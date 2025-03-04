@@ -12,7 +12,7 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { UserPlus, Calendar as CalendarIcon, User } from "lucide-react";
+import { UserPlus, Calendar as CalendarIcon, User, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -33,6 +33,13 @@ const titleOptions = [
   "Ms",
   "Dr",
   "Prof"
+];
+
+const countryOptions = [
+  "England",
+  "Scotland",
+  "Wales",
+  "Northern Ireland"
 ];
 
 export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
@@ -142,6 +149,13 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                       </Label>
                       <Input id="surname" required className="h-10 rounded-lg border-gray-200" />
                     </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-gray-700 font-medium flex items-center">
+                        Email<span className="text-red-500 ml-1">*</span>
+                      </Label>
+                      <Input id="email" type="email" required className="h-10 rounded-lg border-gray-200" />
+                    </div>
                   </div>
 
                   <div className="space-y-4">
@@ -201,6 +215,63 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                           <Label htmlFor="female" className="font-normal cursor-pointer">Female</Label>
                         </div>
                       </RadioGroup>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Address Fields Section */}
+                <div className="mt-6 pt-6 border-t border-gray-100">
+                  <h3 className="text-lg font-medium text-gray-800 mb-4">Address Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="country" className="text-gray-700 font-medium flex items-center">
+                        Country<span className="text-red-500 ml-1">*</span>
+                      </Label>
+                      <Select required>
+                        <SelectTrigger id="country" className="w-full h-10 rounded-lg border-gray-200">
+                          <SelectValue placeholder="Select Country..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {countryOptions.map((country) => (
+                            <SelectItem key={country} value={country}>{country}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="city" className="text-gray-700 font-medium">
+                        City
+                      </Label>
+                      <Input id="city" className="h-10 rounded-lg border-gray-200" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="postalCode" className="text-gray-700 font-medium">
+                        Postal Code
+                      </Label>
+                      <Input id="postalCode" className="h-10 rounded-lg border-gray-200" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="houseNumber" className="text-gray-700 font-medium">
+                        House No/Name
+                      </Label>
+                      <Input id="houseNumber" className="h-10 rounded-lg border-gray-200" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="street" className="text-gray-700 font-medium">
+                        Street
+                      </Label>
+                      <Input id="street" className="h-10 rounded-lg border-gray-200" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="county" className="text-gray-700 font-medium">
+                        County
+                      </Label>
+                      <Input id="county" className="h-10 rounded-lg border-gray-200" />
                     </div>
                   </div>
                 </div>
