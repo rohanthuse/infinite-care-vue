@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp, FileText, Home, ListChecks, Settings } from "lu
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface NavItemProps {
   icon: React.ElementType;
@@ -70,6 +71,8 @@ const SubMenuItem = ({ label, active, onClick }: SubMenuItemProps) => {
 };
 
 export function DashboardNavbar() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [activeItem, setActiveItem] = useState("Home");
   const [activeSubItem, setActiveSubItem] = useState("");
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
@@ -80,12 +83,27 @@ export function DashboardNavbar() {
     } else {
       setActiveItem(label);
       setIsSubmenuOpen(false);
+      
+      // Navigate based on label
+      if (label === "Home") {
+        navigate('/dashboard');
+      } else if (label === "Settings") {
+        // Future implementation
+      } else if (label === "Agreement") {
+        // Future implementation
+      }
     }
   };
 
   const handleSubMenuClick = (label: string) => {
     setActiveSubItem(label);
     setActiveItem("Key Parameters");
+    
+    // Navigate based on submenu item
+    if (label === "Services") {
+      navigate('/services');
+    }
+    // Add other submenu navigations here as needed
   };
 
   const keyParametersSubmenu = [
@@ -98,6 +116,18 @@ export function DashboardNavbar() {
     "Branch",
     "Branch Admin"
   ];
+
+  // Determine the active items based on current route
+  React.useEffect(() => {
+    if (location.pathname === '/dashboard') {
+      setActiveItem("Home");
+      setActiveSubItem("");
+    } else if (location.pathname === '/services') {
+      setActiveItem("Key Parameters");
+      setActiveSubItem("Services");
+      setIsSubmenuOpen(true);
+    }
+  }, [location.pathname]);
 
   return (
     <div className="sticky top-[4.5rem] z-10">
