@@ -1,5 +1,5 @@
 
-import { User, Bell, HelpCircle, LogOut } from "lucide-react";
+import { LogOut, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
@@ -13,7 +13,9 @@ export function DashboardHeader() {
 
   return (
     <header className="bg-white border-b border-gray-200 px-4 py-3 flex justify-between items-center">
-      <div className="flex-1"></div>
+      <div className="flex-1">
+        <h2 className="text-lg font-bold text-blue-600">Med-infinite Healthcare Services</h2>
+      </div>
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" className="text-gray-600">
           <HelpCircle className="h-4 w-4 mr-1" /> Help Guide

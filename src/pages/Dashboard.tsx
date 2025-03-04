@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { AdminsTable } from "@/components/AdminsTable";
 
 const Dashboard = () => {
@@ -32,16 +32,13 @@ const Dashboard = () => {
   }
   
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      <DashboardSidebar />
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <DashboardHeader />
+      <DashboardNavbar />
       
-      <div className="flex-1 flex flex-col">
-        <DashboardHeader />
-        
-        <main className="flex-1 p-6">
-          <AdminsTable />
-        </main>
-      </div>
+      <main className="flex-1 p-6">
+        <AdminsTable />
+      </main>
     </div>
   );
 };
