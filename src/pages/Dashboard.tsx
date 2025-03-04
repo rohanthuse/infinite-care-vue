@@ -32,7 +32,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-med-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className="mt-4 text-gray-700 font-medium tracking-wide">Loading dashboard...</p>
         </div>
       </div>
@@ -45,12 +45,12 @@ const Dashboard = () => {
       <DashboardNavbar />
       
       <motion.main 
-        className="flex-1 px-4 md:px-8 py-6 md:py-8"
+        className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="mb-8">
+        <div className="mb-6 md:mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Branch Administrators</h1>
           <p className="text-gray-500 mt-2 font-medium">Manage and monitor all branch administrators.</p>
         </div>

@@ -1,5 +1,5 @@
 
-import { LogOut, HelpCircle, Menu } from "lucide-react";
+import { LogOut, HelpCircle, Menu, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
@@ -17,7 +17,9 @@ export function DashboardHeader() {
     <header className="bg-white/80 backdrop-blur-md border-b border-gray-100/40 py-4 sticky top-0 z-10">
       <div className="container mx-auto px-4 md:px-6 flex justify-between items-center">
         <div className="flex items-center gap-3 md:gap-4">
-          <div className="w-10 h-10 md:w-11 md:h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 text-white flex items-center justify-center font-bold text-xl shadow-sm">M</div>
+          <div className="w-10 h-10 md:w-11 md:h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 text-white flex items-center justify-center font-bold text-xl shadow-sm">
+            <Heart className="w-6 h-6" />
+          </div>
           <h2 className="text-xl md:text-2xl font-bold tracking-tight">
             Med-infinite <span className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">Healthcare</span>
           </h2>
@@ -34,24 +36,26 @@ export function DashboardHeader() {
           </Button>
         </div>
         
-        <div className={`flex-col md:flex-row absolute md:static top-full left-0 right-0 bg-white md:bg-transparent py-4 md:py-0 border-b md:border-b-0 border-gray-100 shadow-md md:shadow-none z-20 md:z-auto ${mobileMenuOpen ? 'flex' : 'hidden md:flex'} items-center gap-3 md:gap-5 px-6 md:px-0`}>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-gray-700 font-medium hover:bg-gray-50/80 rounded-full transition-all w-full md:w-auto justify-start md:justify-center"
-          >
-            <HelpCircle className="h-4 w-4 mr-2 text-blue-600" /> Help Guide
-          </Button>
+        <div className={`flex-col md:flex-row absolute md:static top-full left-0 right-0 bg-white md:bg-transparent py-4 md:py-0 border-b md:border-b-0 border-gray-100 shadow-md md:shadow-none z-20 md:z-auto ${mobileMenuOpen ? 'flex' : 'hidden md:flex'} items-center md:items-stretch gap-3 md:gap-5 px-6 md:px-0`}>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-gray-700 font-medium hover:bg-gray-50/80 rounded-full transition-all w-full md:w-auto justify-start md:justify-center"
+            >
+              <HelpCircle className="h-4 w-4 mr-2 text-blue-600" /> Help Guide
+            </Button>
+            
+            <CustomButton 
+              size="sm"
+              variant="pill"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium shadow-md hover:shadow-lg transition-all w-full md:w-auto"
+            >
+              New Screen
+            </CustomButton>
+          </div>
           
-          <CustomButton 
-            size="sm"
-            variant="pill"
-            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium shadow-md hover:shadow-lg transition-all w-full md:w-auto"
-          >
-            New Screen
-          </CustomButton>
-          
-          <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm py-2 px-4 rounded-full border border-gray-100/60 shadow-sm w-full md:w-auto justify-between md:justify-start">
+          <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm py-2 px-4 rounded-full border border-gray-100/60 shadow-sm w-full md:w-auto justify-between md:justify-start ml-0 md:ml-2">
             <div>
               <div className="text-gray-800 font-semibold">Administrator</div>
               <div className="text-gray-500 text-xs font-medium">Super Admin</div>

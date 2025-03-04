@@ -24,20 +24,20 @@ const NavItem = ({
   return (
     <div 
       className={cn(
-        "flex items-center px-6 py-3 cursor-pointer rounded-full transition-all font-medium",
+        "flex items-center px-4 md:px-6 py-2.5 md:py-3 cursor-pointer rounded-full transition-all font-medium",
         active 
-          ? "text-med-700 bg-med-50/80 shadow-sm" 
-          : "hover:bg-gray-50/80 hover:text-med-600 text-gray-700"
+          ? "text-blue-700 bg-blue-50/80 shadow-sm" 
+          : "hover:bg-gray-50/80 hover:text-blue-600 text-gray-700"
       )}
       onClick={onClick}
     >
-      <Icon className={cn("h-5 w-5 mr-3", active ? "text-med-600" : "text-gray-500")} />
-      <span className="font-medium">{label}</span>
+      <Icon className={cn("h-5 w-5 mr-2 md:mr-3", active ? "text-blue-600" : "text-gray-500")} />
+      <span className="font-medium text-sm md:text-base">{label}</span>
       {hasSubmenu && (
         isSubmenuOpen ? (
-          <ChevronUp className="ml-2 h-4 w-4 text-gray-600" />
+          <ChevronUp className="ml-1 md:ml-2 h-4 w-4 text-gray-600" />
         ) : (
-          <ChevronDown className="ml-2 h-4 w-4 text-gray-600" />
+          <ChevronDown className="ml-1 md:ml-2 h-4 w-4 text-gray-600" />
         )
       )}
     </div>
@@ -57,10 +57,10 @@ const SubMenuItem = ({ label, active, onClick }: SubMenuItemProps) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        "px-6 py-2.5 cursor-pointer transition-all font-medium text-sm rounded-full",
+        "px-4 md:px-6 py-2 md:py-2.5 cursor-pointer transition-all font-medium text-xs md:text-sm rounded-full",
         active
-          ? "bg-med-50/80 text-med-700 shadow-sm"
-          : "hover:bg-gray-50/80 hover:text-med-600 text-gray-600"
+          ? "bg-blue-50/80 text-blue-700 shadow-sm"
+          : "hover:bg-gray-50/80 hover:text-blue-600 text-gray-600"
       )}
       onClick={onClick}
     >
@@ -100,10 +100,10 @@ export function DashboardNavbar() {
   ];
 
   return (
-    <div>
-      <nav className="bg-white/80 backdrop-blur-md border-b border-gray-100/40 sticky top-[4.5rem] z-10">
-        <div className="container mx-auto px-4">
-          <div className="flex gap-2 py-2">
+    <div className="sticky top-[4.5rem] z-10">
+      <nav className="bg-white/80 backdrop-blur-md border-b border-gray-100/40">
+        <div className="container mx-auto px-2 md:px-4 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1 md:gap-2 py-2 flex-nowrap whitespace-nowrap">
             <NavItem 
               icon={Home} 
               label="Home" 
@@ -141,10 +141,10 @@ export function DashboardNavbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="bg-white/80 backdrop-blur-md border-b border-gray-100/40 py-3 shadow-sm"
+            className="bg-white/80 backdrop-blur-md border-b border-gray-100/40 py-2 md:py-3 shadow-sm"
           >
-            <div className="container mx-auto px-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="container mx-auto px-4 md:px-6 overflow-x-auto scrollbar-hide">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-1 md:gap-2">
                 {keyParametersSubmenu.map((item) => (
                   <SubMenuItem 
                     key={item}
