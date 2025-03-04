@@ -39,8 +39,8 @@ const Footer = () => {
           {/* Logo and description */}
           <div className="md:col-span-2">
             <div className="flex items-center space-x-2 text-2xl font-semibold mb-4">
-              <Heart className="text-med-600 h-6 w-6" />
-              <span className="bg-gradient-to-r from-med-600 to-med-700 bg-clip-text text-transparent">
+              <Heart className="text-blue-600 h-6 w-6" />
+              <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
                 Med-Infinite
               </span>
             </div>
@@ -61,7 +61,7 @@ const Footer = () => {
                   <li key={linkIndex}>
                     <a 
                       href={link.href} 
-                      className="text-gray-600 hover:text-med-600 transition-colors duration-200"
+                      className="text-gray-600 hover:text-blue-600 transition-colors duration-200"
                     >
                       {link.text}
                     </a>

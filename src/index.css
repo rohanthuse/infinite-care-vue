@@ -193,7 +193,7 @@
 }
 
 .gradient-text {
-  @apply bg-gradient-to-r from-med-600 to-med-500 bg-clip-text text-transparent;
+  @apply bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent;
 }
 
 .card-hover {

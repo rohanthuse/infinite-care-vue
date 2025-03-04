@@ -35,42 +35,42 @@ const Features = () => {
     {
       title: "Comprehensive Care Plans",
       description: "Create personalized care plans that adapt to changing patient needs with built-in intelligence.",
-      icon: <Heart className="w-10 h-10 text-med-600 p-2 bg-med-50 rounded-lg" />,
+      icon: <Heart className="w-10 h-10 text-blue-600 p-2 bg-blue-50 rounded-lg" />,
     },
     {
       title: "Intelligent Scheduling",
       description: "Automate appointment scheduling and resource allocation with AI-powered optimization.",
-      icon: <Calendar className="w-10 h-10 text-med-600 p-2 bg-med-50 rounded-lg" />,
+      icon: <Calendar className="w-10 h-10 text-blue-600 p-2 bg-blue-50 rounded-lg" />,
     },
     {
       title: "Verified Providers",
       description: "Connect with certified healthcare providers and specialists through our verified network.",
-      icon: <UserCheck className="w-10 h-10 text-med-600 p-2 bg-med-50 rounded-lg" />,
+      icon: <UserCheck className="w-10 h-10 text-blue-600 p-2 bg-blue-50 rounded-lg" />,
     },
     {
       title: "Secure Communication",
       description: "Maintain HIPAA-compliant communications between patients, providers, and caregivers.",
-      icon: <MessageSquare className="w-10 h-10 text-med-600 p-2 bg-med-50 rounded-lg" />,
+      icon: <MessageSquare className="w-10 h-10 text-blue-600 p-2 bg-blue-50 rounded-lg" />,
     },
     {
       title: "Health Monitoring",
       description: "Track vital signs and health metrics with real-time alerts and comprehensive dashboards.",
-      icon: <Activity className="w-10 h-10 text-med-600 p-2 bg-med-50 rounded-lg" />,
+      icon: <Activity className="w-10 h-10 text-blue-600 p-2 bg-blue-50 rounded-lg" />,
     },
     {
       title: "Task Management",
       description: "Organize and assign care tasks with automated reminders and completion tracking.",
-      icon: <ListChecks className="w-10 h-10 text-med-600 p-2 bg-med-50 rounded-lg" />,
+      icon: <ListChecks className="w-10 h-10 text-blue-600 p-2 bg-blue-50 rounded-lg" />,
     },
     {
       title: "Data Security",
       description: "Enterprise-grade security and privacy controls protect sensitive health information.",
-      icon: <Shield className="w-10 h-10 text-med-600 p-2 bg-med-50 rounded-lg" />,
+      icon: <Shield className="w-10 h-10 text-blue-600 p-2 bg-blue-50 rounded-lg" />,
     },
     {
       title: "Global Accessibility",
       description: "Access your care information from anywhere with our cloud-based platform.",
-      icon: <Globe className="w-10 h-10 text-med-600 p-2 bg-med-50 rounded-lg" />,
+      icon: <Globe className="w-10 h-10 text-blue-600 p-2 bg-blue-50 rounded-lg" />,
     },
   ];
 
@@ -78,7 +78,7 @@ const Features = () => {
     <section id="features" className="py-20 md:py-32 bg-gradient-to-b from-white to-blue-50">
       <div className="container mx-auto px-4">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-med-700 mb-6">
+          <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-700 mb-6">
             <span className="text-sm font-medium">Powerful Features</span>
           </div>
           <h2 className="section-title">Comprehensive Care Management Tools</h2>
