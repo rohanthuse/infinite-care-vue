@@ -68,17 +68,17 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				med: {
-					50: "#f0f9ff",
-					100: "#e0f2fe",
-					200: "#bae6fd",
-					300: "#7dd3fc",
-					400: "#38bdf8",
-					500: "#0ea5e9",
-					600: "#0284c7",
-					700: "#0369a1",
-					800: "#075985",
-					900: "#0c4a6e",
-					950: "#082f49",
+					50: "#edfaff",
+					100: "#d6f2ff",
+					200: "#b5e9ff",
+					300: "#83defe",
+					400: "#48cbfa",
+					500: "#1eaedb", /* Main brand color - fresh bright blue */
+					600: "#0893c9",
+					700: "#0775a3",
+					800: "#0b6186",
+					900: "#105070",
+					950: "#083349",
 				}
 			},
 			borderRadius: {
@@ -123,6 +123,10 @@ export default {
 					'0%': { transform: 'translateX(-100%)', opacity: '0' },
 					'100%': { transform: 'translateX(0)', opacity: '1' }
 				},
+				'float': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-10px)' }
+				},
 				'pulse-gentle': {
 					'0%, 100%': { opacity: '1' },
 					'50%': { opacity: '0.8' }
@@ -136,17 +140,21 @@ export default {
 				'zoom-in': 'zoom-in 0.7s ease-out',
 				'slide-in-right': 'slide-in-right 0.7s ease-out',
 				'slide-in-left': 'slide-in-left 0.7s ease-out',
+				'float': 'float 3s ease-in-out infinite',
 				'pulse-gentle': 'pulse-gentle 3s infinite ease-in-out'
 			},
 			backgroundImage: {
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-				'hero-gradient': 'linear-gradient(109.6deg, rgba(223,234,247,1) 11.2%, rgba(244,248,252,1) 91.1%)',
+				'hero-gradient': 'linear-gradient(135deg, #edfaff 0%, #d6f2ff 100%)',
+				'card-gradient': 'linear-gradient(to bottom right, #ffffff, #f5faff)',
+				'cta-gradient': 'linear-gradient(135deg, #1eaedb 0%, #0775a3 100%)'
 			},
 			boxShadow: {
 				'soft': '0 4px 20px rgba(0, 0, 0, 0.06)',
 				'medium': '0 10px 30px rgba(0, 0, 0, 0.08)',
-				'highlight': '0 0 15px rgba(14, 165, 233, 0.3)',
-				'inner-soft': 'inset 0 1px 3px rgba(0, 0, 0, 0.06)'
+				'highlight': '0 0 15px rgba(30, 174, 219, 0.3)',
+				'inner-soft': 'inset 0 1px 3px rgba(0, 0, 0, 0.06)',
+				'modern': '0 20px 80px -20px rgba(0, 0, 0, 0.08)'
 			},
 			transitionTimingFunction: {
 				'ease-in-out-cubic': 'cubic-bezier(0.65, 0, 0.35, 1)',

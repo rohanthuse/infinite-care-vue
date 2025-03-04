@@ -23,6 +23,7 @@ const CustomButton = React.forwardRef<HTMLButtonElement, CustomButtonProps>(
           "font-medium transition-all duration-300",
           isAnimated && "btn-hover-effect",
           isPill && "rounded-full",
+          "relative overflow-hidden",
           className
         )}
         variant={actualVariant as any}
@@ -30,7 +31,7 @@ const CustomButton = React.forwardRef<HTMLButtonElement, CustomButtonProps>(
         ref={ref}
         {...props}
       >
-        {children}
+        <span className="relative z-10 flex items-center">{children}</span>
       </Button>
     );
   }

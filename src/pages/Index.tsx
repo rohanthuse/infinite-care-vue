@@ -19,8 +19,8 @@ const Index = () => {
 
     const observer = new IntersectionObserver(handleIntersection, {
       root: null,
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px'
+      threshold: 0.15,
+      rootMargin: '0px 0px -100px 0px'
     });
 
     document.querySelectorAll('.reveal-animation').forEach(el => {
@@ -33,7 +33,7 @@ const Index = () => {
   }, []);
 
   return (
-    <main className="bg-white min-h-screen">
+    <main className="bg-background min-h-screen">
       <Navbar />
       <Hero />
       <Features />
