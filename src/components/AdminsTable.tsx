@@ -1,11 +1,12 @@
 
-import { ArrowUpDown, MoreHorizontal, Plus, FileText, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Plus, FileText, Search, ChevronLeft, ChevronRight, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
+import { AddAdminForm } from "@/components/AddAdminForm";
 
 interface AdminData {
   id: string;
@@ -45,6 +46,7 @@ const mockData: AdminData[] = [
 
 export function AdminsTable() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAddAdminModal, setShowAddAdminModal] = useState(false);
   
   return (
     <div className="w-full">
@@ -74,8 +76,9 @@ export function AdminsTable() {
             size="sm"
             variant="pill"
             className="flex items-center bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium shadow-sm hover:shadow-md"
+            onClick={() => setShowAddAdminModal(true)}
           >
-            <Plus className="h-4 w-4 mr-1" /> New Admin
+            <UserPlus className="h-4 w-4 mr-1" /> New Admin
           </CustomButton>
         </div>
       </div>
@@ -166,6 +169,12 @@ export function AdminsTable() {
           </div>
         </div>
       </motion.div>
+
+      {/* Add Admin Modal */}
+      <AddAdminForm 
+        isOpen={showAddAdminModal} 
+        onClose={() => setShowAddAdminModal(false)} 
+      />
     </div>
   );
 }

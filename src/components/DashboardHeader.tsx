@@ -1,14 +1,18 @@
+
 import { LogOut, HelpCircle, Menu, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { useState } from "react";
+
 export function DashboardHeader() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
   const handleLogout = () => {
     navigate('/super-admin');
   };
+  
   return <header className="bg-white/80 backdrop-blur-md border-b border-gray-100/40 py-4 sticky top-0 z-10">
       <div className="container mx-auto px-4 md:px-6 flex justify-between items-center">
         <div className="flex items-center gap-3 md:gap-4">
