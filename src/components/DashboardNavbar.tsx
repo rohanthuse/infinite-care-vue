@@ -1,9 +1,8 @@
 
-import { ChevronDown, ChevronUp, FileText, Home, ListChecks, Settings, Search, PanelLeft } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, Home, ListChecks, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
 
 interface NavItemProps {
   icon: React.ElementType;
@@ -25,20 +24,20 @@ const NavItem = ({
   return (
     <div 
       className={cn(
-        "flex items-center px-4 py-2 cursor-pointer rounded-full transition-all duration-200 font-medium text-sm",
+        "flex items-center px-4 md:px-6 py-2.5 md:py-3 cursor-pointer rounded-full transition-all font-medium",
         active 
-          ? "text-blue-600 bg-blue-50/80" 
+          ? "text-blue-700 bg-blue-50/80 shadow-sm" 
           : "hover:bg-gray-50/80 hover:text-blue-600 text-gray-700"
       )}
       onClick={onClick}
     >
-      <Icon className={cn("h-4 w-4 mr-2", active ? "text-blue-600" : "text-gray-600")} />
-      <span>{label}</span>
+      <Icon className={cn("h-5 w-5 mr-2 md:mr-3", active ? "text-blue-600" : "text-gray-500")} />
+      <span className="font-medium text-sm md:text-base">{label}</span>
       {hasSubmenu && (
         isSubmenuOpen ? (
-          <ChevronUp className="ml-1.5 h-3.5 w-3.5 text-gray-600" />
+          <ChevronUp className="ml-1 md:ml-2 h-4 w-4 text-gray-600" />
         ) : (
-          <ChevronDown className="ml-1.5 h-3.5 w-3.5 text-gray-600" />
+          <ChevronDown className="ml-1 md:ml-2 h-4 w-4 text-gray-600" />
         )
       )}
     </div>
@@ -54,13 +53,13 @@ interface SubMenuItemProps {
 const SubMenuItem = ({ label, active, onClick }: SubMenuItemProps) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: -5 }}
+      initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.15 }}
+      transition={{ duration: 0.2 }}
       className={cn(
-        "px-4 py-1.5 cursor-pointer transition-all duration-200 text-xs rounded-full mx-1",
+        "px-4 md:px-6 py-2 md:py-2.5 cursor-pointer transition-all font-medium text-xs md:text-sm rounded-full",
         active
-          ? "bg-blue-50/80 text-blue-600"
+          ? "bg-blue-50/80 text-blue-700 shadow-sm"
           : "hover:bg-gray-50/80 hover:text-blue-600 text-gray-600"
       )}
       onClick={onClick}
@@ -74,7 +73,6 @@ export function DashboardNavbar() {
   const [activeItem, setActiveItem] = useState("Home");
   const [activeSubItem, setActiveSubItem] = useState("");
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
   const handleNavClick = (label: string) => {
     if (label === "Key Parameters") {
@@ -102,23 +100,10 @@ export function DashboardNavbar() {
   ];
 
   return (
-    <div className="sticky top-[3.5rem] z-10">
-      <div className="bg-white/95 backdrop-blur-xl border-b border-gray-100/30 shadow-sm">
-        <div className="container mx-auto px-4 md:px-6 flex items-center justify-between">
-          <div className="flex items-center overflow-x-auto scrollbar-hide py-2 gap-1">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="md:hidden text-gray-700 hover:bg-gray-50/80 rounded-full mr-1"
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            >
-              <PanelLeft className="h-4 w-4" />
-            </Button>
-            
-            <div className="hidden md:flex mr-2 px-2 py-1 bg-gray-100/70 rounded-md text-xs text-gray-500 font-medium">
-              Dashboard
-            </div>
-            
+    <div className="sticky top-[4.5rem] z-10">
+      <nav className="bg-white/80 backdrop-blur-md border-b border-gray-100/40">
+        <div className="container mx-auto px-2 md:px-4 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1 md:gap-2 py-2 flex-nowrap whitespace-nowrap">
             <NavItem 
               icon={Home} 
               label="Home" 
@@ -146,19 +131,8 @@ export function DashboardNavbar() {
               onClick={() => handleNavClick("Agreement")}
             />
           </div>
-          
-          <div className="hidden md:flex items-center">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Search..." 
-                className="h-8 rounded-full bg-gray-50 border border-gray-200/50 pl-9 pr-4 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400 w-48"
-              />
-            </div>
-          </div>
         </div>
-      </div>
+      </nav>
       
       <AnimatePresence>
         {isSubmenuOpen && (
@@ -166,11 +140,11 @@ export function DashboardNavbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="bg-white/95 backdrop-blur-xl border-b border-gray-100/30 shadow-sm"
+            transition={{ duration: 0.3 }}
+            className="bg-white/80 backdrop-blur-md border-b border-gray-100/40 py-2 md:py-3 shadow-sm"
           >
-            <div className="container mx-auto px-4 md:px-6 py-2">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
+            <div className="container mx-auto px-4 md:px-6 overflow-x-auto scrollbar-hide">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-1 md:gap-2">
                 {keyParametersSubmenu.map((item) => (
                   <SubMenuItem 
                     key={item}
