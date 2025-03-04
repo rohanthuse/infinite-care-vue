@@ -1,37 +1,29 @@
-
 import { useEffect, useRef } from "react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { ArrowRight, ShieldCheck, BarChart3, Users } from "lucide-react";
-
 const Hero = () => {
   const heroRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('active');
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.1
+    });
     if (heroRef.current) {
       observer.observe(heroRef.current);
     }
-
     return () => {
       if (heroRef.current) {
         observer.unobserve(heroRef.current);
       }
     };
   }, []);
-
-  return (
-    <section id="hero" className="relative pt-20 overflow-hidden">
+  return <section id="hero" className="relative pt-20 overflow-hidden">
       {/* Background Elements */}
       <div className="absolute inset-0 bg-hero-gradient -z-10" aria-hidden="true"></div>
       <div className="hero-shape w-[500px] h-[500px] bg-med-200/50 top-[-100px] right-[-200px]" aria-hidden="true"></div>
@@ -104,12 +96,7 @@ const Hero = () => {
             <div className="relative">
               {/* Main Platform Mockup */}
               <div className="relative z-20 rounded-2xl overflow-hidden shadow-modern bg-white p-1">
-                <img 
-                  src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158" 
-                  alt="Med-Infinite Dashboard" 
-                  className="w-full h-full object-cover rounded-xl"
-                  loading="lazy"
-                />
+                <img alt="Med-Infinite Dashboard" className="w-full h-full object-cover rounded-xl" loading="lazy" src="/lovable-uploads/34823937-36c3-4d58-89bb-a99c71fb4dbf.png" />
               </div>
               
               {/* Floating Elements */}
@@ -128,7 +115,9 @@ const Hero = () => {
                 </div>
               </div>
               
-              <div className="absolute bottom-[-30px] left-[20px] z-30 animate-float" style={{ animationDelay: '1s' }}>
+              <div className="absolute bottom-[-30px] left-[20px] z-30 animate-float" style={{
+              animationDelay: '1s'
+            }}>
                 <div className="bg-white rounded-xl shadow-medium p-3 max-w-[180px]">
                   <div className="flex items-center mb-2">
                     <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
@@ -148,16 +137,12 @@ const Hero = () => {
         <div className="container mx-auto px-4">
           <p className="text-center text-sm font-medium text-gray-500 mb-6">TRUSTED BY LEADING HEALTHCARE ORGANIZATIONS</p>
           <div className="flex justify-around items-center flex-wrap gap-8">
-            {['Mayo Clinic', 'Cleveland Clinic', 'Johns Hopkins', 'Mount Sinai', 'UC Health'].map((brand, index) => (
-              <div key={index} className="text-gray-400 font-semibold text-lg">
+            {['Mayo Clinic', 'Cleveland Clinic', 'Johns Hopkins', 'Mount Sinai', 'UC Health'].map((brand, index) => <div key={index} className="text-gray-400 font-semibold text-lg">
                 {brand}
-              </div>
-            ))}
+              </div>)}
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default Hero;
