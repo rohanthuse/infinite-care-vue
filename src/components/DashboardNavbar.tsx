@@ -1,7 +1,7 @@
 
+import React, { useState } from "react";
 import { ChevronDown, ChevronUp, FileText, Home, ListChecks, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 
