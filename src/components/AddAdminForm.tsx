@@ -352,9 +352,9 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                 </CustomButton>
               </div>
             </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+          </Tabs>
+        </form>
+      </DialogContent>
     </Dialog>
   );
 }
