@@ -36,9 +36,9 @@ const Dashboard = () => {
       <DashboardHeader />
       <DashboardNavbar />
       
-      <main className="flex-1 p-8 max-w-[1600px] w-full mx-auto">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
+      <main className="flex-1 container mx-auto px-6 py-8">
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
             <h1 className="text-2xl font-bold text-gray-800">Branch Administrators</h1>
             <p className="text-gray-500 mt-1">Manage and monitor all branch administrators.</p>
           </div>

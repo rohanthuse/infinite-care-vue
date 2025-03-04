@@ -23,20 +23,20 @@ const NavItem = ({
   return (
     <div 
       className={cn(
-        "flex items-center px-6 py-3 cursor-pointer transition-colors font-medium",
+        "flex items-center px-6 py-3 cursor-pointer rounded-md transition-all font-medium",
         active 
-          ? "border-b-2 border-med-500 text-med-700 bg-med-50" 
-          : "hover:bg-gray-100 hover:text-med-600 text-gray-800"
+          ? "text-med-700 bg-med-50 shadow-sm" 
+          : "hover:bg-gray-50 hover:text-med-600 text-gray-700"
       )}
       onClick={onClick}
     >
-      <Icon className={cn("h-5 w-5 mr-3", active ? "text-med-600" : "text-gray-700")} />
+      <Icon className={cn("h-5 w-5 mr-3", active ? "text-med-600" : "text-gray-500")} />
       <span className="font-semibold">{label}</span>
       {hasSubmenu && (
         isSubmenuOpen ? (
-          <ChevronUp className="ml-2 h-4 w-4 text-gray-700" />
+          <ChevronUp className="ml-2 h-4 w-4 text-gray-600" />
         ) : (
-          <ChevronDown className="ml-2 h-4 w-4 text-gray-700" />
+          <ChevronDown className="ml-2 h-4 w-4 text-gray-600" />
         )
       )}
     </div>
@@ -53,10 +53,10 @@ const SubMenuItem = ({ label, active, onClick }: SubMenuItemProps) => {
   return (
     <div
       className={cn(
-        "px-14 py-2 cursor-pointer transition-colors font-medium text-sm",
+        "px-14 py-2.5 cursor-pointer transition-all font-medium text-sm rounded-md mx-2",
         active
-          ? "bg-med-50 text-med-700"
-          : "hover:bg-gray-100 hover:text-med-600 text-gray-700"
+          ? "bg-med-50 text-med-700 shadow-sm"
+          : "hover:bg-gray-50 hover:text-med-600 text-gray-600"
       )}
       onClick={onClick}
     >
@@ -97,47 +97,51 @@ export function DashboardNavbar() {
 
   return (
     <div>
-      <nav className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="flex items-center">
-          <NavItem 
-            icon={Home} 
-            label="Home" 
-            active={activeItem === "Home"} 
-            onClick={() => handleNavClick("Home")}
-          />
-          <NavItem 
-            icon={ListChecks} 
-            label="Key Parameters" 
-            active={activeItem === "Key Parameters" || activeSubItem !== ""} 
-            onClick={() => handleNavClick("Key Parameters")}
-            hasSubmenu={true}
-            isSubmenuOpen={isSubmenuOpen}
-          />
-          <NavItem 
-            icon={Settings} 
-            label="Settings" 
-            active={activeItem === "Settings"} 
-            onClick={() => handleNavClick("Settings")}
-          />
-          <NavItem 
-            icon={FileText} 
-            label="Agreement" 
-            active={activeItem === "Agreement"} 
-            onClick={() => handleNavClick("Agreement")}
-          />
+      <nav className="bg-white shadow-sm border-b border-gray-100">
+        <div className="container mx-auto px-4">
+          <div className="flex gap-1 py-1">
+            <NavItem 
+              icon={Home} 
+              label="Home" 
+              active={activeItem === "Home"} 
+              onClick={() => handleNavClick("Home")}
+            />
+            <NavItem 
+              icon={ListChecks} 
+              label="Key Parameters" 
+              active={activeItem === "Key Parameters" || activeSubItem !== ""} 
+              onClick={() => handleNavClick("Key Parameters")}
+              hasSubmenu={true}
+              isSubmenuOpen={isSubmenuOpen}
+            />
+            <NavItem 
+              icon={Settings} 
+              label="Settings" 
+              active={activeItem === "Settings"} 
+              onClick={() => handleNavClick("Settings")}
+            />
+            <NavItem 
+              icon={FileText} 
+              label="Agreement" 
+              active={activeItem === "Agreement"} 
+              onClick={() => handleNavClick("Agreement")}
+            />
+          </div>
         </div>
       </nav>
       
       {isSubmenuOpen && (
-        <div className="bg-white border-b border-gray-200 shadow-sm animate-fade-in">
-          {keyParametersSubmenu.map((item) => (
-            <SubMenuItem 
-              key={item}
-              label={item}
-              active={activeSubItem === item}
-              onClick={() => handleSubMenuClick(item)}
-            />
-          ))}
+        <div className="bg-white border-b border-gray-100 py-2 shadow-sm animate-fade-in">
+          <div className="container mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-1">
+            {keyParametersSubmenu.map((item) => (
+              <SubMenuItem 
+                key={item}
+                label={item}
+                active={activeSubItem === item}
+                onClick={() => handleSubMenuClick(item)}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>
