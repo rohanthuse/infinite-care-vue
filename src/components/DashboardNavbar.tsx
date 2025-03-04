@@ -14,13 +14,15 @@ const NavItem = ({ icon: Icon, label, active, onClick }: NavItemProps) => {
   return (
     <div 
       className={cn(
-        "flex items-center px-4 py-3 cursor-pointer hover:bg-blue-50 transition-colors",
-        active && "border-b-2 border-blue-600 bg-blue-50"
+        "flex items-center px-6 py-3 cursor-pointer transition-colors text-gray-700 font-medium",
+        active 
+          ? "border-b-2 border-med-500 text-med-700 bg-med-50" 
+          : "hover:bg-gray-50 hover:text-med-600"
       )}
       onClick={onClick}
     >
-      <Icon className="h-5 w-5 mr-3 text-gray-600" />
-      <span className="text-gray-700">{label}</span>
+      <Icon className={cn("h-5 w-5 mr-3", active ? "text-med-600" : "text-gray-600")} />
+      <span>{label}</span>
     </div>
   );
 };
@@ -33,7 +35,7 @@ export function DashboardNavbar() {
   };
 
   return (
-    <nav className="bg-white border-b border-gray-200 px-6">
+    <nav className="bg-white border-b border-gray-200 shadow-sm">
       <div className="flex items-center">
         <NavItem 
           icon={Home} 
