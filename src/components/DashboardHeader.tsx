@@ -26,19 +26,19 @@ export function DashboardHeader() {
   };
   
   return (
-    <header className="bg-white/80 backdrop-blur-md border-b border-gray-100/40 py-3 md:py-4 sticky top-0 z-40">
-      <div className="container mx-auto px-4 md:px-6 flex justify-between items-center relative">
+    <header className="bg-white shadow-sm border-b border-gray-100 py-3 md:py-4 sticky top-0 z-50 w-full">
+      <div className="container mx-auto px-4 flex justify-between items-center relative">
         {/* Logo aligned to the left - simplified for mobile */}
-        <div className="flex items-center gap-2 md:gap-4 md:ml-4">
-          <div className="w-8 h-8 md:w-11 md:h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 text-white flex items-center justify-center font-bold text-xl shadow-sm">
-            <Heart className="w-5 h-5 md:w-6 md:h-6" />
+        <div className="flex items-center gap-2 md:gap-4">
+          <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+            <Heart className="w-4 h-4 md:w-5 md:h-5" />
           </div>
-          <h2 className="text-lg md:text-2xl font-bold tracking-tight">
+          <h2 className="text-base md:text-xl font-bold tracking-tight">
             Med-infinite 
           </h2>
         </div>
         
-        {/* Mobile menu button - Updated for better visibility */}
+        {/* Mobile menu button */}
         <div className="md:hidden">
           <Button 
             variant="outline" 

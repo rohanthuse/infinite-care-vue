@@ -70,6 +70,7 @@ const BranchDashboard = () => {
   const { id, branchName } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [searchValue, setSearchValue] = useState("");
   const displayBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
   
   return (
@@ -78,7 +79,7 @@ const BranchDashboard = () => {
       
       <main className="flex-1 container px-4 pt-4 pb-20 md:py-6 mx-auto">
         <div className="flex flex-col justify-between items-start mb-4 md:mb-6">
-          <div>
+          <div className="w-full">
             <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
               <Button 
                 variant="ghost" 
@@ -90,8 +91,9 @@ const BranchDashboard = () => {
                 <span className="hidden md:inline">Branches</span>
               </Button>
               <ChevronRight className="h-3 w-3" />
-              <span className="text-gray-700 font-medium text-xs md:text-sm truncate max-w-[200px]">{displayBranchName}</span>
+              <span className="text-gray-700 font-medium text-xs md:text-sm truncate max-w-[150px] md:max-w-[200px]">{displayBranchName}</span>
             </div>
+            
             <h1 className="text-lg md:text-3xl font-bold text-gray-800 flex items-center">
               {displayBranchName}
               <Badge className="ml-2 md:ml-3 bg-green-100 text-green-800 hover:bg-green-200 font-normal text-xs md:text-sm" variant="outline">Active</Badge>
@@ -113,52 +115,47 @@ const BranchDashboard = () => {
             </div>
           </div>
           
-          <div className="flex items-center justify-between w-full mt-4 md:hidden">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="h-9 w-9 rounded-full relative"
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-            
-            <Button 
-              variant="default" 
-              size="sm" 
-              className="bg-blue-600 hover:bg-blue-700 rounded-full px-3"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              <span>New Booking</span>
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="h-9 w-9 rounded-full relative"
-            >
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-            </Button>
-          </div>
-          
-          <div className="hidden md:flex items-center gap-3 mt-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input 
-                placeholder="Search..." 
-                className="pl-10 pr-4 py-2 rounded-full bg-white border-gray-200 w-[200px] focus:w-[300px] transition-all duration-300"
-              />
+          <div className="sticky top-[56px] md:static left-0 right-0 bg-white md:bg-transparent z-30 py-2 px-4 md:px-0 w-full md:w-auto mt-3 md:mt-4 border-b md:border-b-0 border-gray-100 shadow-sm md:shadow-none">
+            <div className="flex items-center justify-between w-full md:justify-end gap-2">
+              <div className="relative flex-1 md:w-auto md:max-w-[300px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input 
+                  placeholder="Search..." 
+                  className="pl-10 pr-4 py-2 rounded-full bg-white border-gray-200 md:w-[200px] md:focus:w-[300px] transition-all duration-300"
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                />
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-9 w-9 rounded-full relative hidden md:flex"
+                >
+                  <Bell className="h-4 w-4" />
+                  <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+                </Button>
+                
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="h-9 bg-blue-600 hover:bg-blue-700 rounded-full px-3 shadow-sm"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  <span>New Booking</span>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-9 w-9 rounded-full relative md:hidden"
+                >
+                  <Bell className="h-4 w-4" />
+                  <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+                </Button>
+              </div>
             </div>
-            
-            <Button variant="outline" size="icon" className="rounded-full relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-            </Button>
-            
-            <Button variant="default" className="rounded-md bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              <span>New Booking</span>
-            </Button>
           </div>
         </div>
         
@@ -172,48 +169,48 @@ const BranchDashboard = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="mt-6"
+          className="mt-4 md:mt-6"
         >
           {activeTab === "dashboard" && (
             <>
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
-                  <div className="mr-3 h-8 w-8 rounded-md bg-blue-100 flex items-center justify-center">
-                    <Plus className="h-4 w-4 text-blue-600" />
+                  <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-blue-100 flex items-center justify-center">
+                    <Plus className="h-3.5 md:h-4 w-3.5 md:w-4 text-blue-600" />
                   </div>
                   <div>
-                    <div className="font-medium text-sm">New Client</div>
-                    <div className="text-xs text-gray-500">Add client details</div>
+                    <div className="font-medium text-xs md:text-sm">New Client</div>
+                    <div className="text-xs text-gray-500 hidden md:block">Add client details</div>
                   </div>
                 </Button>
                 
                 <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
-                  <div className="mr-3 h-8 w-8 rounded-md bg-green-100 flex items-center justify-center">
-                    <Calendar className="h-4 w-4 text-green-600" />
+                  <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-green-100 flex items-center justify-center">
+                    <Calendar className="h-3.5 md:h-4 w-3.5 md:w-4 text-green-600" />
                   </div>
                   <div>
-                    <div className="font-medium text-sm">Schedule</div>
-                    <div className="text-xs text-gray-500">View calendar</div>
+                    <div className="font-medium text-xs md:text-sm">Schedule</div>
+                    <div className="text-xs text-gray-500 hidden md:block">View calendar</div>
                   </div>
                 </Button>
                 
                 <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
-                  <div className="mr-3 h-8 w-8 rounded-md bg-amber-100 flex items-center justify-center">
-                    <FileText className="h-4 w-4 text-amber-600" />
+                  <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-amber-100 flex items-center justify-center">
+                    <FileText className="h-3.5 md:h-4 w-3.5 md:w-4 text-amber-600" />
                   </div>
                   <div>
-                    <div className="font-medium text-sm">Reports</div>
-                    <div className="text-xs text-gray-500">Generate reports</div>
+                    <div className="font-medium text-xs md:text-sm">Reports</div>
+                    <div className="text-xs text-gray-500 hidden md:block">Generate reports</div>
                   </div>
                 </Button>
                 
                 <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
-                  <div className="mr-3 h-8 w-8 rounded-md bg-purple-100 flex items-center justify-center">
-                    <Users className="h-4 w-4 text-purple-600" />
+                  <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-purple-100 flex items-center justify-center">
+                    <Users className="h-3.5 md:h-4 w-3.5 md:w-4 text-purple-600" />
                   </div>
                   <div>
-                    <div className="font-medium text-sm">Staff</div>
-                    <div className="text-xs text-gray-500">Manage staff</div>
+                    <div className="font-medium text-xs md:text-sm">Staff</div>
+                    <div className="text-xs text-gray-500 hidden md:block">Manage staff</div>
                   </div>
                 </Button>
               </div>
