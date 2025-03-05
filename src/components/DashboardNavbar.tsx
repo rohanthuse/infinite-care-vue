@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { 
   ChevronDown, ChevronUp, FileText, Home, 
   ListChecks, Settings, Heart, Brain, Briefcase,
@@ -7,70 +8,132 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
-interface NavItemProps {
+interface NavTileProps {
   icon: React.ElementType;
   label: string;
   active?: boolean;
   onClick?: () => void;
   hasSubmenu?: boolean;
   isSubmenuOpen?: boolean;
+  notificationCount?: number;
+  path: string;
 }
 
-const NavItem = ({ 
+const NavTile = ({ 
   icon: Icon, 
   label, 
   active, 
   onClick, 
   hasSubmenu, 
-  isSubmenuOpen 
-}: NavItemProps) => {
+  isSubmenuOpen,
+  notificationCount,
+  path
+}: NavTileProps) => {
+  const location = useLocation();
+  const isActive = active || location.pathname === path;
+  
   return (
     <div 
       className={cn(
-        "flex items-center px-4 md:px-6 py-2.5 md:py-3 cursor-pointer rounded-full transition-all font-medium",
-        active 
-          ? "text-blue-700 bg-blue-50/80 shadow-sm" 
-          : "hover:bg-gray-50/80 hover:text-blue-600 text-gray-700"
+        "relative flex flex-col items-center justify-center p-4 cursor-pointer rounded-xl transition-all duration-300",
+        "border border-gray-100 w-full",
+        isActive 
+          ? "bg-blue-50 shadow-sm border-blue-100" 
+          : "bg-white hover:bg-gray-50 hover:border-blue-50"
       )}
       onClick={onClick}
     >
-      <Icon className={cn("h-5 w-5 mr-2 md:mr-3", active ? "text-blue-600" : "text-gray-500")} />
-      <span className="font-medium text-sm md:text-base">{label}</span>
+      <div className="relative">
+        <Icon className={cn(
+          "h-6 w-6 mb-2",
+          isActive ? "text-blue-600" : "text-gray-500"
+        )} />
+        
+        {notificationCount > 0 && (
+          <Badge 
+            className="absolute -top-2 -right-2 flex items-center justify-center bg-red-500 text-white text-xs p-0 min-w-5 h-5 rounded-full"
+          >
+            {notificationCount}
+          </Badge>
+        )}
+      </div>
+      
+      <span className={cn(
+        "text-sm font-medium text-center",
+        isActive ? "text-blue-700" : "text-gray-700"
+      )}>
+        {label}
+      </span>
+      
       {hasSubmenu && (
-        isSubmenuOpen ? (
-          <ChevronUp className="ml-1 md:ml-2 h-4 w-4 text-gray-600" />
-        ) : (
-          <ChevronDown className="ml-1 md:ml-2 h-4 w-4 text-gray-600" />
-        )
+        <div className="absolute top-2 right-2">
+          {isSubmenuOpen ? (
+            <ChevronUp className="h-4 w-4 text-gray-400" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-gray-400" />
+          )}
+        </div>
       )}
     </div>
   );
 };
 
-interface SubMenuItemProps {
+interface SubNavTileProps {
+  icon: React.ElementType;
   label: string;
   active?: boolean;
   onClick?: () => void;
-  icon?: React.ElementType;
+  path: string;
+  notificationCount?: number;
 }
 
-const SubMenuItem = ({ label, active, onClick, icon: Icon }: SubMenuItemProps) => {
+const SubNavTile = ({ 
+  icon: Icon, 
+  label, 
+  active, 
+  onClick,
+  path,
+  notificationCount 
+}: SubNavTileProps) => {
+  const location = useLocation();
+  const isActive = active || location.pathname === path;
+  
   return (
     <motion.div
-      initial={{ opacity: 0, y: -10 }}
+      initial={{ opacity: 0, y: -5 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        "px-4 md:px-6 py-2 md:py-2.5 cursor-pointer transition-all font-medium text-xs md:text-sm rounded-full flex items-center",
-        active
-          ? "bg-blue-50/80 text-blue-700 shadow-sm"
-          : "hover:bg-gray-50/80 hover:text-blue-600 text-gray-600"
+        "relative flex flex-col items-center justify-center p-4 cursor-pointer rounded-xl transition-all duration-300 border",
+        isActive 
+          ? "bg-blue-50 border-blue-100 shadow-sm" 
+          : "bg-white hover:bg-gray-50 border-gray-100 hover:border-blue-50"
       )}
       onClick={onClick}
     >
-      {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500" />}
-      {label}
+      <div className="relative">
+        <Icon className={cn(
+          "h-6 w-6 mb-2",
+          isActive ? "text-blue-600" : "text-gray-500"
+        )} />
+        
+        {notificationCount > 0 && (
+          <Badge 
+            className="absolute -top-2 -right-2 flex items-center justify-center bg-red-500 text-white text-xs p-0 min-w-5 h-5 rounded-full"
+          >
+            {notificationCount}
+          </Badge>
+        )}
+      </div>
+      
+      <span className={cn(
+        "text-sm font-medium text-center",
+        isActive ? "text-blue-700" : "text-gray-700"
+      )}>
+        {label}
+      </span>
     </motion.div>
   );
 };
@@ -82,43 +145,58 @@ export function DashboardNavbar() {
   const [activeSubItem, setActiveSubItem] = useState("");
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
   
-  const handleNavClick = (label: string) => {
+  // Mock notification counts - in a real app, these would come from an API or context
+  const notifications = {
+    home: 0,
+    keyParameters: 3,
+    settings: 1,
+    agreement: 2,
+    services: 0,
+    hobbies: 5,
+    skills: 0,
+    medicalMental: 2,
+    typeOfWork: 0,
+    bodyMapInjuries: 1,
+    branch: 0,
+    branchAdmin: 3
+  };
+  
+  const handleNavClick = (label: string, path: string) => {
     if (label === "Key Parameters") {
       setIsSubmenuOpen(!isSubmenuOpen);
     } else {
       setActiveItem(label);
       setIsSubmenuOpen(false);
-      
-      // Navigate based on label
-      if (label === "Home") {
-        navigate('/dashboard');
-      } else if (label === "Settings") {
-        navigate('/settings');
-      } else if (label === "Agreement") {
-        navigate('/agreement');
-      }
+      navigate(path);
     }
   };
 
-  const handleSubMenuClick = (label: string, path: string) => {
+  const handleSubNavClick = (label: string, path: string) => {
     setActiveSubItem(label);
     setActiveItem("Key Parameters");
     navigate(path);
   };
 
-  const keyParametersSubmenus = [
-    { label: "Services", path: "/services", icon: Briefcase },
-    { label: "Hobbies", path: "/hobbies", icon: Heart },
-    { label: "Skills", path: "/skills", icon: Brain },
-    { label: "Medical & Mental", path: "/medical-mental", icon: Stethoscope },
-    { label: "Type of Work", path: "/type-of-work", icon: ListChecks },
-    { label: "Body Map Injuries", path: "/body-map-points", icon: ActivitySquare },
-    { label: "Branch", path: "/branch", icon: Building2 },
-    { label: "Branch Admin", path: "/branch-admins", icon: Users },
+  const mainNavItems = [
+    { label: "Home", icon: Home, path: "/dashboard", notification: notifications.home },
+    { label: "Key Parameters", icon: ListChecks, path: "#", notification: notifications.keyParameters, hasSubmenu: true },
+    { label: "Settings", icon: Settings, path: "/settings", notification: notifications.settings },
+    { label: "Agreement", icon: FileText, path: "/agreement", notification: notifications.agreement }
+  ];
+
+  const keyParametersSubItems = [
+    { label: "Services", icon: Briefcase, path: "/services", notification: notifications.services },
+    { label: "Hobbies", icon: Heart, path: "/hobbies", notification: notifications.hobbies },
+    { label: "Skills", icon: Brain, path: "/skills", notification: notifications.skills },
+    { label: "Medical & Mental", icon: Stethoscope, path: "/medical-mental", notification: notifications.medicalMental },
+    { label: "Type of Work", icon: ListChecks, path: "/type-of-work", notification: notifications.typeOfWork },
+    { label: "Body Map Injuries", icon: ActivitySquare, path: "/body-map-points", notification: notifications.bodyMapInjuries },
+    { label: "Branch", icon: Building2, path: "/branch", notification: notifications.branch },
+    { label: "Branch Admin", icon: Users, path: "/branch-admins", notification: notifications.branchAdmin },
   ];
 
   // Determine the active items based on current route
-  React.useEffect(() => {
+  useEffect(() => {
     const path = location.pathname;
     
     if (path === '/dashboard') {
@@ -132,7 +210,7 @@ export function DashboardNavbar() {
       setActiveSubItem("");
     } else {
       // Check if we're on a submenu path
-      const submenuItem = keyParametersSubmenus.find(item => item.path === path);
+      const submenuItem = keyParametersSubItems.find(item => item.path === path);
       if (submenuItem) {
         setActiveItem("Key Parameters");
         setActiveSubItem(submenuItem.label);
@@ -143,35 +221,22 @@ export function DashboardNavbar() {
 
   return (
     <div className="sticky top-[4.5rem] z-10">
-      <nav className="bg-white/80 backdrop-blur-md border-b border-gray-100/40">
-        <div className="container mx-auto px-2 md:px-4 overflow-x-auto scrollbar-hide">
-          <div className="flex gap-1 md:gap-2 py-2 flex-nowrap whitespace-nowrap">
-            <NavItem 
-              icon={Home} 
-              label="Home" 
-              active={activeItem === "Home"} 
-              onClick={() => handleNavClick("Home")}
-            />
-            <NavItem 
-              icon={ListChecks} 
-              label="Key Parameters" 
-              active={activeItem === "Key Parameters" || activeSubItem !== ""} 
-              onClick={() => handleNavClick("Key Parameters")}
-              hasSubmenu={true}
-              isSubmenuOpen={isSubmenuOpen}
-            />
-            <NavItem 
-              icon={Settings} 
-              label="Settings" 
-              active={activeItem === "Settings"} 
-              onClick={() => handleNavClick("Settings")}
-            />
-            <NavItem 
-              icon={FileText} 
-              label="Agreement" 
-              active={activeItem === "Agreement"} 
-              onClick={() => handleNavClick("Agreement")}
-            />
+      <nav className="bg-white/80 backdrop-blur-md border-b border-gray-100/40 py-6">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {mainNavItems.map((item) => (
+              <NavTile 
+                key={item.label}
+                icon={item.icon} 
+                label={item.label} 
+                path={item.path}
+                active={activeItem === item.label}
+                notificationCount={item.notification}
+                onClick={() => handleNavClick(item.label, item.path)}
+                hasSubmenu={item.hasSubmenu}
+                isSubmenuOpen={isSubmenuOpen && item.label === "Key Parameters"}
+              />
+            ))}
           </div>
         </div>
       </nav>
@@ -183,17 +248,19 @@ export function DashboardNavbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="bg-white/80 backdrop-blur-md border-b border-gray-100/40 py-2 md:py-3 shadow-sm"
+            className="bg-white/80 backdrop-blur-md border-b border-gray-100/40 py-6 shadow-sm"
           >
-            <div className="container mx-auto px-4 md:px-6 overflow-x-auto scrollbar-hide">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-1 md:gap-2">
-                {keyParametersSubmenus.map((item) => (
-                  <SubMenuItem 
+            <div className="container mx-auto px-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {keyParametersSubItems.map((item) => (
+                  <SubNavTile 
                     key={item.label}
-                    label={item.label}
                     icon={item.icon}
+                    label={item.label}
+                    path={item.path}
                     active={activeSubItem === item.label}
-                    onClick={() => handleSubMenuClick(item.label, item.path)}
+                    notificationCount={item.notification}
+                    onClick={() => handleSubNavClick(item.label, item.path)}
                   />
                 ))}
               </div>
