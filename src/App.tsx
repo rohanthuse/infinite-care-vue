@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
 import Dashboard from "./pages/Dashboard";
 import Services from "./pages/Services";
+import Settings from "./pages/Settings";
 import { useState } from "react";
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
             <Route path="/super-admin" element={<SuperAdminLogin />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/services" element={<Services />} />
+            <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

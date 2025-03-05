@@ -88,7 +88,7 @@ export function DashboardNavbar() {
       if (label === "Home") {
         navigate('/dashboard');
       } else if (label === "Settings") {
-        // Future implementation
+        navigate('/settings');
       } else if (label === "Agreement") {
         // Future implementation
       }
@@ -126,6 +126,9 @@ export function DashboardNavbar() {
       setActiveItem("Key Parameters");
       setActiveSubItem("Services");
       setIsSubmenuOpen(true);
+    } else if (location.pathname === '/settings') {
+      setActiveItem("Settings");
+      setActiveSubItem("");
     }
   }, [location.pathname]);
 
