@@ -106,34 +106,36 @@ const SubNavTile = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        "relative flex flex-col items-center justify-center p-4 cursor-pointer rounded-xl transition-all duration-300 border",
+        "relative cursor-pointer rounded-xl transition-all duration-300 p-3",
         isActive 
-          ? "bg-blue-50 border-blue-100 shadow-sm" 
-          : "bg-white hover:bg-gray-50 border-gray-100 hover:border-blue-50"
+          ? "bg-white shadow-soft" 
+          : "bg-[#F1F0FB] hover:bg-white"
       )}
       onClick={onClick}
     >
-      <div className="relative">
-        <Icon className={cn(
-          "h-6 w-6 mb-2",
-          isActive ? "text-blue-600" : "text-gray-500"
-        )} />
+      <div className="flex flex-col items-center">
+        <div className="relative mb-1">
+          <Icon className={cn(
+            "h-6 w-6",
+            isActive ? "text-med-500" : "text-[#403E43]"
+          )} />
+          
+          {notificationCount > 0 && (
+            <Badge 
+              className="absolute -top-1 -right-1 flex items-center justify-center bg-[#D946EF] text-white text-xs p-0 min-w-4 h-4 rounded-full"
+            >
+              {notificationCount}
+            </Badge>
+          )}
+        </div>
         
-        {notificationCount > 0 && (
-          <Badge 
-            className="absolute -top-2 -right-2 flex items-center justify-center bg-red-500 text-white text-xs p-0 min-w-5 h-5 rounded-full"
-          >
-            {notificationCount}
-          </Badge>
-        )}
+        <span className={cn(
+          "text-xs font-medium text-center",
+          isActive ? "text-med-600" : "text-[#403E43]"
+        )}>
+          {label}
+        </span>
       </div>
-      
-      <span className={cn(
-        "text-sm font-medium text-center",
-        isActive ? "text-blue-700" : "text-gray-700"
-      )}>
-        {label}
-      </span>
     </motion.div>
   );
 };
@@ -248,10 +250,10 @@ export function DashboardNavbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="bg-white/80 backdrop-blur-md border-b border-gray-100/40 py-6 shadow-sm"
+            className="bg-[#F6F6F7] py-6 shadow-sm"
           >
             <div className="container mx-auto px-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
                 {keyParametersSubItems.map((item) => (
                   <SubNavTile 
                     key={item.label}
