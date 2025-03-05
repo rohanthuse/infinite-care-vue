@@ -37,8 +37,8 @@ export function DashboardHeader() {
           </Button>
         </div>
         
-        {/* Content aligned to the right */}
-        <div className={`flex-col md:flex-row absolute md:static top-full left-0 right-0 bg-white md:bg-transparent py-4 md:py-0 border-b md:border-b-0 border-gray-100 shadow-md md:shadow-none z-20 md:z-auto ${mobileMenuOpen ? 'flex' : 'hidden md:flex'} items-center md:items-center gap-3 md:gap-5 px-6 md:px-0 md:justify-end`}>
+        {/* Content aligned to the right - Fixed z-index and added proper layering */}
+        <div className={`flex-col md:flex-row absolute md:static top-full left-0 right-0 bg-white md:bg-transparent py-4 md:py-0 border-b md:border-b-0 border-gray-100 shadow-md md:shadow-none z-50 md:z-auto ${mobileMenuOpen ? 'flex' : 'hidden md:flex'} items-center md:items-center gap-3 md:gap-5 px-6 md:px-0 md:justify-end`}>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" className="text-gray-700 font-medium hover:bg-gray-50/80 rounded-full transition-all w-full md:w-auto justify-start md:justify-center">
               <HelpCircle className="h-4 w-4 mr-2 text-blue-600" /> Help Guide
