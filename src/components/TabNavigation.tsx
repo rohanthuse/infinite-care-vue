@@ -5,7 +5,8 @@ import {
   Calendar, Star, MessageSquare, Pill, DollarSign, 
   FileText, ClipboardCheck, Bell, ClipboardList, 
   FileUp, Folder, UserPlus, BarChart4, Settings, 
-  Activity, Briefcase, PanelLeft, Paperclip
+  Activity, Briefcase, PanelLeft, Paperclip,
+  ChevronDown, Menu
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,6 +33,10 @@ const primaryTabs: TabItem[] = [
   { icon: Calendar, label: "Bookings", value: "bookings", description: "Manage appointments" },
   { icon: Users, label: "Clients", value: "clients", description: "Client information" },
   { icon: Users, label: "Staff", value: "staff", description: "Staff management" },
+];
+
+// Secondary tabs that will appear in the top navbar for medium and larger screens
+const secondaryTopTabs: TabItem[] = [
   { icon: Star, label: "Reviews", value: "reviews", description: "Client feedback" },
   { icon: MessageSquare, label: "Communication", value: "communication", description: "Messages & emails" },
 ];
@@ -85,13 +90,14 @@ interface TabNavigationProps {
 }
 
 export const TabNavigation = ({ activeTab, onChange }: TabNavigationProps) => {
-  const allTabs = [...primaryTabs, ...secondaryTabs];
+  const allTabs = [...primaryTabs, ...secondaryTopTabs, ...secondaryTabs];
   const activeTabObject = allTabs.find(tab => tab.value === activeTab);
   
   return (
     <div className="w-full">
       <div className="flex flex-col space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          {/* Primary Tab Navigation */}
           <Tabs 
             value={activeTab} 
             onValueChange={onChange}
@@ -114,28 +120,52 @@ export const TabNavigation = ({ activeTab, onChange }: TabNavigationProps) => {
                   </TabsTrigger>
                 );
               })}
+              
+              {/* Secondary Top Tabs (hidden on small screens) */}
+              {secondaryTopTabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <TabsTrigger 
+                    key={tab.value}
+                    value={tab.value}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 rounded-lg data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600",
+                      "transition-all duration-200 flex-shrink-0 hidden md:flex"
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                  </TabsTrigger>
+                );
+              })}
             </TabsList>
           </Tabs>
           
           <div className="flex items-center gap-2">
+            {/* Improved More Actions Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="flex items-center gap-2 border-gray-200 bg-white hover:bg-gray-50">
-                  <PanelLeft className="h-4 w-4" />
-                  <span>More Actions</span>
+                <Button variant="outline" size="sm" className="flex items-center gap-2 border-gray-200 bg-white hover:bg-gray-50 text-gray-700">
+                  <Menu className="h-4 w-4" />
+                  <span>Menu</span>
+                  <ChevronDown className="h-4 w-4 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56 p-2 bg-white border border-gray-200 shadow-lg rounded-lg">
                 {secondaryTabGroups.map((group) => (
                   <React.Fragment key={group.label}>
-                    <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
-                    <DropdownMenuGroup>
+                    <DropdownMenuLabel className="font-bold text-gray-700 px-3 py-2">{group.label}</DropdownMenuLabel>
+                    <DropdownMenuGroup className="mb-2">
                       {group.items.map((tab) => {
                         const Icon = tab.icon;
+                        const isActive = tab.value === activeTab;
                         return (
                           <DropdownMenuItem 
                             key={tab.value}
-                            className="cursor-pointer"
+                            className={cn(
+                              "cursor-pointer py-2 px-3 rounded-md my-1 text-sm",
+                              isActive ? "bg-blue-50 text-blue-600" : "hover:bg-gray-50"
+                            )}
                             onClick={() => onChange(tab.value)}
                           >
                             <Icon className="mr-2 h-4 w-4" />
@@ -144,10 +174,10 @@ export const TabNavigation = ({ activeTab, onChange }: TabNavigationProps) => {
                         );
                       })}
                     </DropdownMenuGroup>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="my-1 bg-gray-100" />
                   </React.Fragment>
                 ))}
-                <DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer py-2 px-3 rounded-md my-1 text-sm hover:bg-gray-50">
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Customize Menu</span>
                 </DropdownMenuItem>
