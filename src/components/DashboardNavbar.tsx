@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   ChevronDown, ChevronUp, FileText, Home, 
@@ -117,12 +116,12 @@ const SubNavTile = ({
         <div className="relative mb-1">
           <Icon className={cn(
             "h-6 w-6",
-            isActive ? "text-med-500" : "text-[#403E43]"
+            isActive ? "text-blue-600" : "text-[#403E43]"
           )} />
           
           {notificationCount > 0 && (
             <Badge 
-              className="absolute -top-1 -right-1 flex items-center justify-center bg-[#D946EF] text-white text-xs p-0 min-w-4 h-4 rounded-full"
+              className="absolute -top-1 -right-1 flex items-center justify-center bg-red-500 text-white text-xs p-0 min-w-4 h-4 rounded-full"
             >
               {notificationCount}
             </Badge>
@@ -131,7 +130,7 @@ const SubNavTile = ({
         
         <span className={cn(
           "text-xs font-medium text-center",
-          isActive ? "text-med-600" : "text-[#403E43]"
+          isActive ? "text-blue-700" : "text-[#403E43]"
         )}>
           {label}
         </span>
@@ -147,7 +146,6 @@ export function DashboardNavbar() {
   const [activeSubItem, setActiveSubItem] = useState("");
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
   
-  // Mock notification counts - in a real app, these would come from an API or context
   const notifications = {
     home: 0,
     keyParameters: 3,
@@ -197,7 +195,6 @@ export function DashboardNavbar() {
     { label: "Branch Admin", icon: Users, path: "/branch-admins", notification: notifications.branchAdmin },
   ];
 
-  // Determine the active items based on current route
   useEffect(() => {
     const path = location.pathname;
     
@@ -211,7 +208,6 @@ export function DashboardNavbar() {
       setActiveItem("Agreement");
       setActiveSubItem("");
     } else {
-      // Check if we're on a submenu path
       const submenuItem = keyParametersSubItems.find(item => item.path === path);
       if (submenuItem) {
         setActiveItem("Key Parameters");
