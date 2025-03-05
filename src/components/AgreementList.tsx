@@ -111,11 +111,14 @@ export function AgreementList({ searchQuery = "" }: AgreementListProps) {
     const agreement = agreements.find(a => a.id === id);
     if (!agreement) return;
     
-    generatePDF(
-      title,
-      `This is the ${agreement.type} signed by ${agreement.signedBy} on ${agreement.signedDate}.`,
-      agreement
-    );
+    // Convert the agreement to the format expected by generatePDF
+    generatePDF({
+      id: agreement.id,
+      title: agreement.title,
+      date: agreement.signedDate,
+      status: agreement.status,
+      signedBy: agreement.signedBy
+    });
   };
 
   return (

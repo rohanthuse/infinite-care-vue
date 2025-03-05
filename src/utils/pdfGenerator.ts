@@ -31,7 +31,7 @@ export const generatePDF = (agreement: {
   // Agreement details
   doc.setFontSize(12);
   doc.text(`Agreement ID: ${agreement.id}`, 20, 55);
-  doc.text(`Date Signed: ${new Date(agreement.date).toLocaleDateString()}`, 20, 65);
+  doc.text(`Date Signed: ${agreement.date}`, 20, 65);
   doc.text(`Status: ${agreement.status}`, 20, 75);
   doc.text(`Signed By: ${agreement.signedBy}`, 20, 85);
   
