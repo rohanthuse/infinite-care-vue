@@ -1,6 +1,10 @@
 
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, FileText, Home, ListChecks, Settings } from "lucide-react";
+import { 
+  ChevronDown, ChevronUp, FileText, Home, 
+  ListChecks, Settings, Heart, Brain, Briefcase,
+  ActivitySquare, Building2, Users, Stethoscope
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -49,22 +53,24 @@ interface SubMenuItemProps {
   label: string;
   active?: boolean;
   onClick?: () => void;
+  icon?: React.ElementType;
 }
 
-const SubMenuItem = ({ label, active, onClick }: SubMenuItemProps) => {
+const SubMenuItem = ({ label, active, onClick, icon: Icon }: SubMenuItemProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
       className={cn(
-        "px-4 md:px-6 py-2 md:py-2.5 cursor-pointer transition-all font-medium text-xs md:text-sm rounded-full",
+        "px-4 md:px-6 py-2 md:py-2.5 cursor-pointer transition-all font-medium text-xs md:text-sm rounded-full flex items-center",
         active
           ? "bg-blue-50/80 text-blue-700 shadow-sm"
           : "hover:bg-gray-50/80 hover:text-blue-600 text-gray-600"
       )}
       onClick={onClick}
     >
+      {Icon && <Icon className="h-4 w-4 mr-2 text-gray-500" />}
       {label}
     </motion.div>
   );
@@ -95,40 +101,41 @@ export function DashboardNavbar() {
     }
   };
 
-  const handleSubMenuClick = (label: string) => {
+  const handleSubMenuClick = (label: string, path: string) => {
     setActiveSubItem(label);
     setActiveItem("Key Parameters");
-    
-    // Navigate based on submenu item
-    if (label === "Services") {
-      navigate('/services');
-    }
-    // Add other submenu navigations here as needed
+    navigate(path);
   };
 
-  const keyParametersSubmenu = [
-    "Services",
-    "Hobbies",
-    "Skills",
-    "Medical & Mental",
-    "Type of Work",
-    "Body Map Injuries",
-    "Branch",
-    "Branch Admin"
+  const keyParametersSubmenus = [
+    { label: "Services", path: "/services", icon: Briefcase },
+    { label: "Hobbies", path: "/hobbies", icon: Heart },
+    { label: "Skills", path: "/skills", icon: Brain },
+    { label: "Medical & Mental", path: "/medical-mental", icon: Stethoscope },
+    { label: "Type of Work", path: "/type-of-work", icon: ListChecks },
+    { label: "Body Map Injuries", path: "/body-map-points", icon: ActivitySquare },
+    { label: "Branch", path: "/branch", icon: Building2 },
+    { label: "Branch Admin", path: "/branch-admins", icon: Users },
   ];
 
   // Determine the active items based on current route
   React.useEffect(() => {
-    if (location.pathname === '/dashboard') {
+    const path = location.pathname;
+    
+    if (path === '/dashboard') {
       setActiveItem("Home");
       setActiveSubItem("");
-    } else if (location.pathname === '/services') {
-      setActiveItem("Key Parameters");
-      setActiveSubItem("Services");
-      setIsSubmenuOpen(true);
-    } else if (location.pathname === '/settings') {
+    } else if (path === '/settings') {
       setActiveItem("Settings");
       setActiveSubItem("");
+    } else {
+      // Check if we're on a submenu path
+      const submenuItem = keyParametersSubmenus.find(item => item.path === path);
+      if (submenuItem) {
+        setActiveItem("Key Parameters");
+        setActiveSubItem(submenuItem.label);
+        setIsSubmenuOpen(true);
+      }
     }
   }, [location.pathname]);
 
@@ -178,12 +185,13 @@ export function DashboardNavbar() {
           >
             <div className="container mx-auto px-4 md:px-6 overflow-x-auto scrollbar-hide">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-1 md:gap-2">
-                {keyParametersSubmenu.map((item) => (
+                {keyParametersSubmenus.map((item) => (
                   <SubMenuItem 
-                    key={item}
-                    label={item}
-                    active={activeSubItem === item}
-                    onClick={() => handleSubMenuClick(item)}
+                    key={item.label}
+                    label={item.label}
+                    icon={item.icon}
+                    active={activeSubItem === item.label}
+                    onClick={() => handleSubMenuClick(item.label, item.path)}
                   />
                 ))}
               </div>

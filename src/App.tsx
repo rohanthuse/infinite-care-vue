@@ -10,6 +10,13 @@ import SuperAdminLogin from "./pages/SuperAdminLogin";
 import Dashboard from "./pages/Dashboard";
 import Services from "./pages/Services";
 import Settings from "./pages/Settings";
+import Hobbies from "./pages/Hobbies";
+import Skills from "./pages/Skills";
+import MedicalMental from "./pages/MedicalMental";
+import TypeOfWork from "./pages/TypeOfWork";
+import BodyMapPoints from "./pages/BodyMapPoints";
+import Branch from "./pages/Branch";
+import BranchAdmins from "./pages/BranchAdmins";
 import { useState } from "react";
 
 function App() {
@@ -28,6 +35,16 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/services" element={<Services />} />
             <Route path="/settings" element={<Settings />} />
+            
+            {/* Key Parameters Routes */}
+            <Route path="/hobbies" element={<Hobbies />} />
+            <Route path="/skills" element={<Skills />} />
+            <Route path="/medical-mental" element={<MedicalMental />} />
+            <Route path="/type-of-work" element={<TypeOfWork />} />
+            <Route path="/body-map-points" element={<BodyMapPoints />} />
+            <Route path="/branch" element={<Branch />} />
+            <Route path="/branch-admins" element={<BranchAdmins />} />
+            
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
