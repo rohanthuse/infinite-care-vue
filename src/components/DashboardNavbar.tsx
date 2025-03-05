@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   ChevronDown, ChevronUp, FileText, Home, 
@@ -16,7 +17,6 @@ interface NavTileProps {
   onClick?: () => void;
   hasSubmenu?: boolean;
   isSubmenuOpen?: boolean;
-  notificationCount?: number;
   path: string;
 }
 
@@ -27,7 +27,6 @@ const NavTile = ({
   onClick, 
   hasSubmenu, 
   isSubmenuOpen,
-  notificationCount,
   path
 }: NavTileProps) => {
   const location = useLocation();
@@ -49,14 +48,6 @@ const NavTile = ({
           "h-6 w-6 mb-2",
           isActive ? "text-blue-600" : "text-gray-500"
         )} />
-        
-        {notificationCount > 0 && (
-          <Badge 
-            className="absolute -top-2 -right-2 flex items-center justify-center bg-red-500 text-white text-xs p-0 min-w-5 h-5 rounded-full"
-          >
-            {notificationCount}
-          </Badge>
-        )}
       </div>
       
       <span className={cn(
@@ -85,7 +76,6 @@ interface SubNavTileProps {
   active?: boolean;
   onClick?: () => void;
   path: string;
-  notificationCount?: number;
 }
 
 const SubNavTile = ({ 
@@ -93,8 +83,7 @@ const SubNavTile = ({
   label, 
   active, 
   onClick,
-  path,
-  notificationCount 
+  path
 }: SubNavTileProps) => {
   const location = useLocation();
   const isActive = active || location.pathname === path;
@@ -119,14 +108,6 @@ const SubNavTile = ({
             "h-5 w-5",
             isActive ? "text-med-500" : "text-gray-500"
           )} />
-          
-          {notificationCount > 0 && (
-            <Badge 
-              className="absolute -top-1.5 -right-1.5 flex items-center justify-center bg-red-500 text-white text-xs p-0 min-w-4 h-4 rounded-full"
-            >
-              {notificationCount}
-            </Badge>
-          )}
         </div>
         
         <span className={cn(
@@ -147,21 +128,6 @@ export function DashboardNavbar() {
   const [activeSubItem, setActiveSubItem] = useState("");
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
   
-  const notifications = {
-    home: 0,
-    keyParameters: 3,
-    settings: 1,
-    agreement: 2,
-    services: 0,
-    hobbies: 5,
-    skills: 0,
-    medicalMental: 2,
-    typeOfWork: 0,
-    bodyMapInjuries: 1,
-    branch: 0,
-    branchAdmin: 3
-  };
-  
   const handleNavClick = (label: string, path: string) => {
     if (label === "Key Parameters") {
       setIsSubmenuOpen(!isSubmenuOpen);
@@ -179,21 +145,21 @@ export function DashboardNavbar() {
   };
 
   const mainNavItems = [
-    { label: "Home", icon: Home, path: "/dashboard", notification: notifications.home },
-    { label: "Key Parameters", icon: ListChecks, path: "#", notification: notifications.keyParameters, hasSubmenu: true },
-    { label: "Settings", icon: Settings, path: "/settings", notification: notifications.settings },
-    { label: "Agreement", icon: FileText, path: "/agreement", notification: notifications.agreement }
+    { label: "Home", icon: Home, path: "/dashboard" },
+    { label: "Key Parameters", icon: ListChecks, path: "#", hasSubmenu: true },
+    { label: "Settings", icon: Settings, path: "/settings" },
+    { label: "Agreement", icon: FileText, path: "/agreement" }
   ];
 
   const keyParametersSubItems = [
-    { label: "Services", icon: Briefcase, path: "/services", notification: notifications.services },
-    { label: "Hobbies", icon: Heart, path: "/hobbies", notification: notifications.hobbies },
-    { label: "Skills", icon: Brain, path: "/skills", notification: notifications.skills },
-    { label: "Medical & Mental", icon: Stethoscope, path: "/medical-mental", notification: notifications.medicalMental },
-    { label: "Type of Work", icon: ListChecks, path: "/type-of-work", notification: notifications.typeOfWork },
-    { label: "Body Map Injuries", icon: ActivitySquare, path: "/body-map-points", notification: notifications.bodyMapInjuries },
-    { label: "Branch", icon: Building2, path: "/branch", notification: notifications.branch },
-    { label: "Branch Admin", icon: Users, path: "/branch-admins", notification: notifications.branchAdmin },
+    { label: "Services", icon: Briefcase, path: "/services" },
+    { label: "Hobbies", icon: Heart, path: "/hobbies" },
+    { label: "Skills", icon: Brain, path: "/skills" },
+    { label: "Medical & Mental", icon: Stethoscope, path: "/medical-mental" },
+    { label: "Type of Work", icon: ListChecks, path: "/type-of-work" },
+    { label: "Body Map Injuries", icon: ActivitySquare, path: "/body-map-points" },
+    { label: "Branch", icon: Building2, path: "/branch" },
+    { label: "Branch Admin", icon: Users, path: "/branch-admins" },
   ];
 
   useEffect(() => {
@@ -230,7 +196,6 @@ export function DashboardNavbar() {
                 label={item.label} 
                 path={item.path}
                 active={activeItem === item.label}
-                notificationCount={item.notification}
                 onClick={() => handleNavClick(item.label, item.path)}
                 hasSubmenu={item.hasSubmenu}
                 isSubmenuOpen={isSubmenuOpen && item.label === "Key Parameters"}
@@ -258,7 +223,6 @@ export function DashboardNavbar() {
                     label={item.label}
                     path={item.path}
                     active={activeSubItem === item.label}
-                    notificationCount={item.notification}
                     onClick={() => handleSubNavClick(item.label, item.path)}
                   />
                 ))}
