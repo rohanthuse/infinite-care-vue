@@ -1,107 +1,12 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
-import { ParameterTable } from "@/components/ParameterTable";
 import { Users } from "lucide-react";
 import { motion } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
-
-// Mock data for branch admins
-const branchAdminsData = [
-  { 
-    id: 1, 
-    fullName: "Ayo-Famure, Opeyemi", 
-    email: "admin@briellehealthcareservices.com", 
-    number: "+44 7846427297", 
-    branches: "Brielle Health Care Services- Milton Keynes", 
-    status: "Active" 
-  },
-  { 
-    id: 2, 
-    fullName: "Iyaniwura, Ifeoluwa", 
-    email: "ifeoluwa@briellehealthcareservices.com", 
-    number: "+44 0744709757", 
-    branches: "Brielle Health Care Services- Milton Keynes", 
-    status: "Active" 
-  },
-  { 
-    id: 3, 
-    fullName: "Abiri-Maitland, Aramide", 
-    email: "mide@briellehealthcareservices.com", 
-    number: "+44 0772494267", 
-    branches: "Brielle Health Care Services- Milton Keynes", 
-    status: "Active" 
-  },
-];
+import { AdminsTable } from "@/components/AdminsTable";
 
 const BranchAdmins = () => {
-  const [filteredData, setFilteredData] = useState(branchAdminsData);
-  const [showInactive, setShowInactive] = useState(false);
-  
-  const columns = [
-    {
-      header: "Full Name",
-      accessorKey: "fullName",
-      enableSorting: true,
-      className: "font-medium text-gray-800 w-[20%]",
-    },
-    {
-      header: "Email",
-      accessorKey: "email",
-      enableSorting: true,
-      className: "text-gray-700 w-[20%]",
-    },
-    {
-      header: "Number",
-      accessorKey: "number",
-      enableSorting: true,
-      className: "text-gray-700 w-[15%]",
-    },
-    {
-      header: "Branches",
-      accessorKey: "branches",
-      enableSorting: true,
-      className: "text-gray-700 w-[30%]",
-    },
-    {
-      header: "Status",
-      accessorKey: "status",
-      enableSorting: true,
-      className: "w-[15%]",
-      cell: (value: string) => (
-        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800 font-medium border-0 rounded-full px-3">
-          {value}
-        </Badge>
-      ),
-    },
-  ];
-  
-  const handleSearch = (query: string) => {
-    if (!query) {
-      setFilteredData(branchAdminsData);
-    } else {
-      const filtered = branchAdminsData.filter(item => 
-        item.fullName.toLowerCase().includes(query.toLowerCase()) ||
-        item.email.toLowerCase().includes(query.toLowerCase()) ||
-        item.branches.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredData(filtered);
-    }
-  };
-  
-  const filterOptions = [
-    {
-      name: "showInactive",
-      options: [
-        { label: "Show Inactive Admins", value: "true" },
-        { label: "Hide Inactive Admins", value: "false" },
-      ],
-      value: showInactive ? "true" : "false",
-      onChange: (value: string) => setShowInactive(value === "true"),
-    },
-  ];
-  
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -113,16 +18,15 @@ const BranchAdmins = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <ParameterTable 
-          title="Branch Admins"
-          icon={<Users className="h-7 w-7 text-blue-600" />}
-          columns={columns}
-          data={filteredData}
-          onSearch={handleSearch}
-          searchPlaceholder="Search admins..."
-          showFilter={true}
-          filterOptions={filterOptions}
-        />
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-1">
+            <Users className="h-6 w-6 text-blue-600" />
+            <h1 className="text-2xl font-bold text-gray-800">Branch Admins</h1>
+          </div>
+          <p className="text-gray-500">Manage administrators for each branch location</p>
+        </div>
+        
+        <AdminsTable />
       </motion.main>
     </div>
   );

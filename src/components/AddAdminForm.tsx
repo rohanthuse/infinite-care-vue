@@ -8,11 +8,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { CustomButton } from "@/components/ui/CustomButton";
-import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { UserPlus, Calendar as CalendarIcon, User, X } from "lucide-react";
+import { CalendarIcon, User, X } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,9 +21,9 @@ interface AddAdminFormProps {
 }
 
 const branchOptions = [
-  "Brielle Health Care Services- Milton Keynes",
-  "Brielle Health Care Services- London",
-  "Brielle Health Care Services- Manchester"
+  "Med-Infinite - Milton Keynes",
+  "Med-Infinite - London",
+  "Med-Infinite - Manchester"
 ];
 
 const titleOptions = [
@@ -47,8 +46,45 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
   const [date, setDate] = useState<Date>();
   const { toast } = useToast();
 
+  const [formData, setFormData] = useState({
+    branch: "",
+    title: "",
+    firstName: "",
+    middleName: "",
+    surname: "",
+    email: "",
+    telephone: "",
+    mobile: "",
+    gender: "male",
+    knownAs: "",
+    country: "",
+    city: "",
+    postalCode: "",
+    houseNumber: "",
+    street: "",
+    county: "",
+  });
+
+  const handleFormChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    const requiredFields = ['branch', 'title', 'firstName', 'surname', 'email', 'mobile', 'country'];
+    const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
+    
+    if (missingFields.length > 0) {
+      toast({
+        title: "Required fields missing",
+        description: `Please fill out all required fields: ${missingFields.join(', ')}`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     toast({
       title: "Admin created successfully",
       description: "The new administrator has been added to the system",
@@ -59,21 +95,28 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[850px] p-0 overflow-hidden rounded-2xl">
+      <DialogContent className="sm:max-w-[850px] p-0 overflow-hidden rounded-xl">
         <DialogHeader className="px-6 pt-6 pb-2 border-b">
           <DialogTitle className="text-xl flex items-center font-semibold text-gray-800">
             <User className="h-5 w-5 mr-2 text-blue-600" /> Add Admin
           </DialogTitle>
+          <Button 
+            className="absolute right-4 top-4 rounded-full p-2 h-auto" 
+            variant="ghost"
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
           <Tabs defaultValue="personal" className="w-full" onValueChange={setActiveTab}>
             <div className="px-6 border-b">
-              <TabsList className="h-12 p-0 bg-transparent border-b-0 space-x-6">
+              <TabsList className="h-12 p-0 bg-transparent border-b-0">
                 <TabsTrigger 
                   value="personal" 
                   className={cn(
-                    "h-12 px-0 border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none bg-transparent",
+                    "h-12 px-4 border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:text-green-600 rounded-none bg-transparent",
                     activeTab === "personal" ? "font-medium" : "text-gray-500"
                   )}
                 >
@@ -82,7 +125,7 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                 <TabsTrigger 
                   value="permissions" 
                   className={cn(
-                    "h-12 px-0 border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none bg-transparent",
+                    "h-12 px-4 border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:text-green-600 rounded-none bg-transparent",
                     activeTab === "permissions" ? "font-medium" : "text-gray-500"
                   )}
                 >
@@ -93,15 +136,18 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
 
             <div className="p-6 max-h-[70vh] overflow-y-auto">
               <TabsContent value="personal" className="m-0 py-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="branch" className="text-gray-700 font-medium flex items-center">
-                        Branch<span className="text-red-500 ml-1">*</span>
+                        Branches<span className="text-red-500 ml-1">*</span>
                       </Label>
-                      <Select required>
-                        <SelectTrigger id="branch" className="w-full h-10 rounded-lg border-gray-200">
-                          <SelectValue placeholder="Select Branch..." />
+                      <Select 
+                        value={formData.branch} 
+                        onValueChange={(value) => handleFormChange('branch', value)}
+                      >
+                        <SelectTrigger id="branch" className="w-full h-10 rounded-md border-gray-300">
+                          <SelectValue placeholder="Select Items..." />
                         </SelectTrigger>
                         <SelectContent>
                           {branchOptions.map((branch) => (
@@ -109,16 +155,18 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-red-500 text-xs mt-1">This field is required.</p>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="title" className="text-gray-700 font-medium flex items-center">
                         Title<span className="text-red-500 ml-1">*</span>
                       </Label>
-                      <Select required>
-                        <SelectTrigger id="title" className="w-full h-10 rounded-lg border-gray-200">
-                          <SelectValue placeholder="Select Title..." />
+                      <Select 
+                        value={formData.title} 
+                        onValueChange={(value) => handleFormChange('title', value)}
+                      >
+                        <SelectTrigger id="title" className="w-full h-10 rounded-md border-gray-300">
+                          <SelectValue placeholder="Select Item..." />
                         </SelectTrigger>
                         <SelectContent>
                           {titleOptions.map((title) => (
@@ -126,39 +174,75 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-red-500 text-xs mt-1">This field is required.</p>
                     </div>
+                  </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="firstName" className="text-gray-700 font-medium flex items-center">
                         First Name<span className="text-red-500 ml-1">*</span>
                       </Label>
-                      <Input id="firstName" required className="h-10 rounded-lg border-gray-200" />
+                      <Input 
+                        id="firstName" 
+                        value={formData.firstName}
+                        onChange={(e) => handleFormChange('firstName', e.target.value)}
+                        className="h-10 rounded-md border-gray-300" 
+                      />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="middleName" className="text-gray-700 font-medium">
                         Middle Name
                       </Label>
-                      <Input id="middleName" className="h-10 rounded-lg border-gray-200" />
+                      <Input 
+                        id="middleName" 
+                        value={formData.middleName}
+                        onChange={(e) => handleFormChange('middleName', e.target.value)}
+                        className="h-10 rounded-md border-gray-300" 
+                      />
                     </div>
+                  </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="surname" className="text-gray-700 font-medium flex items-center">
                         Surname<span className="text-red-500 ml-1">*</span>
                       </Label>
-                      <Input id="surname" required className="h-10 rounded-lg border-gray-200" />
+                      <Input 
+                        id="surname" 
+                        value={formData.surname}
+                        onChange={(e) => handleFormChange('surname', e.target.value)}
+                        className="h-10 rounded-md border-gray-300" 
+                      />
                     </div>
-                    
+
+                    <div className="space-y-2">
+                      <Label htmlFor="knownAs" className="text-gray-700 font-medium">
+                        Known As
+                      </Label>
+                      <Input 
+                        id="knownAs" 
+                        value={formData.knownAs}
+                        onChange={(e) => handleFormChange('knownAs', e.target.value)}
+                        className="h-10 rounded-md border-gray-300" 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="email" className="text-gray-700 font-medium flex items-center">
                         Email<span className="text-red-500 ml-1">*</span>
                       </Label>
-                      <Input id="email" type="email" required className="h-10 rounded-lg border-gray-200" />
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        value={formData.email}
+                        onChange={(e) => handleFormChange('email', e.target.value)}
+                        className="h-10 rounded-md border-gray-300" 
+                      />
                     </div>
-                  </div>
 
-                  <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="dob" className="text-gray-700 font-medium">
                         Date of Birth
@@ -168,7 +252,7 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                           <Button
                             variant="outline"
                             className={cn(
-                              "w-full h-10 rounded-lg border-gray-200 text-left font-normal justify-start",
+                              "w-full h-10 rounded-md border-gray-300 text-left font-normal justify-start",
                               !date && "text-gray-400"
                             )}
                           >
@@ -186,98 +270,150 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                         </PopoverContent>
                       </Popover>
                     </div>
+                  </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="telephone" className="text-gray-700 font-medium">
                         Telephone
                       </Label>
-                      <Input id="telephone" type="tel" className="h-10 rounded-lg border-gray-200" />
+                      <Input 
+                        id="telephone" 
+                        type="tel" 
+                        value={formData.telephone}
+                        onChange={(e) => handleFormChange('telephone', e.target.value)}
+                        className="h-10 rounded-md border-gray-300" 
+                      />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="mobile" className="text-gray-700 font-medium flex items-center">
                         Mobile<span className="text-red-500 ml-1">*</span>
                       </Label>
-                      <Input id="mobile" required type="tel" className="h-10 rounded-lg border-gray-200" />
-                    </div>
-
-                    <div className="space-y-2 pt-2">
-                      <Label className="text-gray-700 font-medium">
-                        Gender
-                      </Label>
-                      <RadioGroup defaultValue="male" className="flex items-center space-x-6 pt-2">
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="male" id="male" />
-                          <Label htmlFor="male" className="font-normal cursor-pointer">Male</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="female" id="female" />
-                          <Label htmlFor="female" className="font-normal cursor-pointer">Female</Label>
-                        </div>
-                      </RadioGroup>
+                      <Input 
+                        id="mobile" 
+                        type="tel" 
+                        value={formData.mobile}
+                        onChange={(e) => handleFormChange('mobile', e.target.value)}
+                        className="h-10 rounded-md border-gray-300" 
+                      />
                     </div>
                   </div>
-                </div>
-                
-                {/* Address Fields Section */}
-                <div className="mt-6 pt-6 border-t border-gray-100">
-                  <h3 className="text-lg font-medium text-gray-800 mb-4">Address Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="country" className="text-gray-700 font-medium flex items-center">
-                        Country<span className="text-red-500 ml-1">*</span>
-                      </Label>
-                      <Select required>
-                        <SelectTrigger id="country" className="w-full h-10 rounded-lg border-gray-200">
-                          <SelectValue placeholder="Select Country..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {countryOptions.map((country) => (
-                            <SelectItem key={country} value={country}>{country}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+
+                  <div className="space-y-2">
+                    <Label className="text-gray-700 font-medium">
+                      Gender
+                    </Label>
+                    <RadioGroup 
+                      value={formData.gender} 
+                      onValueChange={(value) => handleFormChange('gender', value)}
+                      className="flex items-center space-x-6 pt-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="male" id="male" />
+                        <Label htmlFor="male" className="font-normal cursor-pointer">Male</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="female" id="female" />
+                        <Label htmlFor="female" className="font-normal cursor-pointer">Female</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                  
+                  {/* Address Fields */}
+                  <div className="pt-4 border-t border-gray-100">
+                    <h3 className="text-lg font-medium text-gray-800 mb-4">Address Information</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="country" className="text-gray-700 font-medium flex items-center">
+                          Country<span className="text-red-500 ml-1">*</span>
+                        </Label>
+                        <Select 
+                          value={formData.country} 
+                          onValueChange={(value) => handleFormChange('country', value)}
+                        >
+                          <SelectTrigger id="country" className="w-full h-10 rounded-md border-gray-300">
+                            <SelectValue placeholder="Select Country..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {countryOptions.map((country) => (
+                              <SelectItem key={country} value={country}>{country}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="city" className="text-gray-700 font-medium">
+                          City
+                        </Label>
+                        <Input 
+                          id="city" 
+                          value={formData.city}
+                          onChange={(e) => handleFormChange('city', e.target.value)}
+                          className="h-10 rounded-md border-gray-300" 
+                        />
+                      </div>
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="city" className="text-gray-700 font-medium">
-                        City
-                      </Label>
-                      <Input id="city" className="h-10 rounded-lg border-gray-200" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="postalCode" className="text-gray-700 font-medium">
+                          Postal Code
+                        </Label>
+                        <Input 
+                          id="postalCode" 
+                          value={formData.postalCode}
+                          onChange={(e) => handleFormChange('postalCode', e.target.value)}
+                          className="h-10 rounded-md border-gray-300" 
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="houseNumber" className="text-gray-700 font-medium">
+                          House No/Name
+                        </Label>
+                        <Input 
+                          id="houseNumber" 
+                          value={formData.houseNumber}
+                          onChange={(e) => handleFormChange('houseNumber', e.target.value)}
+                          className="h-10 rounded-md border-gray-300" 
+                        />
+                      </div>
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="postalCode" className="text-gray-700 font-medium">
-                        Postal Code
-                      </Label>
-                      <Input id="postalCode" className="h-10 rounded-lg border-gray-200" />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="houseNumber" className="text-gray-700 font-medium">
-                        House No/Name
-                      </Label>
-                      <Input id="houseNumber" className="h-10 rounded-lg border-gray-200" />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="street" className="text-gray-700 font-medium">
-                        Street
-                      </Label>
-                      <Input id="street" className="h-10 rounded-lg border-gray-200" />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="county" className="text-gray-700 font-medium">
-                        County
-                      </Label>
-                      <Input id="county" className="h-10 rounded-lg border-gray-200" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="street" className="text-gray-700 font-medium">
+                          Street
+                        </Label>
+                        <Input 
+                          id="street" 
+                          value={formData.street}
+                          onChange={(e) => handleFormChange('street', e.target.value)}
+                          className="h-10 rounded-md border-gray-300" 
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="county" className="text-gray-700 font-medium">
+                          County
+                        </Label>
+                        <Input 
+                          id="county" 
+                          value={formData.county}
+                          onChange={(e) => handleFormChange('county', e.target.value)}
+                          className="h-10 rounded-md border-gray-300" 
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
               </TabsContent>
 
-              <TabsContent value="permissions" className="m-0 py-2 space-y-8">
+              <TabsContent value="permissions" className="m-0 py-2 space-y-6">
+                {/* Branch Settings Section */}
                 <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
                   <h3 className="font-semibold text-gray-800 border-b pb-2">Branch Settings</h3>
                   <div className="space-y-4">
@@ -292,6 +428,7 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                   </div>
                 </div>
 
+                {/* Care Plan Section */}
                 <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
                   <h3 className="font-semibold text-gray-800 border-b pb-2">Care Plan</h3>
                   <div className="space-y-4">
@@ -306,6 +443,7 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                   </div>
                 </div>
 
+                {/* Reviews Section */}
                 <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
                   <h3 className="font-semibold text-gray-800 border-b pb-2">Reviews</h3>
                   <div className="space-y-4">
@@ -316,6 +454,7 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                   </div>
                 </div>
 
+                {/* Third Party Section */}
                 <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
                   <h3 className="font-semibold text-gray-800 border-b pb-2">Third Party</h3>
                   <div className="space-y-4">
@@ -326,6 +465,7 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                   </div>
                 </div>
 
+                {/* Branch Report Section */}
                 <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
                   <h3 className="font-semibold text-gray-800 border-b pb-2">Branch Report</h3>
                   <div className="space-y-4">
@@ -352,6 +492,7 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                   </div>
                 </div>
 
+                {/* Accounting Section */}
                 <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
                   <h3 className="font-semibold text-gray-800 border-b pb-2">Accounting</h3>
                   <div className="space-y-4">
@@ -410,17 +551,16 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                   type="button" 
                   variant="outline" 
                   onClick={onClose}
-                  className="border-gray-200 rounded-full"
+                  className="border-gray-200 rounded-md"
                 >
                   Cancel
                 </Button>
-                <CustomButton 
+                <Button 
                   type="submit"
-                  variant="pill"
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md"
                 >
-                  <UserPlus className="h-4 w-4 mr-1" /> Add Admin
-                </CustomButton>
+                  Add Admin
+                </Button>
               </div>
             </DialogFooter>
           </Tabs>
