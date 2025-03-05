@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   LayoutDashboard, Workflow, ListChecks, Users, 
@@ -104,142 +103,7 @@ export const TabNavigation = ({ activeTab, onChange }: TabNavigationProps) => {
   return (
     <div className="w-full">
       <div className="flex flex-col space-y-4">
-        {/* Mobile Header with Search and Actions */}
-        <div className="flex items-center justify-between md:hidden bg-white p-3 rounded-lg shadow-sm">
-          <Button variant="outline" size="icon" className="h-9 w-9 rounded-full">
-            <Search className="h-4 w-4" />
-          </Button>
-          
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="icon" className="h-9 w-9 rounded-full relative">
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-            </Button>
-            
-            <Button variant="default" size="sm" className="rounded-full bg-blue-600 hover:bg-blue-700 h-9 w-9 p-0">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Bottom Navigation for Mobile */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 z-30 md:hidden">
-          <div className="flex justify-around">
-            {primaryTabs.slice(0, 5).map((tab) => {
-              const Icon = tab.icon;
-              const isActive = tab.value === activeTab;
-              return (
-                <Button
-                  key={tab.value}
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "flex flex-col items-center justify-center gap-1 h-auto px-1 py-2 rounded-lg",
-                    isActive ? "bg-blue-50 text-blue-600" : "text-gray-500"
-                  )}
-                  onClick={() => onChange(tab.value)}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span className="text-xs">{tab.label}</span>
-                </Button>
-              );
-            })}
-            
-            {/* More Menu Button */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "flex flex-col items-center justify-center gap-1 h-auto px-1 py-2 rounded-lg",
-                    activeTab !== "dashboard" && 
-                    !primaryTabs.slice(0, 5).some(t => t.value === activeTab) 
-                      ? "bg-blue-50 text-blue-600" 
-                      : "text-gray-500"
-                  )}
-                >
-                  <Grid className="h-5 w-5" />
-                  <span className="text-xs">More</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64" align="end" sideOffset={5}>
-                <div className="p-2">
-                  <Input
-                    placeholder="Search modules..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="mb-2"
-                  />
-                </div>
-                <div className="max-h-[50vh] overflow-y-auto p-1">
-                  {filteredTabs.length > 0 ? (
-                    <>
-                      {/* Display remaining primary tabs */}
-                      {primaryTabs.slice(5).map((tab) => {
-                        const Icon = tab.icon;
-                        return (
-                          <Button
-                            key={tab.value}
-                            variant="ghost"
-                            className={cn(
-                              "w-full justify-start text-left py-2 px-3 rounded-md my-1",
-                              tab.value === activeTab ? "bg-blue-50 text-blue-600" : ""
-                            )}
-                            onClick={() => {
-                              onChange(tab.value);
-                              setSearchTerm("");
-                            }}
-                          >
-                            <Icon className="h-4 w-4 mr-2" />
-                            <span>{tab.label}</span>
-                          </Button>
-                        );
-                      })}
-                      
-                      {/* Secondary tabs grouped by category */}
-                      {secondaryTabGroups.map((group) => (
-                        <div key={group.label} className="py-1">
-                          <div className="px-3 py-1 text-xs font-semibold text-gray-500">
-                            {group.label}
-                          </div>
-                          {group.items
-                            .filter(item => 
-                              filteredTabs.some(tab => tab.value === item.value)
-                            )
-                            .map((item) => {
-                              const Icon = item.icon;
-                              return (
-                                <Button
-                                  key={item.value}
-                                  variant="ghost"
-                                  className={cn(
-                                    "w-full justify-start text-left py-2 px-3 rounded-md my-1",
-                                    item.value === activeTab ? "bg-blue-50 text-blue-600" : ""
-                                  )}
-                                  onClick={() => {
-                                    onChange(item.value);
-                                    setSearchTerm("");
-                                  }}
-                                >
-                                  <Icon className="h-4 w-4 mr-2" />
-                                  <span>{item.label}</span>
-                                </Button>
-                              );
-                            })}
-                        </div>
-                      ))}
-                    </>
-                  ) : (
-                    <div className="text-center py-4 text-gray-500">No modules found</div>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-
-        {/* Desktop Navigation */}
+        {/* Desktop Navigation Only */}
         <div className="hidden md:flex md:flex-col md:space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             {/* Primary Tab Navigation as a scrollable row */}
@@ -373,8 +237,130 @@ export const TabNavigation = ({ activeTab, onChange }: TabNavigationProps) => {
         </div>
       </div>
       
+      {/* Bottom Navigation for Mobile - Redesigned and cleaner */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 z-30 md:hidden">
+        <div className="flex justify-around items-center">
+          {/* Main navigation items */}
+          <NavButton 
+            icon={LayoutDashboard} 
+            label="Dashboard" 
+            isActive={activeTab === "dashboard"} 
+            onClick={() => onChange("dashboard")} 
+          />
+          <NavButton 
+            icon={Calendar} 
+            label="Bookings" 
+            isActive={activeTab === "bookings"} 
+            onClick={() => onChange("bookings")} 
+          />
+          <NavButton 
+            icon={Users} 
+            label="Clients" 
+            isActive={activeTab === "clients"} 
+            onClick={() => onChange("clients")} 
+          />
+          <NavButton 
+            icon={Users} 
+            label="Staff" 
+            isActive={activeTab === "staff"} 
+            onClick={() => onChange("staff")} 
+          />
+          <NavButton 
+            icon={Star} 
+            label="Reviews" 
+            isActive={activeTab === "reviews"} 
+            onClick={() => onChange("reviews")} 
+          />
+          
+          {/* More menu with all other items */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className={cn(
+                "flex flex-col items-center justify-center w-16",
+                activeTab !== "dashboard" && 
+                !["dashboard", "bookings", "clients", "staff", "reviews"].includes(activeTab)
+                  ? "text-blue-600" 
+                  : "text-gray-500"
+              )}>
+                <Grid className="h-5 w-5 mb-0.5" />
+                <span className="text-xs">More</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent 
+              className="w-64 p-0 mb-1" 
+              align="end" 
+              side="top"
+              sideOffset={12}
+            >
+              <div className="p-2 border-b">
+                <Input
+                  placeholder="Search modules..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="mb-0"
+                />
+              </div>
+              
+              <div className="max-h-[60vh] overflow-y-auto p-2">
+                {filteredTabs.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-1">
+                    {filteredTabs.map((tab) => {
+                      const Icon = tab.icon;
+                      return (
+                        <Button
+                          key={tab.value}
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            "h-auto py-2 justify-start rounded-md",
+                            tab.value === activeTab ? "bg-blue-50 text-blue-600" : ""
+                          )}
+                          onClick={() => {
+                            onChange(tab.value);
+                            setSearchTerm("");
+                          }}
+                        >
+                          <Icon className="h-4 w-4 mr-2 flex-shrink-0" />
+                          <span className="text-xs truncate">{tab.label}</span>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-gray-500">No modules found</div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+      
       {/* Add spacing at the bottom for mobile to prevent content from being hidden by the bottom bar */}
       <div className="pb-16 md:pb-0"></div>
     </div>
   );
 };
+
+// New component for mobile bottom nav buttons
+const NavButton = ({ 
+  icon: Icon, 
+  label, 
+  isActive, 
+  onClick 
+}: { 
+  icon: React.ComponentType<any>; 
+  label: string; 
+  isActive: boolean; 
+  onClick: () => void;
+}) => (
+  <button
+    className={cn(
+      "flex flex-col items-center justify-center w-16",
+      isActive ? "text-blue-600" : "text-gray-500"
+    )}
+    onClick={onClick}
+  >
+    <Icon className="h-5 w-5 mb-0.5" />
+    <span className="text-xs">{label}</span>
+  </button>
+);

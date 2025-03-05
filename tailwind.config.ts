@@ -158,11 +158,21 @@ export default {
 				'medium': '0 10px 30px rgba(0, 0, 0, 0.08)',
 				'highlight': '0 0 15px rgba(30, 174, 219, 0.3)',
 				'inner-soft': 'inset 0 1px 3px rgba(0, 0, 0, 0.06)',
-				'modern': '0 20px 80px -20px rgba(0, 0, 0, 0.08)'
+				'modern': '0 20px 80px -20px rgba(0, 0, 0, 0.08)',
+				'mobile-bottom': '0 -2px 10px rgba(0, 0, 0, 0.07)',
+				'mobile-card': '0 2px 6px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06)',
+				'mobile-button': '0 2px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08)',
+				'mobile-float': '0 6px 20px rgba(0, 0, 0, 0.1)'
 			},
 			transitionTimingFunction: {
 				'ease-in-out-cubic': 'cubic-bezier(0.65, 0, 0.35, 1)',
 				'ease-out-cubic': 'cubic-bezier(0.33, 1, 0.68, 1)'
+			},
+			spacing: {
+				'safe-bottom': 'env(safe-area-inset-bottom, 0px)',
+				'safe-top': 'env(safe-area-inset-top, 0px)',
+				'mobile-header': '56px',
+				'mobile-footer': '64px',
 			}
 		}
 	},
@@ -176,6 +186,18 @@ export default {
 					'&::-webkit-scrollbar': {
 						display: 'none'
 					}
+				},
+				'.touch-callout-none': {
+					'-webkit-touch-callout': 'none',
+				},
+				'.tap-highlight-transparent': {
+					'-webkit-tap-highlight-color': 'transparent',
+				},
+				'.mobile-safe-bottom': {
+					'padding-bottom': 'env(safe-area-inset-bottom, 16px)',
+				},
+				'.mobile-safe-top': {
+					'padding-top': 'env(safe-area-inset-top, 16px)',
 				}
 			};
 			addUtilities(newUtilities);

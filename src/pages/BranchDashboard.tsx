@@ -79,7 +79,7 @@ const BranchDashboard = () => {
       </div>
       
       <main className="flex-1 container px-4 pt-4 pb-20 md:py-6 mx-auto">
-        <div className="flex flex-col justify-between items-start mb-6">
+        <div className="flex flex-col justify-between items-start mb-5">
           <div>
             <div className="flex items-center gap-2 text-sm text-gray-500 mb-1 hidden md:flex">
               <Button 
@@ -99,20 +99,47 @@ const BranchDashboard = () => {
               <Badge className="ml-2 md:ml-3 bg-green-100 text-green-800 hover:bg-green-200 font-normal text-xs md:text-sm" variant="outline">Active</Badge>
             </h1>
             
-            <div className="flex flex-wrap items-center gap-3 mt-2">
-              <div className="flex items-center text-xs md:text-sm text-gray-600">
-                <MapPin className="h-3.5 w-3.5 mr-1 text-gray-500" />
+            <div className="flex flex-col md:flex-row md:items-center md:gap-3 mt-2">
+              <div className="flex items-center text-xs md:text-sm text-gray-600 mb-1 md:mb-0">
+                <MapPin className="h-3.5 w-3.5 mr-1.5 text-gray-500 flex-shrink-0" />
                 <span>Milton Keynes, UK</span>
               </div>
-              <div className="flex items-center text-xs md:text-sm text-gray-600">
-                <Phone className="h-3.5 w-3.5 mr-1 text-gray-500" />
+              <div className="flex items-center text-xs md:text-sm text-gray-600 mb-1 md:mb-0">
+                <Phone className="h-3.5 w-3.5 mr-1.5 text-gray-500 flex-shrink-0" />
                 <span>+44 20 7946 0958</span>
               </div>
               <div className="flex items-center text-xs md:text-sm text-gray-600">
-                <Mail className="h-3.5 w-3.5 mr-1 text-gray-500" />
+                <Mail className="h-3.5 w-3.5 mr-1.5 text-gray-500 flex-shrink-0" />
                 <span>milton@med-infinite.com</span>
               </div>
             </div>
+          </div>
+          
+          <div className="flex w-full justify-between items-center mt-5 md:hidden">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-12 w-12 rounded-full bg-white shadow-sm"
+            >
+              <Search className="h-5 w-5 text-gray-600" />
+            </Button>
+            
+            <Button 
+              variant="default" 
+              className="h-12 px-4 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center gap-2 shadow-md"
+            >
+              <Plus className="h-5 w-5" />
+              <span className="font-medium">New Booking</span>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-12 w-12 rounded-full relative bg-white shadow-sm"
+            >
+              <Bell className="h-5 w-5 text-gray-600" />
+              <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full"></span>
+            </Button>
           </div>
           
           <div className="hidden md:flex items-center gap-3 mt-4">
@@ -146,14 +173,14 @@ const BranchDashboard = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="mt-6"
+          className="mt-5"
         >
           {activeTab === "dashboard" && (
             <>
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
-                  <div className="mr-3 h-8 w-8 rounded-md bg-blue-100 flex items-center justify-center">
-                    <Plus className="h-4 w-4 text-blue-600" />
+              <div className="grid grid-cols-2 gap-3 mb-5">
+                <Button variant="outline" className="h-auto py-4 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
+                  <div className="w-10 h-10 rounded-md bg-blue-100 flex items-center justify-center mr-3 flex-shrink-0">
+                    <Plus className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
                     <div className="font-medium text-sm">New Client</div>
@@ -161,9 +188,9 @@ const BranchDashboard = () => {
                   </div>
                 </Button>
                 
-                <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
-                  <div className="mr-3 h-8 w-8 rounded-md bg-green-100 flex items-center justify-center">
-                    <Calendar className="h-4 w-4 text-green-600" />
+                <Button variant="outline" className="h-auto py-4 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
+                  <div className="w-10 h-10 rounded-md bg-green-100 flex items-center justify-center mr-3 flex-shrink-0">
+                    <Calendar className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
                     <div className="font-medium text-sm">Schedule</div>
@@ -171,9 +198,9 @@ const BranchDashboard = () => {
                   </div>
                 </Button>
                 
-                <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
-                  <div className="mr-3 h-8 w-8 rounded-md bg-amber-100 flex items-center justify-center">
-                    <FileText className="h-4 w-4 text-amber-600" />
+                <Button variant="outline" className="h-auto py-4 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
+                  <div className="w-10 h-10 rounded-md bg-amber-100 flex items-center justify-center mr-3 flex-shrink-0">
+                    <FileText className="h-5 w-5 text-amber-600" />
                   </div>
                   <div>
                     <div className="font-medium text-sm">Reports</div>
@@ -181,9 +208,9 @@ const BranchDashboard = () => {
                   </div>
                 </Button>
                 
-                <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
-                  <div className="mr-3 h-8 w-8 rounded-md bg-purple-100 flex items-center justify-center">
-                    <Users className="h-4 w-4 text-purple-600" />
+                <Button variant="outline" className="h-auto py-4 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
+                  <div className="w-10 h-10 rounded-md bg-purple-100 flex items-center justify-center mr-3 flex-shrink-0">
+                    <Users className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
                     <div className="font-medium text-sm">Staff</div>
@@ -551,20 +578,20 @@ const DashboardStat = ({
   positive: boolean
 }) => (
   <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 md:p-6 hover:shadow-md transition-shadow">
-    <div className="flex items-center justify-between mb-3 md:mb-4">
-      <div className="bg-gray-50 p-2 md:p-3 rounded-lg">
+    <div className="flex items-center justify-between mb-2 md:mb-4">
+      <div className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-lg">
         {icon}
       </div>
       <div className={`text-xs font-medium px-2 py-1 rounded-full flex items-center ${
         positive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
       }`}>
-        {positive ? <ArrowUp className="h-3 w-3 mr-1" /> : <ArrowDown className="h-3 w-3 mr-1" />}
+        {positive ? <ArrowUp className="h-3 w-3 mr-0.5" /> : <ArrowDown className="h-3 w-3 mr-0.5" />}
         {change}
       </div>
     </div>
     <div className="space-y-1">
-      <p className="text-xs md:text-sm text-gray-500">{title}</p>
-      <p className="text-lg md:text-2xl font-bold">{value}</p>
+      <p className="text-sm text-gray-500">{title}</p>
+      <p className="text-xl md:text-2xl font-bold">{value}</p>
     </div>
   </div>
 );
@@ -594,7 +621,7 @@ const ActionItem = ({
         </div>
         <div>
           <p className="font-medium">{title}</p>
-          <p className="text-sm text-gray-500">{name}</p>
+          <p className="text-xs text-gray-500">{name}</p>
         </div>
       </div>
       <div className="flex items-center gap-3">
