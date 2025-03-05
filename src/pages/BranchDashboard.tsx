@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -162,6 +163,7 @@ const BranchDashboard = () => {
         <TabNavigation 
           activeTab={activeTab} 
           onChange={(value) => setActiveTab(value)} 
+          hideActionsOnMobile={true} // Add this prop to hide duplicate actions
         />
         
         <motion.div 

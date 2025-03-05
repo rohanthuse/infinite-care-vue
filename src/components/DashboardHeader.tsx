@@ -76,10 +76,6 @@ export function DashboardHeader() {
             <Button variant="ghost" size="sm" className="text-gray-700 font-medium hover:bg-gray-50/80 rounded-full transition-all w-full md:w-auto justify-start md:justify-center">
               <HelpCircle className="h-4 w-4 mr-2 text-blue-600" /> Help Guide
             </Button>
-            
-            <CustomButton size="sm" variant="pill" className="bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium shadow-md hover:shadow-lg transition-all w-full md:w-auto">
-              New Screen
-            </CustomButton>
           </div>
           
           <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm py-2 px-4 rounded-full border border-gray-100/60 shadow-sm w-full md:w-auto justify-between md:justify-start ml-0 md:ml-2">

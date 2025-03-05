@@ -89,9 +89,10 @@ const secondaryTabs: TabItem[] = secondaryTabGroups.flatMap(group => group.items
 interface TabNavigationProps {
   activeTab: string;
   onChange: (value: string) => void;
+  hideActionsOnMobile?: boolean;
 }
 
-export const TabNavigation = ({ activeTab, onChange }: TabNavigationProps) => {
+export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false }: TabNavigationProps) => {
   const allTabs = [...primaryTabs, ...secondaryTabs];
   const activeTabObject = allTabs.find(tab => tab.value === activeTab);
   const [searchTerm, setSearchTerm] = useState("");
@@ -104,23 +105,25 @@ export const TabNavigation = ({ activeTab, onChange }: TabNavigationProps) => {
   return (
     <div className="w-full">
       <div className="flex flex-col space-y-4">
-        {/* Mobile Header with Search and Actions */}
-        <div className="flex items-center justify-between md:hidden bg-white p-3 rounded-lg shadow-sm">
-          <Button variant="outline" size="icon" className="h-9 w-9 rounded-full">
-            <Search className="h-4 w-4" />
-          </Button>
-          
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="icon" className="h-9 w-9 rounded-full relative">
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+        {/* Mobile Header with Search and Actions - Only shown if not hidden */}
+        {!hideActionsOnMobile && (
+          <div className="flex items-center justify-between md:hidden bg-white p-3 rounded-lg shadow-sm">
+            <Button variant="outline" size="icon" className="h-9 w-9 rounded-full">
+              <Search className="h-4 w-4" />
             </Button>
             
-            <Button variant="default" size="sm" className="rounded-full bg-blue-600 hover:bg-blue-700 h-9 w-9 p-0">
-              <Plus className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="icon" className="h-9 w-9 rounded-full relative">
+                <Bell className="h-4 w-4" />
+                <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+              </Button>
+              
+              <Button variant="default" size="sm" className="rounded-full bg-blue-600 hover:bg-blue-700 h-9 w-9 p-0">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Bottom Navigation for Mobile */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 z-30 md:hidden">
