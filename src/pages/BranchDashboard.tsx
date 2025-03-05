@@ -74,45 +74,71 @@ const BranchDashboard = () => {
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
-      <div className="hidden md:block">
-        <DashboardHeader />
-      </div>
+      <DashboardHeader />
       
       <main className="flex-1 container px-4 pt-4 pb-20 md:py-6 mx-auto">
-        <div className="flex flex-col justify-between items-start mb-6">
+        <div className="flex flex-col justify-between items-start mb-4 md:mb-6">
           <div>
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-1 hidden md:flex">
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 className="p-0 h-auto font-normal hover:bg-transparent hover:text-blue-600"
                 onClick={() => navigate("/branch")}
               >
-                <Home className="h-3.5 w-3.5 mr-1" />
-                Branches
+                <Home className="h-3 w-3 mr-1" />
+                <span className="hidden md:inline">Branches</span>
               </Button>
               <ChevronRight className="h-3 w-3" />
-              <span className="text-gray-700 font-medium">{displayBranchName}</span>
+              <span className="text-gray-700 font-medium text-xs md:text-sm truncate max-w-[200px]">{displayBranchName}</span>
             </div>
-            <h1 className="text-xl md:text-3xl font-bold text-gray-800 flex items-center">
+            <h1 className="text-lg md:text-3xl font-bold text-gray-800 flex items-center">
               {displayBranchName}
               <Badge className="ml-2 md:ml-3 bg-green-100 text-green-800 hover:bg-green-200 font-normal text-xs md:text-sm" variant="outline">Active</Badge>
             </h1>
             
-            <div className="flex flex-wrap items-center gap-3 mt-2">
+            <div className="flex flex-wrap items-center gap-2 md:gap-3 mt-2">
               <div className="flex items-center text-xs md:text-sm text-gray-600">
-                <MapPin className="h-3.5 w-3.5 mr-1 text-gray-500" />
+                <MapPin className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1 text-gray-500" />
                 <span>Milton Keynes, UK</span>
               </div>
               <div className="flex items-center text-xs md:text-sm text-gray-600">
-                <Phone className="h-3.5 w-3.5 mr-1 text-gray-500" />
+                <Phone className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1 text-gray-500" />
                 <span>+44 20 7946 0958</span>
               </div>
               <div className="flex items-center text-xs md:text-sm text-gray-600">
-                <Mail className="h-3.5 w-3.5 mr-1 text-gray-500" />
+                <Mail className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1 text-gray-500" />
                 <span>milton@med-infinite.com</span>
               </div>
             </div>
+          </div>
+          
+          <div className="flex items-center justify-between w-full mt-4 md:hidden">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-9 w-9 rounded-full relative"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+            
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="bg-blue-600 hover:bg-blue-700 rounded-full px-3"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              <span>New Booking</span>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-9 w-9 rounded-full relative"
+            >
+              <Bell className="h-4 w-4" />
+              <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+            </Button>
           </div>
           
           <div className="hidden md:flex items-center gap-3 mt-4">
@@ -320,16 +346,8 @@ const BranchDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
                 <Card>
                   <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-base md:text-lg font-semibold">Revenue Trend</CardTitle>
-                        <CardDescription>Monthly revenue in 2025</CardDescription>
-                      </div>
-                      <Button variant="outline" size="sm" className="h-8">
-                        <Filter className="h-3.5 w-3.5 mr-2" />
-                        Filter
-                      </Button>
-                    </div>
+                    <CardTitle className="text-base md:text-lg font-semibold">Revenue Trend</CardTitle>
+                    <CardDescription>Monthly revenue in 2025</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="h-[180px] md:h-[220px] w-full">
