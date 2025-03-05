@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
 @tailwind base;
@@ -120,6 +121,24 @@
   }
 }
 
+/* Mobile specific styles */
+@media (max-width: 768px) {
+  /* Add padding for bottom navigation */
+  .mobile-with-nav {
+    padding-bottom: 70px;
+  }
+  
+  /* Smaller text for mobile */
+  .mobile-text-sm {
+    font-size: 0.875rem;
+  }
+  
+  /* Compact cards for mobile */
+  .mobile-card {
+    padding: 0.75rem;
+  }
+}
+
 /* Custom animations */
 .reveal-animation {
   opacity: 0;
@@ -225,4 +244,19 @@ html {
 
 .btn-hover-effect:hover:after {
   transform: translateX(100%);
+}
+
+/* Bottom navigation for mobile */
+.bottom-nav {
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Hide scrollbar for clean UI */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }

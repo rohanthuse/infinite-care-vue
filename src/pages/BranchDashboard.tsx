@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -28,7 +27,6 @@ import {
   Line, AreaChart, Area, PieChart, Pie, Cell
 } from "recharts";
 
-// Dummy data for the charts
 const weeklyData = [
   { day: "Mon", visits: 12, bookings: 8, revenue: 780 },
   { day: "Tue", visits: 19, bookings: 12, revenue: 1200 },
@@ -76,13 +74,14 @@ const BranchDashboard = () => {
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
-      <DashboardHeader />
+      <div className="hidden md:block">
+        <DashboardHeader />
+      </div>
       
-      <main className="flex-1 container px-4 py-6 mx-auto">
-        {/* Branch Info and Breadcrumb */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+      <main className="flex-1 container px-4 pt-4 pb-20 md:py-6 mx-auto">
+        <div className="flex flex-col justify-between items-start mb-6">
           <div>
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-1 hidden md:flex">
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -95,28 +94,28 @@ const BranchDashboard = () => {
               <ChevronRight className="h-3 w-3" />
               <span className="text-gray-700 font-medium">{displayBranchName}</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
+            <h1 className="text-xl md:text-3xl font-bold text-gray-800 flex items-center">
               {displayBranchName}
-              <Badge className="ml-3 bg-green-100 text-green-800 hover:bg-green-200 font-normal" variant="outline">Active</Badge>
+              <Badge className="ml-2 md:ml-3 bg-green-100 text-green-800 hover:bg-green-200 font-normal text-xs md:text-sm" variant="outline">Active</Badge>
             </h1>
             
-            <div className="flex flex-wrap items-center gap-4 mt-2">
-              <div className="flex items-center text-sm text-gray-600">
+            <div className="flex flex-wrap items-center gap-3 mt-2">
+              <div className="flex items-center text-xs md:text-sm text-gray-600">
                 <MapPin className="h-3.5 w-3.5 mr-1 text-gray-500" />
                 <span>Milton Keynes, UK</span>
               </div>
-              <div className="flex items-center text-sm text-gray-600">
+              <div className="flex items-center text-xs md:text-sm text-gray-600">
                 <Phone className="h-3.5 w-3.5 mr-1 text-gray-500" />
                 <span>+44 20 7946 0958</span>
               </div>
-              <div className="flex items-center text-sm text-gray-600">
+              <div className="flex items-center text-xs md:text-sm text-gray-600">
                 <Mail className="h-3.5 w-3.5 mr-1 text-gray-500" />
                 <span>milton@med-infinite.com</span>
               </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-3 mt-4 md:mt-0">
+          <div className="hidden md:flex items-center gap-3 mt-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input 
@@ -137,13 +136,11 @@ const BranchDashboard = () => {
           </div>
         </div>
         
-        {/* Tab Navigation */}
         <TabNavigation 
           activeTab={activeTab} 
           onChange={(value) => setActiveTab(value)} 
         />
         
-        {/* Dashboard Content */}
         <motion.div 
           key={activeTab}
           initial={{ opacity: 0, y: 10 }}
@@ -153,14 +150,13 @@ const BranchDashboard = () => {
         >
           {activeTab === "dashboard" && (
             <>
-              {/* Quick Actions Row */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-2 gap-3 mb-6">
                 <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
                   <div className="mr-3 h-8 w-8 rounded-md bg-blue-100 flex items-center justify-center">
                     <Plus className="h-4 w-4 text-blue-600" />
                   </div>
                   <div>
-                    <div className="font-medium">New Client</div>
+                    <div className="font-medium text-sm">New Client</div>
                     <div className="text-xs text-gray-500">Add client details</div>
                   </div>
                 </Button>
@@ -170,7 +166,7 @@ const BranchDashboard = () => {
                     <Calendar className="h-4 w-4 text-green-600" />
                   </div>
                   <div>
-                    <div className="font-medium">Schedule</div>
+                    <div className="font-medium text-sm">Schedule</div>
                     <div className="text-xs text-gray-500">View calendar</div>
                   </div>
                 </Button>
@@ -180,7 +176,7 @@ const BranchDashboard = () => {
                     <FileText className="h-4 w-4 text-amber-600" />
                   </div>
                   <div>
-                    <div className="font-medium">Reports</div>
+                    <div className="font-medium text-sm">Reports</div>
                     <div className="text-xs text-gray-500">Generate reports</div>
                   </div>
                 </Button>
@@ -190,14 +186,13 @@ const BranchDashboard = () => {
                     <Users className="h-4 w-4 text-purple-600" />
                   </div>
                   <div>
-                    <div className="font-medium">Staff</div>
+                    <div className="font-medium text-sm">Staff</div>
                     <div className="text-xs text-gray-500">Manage staff</div>
                   </div>
                 </Button>
               </div>
               
-              {/* Stats Row */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6">
                 <DashboardStat 
                   title="Total Clients" 
                   value="128" 
@@ -228,14 +223,12 @@ const BranchDashboard = () => {
                 />
               </div>
               
-              {/* Main Content Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                {/* Weekly Activity Chart */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
                 <Card className="lg:col-span-2">
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle className="text-lg font-semibold">Weekly Statistics</CardTitle>
+                        <CardTitle className="text-base md:text-lg font-semibold">Weekly Statistics</CardTitle>
                         <CardDescription>Appointments, visits and revenue</CardDescription>
                       </div>
                       <div className="flex gap-2">
@@ -249,7 +242,7 @@ const BranchDashboard = () => {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-[300px] w-full">
+                    <div className="h-[220px] md:h-[300px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                           data={weeklyData}
@@ -277,20 +270,19 @@ const BranchDashboard = () => {
                   </CardContent>
                 </Card>
                 
-                {/* Client Distribution */}
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-lg font-semibold">Client Distribution</CardTitle>
+                    <CardTitle className="text-base md:text-lg font-semibold">Client Distribution</CardTitle>
                     <CardDescription>New vs returning clients</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-[240px] flex items-center justify-center">
+                    <div className="h-[180px] md:h-[240px] flex items-center justify-center">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
                             data={clientTypeData}
-                            innerRadius={60}
-                            outerRadius={90}
+                            innerRadius={50}
+                            outerRadius={70}
                             paddingAngle={5}
                             dataKey="value"
                           >
@@ -311,28 +303,26 @@ const BranchDashboard = () => {
                       </ResponsiveContainer>
                     </div>
                     
-                    <div className="flex justify-around mt-4">
+                    <div className="flex justify-around mt-3">
                       <div className="flex items-center gap-2">
                         <div className="h-3 w-3 rounded-full bg-indigo-600"></div>
-                        <span className="text-sm">Returning (68%)</span>
+                        <span className="text-xs md:text-sm">Returning (68%)</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="h-3 w-3 rounded-full bg-indigo-300"></div>
-                        <span className="text-sm">New (32%)</span>
+                        <span className="text-xs md:text-sm">New (32%)</span>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
               
-              {/* Bottom Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                {/* Monthly Revenue Trend */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
                 <Card>
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle className="text-lg font-semibold">Revenue Trend</CardTitle>
+                        <CardTitle className="text-base md:text-lg font-semibold">Revenue Trend</CardTitle>
                         <CardDescription>Monthly revenue in 2025</CardDescription>
                       </div>
                       <Button variant="outline" size="sm" className="h-8">
@@ -342,7 +332,7 @@ const BranchDashboard = () => {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-[220px] w-full">
+                    <div className="h-[180px] md:h-[220px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart
                           data={monthlyRevenueData}
@@ -373,17 +363,16 @@ const BranchDashboard = () => {
                   </CardContent>
                 </Card>
                 
-                {/* Popular Services */}
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-lg font-semibold">Popular Services</CardTitle>
+                    <CardTitle className="text-base md:text-lg font-semibold">Popular Services</CardTitle>
                     <CardDescription>Most requested services</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
+                    <div className="space-y-3 md:space-y-4">
                       {serviceData.map((service, index) => (
                         <div key={index} className="flex items-center">
-                          <div className="w-32 font-medium text-sm">{service.name}</div>
+                          <div className="w-24 md:w-32 font-medium text-xs md:text-sm">{service.name}</div>
                           <div className="flex-1">
                             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                               <div 
@@ -392,7 +381,7 @@ const BranchDashboard = () => {
                               ></div>
                             </div>
                           </div>
-                          <div className="ml-3 text-sm font-medium">{service.usage}%</div>
+                          <div className="ml-3 text-xs md:text-sm font-medium">{service.usage}%</div>
                         </div>
                       ))}
                     </div>
@@ -400,12 +389,11 @@ const BranchDashboard = () => {
                 </Card>
               </div>
               
-              {/* Bookings and Reviews */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
                 <Card>
                   <CardHeader className="pb-2 flex flex-row items-center justify-between">
                     <div>
-                      <CardTitle className="text-lg font-semibold">Today's Bookings</CardTitle>
+                      <CardTitle className="text-base md:text-lg font-semibold">Today's Bookings</CardTitle>
                       <CardDescription>Appointments for today</CardDescription>
                     </div>
                     <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
@@ -413,8 +401,8 @@ const BranchDashboard = () => {
                       <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
                     </Button>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-1">
+                  <CardContent className="overflow-x-auto">
+                    <div className="space-y-1 min-w-[400px]">
                       <BookingItem 
                         number="1" 
                         staff="Charuma, Charmaine" 
@@ -457,7 +445,7 @@ const BranchDashboard = () => {
                 <Card>
                   <CardHeader className="pb-2 flex flex-row items-center justify-between">
                     <div>
-                      <CardTitle className="text-lg font-semibold">Latest Reviews</CardTitle>
+                      <CardTitle className="text-base md:text-lg font-semibold">Latest Reviews</CardTitle>
                       <CardDescription>Client feedback</CardDescription>
                     </div>
                     <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
@@ -488,29 +476,21 @@ const BranchDashboard = () => {
                         rating={4} 
                         comment="Good service but arrived a bit late."
                       />
-                      <ReviewItem 
-                        client="Baulch, Ursula" 
-                        staff="Warren, Susan" 
-                        date="20/01/2025" 
-                        rating={5} 
-                        comment="Outstanding care, very attentive."
-                      />
                     </div>
                   </CardContent>
                 </Card>
               </div>
               
-              {/* Action Required Section */}
-              <Card className="mt-6">
+              <Card className="mb-20 md:mb-6">
                 <CardHeader className="pb-2">
                   <div className="flex items-center">
                     <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
-                    <CardTitle className="text-lg font-semibold">Action Required</CardTitle>
+                    <CardTitle className="text-base md:text-lg font-semibold">Action Required</CardTitle>
                   </div>
                   <CardDescription>Tasks that need your immediate attention</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <ActionItem 
                       title="Care Plan Update" 
                       name="Iyaniwura, Ifeoluwa" 
@@ -542,7 +522,7 @@ const BranchDashboard = () => {
           )}
           
           {activeTab !== "dashboard" && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center mb-20 md:mb-0">
               <h2 className="text-xl font-medium text-gray-700 mb-2">
                 {activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace(/-/g, ' ')} Page
               </h2>
@@ -570,9 +550,9 @@ const DashboardStat = ({
   icon: React.ReactNode,
   positive: boolean
 }) => (
-  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:shadow-md transition-shadow">
-    <div className="flex items-center justify-between mb-4">
-      <div className="bg-gray-50 p-3 rounded-lg">
+  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 md:p-6 hover:shadow-md transition-shadow">
+    <div className="flex items-center justify-between mb-3 md:mb-4">
+      <div className="bg-gray-50 p-2 md:p-3 rounded-lg">
         {icon}
       </div>
       <div className={`text-xs font-medium px-2 py-1 rounded-full flex items-center ${
@@ -583,8 +563,8 @@ const DashboardStat = ({
       </div>
     </div>
     <div className="space-y-1">
-      <p className="text-sm text-gray-500">{title}</p>
-      <p className="text-2xl font-bold">{value}</p>
+      <p className="text-xs md:text-sm text-gray-500">{title}</p>
+      <p className="text-lg md:text-2xl font-bold">{value}</p>
     </div>
   </div>
 );
