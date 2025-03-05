@@ -2,14 +2,15 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   LayoutDashboard, Workflow, ListChecks, Users, 
   Calendar, Star, MessageSquare, Pill, DollarSign, 
   FileText, ClipboardCheck, Bell, ClipboardList, 
   FileUp, Folder, UserPlus, BarChart4, Settings,
-  ChevronRight, ChevronDown
+  ChevronRight, ChevronDown, Menu, X
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type MenuItem = {
   icon: React.ElementType;
@@ -49,10 +50,29 @@ type SidebarItemProps = {
   onClick: () => void;
   expanded?: boolean;
   onExpand?: () => void;
+  collapsed: boolean;
 };
 
-const SidebarItem = ({ item, active, onClick, expanded, onExpand }: SidebarItemProps) => {
+const SidebarItem = ({ item, active, onClick, expanded, onExpand, collapsed }: SidebarItemProps) => {
   const Icon = item.icon;
+  
+  if (collapsed) {
+    return (
+      <div 
+        className={cn(
+          "flex flex-col items-center justify-center p-3 my-1 rounded-md cursor-pointer transition-colors",
+          active ? "bg-blue-50 text-blue-600" : "hover:bg-gray-100"
+        )}
+        onClick={onClick}
+        title={item.label}
+      >
+        <Icon className={cn("h-5 w-5", active ? "text-blue-600" : "text-gray-600")} />
+        <span className="text-xs mt-1 text-center">
+          {item.label.length > 6 ? `${item.label.substring(0, 6)}...` : item.label}
+        </span>
+      </div>
+    );
+  }
   
   return (
     <div className="relative">
@@ -97,6 +117,7 @@ export const BranchSidebar = ({ branchName }: BranchSidebarProps) => {
   const location = useLocation();
   const [activeItem, setActiveItem] = useState("Dashboard");
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [collapsed, setCollapsed] = useState(false);
   
   const handleItemClick = (item: MenuItem) => {
     setActiveItem(item.label);
@@ -119,12 +140,34 @@ export const BranchSidebar = ({ branchName }: BranchSidebarProps) => {
     return expandedItems.includes(label);
   };
   
+  const toggleCollapse = () => {
+    setCollapsed(!collapsed);
+  };
+  
   return (
-    <aside className="fixed top-[4.5rem] left-0 bottom-0 w-64 bg-white border-r border-gray-200 z-30 overflow-y-auto">
-      <div className="p-4">
-        <h2 className="text-xl font-bold text-gray-800 mb-1 truncate">{branchName}</h2>
-        <p className="text-sm text-gray-500 mb-6">Branch Dashboard</p>
-        
+    <motion.aside 
+      animate={{ width: collapsed ? 80 : 250 }}
+      transition={{ duration: 0.3 }}
+      className={cn(
+        "fixed top-[4.5rem] left-0 bottom-0 bg-white border-r border-gray-200 z-30 overflow-y-auto",
+        collapsed ? "w-20" : "w-64"
+      )}
+    >
+      <div className="sticky top-0 z-20 bg-white p-3 border-b border-gray-100 flex justify-between items-center">
+        {!collapsed && (
+          <h2 className="text-lg font-bold text-gray-800 truncate">{branchName}</h2>
+        )}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={toggleCollapse} 
+          className="rounded-full hover:bg-gray-100"
+        >
+          {collapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
+        </Button>
+      </div>
+      
+      <div className="p-2 mt-2">
         <nav className="space-y-1">
           {menuItems.map((item) => (
             <SidebarItem 
@@ -134,17 +177,24 @@ export const BranchSidebar = ({ branchName }: BranchSidebarProps) => {
               onClick={() => handleItemClick(item)}
               expanded={isExpanded(item.label)}
               onExpand={() => toggleExpand(item.label)}
+              collapsed={collapsed}
             />
           ))}
         </nav>
       </div>
       
-      <div className="px-4 py-3 border-t border-gray-200 mt-auto">
-        <div className="flex items-center justify-between text-xs text-gray-500">
+      <div className={cn(
+        "border-t border-gray-200 mt-auto p-3",
+        collapsed ? "text-center" : "px-4"
+      )}>
+        <div className={cn(
+          "flex items-center text-xs text-gray-500",
+          collapsed ? "flex-col" : "justify-between"
+        )}>
           <span>Powered by</span>
           <span className="font-medium">Med-Infinite</span>
         </div>
       </div>
-    </aside>
+    </motion.aside>
   );
 };
