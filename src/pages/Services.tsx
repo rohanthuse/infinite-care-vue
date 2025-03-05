@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
@@ -7,11 +6,13 @@ import { motion } from "framer-motion";
 import { Briefcase, Plus, Search, Filter, Download } from "lucide-react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
+import { AddServiceDialog } from "@/components/AddServiceDialog";
 
 const Services = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [filterDoubleHanded, setFilterDoubleHanded] = useState<boolean | null>(null);
+  const [showAddServiceDialog, setShowAddServiceDialog] = useState(false);
   
   const handleFilterChange = (category: string | null, doubleHanded: boolean | null) => {
     setFilterCategory(category);
@@ -55,6 +56,7 @@ const Services = () => {
               <CustomButton 
                 variant="pill" 
                 className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20"
+                onClick={() => setShowAddServiceDialog(true)}
               >
                 <Plus className="mr-1.5 h-4 w-4" /> Add Service
               </CustomButton>
@@ -121,6 +123,11 @@ const Services = () => {
           
           <ServicesTable searchQuery={searchQuery} filterCategory={filterCategory} filterDoubleHanded={filterDoubleHanded} />
         </div>
+        
+        <AddServiceDialog 
+          isOpen={showAddServiceDialog}
+          onClose={() => setShowAddServiceDialog(false)}
+        />
       </motion.main>
     </div>
   );

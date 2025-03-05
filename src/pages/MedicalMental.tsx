@@ -1,12 +1,13 @@
-
 import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable } from "@/components/ParameterTable";
-import { Stethoscope } from "lucide-react";
+import { Stethoscope, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AddMedicalConditionDialog } from "@/components/AddMedicalConditionDialog";
+import { CustomButton } from "@/components/ui/CustomButton";
 
 // Mock data for medical conditions
 const conditionsData = [
@@ -37,6 +38,8 @@ const MedicalMental = () => {
   const [activeTab, setActiveTab] = useState("conditions");
   const [filteredConditions, setFilteredConditions] = useState(conditionsData);
   const [filteredCategories, setFilteredCategories] = useState(categoriesData);
+  const [showConditionDialog, setShowConditionDialog] = useState(false);
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   
   const conditionsColumns = [
     {
@@ -112,6 +115,14 @@ const MedicalMental = () => {
       setFilteredCategories(filtered);
     }
   };
+
+  const handleAddCondition = (condition: any) => {
+    setFilteredConditions([...filteredConditions, { ...condition, id: filteredConditions.length + 1 }]);
+  };
+
+  const handleAddCategory = (category: any) => {
+    setFilteredCategories([...filteredCategories, { ...category, id: filteredCategories.length + 1 }]);
+  };
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
@@ -134,6 +145,15 @@ const MedicalMental = () => {
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Medical & Mental</h1>
                 <p className="text-gray-500 text-sm md:text-base">Manage health parameters</p>
               </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <CustomButton 
+                variant="pill" 
+                className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20"
+                onClick={() => activeTab === "conditions" ? setShowConditionDialog(true) : setShowCategoryDialog(true)}
+              >
+                <Plus className="mr-1.5 h-4 w-4" /> New {activeTab === "conditions" ? "Condition" : "Category"}
+              </CustomButton>
             </div>
           </div>
         </div>
@@ -180,6 +200,22 @@ const MedicalMental = () => {
             </TabsContent>
           </Tabs>
         </div>
+
+        <AddMedicalConditionDialog 
+          isOpen={showConditionDialog} 
+          onClose={() => setShowConditionDialog(false)}
+          onAdd={handleAddCondition}
+          categories={categoriesData}
+          isCategory={false}
+        />
+
+        <AddMedicalConditionDialog 
+          isOpen={showCategoryDialog} 
+          onClose={() => setShowCategoryDialog(false)}
+          onAdd={handleAddCategory}
+          categories={[]}
+          isCategory={true}
+        />
       </motion.main>
     </div>
   );
