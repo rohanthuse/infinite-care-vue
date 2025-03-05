@@ -6,18 +6,29 @@ import { motion } from "framer-motion";
 import { 
   Calendar, Users, BarChart4, Clock, 
   FileText, AlertCircle, Search, Bell,
-  ChevronRight, Home, 
+  ChevronRight, Home, ArrowUpRight,
+  Phone, Mail, MapPin, Plus, Clock7,
+  RefreshCw, Download, Filter, 
+  ClipboardCheck, ThumbsUp, ArrowUp, ArrowDown
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TabNavigation } from "@/components/TabNavigation";
 import { 
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, Legend
+  Tooltip, ResponsiveContainer, Legend, LineChart,
+  Line, AreaChart, Area, PieChart, Pie, Cell
 } from "recharts";
 
-// Dummy data for the chart
+// Dummy data for the charts
 const weeklyData = [
   { day: "Mon", visits: 12, bookings: 8, revenue: 780 },
   { day: "Tue", visits: 19, bookings: 12, revenue: 1200 },
@@ -26,6 +37,35 @@ const weeklyData = [
   { day: "Fri", visits: 22, bookings: 16, revenue: 1640 },
   { day: "Sat", visits: 10, bookings: 7, revenue: 620 },
   { day: "Sun", visits: 5, bookings: 4, revenue: 380 },
+];
+
+const monthlyRevenueData = [
+  { name: "Jan", revenue: 4000 },
+  { name: "Feb", revenue: 5400 },
+  { name: "Mar", revenue: 5800 },
+  { name: "Apr", revenue: 4800 },
+  { name: "May", revenue: 7000 },
+  { name: "Jun", revenue: 6000 },
+  { name: "Jul", revenue: 8100 },
+  { name: "Aug", revenue: 7900 },
+  { name: "Sep", revenue: 8700 },
+  { name: "Oct", revenue: 9400 },
+  { name: "Nov", revenue: 8500 },
+  { name: "Dec", revenue: 11200 },
+];
+
+const clientTypeData = [
+  { name: "Returning", value: 68 },
+  { name: "New", value: 32 },
+];
+
+const COLORS = ["#4f46e5", "#a5b4fc"];
+
+const serviceData = [
+  { name: "Home Care", usage: 45 },
+  { name: "Nurse Visit", usage: 28 },
+  { name: "Consultation", usage: 18 },
+  { name: "Therapy", usage: 9 },
 ];
 
 const BranchDashboard = () => {
@@ -55,11 +95,25 @@ const BranchDashboard = () => {
               <ChevronRight className="h-3 w-3" />
               <span className="text-gray-700 font-medium">{displayBranchName}</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center">
               {displayBranchName}
               <Badge className="ml-3 bg-green-100 text-green-800 hover:bg-green-200 font-normal" variant="outline">Active</Badge>
             </h1>
-            <p className="text-gray-500 mt-1">Branch ID: {id}</p>
+            
+            <div className="flex flex-wrap items-center gap-4 mt-2">
+              <div className="flex items-center text-sm text-gray-600">
+                <MapPin className="h-3.5 w-3.5 mr-1 text-gray-500" />
+                <span>Milton Keynes, UK</span>
+              </div>
+              <div className="flex items-center text-sm text-gray-600">
+                <Phone className="h-3.5 w-3.5 mr-1 text-gray-500" />
+                <span>+44 20 7946 0958</span>
+              </div>
+              <div className="flex items-center text-sm text-gray-600">
+                <Mail className="h-3.5 w-3.5 mr-1 text-gray-500" />
+                <span>milton@med-infinite.com</span>
+              </div>
+            </div>
           </div>
           
           <div className="flex items-center gap-3 mt-4 md:mt-0">
@@ -74,6 +128,11 @@ const BranchDashboard = () => {
             <Button variant="outline" size="icon" className="rounded-full relative">
               <Bell className="h-5 w-5" />
               <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+            </Button>
+            
+            <Button variant="default" className="rounded-md bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-4 w-4 mr-2" />
+              <span>New Booking</span>
             </Button>
           </div>
         </div>
@@ -90,12 +149,55 @@ const BranchDashboard = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="mt-4"
+          className="mt-6"
         >
           {activeTab === "dashboard" && (
             <>
+              {/* Quick Actions Row */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
+                  <div className="mr-3 h-8 w-8 rounded-md bg-blue-100 flex items-center justify-center">
+                    <Plus className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium">New Client</div>
+                    <div className="text-xs text-gray-500">Add client details</div>
+                  </div>
+                </Button>
+                
+                <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
+                  <div className="mr-3 h-8 w-8 rounded-md bg-green-100 flex items-center justify-center">
+                    <Calendar className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium">Schedule</div>
+                    <div className="text-xs text-gray-500">View calendar</div>
+                  </div>
+                </Button>
+                
+                <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
+                  <div className="mr-3 h-8 w-8 rounded-md bg-amber-100 flex items-center justify-center">
+                    <FileText className="h-4 w-4 text-amber-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium">Reports</div>
+                    <div className="text-xs text-gray-500">Generate reports</div>
+                  </div>
+                </Button>
+                
+                <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
+                  <div className="mr-3 h-8 w-8 rounded-md bg-purple-100 flex items-center justify-center">
+                    <Users className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium">Staff</div>
+                    <div className="text-xs text-gray-500">Manage staff</div>
+                  </div>
+                </Button>
+              </div>
+              
               {/* Stats Row */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <DashboardStat 
                   title="Total Clients" 
                   value="128" 
@@ -117,16 +219,36 @@ const BranchDashboard = () => {
                   icon={<FileText className="h-5 w-5 text-amber-600" />}
                   positive={false}
                 />
+                <DashboardStat 
+                  title="Monthly Revenue" 
+                  value="£18,947" 
+                  change="+15.3%" 
+                  icon={<BarChart4 className="h-5 w-5 text-purple-600" />}
+                  positive={true}
+                />
               </div>
               
               {/* Main Content Row */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                {/* Left Column */}
-                <div className="lg:col-span-2">
-                  <DashboardCard 
-                    title="Weekly Statistics" 
-                    icon={<BarChart4 className="h-5 w-5 text-blue-600" />}
-                  >
+                {/* Weekly Activity Chart */}
+                <Card className="lg:col-span-2">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg font-semibold">Weekly Statistics</CardTitle>
+                        <CardDescription>Appointments, visits and revenue</CardDescription>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
                     <div className="h-[300px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
@@ -135,7 +257,8 @@ const BranchDashboard = () => {
                         >
                           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                           <XAxis dataKey="day" />
-                          <YAxis />
+                          <YAxis yAxisId="left" />
+                          <YAxis yAxisId="right" orientation="right" />
                           <Tooltip
                             contentStyle={{
                               backgroundColor: "white",
@@ -145,98 +268,276 @@ const BranchDashboard = () => {
                             }}
                           />
                           <Legend />
-                          <Bar dataKey="visits" name="Visits" fill="#a5b4fc" radius={[4, 4, 0, 0]} />
-                          <Bar dataKey="bookings" name="Bookings" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+                          <Bar yAxisId="left" dataKey="visits" name="Visits" fill="#a5b4fc" radius={[4, 4, 0, 0]} />
+                          <Bar yAxisId="left" dataKey="bookings" name="Bookings" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+                          <Line yAxisId="right" type="monotone" dataKey="revenue" name="Revenue (£)" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
-                  </DashboardCard>
-                </div>
+                  </CardContent>
+                </Card>
                 
-                {/* Right Column */}
-                <div>
-                  <DashboardCard 
-                    title="Action Required" 
-                    icon={<AlertCircle className="h-5 w-5 text-blue-600" />}
-                  >
-                    <div className="space-y-3">
-                      <ActionItem 
-                        number="1" 
-                        name="Iyaniwura, Ifeoluwa" 
-                        date="Thu 30/01/2025" 
-                      />
-                      <ActionItem 
-                        number="2" 
-                        name="Baulch, Ursula" 
-                        date="Fri 17/01/2025" 
-                      />
-                      <ActionItem 
-                        number="3" 
-                        name="Ren, Victoria" 
-                        date="Mon 20/01/2025" 
-                      />
+                {/* Client Distribution */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-semibold">Client Distribution</CardTitle>
+                    <CardDescription>New vs returning clients</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[240px] flex items-center justify-center">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={clientTypeData}
+                            innerRadius={60}
+                            outerRadius={90}
+                            paddingAngle={5}
+                            dataKey="value"
+                          >
+                            {clientTypeData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            formatter={(value) => [`${value}%`, "Percentage"]}
+                            contentStyle={{
+                              backgroundColor: "white",
+                              border: "1px solid #f0f0f0",
+                              borderRadius: "8px",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
                     </div>
-                  </DashboardCard>
-                </div>
+                    
+                    <div className="flex justify-around mt-4">
+                      <div className="flex items-center gap-2">
+                        <div className="h-3 w-3 rounded-full bg-indigo-600"></div>
+                        <span className="text-sm">Returning (68%)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-3 w-3 rounded-full bg-indigo-300"></div>
+                        <span className="text-sm">New (32%)</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
               
               {/* Bottom Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <DashboardCard 
-                  title="Bookings Today" 
-                  icon={<Clock className="h-5 w-5 text-blue-600" />}
-                >
-                  <div className="space-y-3">
-                    <BookingItem 
-                      number="1" 
-                      staff="Charuma, Charmaine" 
-                      client="Fulcher, Patricia" 
-                      time="07:30 - 08:30" 
-                      status="Done" 
-                    />
-                    <BookingItem 
-                      number="2" 
-                      staff="Ayo-Famure, Opeyemi" 
-                      client="Ltd, Careville" 
-                      time="08:30 - 09:15" 
-                      status="Booked" 
-                    />
-                    <BookingItem 
-                      number="3" 
-                      staff="Warren, Susan" 
-                      client="Baulch, Ursula" 
-                      time="10:00 - 11:00" 
-                      status="Booked" 
-                    />
-                  </div>
-                </DashboardCard>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {/* Monthly Revenue Trend */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg font-semibold">Revenue Trend</CardTitle>
+                        <CardDescription>Monthly revenue in 2025</CardDescription>
+                      </div>
+                      <Button variant="outline" size="sm" className="h-8">
+                        <Filter className="h-3.5 w-3.5 mr-2" />
+                        Filter
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[220px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart
+                          data={monthlyRevenueData}
+                          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                        >
+                          <defs>
+                            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
+                              <stop offset="95%" stopColor="#8884d8" stopOpacity={0.1}/>
+                            </linearGradient>
+                          </defs>
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <Tooltip
+                            formatter={(value) => [`£${value}`, "Revenue"]}
+                            contentStyle={{
+                              backgroundColor: "white",
+                              border: "1px solid #f0f0f0",
+                              borderRadius: "8px",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
+                            }}
+                          />
+                          <Area type="monotone" dataKey="revenue" stroke="#8884d8" fillOpacity={1} fill="url(#colorRevenue)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
                 
-                <DashboardCard 
-                  title="Latest Reviews" 
-                  icon={<FileText className="h-5 w-5 text-blue-600" />}
-                >
-                  <div className="space-y-3">
-                    <ReviewItem 
-                      client="Pender, Eva" 
-                      staff="Warren, Susan" 
-                      date="26/01/2025" 
-                      rating={5} 
+                {/* Popular Services */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-semibold">Popular Services</CardTitle>
+                    <CardDescription>Most requested services</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {serviceData.map((service, index) => (
+                        <div key={index} className="flex items-center">
+                          <div className="w-32 font-medium text-sm">{service.name}</div>
+                          <div className="flex-1">
+                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-blue-600 rounded-full" 
+                                style={{ width: `${service.usage}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                          <div className="ml-3 text-sm font-medium">{service.usage}%</div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Bookings and Reviews */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg font-semibold">Today's Bookings</CardTitle>
+                      <CardDescription>Appointments for today</CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+                      View All
+                      <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-1">
+                      <BookingItem 
+                        number="1" 
+                        staff="Charuma, Charmaine" 
+                        client="Fulcher, Patricia" 
+                        time="07:30 - 08:30" 
+                        status="Done" 
+                      />
+                      <BookingItem 
+                        number="2" 
+                        staff="Ayo-Famure, Opeyemi" 
+                        client="Ltd, Careville" 
+                        time="08:30 - 09:15" 
+                        status="Booked" 
+                      />
+                      <BookingItem 
+                        number="3" 
+                        staff="Warren, Susan" 
+                        client="Baulch, Ursula" 
+                        time="10:00 - 11:00" 
+                        status="Booked" 
+                      />
+                      <BookingItem 
+                        number="4" 
+                        staff="Warren, Susan" 
+                        client="Ren, Victoria" 
+                        time="11:30 - 12:30" 
+                        status="Waiting" 
+                      />
+                      <BookingItem 
+                        number="5" 
+                        staff="Charuma, Charmaine" 
+                        client="Iyaniwura, Ifeoluwa" 
+                        time="14:00 - 15:00" 
+                        status="Booked" 
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg font-semibold">Latest Reviews</CardTitle>
+                      <CardDescription>Client feedback</CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+                      View All
+                      <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-1">
+                      <ReviewItem 
+                        client="Pender, Eva" 
+                        staff="Warren, Susan" 
+                        date="26/01/2025" 
+                        rating={5} 
+                        comment="Excellent care and attention to detail."
+                      />
+                      <ReviewItem 
+                        client="Pender, Eva" 
+                        staff="Charuma, Charmaine" 
+                        date="26/01/2025" 
+                        rating={5} 
+                        comment="Very professional and friendly service."
+                      />
+                      <ReviewItem 
+                        client="Fulcher, Patricia" 
+                        staff="Ayo-Famure, Opeyemi" 
+                        date="22/01/2025" 
+                        rating={4} 
+                        comment="Good service but arrived a bit late."
+                      />
+                      <ReviewItem 
+                        client="Baulch, Ursula" 
+                        staff="Warren, Susan" 
+                        date="20/01/2025" 
+                        rating={5} 
+                        comment="Outstanding care, very attentive."
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Action Required Section */}
+              <Card className="mt-6">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center">
+                    <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
+                    <CardTitle className="text-lg font-semibold">Action Required</CardTitle>
+                  </div>
+                  <CardDescription>Tasks that need your immediate attention</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ActionItem 
+                      title="Care Plan Update" 
+                      name="Iyaniwura, Ifeoluwa" 
+                      date="Thu 30/01/2025" 
+                      priority="High"
                     />
-                    <ReviewItem 
-                      client="Pender, Eva" 
-                      staff="Charuma, Charmaine" 
-                      date="26/01/2025" 
-                      rating={5} 
+                    <ActionItem 
+                      title="Medication Review" 
+                      name="Baulch, Ursula" 
+                      date="Fri 17/01/2025" 
+                      priority="Medium"
                     />
-                    <ReviewItem 
-                      client="Fulcher, Patricia" 
-                      staff="Ayo-Famure, Opeyemi" 
-                      date="22/01/2025" 
-                      rating={4} 
+                    <ActionItem 
+                      title="Assessment Followup" 
+                      name="Ren, Victoria" 
+                      date="Mon 20/01/2025" 
+                      priority="Low"
+                    />
+                    <ActionItem 
+                      title="Service Agreement" 
+                      name="Ltd, Careville" 
+                      date="Wed 22/01/2025" 
+                      priority="Medium"
                     />
                   </div>
-                </DashboardCard>
-              </div>
+                </CardContent>
+              </Card>
             </>
           )}
           
@@ -269,14 +570,15 @@ const DashboardStat = ({
   icon: React.ReactNode,
   positive: boolean
 }) => (
-  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+  <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:shadow-md transition-shadow">
     <div className="flex items-center justify-between mb-4">
       <div className="bg-gray-50 p-3 rounded-lg">
         {icon}
       </div>
-      <div className={`text-xs font-medium px-2 py-1 rounded-full ${
+      <div className={`text-xs font-medium px-2 py-1 rounded-full flex items-center ${
         positive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
       }`}>
+        {positive ? <ArrowUp className="h-3 w-3 mr-1" /> : <ArrowDown className="h-3 w-3 mr-1" />}
         {change}
       </div>
     </div>
@@ -287,41 +589,43 @@ const DashboardStat = ({
   </div>
 );
 
-const DashboardCard = ({ 
-  title, 
-  icon, 
-  children, 
-  fullWidth 
+const ActionItem = ({ 
+  title,
+  name, 
+  date, 
+  priority 
 }: { 
-  title: string, 
-  icon: React.ReactNode, 
-  children: React.ReactNode,
-  fullWidth?: boolean
-}) => (
-  <div className={`bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden ${fullWidth ? 'col-span-full' : ''}`}>
-    <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-      <div className="flex items-center gap-2">
-        {icon}
-        <h3 className="font-medium text-gray-800">{title}</h3>
+  title: string,
+  name: string, 
+  date: string, 
+  priority: "High" | "Medium" | "Low"
+}) => {
+  const priorityClasses = {
+    High: "bg-red-100 text-red-800",
+    Medium: "bg-amber-100 text-amber-800",
+    Low: "bg-blue-100 text-blue-800"
+  };
+  
+  return (
+    <div className="flex items-center justify-between p-4 border border-gray-100 rounded-lg bg-white hover:shadow-sm transition-shadow">
+      <div className="flex items-center gap-3">
+        <div className="bg-gray-100 p-2 rounded-full">
+          <Clock7 className="h-4 w-4 text-gray-600" />
+        </div>
+        <div>
+          <p className="font-medium">{title}</p>
+          <p className="text-sm text-gray-500">{name}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="text-sm text-gray-700">{date}</div>
+        <Badge variant="outline" className={priorityClasses[priority]}>
+          {priority}
+        </Badge>
       </div>
     </div>
-    <div className="p-4">
-      {children}
-    </div>
-  </div>
-);
-
-const ActionItem = ({ number, name, date }: { number: string, name: string, date: string }) => (
-  <div className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-    <div className="flex items-center gap-3">
-      <div className="text-sm font-medium text-gray-500 w-6">{number}</div>
-      <div>
-        <p className="font-medium">{name}</p>
-      </div>
-    </div>
-    <div className="text-sm text-gray-700">{date}</div>
-  </div>
-);
+  );
+};
 
 const BookingItem = ({ 
   number, 
@@ -334,56 +638,77 @@ const BookingItem = ({
   staff: string, 
   client: string, 
   time: string, 
-  status: string 
-}) => (
-  <div className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-    <div className="flex items-center gap-3">
-      <div className="text-sm font-medium text-gray-500 w-6">{number}</div>
-      <div>
-        <p className="font-medium">{staff}</p>
-        <p className="text-xs text-gray-500">{client}</p>
+  status: "Done" | "Booked" | "Waiting" | "Cancelled"
+}) => {
+  const statusClasses = {
+    Done: "bg-green-100 text-green-800",
+    Booked: "bg-blue-100 text-blue-800",
+    Waiting: "bg-amber-100 text-amber-800",
+    Cancelled: "bg-red-100 text-red-800"
+  };
+  
+  return (
+    <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 px-2 rounded-md transition-colors">
+      <div className="flex items-center gap-3">
+        <div className="text-sm font-medium text-gray-400 w-6">{number}</div>
+        <div>
+          <p className="font-medium">{staff}</p>
+          <p className="text-xs text-gray-500">{client}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 text-sm text-gray-700">
+          <Clock className="h-3.5 w-3.5 text-gray-400" />
+          {time}
+        </div>
+        <div className={`py-1 px-2 rounded-md text-xs font-medium ${
+          statusClasses[status]
+        }`}>
+          {status}
+        </div>
       </div>
     </div>
-    <div className="flex items-center gap-3">
-      <div className="text-sm text-gray-700">{time}</div>
-      <div className={`py-1 px-2 rounded-md text-xs font-medium ${
-        status === "Done" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
-      }`}>
-        {status}
-      </div>
-    </div>
-  </div>
-);
+  );
+};
 
 const ReviewItem = ({ 
   client, 
   staff, 
   date, 
-  rating 
+  rating,
+  comment
 }: { 
   client: string, 
   staff: string, 
   date: string, 
-  rating: number 
+  rating: number,
+  comment: string
 }) => (
-  <div className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-    <div className="flex items-center gap-3">
-      <div className="bg-amber-100 p-2 rounded-full">
-        <Users className="h-4 w-4 text-amber-600" />
+  <div className="flex flex-col py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 px-2 rounded-md transition-colors">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className="bg-amber-100 p-2 rounded-full">
+          <ThumbsUp className="h-3.5 w-3.5 text-amber-600" />
+        </div>
+        <div>
+          <p className="font-medium">{client}</p>
+          <p className="text-xs text-gray-500">Staff: {staff}</p>
+        </div>
       </div>
-      <div>
-        <p className="font-medium">{client}</p>
-        <p className="text-xs text-gray-500">Staff: {staff}</p>
+      <div className="flex items-center gap-2">
+        <div className="text-xs text-gray-500">{date}</div>
+        <div className="flex text-amber-500">
+          {Array(rating).fill(0).map((_, i) => (
+            <span key={i}>★</span>
+          ))}
+        </div>
       </div>
     </div>
-    <div className="flex items-center gap-2">
-      <div className="text-xs text-gray-500">{date}</div>
-      <div className="flex text-amber-500">
-        {Array(rating).fill(0).map((_, i) => (
-          <span key={i}>★</span>
-        ))}
+    {comment && (
+      <div className="mt-2 text-sm text-gray-600 italic pl-12">
+        "{comment}"
       </div>
-    </div>
+    )}
   </div>
 );
 
