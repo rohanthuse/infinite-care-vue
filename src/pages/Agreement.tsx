@@ -7,10 +7,14 @@ import { FileText, Plus, Download, Filter, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { CustomButton } from "@/components/ui/CustomButton";
+import { toast } from "sonner";
+import { generatePDF } from "@/utils/pdfGenerator";
 
 const Agreement = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
   
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -19,6 +23,10 @@ const Agreement = () => {
     
     return () => clearTimeout(timer);
   }, [searchQuery]);
+  
+  const handleDownloadAll = () => {
+    toast.success("All agreements have been queued for download");
+  };
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
@@ -57,6 +65,7 @@ const Agreement = () => {
               <CustomButton 
                 variant="pill" 
                 className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20"
+                onClick={handleDownloadAll}
               >
                 <Download className="mr-1.5 h-4 w-4" /> Download All
               </CustomButton>
@@ -71,14 +80,19 @@ const Agreement = () => {
               <div className="flex gap-2 flex-wrap">
                 <select 
                   className="px-3 py-1.5 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-300"
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
                 >
                   <option value="all">All Types</option>
-                  <option value="employment">Employment Agreement</option>
-                  <option value="service">Service Agreement</option>
-                  <option value="nda">Non-Disclosure Agreement</option>
+                  <option value="Employment Agreement">Employment Agreement</option>
+                  <option value="Service Agreement">Service Agreement</option>
+                  <option value="NDA">NDA</option>
+                  <option value="Data Agreement">Data Agreement</option>
                 </select>
                 <select 
                   className="px-3 py-1.5 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-300"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
                 >
                   <option value="all">All Dates</option>
                   <option value="last7days">Last 7 Days</option>
@@ -97,7 +111,11 @@ const Agreement = () => {
             </CustomButton>
           </div>
           
-          <AgreementList searchQuery={debouncedSearchQuery} />
+          <AgreementList 
+            searchQuery={debouncedSearchQuery} 
+            typeFilter={typeFilter} 
+            dateFilter={dateFilter}
+          />
         </div>
       </motion.main>
     </div>
