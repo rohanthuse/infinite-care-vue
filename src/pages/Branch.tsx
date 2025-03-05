@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { AddBranchDialog } from "@/components/AddBranchDialog";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 // Mock data for branches
 const branchData = [
@@ -43,6 +44,7 @@ const Branch = () => {
   const [searchQuery, setSearchQuery] = useState("");
   
   const handleViewBranchDetails = (branchId: number) => {
+    toast.info("Viewing branch details");
     navigate(`/branch-details/${branchId}`);
   };
   
