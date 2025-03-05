@@ -1,14 +1,18 @@
+
 import { LogOut, HelpCircle, Menu, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { useState } from "react";
+
 export function DashboardHeader() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
   const handleLogout = () => {
     navigate('/super-admin');
   };
+  
   return <header className="bg-white/80 backdrop-blur-md border-b border-gray-100/40 py-4 sticky top-0 z-10">
       <div className="container mx-auto px-4 md:px-6 flex justify-between items-center">
         <div className="flex items-center gap-3 md:gap-4">
@@ -32,7 +36,9 @@ export function DashboardHeader() {
               <HelpCircle className="h-4 w-4 mr-2 text-blue-600" /> Help Guide
             </Button>
             
-            
+            <CustomButton size="sm" variant="pill" className="bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium shadow-md hover:shadow-lg transition-all w-full md:w-auto">
+              New Screen
+            </CustomButton>
           </div>
           
           <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm py-2 px-4 rounded-full border border-gray-100/60 shadow-sm w-full md:w-auto justify-between md:justify-start ml-0 md:ml-2">
