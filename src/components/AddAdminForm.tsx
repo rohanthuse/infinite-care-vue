@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,38 +13,22 @@ import { CalendarIcon, User, X } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-
 interface AddAdminFormProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const branchOptions = [
-  "Med-Infinite - Milton Keynes",
-  "Med-Infinite - London",
-  "Med-Infinite - Manchester"
-];
-
-const titleOptions = [
-  "Mr",
-  "Mrs",
-  "Ms",
-  "Dr",
-  "Prof"
-];
-
-const countryOptions = [
-  "England",
-  "Scotland",
-  "Wales",
-  "Northern Ireland"
-];
-
-export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
+const branchOptions = ["Med-Infinite - Milton Keynes", "Med-Infinite - London", "Med-Infinite - Manchester"];
+const titleOptions = ["Mr", "Mrs", "Ms", "Dr", "Prof"];
+const countryOptions = ["England", "Scotland", "Wales", "Northern Ireland"];
+export function AddAdminForm({
+  isOpen,
+  onClose
+}: AddAdminFormProps) {
   const [activeTab, setActiveTab] = useState("personal");
   const [date, setDate] = useState<Date>();
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const [formData, setFormData] = useState({
     branch: "",
     title: "",
@@ -62,73 +45,52 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
     postalCode: "",
     houseNumber: "",
     street: "",
-    county: "",
+    county: ""
   });
-
   const handleFormChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate required fields
     const requiredFields = ['branch', 'title', 'firstName', 'surname', 'email', 'mobile', 'country'];
     const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
-    
     if (missingFields.length > 0) {
       toast({
         title: "Required fields missing",
         description: `Please fill out all required fields: ${missingFields.join(', ')}`,
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-    
     toast({
       title: "Admin created successfully",
       description: "The new administrator has been added to the system",
-      duration: 3000,
+      duration: 3000
     });
     onClose();
   };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+  return <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[850px] p-0 overflow-hidden rounded-xl">
         <DialogHeader className="px-6 pt-6 pb-2 border-b">
           <DialogTitle className="text-xl flex items-center font-semibold text-gray-800">
             <User className="h-5 w-5 mr-2 text-blue-600" /> Add Admin
           </DialogTitle>
-          <Button 
-            className="absolute right-4 top-4 rounded-full p-2 h-auto" 
-            variant="ghost"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
           <Tabs defaultValue="personal" className="w-full" onValueChange={setActiveTab}>
             <div className="px-6 border-b">
               <TabsList className="h-12 p-0 bg-transparent border-b-0">
-                <TabsTrigger 
-                  value="personal" 
-                  className={cn(
-                    "h-12 px-4 border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:text-green-600 rounded-none bg-transparent",
-                    activeTab === "personal" ? "font-medium" : "text-gray-500"
-                  )}
-                >
+                <TabsTrigger value="personal" className={cn("h-12 px-4 border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:text-green-600 rounded-none bg-transparent", activeTab === "personal" ? "font-medium" : "text-gray-500")}>
                   Personal Details
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="permissions" 
-                  className={cn(
-                    "h-12 px-4 border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:text-green-600 rounded-none bg-transparent",
-                    activeTab === "permissions" ? "font-medium" : "text-gray-500"
-                  )}
-                >
+                <TabsTrigger value="permissions" className={cn("h-12 px-4 border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:text-green-600 rounded-none bg-transparent", activeTab === "permissions" ? "font-medium" : "text-gray-500")}>
                   Permissions
                 </TabsTrigger>
               </TabsList>
@@ -142,17 +104,12 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                       <Label htmlFor="branch" className="text-gray-700 font-medium flex items-center">
                         Branches<span className="text-red-500 ml-1">*</span>
                       </Label>
-                      <Select 
-                        value={formData.branch} 
-                        onValueChange={(value) => handleFormChange('branch', value)}
-                      >
+                      <Select value={formData.branch} onValueChange={value => handleFormChange('branch', value)}>
                         <SelectTrigger id="branch" className="w-full h-10 rounded-md border-gray-300">
                           <SelectValue placeholder="Select Items..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {branchOptions.map((branch) => (
-                            <SelectItem key={branch} value={branch}>{branch}</SelectItem>
-                          ))}
+                          {branchOptions.map(branch => <SelectItem key={branch} value={branch}>{branch}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
@@ -161,17 +118,12 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                       <Label htmlFor="title" className="text-gray-700 font-medium flex items-center">
                         Title<span className="text-red-500 ml-1">*</span>
                       </Label>
-                      <Select 
-                        value={formData.title} 
-                        onValueChange={(value) => handleFormChange('title', value)}
-                      >
+                      <Select value={formData.title} onValueChange={value => handleFormChange('title', value)}>
                         <SelectTrigger id="title" className="w-full h-10 rounded-md border-gray-300">
                           <SelectValue placeholder="Select Item..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {titleOptions.map((title) => (
-                            <SelectItem key={title} value={title}>{title}</SelectItem>
-                          ))}
+                          {titleOptions.map(title => <SelectItem key={title} value={title}>{title}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
@@ -182,24 +134,14 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                       <Label htmlFor="firstName" className="text-gray-700 font-medium flex items-center">
                         First Name<span className="text-red-500 ml-1">*</span>
                       </Label>
-                      <Input 
-                        id="firstName" 
-                        value={formData.firstName}
-                        onChange={(e) => handleFormChange('firstName', e.target.value)}
-                        className="h-10 rounded-md border-gray-300" 
-                      />
+                      <Input id="firstName" value={formData.firstName} onChange={e => handleFormChange('firstName', e.target.value)} className="h-10 rounded-md border-gray-300" />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="middleName" className="text-gray-700 font-medium">
                         Middle Name
                       </Label>
-                      <Input 
-                        id="middleName" 
-                        value={formData.middleName}
-                        onChange={(e) => handleFormChange('middleName', e.target.value)}
-                        className="h-10 rounded-md border-gray-300" 
-                      />
+                      <Input id="middleName" value={formData.middleName} onChange={e => handleFormChange('middleName', e.target.value)} className="h-10 rounded-md border-gray-300" />
                     </div>
                   </div>
 
@@ -208,24 +150,14 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                       <Label htmlFor="surname" className="text-gray-700 font-medium flex items-center">
                         Surname<span className="text-red-500 ml-1">*</span>
                       </Label>
-                      <Input 
-                        id="surname" 
-                        value={formData.surname}
-                        onChange={(e) => handleFormChange('surname', e.target.value)}
-                        className="h-10 rounded-md border-gray-300" 
-                      />
+                      <Input id="surname" value={formData.surname} onChange={e => handleFormChange('surname', e.target.value)} className="h-10 rounded-md border-gray-300" />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="knownAs" className="text-gray-700 font-medium">
                         Known As
                       </Label>
-                      <Input 
-                        id="knownAs" 
-                        value={formData.knownAs}
-                        onChange={(e) => handleFormChange('knownAs', e.target.value)}
-                        className="h-10 rounded-md border-gray-300" 
-                      />
+                      <Input id="knownAs" value={formData.knownAs} onChange={e => handleFormChange('knownAs', e.target.value)} className="h-10 rounded-md border-gray-300" />
                     </div>
                   </div>
 
@@ -234,13 +166,7 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                       <Label htmlFor="email" className="text-gray-700 font-medium flex items-center">
                         Email<span className="text-red-500 ml-1">*</span>
                       </Label>
-                      <Input 
-                        id="email" 
-                        type="email" 
-                        value={formData.email}
-                        onChange={(e) => handleFormChange('email', e.target.value)}
-                        className="h-10 rounded-md border-gray-300" 
-                      />
+                      <Input id="email" type="email" value={formData.email} onChange={e => handleFormChange('email', e.target.value)} className="h-10 rounded-md border-gray-300" />
                     </div>
 
                     <div className="space-y-2">
@@ -249,24 +175,13 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                       </Label>
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full h-10 rounded-md border-gray-300 text-left font-normal justify-start",
-                              !date && "text-gray-400"
-                            )}
-                          >
+                          <Button variant="outline" className={cn("w-full h-10 rounded-md border-gray-300 text-left font-normal justify-start", !date && "text-gray-400")}>
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {date ? format(date, "dd-MM-yyyy") : "dd-mm-yyyy"}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={date}
-                            onSelect={setDate}
-                            initialFocus
-                          />
+                          <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
                         </PopoverContent>
                       </Popover>
                     </div>
@@ -277,26 +192,14 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                       <Label htmlFor="telephone" className="text-gray-700 font-medium">
                         Telephone
                       </Label>
-                      <Input 
-                        id="telephone" 
-                        type="tel" 
-                        value={formData.telephone}
-                        onChange={(e) => handleFormChange('telephone', e.target.value)}
-                        className="h-10 rounded-md border-gray-300" 
-                      />
+                      <Input id="telephone" type="tel" value={formData.telephone} onChange={e => handleFormChange('telephone', e.target.value)} className="h-10 rounded-md border-gray-300" />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="mobile" className="text-gray-700 font-medium flex items-center">
                         Mobile<span className="text-red-500 ml-1">*</span>
                       </Label>
-                      <Input 
-                        id="mobile" 
-                        type="tel" 
-                        value={formData.mobile}
-                        onChange={(e) => handleFormChange('mobile', e.target.value)}
-                        className="h-10 rounded-md border-gray-300" 
-                      />
+                      <Input id="mobile" type="tel" value={formData.mobile} onChange={e => handleFormChange('mobile', e.target.value)} className="h-10 rounded-md border-gray-300" />
                     </div>
                   </div>
 
@@ -304,11 +207,7 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                     <Label className="text-gray-700 font-medium">
                       Gender
                     </Label>
-                    <RadioGroup 
-                      value={formData.gender} 
-                      onValueChange={(value) => handleFormChange('gender', value)}
-                      className="flex items-center space-x-6 pt-2"
-                    >
+                    <RadioGroup value={formData.gender} onValueChange={value => handleFormChange('gender', value)} className="flex items-center space-x-6 pt-2">
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="male" id="male" />
                         <Label htmlFor="male" className="font-normal cursor-pointer">Male</Label>
@@ -329,17 +228,12 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                         <Label htmlFor="country" className="text-gray-700 font-medium flex items-center">
                           Country<span className="text-red-500 ml-1">*</span>
                         </Label>
-                        <Select 
-                          value={formData.country} 
-                          onValueChange={(value) => handleFormChange('country', value)}
-                        >
+                        <Select value={formData.country} onValueChange={value => handleFormChange('country', value)}>
                           <SelectTrigger id="country" className="w-full h-10 rounded-md border-gray-300">
                             <SelectValue placeholder="Select Country..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {countryOptions.map((country) => (
-                              <SelectItem key={country} value={country}>{country}</SelectItem>
-                            ))}
+                            {countryOptions.map(country => <SelectItem key={country} value={country}>{country}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
@@ -348,12 +242,7 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                         <Label htmlFor="city" className="text-gray-700 font-medium">
                           City
                         </Label>
-                        <Input 
-                          id="city" 
-                          value={formData.city}
-                          onChange={(e) => handleFormChange('city', e.target.value)}
-                          className="h-10 rounded-md border-gray-300" 
-                        />
+                        <Input id="city" value={formData.city} onChange={e => handleFormChange('city', e.target.value)} className="h-10 rounded-md border-gray-300" />
                       </div>
                     </div>
                     
@@ -362,24 +251,14 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                         <Label htmlFor="postalCode" className="text-gray-700 font-medium">
                           Postal Code
                         </Label>
-                        <Input 
-                          id="postalCode" 
-                          value={formData.postalCode}
-                          onChange={(e) => handleFormChange('postalCode', e.target.value)}
-                          className="h-10 rounded-md border-gray-300" 
-                        />
+                        <Input id="postalCode" value={formData.postalCode} onChange={e => handleFormChange('postalCode', e.target.value)} className="h-10 rounded-md border-gray-300" />
                       </div>
                       
                       <div className="space-y-2">
                         <Label htmlFor="houseNumber" className="text-gray-700 font-medium">
                           House No/Name
                         </Label>
-                        <Input 
-                          id="houseNumber" 
-                          value={formData.houseNumber}
-                          onChange={(e) => handleFormChange('houseNumber', e.target.value)}
-                          className="h-10 rounded-md border-gray-300" 
-                        />
+                        <Input id="houseNumber" value={formData.houseNumber} onChange={e => handleFormChange('houseNumber', e.target.value)} className="h-10 rounded-md border-gray-300" />
                       </div>
                     </div>
                     
@@ -388,24 +267,14 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
                         <Label htmlFor="street" className="text-gray-700 font-medium">
                           Street
                         </Label>
-                        <Input 
-                          id="street" 
-                          value={formData.street}
-                          onChange={(e) => handleFormChange('street', e.target.value)}
-                          className="h-10 rounded-md border-gray-300" 
-                        />
+                        <Input id="street" value={formData.street} onChange={e => handleFormChange('street', e.target.value)} className="h-10 rounded-md border-gray-300" />
                       </div>
                       
                       <div className="space-y-2">
                         <Label htmlFor="county" className="text-gray-700 font-medium">
                           County
                         </Label>
-                        <Input 
-                          id="county" 
-                          value={formData.county}
-                          onChange={(e) => handleFormChange('county', e.target.value)}
-                          className="h-10 rounded-md border-gray-300" 
-                        />
+                        <Input id="county" value={formData.county} onChange={e => handleFormChange('county', e.target.value)} className="h-10 rounded-md border-gray-300" />
                       </div>
                     </div>
                   </div>
@@ -547,18 +416,10 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
 
             <DialogFooter className="px-6 py-4 border-t bg-gray-50/80">
               <div className="flex justify-end gap-2 w-full">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={onClose}
-                  className="border-gray-200 rounded-md"
-                >
+                <Button type="button" variant="outline" onClick={onClose} className="border-gray-200 rounded-md">
                   Cancel
                 </Button>
-                <Button 
-                  type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md"
-                >
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md">
                   Add Admin
                 </Button>
               </div>
@@ -566,6 +427,5 @@ export function AddAdminForm({ isOpen, onClose }: AddAdminFormProps) {
           </Tabs>
         </form>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 }
