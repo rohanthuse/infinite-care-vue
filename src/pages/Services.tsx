@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ServicesTable } from "@/components/ServicesTable";
@@ -13,6 +13,15 @@ const Services = () => {
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [filterDoubleHanded, setFilterDoubleHanded] = useState<boolean | null>(null);
   const [showAddServiceDialog, setShowAddServiceDialog] = useState(false);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
   
   const handleFilterChange = (category: string | null, doubleHanded: boolean | null) => {
     setFilterCategory(category);
@@ -121,7 +130,11 @@ const Services = () => {
             </CustomButton>
           </div>
           
-          <ServicesTable searchQuery={searchQuery} filterCategory={filterCategory} filterDoubleHanded={filterDoubleHanded} />
+          <ServicesTable 
+            searchQuery={debouncedSearchQuery} 
+            filterCategory={filterCategory} 
+            filterDoubleHanded={filterDoubleHanded} 
+          />
         </div>
         
         <AddServiceDialog 

@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable } from "@/components/ParameterTable";
@@ -31,6 +30,7 @@ const typeOfWorkData = [
 const TypeOfWork = () => {
   const [workTypes, setWorkTypes] = useState(typeOfWorkData);
   const [filteredData, setFilteredData] = useState(workTypes);
+  const [searchQuery, setSearchQuery] = useState("");
   
   const columns = [
     {
@@ -52,7 +52,12 @@ const TypeOfWork = () => {
     },
   ];
   
+  useEffect(() => {
+    handleSearch(searchQuery);
+  }, [searchQuery, workTypes]);
+  
   const handleSearch = (query: string) => {
+    setSearchQuery(query);
     if (!query) {
       setFilteredData(workTypes);
     } else {
@@ -71,7 +76,7 @@ const TypeOfWork = () => {
     
     const updatedWorkTypes = [...workTypes, newWorkTypeWithId];
     setWorkTypes(updatedWorkTypes);
-    setFilteredData(updatedWorkTypes);
+    setFilteredData(!searchQuery ? updatedWorkTypes : filteredData);
   };
   
   return (

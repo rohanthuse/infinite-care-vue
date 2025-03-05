@@ -1,7 +1,7 @@
 import { ArrowUpDown, MoreHorizontal, Search, ChevronLeft, ChevronRight, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { AddAdminForm } from "@/components/AddAdminForm";
@@ -49,25 +49,31 @@ export function AdminsTable() {
   const [filteredData, setFilteredData] = useState(mockData);
   const [showInactive, setShowInactive] = useState(false);
   
+  useEffect(() => {
+    if (!searchQuery.trim() && !showInactive) {
+      setFilteredData(mockData);
+    } else {
+      const filtered = mockData.filter(item => {
+        const matchesSearch = !searchQuery.trim() || 
+          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.branch.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        const matchesStatus = !showInactive || item.status === "Inactive";
+        
+        return matchesSearch && (showInactive ? matchesStatus : true);
+      });
+      setFilteredData(filtered);
+    }
+  }, [searchQuery, showInactive]);
+  
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
-    
-    if (!query.trim()) {
-      setFilteredData(mockData);
-    } else {
-      const filtered = mockData.filter(item => 
-        item.name.toLowerCase().includes(query.toLowerCase()) ||
-        item.email.toLowerCase().includes(query.toLowerCase()) ||
-        item.branch.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredData(filtered);
-    }
   };
   
   const toggleInactiveAdmins = () => {
     setShowInactive(!showInactive);
-    setFilteredData(mockData);
   };
   
   return (
@@ -201,7 +207,6 @@ export function AdminsTable() {
         </div>
       </motion.div>
 
-      {/* Add Admin Modal */}
       <AddAdminForm 
         isOpen={showAddAdminModal} 
         onClose={() => setShowAddAdminModal(false)} 

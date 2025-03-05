@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable } from "@/components/ParameterTable";
@@ -18,6 +17,7 @@ const bodyMapPointsData = [
 const BodyMapPoints = () => {
   const [points, setPoints] = useState(bodyMapPointsData);
   const [filteredData, setFilteredData] = useState(points);
+  const [searchQuery, setSearchQuery] = useState("");
   
   const columns = [
     {
@@ -46,7 +46,12 @@ const BodyMapPoints = () => {
     },
   ];
   
+  useEffect(() => {
+    handleSearch(searchQuery);
+  }, [searchQuery, points]);
+  
   const handleSearch = (query: string) => {
+    setSearchQuery(query);
     if (!query) {
       setFilteredData(points);
     } else {
@@ -66,7 +71,7 @@ const BodyMapPoints = () => {
     
     const updatedPoints = [...points, newPointWithId];
     setPoints(updatedPoints);
-    setFilteredData(updatedPoints);
+    setFilteredData(!searchQuery ? updatedPoints : filteredData);
   };
   
   return (

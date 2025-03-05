@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable } from "@/components/ParameterTable";
@@ -31,6 +31,7 @@ const hobbiesData = [
 const Hobbies = () => {
   const [hobbies, setHobbies] = useState(hobbiesData);
   const [filteredData, setFilteredData] = useState(hobbies);
+  const [searchQuery, setSearchQuery] = useState("");
   
   const columns = [
     {
@@ -52,7 +53,13 @@ const Hobbies = () => {
     },
   ];
   
+  // Update search whenever query changes
+  useEffect(() => {
+    handleSearch(searchQuery);
+  }, [searchQuery, hobbies]);
+  
   const handleSearch = (query: string) => {
+    setSearchQuery(query);
     if (!query) {
       setFilteredData(hobbies);
     } else {
@@ -71,7 +78,7 @@ const Hobbies = () => {
     
     const updatedHobbies = [...hobbies, newHobbyWithId];
     setHobbies(updatedHobbies);
-    setFilteredData(updatedHobbies);
+    setFilteredData(!searchQuery ? updatedHobbies : filteredData);
   };
   
   return (

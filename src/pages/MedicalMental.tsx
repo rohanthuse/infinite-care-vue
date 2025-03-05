@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable } from "@/components/ParameterTable";
@@ -36,10 +36,22 @@ const categoriesData = [
 
 const MedicalMental = () => {
   const [activeTab, setActiveTab] = useState("conditions");
-  const [filteredConditions, setFilteredConditions] = useState(conditionsData);
-  const [filteredCategories, setFilteredCategories] = useState(categoriesData);
+  const [conditions, setConditions] = useState(conditionsData);
+  const [categories, setCategories] = useState(categoriesData);
+  const [filteredConditions, setFilteredConditions] = useState(conditions);
+  const [filteredCategories, setFilteredCategories] = useState(categories);
+  const [conditionsSearchQuery, setConditionsSearchQuery] = useState("");
+  const [categoriesSearchQuery, setCategoriesSearchQuery] = useState("");
   const [showConditionDialog, setShowConditionDialog] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  
+  useEffect(() => {
+    handleConditionsSearch(conditionsSearchQuery);
+  }, [conditionsSearchQuery, conditions]);
+  
+  useEffect(() => {
+    handleCategoriesSearch(categoriesSearchQuery);
+  }, [categoriesSearchQuery, categories]);
   
   const conditionsColumns = [
     {
@@ -94,22 +106,25 @@ const MedicalMental = () => {
   ];
   
   const handleConditionsSearch = (query: string) => {
+    setConditionsSearchQuery(query);
     if (!query) {
-      setFilteredConditions(conditionsData);
+      setFilteredConditions(conditions);
     } else {
-      const filtered = conditionsData.filter(item => 
+      const filtered = conditions.filter(item => 
         item.title.toLowerCase().includes(query.toLowerCase()) ||
-        item.category.toLowerCase().includes(query.toLowerCase())
+        item.category.toLowerCase().includes(query.toLowerCase()) ||
+        (item.fieldCaption && item.fieldCaption.toLowerCase().includes(query.toLowerCase()))
       );
       setFilteredConditions(filtered);
     }
   };
   
   const handleCategoriesSearch = (query: string) => {
+    setCategoriesSearchQuery(query);
     if (!query) {
-      setFilteredCategories(categoriesData);
+      setFilteredCategories(categories);
     } else {
-      const filtered = categoriesData.filter(item => 
+      const filtered = categories.filter(item => 
         item.name.toLowerCase().includes(query.toLowerCase())
       );
       setFilteredCategories(filtered);
@@ -117,11 +132,25 @@ const MedicalMental = () => {
   };
 
   const handleAddCondition = (condition: any) => {
-    setFilteredConditions([...filteredConditions, { ...condition, id: filteredConditions.length + 1 }]);
+    const newCondition = { ...condition, id: conditions.length + 1 };
+    setConditions([...conditions, newCondition]);
+    
+    if (conditionsSearchQuery) {
+      handleConditionsSearch(conditionsSearchQuery);
+    } else {
+      setFilteredConditions([...conditions, newCondition]);
+    }
   };
 
   const handleAddCategory = (category: any) => {
-    setFilteredCategories([...filteredCategories, { ...category, id: filteredCategories.length + 1 }]);
+    const newCategory = { ...category, id: categories.length + 1 };
+    setCategories([...categories, newCategory]);
+    
+    if (categoriesSearchQuery) {
+      handleCategoriesSearch(categoriesSearchQuery);
+    } else {
+      setFilteredCategories([...categories, newCategory]);
+    }
   };
   
   return (

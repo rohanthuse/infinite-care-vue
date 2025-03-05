@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable } from "@/components/ParameterTable";
@@ -37,6 +37,7 @@ const branchData = [
 const Branch = () => {
   const [branches, setBranches] = useState(branchData);
   const [filteredData, setFilteredData] = useState(branches);
+  const [searchQuery, setSearchQuery] = useState("");
   
   const columns = [
     {
@@ -100,14 +101,21 @@ const Branch = () => {
     },
   ];
   
+  // Update search whenever query changes
+  useEffect(() => {
+    handleSearch(searchQuery);
+  }, [searchQuery, branches]);
+  
   const handleSearch = (query: string) => {
+    setSearchQuery(query);
     if (!query) {
       setFilteredData(branches);
     } else {
       const filtered = branches.filter(item => 
         item.title.toLowerCase().includes(query.toLowerCase()) ||
         item.country.toLowerCase().includes(query.toLowerCase()) ||
-        item.branchType.toLowerCase().includes(query.toLowerCase())
+        item.branchType.toLowerCase().includes(query.toLowerCase()) ||
+        item.regulatory.toLowerCase().includes(query.toLowerCase())
       );
       setFilteredData(filtered);
     }

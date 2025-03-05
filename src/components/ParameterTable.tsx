@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Table, TableHeader, TableBody, TableHead, 
   TableRow, TableCell, 
@@ -65,8 +65,12 @@ export function ParameterTable({
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [searchQuery, setSearchQuery] = useState("");
+  const [internalFilteredData, setInternalFilteredData] = useState(data);
 
-  // Handle sorting
+  useEffect(() => {
+    setInternalFilteredData(data);
+  }, [data]);
+
   const handleSort = (column: string) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -76,12 +80,25 @@ export function ParameterTable({
     }
   };
 
-  // Calculate pagination
-  const totalPages = Math.ceil(data.length / itemsPerPage);
+  useEffect(() => {
+    if (!onSearch && searchQuery) {
+      const filtered = data.filter(item => {
+        return Object.values(item).some(value => 
+          value != null && 
+          value.toString().toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      });
+      setInternalFilteredData(filtered);
+      setCurrentPage(1);
+    } else if (!onSearch) {
+      setInternalFilteredData(data);
+    }
+  }, [searchQuery, data, onSearch]);
+
+  const totalPages = Math.ceil(internalFilteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedData = data.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedData = internalFilteredData.slice(startIndex, startIndex + itemsPerPage);
   
-  // Handle search
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
@@ -245,7 +262,7 @@ export function ParameterTable({
         
         <div className="border-t border-gray-100/60 p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-gray-50/50 rounded-b-xl">
           <div className="text-gray-600 text-sm">
-            Showing {Math.min(data.length, 1 + (currentPage - 1) * itemsPerPage)} to {Math.min(currentPage * itemsPerPage, data.length)} of {data.length} entries
+            Showing {Math.min(internalFilteredData.length, 1 + (currentPage - 1) * itemsPerPage)} to {Math.min(currentPage * itemsPerPage, internalFilteredData.length)} of {internalFilteredData.length} entries
           </div>
           
           <div className="flex items-center gap-2">

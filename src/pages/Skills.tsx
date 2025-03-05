@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable } from "@/components/ParameterTable";
@@ -30,6 +29,7 @@ const skillsData = [
 const Skills = () => {
   const [skills, setSkills] = useState(skillsData);
   const [filteredData, setFilteredData] = useState(skills);
+  const [searchQuery, setSearchQuery] = useState("");
   
   const columns = [
     {
@@ -57,12 +57,18 @@ const Skills = () => {
     },
   ];
   
+  useEffect(() => {
+    handleSearch(searchQuery);
+  }, [searchQuery, skills]);
+  
   const handleSearch = (query: string) => {
+    setSearchQuery(query);
     if (!query) {
       setFilteredData(skills);
     } else {
       const filtered = skills.filter(item => 
-        item.name.toLowerCase().includes(query.toLowerCase())
+        item.name.toLowerCase().includes(query.toLowerCase()) ||
+        (item.explanation && item.explanation.toLowerCase().includes(query.toLowerCase()))
       );
       setFilteredData(filtered);
     }
@@ -76,7 +82,7 @@ const Skills = () => {
     
     const updatedSkills = [...skills, newSkillWithId];
     setSkills(updatedSkills);
-    setFilteredData(updatedSkills);
+    setFilteredData(!searchQuery ? updatedSkills : filteredData);
   };
   
   return (

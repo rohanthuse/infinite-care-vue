@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Check, ArrowUpDown, MoreHorizontal, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { 
   Table, 
@@ -24,7 +23,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Define the service data type
 interface Service {
   id: number;
   title: string;
@@ -32,7 +30,6 @@ interface Service {
   category?: string;
 }
 
-// Sample data array with categories
 const initialServices: Service[] = [
   { id: 1, title: "Personal Care", doubleHanded: false, category: "Daily Support" },
   { id: 2, title: "Medication Assistance", doubleHanded: false, category: "Medical" },
@@ -72,13 +69,12 @@ export function ServicesTable({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   
-  // Filter and sort services based on search query, filters, and sort settings
   const filteredAndSortedServices = useMemo(() => {
-    // First filter by search query
     let filtered = services.filter(service => {
-      const matchesSearch = searchQuery 
-        ? service.title.toLowerCase().includes(searchQuery.toLowerCase()) 
-        : true;
+      const matchesSearch = !searchQuery 
+        ? true 
+        : service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (service.category && service.category.toLowerCase().includes(searchQuery.toLowerCase()));
       
       const matchesCategory = filterCategory 
         ? service.category === filterCategory 
@@ -91,7 +87,6 @@ export function ServicesTable({
       return matchesSearch && matchesCategory && matchesDoubleHanded;
     });
     
-    // Then sort the filtered results
     return filtered.sort((a, b) => {
       if (sortColumn === 'title') {
         return sortOrder === 'asc' 
@@ -104,7 +99,6 @@ export function ServicesTable({
           ? catA.localeCompare(catB)
           : catB.localeCompare(catA);
       } else {
-        // Sort by boolean value
         return sortOrder === 'asc' 
           ? Number(a.doubleHanded) - Number(b.doubleHanded)
           : Number(b.doubleHanded) - Number(a.doubleHanded);
@@ -112,17 +106,14 @@ export function ServicesTable({
     });
   }, [services, searchQuery, filterCategory, filterDoubleHanded, sortColumn, sortOrder]);
   
-  // Reset to first page when filters change
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, filterCategory, filterDoubleHanded]);
   
-  // Calculate pagination
   const totalPages = Math.ceil(filteredAndSortedServices.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedServices = filteredAndSortedServices.slice(startIndex, startIndex + itemsPerPage);
   
-  // Handle sort
   const handleSort = (column: 'title' | 'doubleHanded' | 'category') => {
     if (sortColumn === column) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
