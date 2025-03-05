@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { AgreementList } from "@/components/AgreementList";
-import { FileText, Plus, Download, Filter, Search } from "lucide-react";
+import { FileText, Download, Filter, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { CustomButton } from "@/components/ui/CustomButton";
@@ -102,13 +102,7 @@ const Agreement = () => {
               </div>
             </div>
             
-            <CustomButton 
-              variant="outline" 
-              size="sm"
-              className="text-gray-600 border-gray-200 hover:bg-gray-50"
-            >
-              <Plus className="mr-1.5 h-4 w-4" /> Add New Agreement
-            </CustomButton>
+            {/* Removed the "Add New Agreement" button */}
           </div>
           
           <AgreementList 
