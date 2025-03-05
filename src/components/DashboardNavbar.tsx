@@ -106,22 +106,23 @@ const SubNavTile = ({
       transition={{ duration: 0.2 }}
       className={cn(
         "relative cursor-pointer rounded-xl transition-all duration-300 p-3",
+        "hover:shadow-soft border", 
         isActive 
-          ? "bg-white shadow-soft" 
-          : "bg-[#F1F0FB] hover:bg-white"
+          ? "bg-white border-med-200 shadow-soft" 
+          : "bg-white/60 backdrop-blur-sm border-transparent hover:border-med-100"
       )}
       onClick={onClick}
     >
       <div className="flex flex-col items-center">
-        <div className="relative mb-1">
+        <div className="relative mb-1.5">
           <Icon className={cn(
-            "h-6 w-6",
-            isActive ? "text-blue-600" : "text-[#403E43]"
+            "h-5 w-5",
+            isActive ? "text-med-500" : "text-gray-500"
           )} />
           
           {notificationCount > 0 && (
             <Badge 
-              className="absolute -top-1 -right-1 flex items-center justify-center bg-red-500 text-white text-xs p-0 min-w-4 h-4 rounded-full"
+              className="absolute -top-1.5 -right-1.5 flex items-center justify-center bg-red-500 text-white text-xs p-0 min-w-4 h-4 rounded-full"
             >
               {notificationCount}
             </Badge>
@@ -130,7 +131,7 @@ const SubNavTile = ({
         
         <span className={cn(
           "text-xs font-medium text-center",
-          isActive ? "text-blue-700" : "text-[#403E43]"
+          isActive ? "text-med-600" : "text-gray-600"
         )}>
           {label}
         </span>
@@ -246,10 +247,10 @@ export function DashboardNavbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="bg-[#F6F6F7] py-6 shadow-sm"
+            className="bg-gray-50/80 backdrop-blur-sm py-8 shadow-sm border-b border-gray-100"
           >
             <div className="container mx-auto px-4">
-              <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+              <div className="grid grid-cols-4 md:grid-cols-8 gap-4">
                 {keyParametersSubItems.map((item) => (
                   <SubNavTile 
                     key={item.label}
