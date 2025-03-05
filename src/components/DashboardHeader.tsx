@@ -16,7 +16,7 @@ export function DashboardHeader() {
   return <header className="bg-white/80 backdrop-blur-md border-b border-gray-100/40 py-4 sticky top-0 z-10">
       <div className="container mx-auto px-4 md:px-6 flex justify-between items-center">
         {/* Logo aligned to the left */}
-        <div className="flex items-center gap-3 md:gap-4">
+        <div className="flex items-center gap-3 md:gap-4 md:ml-4 pl-[4px]">
           <div className="w-10 h-10 md:w-11 md:h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 text-white flex items-center justify-center font-bold text-xl shadow-sm">
             <Heart className="w-6 h-6" />
           </div>
@@ -58,4 +58,3 @@ export function DashboardHeader() {
       </div>
     </header>;
 }
-
