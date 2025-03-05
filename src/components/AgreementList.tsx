@@ -1,197 +1,211 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+  Table, TableBody, TableCell, TableHead, 
+  TableHeader, TableRow 
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { 
+  Eye, Download, FileText, Calendar, User
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Download, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { generatePDF } from "@/utils/pdfGenerator";
-import { toast } from "@/hooks/use-toast";
 
 // Mock data for agreements
 const agreementsData = [
-  { 
-    id: 1, 
-    title: "Service Level Agreement", 
-    date: "2023-05-15", 
-    status: "Active",
-    signedBy: "John Doe" 
+  {
+    id: 1,
+    title: "Employment Contract",
+    signedBy: "Aderinsola Thomas",
+    signedDate: "15 May 2023",
+    type: "Employment Agreement",
+    status: "Active"
   },
-  { 
-    id: 2, 
-    title: "Confidentiality Agreement", 
-    date: "2023-06-22", 
-    status: "Active",
-    signedBy: "John Doe" 
+  {
+    id: 2,
+    title: "Non-Disclosure Agreement",
+    signedBy: "James Wilson",
+    signedDate: "24 June 2023",
+    type: "NDA",
+    status: "Active"
   },
-  { 
-    id: 3, 
-    title: "Data Processing Agreement", 
-    date: "2023-07-30", 
-    status: "Active",
-    signedBy: "John Doe" 
+  {
+    id: 3,
+    title: "Service Level Agreement",
+    signedBy: "Sophia Martinez",
+    signedDate: "07 August 2023",
+    type: "Service Agreement",
+    status: "Active"
   },
-  { 
-    id: 4, 
-    title: "Annual Service Contract", 
-    date: "2023-08-12", 
-    status: "Active",
-    signedBy: "Jane Smith" 
+  {
+    id: 4,
+    title: "Caretaker Contract",
+    signedBy: "Michael Johnson",
+    signedDate: "12 September 2023",
+    type: "Employment Agreement",
+    status: "Active"
   },
+  {
+    id: 5,
+    title: "Data Processing Agreement",
+    signedBy: "Emma Williams",
+    signedDate: "05 October 2023",
+    type: "Data Agreement",
+    status: "Active"
+  },
+  {
+    id: 6,
+    title: "Branch Operational Agreement",
+    signedBy: "Daniel Smith",
+    signedDate: "18 November 2023",
+    type: "Service Agreement",
+    status: "Active"
+  },
+  {
+    id: 7,
+    title: "Client Care Agreement",
+    signedBy: "Olivia Brown",
+    signedDate: "29 December 2023",
+    type: "Service Agreement",
+    status: "Expired"
+  },
+  {
+    id: 8,
+    title: "Staff Training Agreement",
+    signedBy: "William Taylor",
+    signedDate: "14 January 2024",
+    type: "Employment Agreement",
+    status: "Active"
+  }
 ];
 
-export const AgreementList = () => {
-  const [isViewOpen, setIsViewOpen] = useState(false);
-  const [selectedAgreement, setSelectedAgreement] = useState<typeof agreementsData[0] | null>(null);
+type AgreementListProps = {
+  searchQuery?: string;
+};
 
-  const handleView = (agreement: typeof agreementsData[0]) => {
-    setSelectedAgreement(agreement);
-    setIsViewOpen(true);
+export function AgreementList({ searchQuery = "" }: AgreementListProps) {
+  const [agreements, setAgreements] = useState(agreementsData);
+  const [filteredAgreements, setFilteredAgreements] = useState(agreements);
+  
+  useEffect(() => {
+    if (!searchQuery) {
+      setFilteredAgreements(agreements);
+    } else {
+      const filtered = agreements.filter(
+        agreement => 
+          agreement.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          agreement.signedBy.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          agreement.type.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredAgreements(filtered);
+    }
+  }, [searchQuery, agreements]);
+  
+  const handleView = (id: number) => {
+    // In a real app, this would open the agreement viewer
+    toast.success(`Viewing agreement #${id}`);
   };
-
-  const handleDownload = (agreement: typeof agreementsData[0]) => {
-    generatePDF(agreement);
-    toast({
-      title: "Download started",
-      description: `${agreement.title} is being downloaded.`,
-    });
+  
+  const handleDownload = (id: number, title: string) => {
+    const agreement = agreements.find(a => a.id === id);
+    if (!agreement) return;
+    
+    generatePDF(
+      title,
+      `This is the ${agreement.type} signed by ${agreement.signedBy} on ${agreement.signedDate}.`,
+      agreement
+    );
   };
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="pb-3">
-        <CardTitle>Signed Agreements</CardTitle>
-        <CardDescription>
-          View and download agreements signed with the super admin.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[40%]">Agreement Title</TableHead>
-              <TableHead className="w-[15%]">Signed Date</TableHead>
-              <TableHead className="w-[15%]">Status</TableHead>
-              <TableHead className="w-[15%]">Signed By</TableHead>
-              <TableHead className="w-[15%] text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {agreementsData.map((agreement) => (
-              <TableRow key={agreement.id}>
-                <TableCell className="font-medium">{agreement.title}</TableCell>
-                <TableCell>{new Date(agreement.date).toLocaleDateString()}</TableCell>
+    <div className="w-full overflow-auto">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-gray-50/50">
+            <TableHead className="w-[5%]">#</TableHead>
+            <TableHead className="w-[30%]">Title</TableHead>
+            <TableHead className="w-[20%]">Signed By</TableHead>
+            <TableHead className="w-[15%]">Date</TableHead>
+            <TableHead className="w-[15%]">Type</TableHead>
+            <TableHead className="w-[15%]">Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredAgreements.length > 0 ? (
+            filteredAgreements.map((agreement) => (
+              <TableRow key={agreement.id} className="border-b border-gray-100 hover:bg-gray-50/40">
+                <TableCell className="font-medium">{agreement.id}</TableCell>
                 <TableCell>
-                  <Badge className="bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800 font-medium border-0 rounded-full px-3">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-blue-500" />
+                    <span className="font-medium text-gray-800">{agreement.title}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-gray-400" />
+                    <span>{agreement.signedBy}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-400" />
+                    <span>{agreement.signedDate}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span className="text-gray-600">{agreement.type}</span>
+                </TableCell>
+                <TableCell>
+                  <Badge 
+                    className={
+                      agreement.status === "Active" 
+                        ? "bg-green-100 text-green-800 hover:bg-green-100" 
+                        : "bg-amber-100 text-amber-800 hover:bg-amber-100"
+                    }
+                  >
                     {agreement.status}
                   </Badge>
                 </TableCell>
-                <TableCell>{agreement.signedBy}</TableCell>
-                <TableCell className="text-right space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleView(agreement)}
-                    className="h-8 px-3 text-xs"
-                  >
-                    <Eye className="h-3.5 w-3.5 mr-1" />
-                    View
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(agreement)}
-                    className="h-8 px-3 text-xs"
-                  >
-                    <Download className="h-3.5 w-3.5 mr-1" />
-                    Download
-                  </Button>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0"
+                      onClick={() => handleView(agreement.id)}
+                    >
+                      <Eye className="h-4 w-4 text-blue-600" />
+                    </Button>
+                    <Button 
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0"
+                      onClick={() => handleDownload(agreement.id, agreement.title)}
+                    >
+                      <Download className="h-4 w-4 text-blue-600" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-
-      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              {selectedAgreement?.title}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="p-4 border rounded-md bg-gray-50 max-h-[60vh] overflow-auto">
-            <h3 className="text-lg font-bold mb-4">{selectedAgreement?.title}</h3>
-            <p className="mb-2"><strong>Signed on:</strong> {selectedAgreement?.date && new Date(selectedAgreement.date).toLocaleDateString()}</p>
-            <p className="mb-4"><strong>Signed by:</strong> {selectedAgreement?.signedBy}</p>
-            
-            <div className="prose prose-sm max-w-none">
-              <h4>Agreement Terms</h4>
-              <p>This Agreement ("Agreement") is entered into by and between Med-Infinite ("Company") and the undersigned party ("Client").</p>
-              
-              <h5>1. Services</h5>
-              <p>The Company agrees to provide healthcare management services as described in the attached Schedule of Services.</p>
-              
-              <h5>2. Term</h5>
-              <p>This Agreement shall commence on the date of signing and shall continue for a period of 12 months unless terminated earlier as provided herein.</p>
-              
-              <h5>3. Fees and Payment</h5>
-              <p>Client agrees to pay the Company the fees as set forth in the attached Fee Schedule. Payments are due within 30 days of receipt of invoice.</p>
-              
-              <h5>4. Confidentiality</h5>
-              <p>Each party shall maintain the confidentiality of all proprietary or confidential information provided by the other party.</p>
-              
-              <h5>5. Termination</h5>
-              <p>Either party may terminate this Agreement with 30 days written notice to the other party.</p>
-              
-              <h5>6. Governing Law</h5>
-              <p>This Agreement shall be governed by and construed in accordance with the laws of the jurisdiction in which the Company is located.</p>
-              
-              <h5>7. Entire Agreement</h5>
-              <p>This Agreement constitutes the entire understanding between the parties concerning the subject matter hereof.</p>
-              
-              <div className="mt-8 pt-4 border-t">
-                <p className="italic">Signed and agreed to by authorized representatives of both parties on the date indicated.</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex justify-end gap-2 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setIsViewOpen(false)}
-            >
-              Close
-            </Button>
-            <Button
-              onClick={() => {
-                if (selectedAgreement) {
-                  handleDownload(selectedAgreement);
-                }
-              }}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Download PDF
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </Card>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={7} className="h-24 text-center">
+                <div className="flex flex-col items-center justify-center gap-1 py-4 text-gray-500">
+                  <FileText className="h-10 w-10 text-gray-300" />
+                  <p className="text-sm">No agreements found</p>
+                  {searchQuery && (
+                    <p className="text-xs text-gray-400">Try a different search term</p>
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
-};
+}
