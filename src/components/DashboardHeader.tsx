@@ -3,17 +3,29 @@ import { LogOut, HelpCircle, Menu, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function DashboardHeader() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
+  // Close mobile menu when resizing to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768 && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [mobileMenuOpen]);
+  
   const handleLogout = () => {
     navigate('/super-admin');
   };
   
-  return <header className="bg-white/80 backdrop-blur-md border-b border-gray-100/40 py-4 sticky top-0 z-10">
+  return <header className="bg-white/80 backdrop-blur-md border-b border-gray-100/40 py-4 sticky top-0 z-40">
       <div className="container mx-auto px-4 md:px-6 flex justify-between items-center relative">
         {/* Logo aligned to the left */}
         <div className="flex items-center gap-3 md:gap-4 md:ml-4 pl-[4px]">
@@ -37,7 +49,7 @@ export function DashboardHeader() {
           </Button>
         </div>
         
-        {/* Content aligned to the right - Fixed z-index and layering with fixed positioning for mobile */}
+        {/* Content aligned to the right - Fixed for mobile viewing */}
         <div 
           className={`
             flex-col md:flex-row 
@@ -50,15 +62,16 @@ export function DashboardHeader() {
             border-b md:border-b-0 
             border-gray-100 
             shadow-md md:shadow-none 
-            z-[100] md:z-auto
+            z-[500] md:z-auto
             ${mobileMenuOpen ? 'flex' : 'hidden md:flex'} 
             items-center md:items-center 
             gap-3 md:gap-5 
             px-6 md:px-0 
             md:justify-end
           `}
+          style={{ maxHeight: 'calc(100vh - 72px)', overflowY: 'auto' }}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full md:w-auto">
             <Button variant="ghost" size="sm" className="text-gray-700 font-medium hover:bg-gray-50/80 rounded-full transition-all w-full md:w-auto justify-start md:justify-center">
               <HelpCircle className="h-4 w-4 mr-2 text-blue-600" /> Help Guide
             </Button>
