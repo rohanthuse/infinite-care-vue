@@ -108,10 +108,10 @@ const Branch = () => {
     },
     {
       header: "Actions",
-      accessorKey: "actions", // Added accessorKey to fix the type error
+      accessorKey: "actions",
       id: "actions",
       className: "w-[10%]",
-      cell: (_, row: any) => (
+      cell: (_: any, row: any) => (
         <Button
           variant="ghost"
           size="sm"

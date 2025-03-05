@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   Table, TableHeader, TableBody, TableHead, 
@@ -18,9 +19,10 @@ import { motion } from "framer-motion";
 interface ColumnDef {
   header: string;
   accessorKey: string;
-  cell?: (value: any) => React.ReactNode;
   enableSorting?: boolean;
   className?: string;
+  id?: string;
+  cell?: ((value: any) => React.ReactNode) | ((value: any, row: any) => React.ReactNode);
 }
 
 export interface ParameterItem {
@@ -214,7 +216,10 @@ export function ParameterTable({
                     {columns.map((column, colIndex) => (
                       <TableCell key={`${rowIndex}-${colIndex}`} className={column.className}>
                         {column.cell ? (
-                          column.cell(item[column.accessorKey])
+                          // Update to handle both function signatures
+                          column.cell instanceof Function && column.cell.length > 1 
+                            ? (column.cell as any)(item[column.accessorKey], item)
+                            : (column.cell as any)(item[column.accessorKey])
                         ) : (
                           column.accessorKey === "color" ? (
                             <div 
