@@ -15,6 +15,7 @@ export function DashboardHeader() {
   
   return <header className="bg-white/80 backdrop-blur-md border-b border-gray-100/40 py-4 sticky top-0 z-10">
       <div className="container mx-auto px-4 md:px-6 flex justify-between items-center">
+        {/* Logo aligned to the left */}
         <div className="flex items-center gap-3 md:gap-4">
           <div className="w-10 h-10 md:w-11 md:h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 text-white flex items-center justify-center font-bold text-xl shadow-sm">
             <Heart className="w-6 h-6" />
@@ -24,13 +25,15 @@ export function DashboardHeader() {
           </h2>
         </div>
         
+        {/* Mobile menu button */}
         <div className="md:hidden">
           <Button variant="ghost" size="icon" className="text-gray-700 hover:bg-gray-50/80 rounded-full" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             <Menu className="h-5 w-5" />
           </Button>
         </div>
         
-        <div className={`flex-col md:flex-row absolute md:static top-full left-0 right-0 bg-white md:bg-transparent py-4 md:py-0 border-b md:border-b-0 border-gray-100 shadow-md md:shadow-none z-20 md:z-auto ${mobileMenuOpen ? 'flex' : 'hidden md:flex'} items-center md:items-stretch gap-3 md:gap-5 px-6 md:px-0`}>
+        {/* Content aligned to the right */}
+        <div className={`flex-col md:flex-row absolute md:static top-full left-0 right-0 bg-white md:bg-transparent py-4 md:py-0 border-b md:border-b-0 border-gray-100 shadow-md md:shadow-none z-20 md:z-auto ${mobileMenuOpen ? 'flex' : 'hidden md:flex'} items-center md:items-center gap-3 md:gap-5 px-6 md:px-0 md:justify-end`}>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" className="text-gray-700 font-medium hover:bg-gray-50/80 rounded-full transition-all w-full md:w-auto justify-start md:justify-center">
               <HelpCircle className="h-4 w-4 mr-2 text-blue-600" /> Help Guide
@@ -55,3 +58,4 @@ export function DashboardHeader() {
       </div>
     </header>;
 }
+
