@@ -3,10 +3,12 @@ import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable } from "@/components/ParameterTable";
-import { Building2 } from "lucide-react";
+import { Building2, Eye } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { AddBranchDialog } from "@/components/AddBranchDialog";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 // Mock data for branches
 const branchData = [
@@ -35,9 +37,14 @@ const branchData = [
 ];
 
 const Branch = () => {
+  const navigate = useNavigate();
   const [branches, setBranches] = useState(branchData);
   const [filteredData, setFilteredData] = useState(branches);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  const handleViewBranchDetails = (branchId: number) => {
+    navigate(`/branch-details/${branchId}`);
+  };
   
   const columns = [
     {
@@ -97,6 +104,21 @@ const Branch = () => {
         <Badge className="bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800 font-medium border-0 rounded-full px-3">
           {value}
         </Badge>
+      ),
+    },
+    {
+      header: "Actions",
+      id: "actions",
+      className: "w-[10%]",
+      cell: (_, row: any) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex items-center text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+          onClick={() => handleViewBranchDetails(row.id)}
+        >
+          <Eye className="h-4 w-4 mr-1" /> View Details
+        </Button>
       ),
     },
   ];

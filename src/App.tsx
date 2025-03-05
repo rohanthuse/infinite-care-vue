@@ -16,6 +16,7 @@ import MedicalMental from "./pages/MedicalMental";
 import TypeOfWork from "./pages/TypeOfWork";
 import BodyMapPoints from "./pages/BodyMapPoints";
 import Branch from "./pages/Branch";
+import BranchDetails from "./pages/BranchDetails";
 import BranchAdmins from "./pages/BranchAdmins";
 import Agreement from "./pages/Agreement";
 import { useState } from "react";
@@ -45,6 +46,7 @@ function App() {
             <Route path="/type-of-work" element={<TypeOfWork />} />
             <Route path="/body-map-points" element={<BodyMapPoints />} />
             <Route path="/branch" element={<Branch />} />
+            <Route path="/branch-details/:id" element={<BranchDetails />} />
             <Route path="/branch-admins" element={<BranchAdmins />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
