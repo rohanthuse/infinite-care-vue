@@ -25,10 +25,15 @@ export function DashboardHeader() {
           </h2>
         </div>
         
-        {/* Mobile menu button */}
+        {/* Mobile menu button - Updated for better visibility */}
         <div className="md:hidden">
-          <Button variant="ghost" size="icon" className="text-gray-700 hover:bg-gray-50/80 rounded-full" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            <Menu className="h-5 w-5" />
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="text-blue-600 border border-blue-200 bg-white shadow-sm hover:bg-blue-50 rounded-full" 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            <Menu className="h-6 w-6" />
           </Button>
         </div>
         
