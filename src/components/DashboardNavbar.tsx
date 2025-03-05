@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   ChevronDown, ChevronUp, FileText, Home, 
@@ -96,7 +95,7 @@ export function DashboardNavbar() {
       } else if (label === "Settings") {
         navigate('/settings');
       } else if (label === "Agreement") {
-        // Future implementation
+        navigate('/agreement');
       }
     }
   };
@@ -127,6 +126,9 @@ export function DashboardNavbar() {
       setActiveSubItem("");
     } else if (path === '/settings') {
       setActiveItem("Settings");
+      setActiveSubItem("");
+    } else if (path === '/agreement') {
+      setActiveItem("Agreement");
       setActiveSubItem("");
     } else {
       // Check if we're on a submenu path

@@ -17,6 +17,7 @@ import TypeOfWork from "./pages/TypeOfWork";
 import BodyMapPoints from "./pages/BodyMapPoints";
 import Branch from "./pages/Branch";
 import BranchAdmins from "./pages/BranchAdmins";
+import Agreement from "./pages/Agreement";
 import { useState } from "react";
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/services" element={<Services />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/agreement" element={<Agreement />} />
             
             {/* Key Parameters Routes */}
             <Route path="/hobbies" element={<Hobbies />} />
