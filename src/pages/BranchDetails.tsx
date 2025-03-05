@@ -8,7 +8,8 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { motion } from "framer-motion";
 import { 
   Building2, Calendar, Users, FileText, Clock, 
-  BarChart4, AlertCircle, Clipboard, ArrowLeft, UserCog
+  BarChart4, AlertCircle, Clipboard, ArrowLeft, UserCog,
+  LayoutDashboard
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -76,6 +77,13 @@ const BranchDetails = () => {
     navigate('/branch-admins');
   };
 
+  const handleNavigateToBranchDashboard = () => {
+    toast.success("Navigating to Branch Dashboard");
+    if (branchData) {
+      navigate(`/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.title)}`);
+    }
+  };
+
   const StatCard = ({ icon: Icon, title, value, color }: { icon: any, title: string, value: number | string, color: string }) => (
     <div className={`bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex flex-col`}>
       <div className="flex items-center mb-2">
@@ -129,8 +137,13 @@ const BranchDetails = () => {
               </div>
               
               <div className="flex gap-3">
-                <Button variant="outline" className="rounded-md border-gray-200">
-                  Edit Branch
+                <Button 
+                  variant="outline" 
+                  className="rounded-md border-gray-200 flex items-center gap-2"
+                  onClick={handleNavigateToBranchDashboard}
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Branch Dashboard
                 </Button>
                 <Button 
                   variant="outline"
@@ -139,6 +152,9 @@ const BranchDetails = () => {
                 >
                   <UserCog className="h-4 w-4" />
                   Branch Admins
+                </Button>
+                <Button variant="outline" className="rounded-md border-gray-200">
+                  Edit Branch
                 </Button>
                 <CustomButton className="bg-blue-600 hover:bg-blue-700">
                   Manage Staff

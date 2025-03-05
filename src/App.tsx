@@ -17,6 +17,7 @@ import TypeOfWork from "./pages/TypeOfWork";
 import BodyMapPoints from "./pages/BodyMapPoints";
 import Branch from "./pages/Branch";
 import BranchDetails from "./pages/BranchDetails";
+import BranchDashboard from "./pages/BranchDashboard";
 import BranchAdmins from "./pages/BranchAdmins";
 import Agreement from "./pages/Agreement";
 import { useState } from "react";
@@ -48,6 +49,9 @@ function App() {
             <Route path="/branch" element={<Branch />} />
             <Route path="/branch-details/:id" element={<BranchDetails />} />
             <Route path="/branch-admins" element={<BranchAdmins />} />
+            
+            {/* Branch Dashboard Routes */}
+            <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
