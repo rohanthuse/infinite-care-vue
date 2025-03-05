@@ -54,6 +54,18 @@ export function DashboardHeader() {
               <LogOut className="h-5 w-5" />
             </CustomButton>
           </div>
+          
+          {/* Mobile logout option */}
+          <div className="md:hidden w-full">
+            <Button 
+              variant="ghost" 
+              className="w-full flex justify-between items-center text-gray-700 hover:bg-gray-50/80 rounded-lg py-3"
+              onClick={handleLogout}
+            >
+              <span className="font-medium">Logout</span>
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </div>
     </header>;
