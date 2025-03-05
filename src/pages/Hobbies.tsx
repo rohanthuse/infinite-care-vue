@@ -6,6 +6,7 @@ import { ParameterTable } from "@/components/ParameterTable";
 import { Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { AddHobbyDialog } from "@/components/AddHobbyDialog";
 
 // Mock data for hobbies
 const hobbiesData = [
@@ -28,7 +29,8 @@ const hobbiesData = [
 ];
 
 const Hobbies = () => {
-  const [filteredData, setFilteredData] = useState(hobbiesData);
+  const [hobbies, setHobbies] = useState(hobbiesData);
+  const [filteredData, setFilteredData] = useState(hobbies);
   
   const columns = [
     {
@@ -52,13 +54,24 @@ const Hobbies = () => {
   
   const handleSearch = (query: string) => {
     if (!query) {
-      setFilteredData(hobbiesData);
+      setFilteredData(hobbies);
     } else {
-      const filtered = hobbiesData.filter(item => 
+      const filtered = hobbies.filter(item => 
         item.title.toLowerCase().includes(query.toLowerCase())
       );
       setFilteredData(filtered);
     }
+  };
+
+  const handleAddHobby = (newHobby: { title: string; status: string }) => {
+    const newHobbyWithId = {
+      id: hobbies.length + 1,
+      ...newHobby
+    };
+    
+    const updatedHobbies = [...hobbies, newHobbyWithId];
+    setHobbies(updatedHobbies);
+    setFilteredData(updatedHobbies);
   };
   
   return (
@@ -79,6 +92,7 @@ const Hobbies = () => {
           data={filteredData}
           onSearch={handleSearch}
           searchPlaceholder="Search hobbies..."
+          addButton={<AddHobbyDialog onAdd={handleAddHobby} />}
         />
       </motion.main>
     </div>

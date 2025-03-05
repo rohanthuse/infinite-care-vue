@@ -6,6 +6,7 @@ import { ParameterTable } from "@/components/ParameterTable";
 import { Briefcase } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { AddWorkTypeDialog } from "@/components/AddWorkTypeDialog";
 
 // Mock data for type of work
 const typeOfWorkData = [
@@ -28,7 +29,8 @@ const typeOfWorkData = [
 ];
 
 const TypeOfWork = () => {
-  const [filteredData, setFilteredData] = useState(typeOfWorkData);
+  const [workTypes, setWorkTypes] = useState(typeOfWorkData);
+  const [filteredData, setFilteredData] = useState(workTypes);
   
   const columns = [
     {
@@ -52,13 +54,24 @@ const TypeOfWork = () => {
   
   const handleSearch = (query: string) => {
     if (!query) {
-      setFilteredData(typeOfWorkData);
+      setFilteredData(workTypes);
     } else {
-      const filtered = typeOfWorkData.filter(item => 
+      const filtered = workTypes.filter(item => 
         item.title.toLowerCase().includes(query.toLowerCase())
       );
       setFilteredData(filtered);
     }
+  };
+  
+  const handleAddWorkType = (newWorkType: { title: string; status: string }) => {
+    const newWorkTypeWithId = {
+      id: workTypes.length + 1,
+      ...newWorkType
+    };
+    
+    const updatedWorkTypes = [...workTypes, newWorkTypeWithId];
+    setWorkTypes(updatedWorkTypes);
+    setFilteredData(updatedWorkTypes);
   };
   
   return (
@@ -79,6 +92,7 @@ const TypeOfWork = () => {
           data={filteredData}
           onSearch={handleSearch}
           searchPlaceholder="Search work types..."
+          addButton={<AddWorkTypeDialog onAdd={handleAddWorkType} />}
         />
       </motion.main>
     </div>

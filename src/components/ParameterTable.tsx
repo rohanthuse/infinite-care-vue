@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Table, TableHeader, TableBody, TableHead, 
@@ -45,6 +44,7 @@ interface ParameterTableProps {
   onSearch?: (value: string) => void;
   searchPlaceholder?: string;
   hasColorColumn?: boolean;
+  addButton?: React.ReactNode;
 }
 
 export function ParameterTable({
@@ -58,6 +58,7 @@ export function ParameterTable({
   onSearch,
   searchPlaceholder = "Search...",
   hasColorColumn = false,
+  addButton,
 }: ParameterTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -116,12 +117,16 @@ export function ParameterTable({
               </div>
             )}
             
-            <CustomButton 
-              variant="pill" 
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20"
-            >
-              <Plus className="mr-1.5 h-4 w-4" /> New {title.slice(0, -1)}
-            </CustomButton>
+            {addButton ? (
+              addButton
+            ) : (
+              <CustomButton 
+                variant="pill" 
+                className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20"
+              >
+                <Plus className="mr-1.5 h-4 w-4" /> New {title.slice(0, -1)}
+              </CustomButton>
+            )}
           </div>
         </div>
       </div>

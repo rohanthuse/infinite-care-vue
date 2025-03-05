@@ -6,12 +6,13 @@ import { ParameterTable } from "@/components/ParameterTable";
 import { Building2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { AddBranchDialog } from "@/components/AddBranchDialog";
 
 // Mock data for branches
 const branchData = [
   { 
     id: 1, 
-    title: "Brielle Health Care Services- Milton Keynes", 
+    title: "Med-Infinite Health Care Services- Milton Keynes", 
     country: "England", 
     currency: "£", 
     regulatory: "CQC", 
@@ -22,7 +23,7 @@ const branchData = [
   },
   { 
     id: 2, 
-    title: "Brielle Health Care Services- Hampshire", 
+    title: "Med-Infinite Health Care Services- Hampshire", 
     country: "England", 
     currency: "£", 
     regulatory: "CQC", 
@@ -34,7 +35,8 @@ const branchData = [
 ];
 
 const Branch = () => {
-  const [filteredData, setFilteredData] = useState(branchData);
+  const [branches, setBranches] = useState(branchData);
+  const [filteredData, setFilteredData] = useState(branches);
   
   const columns = [
     {
@@ -100,15 +102,38 @@ const Branch = () => {
   
   const handleSearch = (query: string) => {
     if (!query) {
-      setFilteredData(branchData);
+      setFilteredData(branches);
     } else {
-      const filtered = branchData.filter(item => 
+      const filtered = branches.filter(item => 
         item.title.toLowerCase().includes(query.toLowerCase()) ||
         item.country.toLowerCase().includes(query.toLowerCase()) ||
         item.branchType.toLowerCase().includes(query.toLowerCase())
       );
       setFilteredData(filtered);
     }
+  };
+  
+  const handleAddBranch = (newBranch: {
+    title: string;
+    country: string;
+    currency: string;
+    regulatory: string;
+    branchType: string;
+    status: string;
+  }) => {
+    const currentDate = new Date();
+    const formattedDate = `${currentDate.getDate().toString().padStart(2, '0')}/${(currentDate.getMonth() + 1).toString().padStart(2, '0')}/${currentDate.getFullYear()}`;
+    
+    const newBranchWithId = {
+      id: branches.length + 1,
+      ...newBranch,
+      createdOn: formattedDate,
+      createdBy: "Admin User"
+    };
+    
+    const updatedBranches = [...branches, newBranchWithId];
+    setBranches(updatedBranches);
+    setFilteredData(updatedBranches);
   };
   
   return (
@@ -129,6 +154,7 @@ const Branch = () => {
           data={filteredData}
           onSearch={handleSearch}
           searchPlaceholder="Search branches..."
+          addButton={<AddBranchDialog onAdd={handleAddBranch} />}
         />
       </motion.main>
     </div>

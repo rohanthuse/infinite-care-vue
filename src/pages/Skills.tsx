@@ -6,6 +6,7 @@ import { ParameterTable } from "@/components/ParameterTable";
 import { Brain } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { AddSkillDialog } from "@/components/AddSkillDialog";
 
 // Mock data for skills
 const skillsData = [
@@ -27,7 +28,8 @@ const skillsData = [
 ];
 
 const Skills = () => {
-  const [filteredData, setFilteredData] = useState(skillsData);
+  const [skills, setSkills] = useState(skillsData);
+  const [filteredData, setFilteredData] = useState(skills);
   
   const columns = [
     {
@@ -57,13 +59,24 @@ const Skills = () => {
   
   const handleSearch = (query: string) => {
     if (!query) {
-      setFilteredData(skillsData);
+      setFilteredData(skills);
     } else {
-      const filtered = skillsData.filter(item => 
+      const filtered = skills.filter(item => 
         item.name.toLowerCase().includes(query.toLowerCase())
       );
       setFilteredData(filtered);
     }
+  };
+  
+  const handleAddSkill = (newSkill: { name: string; explanation: string; status: string }) => {
+    const newSkillWithId = {
+      id: skills.length + 1,
+      ...newSkill
+    };
+    
+    const updatedSkills = [...skills, newSkillWithId];
+    setSkills(updatedSkills);
+    setFilteredData(updatedSkills);
   };
   
   return (
@@ -84,6 +97,7 @@ const Skills = () => {
           data={filteredData}
           onSearch={handleSearch}
           searchPlaceholder="Search skills..."
+          addButton={<AddSkillDialog onAdd={handleAddSkill} />}
         />
       </motion.main>
     </div>

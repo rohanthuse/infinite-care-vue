@@ -5,6 +5,7 @@ import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable } from "@/components/ParameterTable";
 import { ActivitySquare } from "lucide-react";
 import { motion } from "framer-motion";
+import { AddBodyMapPointDialog } from "@/components/AddBodyMapPointDialog";
 
 // Mock data for body map points
 const bodyMapPointsData = [
@@ -15,7 +16,8 @@ const bodyMapPointsData = [
 ];
 
 const BodyMapPoints = () => {
-  const [filteredData, setFilteredData] = useState(bodyMapPointsData);
+  const [points, setPoints] = useState(bodyMapPointsData);
+  const [filteredData, setFilteredData] = useState(points);
   
   const columns = [
     {
@@ -46,14 +48,25 @@ const BodyMapPoints = () => {
   
   const handleSearch = (query: string) => {
     if (!query) {
-      setFilteredData(bodyMapPointsData);
+      setFilteredData(points);
     } else {
-      const filtered = bodyMapPointsData.filter(item => 
+      const filtered = points.filter(item => 
         item.title.toLowerCase().includes(query.toLowerCase()) ||
         item.letter.toLowerCase().includes(query.toLowerCase())
       );
       setFilteredData(filtered);
     }
+  };
+
+  const handleAddBodyMapPoint = (newPoint: { letter: string; title: string; color: string }) => {
+    const newPointWithId = {
+      id: points.length + 1,
+      ...newPoint
+    };
+    
+    const updatedPoints = [...points, newPointWithId];
+    setPoints(updatedPoints);
+    setFilteredData(updatedPoints);
   };
   
   return (
@@ -75,6 +88,7 @@ const BodyMapPoints = () => {
           onSearch={handleSearch}
           searchPlaceholder="Search body map points..."
           hasColorColumn={true}
+          addButton={<AddBodyMapPointDialog onAdd={handleAddBodyMapPoint} />}
         />
       </motion.main>
     </div>
