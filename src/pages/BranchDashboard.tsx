@@ -21,6 +21,20 @@ import { CarersTab } from "@/components/carers/CarersTab";
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { NewBookingDialog } from "@/components/bookings/NewBookingDialog";
 import {
+  Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter
+} from "@/components/ui/card";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from "@/components/ui/table";
+import {
+  Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select";
+import {
+  Popover, PopoverContent, PopoverTrigger
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, Legend, LineChart,
   Line, AreaChart, Area, PieChart, Pie, Cell
