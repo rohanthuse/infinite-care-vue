@@ -92,7 +92,7 @@ const mockDocuments = [
 ];
 
 const ApplicationDetailsPage = () => {
-  const { candidateId } = useParams();
+  const { candidateId, id, branchName } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [adminNotes, setAdminNotes] = useState("");
@@ -161,7 +161,11 @@ const ApplicationDetailsPage = () => {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center">
-          <Button variant="outline" onClick={() => navigate(-1)} className="mr-4">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate(`/branch-dashboard/${id}/${branchName}`, { state: { activeTab: 'recruitment' } })} 
+            className="mr-4"
+          >
             <ChevronLeft className="h-4 w-4 mr-1" />
             Back to Recruitment
           </Button>
