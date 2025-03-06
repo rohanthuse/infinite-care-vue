@@ -25,7 +25,7 @@ const FormMatrix = () => {
       }
     } else {
       if (value === "workflow") {
-        navigate(`/workflow/form-matrix`);
+        navigate(`/workflow`);
       } else if (value === "task-matrix" || value === "training-matrix" || value === "form-matrix") {
         navigate(`/workflow/${value}`);
       } else {
