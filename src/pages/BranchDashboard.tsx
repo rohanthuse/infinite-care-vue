@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -9,7 +8,9 @@ import {
   ChevronRight, Home, ArrowUpRight,
   Phone, Mail, MapPin, Plus, Clock7,
   RefreshCw, Download, Filter, 
-  ClipboardCheck, ThumbsUp, ArrowUp, ArrowDown
+  ClipboardCheck, ThumbsUp, ArrowUp, ArrowDown,
+  ChevronDown, Edit, EyeIcon, HelpCircle,
+  CalendarIcon, ChevronLeft
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,29 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, Legend, LineChart,
@@ -67,12 +91,97 @@ const serviceData = [
   { name: "Therapy", usage: 9 },
 ];
 
+const clients = [
+  {
+    id: "CL-3421",
+    name: "Wendy Smith",
+    email: "wendysmith@gmail.com",
+    phone: "+44 20 7946 0587",
+    company: "Personal",
+    status: "Active",
+    avatar: "WS",
+  },
+  {
+    id: "CL-2356",
+    name: "John Michael",
+    email: "john.michael@hotmail.com",
+    phone: "+44 20 7946 1122",
+    company: "Personal",
+    status: "Inactive",
+    avatar: "JM",
+  },
+  {
+    id: "CL-9876",
+    name: "Lisa Rodrigues",
+    email: "lisa.rod@outlook.com",
+    phone: "+44 20 7946 3344",
+    company: "Care Solutions Ltd",
+    status: "Active",
+    avatar: "LR",
+  },
+  {
+    id: "CL-5432",
+    name: "Kate Williams",
+    email: "kate.w@company.co.uk",
+    phone: "+44 20 7946 5566",
+    company: "Personal",
+    status: "Pending",
+    avatar: "KW",
+  },
+  {
+    id: "CL-7890",
+    name: "Robert Johnson",
+    email: "r.johnson@gmail.com",
+    phone: "+44 20 7946 7788",
+    company: "Eldercare Services",
+    status: "Active",
+    avatar: "RJ",
+  },
+];
+
 const BranchDashboard = () => {
   const { id, branchName } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [searchValue, setSearchValue] = useState("");
+  const [clientSearchValue, setClientSearchValue] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [regionFilter, setRegionFilter] = useState("all");
+  const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
+  const [toDate, setToDate] = useState<Date | undefined>(undefined);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  
   const displayBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
+  
+  const filteredClients = clients.filter(client => {
+    const matchesSearch = 
+      client.name.toLowerCase().includes(clientSearchValue.toLowerCase()) ||
+      client.email.toLowerCase().includes(clientSearchValue.toLowerCase()) ||
+      client.id.toLowerCase().includes(clientSearchValue.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || client.status.toLowerCase() === statusFilter.toLowerCase();
+    
+    return matchesSearch && matchesStatus;
+  });
+  
+  const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
+  const paginatedClients = filteredClients.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+  
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+  
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
@@ -539,7 +648,219 @@ const BranchDashboard = () => {
             </>
           )}
           
-          {activeTab !== "dashboard" && (
+          {activeTab === "clients" && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-20 md:mb-0">
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-800">Clients</h2>
+                    <p className="text-gray-500 text-sm mt-1">
+                      Manage all registered clients, view their details, and take administrative actions
+                    </p>
+                  </div>
+                  <Button className="bg-blue-600 hover:bg-blue-700 md:w-auto w-full">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Client
+                  </Button>
+                </div>
+                
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-5 gap-4">
+                  <div className="md:col-span-2 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input 
+                      placeholder="Search client name, email or ID" 
+                      className="pl-10"
+                      value={clientSearchValue}
+                      onChange={(e) => setClientSearchValue(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Select 
+                      value={statusFilter}
+                      onValueChange={setStatusFilter}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Select value={regionFilter} onValueChange={setRegionFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Regions" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="all">All Regions</SelectItem>
+                          <SelectItem value="north">North</SelectItem>
+                          <SelectItem value="south">South</SelectItem>
+                          <SelectItem value="east">East</SelectItem>
+                          <SelectItem value="west">West</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <div className="flex-1">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {fromDate ? format(fromDate, "dd/MM/yyyy") : "From date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={fromDate}
+                            onSelect={setFromDate}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    
+                    <div className="flex-1">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {toDate ? format(toDate, "dd/MM/yyyy") : "To date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={toDate}
+                            onSelect={setToDate}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">Client ID</TableHead>
+                      <TableHead>Client Name</TableHead>
+                      <TableHead>Email Address</TableHead>
+                      <TableHead>Contact Number</TableHead>
+                      <TableHead>Company</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedClients.length > 0 ? (
+                      paginatedClients.map((client) => (
+                        <TableRow key={client.id} className="hover:bg-gray-50">
+                          <TableCell className="font-medium">{client.id}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm">
+                                {client.avatar}
+                              </div>
+                              <span>{client.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{client.email}</TableCell>
+                          <TableCell>{client.phone}</TableCell>
+                          <TableCell>{client.company}</TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant="outline" 
+                              className={`
+                                ${client.status === "Active" ? "bg-green-50 text-green-700 border-green-200" : ""}
+                                ${client.status === "Inactive" ? "bg-gray-50 text-gray-700 border-gray-200" : ""}
+                                ${client.status === "Pending" ? "bg-amber-50 text-amber-700 border-amber-200" : ""}
+                              `}
+                            >
+                              {client.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <EyeIcon className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <HelpCircle className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                          No clients found matching your search criteria.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {paginatedClients.length > 0 && (
+                <div className="flex items-center justify-between p-4 border-t border-gray-100">
+                  <div className="text-sm text-gray-500">
+                    Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredClients.length)} of {filteredClients.length} clients
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handlePreviousPage}
+                      disabled={currentPage === 1}
+                      className="h-8"
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" />
+                      Previous
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleNextPage}
+                      disabled={currentPage === totalPages}
+                      className="h-8"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {activeTab !== "dashboard" && activeTab !== "clients" && (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center mb-20 md:mb-0">
               <h2 className="text-xl font-medium text-gray-700 mb-2">
                 {activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace(/-/g, ' ')} Page
