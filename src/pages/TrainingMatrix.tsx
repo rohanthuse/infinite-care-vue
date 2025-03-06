@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { TabNavigation } from "@/components/TabNavigation";
 import { BranchHeader } from "@/components/BranchHeader";
@@ -67,23 +68,25 @@ const trainingData = [
 ];
 
 const TrainingMatrix = () => {
-  const [activeTab, setActiveTab] = useState("training-matrix");
+  const location = useLocation();
   const { id, branchName } = useParams();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+  
+  const activeTab = location.pathname.includes("training-matrix") ? "training-matrix" : "dashboard";
   
   const filteredData = trainingData.filter(
     staff => staff.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleChangeTab = (value: string) => {
-    setActiveTab(value);
-    
     if (id && branchName) {
-      // Branch context navigation
-      navigate(`/branch-dashboard/${id}/${branchName}/${value === "dashboard" ? "" : value}`);
+      if (value === "dashboard") {
+        navigate(`/branch-dashboard/${id}/${branchName}`);
+      } else {
+        navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
+      }
     } else {
-      // Global context navigation
       if (value.includes("matrix") || value === "workflow") {
         navigate(`/workflow/${value}`);
       } else {

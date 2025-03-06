@@ -29,11 +29,15 @@ import TrainingMatrix from "./pages/TrainingMatrix";
 import FormMatrix from "./pages/FormMatrix";
 import { useState } from "react";
 
-// Create a wrapper component for the redirection
+// Redirect components for consistent routing
 const FormsToFormMatrixRedirect = () => {
   const location = useLocation();
   const redirectTo = location.pathname.replace('/forms', '/form-matrix');
   return <Navigate to={redirectTo} />;
+};
+
+const WorkflowRedirect = () => {
+  return <Navigate to="/workflow/task-matrix" />;
 };
 
 function App() {
@@ -65,9 +69,15 @@ function App() {
             <Route path="/branch-admins" element={<BranchAdmins />} />
             
             {/* Global workflow routes */}
+            <Route path="/workflow" element={<WorkflowRedirect />} />
             <Route path="/workflow/task-matrix" element={<TaskMatrix />} />
             <Route path="/workflow/training-matrix" element={<TrainingMatrix />} />
             <Route path="/workflow/form-matrix" element={<FormMatrix />} />
+            
+            {/* Direct access to matrix pages from root */}
+            <Route path="/task-matrix" element={<Navigate to="/workflow/task-matrix" />} />
+            <Route path="/training-matrix" element={<Navigate to="/workflow/training-matrix" />} />
+            <Route path="/form-matrix" element={<Navigate to="/workflow/form-matrix" />} />
             
             {/* Branch-specific routes */}
             <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
