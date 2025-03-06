@@ -7,7 +7,9 @@ import { BookingFilters } from "./BookingFilters";
 import { BookingTimeGrid, Client, Carer, Booking } from "./BookingTimeGrid";
 import { BookingsList } from "./BookingsList";
 import { BookingReport } from "./BookingReport";
+import { NewBookingDialog } from "./NewBookingDialog";
 import { toast } from "sonner";
+
 const mockClients: Client[] = [{
   id: "CL-001",
   name: "Pender, Eva",
@@ -59,6 +61,7 @@ const mockClients: Client[] = [{
   initials: "TE",
   bookingCount: 2
 }];
+
 const mockCarers: Carer[] = [{
   id: "CA-001",
   name: "Charuma, Charmaine",
@@ -110,6 +113,7 @@ const mockCarers: Carer[] = [{
   initials: "MJ",
   bookingCount: 2
 }];
+
 const mockBookings: Booking[] = [{
   id: "BK-001",
   clientId: "CL-001",
@@ -211,9 +215,11 @@ const mockBookings: Booking[] = [{
   date: new Date().toISOString().split('T')[0],
   status: "assigned"
 }];
+
 interface BookingsTabProps {
   branchId: string;
 }
+
 export const BookingsTab: React.FC<BookingsTabProps> = ({
   branchId
 }) => {
@@ -224,6 +230,8 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   const [viewMode, setViewMode] = useState<"client" | "group">("client");
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["assigned", "in-progress"]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [newBookingDialogOpen, setNewBookingDialogOpen] = useState<boolean>(false);
+
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
     const additionalBookings: Booking[] = [{
@@ -285,6 +293,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     }];
     mockBookings.push(...additionalBookings);
   }, []);
+
   const handleRefresh = () => {
     setIsLoading(true);
     setTimeout(() => {
@@ -292,11 +301,38 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       toast.success("Bookings refreshed successfully");
     }, 800);
   };
+
   const handleNewBooking = () => {
-    toast.success("New booking function triggered", {
-      description: "This feature will be implemented soon"
-    });
+    setNewBookingDialogOpen(true);
   };
+
+  const handleCreateBooking = (bookingData: any) => {
+    console.log("Creating new booking:", bookingData);
+    
+    const newId = `BK-${Math.floor(Math.random() * 9000) + 1000}`;
+    
+    const selectedClient = mockClients.find(c => c.id === bookingData.clientId);
+    const selectedCarer = mockCarers.find(c => c.id === bookingData.carerId);
+    
+    if (selectedClient && selectedCarer) {
+      const newBooking: Booking = {
+        id: newId,
+        clientId: selectedClient.id,
+        clientName: selectedClient.name,
+        clientInitials: selectedClient.initials,
+        carerId: selectedCarer.id,
+        carerName: selectedCarer.name,
+        startTime: bookingData.startTime,
+        endTime: bookingData.endTime,
+        date: bookingData.date.toISOString().split('T')[0],
+        status: "assigned",
+        notes: bookingData.notes || undefined
+      };
+      
+      mockBookings.push(newBooking);
+    }
+  };
+
   return <div className="space-y-4">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -321,7 +357,14 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
             
-            
+            <Button 
+              onClick={handleNewBooking}
+              variant="default" 
+              className="h-9 bg-blue-600 hover:bg-blue-700 rounded-full px-3 shadow-sm"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              <span>New Booking</span>
+            </Button>
           </div>
         </div>
       </div>
@@ -335,5 +378,13 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       {activeTab === "list" && <BookingsList bookings={mockBookings} />}
 
       {activeTab === "report" && <BookingReport bookings={mockBookings} />}
+      
+      <NewBookingDialog 
+        open={newBookingDialogOpen}
+        onOpenChange={setNewBookingDialogOpen}
+        clients={mockClients}
+        carers={mockCarers}
+        onCreateBooking={handleCreateBooking}
+      />
     </div>;
 };
