@@ -8,7 +8,7 @@ import {
   Activity, Briefcase, PanelLeft, Paperclip,
   ChevronDown, Menu, Search, Grid, Plus,
   UserPlus2, FileSignature, CalendarPlus, Contact, UserRoundPlus,
-  CheckSquare, ClipboardList, FileSpreadsheet, ListChecks
+  CheckSquare, ClipboardList, FileSpreadsheet, ListChecks, Clipboard
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -66,7 +66,7 @@ const secondaryTabGroups = [
       { icon: DollarSign, label: "Accounting", value: "accounting", description: "Financial management" },
       { icon: FileText, label: "Agreements", value: "agreements", description: "Legal documents" },
       { icon: Bell, label: "Events & Logs", value: "events-logs", description: "Activity tracking" },
-      { icon: ClipboardCheck, label: "Attendance", value: "attendance", description: "Staff attendance" },
+      { icon: Clipboard, label: "Attendance", value: "attendance", description: "Staff attendance" },
     ]
   },
   {
