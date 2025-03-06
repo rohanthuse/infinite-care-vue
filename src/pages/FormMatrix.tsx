@@ -74,15 +74,15 @@ const FormMatrix = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("all");
   
-  // Always set activeTab to "workflow" for matrix pages
-  const activeTab = "workflow";
+  // Set activeTab to "form-matrix" instead of "workflow"
+  const activeTab = "form-matrix";
 
   const handleChangeTab = (value: string) => {
     if (id && branchName) {
       if (value === "dashboard") {
         navigate(`/branch-dashboard/${id}/${branchName}`);
       } else if (value === "workflow") {
-        navigate(`/branch-dashboard/${id}/${branchName}/form-matrix`);
+        navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
       } else if (value === "task-matrix" || value === "training-matrix" || value === "form-matrix") {
         navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
       } else {

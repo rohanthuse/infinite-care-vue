@@ -73,8 +73,8 @@ const TrainingMatrix = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Always set activeTab to "workflow" for matrix pages
-  const activeTab = "workflow";
+  // Set activeTab to "training-matrix" instead of "workflow"
+  const activeTab = "training-matrix";
   
   const filteredData = trainingData.filter(
     staff => staff.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -85,7 +85,7 @@ const TrainingMatrix = () => {
       if (value === "dashboard") {
         navigate(`/branch-dashboard/${id}/${branchName}`);
       } else if (value === "workflow") {
-        navigate(`/branch-dashboard/${id}/${branchName}/training-matrix`);
+        navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
       } else if (value === "task-matrix" || value === "training-matrix" || value === "form-matrix") {
         navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
       } else {
@@ -93,7 +93,7 @@ const TrainingMatrix = () => {
       }
     } else {
       if (value === "workflow") {
-        navigate(`/workflow/training-matrix`);
+        navigate(`/workflow`);
       } else if (value === "task-matrix" || value === "training-matrix" || value === "form-matrix") {
         navigate(`/workflow/${value}`);
       } else {
