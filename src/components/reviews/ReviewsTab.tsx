@@ -41,7 +41,7 @@ const mockReviews: Review[] = [
   },
 ];
 
-const ReviewsTab = () => {
+export const ReviewsTab = () => {
   const { toast } = useToast();
 
   const handleConfirmReview = (reviewId: string) => {

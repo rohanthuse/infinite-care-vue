@@ -19,7 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import { TabNavigation } from "@/components/TabNavigation";
 import { BookingsTab } from "@/components/bookings/BookingsTab";
 import { CarersTab } from "@/components/carers/CarersTab";
-import { ReviewsTab } from "@/components/reviews/ReviewsTab";
+// Import ReviewsTab as a default import
+import ReviewsTab from "@/components/reviews/ReviewsTab";
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { NewBookingDialog } from "@/components/bookings/NewBookingDialog";
 import {
@@ -1048,11 +1049,11 @@ const BranchDashboard = () => {
           )}
           
           {activeTab === "bookings" && (
-            <BookingsTab />
+            <BookingsTab branchId={id || ""} />
           )}
           
           {activeTab === "carers" && (
-            <CarersTab />
+            <CarersTab branchId={id || ""} />
           )}
           
           {activeTab === "reviews" && (
