@@ -22,6 +22,28 @@ import ReviewsTab from "@/components/reviews/ReviewsTab";
 import CommTab from "@/components/communications/CommTab";
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { NewBookingDialog } from "@/components/bookings/NewBookingDialog";
+import { format } from "date-fns";
+import { 
+  Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter 
+} from "@/components/ui/card";
+import {
+  Table, TableHeader, TableBody, TableHead, TableRow, TableCell, TableCaption
+} from "@/components/ui/table";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select";
+import {
+  Popover, PopoverContent, PopoverTrigger
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { 
+  BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line,
+  ResponsiveContainer, PieChart, Pie, AreaChart, Area
+} from "recharts";
+import DashboardStat from "@/components/dashboard/DashboardStat";
+import { BookingItem } from "@/components/bookings/BookingItem";
+import { ReviewItem } from "@/components/reviews/ReviewItem";
+import { ActionItem } from "@/components/dashboard/ActionItem";
 
 const weeklyData = [
   { day: "Mon", visits: 12, bookings: 8, revenue: 780 },
