@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
@@ -57,18 +57,30 @@ function App() {
             <Route path="/branch-details/:id" element={<BranchDetails />} />
             <Route path="/branch-admins" element={<BranchAdmins />} />
             
+            {/* Global workflow routes */}
+            <Route path="/workflow/task-matrix" element={<TaskMatrix />} />
+            <Route path="/workflow/training-matrix" element={<TrainingMatrix />} />
+            <Route path="/workflow/form-matrix" element={<FormMatrix />} />
+            
+            {/* Branch-specific routes */}
             <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
             <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
             <Route path="/branch-dashboard/:id/:branchName/notifications" element={<Notifications />} />
             <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
-            <Route path="/workflow/task-matrix" element={<TaskMatrix />} />
+            
+            {/* Branch workflow routes */}
             <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
-            <Route path="/workflow/training-matrix" element={<TrainingMatrix />} />
             <Route path="/branch-dashboard/:id/:branchName/training-matrix" element={<TrainingMatrix />} />
-            <Route path="/workflow/form-matrix" element={<FormMatrix />} />
             <Route path="/branch-dashboard/:id/:branchName/form-matrix" element={<FormMatrix />} />
+            
+            {/* Redirect old form route format to the new one */}
+            <Route 
+              path="/branch-dashboard/:id/:branchName/forms" 
+              element={<Navigate to={pathname => pathname.replace('/forms', '/form-matrix')} />} 
+            />
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

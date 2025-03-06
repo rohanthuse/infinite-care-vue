@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { 
-  LayoutDashboard, Workflow, ListChecks, Users, 
+  LayoutDashboard, Workflow, Users, 
   Calendar, Star, MessageSquare, Pill, DollarSign, 
-  FileText, ClipboardCheck, Bell, ClipboardList, 
+  FileText, ClipboardCheck, Bell, 
   FileUp, Folder, UserPlus, BarChart4, Settings, 
   Activity, Briefcase, PanelLeft, Paperclip,
   ChevronDown, Menu, Search, Grid, Plus,
-  UserPlus2, FileSignature, CalendarPlus, Contact, UserRoundPlus
+  UserPlus2, FileSignature, CalendarPlus, Contact, UserRoundPlus,
+  CheckSquare, FileCheck, ClipboardList, FileSpreadsheet
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -51,10 +52,10 @@ const secondaryTabGroups = [
     label: "Operations",
     items: [
       { icon: Workflow, label: "Workflow", value: "workflow", description: "Process management" },
-      { icon: ListChecks, label: "Task Matrix", value: "task-matrix", description: "Compliance tracking", path: "task-matrix" },
-      { icon: ListChecks, label: "Training Matrix", value: "training-matrix", description: "Training tracking", path: "training-matrix" },
+      { icon: CheckSquare, label: "Task Matrix", value: "task-matrix", description: "Compliance tracking", path: "task-matrix" },
+      { icon: CheckSquare, label: "Training Matrix", value: "training-matrix", description: "Training tracking", path: "training-matrix" },
       { icon: FileText, label: "Form Matrix", value: "form-matrix", description: "Form tracking", path: "form-matrix" },
-      { icon: ListChecks, label: "Key Parameters", value: "parameters", description: "Track metrics" },
+      { icon: CheckSquare, label: "Key Parameters", value: "parameters", description: "Track metrics" },
       { icon: Pill, label: "Medication", value: "medication", description: "Medicine tracking" },
       { icon: ClipboardList, label: "Care Plan", value: "care-plan", description: "Patient care plans" },
     ]

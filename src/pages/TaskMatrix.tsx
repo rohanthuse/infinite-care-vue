@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { TabNavigation } from "@/components/TabNavigation";
 import { BranchHeader } from "@/components/BranchHeader";
@@ -97,6 +97,7 @@ const TaskMatrix = () => {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const { id, branchName } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const filteredData = mockData.filter(row => 
     row.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -188,58 +189,12 @@ const TaskMatrix = () => {
     setActiveTab(value);
     
     if (id && branchName) {
-      switch (value) {
-        case "dashboard":
-          navigate(`/branch-dashboard/${id}/${branchName}`);
-          break;
-        case "bookings":
-          navigate(`/branch-dashboard/${id}/${branchName}/bookings`);
-          break;
-        case "clients":
-          navigate(`/branch-dashboard/${id}/${branchName}/clients`);
-          break;
-        case "carers":
-          navigate(`/branch-dashboard/${id}/${branchName}/carers`);
-          break;
-        case "reviews":
-          navigate(`/branch-dashboard/${id}/${branchName}/reviews`);
-          break;
-        case "communication":
-          navigate(`/branch-dashboard/${id}/${branchName}/communication`);
-          break;
-        case "workflow":
-          navigate(`/branch-dashboard/${id}/${branchName}/workflow`);
-          break;
-        case "task-matrix":
-          navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
-          break;
-        case "training-matrix":
-          navigate(`/branch-dashboard/${id}/${branchName}/training-matrix`);
-          break;
-        case "form-matrix":
-          navigate(`/branch-dashboard/${id}/${branchName}/form-matrix`);
-          break;
-        case "notifications":
-          navigate(`/branch-dashboard/${id}/${branchName}/notifications`);
-          break;
-        default:
-          navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
-          break;
-      }
+      navigate(`/branch-dashboard/${id}/${branchName}/${value === "dashboard" ? "" : value}`);
     } else {
-      switch (value) {
-        case "task-matrix":
-          navigate("/workflow/task-matrix");
-          break;
-        case "training-matrix":
-          navigate("/workflow/training-matrix");
-          break;
-        case "form-matrix":
-          navigate("/workflow/form-matrix");
-          break;
-        default:
-          navigate(`/${value}`);
-          break;
+      if (value.includes("matrix") || value === "workflow") {
+        navigate(`/workflow/${value}`);
+      } else {
+        navigate(`/${value}`);
       }
     }
   };
