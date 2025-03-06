@@ -1,3 +1,4 @@
+
 import { ArrowUpDown, MoreHorizontal, Search, ChevronLeft, ChevronRight, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -104,7 +105,7 @@ export function AdminsTable() {
           <Button 
             variant="default" 
             size="sm" 
-            className="flex items-center bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full px-6"
+            className="flex items-center hover:bg-blue-700 text-white font-medium rounded-full px-6"
             onClick={() => setShowAddAdminModal(true)}
           >
             <UserPlus className="h-4 w-4 mr-2" /> New Admin

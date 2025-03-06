@@ -47,7 +47,7 @@ export function AddWorkTypeDialog({ onAdd }: AddWorkTypeDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 rounded-full">
+        <Button className="hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 rounded-full">
           <Plus className="mr-1.5 h-4 w-4" /> New Type of Work
         </Button>
       </DialogTrigger>
@@ -77,7 +77,7 @@ export function AddWorkTypeDialog({ onAdd }: AddWorkTypeDialogProps) {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Button type="submit" className="hover:bg-blue-700 text-white">
               Add Work Type
             </Button>
           </DialogFooter>
