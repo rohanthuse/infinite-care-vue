@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { 
   X, Send, Clock, ChevronDown, Save, BadgeCheck, Building2, 
-  FileUp, Mail, Phone, User, Users, Bell
+  FileUp, Mail, Phone, User, Users, Bell, FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
+import { Paperclip } from "lucide-react";
 
 // Mocked data - would come from an API
 const mockCarers = [
@@ -58,7 +59,7 @@ export const MessageComposer = ({
   const [recipients, setRecipients] = useState<string[]>([]);
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [files, setFiles] = useState<File[]>([]);
-  const [messageType, setMessageType] = useState("");
+  const [messageType, setMessageType("");
   const [branchAdmin, setBranchAdmin] = useState("");
   const [staff, setStaff] = useState("");
   const [client, setClient] = useState("");
@@ -147,13 +148,18 @@ export const MessageComposer = ({
   };
   
   const handleSendMessage = () => {
+    if (!messageType.trim()) {
+      toast.error("Please select a message type");
+      return;
+    }
+
     if (!subject.trim()) {
       toast.error("Please enter a subject");
       return;
     }
     
     if (!content.trim()) {
-      toast.error("Please enter a message");
+      toast.error("Please enter message details");
       return;
     }
     
@@ -164,17 +170,17 @@ export const MessageComposer = ({
     
     // Send the message (would go to API)
     console.log("Sending message:", {
+      type: messageType,
       subject,
       content,
       recipients,
-      priority
+      priority,
+      adminEyesOnly,
+      actionRequired,
+      notificationMethods
     });
     
-    toast.success("Message sent successfully", {
-      description: `Your message has been sent to ${recipients.length} recipient(s).`
-    });
-    
-    // Close the composer
+    toast.success("Message sent successfully");
     onClose();
   };
   
@@ -207,11 +213,16 @@ export const MessageComposer = ({
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-        <div className="flex items-center">
-          <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={onClose}>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
           <h2 className="text-lg font-semibold">New Message</h2>
+          {adminEyesOnly && (
+            <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">
+              Admin Eyes Only
+            </Badge>
+          )}
         </div>
         
         <div className="flex items-center gap-2">
@@ -242,15 +253,21 @@ export const MessageComposer = ({
       
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-4">
-          {/* Message Type */}
           <div>
             <Label htmlFor="type" className="block text-sm font-medium mb-1">Type *</Label>
-            <Input
+            <select
               id="type"
               value={messageType}
               onChange={(e) => setMessageType(e.target.value)}
+              className="w-full rounded-md border border-gray-300 p-2"
               required
-            />
+            >
+              <option value="">Select Type</option>
+              <option value="incident">Incident Report</option>
+              <option value="shift">Shift Update</option>
+              <option value="general">General Communication</option>
+              <option value="emergency">Emergency</option>
+            </select>
           </div>
 
           {/* Recipients Fields */}
@@ -281,18 +298,20 @@ export const MessageComposer = ({
             />
           </div>
 
-          {/* Subject Field */}
           <div>
-            <Label htmlFor="subject" className="block text-sm font-medium mb-1">Subject</Label>
+            <Label htmlFor="subject" className="block text-sm font-medium mb-1">Subject *</Label>
             <Input
               id="subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
+              placeholder={messageType === "incident" ? "Incident Report - Brief Description" : "Enter subject"}
+              className="w-full"
+              required
             />
           </div>
 
-          {/* Rich Text Editor */}
           <div>
+            <Label htmlFor="content" className="block text-sm font-medium mb-1">Details *</Label>
             <div className="mb-2 flex items-center gap-2 border border-gray-200 p-2 rounded-t-md bg-gray-50">
               <select 
                 value={fontFamily}
@@ -341,13 +360,17 @@ export const MessageComposer = ({
                 U
               </Button>
             </div>
-
             <Textarea
+              id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Type your message here..."
+              placeholder={messageType === "incident" ? 
+                "Please provide:\n- Detailed description of the incident\n- Time and date\n- People involved\n- Actions taken\n- Resolution\n- Next steps" : 
+                "Type your message here..."
+              }
               className={cn(
-                "min-h-[200px] font-[" + fontFamily + "]",
+                "min-h-[200px]",
+                "font-[" + fontFamily + "]",
                 "text-[" + fontSize + "]",
                 isBold && "font-bold",
                 isItalic && "italic",
@@ -356,16 +379,15 @@ export const MessageComposer = ({
             />
           </div>
 
-          {/* File Upload */}
           <div>
-            <Label className="block text-sm font-medium mb-1">File</Label>
+            <Label className="block text-sm font-medium mb-1">Attachments</Label>
             <div 
               className="border-2 border-dashed border-gray-300 rounded-md p-4"
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleFileDrop}
             >
               <div className="text-center">
-                <FileUp className="mx-auto h-8 w-8 text-gray-400" />
+                <FileText className="mx-auto h-8 w-8 text-gray-400" />
                 <p className="mt-1 text-sm text-gray-600">
                   Drop files here to upload or
                 </p>
@@ -465,7 +487,7 @@ export const MessageComposer = ({
         <div className="flex items-center justify-between">
           <div>
             <Button variant="outline" size="sm" className="mr-2">
-              <Paperclip className="h-4 w-4 mr-2" />
+              <FileText className="h-4 w-4 mr-2" />
               <span>Attach</span>
             </Button>
           </div>
