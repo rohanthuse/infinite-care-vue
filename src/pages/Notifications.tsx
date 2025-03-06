@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -243,7 +244,7 @@ const Notifications = () => {
           </>
         )}
         
-        <TabNavigation activeTab={tab} onChange={handleNavigationChange} />
+        <TabNavigation activeTab={tab} onChange={handleNavigationChange} hideQuickAdd={true} />
         
         <div className="mt-8">
           <div className="mb-6 flex flex-col space-y-2">
