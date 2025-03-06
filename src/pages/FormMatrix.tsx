@@ -4,7 +4,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { TabNavigation } from "@/components/TabNavigation";
 import { BranchHeader } from "@/components/BranchHeader";
-// Include any other imports that the component needs
+import { FileText } from "lucide-react";
 
 const FormMatrix = () => {
   const [activeTab, setActiveTab] = useState("form-matrix");
@@ -33,11 +33,13 @@ const FormMatrix = () => {
       <DashboardHeader />
       
       <main className="flex-1 container mx-auto px-4 py-6">
-        <BranchHeader 
-          id={id} 
-          branchName={branchName} 
-          onNewBooking={() => {}}
-        />
+        {id && branchName && (
+          <BranchHeader 
+            id={id} 
+            branchName={branchName} 
+            onNewBooking={() => {}}
+          />
+        )}
         
         <TabNavigation 
           activeTab={activeTab} 
@@ -52,8 +54,12 @@ const FormMatrix = () => {
             </div>
           </div>
           
-          <div className="p-8 text-center text-gray-500">
-            Form Matrix content will be implemented soon
+          <div className="p-8 bg-white rounded-lg border border-gray-200 shadow-sm text-center">
+            <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-700 mb-2">Form Matrix</h3>
+            <p className="text-gray-500 max-w-md mx-auto">
+              Form Matrix content will be implemented soon. This page will display client form completion and documentation status.
+            </p>
           </div>
         </div>
       </main>
