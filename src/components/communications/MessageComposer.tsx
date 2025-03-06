@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Paperclip } from "lucide-react";
 
-// Mocked data - would come from an API
 const mockCarers = [
   { id: "carer-1", name: "Charuma, Charmaine", avatar: "CC", type: "carer" },
   { id: "carer-2", name: "Warren, Susan", avatar: "WS", type: "carer" },
@@ -59,7 +58,7 @@ export const MessageComposer = ({
   const [recipients, setRecipients] = useState<string[]>([]);
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [files, setFiles] = useState<File[]>([]);
-  const [messageType, setMessageType("");
+  const [messageType, setMessageType] = useState("");
   const [branchAdmin, setBranchAdmin] = useState("");
   const [staff, setStaff] = useState("");
   const [client, setClient] = useState("");
@@ -71,13 +70,6 @@ export const MessageComposer = ({
     otherEmail: false
   });
 
-  // Font formatting state
-  const [fontFamily, setFontFamily] = useState("Sans Serif");
-  const [fontSize, setFontSize] = useState("14px");
-  const [isBold, setIsBold] = useState(false);
-  const [isItalic, setIsItalic] = useState(false);
-  const [isUnderline, setIsUnderline] = useState(false);
-
   const [showContactSelector, setShowContactSelector] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<{
     carers: string[];
@@ -86,8 +78,7 @@ export const MessageComposer = ({
     carers: [],
     clients: []
   });
-  
-  // Set initial recipients if a contact is selected
+
   useEffect(() => {
     if (selectedContactId) {
       const isCarer = mockCarers.some(carer => carer.id === selectedContactId);
@@ -108,7 +99,7 @@ export const MessageComposer = ({
       setRecipients([selectedContactId]);
     }
   }, [selectedContactId]);
-  
+
   const handleApplyTemplate = (templateId: string) => {
     const template = mockTemplates.find(t => t.id === templateId);
     if (template) {
@@ -118,7 +109,7 @@ export const MessageComposer = ({
       });
     }
   };
-  
+
   const handleContactToggle = (contactId: string, contactType: "carers" | "clients") => {
     setSelectedContacts(prev => {
       const newSelected = { ...prev };
@@ -130,13 +121,13 @@ export const MessageComposer = ({
       return newSelected;
     });
   };
-  
+
   const handleApplyContacts = () => {
     const allSelectedIds = [...selectedContacts.carers, ...selectedContacts.clients];
     setRecipients(allSelectedIds);
     setShowContactSelector(false);
   };
-  
+
   const getContactDetails = (contactId: string) => {
     const carer = mockCarers.find(c => c.id === contactId);
     if (carer) return carer;
@@ -146,7 +137,7 @@ export const MessageComposer = ({
     
     return null;
   };
-  
+
   const handleSendMessage = () => {
     if (!messageType.trim()) {
       toast.error("Please select a message type");
@@ -168,7 +159,6 @@ export const MessageComposer = ({
       return;
     }
     
-    // Send the message (would go to API)
     console.log("Sending message:", {
       type: messageType,
       subject,
@@ -183,12 +173,12 @@ export const MessageComposer = ({
     toast.success("Message sent successfully");
     onClose();
   };
-  
+
   const handleSaveAsDraft = () => {
     toast.success("Message saved as draft");
     onClose();
   };
-  
+
   const handleScheduleSend = () => {
     toast.info("Schedule sending feature coming soon");
   };
@@ -270,7 +260,6 @@ export const MessageComposer = ({
             </select>
           </div>
 
-          {/* Recipients Fields */}
           <div>
             <Label htmlFor="branchAdmin" className="block text-sm font-medium mb-1">Branch Admin</Label>
             <Input
@@ -412,7 +401,6 @@ export const MessageComposer = ({
             </div>
           </div>
 
-          {/* Additional Options */}
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
               <Checkbox 
@@ -433,7 +421,6 @@ export const MessageComposer = ({
             </div>
           </div>
 
-          {/* Notification Methods */}
           <div>
             <Label className="block text-sm font-medium mb-2">Send Notification By:</Label>
             <div className="space-y-2">
