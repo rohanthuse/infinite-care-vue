@@ -38,18 +38,21 @@ export function DashboardHeader() {
           </h2>
         </div>
         
-        {/* Search and Notification in Desktop view */}
-        <div className="hidden md:flex items-center gap-3">
-          <div className="relative">
+        {/* Search in center for desktop view */}
+        <div className="hidden md:flex items-center justify-center flex-1 mx-4">
+          <div className="relative max-w-md w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input 
               placeholder="Search..." 
-              className="pl-10 pr-4 py-2 rounded-full bg-white border-gray-200 w-[200px] focus:w-[300px] transition-all duration-300"
+              className="pl-10 pr-4 py-2 rounded-full bg-white border-gray-200 w-full transition-all duration-300"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
             />
           </div>
-          
+        </div>
+        
+        {/* Bell notification on right for desktop view */}
+        <div className="hidden md:flex items-center">
           <Button 
             variant="outline" 
             size="icon" 
