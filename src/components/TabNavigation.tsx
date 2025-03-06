@@ -90,9 +90,10 @@ interface TabNavigationProps {
   activeTab: string;
   onChange: (value: string) => void;
   hideActionsOnMobile?: boolean;
+  hideQuickAdd?: boolean; // New prop to control Quick Add button visibility
 }
 
-export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false }: TabNavigationProps) => {
+export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false, hideQuickAdd = false }: TabNavigationProps) => {
   const allTabs = [...primaryTabs, ...secondaryTabs];
   const activeTabObject = allTabs.find(tab => tab.value === activeTab);
   const [searchTerm, setSearchTerm] = useState("");
@@ -124,37 +125,39 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                 <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
               </Button>
               
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="default" 
-                    size="sm" 
-                    className="rounded-full bg-blue-600 hover:bg-blue-700 h-9 w-9 p-0"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleQuickAddAction("New Client")} className="cursor-pointer">
-                    <UserPlus2 className="mr-2 h-4 w-4" />
-                    <span>New Client</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleQuickAddAction("New Booking")} className="cursor-pointer">
-                    <CalendarPlus className="mr-2 h-4 w-4" />
-                    <span>New Booking</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleQuickAddAction("New Agreement")} className="cursor-pointer">
-                    <FileSignature className="mr-2 h-4 w-4" />
-                    <span>New Agreement</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleQuickAddAction("New Staff")} className="cursor-pointer">
-                    <UserRoundPlus className="mr-2 h-4 w-4" />
-                    <span>New Staff</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {!hideQuickAdd && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="rounded-full bg-blue-600 hover:bg-blue-700 h-9 w-9 p-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleQuickAddAction("New Client")} className="cursor-pointer">
+                      <UserPlus2 className="mr-2 h-4 w-4" />
+                      <span>New Client</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleQuickAddAction("New Booking")} className="cursor-pointer">
+                      <CalendarPlus className="mr-2 h-4 w-4" />
+                      <span>New Booking</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleQuickAddAction("New Agreement")} className="cursor-pointer">
+                      <FileSignature className="mr-2 h-4 w-4" />
+                      <span>New Agreement</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleQuickAddAction("New Staff")} className="cursor-pointer">
+                      <UserRoundPlus className="mr-2 h-4 w-4" />
+                      <span>New Staff</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         )}
@@ -387,43 +390,45 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="default" 
-                    size="sm" 
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Paperclip className="h-4 w-4 mr-2" />
-                    <span>Quick Add</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleQuickAddAction("New Client")} className="cursor-pointer">
-                    <UserPlus2 className="mr-2 h-4 w-4" />
-                    <span>New Client</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleQuickAddAction("New Booking")} className="cursor-pointer">
-                    <CalendarPlus className="mr-2 h-4 w-4" />
-                    <span>New Booking</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleQuickAddAction("New Agreement")} className="cursor-pointer">
-                    <FileSignature className="mr-2 h-4 w-4" />
-                    <span>New Agreement</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleQuickAddAction("New Staff")} className="cursor-pointer">
-                    <UserRoundPlus className="mr-2 h-4 w-4" />
-                    <span>New Staff</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleQuickAddAction("Upload Document")} className="cursor-pointer">
-                    <FileUp className="mr-2 h-4 w-4" />
-                    <span>Upload Document</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {!hideQuickAdd && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Paperclip className="h-4 w-4 mr-2" />
+                      <span>Quick Add</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleQuickAddAction("New Client")} className="cursor-pointer">
+                      <UserPlus2 className="mr-2 h-4 w-4" />
+                      <span>New Client</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleQuickAddAction("New Booking")} className="cursor-pointer">
+                      <CalendarPlus className="mr-2 h-4 w-4" />
+                      <span>New Booking</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleQuickAddAction("New Agreement")} className="cursor-pointer">
+                      <FileSignature className="mr-2 h-4 w-4" />
+                      <span>New Agreement</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleQuickAddAction("New Staff")} className="cursor-pointer">
+                      <UserRoundPlus className="mr-2 h-4 w-4" />
+                      <span>New Staff</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleQuickAddAction("Upload Document")} className="cursor-pointer">
+                      <FileUp className="mr-2 h-4 w-4" />
+                      <span>Upload Document</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
           

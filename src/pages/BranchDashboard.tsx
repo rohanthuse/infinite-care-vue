@@ -163,7 +163,8 @@ const BranchDashboard = () => {
         <TabNavigation 
           activeTab={activeTab} 
           onChange={(value) => setActiveTab(value)} 
-          hideActionsOnMobile={true} // Add this prop to hide duplicate actions
+          hideActionsOnMobile={true}
+          hideQuickAdd={true} // Hide the Quick Add button on this page
         />
         
         <motion.div 
