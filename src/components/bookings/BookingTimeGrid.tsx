@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BookingEntry } from "./BookingEntry";
@@ -56,6 +55,8 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedCarerId, setSelectedCarerId] = useState<string | null>(null);
   const [showHalfHours, setShowHalfHours] = useState(true);
+  
+  const weeklyGridRef = useRef<HTMLDivElement>(null);
   
   const hourHeight = 60; // height in px for one hour
   
@@ -140,7 +141,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     return hours * hourHeight + (minutes / 60) * hourHeight;
   };
 
-  // Add the missing getCurrentTimePercentage function
   const getCurrentTimePercentage = () => {
     const hours = currentTime.getHours();
     const minutes = currentTime.getMinutes();
@@ -165,6 +165,16 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     const bookingDate = new Date(booking.date);
     return isSameDay(bookingDate, checkDate);
   };
+  
+  useEffect(() => {
+    if (viewType === "weekly" && isToday(date)) {
+      const currentHour = new Date().getHours();
+      if (weeklyGridRef.current) {
+        const scrollTarget = Math.max(0, (currentHour - 2) * hourHeight);
+        weeklyGridRef.current.scrollTop = scrollTarget;
+      }
+    }
+  }, [viewType, date]);
   
   return (
     <div className={`${isFullScreen ? 'booking-fullscreen' : ''} bg-white rounded-lg border border-gray-200 shadow-sm`}>
@@ -335,7 +345,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                     </div>
                   </div>
                   
-                  <div className="weekly-grid mt-1 relative">
+                  <div className="weekly-grid mt-1 relative" ref={weeklyGridRef}>
                     <div className="time-column">
                       {timeSlots.map((time, index) => (
                         <div key={index} className="time-slot">
@@ -516,7 +526,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                     </div>
                   </div>
                   
-                  <div className="weekly-grid mt-1 relative">
+                  <div className="weekly-grid mt-1 relative" ref={weeklyGridRef}>
                     <div className="time-column">
                       {timeSlots.map((time, index) => (
                         <div key={index} className="time-slot">

@@ -1,4 +1,3 @@
-
 /* Grid columns for the time slots */
 .grid-cols-24 {
   grid-template-columns: repeat(24, minmax(0, 1fr));
@@ -81,7 +80,7 @@
   overflow: auto;
 }
 
-/* Time Column */
+/* Time Column - Updated to fix scroll issues */
 .time-column {
   width: 60px;
   min-width: 60px;
@@ -111,12 +110,13 @@
   display: flex;
   flex: 1;
   min-width: 0;
+  overflow-x: auto; /* Allow horizontal scrolling */
 }
 
 /* Day Column */
 .day-column {
   flex: 1;
-  min-width: 100px;
+  min-width: 120px; /* Increased min-width for better display */
   border-right: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
@@ -126,7 +126,7 @@
   background-color: rgba(59, 130, 246, 0.05);
 }
 
-/* Day Header */
+/* Day Header - Updated to fix scroll issues */
 .day-header {
   height: 40px;
   padding: 4px;
