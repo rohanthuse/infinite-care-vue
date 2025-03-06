@@ -432,7 +432,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
           </div>
           
           {activeTabObject && (
-            <div className="text-sm text-gray-500 hidden md:block">
+            <div className="text-sm font-bold text-gray-600 hidden md:block text-base">
               {activeTabObject.description || `View and manage ${activeTabObject.label.toLowerCase()}`}
             </div>
           )}
