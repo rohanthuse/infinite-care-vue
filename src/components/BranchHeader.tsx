@@ -1,26 +1,21 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Home, MapPin, Phone, Mail, Plus } from "lucide-react";
-
 interface BranchHeaderProps {
   id?: string;
   branchName?: string;
   onNewBooking?: () => void;
 }
-
-export const BranchHeader: React.FC<BranchHeaderProps> = ({ 
-  id, 
+export const BranchHeader: React.FC<BranchHeaderProps> = ({
+  id,
   branchName,
-  onNewBooking 
+  onNewBooking
 }) => {
   const location = useLocation();
-  
-  return (
-    <div className="mb-6">
+  return <div className="mb-6">
       <Breadcrumb className="mb-2">
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
@@ -62,69 +57,14 @@ export const BranchHeader: React.FC<BranchHeaderProps> = ({
           </div>
         </div>
         
-        <Button 
-          onClick={onNewBooking}
-          className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
-        >
+        <Button onClick={onNewBooking} className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
           <Plus className="h-4 w-4" />
           <span>New Booking</span>
         </Button>
       </div>
       
       <div className="flex overflow-x-auto pb-2 hide-scrollbar">
-        <div className="flex space-x-2 border-b border-gray-200 w-full">
-          <Link 
-            to={`/branch-dashboard/${id}/${branchName}`} 
-            className={`px-4 py-2 flex items-center gap-1 whitespace-nowrap ${
-              location.pathname === `/branch-dashboard/${id}/${branchName}` 
-                ? 'border-b-2 border-blue-600 text-blue-600 font-medium'
-                : 'text-gray-600 hover:text-blue-600'
-            }`}
-          >
-            <span>Dashboard</span>
-          </Link>
-          <Link 
-            to={`/branch-dashboard/${id}/${branchName}/bookings`} 
-            className={`px-4 py-2 flex items-center gap-1 whitespace-nowrap ${
-              location.pathname.includes('/bookings') 
-                ? 'border-b-2 border-blue-600 text-blue-600 font-medium'
-                : 'text-gray-600 hover:text-blue-600'
-            }`}
-          >
-            <span>Bookings</span>
-          </Link>
-          <Link 
-            to={`/branch-dashboard/${id}/${branchName}/clients`} 
-            className={`px-4 py-2 flex items-center gap-1 whitespace-nowrap ${
-              location.pathname.includes('/clients') 
-                ? 'border-b-2 border-blue-600 text-blue-600 font-medium'
-                : 'text-gray-600 hover:text-blue-600'
-            }`}
-          >
-            <span>Clients</span>
-          </Link>
-          <Link 
-            to={`/branch-dashboard/${id}/${branchName}/carers`} 
-            className={`px-4 py-2 flex items-center gap-1 whitespace-nowrap ${
-              location.pathname.includes('/carers') 
-                ? 'border-b-2 border-blue-600 text-blue-600 font-medium'
-                : 'text-gray-600 hover:text-blue-600'
-            }`}
-          >
-            <span>Carers</span>
-          </Link>
-          <Link 
-            to={`/branch-dashboard/${id}/${branchName}/task-matrix`} 
-            className={`px-4 py-2 flex items-center gap-1 whitespace-nowrap ${
-              location.pathname.includes('task-matrix') 
-                ? 'border-b-2 border-blue-600 text-blue-600 font-medium'
-                : 'text-gray-600 hover:text-blue-600'
-            }`}
-          >
-            <span>Task Matrix</span>
-          </Link>
-        </div>
+        
       </div>
-    </div>
-  );
+    </div>;
 };
