@@ -87,3 +87,279 @@
   border-radius: 0.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
+
+/* Weekly Grid Styles */
+.weekly-grid {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 700px;
+}
+
+.weekly-grid-header {
+  display: flex;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.time-column {
+  width: 60px;
+  min-width: 60px;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.time-header {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  text-align: center;
+}
+
+.day-column-header {
+  flex: 1;
+  min-width: 80px;
+  text-align: center;
+  padding: 8px 4px;
+  border-right: 1px solid #e5e7eb;
+}
+
+.day-column-header.today {
+  background-color: rgba(59, 130, 246, 0.08);
+}
+
+.day-name {
+  font-weight: 500;
+  font-size: 0.8rem;
+  color: #374151;
+}
+
+.day-date {
+  font-size: 0.7rem;
+  color: #6b7280;
+}
+
+.weekly-grid-body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow-y: auto;
+  position: relative;
+}
+
+.time-slots {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60px;
+  height: 100%;
+  border-right: 1px solid #e5e7eb;
+  z-index: 5;
+  background-color: #f9fafb;
+}
+
+.time-slot {
+  height: 60px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.time-slot span {
+  font-size: 0.7rem;
+  color: #6b7280;
+}
+
+.client-week-row, .carer-week-row {
+  display: flex;
+  margin-bottom: 16px;
+}
+
+.client-info, .carer-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 60px;
+  min-width: 60px;
+  z-index: 2;
+  background-color: #f9fafb;
+  border-right: 1px solid #e5e7eb;
+  padding: 8px 4px;
+}
+
+.client-avatar, .carer-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.client-avatar {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.carer-avatar {
+  background-color: #f3e8ff;
+  color: #9333ea;
+}
+
+.client-name, .carer-name {
+  font-size: 0.7rem;
+  text-align: center;
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.client-week-grid, .carer-week-grid {
+  display: flex;
+  flex-grow: 1;
+  position: relative;
+}
+
+.day-column {
+  flex: 1;
+  min-width: 80px;
+  border-right: 1px solid #e5e7eb;
+  position: relative;
+  height: 1440px; /* 24 hours * 60px per hour */
+}
+
+.day-column.today {
+  background-color: rgba(59, 130, 246, 0.04);
+}
+
+.time-cell {
+  height: 60px;
+  border-bottom: 1px dashed #e5e7eb;
+}
+
+.booking-entry-weekly {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  border-radius: 4px;
+  padding: 4px;
+  font-size: 0.65rem;
+  overflow: hidden;
+  z-index: 5;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.booking-time {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.booking-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Status Colors for Weekly View */
+.booking-status-assigned {
+  background-color: #dcfce7;
+  border: 1px solid #86efac;
+  color: #166534;
+}
+
+.booking-status-unassigned {
+  background-color: #fef9c3;
+  border: 1px solid #fde047;
+  color: #854d0e;
+}
+
+.booking-status-done {
+  background-color: #dbeafe;
+  border: 1px solid #93c5fd;
+  color: #1e40af;
+}
+
+.booking-status-in-progress {
+  background-color: #f3e8ff;
+  border: 1px solid #d8b4fe;
+  color: #6b21a8;
+}
+
+.booking-status-cancelled {
+  background-color: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+}
+
+.booking-status-departed {
+  background-color: #ccfbf1;
+  border: 1px solid #5eead4;
+  color: #0f766e;
+}
+
+.booking-status-suspended {
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+
+/* Current time indicator for weekly view */
+.current-time-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: rgba(220, 38, 38, 0.8);
+  z-index: 10;
+}
+
+.current-time-label {
+  position: absolute;
+  left: 0;
+  top: -10px;
+  background-color: rgb(220, 38, 38);
+  color: white;
+  font-size: 0.65rem;
+  padding: 1px 4px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+/* Selected row styles for weekly view */
+.selected-client, .selected-carer {
+  position: relative;
+}
+
+.selected-client::before, .selected-carer::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+}
+
+.selected-client::before {
+  background-color: #2563eb;
+}
+
+.selected-carer::before {
+  background-color: #9333ea;
+}
