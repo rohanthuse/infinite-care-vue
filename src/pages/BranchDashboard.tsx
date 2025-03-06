@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -748,3 +749,170 @@ const BranchDashboard = () => {
                       rating={5} 
                       comment="Excellent care and attention to detail."
                     />
+                    <ReviewItem 
+                      client="Baulch, Ursula" 
+                      staff="Charuma, Charmaine" 
+                      date="23/01/2025" 
+                      rating={4} 
+                      comment="Very professional and caring."
+                    />
+                    <ReviewItem 
+                      client="Ren, Victoria" 
+                      staff="Ayo-Famure, Opeyemi" 
+                      date="22/01/2025" 
+                      rating={5} 
+                      comment="Outstanding service, highly recommend."
+                    />
+                    <ReviewItem 
+                      client="Mistry, Sanjay" 
+                      staff="Smith, John" 
+                      date="20/01/2025" 
+                      rating={3} 
+                      comment="Good service but arrived late."
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="mb-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base md:text-lg font-semibold">Action Items</CardTitle>
+                  <CardDescription>Tasks requiring attention</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <ActionItem 
+                      title="Review Care Plan" 
+                      name="Eva Pender" 
+                      date="Today" 
+                      priority="High" 
+                    />
+                    <ActionItem 
+                      title="Update Medication List" 
+                      name="Ursula Baulch" 
+                      date="Tomorrow" 
+                      priority="Medium" 
+                    />
+                    <ActionItem 
+                      title="Schedule Supervision" 
+                      name="Susan Warren" 
+                      date="23/02/2025" 
+                      priority="Low" 
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        );
+      case "bookings":
+        return <BookingsTab 
+                branchId={id} 
+                branchName={displayBranchName} 
+                onNewBooking={handleNewBooking} 
+              />;
+      case "carers":
+        return <CarersTab 
+                branchId={id} 
+                branchName={displayBranchName} 
+              />;
+      case "reviews":
+        return <ReviewsTab />;
+      case "communications":
+        return <CommunicationsTab />;
+      default:
+        return (
+          <div className="flex flex-col items-center justify-center min-h-[400px] text-gray-500">
+            <FileText className="h-16 w-16 mb-4 text-gray-300" />
+            <h3 className="text-xl font-medium mb-2">Content Not Available</h3>
+            <p>The requested section is not available or still in development.</p>
+          </div>
+        );
+    }
+  };
+  
+  return (
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+      <DashboardHeader />
+      
+      <main className="flex-1 container mx-auto px-4 py-6">
+        <div className="pb-4 mb-6 border-b border-gray-200">
+          <div className="flex items-center mb-4">
+            <Button 
+              variant="ghost" 
+              className="p-0 mr-2" 
+              onClick={() => navigate("/dashboard")}
+            >
+              <Home className="h-4 w-4 mr-1" />
+            </Button>
+            <ChevronRight className="h-4 w-4 text-gray-400" />
+            <span className="ml-2 text-gray-600">Branches</span>
+            <ChevronRight className="h-4 w-4 mx-2 text-gray-400" />
+            <span className="font-medium">{displayBranchName}</span>
+          </div>
+          
+          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+                {displayBranchName}
+              </h1>
+              <div className="flex items-center text-gray-500 mt-1">
+                <MapPin className="h-4 w-4 mr-1" />
+                <span className="text-sm">Milton Keynes, MK9 3NZ</span>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                onClick={handleNewBooking} 
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                New Booking
+              </Button>
+              <Button 
+                onClick={handleNewClient} 
+                variant="outline" 
+                className="border-gray-200 text-gray-800"
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Add Client
+              </Button>
+              <Button variant="outline" className="border-gray-200 text-gray-800">
+                <Eye className="h-4 w-4 mr-2" />
+                Activity Log
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        <TabNavigation activeTab={activeTab} onChange={setActiveTab} />
+        
+        <div className="mt-6">
+          {renderTabContent()}
+        </div>
+      </main>
+      
+      {addClientDialogOpen && (
+        <AddClientDialog
+          open={addClientDialogOpen}
+          onOpenChange={setAddClientDialogOpen}
+        />
+      )}
+      
+      {newBookingDialogOpen && (
+        <NewBookingDialog 
+          open={newBookingDialogOpen}
+          onOpenChange={setNewBookingDialogOpen}
+          onCreateBooking={handleCreateBooking}
+          clients={mockClients}
+          carers={mockCarers}
+        />
+      )}
+    </div>
+  );
+};
+
+export default BranchDashboard;
