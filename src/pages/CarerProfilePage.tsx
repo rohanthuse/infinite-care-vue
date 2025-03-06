@@ -6,7 +6,8 @@ import {
   User, Phone, Mail, MapPin, Calendar, FileText, Heart, 
   Briefcase, Users, CheckCircle, XCircle, Clock, AlertCircle, 
   Download, ChevronLeft, Edit, ArrowLeft, FileIcon, Star,
-  Clipboard, Award, UserCheck, HeartHandshake, ListChecks, Newspaper
+  Clipboard, Award, UserCheck, HeartHandshake, ListChecks, Newspaper,
+  Plus
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
