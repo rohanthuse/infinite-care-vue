@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -15,7 +14,6 @@ import {
 } from "lucide-react";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 
-// Define a consistent status type for all compliance items
 interface StatusInfo {
   status: string;
   date?: string;
@@ -196,9 +194,11 @@ const TaskMatrix = () => {
         <div className="mb-6">
           <Breadcrumb className="mb-2">
             <BreadcrumbItem>
-              <BreadcrumbLink as={Link} to="/branch">
-                <Home className="h-4 w-4 mr-1" />
-                Branches
+              <BreadcrumbLink asChild>
+                <Link to="/branch">
+                  <Home className="h-4 w-4 mr-1" />
+                  Branches
+                </Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
@@ -242,7 +242,6 @@ const TaskMatrix = () => {
             </Button>
           </div>
           
-          {/* Navigation menu for branch dashboard */}
           <div className="flex overflow-x-auto pb-2 hide-scrollbar">
             <div className="flex space-x-2 border-b border-gray-200 w-full">
               <Link to={`/branch-dashboard/${id}/${branchName}`} className="px-4 py-2 text-gray-600 hover:text-blue-600 flex items-center gap-1 whitespace-nowrap">
