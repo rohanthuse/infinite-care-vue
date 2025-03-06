@@ -151,12 +151,10 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   };
   
   useEffect(() => {
-    // Scroll to current time when component mounts or viewType/date changes
     if (gridRef.current) {
       const currentHour = new Date().getHours();
       const scrollTarget = Math.max(0, (currentHour - 2) * hourHeight);
       
-      // Only scroll if it's today's date
       if ((viewType === "weekly" && weekDates.some(d => isToday(d))) || 
           (viewType === "daily" && isToday(date))) {
         gridRef.current.scrollTop = scrollTarget;
