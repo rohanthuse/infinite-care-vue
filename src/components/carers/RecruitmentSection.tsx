@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { UserPlus, Briefcase, FileCheck, Calendar, Filter } from "lucide-react";
+import { UserPlus, Briefcase, FileCheck, Calendar, Filter, Clock, Plus, Search, FileText, CheckCircle, XCircle, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
+import { PostJobDialog } from "./PostJobDialog";
+import { ApplicationDetailsDialog } from "./ApplicationDetailsDialog";
 
 const mockRecruitmentData = [
   {
@@ -56,11 +61,54 @@ const mockRecruitmentData = [
   }
 ];
 
+const mockJobPostings = [
+  {
+    id: "JOB-001",
+    title: "Home Care Assistant",
+    location: "Milton Keynes",
+    type: "Full-time",
+    postedDate: "2023-05-15",
+    applicants: 12,
+    status: "Active",
+    description: "We are looking for compassionate individuals to join our team as Home Care Assistants.",
+    salary: "£22,000 - £28,000",
+    deadline: "2023-07-15"
+  },
+  {
+    id: "JOB-002",
+    title: "Registered Nurse",
+    location: "London",
+    type: "Full-time",
+    postedDate: "2023-05-20",
+    applicants: 8,
+    status: "Active",
+    description: "Seeking registered nurses with experience in geriatric care.",
+    salary: "£32,000 - £40,000",
+    deadline: "2023-07-20"
+  },
+  {
+    id: "JOB-003",
+    title: "Physiotherapist",
+    location: "Cambridge",
+    type: "Part-time",
+    postedDate: "2023-05-25",
+    applicants: 5,
+    status: "Active",
+    description: "Looking for a qualified physiotherapist to join our team on a part-time basis.",
+    salary: "£30,000 - £35,000 pro rata",
+    deadline: "2023-07-25"
+  }
+];
+
 const RecruitmentSection = () => {
   const [isNewCandidateDialogOpen, setIsNewCandidateDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState("candidates");
   const [searchValue, setSearchValue] = useState("");
   const [stageFilter, setStageFilter] = useState("all");
+  const [isViewApplicationOpen, setIsViewApplicationOpen] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [isPostJobDialogOpen, setIsPostJobDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const filteredCandidates = mockRecruitmentData.filter(candidate => {
     const matchesSearch = 
@@ -70,11 +118,7 @@ const RecruitmentSection = () => {
     
     const matchesStage = stageFilter === "all" || candidate.stage === stageFilter;
     
-    if (activeTab === "all") {
-      return matchesSearch && matchesStage;
-    } else {
-      return matchesSearch && matchesStage && candidate.stage === activeTab;
-    }
+    return matchesSearch && matchesStage;
   });
 
   const getStatusColor = (status) => {
@@ -89,6 +133,20 @@ const RecruitmentSection = () => {
     return statusColors[status] || "bg-gray-50 text-gray-700";
   };
 
+  const handleViewApplication = (candidate) => {
+    setSelectedCandidate(candidate);
+    setIsViewApplicationOpen(true);
+  };
+
+  const handlePostNewJob = (jobData) => {
+    toast({
+      title: "Job Posted Successfully",
+      description: `"${jobData.title}" has been posted.`,
+      variant: "default",
+    });
+    setIsPostJobDialogOpen(false);
+  };
+
   return (
     <div className="mt-8">
       <Card>
@@ -98,84 +156,97 @@ const RecruitmentSection = () => {
               <CardTitle className="text-xl font-bold">Recruitment</CardTitle>
               <CardDescription>Track candidate applications and recruitment progress</CardDescription>
             </div>
-            <Button onClick={() => setIsNewCandidateDialogOpen(true)}>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add Candidate
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button variant="outline" onClick={() => setIsNewCandidateDialogOpen(true)}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Candidate
+              </Button>
+              <Button onClick={() => setIsPostJobDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Post Job
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 md:space-x-4 mb-4">
-            <div className="relative w-full md:w-64">
-              <Input
-                placeholder="Search candidates..."
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                className="pl-10"
-              />
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="h-5 w-5"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            </div>
-
-            <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
-              <div className="flex items-center space-x-2">
-                <Filter className="h-4 w-4 text-gray-500" />
-                <Select value={stageFilter} onValueChange={setStageFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by stage" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Stages</SelectItem>
-                    <SelectItem value="Screening">Screening</SelectItem>
-                    <SelectItem value="Interview">Interview</SelectItem>
-                    <SelectItem value="Assessment">Assessment</SelectItem>
-                    <SelectItem value="Offer">Offer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
           <Tabs 
-            defaultValue="all"
+            defaultValue="candidates"
             value={activeTab}
             onValueChange={setActiveTab}
             className="mt-2"
           >
             <TabsList className="mb-4">
-              <TabsTrigger value="all">All Candidates</TabsTrigger>
-              <TabsTrigger value="Screening">Screening</TabsTrigger>
-              <TabsTrigger value="Interview">Interview</TabsTrigger>
-              <TabsTrigger value="Assessment">Assessment</TabsTrigger>
-              <TabsTrigger value="Offer">Offer</TabsTrigger>
+              <TabsTrigger value="candidates">Candidates</TabsTrigger>
+              <TabsTrigger value="jobs">Job Postings</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="all" className="mt-0">
-              {renderCandidatesList(filteredCandidates, getStatusColor)}
+            <TabsContent value="candidates" className="mt-0">
+              <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 md:space-x-4 mb-4">
+                <div className="relative w-full md:w-64">
+                  <Input
+                    placeholder="Search candidates..."
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    className="pl-10"
+                  />
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <Search className="h-4 w-4" />
+                  </div>
+                </div>
+
+                <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
+                  <div className="flex items-center space-x-2">
+                    <Filter className="h-4 w-4 text-gray-500" />
+                    <Select value={stageFilter} onValueChange={setStageFilter}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Filter by stage" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Stages</SelectItem>
+                        <SelectItem value="Screening">Screening</SelectItem>
+                        <SelectItem value="Interview">Interview</SelectItem>
+                        <SelectItem value="Assessment">Assessment</SelectItem>
+                        <SelectItem value="Offer">Offer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {renderCandidatesList(filteredCandidates, getStatusColor, handleViewApplication)}
             </TabsContent>
-            <TabsContent value="Screening" className="mt-0">
-              {renderCandidatesList(filteredCandidates, getStatusColor)}
-            </TabsContent>
-            <TabsContent value="Interview" className="mt-0">
-              {renderCandidatesList(filteredCandidates, getStatusColor)}
-            </TabsContent>
-            <TabsContent value="Assessment" className="mt-0">
-              {renderCandidatesList(filteredCandidates, getStatusColor)}
-            </TabsContent>
-            <TabsContent value="Offer" className="mt-0">
-              {renderCandidatesList(filteredCandidates, getStatusColor)}
+
+            <TabsContent value="jobs" className="mt-0">
+              <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 md:space-x-4 mb-4">
+                <div className="relative w-full md:w-64">
+                  <Input
+                    placeholder="Search job postings..."
+                    className="pl-10"
+                  />
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <Search className="h-4 w-4" />
+                  </div>
+                </div>
+
+                <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
+                  <div className="flex items-center space-x-2">
+                    <Filter className="h-4 w-4 text-gray-500" />
+                    <Select defaultValue="all">
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="closed">Closed</SelectItem>
+                        <SelectItem value="draft">Draft</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {renderJobsList(mockJobPostings)}
             </TabsContent>
           </Tabs>
         </CardContent>
@@ -246,11 +317,25 @@ const RecruitmentSection = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Application Details Dialog */}
+      <ApplicationDetailsDialog
+        isOpen={isViewApplicationOpen}
+        onClose={() => setIsViewApplicationOpen(false)}
+        candidate={selectedCandidate}
+      />
+
+      {/* Post Job Dialog */}
+      <PostJobDialog
+        isOpen={isPostJobDialogOpen}
+        onClose={() => setIsPostJobDialogOpen(false)}
+        onPostJob={handlePostNewJob}
+      />
     </div>
   );
 };
 
-const renderCandidatesList = (candidates, getStatusColor) => {
+const renderCandidatesList = (candidates, getStatusColor, onViewApplication) => {
   if (candidates.length === 0) {
     return (
       <div className="text-center py-10 text-gray-500">
@@ -299,10 +384,97 @@ const renderCandidatesList = (candidates, getStatusColor) => {
                 year: 'numeric'
               })}
             </div>
-            <Button size="sm" variant="outline" className="ml-auto md:ml-0">
-              <FileCheck className="h-4 w-4 mr-1" />
-              View Details
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="ml-auto md:ml-0"
+              onClick={() => onViewApplication(candidate)}
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              View Application
             </Button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const renderJobsList = (jobs) => {
+  if (jobs.length === 0) {
+    return (
+      <div className="text-center py-10 text-gray-500">
+        No job postings found matching your search criteria.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {jobs.map((job) => (
+        <div 
+          key={job.id}
+          className="flex flex-col p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          <div className="flex flex-col md:flex-row md:items-center justify-between">
+            <div>
+              <div className="flex items-center">
+                <h3 className="text-lg font-medium">{job.title}</h3>
+                <Badge className="ml-2 bg-green-100 text-green-800 border-0">
+                  {job.status}
+                </Badge>
+              </div>
+              <div className="flex flex-wrap gap-y-1 gap-x-3 mt-1 text-sm text-gray-500">
+                <span className="flex items-center">
+                  <Briefcase className="h-3.5 w-3.5 mr-1.5" />
+                  {job.type}
+                </span>
+                <span className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1113.314-7.071 8 8 0 01-2 8.071z" />
+                  </svg>
+                  {job.location}
+                </span>
+                <span className="flex items-center">
+                  <Clock className="h-3.5 w-3.5 mr-1.5" />
+                  Posted {new Date(job.postedDate).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                  })}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-2 md:mt-0">
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-0">
+                {job.applicants} Applications
+              </Badge>
+              <Button size="sm" className="ml-auto md:ml-0" variant="outline">
+                <Eye className="h-4 w-4 mr-1" />
+                View Details
+              </Button>
+            </div>
+          </div>
+          
+          <div className="mt-2">
+            <p className="text-sm text-gray-600 line-clamp-2">{job.description}</p>
+          </div>
+          
+          <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+            <div className="flex items-center text-gray-500">
+              <span className="font-medium text-gray-700 mr-1">Salary:</span> {job.salary}
+            </div>
+            <div className="flex items-center text-gray-500">
+              <span className="font-medium text-gray-700 mr-1">Deadline:</span> {new Date(job.deadline).toLocaleDateString('en-GB', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+              })}
+            </div>
+            <div className="ml-auto flex gap-2">
+              <Button size="sm" variant="ghost">Edit</Button>
+              <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50">Close</Button>
+            </div>
           </div>
         </div>
       ))}
