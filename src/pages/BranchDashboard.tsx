@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -11,7 +10,7 @@ import {
   RefreshCw, Download, Filter, 
   ClipboardCheck, ThumbsUp, ArrowUp, ArrowDown,
   ChevronDown, Edit, Eye, HelpCircle,
-  CalendarIcon, ChevronLeft
+  CalendarIcon, ChevronLeft, MessageCircle
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,29 +18,10 @@ import { Badge } from "@/components/ui/badge";
 import { TabNavigation } from "@/components/TabNavigation";
 import { BookingsTab } from "@/components/bookings/BookingsTab";
 import { CarersTab } from "@/components/carers/CarersTab";
-// Import ReviewsTab as a default import
 import ReviewsTab from "@/components/reviews/ReviewsTab";
+import CommTab from "@/components/communications/CommTab";
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { NewBookingDialog } from "@/components/bookings/NewBookingDialog";
-import {
-  Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter
-} from "@/components/ui/card";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
-} from "@/components/ui/table";
-import {
-  Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
-import {
-  Popover, PopoverContent, PopoverTrigger
-} from "@/components/ui/popover";
-import { format } from "date-fns";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, Legend, LineChart,
-  Line, AreaChart, Area, PieChart, Pie, Cell
-} from "recharts";
 
 const weeklyData = [
   { day: "Mon", visits: 12, bookings: 8, revenue: 780 },
@@ -172,134 +152,6 @@ const clients = [
     registeredOn: "02/01/2023"
   },
 ];
-
-// Dashboard Stat Component
-const DashboardStat = ({ title, value, change, icon, positive }: { 
-  title: string; 
-  value: string; 
-  change: string; 
-  icon: React.ReactNode;
-  positive: boolean;
-}) => {
-  return (
-    <Card>
-      <CardContent className="p-4 md:p-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <p className="text-sm text-gray-500">{title}</p>
-            <h3 className="text-lg md:text-2xl font-bold mt-1">{value}</h3>
-            <div className={`flex items-center mt-1 text-xs ${positive ? 'text-green-600' : 'text-red-600'}`}>
-              {positive ? (
-                <ArrowUp className="h-3 w-3 mr-1" />
-              ) : (
-                <ArrowDown className="h-3 w-3 mr-1" />
-              )}
-              <span>{change}</span>
-            </div>
-          </div>
-          <div className="p-2 rounded-md bg-gray-50 border border-gray-100">
-            {icon}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-// Booking Item Component
-const BookingItem = ({ number, staff, client, time, status }: {
-  number: string;
-  staff: string;
-  client: string;
-  time: string;
-  status: string;
-}) => {
-  let statusColor = "bg-gray-100 text-gray-600";
-  if (status === "Done") statusColor = "bg-green-100 text-green-700";
-  else if (status === "Booked") statusColor = "bg-blue-100 text-blue-700";
-  else if (status === "Waiting") statusColor = "bg-amber-100 text-amber-700";
-
-  return (
-    <div className="py-2 border-b last:border-0 flex items-center justify-between">
-      <div className="flex items-center">
-        <div className="w-5 text-xs text-gray-500 mr-2">{number}.</div>
-        <div>
-          <div className="text-xs md:text-sm font-medium">{staff}</div>
-          <div className="text-xs text-gray-500">{client}</div>
-        </div>
-      </div>
-      <div className="flex items-center">
-        <div className="flex items-center mr-3">
-          <Clock className="h-3 w-3 text-gray-400 mr-1" />
-          <span className="text-xs text-gray-600">{time}</span>
-        </div>
-        <div className={`${statusColor} rounded-full px-2 py-0.5 text-xs font-medium`}>
-          {status}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Review Item Component
-const ReviewItem = ({ client, staff, date, rating, comment }: {
-  client: string;
-  staff: string;
-  date: string;
-  rating: number;
-  comment: string;
-}) => {
-  return (
-    <div className="py-2 border-b last:border-0">
-      <div className="flex justify-between">
-        <div>
-          <div className="text-xs md:text-sm font-medium">{client}</div>
-          <div className="text-xs text-gray-500">for {staff}</div>
-        </div>
-        <div className="text-xs text-gray-500">{date}</div>
-      </div>
-      <div className="flex items-center mt-1">
-        <div className="flex">
-          {Array(rating).fill(0).map((_, i) => (
-            <ThumbsUp key={i} className="h-3 w-3 text-yellow-500" />
-          ))}
-        </div>
-        <p className="ml-2 text-xs md:text-sm text-gray-700">{comment}</p>
-      </div>
-    </div>
-  );
-};
-
-// Action Item Component
-const ActionItem = ({ title, name, date, priority }: {
-  title: string;
-  name: string;
-  date: string;
-  priority: string;
-}) => {
-  let priorityColor = "bg-gray-100 text-gray-600";
-  if (priority === "High") priorityColor = "bg-red-100 text-red-700";
-  else if (priority === "Medium") priorityColor = "bg-amber-100 text-amber-700";
-  else if (priority === "Low") priorityColor = "bg-green-100 text-green-700";
-
-  return (
-    <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between mb-2">
-        <h4 className="font-medium text-sm">{title}</h4>
-        <div className={`${priorityColor} rounded-full px-2 py-0.5 text-xs font-medium`}>
-          {priority}
-        </div>
-      </div>
-      <div className="flex items-center justify-between text-xs">
-        <div className="text-gray-600">{name}</div>
-        <div className="flex items-center text-gray-500">
-          <CalendarIcon className="h-3 w-3 mr-1" />
-          {date}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const BranchDashboard = () => {
   const { id, branchName } = useParams();
@@ -438,13 +290,11 @@ const BranchDashboard = () => {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
       
-      {/* Add Client Dialog */}
       <AddClientDialog 
         open={addClientDialogOpen} 
         onOpenChange={setAddClientDialogOpen} 
       />
       
-      {/* New Booking Dialog */}
       <NewBookingDialog
         open={newBookingDialogOpen}
         onOpenChange={setNewBookingDialogOpen}
@@ -888,7 +738,6 @@ const BranchDashboard = () => {
           
           {activeTab === "clients" && (
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-              {/* Client tab content */}
               <div className="flex justify-between p-4 border-b border-gray-100">
                 <h2 className="text-lg font-semibold">Clients</h2>
                 <Button 
@@ -1058,6 +907,10 @@ const BranchDashboard = () => {
           
           {activeTab === "reviews" && (
             <ReviewsTab />
+          )}
+          
+          {activeTab === "communications" && (
+            <CommTab branchId={id || ""} />
           )}
         </motion.div>
       </main>
