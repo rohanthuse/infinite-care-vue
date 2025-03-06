@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -8,7 +7,7 @@ import {
 } from "lucide-react";
 import { TabNavigation } from "@/components/TabNavigation";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { BranchSidebar } from "@/components/BranchSidebar";
+import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -168,181 +167,198 @@ const Notifications = () => {
     }
   };
   
+  const handleNavigationChange = (value: string) => {
+    if (value === "notifications") {
+      // Stay on the notifications page
+      setTab(value);
+    } else {
+      // Navigate to the selected tab
+      if (isInBranchContext && id && branchName) {
+        navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
+      } else {
+        navigate(`/${value}`);
+      }
+    }
+  };
+
+  // Set active tab to notifications when page loads
+  useEffect(() => {
+    setTab("notifications");
+  }, []);
+  
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {isInBranchContext && <BranchSidebar branchName={branchName || "Branch"} />}
-      <div className="flex-1">
-        <DashboardHeader />
-        <div className="container mx-auto px-4 py-6">
-          <TabNavigation activeTab={tab} onChange={(value) => setTab(value)} />
-          
-          <div className="mt-8">
-            <div className="mb-6 flex flex-col space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <Bell className="h-6 w-6 text-blue-600" />
-                    Notifications
-                    {categoryId && (
-                      <Badge variant="outline" className="ml-2">
-                        {notificationCategories.find(c => c.id === categoryId)?.title || categoryId}
-                      </Badge>
-                    )}
-                  </h1>
-                  <p className="text-gray-500 mt-1">
-                    Manage all notifications in one place
-                  </p>
-                </div>
+    <div className="flex min-h-screen flex-col bg-gray-50">
+      <DashboardHeader />
+      {!isInBranchContext && <DashboardNavbar />}
+      <div className="container mx-auto px-4 py-6">
+        <TabNavigation activeTab={tab} onChange={handleNavigationChange} />
+        
+        <div className="mt-8">
+          <div className="mb-6 flex flex-col space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <Bell className="h-6 w-6 text-blue-600" />
+                  Notifications
+                  {categoryId && (
+                    <Badge variant="outline" className="ml-2">
+                      {notificationCategories.find(c => c.id === categoryId)?.title || categoryId}
+                    </Badge>
+                  )}
+                </h1>
+                <p className="text-gray-500 mt-1">
+                  Manage all notifications in one place
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="flex items-center gap-2">
+                      <Filter className="h-4 w-4" />
+                      <span className="hidden sm:inline">
+                        {filter === "all" ? "All" : 
+                        filter === "unread" ? "Unread" : 
+                        filter === "notConfirmed" ? "Not Confirmed" : filter}
+                      </span>
+                      <ChevronDown className="h-4 w-4 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setFilter("all")}>
+                      All Notifications
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFilter("unread")}>
+                      Unread
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFilter("notConfirmed")}>
+                      Not Confirmed
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 
-                <div className="flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="flex items-center gap-2">
-                        <Filter className="h-4 w-4" />
-                        <span className="hidden sm:inline">
-                          {filter === "all" ? "All" : 
-                          filter === "unread" ? "Unread" : 
-                          filter === "notConfirmed" ? "Not Confirmed" : filter}
-                        </span>
-                        <ChevronDown className="h-4 w-4 opacity-50" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setFilter("all")}>
-                        All Notifications
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setFilter("unread")}>
-                        Unread
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setFilter("notConfirmed")}>
-                        Not Confirmed
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  
-                  <Button variant="outline" size="sm" className="gap-2" onClick={handleMarkAllRead}>
-                    <CheckCircle className="h-4 w-4" />
-                    <span className="hidden sm:inline">Mark All Read</span>
-                  </Button>
-                  
-                  <Button variant="outline" size="sm" className="gap-2" onClick={handleRefresh}>
-                    <RefreshCw className="h-4 w-4" />
-                    <span className="hidden sm:inline">Refresh</span>
-                  </Button>
-                </div>
+                <Button variant="outline" size="sm" className="gap-2" onClick={handleMarkAllRead}>
+                  <CheckCircle className="h-4 w-4" />
+                  <span className="hidden sm:inline">Mark All Read</span>
+                </Button>
+                
+                <Button variant="outline" size="sm" className="gap-2" onClick={handleRefresh}>
+                  <RefreshCw className="h-4 w-4" />
+                  <span className="hidden sm:inline">Refresh</span>
+                </Button>
               </div>
             </div>
-            
-            <div className="mb-6">
-              <Tabs defaultValue={view} onValueChange={setView} className="w-full">
-                <div className="flex items-center justify-between">
-                  <TabsList className="grid w-[180px] grid-cols-2">
-                    <TabsTrigger value="grid">Grid</TabsTrigger>
-                    <TabsTrigger value="list">List</TabsTrigger>
-                  </TabsList>
-                  
-                  <div className="text-sm text-gray-500">
-                    <Clock className="h-4 w-4 inline mr-1" />
-                    Last updated: {new Date().toLocaleTimeString()}
-                  </div>
-                </div>
+          </div>
+          
+          <div className="mb-6">
+            <Tabs defaultValue={view} onValueChange={setView} className="w-full">
+              <div className="flex items-center justify-between">
+                <TabsList className="grid w-[180px] grid-cols-2">
+                  <TabsTrigger value="grid">Grid</TabsTrigger>
+                  <TabsTrigger value="list">List</TabsTrigger>
+                </TabsList>
                 
-                <TabsContent value="grid" className="mt-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {notificationCategories.map((category) => (
-                      <Card 
-                        key={category.id}
-                        className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                        onClick={() => handleCategoryClick(category.id)}
-                      >
-                        <CardHeader className="pb-2">
-                          <div className="flex items-start justify-between">
+                <div className="text-sm text-gray-500">
+                  <Clock className="h-4 w-4 inline mr-1" />
+                  Last updated: {new Date().toLocaleTimeString()}
+                </div>
+              </div>
+              
+              <TabsContent value="grid" className="mt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {notificationCategories.map((category) => (
+                    <Card 
+                      key={category.id}
+                      className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => handleCategoryClick(category.id)}
+                    >
+                      <CardHeader className="pb-2">
+                        <div className="flex items-start justify-between">
+                          <div className={`p-2 rounded-full ${category.color} bg-opacity-10`}>
+                            <category.icon className={`h-5 w-5 ${category.color}`} />
+                          </div>
+                          <Badge className={`${getPriorityColor(category.priority)}`}>
+                            {category.priority}
+                          </Badge>
+                        </div>
+                        <CardTitle className="text-xl mt-2">{category.title}</CardTitle>
+                        <CardDescription>{category.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="text-3xl font-bold">{category.count}</div>
+                            <div className="text-sm text-gray-500">Total</div>
+                          </div>
+                          <div className="flex gap-4">
+                            <div>
+                              <div className="text-lg font-semibold text-amber-600">{category.notConfirmed}</div>
+                              <div className="text-xs text-gray-500">Pending</div>
+                            </div>
+                            <div>
+                              <div className="text-lg font-semibold text-blue-600">{category.unread}</div>
+                              <div className="text-xs text-gray-500">Unread</div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter className="pt-2 border-t">
+                        <Button variant="ghost" size="sm" className="ml-auto" onClick={(e) => {
+                          e.stopPropagation();
+                          toast({
+                            title: `Viewing ${category.title} details`,
+                            duration: 2000,
+                          });
+                        }}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          View details
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="list" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Notification Summary</CardTitle>
+                    <CardDescription>View all notification categories</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="divide-y">
+                      {notificationCategories.map((category) => (
+                        <div 
+                          key={category.id}
+                          className="p-4 hover:bg-gray-50 cursor-pointer flex items-center justify-between"
+                          onClick={() => handleCategoryClick(category.id)}
+                        >
+                          <div className="flex items-center gap-3">
                             <div className={`p-2 rounded-full ${category.color} bg-opacity-10`}>
                               <category.icon className={`h-5 w-5 ${category.color}`} />
                             </div>
-                            <Badge className={`${getPriorityColor(category.priority)}`}>
-                              {category.priority}
-                            </Badge>
-                          </div>
-                          <CardTitle className="text-xl mt-2">{category.title}</CardTitle>
-                          <CardDescription>{category.description}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-center justify-between">
                             <div>
-                              <div className="text-3xl font-bold">{category.count}</div>
-                              <div className="text-sm text-gray-500">Total</div>
-                            </div>
-                            <div className="flex gap-4">
-                              <div>
-                                <div className="text-lg font-semibold text-amber-600">{category.notConfirmed}</div>
-                                <div className="text-xs text-gray-500">Pending</div>
-                              </div>
-                              <div>
-                                <div className="text-lg font-semibold text-blue-600">{category.unread}</div>
-                                <div className="text-xs text-gray-500">Unread</div>
-                              </div>
+                              <div className="font-medium">{category.title}</div>
+                              <div className="text-sm text-gray-500">{category.description}</div>
                             </div>
                           </div>
-                        </CardContent>
-                        <CardFooter className="pt-2 border-t">
-                          <Button variant="ghost" size="sm" className="ml-auto" onClick={(e) => {
-                            e.stopPropagation();
-                            toast({
-                              title: `Viewing ${category.title} details`,
-                              duration: 2000,
-                            });
-                          }}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View details
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="list" className="mt-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Notification Summary</CardTitle>
-                      <CardDescription>View all notification categories</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      <div className="divide-y">
-                        {notificationCategories.map((category) => (
-                          <div 
-                            key={category.id}
-                            className="p-4 hover:bg-gray-50 cursor-pointer flex items-center justify-between"
-                            onClick={() => handleCategoryClick(category.id)}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className={`p-2 rounded-full ${category.color} bg-opacity-10`}>
-                                <category.icon className={`h-5 w-5 ${category.color}`} />
-                              </div>
-                              <div>
-                                <div className="font-medium">{category.title}</div>
-                                <div className="text-sm text-gray-500">{category.description}</div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <Badge variant="outline" className="flex gap-1 items-center">
-                                <AlertCircle className="h-3 w-3" />
-                                {category.notConfirmed}
-                              </Badge>
-                              <div className="text-xl font-bold">{category.count}</div>
-                              <Button variant="ghost" size="sm">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </div>
+                          <div className="flex items-center gap-4">
+                            <Badge variant="outline" className="flex gap-1 items-center">
+                              <AlertCircle className="h-3 w-3" />
+                              {category.notConfirmed}
+                            </Badge>
+                            <div className="text-xl font-bold">{category.count}</div>
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
                           </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>
