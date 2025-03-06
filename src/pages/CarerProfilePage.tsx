@@ -1,4 +1,4 @@
-<lov-code>
+
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -708,3 +708,315 @@ const CarerProfilePage = () => {
                                   <h3 className="font-medium">{item}</h3>
                                 </div>
                                 <Badge variant="outline" className="ml-auto bg-amber-50 text-amber-600 mr-2">Pending</Badge>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-4 pb-4 pt-2 bg-white">
+                              <p className="text-amber-600 text-sm">This information is awaiting completion.</p>
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                      </Accordion>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Employment Tab */}
+              <TabsContent value="employment">
+                <Card className="mb-6">
+                  <CardHeader>
+                    <div className="flex items-center">
+                      <Briefcase className="h-5 w-5 mr-2 text-gray-600" />
+                      <CardTitle className="text-xl">Employment History</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <Accordion type="single" collapsible className="w-full">
+                        {employmentHistory.map((job, index) => (
+                          <AccordionItem 
+                            key={index} 
+                            value={`job-${index}`} 
+                            className="border rounded-lg overflow-hidden border-0 mb-4"
+                          >
+                            <AccordionTrigger className="px-4 py-4 hover:no-underline bg-white">
+                              <div className="flex items-center w-full justify-between pr-2">
+                                <div className="flex items-center">
+                                  <Briefcase className="text-blue-600 h-5 w-5 mr-2" />
+                                  <div>
+                                    <h3 className="font-medium text-left">{job.company}</h3>
+                                    <p className="text-sm text-gray-500 text-left">{job.startDate} - {job.endDate}</p>
+                                  </div>
+                                </div>
+                                <Badge className="ml-auto bg-blue-600 mr-2">{job.status}</Badge>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-4 pb-4 pt-2 bg-white">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <h4 className="font-medium mb-2">Job Details</h4>
+                                  <div className="space-y-2">
+                                    <div>
+                                      <Label className="text-xs text-gray-500">Company</Label>
+                                      <p className="font-medium">{job.company}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs text-gray-500">Position</Label>
+                                      <p className="font-medium">{job.position}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs text-gray-500">Duration</Label>
+                                      <p className="font-medium">{job.startDate} - {job.endDate}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div>
+                                  <h4 className="font-medium mb-2">Reference Information</h4>
+                                  <div className="space-y-2">
+                                    <div>
+                                      <Label className="text-xs text-gray-500">Reference Type</Label>
+                                      <p className="font-medium">{job.referenceType}</p>
+                                    </div>
+                                    {job.referenceDate && (
+                                      <div>
+                                        <Label className="text-xs text-gray-500">Reference Date</Label>
+                                        <p className="font-medium">{job.referenceDate}</p>
+                                      </div>
+                                    )}
+                                    <div>
+                                      <Label className="text-xs text-gray-500">Status</Label>
+                                      <Badge className="bg-blue-600">{job.status}</Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                      </Accordion>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Statements Tab */}
+              <TabsContent value="statements">
+                <Card className="mb-6">
+                  <CardHeader>
+                    <div className="flex items-center">
+                      <FileText className="h-5 w-5 mr-2 text-gray-600" />
+                      <CardTitle className="text-xl">Supporting Statements</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Accordion type="single" collapsible className="w-full">
+                      <AccordionItem value="why-interested" className="border rounded-lg overflow-hidden border-0 mb-4">
+                        <AccordionTrigger className="px-4 py-4 hover:no-underline bg-white">
+                          <div className="flex items-center w-full justify-between pr-2">
+                            <div className="flex items-center">
+                              <Heart className="text-red-500 h-5 w-5 mr-2" />
+                              <h3 className="font-medium">Why are you interested in working with us?</h3>
+                            </div>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4 pt-2 bg-white">
+                          <p className="text-gray-700">{supportingStatement.whyInterested}</p>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="vulnerable-experience" className="border rounded-lg overflow-hidden border-0 mb-4">
+                        <AccordionTrigger className="px-4 py-4 hover:no-underline bg-white">
+                          <div className="flex items-center w-full justify-between pr-2">
+                            <div className="flex items-center">
+                              <Users className="text-blue-500 h-5 w-5 mr-2" />
+                              <h3 className="font-medium">Experience with vulnerable people</h3>
+                            </div>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4 pt-2 bg-white">
+                          <p className="text-gray-700">{supportingStatement.vulnerableExperience}</p>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="strengths" className="border rounded-lg overflow-hidden border-0 mb-4">
+                        <AccordionTrigger className="px-4 py-4 hover:no-underline bg-white">
+                          <div className="flex items-center w-full justify-between pr-2">
+                            <div className="flex items-center">
+                              <Award className="text-amber-500 h-5 w-5 mr-2" />
+                              <h3 className="font-medium">Strengths and what sets you apart</h3>
+                            </div>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4 pt-2 bg-white">
+                          <p className="text-gray-700 whitespace-pre-line">{supportingStatement.strengths}</p>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </CardContent>
+                </Card>
+
+                {/* Skills, Type of Work, and Hobbies accordions */}
+                <Card className="mb-6">
+                  <CardHeader>
+                    <div className="flex items-center">
+                      <ListChecks className="h-5 w-5 mr-2 text-gray-600" />
+                      <CardTitle className="text-xl">Preferences & Interests</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Accordion type="single" collapsible className="w-full">
+                      <AccordionItem value="skills" className="border rounded-lg overflow-hidden border-0 mb-4">
+                        <AccordionTrigger className="px-4 py-4 hover:no-underline bg-white">
+                          <div className="flex items-center w-full justify-between pr-2">
+                            <div className="flex items-center">
+                              <HeartHandshake className="text-green-600 h-5 w-5 mr-2" />
+                              <h3 className="font-medium">Skills & Attributes</h3>
+                            </div>
+                            <Badge className="ml-auto bg-gray-600 mr-2">{skills.length}</Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4 pt-2 bg-white">
+                          <div className="flex flex-wrap gap-2">
+                            {skills.map((skill, index) => (
+                              <Badge key={index} variant="outline" className="bg-gray-50">
+                                {skill}
+                              </Badge>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="work-types" className="border rounded-lg overflow-hidden border-0 mb-4">
+                        <AccordionTrigger className="px-4 py-4 hover:no-underline bg-white">
+                          <div className="flex items-center w-full justify-between pr-2">
+                            <div className="flex items-center">
+                              <Briefcase className="text-blue-600 h-5 w-5 mr-2" />
+                              <h3 className="font-medium">Types of Work</h3>
+                            </div>
+                            <Badge className="ml-auto bg-gray-600 mr-2">{typeOfWork.length}</Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4 pt-2 bg-white">
+                          <div className="flex flex-wrap gap-2">
+                            {typeOfWork.map((work, index) => (
+                              <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                {work}
+                              </Badge>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="hobbies" className="border rounded-lg overflow-hidden border-0 mb-4">
+                        <AccordionTrigger className="px-4 py-4 hover:no-underline bg-white">
+                          <div className="flex items-center w-full justify-between pr-2">
+                            <div className="flex items-center">
+                              <Heart className="text-red-500 h-5 w-5 mr-2" />
+                              <h3 className="font-medium">Hobbies & Interests</h3>
+                            </div>
+                            <Badge className="ml-auto bg-gray-600 mr-2">{hobbies.length}</Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4 pt-2 bg-white">
+                          <div className="flex flex-wrap gap-2">
+                            {hobbies.map((hobby, index) => (
+                              <Badge key={index} variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                                {hobby}
+                              </Badge>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Documents Tab */}
+              <TabsContent value="documents">
+                <Card className="mb-6">
+                  <CardHeader>
+                    <div className="flex items-center">
+                      <FileText className="h-5 w-5 mr-2 text-gray-600" />
+                      <CardTitle className="text-xl">Documents</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <Accordion type="single" collapsible className="w-full">
+                        {documents.map((doc, index) => (
+                          <AccordionItem 
+                            key={index} 
+                            value={`doc-${index}`} 
+                            className="border rounded-lg overflow-hidden border-0 mb-4"
+                          >
+                            <AccordionTrigger className="px-4 py-4 hover:no-underline bg-white">
+                              <div className="flex items-center w-full justify-between pr-2">
+                                <div className="flex items-center">
+                                  <FileText className="text-blue-600 h-5 w-5 mr-2" />
+                                  <div>
+                                    <h3 className="font-medium text-left">{doc.name}</h3>
+                                    <p className="text-sm text-gray-500 text-left">{doc.type}</p>
+                                  </div>
+                                </div>
+                                <Badge variant="outline" className="ml-auto bg-gray-100 text-gray-700 mr-2">
+                                  {doc.uploadDate}
+                                </Badge>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-4 pb-4 pt-2 bg-white">
+                              <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                                <div className="flex items-center space-x-3">
+                                  <div className="bg-blue-100 p-2 rounded-lg">
+                                    <FileText className="h-6 w-6 text-blue-600" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">{doc.name}</p>
+                                    <p className="text-sm text-gray-500">{doc.size} • {doc.type}</p>
+                                  </div>
+                                </div>
+                                <Button variant="outline" size="sm" className="ml-auto">
+                                  <Download className="h-4 w-4 mr-1" />
+                                  Download
+                                </Button>
+                              </div>
+                              <div className="mt-3 pt-3 border-t border-gray-200">
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                                  <div className="mb-2 sm:mb-0">
+                                    <p className="text-sm text-gray-500">Uploaded on: {doc.uploadDate}</p>
+                                  </div>
+                                  <div className="flex space-x-2">
+                                    <Button variant="outline" size="sm">
+                                      <Edit className="h-4 w-4 mr-1" />
+                                      Replace
+                                    </Button>
+                                    <Button variant="destructive" size="sm">
+                                      Delete
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                      </Accordion>
+                      
+                      <div className="mt-4">
+                        <Button className="w-full">
+                          <Plus className="h-4 w-4 mr-1" />
+                          Upload New Document
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default CarerProfilePage;
