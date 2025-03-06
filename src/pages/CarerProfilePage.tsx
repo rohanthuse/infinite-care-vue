@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -17,40 +18,38 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } fr
 import { Checkbox } from "@/components/ui/checkbox";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
-const mockCarerData = {
-  id: "CR-001",
-  carerId: "111111",
-  name: "Ayo-Famure, Opeyemi",
-  firstName: "Opeyemi",
-  middleName: "Olumide",
-  surname: "Ayo-Famure",
-  knownAs: "",
-  title: "Mrs",
-  jobTitle: "Administrator",
-  email: "opeawoz@gmail.com",
-  phone: "+44 20 7946 3344",
-  mobile: "+44 07846427297",
-  location: "Milton Keynes, MK9 3NZ",
-  status: "Active",
-  avatar: "OA",
-  experience: "1 year 2 months 27 days",
-  specialization: "Home Care",
-  availability: "Full-time",
-  profileImage: null,
-  dateOfBirth: "28-12-1987",
-  gender: "Female",
-  pronouns: "",
-  joinedOn: "07/12/2023",
-  nationality: "British",
-  countryCode: "England",
-  supervisor: "Iyaniwura, Ifeoluwa",
-  introductionMethod: "Online Search",
-  rating: 5,
-  profileCompletion: 91
-};
-
 const allMockCarers = [
-  mockCarerData,
+  {
+    id: "CR-001",
+    carerId: "111111",
+    name: "Charuma, Charmaine",
+    firstName: "Charmaine",
+    middleName: "",
+    surname: "Charuma",
+    knownAs: "",
+    title: "Ms",
+    jobTitle: "Home Carer",
+    email: "charmaine.c@med-infinite.com",
+    phone: "+44 20 7946 3344",
+    mobile: "+44 07846427111",
+    location: "Milton Keynes, MK9 3NZ",
+    status: "Active",
+    avatar: "CC",
+    experience: "3 years",
+    specialization: "Home Care",
+    availability: "Full-time",
+    profileImage: null,
+    dateOfBirth: "15-05-1990",
+    gender: "Female",
+    pronouns: "",
+    joinedOn: "01/04/2021",
+    nationality: "British",
+    countryCode: "England",
+    supervisor: "Iyaniwura, Ifeoluwa",
+    introductionMethod: "Agency",
+    rating: 5,
+    profileCompletion: 98
+  },
   {
     id: "CR-002",
     carerId: "222222",
@@ -87,31 +86,31 @@ const allMockCarers = [
     carerId: "333333",
     name: "Ayo-Famure, Opeyemi",
     firstName: "Opeyemi",
-    middleName: "",
+    middleName: "Olumide",
     surname: "Ayo-Famure",
     knownAs: "",
     title: "Mrs",
-    jobTitle: "Nurse",
-    email: "opeyemi.af@med-infinite.com",
+    jobTitle: "Administrator",
+    email: "opeawoz@gmail.com",
     phone: "+44 20 7946 7788",
-    mobile: "+44 07946778899",
+    mobile: "+44 07846427297",
     location: "London, SW1A 1AA",
     status: "On Leave",
     avatar: "OA",
-    experience: "2 years",
+    experience: "1 year 2 months 27 days",
     specialization: "Nurse",
     availability: "Part-time",
     profileImage: null,
-    dateOfBirth: "22-06-1990",
+    dateOfBirth: "28-12-1987",
     gender: "Female",
     pronouns: "",
-    joinedOn: "15/03/2022",
+    joinedOn: "07/12/2023",
     nationality: "British",
     countryCode: "England",
     supervisor: "Iyaniwura, Ifeoluwa",
-    introductionMethod: "Job Board",
+    introductionMethod: "Online Search",
     rating: 4,
-    profileCompletion: 78
+    profileCompletion: 91
   },
   {
     id: "CR-004",
@@ -313,13 +312,24 @@ const CarerProfilePage = () => {
     navigate(`/branch-dashboard/${id}/${branchName}`);
   };
   
+  // Improved function to find carer by ID
   const findCarerById = (id) => {
-    const foundCarer = allMockCarers.find(carer => carer.id === id);
-    if (foundCarer) return foundCarer;
+    // First try to find by exact ID match
+    let foundCarer = allMockCarers.find(carer => carer.id === id);
     
-    return allMockCarers.find(carer => carer.carerId === id) || allMockCarers[0];
+    // If not found, try by carerId field
+    if (!foundCarer) {
+      foundCarer = allMockCarers.find(carer => carer.carerId === id);
+    }
+    
+    console.log("Looking for carer with ID:", id);
+    console.log("Found carer:", foundCarer ? foundCarer.name : "None");
+    
+    // If still not found, return the first carer as a fallback
+    return foundCarer || allMockCarers[0];
   };
   
+  // Get the carer based on the URL parameter
   const carer = findCarerById(carerId);
   
   const renderStatusBadge = status => {
