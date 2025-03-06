@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -73,7 +74,8 @@ const FormMatrix = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("all");
   
-  const activeTab = location.pathname.includes("form-matrix") ? "form-matrix" : "dashboard";
+  // Always set activeTab to form-matrix for consistent menu highlighting
+  const activeTab = "form-matrix";
 
   const handleChangeTab = (value: string) => {
     if (id && branchName) {
@@ -132,6 +134,7 @@ const FormMatrix = () => {
         <TabNavigation 
           activeTab={activeTab} 
           onChange={handleChangeTab}
+          hideQuickAdd={true}
         />
         
         <div className="mt-6 space-y-6">

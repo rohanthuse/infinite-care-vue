@@ -76,7 +76,8 @@ const TaskMatrix = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   
-  const activeTab = location.pathname.includes("task-matrix") ? "task-matrix" : "dashboard";
+  // Always set activeTab to task-matrix for consistent menu highlighting
+  const activeTab = "task-matrix";
 
   const handleChangeTab = (value: string) => {
     if (id && branchName) {
@@ -135,6 +136,7 @@ const TaskMatrix = () => {
         <TabNavigation 
           activeTab={activeTab} 
           onChange={handleChangeTab}
+          hideQuickAdd={true}
         />
         
         <div className="mt-6 space-y-6">

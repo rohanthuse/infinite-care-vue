@@ -73,7 +73,8 @@ const TrainingMatrix = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   
-  const activeTab = location.pathname.includes("training-matrix") ? "training-matrix" : "dashboard";
+  // Always set activeTab to training-matrix for consistent menu highlighting
+  const activeTab = "training-matrix";
   
   const filteredData = trainingData.filter(
     staff => staff.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -140,6 +141,7 @@ const TrainingMatrix = () => {
         <TabNavigation 
           activeTab={activeTab} 
           onChange={handleChangeTab}
+          hideQuickAdd={true}
         />
         
         <div className="mt-6 space-y-6">
