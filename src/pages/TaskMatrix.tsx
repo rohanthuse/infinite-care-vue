@@ -91,7 +91,7 @@ const mockData: TaskData[] = [
 ];
 
 const TaskMatrix = () => {
-  const [activeTab, setActiveTab] = useState("workflow");
+  const [activeTab, setActiveTab] = useState("task-matrix");
   const [viewType, setViewType] = useState<"staff" | "client">("staff");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState("percentage");
@@ -185,6 +185,31 @@ const TaskMatrix = () => {
     }
   };
 
+  const handleChangeTab = (value: string) => {
+    setActiveTab(value);
+    if (id && branchName) {
+      switch (value) {
+        case "dashboard":
+          navigate(`/branch-dashboard/${id}/${branchName}`);
+          break;
+        case "bookings":
+          navigate(`/branch-dashboard/${id}/${branchName}/bookings`);
+          break;
+        case "clients":
+          navigate(`/branch-dashboard/${id}/${branchName}/clients`);
+          break;
+        case "carers":
+          navigate(`/branch-dashboard/${id}/${branchName}/carers`);
+          break;
+        case "task-matrix":
+          navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
+          break;
+        default:
+          break;
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -194,6 +219,11 @@ const TaskMatrix = () => {
           id={id} 
           branchName={branchName} 
           onNewBooking={handleNewBooking}
+        />
+        
+        <TabNavigation 
+          activeTab={activeTab} 
+          onChange={handleChangeTab}
         />
         
         <div className="mt-6 space-y-6">
