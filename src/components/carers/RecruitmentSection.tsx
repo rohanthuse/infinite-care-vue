@@ -1,6 +1,7 @@
 
-import React, { useState } from "react";
-import { UserPlus, Briefcase, FileCheck, Calendar, Filter, Clock, Plus, Search, FileText, CheckCircle, XCircle, Eye } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { UserPlus, Briefcase, Calendar, Filter, Clock, Plus, Search, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,11 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { PostJobDialog } from "./PostJobDialog";
-import { ApplicationDetailsDialog } from "./ApplicationDetailsDialog";
 
 const mockRecruitmentData = [
   {
@@ -101,15 +98,17 @@ const mockJobPostings = [
 ];
 
 const RecruitmentSection = () => {
+  const { id, branchName } = useParams();
+  const navigate = useNavigate();
   const [isNewCandidateDialogOpen, setIsNewCandidateDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("candidates");
   const [searchValue, setSearchValue] = useState("");
   const [stageFilter, setStageFilter] = useState("all");
-  const [isViewApplicationOpen, setIsViewApplicationOpen] = useState(false);
-  const [selectedCandidate, setSelectedCandidate] = useState(null);
-  const [isPostJobDialogOpen, setIsPostJobDialogOpen] = useState(false);
+  const [jobStatusFilter, setJobStatusFilter] = useState("all");
+  const [jobSearchValue, setJobSearchValue] = useState("");
   const { toast } = useToast();
 
+  // Filter candidates based on search and stage
   const filteredCandidates = mockRecruitmentData.filter(candidate => {
     const matchesSearch = 
       candidate.name.toLowerCase().includes(searchValue.toLowerCase()) ||
@@ -119,6 +118,18 @@ const RecruitmentSection = () => {
     const matchesStage = stageFilter === "all" || candidate.stage === stageFilter;
     
     return matchesSearch && matchesStage;
+  });
+
+  // Filter job postings based on search and status
+  const filteredJobs = mockJobPostings.filter(job => {
+    const matchesSearch = 
+      job.title.toLowerCase().includes(jobSearchValue.toLowerCase()) ||
+      job.location.toLowerCase().includes(jobSearchValue.toLowerCase()) ||
+      job.id.toLowerCase().includes(jobSearchValue.toLowerCase());
+    
+    const matchesStatus = jobStatusFilter === "all" || job.status.toLowerCase() === jobStatusFilter.toLowerCase();
+    
+    return matchesSearch && matchesStatus;
   });
 
   const getStatusColor = (status) => {
@@ -133,18 +144,21 @@ const RecruitmentSection = () => {
     return statusColors[status] || "bg-gray-50 text-gray-700";
   };
 
-  const handleViewApplication = (candidate) => {
-    setSelectedCandidate(candidate);
-    setIsViewApplicationOpen(true);
+  const handleViewApplication = (candidateId: string) => {
+    navigate(`/branch-dashboard/${id}/${branchName}/recruitment/application/${candidateId}`);
   };
 
-  const handlePostNewJob = (jobData) => {
+  const handlePostNewJob = () => {
+    navigate(`/branch-dashboard/${id}/${branchName}/recruitment/post-job`);
+  };
+
+  const handleViewJob = (jobId: string) => {
+    // This would navigate to a job details page in a real application
     toast({
-      title: "Job Posted Successfully",
-      description: `"${jobData.title}" has been posted.`,
+      title: "Job Details",
+      description: `Viewing details for job ${jobId}`,
       variant: "default",
     });
-    setIsPostJobDialogOpen(false);
   };
 
   return (
@@ -161,7 +175,7 @@ const RecruitmentSection = () => {
                 <UserPlus className="mr-2 h-4 w-4" />
                 Add Candidate
               </Button>
-              <Button onClick={() => setIsPostJobDialogOpen(true)}>
+              <Button onClick={handlePostNewJob}>
                 <Plus className="mr-2 h-4 w-4" />
                 Post Job
               </Button>
@@ -222,6 +236,8 @@ const RecruitmentSection = () => {
                   <Input
                     placeholder="Search job postings..."
                     className="pl-10"
+                    value={jobSearchValue}
+                    onChange={(e) => setJobSearchValue(e.target.value)}
                   />
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <Search className="h-4 w-4" />
@@ -231,7 +247,7 @@ const RecruitmentSection = () => {
                 <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
                   <div className="flex items-center space-x-2">
                     <Filter className="h-4 w-4 text-gray-500" />
-                    <Select defaultValue="all">
+                    <Select value={jobStatusFilter} onValueChange={setJobStatusFilter}>
                       <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Filter by status" />
                       </SelectTrigger>
@@ -246,7 +262,7 @@ const RecruitmentSection = () => {
                 </div>
               </div>
 
-              {renderJobsList(mockJobPostings)}
+              {renderJobsList(filteredJobs, handleViewJob)}
             </TabsContent>
           </Tabs>
         </CardContent>
@@ -317,20 +333,6 @@ const RecruitmentSection = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Application Details Dialog */}
-      <ApplicationDetailsDialog
-        isOpen={isViewApplicationOpen}
-        onClose={() => setIsViewApplicationOpen(false)}
-        candidate={selectedCandidate}
-      />
-
-      {/* Post Job Dialog */}
-      <PostJobDialog
-        isOpen={isPostJobDialogOpen}
-        onClose={() => setIsPostJobDialogOpen(false)}
-        onPostJob={handlePostNewJob}
-      />
     </div>
   );
 };
@@ -388,7 +390,7 @@ const renderCandidatesList = (candidates, getStatusColor, onViewApplication) => 
               size="sm" 
               variant="outline" 
               className="ml-auto md:ml-0"
-              onClick={() => onViewApplication(candidate)}
+              onClick={() => onViewApplication(candidate.id)}
             >
               <Eye className="h-4 w-4 mr-1" />
               View Application
@@ -400,7 +402,7 @@ const renderCandidatesList = (candidates, getStatusColor, onViewApplication) => 
   );
 };
 
-const renderJobsList = (jobs) => {
+const renderJobsList = (jobs, onViewJob) => {
   if (jobs.length === 0) {
     return (
       <div className="text-center py-10 text-gray-500">
@@ -449,7 +451,7 @@ const renderJobsList = (jobs) => {
               <Badge variant="outline" className="bg-blue-50 text-blue-700 border-0">
                 {job.applicants} Applications
               </Badge>
-              <Button size="sm" className="ml-auto md:ml-0" variant="outline">
+              <Button size="sm" className="ml-auto md:ml-0" variant="outline" onClick={() => onViewJob(job.id)}>
                 <Eye className="h-4 w-4 mr-1" />
                 View Details
               </Button>
