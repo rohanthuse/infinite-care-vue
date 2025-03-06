@@ -51,7 +51,7 @@ const CallToAction = () => {
               <CustomButton 
                 size="lg" 
                 variant="pill" 
-                className="bg-white text-blue-700 hover:bg-blue-50"
+                className="bg-white text-blue-600 hover:bg-blue-50"
               >
                 Get Started <ArrowRight className="ml-2 h-5 w-5" />
               </CustomButton>

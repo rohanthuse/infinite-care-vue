@@ -78,7 +78,7 @@ const Features = () => {
     <section id="features" className="py-20 md:py-32 bg-gradient-to-b from-white to-blue-50">
       <div className="container mx-auto px-4">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-700 mb-6">
+          <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 mb-6">
             <span className="text-sm font-medium">Powerful Features</span>
           </div>
           <h2 className="section-title">Comprehensive Care Management Tools</h2>

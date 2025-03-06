@@ -43,7 +43,7 @@ const Navbar = () => {
         {/* Logo */}
         <a href="#" className="flex items-center space-x-2 text-2xl font-semibold">
           <Heart className="text-blue-600 h-7 w-7" />
-          <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent">
             Med-Infinite
           </span>
         </a>
@@ -66,7 +66,7 @@ const Navbar = () => {
           <CustomButton 
             variant="pill" 
             size="sm" 
-            className="bg-blue-600 hover:bg-blue-500"
+            className="bg-blue-600 hover:bg-blue-700"
           >
             Get Started
           </CustomButton>
@@ -101,7 +101,7 @@ const Navbar = () => {
             </a>
           ))}
           <div className="pt-4">
-            <CustomButton className="w-full bg-blue-600 hover:bg-blue-500">
+            <CustomButton className="w-full bg-blue-600 hover:bg-blue-700">
               Get Started
             </CustomButton>
           </div>

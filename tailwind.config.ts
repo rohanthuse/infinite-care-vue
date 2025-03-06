@@ -151,12 +151,12 @@ export default {
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
 				'hero-gradient': 'linear-gradient(135deg, #edfaff 0%, #d6f2ff 100%)',
 				'card-gradient': 'linear-gradient(to bottom right, #ffffff, #f5faff)',
-				'cta-gradient': 'linear-gradient(135deg, #1eaedb 0%, #0775a3 100%)'
+				'cta-gradient': 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)'
 			},
 			boxShadow: {
 				'soft': '0 4px 20px rgba(0, 0, 0, 0.06)',
 				'medium': '0 10px 30px rgba(0, 0, 0, 0.08)',
-				'highlight': '0 0 15px rgba(30, 174, 219, 0.3)',
+				'highlight': '0 0 15px rgba(37, 99, 235, 0.3)',
 				'inner-soft': 'inset 0 1px 3px rgba(0, 0, 0, 0.06)',
 				'modern': '0 20px 80px -20px rgba(0, 0, 0, 0.08)'
 			},
