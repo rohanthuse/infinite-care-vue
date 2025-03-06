@@ -1,39 +1,12 @@
 
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { TabNavigation } from "@/components/TabNavigation";
 import { BranchHeader } from "@/components/BranchHeader";
 import TaskMatrixContent from "@/components/workflow/TaskMatrixContent";
 
 const TaskMatrix = () => {
   const { id, branchName } = useParams();
-  const navigate = useNavigate();
   
-  // Set activeTab to "task-matrix" explicitly
-  const activeTab = "task-matrix";
-
-  const handleChangeTab = (value: string) => {
-    if (id && branchName) {
-      if (value === "dashboard") {
-        navigate(`/branch-dashboard/${id}/${branchName}`);
-      } else if (value === "workflow") {
-        navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
-      } else if (value === "task-matrix" || value === "training-matrix" || value === "form-matrix") {
-        navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
-      } else {
-        navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
-      }
-    } else {
-      if (value === "workflow") {
-        navigate(`/workflow`);
-      } else if (value === "task-matrix" || value === "training-matrix" || value === "form-matrix") {
-        navigate(`/workflow/${value}`);
-      } else {
-        navigate(`/${value}`);
-      }
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -46,12 +19,6 @@ const TaskMatrix = () => {
             onNewBooking={() => {}}
           />
         )}
-        
-        <TabNavigation 
-          activeTab={activeTab} 
-          onChange={handleChangeTab}
-          hideQuickAdd={true}
-        />
         
         <div className="mt-6">
           <TaskMatrixContent />
