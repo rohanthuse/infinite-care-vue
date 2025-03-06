@@ -169,12 +169,16 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   useEffect(() => {
     if (viewType === "weekly" && isToday(date)) {
       const currentHour = new Date().getHours();
-      if (weeklyGridRef.current) {
-        const scrollTarget = Math.max(0, (currentHour - 2) * hourHeight);
-        weeklyGridRef.current.scrollTop = scrollTarget;
-      }
+      const weeklyGridElements = document.querySelectorAll('.weekly-grid');
+      
+      weeklyGridElements.forEach(element => {
+        if (element instanceof HTMLElement) {
+          const scrollTarget = Math.max(0, (currentHour - 2) * hourHeight);
+          element.scrollTop = scrollTarget;
+        }
+      });
     }
-  }, [viewType, date]);
+  }, [viewType, date, hourHeight]);
   
   return (
     <div className={`${isFullScreen ? 'booking-fullscreen' : ''} bg-white rounded-lg border border-gray-200 shadow-sm`}>
