@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -373,7 +374,14 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       </div>
       
       {activeTab === "planning" && <>
-          <BookingFilters searchQuery={searchQuery} onSearchChange={setSearchQuery} viewMode={viewMode} onViewModeChange={setViewMode} selectedStatuses={selectedStatuses} onStatusChange={setSelectedStatuses} />
+          <BookingFilters 
+            searchQuery={searchQuery} 
+            onSearchChange={setSearchQuery} 
+            viewMode={viewMode} 
+            onViewModeChange={setViewMode} 
+            selectedStatuses={selectedStatuses} 
+            onStatusChange={setSelectedStatuses} 
+          />
           
           <BookingTimeGrid date={currentDate} bookings={mockBookings} clients={mockClients} carers={mockCarers} viewType={viewType} viewMode={viewMode} />
         </>}
