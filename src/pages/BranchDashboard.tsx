@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -19,7 +18,6 @@ import { Badge } from "@/components/ui/badge";
 import { TabNavigation } from "@/components/TabNavigation";
 import { BookingsTab } from "@/components/bookings/BookingsTab";
 import { CarersTab } from "@/components/carers/CarersTab";
-// Import ReviewsTab as a default import
 import ReviewsTab from "@/components/reviews/ReviewsTab";
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { NewBookingDialog } from "@/components/bookings/NewBookingDialog";
@@ -42,6 +40,7 @@ import {
   Tooltip, ResponsiveContainer, Legend, LineChart,
   Line, AreaChart, Area, PieChart, Pie, Cell
 } from "recharts";
+import { CommunicationsTab } from "@/components/communications/CommunicationsTab";
 
 const weeklyData = [
   { day: "Mon", visits: 12, bookings: 8, revenue: 780 },
@@ -173,7 +172,6 @@ const clients = [
   },
 ];
 
-// Dashboard Stat Component
 const DashboardStat = ({ title, value, change, icon, positive }: { 
   title: string; 
   value: string; 
@@ -206,7 +204,6 @@ const DashboardStat = ({ title, value, change, icon, positive }: {
   );
 };
 
-// Booking Item Component
 const BookingItem = ({ number, staff, client, time, status }: {
   number: string;
   staff: string;
@@ -241,7 +238,6 @@ const BookingItem = ({ number, staff, client, time, status }: {
   );
 };
 
-// Review Item Component
 const ReviewItem = ({ client, staff, date, rating, comment }: {
   client: string;
   staff: string;
@@ -270,7 +266,6 @@ const ReviewItem = ({ client, staff, date, rating, comment }: {
   );
 };
 
-// Action Item Component
 const ActionItem = ({ title, name, date, priority }: {
   title: string;
   name: string;
@@ -438,13 +433,11 @@ const BranchDashboard = () => {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
       
-      {/* Add Client Dialog */}
       <AddClientDialog 
         open={addClientDialogOpen} 
         onOpenChange={setAddClientDialogOpen} 
       />
       
-      {/* New Booking Dialog */}
       <NewBookingDialog
         open={newBookingDialogOpen}
         onOpenChange={setNewBookingDialogOpen}
@@ -888,7 +881,6 @@ const BranchDashboard = () => {
           
           {activeTab === "clients" && (
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-              {/* Client tab content */}
               <div className="flex justify-between p-4 border-b border-gray-100">
                 <h2 className="text-lg font-semibold">Clients</h2>
                 <Button 
@@ -1058,6 +1050,10 @@ const BranchDashboard = () => {
           
           {activeTab === "reviews" && (
             <ReviewsTab />
+          )}
+          
+          {activeTab === "communication" && (
+            <CommunicationsTab branchId={id || ""} />
           )}
         </motion.div>
       </main>
