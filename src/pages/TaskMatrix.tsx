@@ -5,78 +5,265 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { TabNavigation } from "@/components/TabNavigation";
 import { BranchHeader } from "@/components/BranchHeader";
 import { 
-  CheckSquare, Search, Filter, Download, Plus, 
-  FileUp, Calendar, ClipboardList 
+  Download, Filter, Plus, Search, MoreVertical, Calendar,
+  FileText, ClipboardList, CheckSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-// Sample data for the task matrix
-const taskRecords = [
+// Sample staff compliance data based on the screenshot
+const staffComplianceData = [
   {
-    id: "T001",
-    name: "Client Assessment",
-    assignedTo: "Warren, Susan",
-    priority: "High",
-    dueDate: "28/02/2025",
-    status: "Completed"
+    id: 1,
+    fullName: "Ayo-Famure, Opeyemi",
+    compliancePercentage: 86,
+    workPermit: {
+      status: "valid",
+      date: "13/05/2028",
+      expiresIn: 1164,
+      completed: false
+    },
+    carInsurance: {
+      status: "n/a",
+      completed: false
+    },
+    niNumber: {
+      status: "completed",
+      completed: true
+    },
+    drivingLicense: {
+      status: "n/a",
+      completed: false
+    },
+    dvla: {
+      status: "n/a",
+      completed: false
+    },
+    dbs: {
+      status: "valid",
+      date: "20/02/2027",
+      expiresIn: 716,
+      completed: false
+    }
   },
   {
-    id: "T002",
-    name: "Medication Review",
-    assignedTo: "Charuma, Charmaine",
-    priority: "Medium",
-    dueDate: "05/03/2025",
-    status: "In Progress"
+    id: 2,
+    fullName: "Iyaniwura, Ifeoluwa Adeseye",
+    compliancePercentage: 13,
+    workPermit: {
+      status: "missing",
+      completed: false
+    },
+    carInsurance: {
+      status: "missing",
+      completed: false
+    },
+    niNumber: {
+      status: "missing",
+      completed: false
+    },
+    drivingLicense: {
+      status: "missing",
+      completed: false
+    },
+    dvla: {
+      status: "missing",
+      completed: false
+    },
+    dbs: {
+      status: "missing",
+      completed: false
+    }
   },
   {
-    id: "T003",
-    name: "Care Plan Update",
-    assignedTo: "Ayo-Famure, Opeyemi",
-    priority: "High",
-    dueDate: "10/03/2025",
-    status: "Pending"
+    id: 3,
+    fullName: "Abiri-Maitland, Midé",
+    compliancePercentage: 73,
+    workPermit: {
+      status: "completed",
+      completed: true
+    },
+    carInsurance: {
+      status: "n/a",
+      completed: false
+    },
+    niNumber: {
+      status: "completed",
+      completed: true
+    },
+    drivingLicense: {
+      status: "valid",
+      date: "15/05/2033",
+      expiresIn: 2992,
+      completed: false
+    },
+    dvla: {
+      status: "completed",
+      completed: true
+    },
+    dbs: {
+      status: "n/a",
+      completed: false
+    }
   },
   {
-    id: "T004",
-    name: "Staff Training",
-    assignedTo: "Warren, Susan",
-    priority: "Low",
-    dueDate: "15/03/2025",
-    status: "In Progress"
+    id: 4,
+    fullName: "Asubonteng, Lydia",
+    compliancePercentage: 80,
+    workPermit: {
+      status: "valid",
+      date: "26/09/2026",
+      expiresIn: 569,
+      completed: false
+    },
+    carInsurance: {
+      status: "n/a",
+      completed: false
+    },
+    niNumber: {
+      status: "completed",
+      completed: true
+    },
+    drivingLicense: {
+      status: "n/a",
+      completed: false
+    },
+    dvla: {
+      status: "n/a",
+      completed: false
+    },
+    dbs: {
+      status: "expired",
+      date: "09/02/2025",
+      completed: false
+    }
   },
   {
-    id: "T005",
-    name: "Equipment Check",
-    assignedTo: "Charuma, Charmaine",
-    priority: "Medium",
-    dueDate: "12/03/2025",
-    status: "Pending"
+    id: 5,
+    fullName: "Baulch, Ursula",
+    compliancePercentage: 80,
+    workPermit: {
+      status: "valid",
+      date: "30/04/2028",
+      expiresIn: 1151,
+      completed: false
+    },
+    carInsurance: {
+      status: "n/a",
+      completed: false
+    },
+    niNumber: {
+      status: "completed",
+      completed: true
+    },
+    drivingLicense: {
+      status: "n/a",
+      completed: false
+    },
+    dvla: {
+      status: "n/a",
+      completed: false
+    },
+    dbs: {
+      status: "expired",
+      date: "30/11/2024",
+      completed: false
+    }
   },
   {
-    id: "T006",
-    name: "Client Feedback Collection",
-    assignedTo: "Ayo-Famure, Opeyemi",
-    priority: "Low",
-    dueDate: "20/03/2025",
-    status: "Completed"
+    id: 6,
+    fullName: "Charuma, Charmaine",
+    compliancePercentage: 86,
+    workPermit: {
+      status: "valid",
+      date: "23/10/2026",
+      expiresIn: 596,
+      completed: false
+    },
+    carInsurance: {
+      status: "valid",
+      date: "21/06/2025",
+      expiresIn: 107,
+      completed: false
+    },
+    niNumber: {
+      status: "completed",
+      completed: true
+    },
+    drivingLicense: {
+      status: "valid",
+      date: "31/01/2034",
+      expiresIn: 3253,
+      completed: false
+    },
+    dvla: {
+      status: "completed",
+      completed: true
+    },
+    dbs: {
+      status: "valid",
+      date: "31/01/2027",
+      expiresIn: 696,
+      completed: false
+    }
   }
 ];
+
+// Define compliance categories with their completion percentages
+const complianceCategories = [
+  { id: "workPermit", name: "Work Permit", completion: 61 },
+  { id: "carInsurance", name: "Car Insurance", completion: 61 },
+  { id: "niNumber", name: "NI Number", completion: 55 },
+  { id: "drivingLicense", name: "Driving License", completion: 72 },
+  { id: "dvla", name: "DVLA", completion: 72 },
+  { id: "dbs", name: "DBS", completion: 55 },
+];
+
+// Helper function to determine cell background color
+const getCellBackgroundColor = (item: any) => {
+  if (item.status === "missing") return "bg-red-600 text-white";
+  if (item.status === "expired") return "bg-red-600 text-white";
+  if (item.status === "valid" || item.status === "completed") return "bg-green-500 text-white";
+  return "bg-gray-200 text-gray-600";
+};
+
+// Helper function to render cell content
+const renderCellContent = (item: any) => {
+  if (item.status === "missing") {
+    const documentName = Object.keys(item.parent).find(key => item.parent[key] === item);
+    return `No ${documentName?.replace(/([A-Z])/g, ' $1').trim()}`;
+  }
+  if (item.status === "completed") return "Completed";
+  if (item.status === "n/a") return "N/A";
+  if (item.status === "valid") return (
+    <>
+      {item.date}<br />
+      <span className="text-xs">Expires in {item.expiresIn} days</span>
+    </>
+  );
+  if (item.status === "expired") return item.date;
+  return item.status;
+};
 
 const TaskMatrix = () => {
   const location = useLocation();
   const { id, branchName } = useParams();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [viewType, setViewType] = useState("staff");
   
-  // Set active tab based on route context
   const activeTab = location.pathname.includes("/workflow/") 
     ? "workflow" 
     : "task-matrix";
@@ -101,23 +288,9 @@ const TaskMatrix = () => {
     }
   };
 
-  const filteredTasks = taskRecords.filter(task => {
-    const matchesSearch = task.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          task.assignedTo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          task.id.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === "all" || task.status === statusFilter;
-    const matchesPriority = priorityFilter === "all" || task.priority === priorityFilter;
-    
-    return matchesSearch && matchesStatus && matchesPriority;
-  });
-
-  const handleAddTask = () => {
-    toast.info("Add Task functionality will be implemented soon", {
-      description: "This feature is coming in a future update",
-      position: "top-center",
-    });
-  };
+  const filteredStaff = staffComplianceData.filter(staff => 
+    staff.fullName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleExport = () => {
     toast.info("Export functionality will be implemented soon", {
@@ -126,8 +299,15 @@ const TaskMatrix = () => {
     });
   };
 
+  const handleAddTask = () => {
+    toast.info("Add Task functionality will be implemented soon", {
+      description: "This feature is coming in a future update",
+      position: "top-center",
+    });
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen flex flex-col bg-white">
       <DashboardHeader />
       
       <main className="flex-1 container mx-auto px-4 py-6">
@@ -146,12 +326,55 @@ const TaskMatrix = () => {
         />
         
         <div className="mt-6 space-y-6">
-          <div className="flex flex-col md:flex-row justify-between gap-4">
-            <div>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <FileText className="h-6 w-6 text-gray-500" />
               <h1 className="text-2xl font-bold text-gray-800">Task Matrix</h1>
-              <p className="text-gray-500 mt-1">Track task completion and compliance status</p>
             </div>
-            <div className="flex gap-3 items-center">
+            
+            <div className="flex items-center gap-3">
+              <RadioGroup 
+                defaultValue="staff" 
+                className="flex items-center rounded-md border p-1" 
+                value={viewType}
+                onValueChange={setViewType}
+              >
+                <div className="flex items-center space-x-1">
+                  <RadioGroupItem 
+                    value="staff" 
+                    id="staff" 
+                    className="peer sr-only" 
+                  />
+                  <Label
+                    htmlFor="staff"
+                    className={`rounded-sm px-3 py-1.5 text-sm font-medium ${
+                      viewType === "staff" 
+                        ? "bg-blue-600 text-white" 
+                        : "bg-transparent text-gray-600 hover:bg-gray-100"
+                    } cursor-pointer transition-colors`}
+                  >
+                    Staff
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <RadioGroupItem 
+                    value="client" 
+                    id="client" 
+                    className="peer sr-only" 
+                  />
+                  <Label
+                    htmlFor="client"
+                    className={`rounded-sm px-3 py-1.5 text-sm font-medium ${
+                      viewType === "client" 
+                        ? "bg-blue-600 text-white" 
+                        : "bg-transparent text-gray-600 hover:bg-gray-100"
+                    } cursor-pointer transition-colors`}
+                  >
+                    Client
+                  </Label>
+                </div>
+              </RadioGroup>
+              
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -167,211 +390,152 @@ const TaskMatrix = () => {
                 onClick={handleAddTask}
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add Task
+                Add
               </Button>
             </div>
           </div>
           
-          <div className="flex flex-col md:flex-row gap-3 mb-6">
-            <div className="relative flex-1">
+          <div className="flex mb-6">
+            <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search tasks..."
+                placeholder="Search staff..."
                 className="pl-10 pr-4"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3 md:w-1/3">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
-                  <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Priorities</SelectItem>
-                  <SelectItem value="High">High</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="Low">Low</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
           
-          <Card>
-            <CardHeader className="pb-1">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <div>
-                  <CardTitle>Task Tracking</CardTitle>
-                  <CardDescription>Monitor task assignments and completion</CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <Calendar className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <Filter className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[80px]">ID</TableHead>
-                      <TableHead>Task Name</TableHead>
-                      <TableHead>Assigned To</TableHead>
-                      <TableHead>Priority</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredTasks.length > 0 ? (
-                      filteredTasks.map((task) => (
-                        <TableRow key={task.id}>
-                          <TableCell className="font-medium">{task.id}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <CheckSquare className="h-4 w-4 mr-2 text-gray-400" />
-                              {task.name}
+          <div className="overflow-x-auto bg-white rounded-md shadow">
+            <Table className="border-collapse w-full">
+              <TableHeader>
+                <TableRow className="bg-blue-600 text-white">
+                  <TableHead className="border border-blue-700 text-center py-2 px-4 font-semibold text-white text-sm w-[40px]">#</TableHead>
+                  <TableHead className="border border-blue-700 py-2 px-4 font-semibold text-white text-sm">Full Name</TableHead>
+                  <TableHead className="border border-blue-700 py-2 px-4 font-semibold text-white text-sm">Percentage</TableHead>
+                  
+                  {complianceCategories.map((category) => (
+                    <TableHead 
+                      key={category.id}
+                      className="border border-blue-700 py-2 px-4 font-semibold text-white text-sm text-center relative min-w-[150px]"
+                    >
+                      <div className="flex flex-col items-center">
+                        <span>{category.name}</span>
+                        <span className="text-xs mt-1">{category.completion}%</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 absolute right-1 top-1 text-white hover:text-white hover:bg-blue-700"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              
+              <TableBody>
+                {filteredStaff.length > 0 ? (
+                  filteredStaff.map((staff) => {
+                    // Prepare items with parent reference for each row
+                    const workPermit = { ...staff.workPermit, parent: staff };
+                    const carInsurance = { ...staff.carInsurance, parent: staff };
+                    const niNumber = { ...staff.niNumber, parent: staff };
+                    const drivingLicense = { ...staff.drivingLicense, parent: staff };
+                    const dvla = { ...staff.dvla, parent: staff };
+                    const dbs = { ...staff.dbs, parent: staff };
+                    
+                    return (
+                      <TableRow key={staff.id} className={staff.id % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                        <TableCell className="border border-gray-200 text-center py-4 px-4 font-medium">
+                          {staff.id}
+                        </TableCell>
+                        <TableCell className="border border-gray-200 py-4 px-4">
+                          {staff.fullName}
+                        </TableCell>
+                        <TableCell className="border border-gray-200 py-4 px-4 font-medium">
+                          {staff.compliancePercentage}%
+                        </TableCell>
+                        
+                        <TableCell className={`border border-gray-200 p-0 ${getCellBackgroundColor(workPermit)}`}>
+                          <div className="flex flex-col h-full">
+                            <div className="flex-1 p-4 text-center">
+                              {renderCellContent(workPermit)}
                             </div>
-                          </TableCell>
-                          <TableCell>{task.assignedTo}</TableCell>
-                          <TableCell>
-                            <Badge className={`
-                              ${task.priority === "High" ? "bg-red-100 text-red-800" : 
-                                task.priority === "Medium" ? "bg-amber-100 text-amber-800" : 
-                                "bg-blue-100 text-blue-800"}
-                            `}>
-                              {task.priority}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{task.dueDate}</TableCell>
-                          <TableCell>
-                            <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              task.status === "Completed" ? "bg-green-100 text-green-800" :
-                              task.status === "In Progress" ? "bg-blue-100 text-blue-800" :
-                              "bg-amber-100 text-amber-800"
-                            }`}>
-                              {task.status}
+                            <div className="p-1.5 border-t border-gray-200 bg-white">
+                              <input type="checkbox" className="h-4 w-4" checked={workPermit.completed} readOnly />
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-4 text-gray-500">
-                          No tasks found matching your search criteria
+                          </div>
+                        </TableCell>
+                        
+                        <TableCell className={`border border-gray-200 p-0 ${getCellBackgroundColor(carInsurance)}`}>
+                          <div className="flex flex-col h-full">
+                            <div className="flex-1 p-4 text-center">
+                              {renderCellContent(carInsurance)}
+                            </div>
+                            <div className="p-1.5 border-t border-gray-200 bg-white">
+                              <input type="checkbox" className="h-4 w-4" checked={carInsurance.completed} readOnly />
+                            </div>
+                          </div>
+                        </TableCell>
+                        
+                        <TableCell className={`border border-gray-200 p-0 ${getCellBackgroundColor(niNumber)}`}>
+                          <div className="flex flex-col h-full">
+                            <div className="flex-1 p-4 text-center">
+                              {renderCellContent(niNumber)}
+                            </div>
+                            <div className="p-1.5 border-t border-gray-200 bg-white">
+                              <input type="checkbox" className="h-4 w-4" checked={niNumber.completed} readOnly />
+                            </div>
+                          </div>
+                        </TableCell>
+                        
+                        <TableCell className={`border border-gray-200 p-0 ${getCellBackgroundColor(drivingLicense)}`}>
+                          <div className="flex flex-col h-full">
+                            <div className="flex-1 p-4 text-center">
+                              {renderCellContent(drivingLicense)}
+                            </div>
+                            <div className="p-1.5 border-t border-gray-200 bg-white">
+                              <input type="checkbox" className="h-4 w-4" checked={drivingLicense.completed} readOnly />
+                            </div>
+                          </div>
+                        </TableCell>
+                        
+                        <TableCell className={`border border-gray-200 p-0 ${getCellBackgroundColor(dvla)}`}>
+                          <div className="flex flex-col h-full">
+                            <div className="flex-1 p-4 text-center">
+                              {renderCellContent(dvla)}
+                            </div>
+                            <div className="p-1.5 border-t border-gray-200 bg-white">
+                              <input type="checkbox" className="h-4 w-4" checked={dvla.completed} readOnly />
+                            </div>
+                          </div>
+                        </TableCell>
+                        
+                        <TableCell className={`border border-gray-200 p-0 ${getCellBackgroundColor(dbs)}`}>
+                          <div className="flex flex-col h-full">
+                            <div className="flex-1 p-4 text-center">
+                              {renderCellContent(dbs)}
+                            </div>
+                            <div className="p-1.5 border-t border-gray-200 bg-white">
+                              <input type="checkbox" className="h-4 w-4" checked={dbs.completed} readOnly />
+                            </div>
+                          </div>
                         </TableCell>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="border border-gray-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-800">Task Status Overview</h3>
-                  <Badge className="bg-green-100 text-green-800">67% Complete</Badge>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600">Completed</span>
-                      <span className="text-gray-800 font-medium">2</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-green-500 h-2 rounded-full" style={{ width: "33%" }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600">In Progress</span>
-                      <span className="text-gray-800 font-medium">2</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: "33%" }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600">Pending</span>
-                      <span className="text-gray-800 font-medium">2</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-amber-500 h-2 rounded-full" style={{ width: "33%" }}></div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="border border-gray-200">
-              <CardContent className="p-6">
-                <h3 className="font-semibold text-gray-800 mb-4">Tasks Due Soon</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                    <div>
-                      <p className="font-medium text-gray-800">Medication Review</p>
-                      <p className="text-sm text-gray-500">Charuma, Charmaine</p>
-                    </div>
-                    <Badge className="bg-amber-100 text-amber-800">5 days</Badge>
-                  </div>
-                  <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                    <div>
-                      <p className="font-medium text-gray-800">Equipment Check</p>
-                      <p className="text-sm text-gray-500">Charuma, Charmaine</p>
-                    </div>
-                    <Badge className="bg-amber-100 text-amber-800">12 days</Badge>
-                  </div>
-                  <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                    <div>
-                      <p className="font-medium text-gray-800">Care Plan Update</p>
-                      <p className="text-sm text-gray-500">Ayo-Famure, Opeyemi</p>
-                    </div>
-                    <Badge className="bg-red-100 text-red-800">2 days</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="border border-gray-200">
-              <CardContent className="p-6">
-                <h3 className="font-semibold text-gray-800 mb-4">Quick Actions</h3>
-                <div className="space-y-2">
-                  <Button variant="outline" className="w-full justify-start text-gray-700">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Assign New Task
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start text-gray-700">
-                    <ClipboardList className="h-4 w-4 mr-2" />
-                    Generate Task Report
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start text-gray-700">
-                    <FileUp className="h-4 w-4 mr-2" />
-                    Import Tasks
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                      No staff members found matching your search criteria
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
         </div>
       </main>
