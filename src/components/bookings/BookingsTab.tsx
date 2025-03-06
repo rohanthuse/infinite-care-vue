@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +15,10 @@ const mockClients: Client[] = [
   { id: "CL-004", name: "Ren, Victoria", initials: "RV", bookingCount: 2 },
   { id: "CL-005", name: "Iyaniwura, Ifeoluwa", initials: "II", bookingCount: 1 },
   { id: "CL-006", name: "Careville Ltd", initials: "CL", bookingCount: 4 },
+  { id: "CL-007", name: "Johnson, Andrew", initials: "JA", bookingCount: 2 },
+  { id: "CL-008", name: "Mistry, Sanjay", initials: "MS", bookingCount: 3 },
+  { id: "CL-009", name: "Williams, Olivia", initials: "WO", bookingCount: 1 },
+  { id: "CL-010", name: "Thompson, Emma", initials: "TE", bookingCount: 2 },
 ];
 
 const mockCarers: Carer[] = [
@@ -24,6 +27,11 @@ const mockCarers: Carer[] = [
   { id: "CA-003", name: "Ayo-Famure, Opeyemi", initials: "AF", bookingCount: 3 },
   { id: "CA-004", name: "Smith, John", initials: "SJ", bookingCount: 2 },
   { id: "CA-005", name: "Williams, Mary", initials: "WM", bookingCount: 1 },
+  { id: "CA-006", name: "Davis, Michael", initials: "DM", bookingCount: 2 },
+  { id: "CA-007", name: "Brown, David", initials: "BD", bookingCount: 3 },
+  { id: "CA-008", name: "Miller, Sarah", initials: "MS", bookingCount: 2 },
+  { id: "CA-009", name: "Wilson, Thomas", initials: "WT", bookingCount: 1 },
+  { id: "CA-010", name: "Moore, Jennifer", initials: "MJ", bookingCount: 2 },
 ];
 
 const mockBookings: Booking[] = [
@@ -37,7 +45,8 @@ const mockBookings: Booking[] = [
     startTime: "07:30",
     endTime: "08:30",
     date: new Date().toISOString().split('T')[0],
-    status: "done"
+    status: "done",
+    notes: "Medication administered as prescribed"
   },
   {
     id: "BK-002",
@@ -149,6 +158,76 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({ branchId }) => {
   const [viewMode, setViewMode] = useState<"client" | "group">("client");
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["assigned", "in-progress"]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const additionalBookings: Booking[] = [
+      {
+        id: "BK-010",
+        clientId: "CL-007",
+        clientName: "Johnson, Andrew",
+        clientInitials: "JA",
+        carerId: "CA-006",
+        carerName: "Davis, Michael",
+        startTime: "09:30",
+        endTime: "10:30",
+        date: today,
+        status: "assigned"
+      },
+      {
+        id: "BK-011",
+        clientId: "CL-008",
+        clientName: "Mistry, Sanjay",
+        clientInitials: "MS",
+        carerId: "CA-007",
+        carerName: "Brown, David",
+        startTime: "11:00",
+        endTime: "12:00",
+        date: today,
+        status: "in-progress"
+      },
+      {
+        id: "BK-012",
+        clientId: "CL-009",
+        clientName: "Williams, Olivia",
+        clientInitials: "WO",
+        carerId: "CA-008",
+        carerName: "Miller, Sarah",
+        startTime: "13:30",
+        endTime: "14:30",
+        date: today,
+        status: "assigned"
+      },
+      {
+        id: "BK-013",
+        clientId: "CL-010",
+        clientName: "Thompson, Emma",
+        clientInitials: "TE",
+        carerId: "CA-009",
+        carerName: "Wilson, Thomas",
+        startTime: "15:00",
+        endTime: "16:00",
+        date: today,
+        status: "assigned"
+      },
+      {
+        id: "BK-014",
+        clientId: "CL-004",
+        clientName: "Ren, Victoria",
+        clientInitials: "RV",
+        carerId: "CA-010",
+        carerName: "Moore, Jennifer",
+        startTime: "16:30",
+        endTime: "17:30",
+        date: today,
+        status: "cancelled",
+        notes: "Client requested cancellation due to hospital appointment"
+      }
+    ];
+    
+    mockBookings.push(...additionalBookings);
+  }, []);
 
   const handleRefresh = () => {
     setIsLoading(true);

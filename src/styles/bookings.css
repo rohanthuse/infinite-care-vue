@@ -4,6 +4,11 @@
   grid-template-columns: repeat(24, minmax(0, 1fr));
 }
 
+/* Half-hour grid columns (48 columns for 24 hours) */
+.grid-cols-48 {
+  grid-template-columns: repeat(48, minmax(0, 1fr));
+}
+
 /* Hide scrollbar but allow scrolling */
 .hide-scrollbar {
   -ms-overflow-style: none;  /* IE and Edge */
@@ -12,4 +17,73 @@
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;  /* Chrome, Safari, Opera */
+}
+
+/* Fullscreen mode styles */
+.booking-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  background-color: white;
+  overflow: auto;
+  padding: 1rem;
+}
+
+/* Time marker styles */
+.time-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: rgba(220, 38, 38, 0.8);
+  z-index: 20;
+}
+
+/* Time marker label */
+.time-marker-label {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  background-color: rgb(220, 38, 38);
+  color: white;
+  font-size: 0.65rem;
+  padding: 1px 4px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+/* Highlight for the selected client/carer row */
+.selected-row {
+  background-color: rgba(59, 130, 246, 0.08) !important;
+  border-left: 2px solid rgb(59, 130, 246);
+}
+
+/* Time grid header */
+.time-grid-header {
+  height: 40px;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 10;
+}
+
+/* Half hour markers */
+.half-hour-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: rgba(209, 213, 219, 0.5);
+}
+
+/* Client/Carer selector styles */
+.entity-selector {
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
