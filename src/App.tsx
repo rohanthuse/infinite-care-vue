@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -87,7 +88,7 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
             
             {/* Branch workflow routes */}
-            <Route path="/branch-dashboard/:id/:branchName/workflow" element={<Navigate to={`/branch-dashboard/:id/:branchName/task-matrix`} />} />
+            <Route path="/branch-dashboard/:id/:branchName/workflow" element={<Navigate to={`/branch-dashboard/:id/:branchName/task-matrix`} replace />} />
             <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
             <Route path="/branch-dashboard/:id/:branchName/training-matrix" element={<TrainingMatrix />} />
             <Route path="/branch-dashboard/:id/:branchName/form-matrix" element={<FormMatrix />} />
