@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -137,6 +138,15 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     const hours = currentTime.getHours();
     const minutes = currentTime.getMinutes();
     return hours * hourHeight + (minutes / 60) * hourHeight;
+  };
+
+  // Add the missing getCurrentTimePercentage function
+  const getCurrentTimePercentage = () => {
+    const hours = currentTime.getHours();
+    const minutes = currentTime.getMinutes();
+    const totalMinutesInDay = 24 * 60;
+    const currentMinutes = hours * 60 + minutes;
+    return (currentMinutes / totalMinutesInDay) * 100;
   };
 
   const getBookingStyle = (startTime: string, endTime: string) => {
