@@ -6,18 +6,23 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 interface BookingEntryProps {
   booking: Booking;
-  startPos: number;
-  width: number;
-  type: "client" | "carer";
-  displayMode: "horizontal" | "vertical";
+  startPos?: number;
+  width?: number;
+  type?: "client" | "carer";
+  displayMode?: "horizontal" | "vertical";
+  position?: {
+    top: number;
+    height: number;
+  };
 }
 
 export const BookingEntry: React.FC<BookingEntryProps> = ({
   booking,
-  startPos,
-  width,
-  type,
-  displayMode
+  startPos = 0,
+  width = 100,
+  type = "client",
+  displayMode = "horizontal",
+  position
 }) => {
   // Determine background color based on status
   const statusColors = {
@@ -41,6 +46,54 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
       year: "numeric" 
     });
   };
+  
+  // If position is provided, use it (vertical view)
+  if (position) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div 
+              className={`absolute rounded shadow-sm border ${backgroundColor} hover:shadow-md transition-shadow cursor-pointer text-xs z-10`}
+              style={{ 
+                top: `${position.top}px`,
+                height: `${position.height}px`,
+                left: '2px',
+                right: '2px'
+              }}
+            >
+              <div className="p-1 overflow-hidden h-full flex flex-col">
+                <div className="font-medium truncate flex items-center">
+                  <span>{booking.startTime}-{booking.endTime}</span>
+                  <Info className="h-3 w-3 ml-1 opacity-60" />
+                </div>
+                <div className="truncate mt-auto">
+                  {type === "client" ? booking.carerName.split(",")[0] : booking.clientInitials}
+                </div>
+              </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs bg-white p-3 shadow-lg rounded-md border">
+            <div className="space-y-1.5">
+              <div className="font-semibold text-sm">{type === "client" ? booking.carerName : booking.clientName}</div>
+              <div className="flex items-center text-xs text-gray-600">
+                <Clock className="h-3.5 w-3.5 mr-1" />
+                <span>{booking.startTime} - {booking.endTime}</span>
+                <span className="mx-1.5">·</span>
+                <span>{formatDate(booking.date)}</span>
+              </div>
+              <div className={`text-xs py-0.5 px-1.5 rounded-full inline-flex ${statusColors[booking.status]}`}>
+                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+              </div>
+              {booking.notes && (
+                <div className="text-xs mt-1 text-gray-600">{booking.notes}</div>
+              )}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
   
   // Only render horizontal booking entry in daily view
   if (displayMode === "horizontal") {
