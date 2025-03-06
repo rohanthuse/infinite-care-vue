@@ -6,7 +6,7 @@ import {
   Briefcase, Users, CheckCircle, XCircle, Clock, AlertCircle, 
   Download, ChevronLeft, Edit, ArrowLeft, FileIcon, Star,
   Clipboard, Award, UserCheck, HeartHandshake, ListChecks, Newspaper,
-  Plus, ChevronDown, BadgeCheck, Timer, Trophy, IdCard, Globe
+  Plus, ChevronDown, BadgeCheck, Timer, Trophy, IdCard, Globe, ChevronRight
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -61,18 +61,18 @@ const mockCarerData = {
 };
 
 const essentials = [
-  { name: "Work Permit & Nationality", status: "completed" },
-  { name: "Vaccination", status: "completed" },
-  { name: "Car Insurance", status: "completed" },
-  { name: "Name Change", status: "completed" },
-  { name: "Driving License", status: "completed" },
-  { name: "NI Number", status: "completed" },
-  { name: "P45", status: "completed" },
-  { name: "Proof of Address", status: "completed" },
-  { name: "DBS", status: "completed" },
-  { name: "Bank Details", status: "missing" },
-  { name: "Individualised", status: "pending" },
-  { name: "Documents & Additional Information", status: "pending" }
+  { id: "work-permit", name: "Work Permit & Nationality", status: "completed" },
+  { id: "vaccination", name: "Vaccination", status: "completed" },
+  { id: "car-insurance", name: "Car Insurance", status: "completed" },
+  { id: "name-change", name: "Name Change", status: "completed" },
+  { id: "driving-license", name: "Driving License", status: "completed" },
+  { id: "ni-number", name: "NI Number", status: "completed" },
+  { id: "p45", name: "P45", status: "completed" },
+  { id: "proof-address", name: "Proof of Address", status: "completed" },
+  { id: "dbs", name: "DBS", status: "completed" },
+  { id: "bank-details", name: "Bank Details", status: "missing" },
+  { id: "individualised", name: "Individualised", status: "pending" },
+  { id: "documents-info", name: "Documents & Additional Information", status: "pending" }
 ];
 
 const employmentHistory = [
@@ -187,6 +187,30 @@ const CarerProfilePage = () => {
   };
 
   const carer = mockCarerData;
+
+  const renderStatusBadge = (status) => {
+    switch (status) {
+      case "completed":
+        return <Badge className="bg-green-600 hover:bg-green-700">Completed</Badge>;
+      case "missing":
+        return <Badge className="bg-red-600 hover:bg-red-700">Missing</Badge>;
+      case "pending":
+      default:
+        return null; // No badge for pending items
+    }
+  };
+
+  const renderStatusIcon = (status) => {
+    switch (status) {
+      case "completed":
+        return <CheckCircle className="text-green-600 h-5 w-5 mr-2" />;
+      case "missing":
+        return <XCircle className="text-red-600 h-5 w-5 mr-2" />;
+      case "pending":
+      default:
+        return <AlertCircle className="text-amber-600 h-5 w-5 mr-2" />;
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
@@ -630,62 +654,81 @@ const CarerProfilePage = () => {
                   <CardContent>
                     <div className="space-y-4">
                       <Accordion type="single" collapsible className="w-full">
-                        <AccordionItem value="work-permit" className="bg-gray-50 p-4 rounded-lg border-0 mb-4">
-                          <AccordionTrigger className="py-0 hover:no-underline">
-                            <div className="flex items-center w-full justify-between pr-2">
-                              <div className="flex items-center">
-                                <CheckCircle className="text-green-600 h-5 w-5 mr-2" />
-                                <h3 className="font-medium">Work Permit & Nationality</h3>
-                              </div>
-                              <Badge className="ml-auto bg-green-600 mr-2">Completed</Badge>
-                            </div>
-                          </AccordionTrigger>
-                          <AccordionContent className="pt-4">
-                            <div className="space-y-4">
-                              <div>
-                                <Label className="mb-1">N/A</Label>
-                              </div>
-                              
-                              <div>
-                                <Label className="mb-1">Work Permit:</Label>
-                                <div className="border rounded-md p-2 bg-white">Other</div>
-                              </div>
-                              
-                              <div>
-                                <Label className="mb-1 after:content-['*'] after:text-red-500 after:ml-0.5">Specify:</Label>
-                                <div className="border rounded-md p-2 bg-white">BRP</div>
-                              </div>
-                              
-                              <div>
-                                <Label className="mb-1">How many hours are you allowed to work in the UK per week?</Label>
-                                <div className="border rounded-md p-2 bg-white">Full-Time</div>
-                              </div>
-                              
-                              <div>
-                                <Label className="mb-1">Expiry Date:</Label>
-                                <div className="border rounded-md p-2 bg-white">13-05-2028</div>
-                              </div>
-                              
-                              <div>
-                                <Label className="mb-1 after:content-['*'] after:text-red-500 after:ml-0.5">Upload a Copy:</Label>
-                                <div className="border rounded p-3 bg-white mt-1">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-2">
-                                      <FileText className="h-5 w-5 text-blue-500" />
-                                      <div>
-                                        <p className="text-sm font-medium">Right_to_work_opeyemi.jpg</p>
-                                        <p className="text-xs text-gray-500">0.07 KB</p>
-                                      </div>
-                                    </div>
-                                    <Button variant="ghost" size="sm">
-                                      <Download className="h-4 w-4" />
-                                    </Button>
-                                  </div>
+                        {essentials.map((item) => (
+                          <AccordionItem 
+                            key={item.id} 
+                            value={item.id} 
+                            className="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-4 overflow-hidden"
+                          >
+                            <AccordionTrigger className="py-0 hover:no-underline">
+                              <div className="flex items-center w-full justify-between pr-2">
+                                <div className="flex items-center">
+                                  {renderStatusIcon(item.status)}
+                                  <h3 className="font-medium">{item.name}</h3>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {renderStatusBadge(item.status)}
+                                  <ChevronRight className="h-5 w-5 text-gray-400 transition-transform duration-200" />
                                 </div>
                               </div>
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
+                            </AccordionTrigger>
+                            <AccordionContent className="pt-4">
+                              {item.id === "work-permit" ? (
+                                <div className="space-y-4">
+                                  <div>
+                                    <Label className="mb-1">N/A</Label>
+                                  </div>
+                                  
+                                  <div>
+                                    <Label className="mb-1">Work Permit:</Label>
+                                    <div className="border rounded-md p-2 bg-white">Other</div>
+                                  </div>
+                                  
+                                  <div>
+                                    <Label className="mb-1 after:content-['*'] after:text-red-500 after:ml-0.5">Specify:</Label>
+                                    <div className="border rounded-md p-2 bg-white">BRP</div>
+                                  </div>
+                                  
+                                  <div>
+                                    <Label className="mb-1">How many hours are you allowed to work in the UK per week?</Label>
+                                    <div className="border rounded-md p-2 bg-white">Full-Time</div>
+                                  </div>
+                                  
+                                  <div>
+                                    <Label className="mb-1">Expiry Date:</Label>
+                                    <div className="border rounded-md p-2 bg-white">13-05-2028</div>
+                                  </div>
+                                  
+                                  <div>
+                                    <Label className="mb-1 after:content-['*'] after:text-red-500 after:ml-0.5">Upload a Copy:</Label>
+                                    <div className="border rounded p-3 bg-white mt-1">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-2">
+                                          <FileText className="h-5 w-5 text-blue-500" />
+                                          <div>
+                                            <p className="text-sm font-medium">Right_to_work_opeyemi.jpg</p>
+                                            <p className="text-xs text-gray-500">0.07 KB</p>
+                                          </div>
+                                        </div>
+                                        <Button variant="ghost" size="sm">
+                                          <Download className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="py-2 text-gray-500 italic">
+                                  {item.status === "missing" ? 
+                                    "This information is required but not yet provided." : 
+                                    item.status === "pending" ? 
+                                      "This information is pending review." : 
+                                      "Details are available and have been verified."}
+                                </div>
+                              )}
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
                       </Accordion>
                     </div>
                   </CardContent>
