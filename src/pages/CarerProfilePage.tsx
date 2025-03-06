@@ -7,7 +7,7 @@ import {
   Briefcase, Users, CheckCircle, XCircle, Clock, AlertCircle, 
   Download, ChevronLeft, Edit, ArrowLeft, FileIcon, Star,
   Clipboard, Award, UserCheck, HeartHandshake, ListChecks, Newspaper,
-  Plus, ChevronDown
+  Plus, ChevronDown, BadgeCheck, Timer, Trophy, IdCard, Globe
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -317,121 +317,192 @@ const CarerProfilePage = () => {
                 <TabsTrigger value="documents">Documents</TabsTrigger>
               </TabsList>
 
-              {/* Overview Tab */}
+              {/* Overview Tab - Redesigned for a modern look */}
               <TabsContent value="overview">
-                <Card className="mb-6">
+                <Card className="mb-6 overflow-hidden border-0 shadow-lg">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b">
+                    <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                      <FileText className="h-5 w-5 mr-2 text-blue-600" />
+                      Overview
+                    </h2>
+                  </div>
                   <CardContent className="p-6">
-                    <h2 className="text-xl font-bold mb-4">Overview</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <div className="mb-4">
-                          <h3 className="text-sm font-medium text-gray-500">ID No:</h3>
-                          <p>{carer.carerId}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-10">
+                      <div className="space-y-4">
+                        <div className="flex items-start">
+                          <div className="bg-blue-100 p-2 rounded-full mr-3">
+                            <IdCard className="h-5 w-5 text-blue-700" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-medium text-gray-500">ID No</h3>
+                            <p className="font-semibold text-lg">{carer.carerId}</p>
+                          </div>
                         </div>
-                        <div className="mb-4">
-                          <h3 className="text-sm font-medium text-gray-500">Joined On:</h3>
-                          <p>{carer.joinedOn}</p>
+                        
+                        <div className="flex items-start">
+                          <div className="bg-purple-100 p-2 rounded-full mr-3">
+                            <Calendar className="h-5 w-5 text-purple-700" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-medium text-gray-500">Joined On</h3>
+                            <p className="font-semibold text-lg">{carer.joinedOn}</p>
+                          </div>
                         </div>
-                        <div className="mb-4">
-                          <h3 className="text-sm font-medium text-gray-500">Location:</h3>
-                          <p>{carer.location}</p>
+                        
+                        <div className="flex items-start">
+                          <div className="bg-green-100 p-2 rounded-full mr-3">
+                            <MapPin className="h-5 w-5 text-green-700" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-medium text-gray-500">Location</h3>
+                            <p className="font-semibold text-lg">{carer.location}</p>
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <div className="mb-4">
-                          <h3 className="text-sm font-medium text-gray-500">Telephone:</h3>
-                          <p>{carer.phone}</p>
+                      
+                      <div className="space-y-4">
+                        <div className="flex items-start">
+                          <div className="bg-amber-100 p-2 rounded-full mr-3">
+                            <Phone className="h-5 w-5 text-amber-700" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-medium text-gray-500">Telephone</h3>
+                            <p className="font-semibold text-lg">{carer.phone}</p>
+                          </div>
                         </div>
-                        <div className="mb-4">
-                          <h3 className="text-sm font-medium text-gray-500">Mobile:</h3>
-                          <p>{carer.mobile}</p>
+                        
+                        <div className="flex items-start">
+                          <div className="bg-red-100 p-2 rounded-full mr-3">
+                            <Phone className="h-5 w-5 text-red-700" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-medium text-gray-500">Mobile</h3>
+                            <p className="font-semibold text-lg">{carer.mobile}</p>
+                          </div>
                         </div>
-                        <div className="mb-4">
-                          <h3 className="text-sm font-medium text-gray-500">Email:</h3>
-                          <p>{carer.email}</p>
+                        
+                        <div className="flex items-start">
+                          <div className="bg-indigo-100 p-2 rounded-full mr-3">
+                            <Mail className="h-5 w-5 text-indigo-700" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-medium text-gray-500">Email</h3>
+                            <p className="font-semibold text-lg">{carer.email}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                      <Card className="bg-cyan-500 text-white">
-                        <CardContent className="p-4">
-                          <h3 className="text-sm font-medium mb-2">Supervisor</h3>
-                          <p className="text-lg font-semibold">{carer.supervisor}</p>
-                        </CardContent>
-                      </Card>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-8">
+                      <div className="transform transition-all duration-200 hover:scale-105">
+                        <Card className="overflow-hidden shadow border-0 bg-gradient-to-r from-cyan-500 to-blue-500 text-white">
+                          <CardContent className="p-5">
+                            <div className="flex items-center mb-3">
+                              <UserCheck className="h-6 w-6 mr-2 text-white" />
+                              <h3 className="text-sm font-medium">Supervisor</h3>
+                            </div>
+                            <p className="text-xl font-bold">{carer.supervisor}</p>
+                          </CardContent>
+                        </Card>
+                      </div>
                       
-                      <Card className="bg-gray-600 text-white">
-                        <CardContent className="p-4">
-                          <h3 className="text-sm font-medium mb-2">Length of Service</h3>
-                          <p className="text-lg font-semibold">{carer.experience}</p>
-                        </CardContent>
-                      </Card>
+                      <div className="transform transition-all duration-200 hover:scale-105">
+                        <Card className="overflow-hidden shadow border-0 bg-gradient-to-r from-slate-700 to-slate-600 text-white">
+                          <CardContent className="p-5">
+                            <div className="flex items-center mb-3">
+                              <Timer className="h-6 w-6 mr-2 text-white" />
+                              <h3 className="text-sm font-medium">Length of Service</h3>
+                            </div>
+                            <p className="text-xl font-bold">{carer.experience}</p>
+                          </CardContent>
+                        </Card>
+                      </div>
                       
-                      <Card className="bg-green-500 text-white">
-                        <CardContent className="p-4">
-                          <h3 className="text-sm font-medium mb-2">Rating</h3>
-                          <div className="flex">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} className="h-5 w-5 fill-white" />
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
+                      <div className="transform transition-all duration-200 hover:scale-105">
+                        <Card className="overflow-hidden shadow border-0 bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                          <CardContent className="p-5">
+                            <div className="flex items-center mb-3">
+                              <Trophy className="h-6 w-6 mr-2 text-white" />
+                              <h3 className="text-sm font-medium">Rating</h3>
+                            </div>
+                            <div className="flex">
+                              {[...Array(5)].map((_, i) => (
+                                <Star key={i} className="h-6 w-6 fill-white" />
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
                 
-                <Card className="mb-6">
+                <Card className="mb-6 overflow-hidden border-0 shadow-lg">
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b">
+                    <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                      <BadgeCheck className="h-5 w-5 mr-2 text-purple-600" />
+                      Profile Completion
+                    </h2>
+                  </div>
                   <CardContent className="p-6">
-                    <h2 className="text-xl font-bold mb-4">Profile Completion Percentage</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="flex justify-center">
-                        <div className="relative w-36 h-36">
-                          <div className="w-36 h-36 rounded-full bg-gray-100 flex items-center justify-center">
-                            <div className="text-center">
-                              <div className="text-3xl font-bold text-green-600">{carer.profileCompletion}%</div>
-                              <div className="text-xs text-gray-500">Complete</div>
-                            </div>
-                          </div>
-                          <svg className="absolute top-0 left-0 w-36 h-36" viewBox="0 0 36 36">
-                            <path
-                              d="M18 2.0845
-                                a 15.9155 15.9155 0 0 1 0 31.831
-                                a 15.9155 15.9155 0 0 1 0 -31.831"
-                              fill="none"
-                              stroke="#4CAF50"
-                              strokeWidth="2"
-                              strokeDasharray={`${carer.profileCompletion}, 100`}
+                      <div className="flex justify-center items-center">
+                        <div className="relative w-44 h-44 flex items-center justify-center bg-white rounded-full shadow-md">
+                          <svg className="absolute w-44 h-44" viewBox="0 0 44 44">
+                            <circle 
+                              cx="22" cy="22" r="20" 
+                              fill="none" 
+                              stroke="#e5e7eb" 
+                              strokeWidth="4"
+                            />
+                            <circle 
+                              cx="22" cy="22" r="20" 
+                              fill="none" 
+                              stroke="#4ade80" 
+                              strokeWidth="4" 
                               strokeLinecap="round"
-                              transform="rotate(-90, 18, 18)"
+                              strokeDasharray={`${carer.profileCompletion * 1.26}, 126`} 
+                              transform="rotate(-90, 22, 22)"
+                              className="drop-shadow-md"
                             />
                           </svg>
+                          <div className="text-center z-10">
+                            <span className="text-4xl font-bold text-gray-800">{carer.profileCompletion}%</span>
+                            <p className="text-sm text-gray-500 mt-1">Complete</p>
+                          </div>
                         </div>
                       </div>
                       
-                      <div className="space-y-2">
+                      <div className="space-y-3 bg-white p-4 rounded-lg shadow-sm">
                         {profileCompletionItems.slice(0, 6).map((item, index) => (
-                          <div key={index} className="flex items-center">
-                            {item.completed ? (
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                            ) : (
-                              <XCircle className="h-4 w-4 text-red-500 mr-2" />
-                            )}
-                            <span>{item.name}</span>
+                          <div key={index} className="flex items-center p-2 rounded-md transition-colors hover:bg-gray-50">
+                            <div className={`rounded-full p-1 mr-3 ${item.completed ? "bg-green-100" : "bg-red-100"}`}>
+                              {item.completed ? (
+                                <CheckCircle className="h-5 w-5 text-green-600" />
+                              ) : (
+                                <XCircle className="h-5 w-5 text-red-600" />
+                              )}
+                            </div>
+                            <span className={`font-medium ${item.completed ? "text-gray-700" : "text-red-600"}`}>
+                              {item.name}
+                            </span>
                           </div>
                         ))}
                       </div>
                       
-                      <div className="space-y-2">
+                      <div className="space-y-3 bg-white p-4 rounded-lg shadow-sm">
                         {profileCompletionItems.slice(6).map((item, index) => (
-                          <div key={index} className="flex items-center">
-                            {item.completed ? (
-                              <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                            ) : (
-                              <XCircle className="h-4 w-4 text-red-500 mr-2" />
-                            )}
-                            <span>{item.name}</span>
+                          <div key={index} className="flex items-center p-2 rounded-md transition-colors hover:bg-gray-50">
+                            <div className={`rounded-full p-1 mr-3 ${item.completed ? "bg-green-100" : "bg-red-100"}`}>
+                              {item.completed ? (
+                                <CheckCircle className="h-5 w-5 text-green-600" />
+                              ) : (
+                                <XCircle className="h-5 w-5 text-red-600" />
+                              )}
+                            </div>
+                            <span className={`font-medium ${item.completed ? "text-gray-700" : "text-red-600"}`}>
+                              {item.name}
+                            </span>
                           </div>
                         ))}
                       </div>
