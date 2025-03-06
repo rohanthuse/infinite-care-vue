@@ -38,7 +38,7 @@ const BranchDetails = () => {
             createdBy: "System", 
             status: "Active",
             stats: {
-              staff: 15,
+              carers: 15,
               clients: 32,
               bookings: 124,
               reviews: 28,
@@ -55,7 +55,7 @@ const BranchDetails = () => {
             createdBy: "Laniyan, Aderinsola", 
             status: "Active",
             stats: {
-              staff: 8,
+              carers: 8,
               clients: 17,
               bookings: 56,
               reviews: 12,
@@ -157,7 +157,7 @@ const BranchDetails = () => {
                   Edit Branch
                 </Button>
                 <CustomButton className="bg-blue-600 hover:bg-blue-700">
-                  Manage Staff
+                  Manage Carers
                 </CustomButton>
               </div>
             </div>
@@ -165,8 +165,8 @@ const BranchDetails = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               <StatCard 
                 icon={Users} 
-                title="Staff Members" 
-                value={branchData.stats.staff} 
+                title="Carers" 
+                value={branchData.stats.carers} 
                 color="bg-blue-600" 
               />
               <StatCard 
@@ -284,7 +284,7 @@ const BranchDetails = () => {
                         </div>
                         <div>
                           <p className="font-medium">Pender, Eva</p>
-                          <p className="text-xs text-gray-500">Staff: Warren, Susan</p>
+                          <p className="text-xs text-gray-500">Carer: Warren, Susan</p>
                         </div>
                       </div>
                       <div className="flex text-amber-500">

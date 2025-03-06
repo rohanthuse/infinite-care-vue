@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   LayoutDashboard, Workflow, ListChecks, Users, 
@@ -40,7 +39,7 @@ const primaryTabs: TabItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", value: "dashboard", description: "Branch overview" },
   { icon: Calendar, label: "Bookings", value: "bookings", description: "Manage appointments" },
   { icon: Users, label: "Clients", value: "clients", description: "Client information" },
-  { icon: Users, label: "Staff", value: "staff", description: "Staff management" },
+  { icon: Users, label: "Carers", value: "carers", description: "Carer management" },
   { icon: Star, label: "Reviews", value: "reviews", description: "Client feedback" },
   { icon: MessageSquare, label: "Communication", value: "communication", description: "Messages & emails" },
 ];
@@ -90,7 +89,7 @@ interface TabNavigationProps {
   activeTab: string;
   onChange: (value: string) => void;
   hideActionsOnMobile?: boolean;
-  hideQuickAdd?: boolean; // New prop to control Quick Add button visibility
+  hideQuickAdd?: boolean;
 }
 
 export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false, hideQuickAdd = false }: TabNavigationProps) => {
@@ -151,9 +150,9 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                       <FileSignature className="mr-2 h-4 w-4" />
                       <span>New Agreement</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleQuickAddAction("New Staff")} className="cursor-pointer">
+                    <DropdownMenuItem onClick={() => handleQuickAddAction("New Carer")} className="cursor-pointer">
                       <UserRoundPlus className="mr-2 h-4 w-4" />
-                      <span>New Staff</span>
+                      <span>New Carer</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -417,9 +416,9 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                       <FileSignature className="mr-2 h-4 w-4" />
                       <span>New Agreement</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleQuickAddAction("New Staff")} className="cursor-pointer">
+                    <DropdownMenuItem onClick={() => handleQuickAddAction("New Carer")} className="cursor-pointer">
                       <UserRoundPlus className="mr-2 h-4 w-4" />
-                      <span>New Staff</span>
+                      <span>New Carer</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => handleQuickAddAction("Upload Document")} className="cursor-pointer">
