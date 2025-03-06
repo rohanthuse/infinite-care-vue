@@ -52,6 +52,7 @@ const secondaryTabGroups = [
     items: [
       { icon: Workflow, label: "Workflow", value: "workflow", description: "Process management" },
       { icon: ListChecks, label: "Task Matrix", value: "task-matrix", description: "Compliance tracking", path: "task-matrix" },
+      { icon: ListChecks, label: "Training Matrix", value: "training-matrix", description: "Training tracking", path: "training-matrix" },
       { icon: ListChecks, label: "Key Parameters", value: "parameters", description: "Track metrics" },
       { icon: Pill, label: "Medication", value: "medication", description: "Medicine tracking" },
       { icon: ClipboardList, label: "Care Plan", value: "care-plan", description: "Patient care plans" },
@@ -122,6 +123,10 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
       navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
     } else if (value === "task-matrix") {
       navigate("/workflow/task-matrix");
+    } else if (value === "training-matrix" && id && branchName) {
+      navigate(`/branch-dashboard/${id}/${branchName}/training-matrix`);
+    } else if (value === "training-matrix") {
+      navigate("/workflow/training-matrix");
     }
   };
   

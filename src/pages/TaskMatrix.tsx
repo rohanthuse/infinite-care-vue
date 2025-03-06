@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -204,8 +203,15 @@ const TaskMatrix = () => {
         case "task-matrix":
           navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
           break;
+        case "training-matrix":
+          navigate(`/branch-dashboard/${id}/${branchName}/training-matrix`);
+          break;
         default:
           break;
+      }
+    } else {
+      if (value === "training-matrix") {
+        navigate("/workflow/training-matrix");
       }
     }
   };

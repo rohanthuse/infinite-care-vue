@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -220,6 +219,10 @@ const TrainingMatrix = () => {
           break;
         default:
           break;
+      }
+    } else {
+      if (value === "task-matrix") {
+        navigate("/workflow/task-matrix");
       }
     }
   };
