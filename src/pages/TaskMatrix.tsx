@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { TabNavigation } from "@/components/TabNavigation";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
@@ -8,7 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { Filter, Download, ChevronDown, Search, Check, X, AlertCircle, Clock } from "lucide-react";
+import { 
+  Filter, Download, ChevronDown, Search, Check, X, AlertCircle, Clock,
+  Home, MapPin, Phone, Mail, Plus, CalendarPlus 
+} from "lucide-react";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 
 // Define a consistent status type for all compliance items
 interface StatusInfo {
@@ -93,6 +98,8 @@ const TaskMatrix = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState("percentage");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const { id, branchName } = useParams();
+  const navigate = useNavigate();
 
   const filteredData = mockData.filter(row => 
     row.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -173,12 +180,90 @@ const TaskMatrix = () => {
     if (percentage > 50) return "bg-amber-100 text-amber-800 border-amber-200";
     return "bg-red-100 text-red-800 border-red-200";
   };
+  
+  const handleNewBooking = () => {
+    if (id && branchName) {
+      navigate(`/branch-dashboard/${id}/${branchName}/recruitment/post-job`);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
       
       <main className="flex-1 container mx-auto px-4 py-6">
+        {/* Branch Header */}
+        <div className="mb-6">
+          <Breadcrumb className="mb-2">
+            <BreadcrumbItem>
+              <BreadcrumbLink as={Link} to="/branch">
+                <Home className="h-4 w-4 mr-1" />
+                Branches
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink>
+                {branchName || "Branch"}
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+          </Breadcrumb>
+          
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-3xl font-bold text-gray-800">{branchName || "Branch"}</h1>
+                <Badge className="bg-green-100 text-green-800 border border-green-200">Active</Badge>
+              </div>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-2 text-gray-600">
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  <span>Milton Keynes, UK</span>
+                </div>
+                <div className="hidden sm:block h-4 w-0.5 bg-gray-300 rounded-full"></div>
+                <div className="flex items-center gap-1">
+                  <Phone className="h-4 w-4" />
+                  <span>+44 20 7946 0958</span>
+                </div>
+                <div className="hidden sm:block h-4 w-0.5 bg-gray-300 rounded-full"></div>
+                <div className="flex items-center gap-1">
+                  <Mail className="h-4 w-4" />
+                  <span>milton@med-infinite.com</span>
+                </div>
+              </div>
+            </div>
+            
+            <Button 
+              onClick={handleNewBooking}
+              className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              <span>New Booking</span>
+            </Button>
+          </div>
+          
+          {/* Navigation menu for branch dashboard */}
+          <div className="flex overflow-x-auto pb-2 hide-scrollbar">
+            <div className="flex space-x-2 border-b border-gray-200 w-full">
+              <Link to={`/branch-dashboard/${id}/${branchName}`} className="px-4 py-2 text-gray-600 hover:text-blue-600 flex items-center gap-1 whitespace-nowrap">
+                <span>Dashboard</span>
+              </Link>
+              <Link to={`/branch-dashboard/${id}/${branchName}/bookings`} className="px-4 py-2 text-gray-600 hover:text-blue-600 flex items-center gap-1 whitespace-nowrap">
+                <span>Bookings</span>
+              </Link>
+              <Link to={`/branch-dashboard/${id}/${branchName}/clients`} className="px-4 py-2 text-gray-600 hover:text-blue-600 flex items-center gap-1 whitespace-nowrap">
+                <span>Clients</span>
+              </Link>
+              <Link to={`/branch-dashboard/${id}/${branchName}/carers`} className="px-4 py-2 text-gray-600 hover:text-blue-600 flex items-center gap-1 whitespace-nowrap">
+                <span>Carers</span>
+              </Link>
+              <Link to={`/branch-dashboard/${id}/${branchName}/task-matrix`} className="px-4 py-2 border-b-2 border-blue-600 text-blue-600 font-medium flex items-center gap-1 whitespace-nowrap">
+                <span>Task Matrix</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+        
         <TabNavigation activeTab={activeTab} onChange={setActiveTab} hideQuickAdd />
         
         <div className="mt-6 space-y-6">
