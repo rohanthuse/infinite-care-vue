@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
@@ -21,9 +20,8 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
     if (viewType === "daily") {
       onDateChange(subDays(currentDate, 1));
     } else {
-      // For weekly view, go back 7 days from the start of the week
-      const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-      onDateChange(subDays(weekStart, 7));
+      // For weekly view, go back 7 days
+      onDateChange(subDays(currentDate, 7));
     }
   };
 
@@ -31,9 +29,8 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
     if (viewType === "daily") {
       onDateChange(addDays(currentDate, 1));
     } else {
-      // For weekly view, go forward 7 days from the start of the week
-      const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-      onDateChange(addDays(weekStart, 7));
+      // For weekly view, go forward 7 days
+      onDateChange(addDays(currentDate, 7));
     }
   };
 

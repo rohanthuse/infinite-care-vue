@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { BookingEntry } from "./BookingEntry";
 import { EntitySelector } from "./EntitySelector";
 import { Maximize2, Minimize2, Calendar, Clock } from "lucide-react";
-import { format, addDays, startOfWeek, endOfWeek, isSameDay } from "date-fns";
+import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO } from "date-fns";
 
-// Type definitions
 export interface Booking {
   id: string;
   clientId: string;
@@ -134,30 +133,27 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
       someDate.getFullYear() === today.getFullYear();
   };
   
-  const getCurrentTimePercentage = () => {
-    const totalMinutes = 24 * 60;
-    const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
-    return (currentMinutes / totalMinutes) * 100;
+  const getCurrentTimePosition = () => {
+    const hours = currentTime.getHours();
+    const minutes = currentTime.getMinutes();
+    return hours * hourHeight + (minutes / 60) * hourHeight;
   };
 
-  // Function to get position and height for weekly view bookings
-  const getBookingPosition = (startTime: string, endTime: string) => {
+  const getBookingStyle = (startTime: string, endTime: string) => {
     const [startHour, startMin] = startTime.split(':').map(Number);
     const [endHour, endMin] = endTime.split(':').map(Number);
     
-    const startInMinutes = startHour * 60 + startMin;
-    const endInMinutes = endHour * 60 + endMin;
+    const startPosition = startHour * hourHeight + (startMin / 60) * hourHeight;
+    const endPosition = endHour * hourHeight + (endMin / 60) * hourHeight;
+    const height = endPosition - startPosition;
     
-    const top = (startInMinutes / 60) * hourHeight;
-    const height = ((endInMinutes - startInMinutes) / 60) * hourHeight;
-    
-    return { top, height };
+    return { top: startPosition, height };
   };
   
-  // Helper to check if a booking is on a specific date
-  const isBookingOnDate = (booking: Booking, date: Date) => {
+  const isBookingOnDate = (booking: Booking, checkDate: Date) => {
+    if (!booking.date) return false;
     const bookingDate = new Date(booking.date);
-    return isSameDay(bookingDate, date);
+    return isSameDay(bookingDate, checkDate);
   };
   
   return (
@@ -315,94 +311,78 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
             </div>
           ) : (
             <div className="weekly-view">
-              <div className="weekly-grid-header">
-                <div className="time-column">
-                  <div className="time-header">Time</div>
-                </div>
-                {weekDates.map((day, index) => (
-                  <div 
-                    key={index} 
-                    className={`day-column-header ${isToday(day) ? 'today' : ''}`}
-                  >
-                    <div className="day-name">{format(day, 'EEE')}</div>
-                    <div className="day-date">{format(day, 'd MMM')}</div>
-                  </div>
-                ))}
-              </div>
-              
               {displayedClients.map((client) => (
-                <div 
-                  key={client.id} 
-                  className={`weekly-client-row ${client.id === selectedClientId ? 'selected-row' : ''}`}
-                >
-                  <div className="client-info">
-                    <div className="client-avatar">{client.initials}</div>
-                    <div className="client-name">{client.name}</div>
+                <div key={client.id} className="mb-6">
+                  <div className={`client-header p-2 rounded-md ${client.id === selectedClientId ? 'bg-blue-50' : 'bg-gray-50'}`}>
+                    <div className="flex items-center">
+                      <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium mr-2">
+                        {client.initials}
+                      </div>
+                      <div className="text-sm font-medium">{client.name}</div>
+                      <Badge className="ml-2 bg-blue-50 text-blue-700 text-xs">
+                        {client.bookings.length} bookings
+                      </Badge>
+                    </div>
                   </div>
                   
-                  <div className="day-columns-container">
-                    {weekDates.map((day, dayIndex) => (
-                      <div 
-                        key={dayIndex} 
-                        className={`day-column ${isToday(day) ? 'today' : ''}`}
-                      >
-                        {timeSlots.map((time, timeIndex) => (
-                          <div key={timeIndex} className="time-cell">
-                            {timeIndex === 0 && (
-                              <div className="time-label">{time}</div>
+                  <div className="weekly-grid mt-1 relative">
+                    <div className="time-column">
+                      {timeSlots.map((time, index) => (
+                        <div key={index} className="time-slot">
+                          <span>{time}</span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="day-columns">
+                      {weekDates.map((day, dayIndex) => (
+                        <div key={dayIndex} className={`day-column ${isToday(day) ? 'today' : ''}`}>
+                          <div className="day-header">
+                            <div className="day-name">{format(day, 'EEE')}</div>
+                            <div className="day-date">{format(day, 'd')}</div>
+                          </div>
+                          
+                          <div className="day-content">
+                            {timeSlots.map((_, timeIndex) => (
+                              <div key={timeIndex} className="hour-cell"></div>
+                            ))}
+                            
+                            {client.bookings.filter(booking => isBookingOnDate(booking, day)).map(booking => {
+                              const style = getBookingStyle(booking.startTime, booking.endTime);
+                              
+                              return (
+                                <div
+                                  key={booking.id}
+                                  className={`booking-item booking-status-${booking.status}`}
+                                  style={{ top: `${style.top}px`, height: `${style.height}px` }}
+                                >
+                                  <div className="booking-time text-xs font-medium">
+                                    {booking.startTime} - {booking.endTime}
+                                  </div>
+                                  <div className="booking-carer text-xs truncate">
+                                    {booking.carerName}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            
+                            {isToday(day) && (
+                              <div 
+                                className="current-time-line" 
+                                style={{ top: `${getCurrentTimePosition()}px` }}
+                              >
+                                <span className="current-time-label">
+                                  {format(currentTime, 'HH:mm')}
+                                </span>
+                              </div>
                             )}
                           </div>
-                        ))}
-                        
-                        {client.bookings
-                          .filter(booking => isBookingOnDate(booking, day))
-                          .map(booking => {
-                            const { top, height } = getBookingPosition(booking.startTime, booking.endTime);
-                            
-                            return (
-                              <div
-                                key={booking.id}
-                                className={`weekly-booking booking-status-${booking.status}`}
-                                style={{
-                                  top: `${top}px`,
-                                  height: `${height}px`
-                                }}
-                              >
-                                <div className="booking-time">
-                                  {booking.startTime} - {booking.endTime}
-                                </div>
-                                <div className="booking-carer-name">
-                                  {booking.carerName.split(' ')[0]}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        
-                        {isToday(day) && (
-                          <div 
-                            className="current-time-indicator" 
-                            style={{ 
-                              top: `${(currentTime.getHours() * 60 + currentTime.getMinutes()) / 60 * hourHeight}px` 
-                            }}
-                          >
-                            <div className="current-time-label">
-                              {currentTime.getHours().toString().padStart(2, '0')}:{currentTime.getMinutes().toString().padStart(2, '0')}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ))}
-              
-              <div className="time-slots-container">
-                {timeSlots.map((time, i) => (
-                  <div key={i} className="time-slot" style={{ top: `${i * hourHeight}px` }}>
-                    {time}
-                  </div>
-                ))}
-              </div>
             </div>
           )}
         </div>
@@ -512,94 +492,78 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
             </div>
           ) : (
             <div className="weekly-view">
-              <div className="weekly-grid-header">
-                <div className="time-column">
-                  <div className="time-header">Time</div>
-                </div>
-                {weekDates.map((day, index) => (
-                  <div 
-                    key={index} 
-                    className={`day-column-header ${isToday(day) ? 'today' : ''}`}
-                  >
-                    <div className="day-name">{format(day, 'EEE')}</div>
-                    <div className="day-date">{format(day, 'd MMM')}</div>
-                  </div>
-                ))}
-              </div>
-              
               {displayedCarers.map((carer) => (
-                <div 
-                  key={carer.id} 
-                  className={`weekly-carer-row ${carer.id === selectedCarerId ? 'selected-row' : ''}`}
-                >
-                  <div className="carer-info">
-                    <div className="carer-avatar">{carer.initials}</div>
-                    <div className="carer-name">{carer.name}</div>
+                <div key={carer.id} className="mb-6">
+                  <div className={`carer-header p-2 rounded-md ${carer.id === selectedCarerId ? 'bg-purple-50' : 'bg-gray-50'}`}>
+                    <div className="flex items-center">
+                      <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-medium mr-2">
+                        {carer.initials}
+                      </div>
+                      <div className="text-sm font-medium">{carer.name}</div>
+                      <Badge className="ml-2 bg-purple-50 text-purple-700 text-xs">
+                        {carer.bookings.length} bookings
+                      </Badge>
+                    </div>
                   </div>
                   
-                  <div className="day-columns-container">
-                    {weekDates.map((day, dayIndex) => (
-                      <div 
-                        key={dayIndex} 
-                        className={`day-column ${isToday(day) ? 'today' : ''}`}
-                      >
-                        {timeSlots.map((time, timeIndex) => (
-                          <div key={timeIndex} className="time-cell">
-                            {timeIndex === 0 && (
-                              <div className="time-label">{time}</div>
+                  <div className="weekly-grid mt-1 relative">
+                    <div className="time-column">
+                      {timeSlots.map((time, index) => (
+                        <div key={index} className="time-slot">
+                          <span>{time}</span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="day-columns">
+                      {weekDates.map((day, dayIndex) => (
+                        <div key={dayIndex} className={`day-column ${isToday(day) ? 'today' : ''}`}>
+                          <div className="day-header">
+                            <div className="day-name">{format(day, 'EEE')}</div>
+                            <div className="day-date">{format(day, 'd')}</div>
+                          </div>
+                          
+                          <div className="day-content">
+                            {timeSlots.map((_, timeIndex) => (
+                              <div key={timeIndex} className="hour-cell"></div>
+                            ))}
+                            
+                            {carer.bookings.filter(booking => isBookingOnDate(booking, day)).map(booking => {
+                              const style = getBookingStyle(booking.startTime, booking.endTime);
+                              
+                              return (
+                                <div
+                                  key={booking.id}
+                                  className={`booking-item booking-status-${booking.status}`}
+                                  style={{ top: `${style.top}px`, height: `${style.height}px` }}
+                                >
+                                  <div className="booking-time text-xs font-medium">
+                                    {booking.startTime} - {booking.endTime}
+                                  </div>
+                                  <div className="booking-client text-xs truncate">
+                                    {booking.clientName}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            
+                            {isToday(day) && (
+                              <div 
+                                className="current-time-line" 
+                                style={{ top: `${getCurrentTimePosition()}px` }}
+                              >
+                                <span className="current-time-label">
+                                  {format(currentTime, 'HH:mm')}
+                                </span>
+                              </div>
                             )}
                           </div>
-                        ))}
-                        
-                        {carer.bookings
-                          .filter(booking => isBookingOnDate(booking, day))
-                          .map(booking => {
-                            const { top, height } = getBookingPosition(booking.startTime, booking.endTime);
-                            
-                            return (
-                              <div
-                                key={booking.id}
-                                className={`weekly-booking booking-status-${booking.status}`}
-                                style={{
-                                  top: `${top}px`,
-                                  height: `${height}px`
-                                }}
-                              >
-                                <div className="booking-time">
-                                  {booking.startTime} - {booking.endTime}
-                                </div>
-                                <div className="booking-client-name">
-                                  {booking.clientInitials}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        
-                        {isToday(day) && (
-                          <div 
-                            className="current-time-indicator" 
-                            style={{ 
-                              top: `${(currentTime.getHours() * 60 + currentTime.getMinutes()) / 60 * hourHeight}px` 
-                            }}
-                          >
-                            <div className="current-time-label">
-                              {currentTime.getHours().toString().padStart(2, '0')}:{currentTime.getMinutes().toString().padStart(2, '0')}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ))}
-              
-              <div className="time-slots-container">
-                {timeSlots.map((time, i) => (
-                  <div key={i} className="time-slot" style={{ top: `${i * hourHeight}px` }}>
-                    {time}
-                  </div>
-                ))}
-              </div>
             </div>
           )}
         </div>
