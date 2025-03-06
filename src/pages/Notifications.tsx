@@ -126,7 +126,13 @@ const Notifications = () => {
   };
   
   const handleCategoryClick = (categoryId: string) => {
-    navigate(`/branch-dashboard/${id}/${branchName}/notifications/${categoryId}`);
+    // Fix the navigation path to use the actual id and branchName values, not the parameter names
+    if (id && branchName) {
+      navigate(`/branch-dashboard/${id}/${branchName}/notifications/${categoryId}`);
+    } else {
+      // Handle the case when accessed from the main notifications page
+      navigate(`/notifications/${categoryId}`);
+    }
   };
   
   return (
