@@ -236,6 +236,10 @@ const BranchDashboard = () => {
     setNewBookingDialogOpen(true);
   };
 
+  const handleNewClient = () => {
+    setAddClientDialogOpen(true);
+  };
+
   const mockClients = [{
     id: "CL-001",
     name: "Pender, Eva",
@@ -400,7 +404,11 @@ const BranchDashboard = () => {
           {activeTab === "dashboard" && (
             <>
               <div className="grid grid-cols-2 gap-3 mb-6">
-                <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
+                <Button 
+                  variant="outline" 
+                  className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start"
+                  onClick={handleNewClient}
+                >
                   <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-blue-100 flex items-center justify-center">
                     <Plus className="h-3.5 md:h-4 w-3.5 md:w-4 text-blue-600" />
                   </div>
