@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { MessageFilters } from "./MessageFilters";
+import { useToast } from "@/hooks/use-toast";
 
 interface CommunicationsTabProps {
   branchId: string;
@@ -20,10 +21,11 @@ export const CommunicationsTab = ({ branchId }: CommunicationsTabProps) => {
   const [isComposing, setIsComposing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [priorityFilter, setPriorityFilter] = useState<string | undefined>(undefined);
-  const [readFilter, setReadFilter] = useState<string | undefined>(undefined);
-  const [dateFilter, setDateFilter] = useState<string | undefined>(undefined);
+  const [priorityFilter, setPriorityFilter] = useState<string | undefined>("all");
+  const [readFilter, setReadFilter] = useState<string | undefined>("all");
+  const [dateFilter, setDateFilter] = useState<string | undefined>("all");
   
+  const { toast } = useToast();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const isTablet = useMediaQuery("(max-width: 1024px)");
   
@@ -37,8 +39,10 @@ export const CommunicationsTab = ({ branchId }: CommunicationsTabProps) => {
   };
   
   const handleMessageSelect = (messageId: string) => {
-    setSelectedMessageId(messageId);
-    setIsComposing(false);
+    if (messageId) {
+      setSelectedMessageId(messageId);
+      setIsComposing(false);
+    }
   };
   
   const handleContactSelect = (contactId: string) => {
@@ -51,7 +55,7 @@ export const CommunicationsTab = ({ branchId }: CommunicationsTabProps) => {
 
   const handleFilterChange = (filter: string) => {
     setSelectedFilter(filter);
-    setSelectedMessageId(null);
+    // Don't clear selection here, let MessageList handle auto-selection
   };
 
   const handleFilterOptionsChange = (
@@ -62,8 +66,7 @@ export const CommunicationsTab = ({ branchId }: CommunicationsTabProps) => {
     setPriorityFilter(priority);
     setReadFilter(readStatus);
     setDateFilter(date);
-    // Clear selected message if it might get filtered out
-    setSelectedMessageId(null);
+    // Don't clear selected message here, let MessageList handle auto-selection
   };
 
   return (

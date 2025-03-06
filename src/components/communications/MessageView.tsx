@@ -80,8 +80,14 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
   
   if (!message) {
     return (
-      <div className="p-8 text-center text-gray-500">
-        Message not found
+      <div className="flex flex-col items-center justify-center h-full bg-gray-50">
+        <div className="text-gray-400 text-lg mb-2">Message not found</div>
+        <p className="text-sm text-gray-500 max-w-md text-center">
+          The selected message may have been deleted or is not available with the current filters.
+        </p>
+        <Button variant="outline" className="mt-4" onClick={onReply}>
+          Create New Message
+        </Button>
       </div>
     );
   }

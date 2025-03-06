@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useEffect } from "react";
 import { format } from "date-fns";
 import { 
   Star, FileText, User, Users, AlertCircle,
@@ -180,14 +179,13 @@ export const MessageList = ({
   // Check if selected message is in filtered results
   const selectedMessageExists = selectedMessageId && filteredMessages.some(msg => msg.id === selectedMessageId);
   
-  // If no messages match the filter, clear the selection
-  React.useEffect(() => {
-    if (selectedMessageId && !selectedMessageExists && filteredMessages.length > 0) {
-      // If the selected message doesn't exist in filtered results but we have other messages,
-      // auto-select the first one
+  // Effect to auto-select first message if current selection doesn't exist
+  useEffect(() => {
+    // If no message is selected and we have filtered messages, select the first one
+    if ((!selectedMessageId || !selectedMessageExists) && filteredMessages.length > 0) {
       onMessageSelect(filteredMessages[0].id);
     }
-  }, [selectedMessageId, selectedMessageExists, filteredMessages, onMessageSelect]);
+  }, [filteredMessages, selectedMessageId, selectedMessageExists, onMessageSelect]);
   
   return (
     <div className="divide-y divide-gray-100">
