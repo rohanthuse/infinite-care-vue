@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MessageList } from "./MessageList";
 import { ContactSidebar } from "./ContactSidebar";
 import { MessageComposer } from "./MessageComposer";
@@ -20,6 +20,9 @@ export const CommunicationsTab = ({ branchId }: CommunicationsTabProps) => {
   const [isComposing, setIsComposing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState<string | undefined>(undefined);
+  const [readFilter, setReadFilter] = useState<string | undefined>(undefined);
+  const [dateFilter, setDateFilter] = useState<string | undefined>(undefined);
   
   const isMobile = useMediaQuery("(max-width: 768px)");
   const isTablet = useMediaQuery("(max-width: 1024px)");
@@ -51,6 +54,18 @@ export const CommunicationsTab = ({ branchId }: CommunicationsTabProps) => {
     setSelectedMessageId(null);
   };
 
+  const handleFilterOptionsChange = (
+    priority?: string,
+    readStatus?: string,
+    date?: string
+  ) => {
+    setPriorityFilter(priority);
+    setReadFilter(readStatus);
+    setDateFilter(date);
+    // Clear selected message if it might get filtered out
+    setSelectedMessageId(null);
+  };
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
       <div className="flex h-[calc(100vh-230px)] min-h-[500px]">
@@ -75,6 +90,10 @@ export const CommunicationsTab = ({ branchId }: CommunicationsTabProps) => {
               <MessageFilters
                 selectedFilter={selectedFilter}
                 onFilterChange={handleFilterChange}
+                priorityFilter={priorityFilter}
+                readFilter={readFilter}
+                dateFilter={dateFilter}
+                onFilterOptionsChange={handleFilterOptionsChange}
               />
             </div>
             <div className="flex-1 overflow-y-auto">
@@ -84,6 +103,9 @@ export const CommunicationsTab = ({ branchId }: CommunicationsTabProps) => {
                 selectedMessageId={selectedMessageId}
                 selectedFilter={selectedFilter}
                 searchTerm={searchTerm}
+                priorityFilter={priorityFilter}
+                readFilter={readFilter}
+                dateFilter={dateFilter}
               />
             </div>
             <div className="p-3 border-t border-gray-200">

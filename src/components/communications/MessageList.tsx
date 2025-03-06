@@ -2,7 +2,7 @@
 import React from "react";
 import { format } from "date-fns";
 import { 
-  Star, Paperclip, User, Users, AlertCircle,
+  Star, FileText, User, Users, AlertCircle,
   BadgeCheck, Building2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -98,6 +98,9 @@ interface MessageListProps {
   selectedMessageId: string | null;
   selectedFilter: string;
   searchTerm: string;
+  priorityFilter?: string;
+  readFilter?: string;
+  dateFilter?: string;
 }
 
 export const MessageList = ({ 
@@ -105,7 +108,10 @@ export const MessageList = ({
   onMessageSelect,
   selectedMessageId,
   selectedFilter,
-  searchTerm
+  searchTerm,
+  priorityFilter,
+  readFilter,
+  dateFilter
 }: MessageListProps) => {
   // Filter messages based on selected filter and search term
   const filteredMessages = mockMessages.filter(message => {
@@ -124,8 +130,38 @@ export const MessageList = ({
       message.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
       message.sender.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       message.recipients.some(r => r.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    // Apply priority filter if provided
+    const matchesPriority = 
+      !priorityFilter || priorityFilter === "all" ? true : 
+      message.priority === priorityFilter.toLowerCase();
+
+    // Apply read/unread filter if provided
+    const matchesReadStatus = 
+      !readFilter || readFilter === "all" ? true :
+      readFilter === "read" ? message.isRead :
+      readFilter === "unread" ? !message.isRead : true;
+
+    // Apply date filter if provided
+    let matchesDate = true;
+    if (dateFilter && dateFilter !== "all") {
+      const now = new Date();
+      const messageDate = new Date(message.timestamp);
+      
+      if (dateFilter === "today") {
+        matchesDate = messageDate.toDateString() === now.toDateString();
+      } else if (dateFilter === "week") {
+        const weekAgo = new Date();
+        weekAgo.setDate(now.getDate() - 7);
+        matchesDate = messageDate >= weekAgo;
+      } else if (dateFilter === "month") {
+        const monthAgo = new Date();
+        monthAgo.setMonth(now.getMonth() - 1);
+        matchesDate = messageDate >= monthAgo;
+      }
+    }
     
-    return matchesType && matchesSearch;
+    return matchesType && matchesSearch && matchesPriority && matchesReadStatus && matchesDate;
   });
   
   const formatMessageDate = (date: Date) => {
@@ -140,6 +176,18 @@ export const MessageList = ({
       return format(date, "dd MMM");
     }
   };
+
+  // Check if selected message is in filtered results
+  const selectedMessageExists = selectedMessageId && filteredMessages.some(msg => msg.id === selectedMessageId);
+  
+  // If no messages match the filter, clear the selection
+  React.useEffect(() => {
+    if (selectedMessageId && !selectedMessageExists && filteredMessages.length > 0) {
+      // If the selected message doesn't exist in filtered results but we have other messages,
+      // auto-select the first one
+      onMessageSelect(filteredMessages[0].id);
+    }
+  }, [selectedMessageId, selectedMessageExists, filteredMessages, onMessageSelect]);
   
   return (
     <div className="divide-y divide-gray-100">
@@ -203,7 +251,7 @@ export const MessageList = ({
                   
                   <div className="flex items-center">
                     {message.hasAttachments && (
-                      <Paperclip className="h-3 w-3 text-gray-400 ml-1" />
+                      <FileText className="h-3 w-3 text-gray-400 ml-1" />
                     )}
                     
                     {message.recipients.length > 1 && (

@@ -17,12 +17,44 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 interface MessageFiltersProps {
   selectedFilter: string;
   onFilterChange: (filter: string) => void;
+  priorityFilter?: string;
+  readFilter?: string;
+  dateFilter?: string;
+  onFilterOptionsChange?: (priority?: string, readStatus?: string, date?: string) => void;
 }
 
-export const MessageFilters = ({ selectedFilter, onFilterChange }: MessageFiltersProps) => {
-  const [priorityFilter, setPriorityFilter] = useState<string | undefined>(undefined);
-  const [readFilter, setReadFilter] = useState<string | undefined>(undefined);
-  const [dateFilter, setDateFilter] = useState<string | undefined>(undefined);
+export const MessageFilters = ({ 
+  selectedFilter, 
+  onFilterChange,
+  priorityFilter,
+  readFilter,
+  dateFilter,
+  onFilterOptionsChange 
+}: MessageFiltersProps) => {
+  const [localPriorityFilter, setLocalPriorityFilter] = useState<string | undefined>(priorityFilter || "all");
+  const [localReadFilter, setLocalReadFilter] = useState<string | undefined>(readFilter || "all");
+  const [localDateFilter, setLocalDateFilter] = useState<string | undefined>(dateFilter || "all");
+
+  const handlePriorityChange = (value: string) => {
+    setLocalPriorityFilter(value);
+    if (onFilterOptionsChange) {
+      onFilterOptionsChange(value, localReadFilter, localDateFilter);
+    }
+  };
+
+  const handleReadStatusChange = (value: string) => {
+    setLocalReadFilter(value);
+    if (onFilterOptionsChange) {
+      onFilterOptionsChange(localPriorityFilter, value, localDateFilter);
+    }
+  };
+
+  const handleDateFilterChange = (value: string) => {
+    setLocalDateFilter(value);
+    if (onFilterOptionsChange) {
+      onFilterOptionsChange(localPriorityFilter, localReadFilter, value);
+    }
+  };
 
   return (
     <div className="flex flex-col space-y-3">
@@ -37,7 +69,7 @@ export const MessageFilters = ({ selectedFilter, onFilterChange }: MessageFilter
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel>Message Status</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={readFilter} onValueChange={setReadFilter}>
+            <DropdownMenuRadioGroup value={localReadFilter} onValueChange={handleReadStatusChange}>
               <DropdownMenuRadioItem value="all">All Messages</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="read">Read</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="unread">Unread</DropdownMenuRadioItem>
@@ -46,7 +78,7 @@ export const MessageFilters = ({ selectedFilter, onFilterChange }: MessageFilter
             <DropdownMenuSeparator />
             
             <DropdownMenuLabel>Priority</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={priorityFilter} onValueChange={setPriorityFilter}>
+            <DropdownMenuRadioGroup value={localPriorityFilter} onValueChange={handlePriorityChange}>
               <DropdownMenuRadioItem value="all">All Priorities</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="high">High</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="medium">Medium</DropdownMenuRadioItem>
@@ -56,7 +88,7 @@ export const MessageFilters = ({ selectedFilter, onFilterChange }: MessageFilter
             <DropdownMenuSeparator />
             
             <DropdownMenuLabel>Date Range</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={dateFilter} onValueChange={setDateFilter}>
+            <DropdownMenuRadioGroup value={localDateFilter} onValueChange={handleDateFilterChange}>
               <DropdownMenuRadioItem value="all">All Time</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="today">Today</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="week">This Week</DropdownMenuRadioItem>
