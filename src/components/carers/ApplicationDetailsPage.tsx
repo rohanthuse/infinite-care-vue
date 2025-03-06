@@ -12,48 +12,70 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // Mock data - would be replaced with actual data fetching in a real application
 const mockRecruitmentData = [
   {
-    id: "REC-001",
-    name: "Johnson, Mark",
-    role: "Home Carer",
+    id: "APP-001",
+    name: "John Smith",
+    role: "Home Care Assistant",
     status: "Interview Scheduled",
-    date: "2023-06-15",
+    date: "2023-10-15",
     source: "Indeed",
     stage: "Interview",
-    email: "mark.j@example.com",
+    email: "john.s@example.com",
     phone: "+44 7700 900123"
   },
   {
-    id: "REC-002",
-    name: "Williams, Sarah",
-    role: "Nurse",
+    id: "APP-002",
+    name: "Sarah Johnson",
+    role: "Registered Nurse",
     status: "Application Review",
-    date: "2023-06-12",
+    date: "2023-10-14",
     source: "LinkedIn",
     stage: "Screening",
-    email: "sarah.w@example.com",
+    email: "sarah.j@example.com",
     phone: "+44 7700 900456"
   },
   {
-    id: "REC-003",
-    name: "Brown, Robert",
-    role: "Physiotherapist",
+    id: "APP-003",
+    name: "Michael Brown",
+    role: "Care Coordinator",
     status: "Assessment",
-    date: "2023-06-10",
+    date: "2023-10-12",
     source: "Referral",
     stage: "Assessment",
-    email: "robert.b@example.com",
+    email: "michael.b@example.com",
     phone: "+44 7700 900789"
   },
   {
-    id: "REC-004",
-    name: "Davies, Emily",
-    role: "Home Carer",
+    id: "APP-004",
+    name: "Emily Davis",
+    role: "Home Care Assistant",
     status: "Offer Sent",
-    date: "2023-06-05",
+    date: "2023-10-10",
     source: "Job Fair",
     stage: "Offer",
     email: "emily.d@example.com",
     phone: "+44 7700 900321"
+  },
+  {
+    id: "APP-005",
+    name: "David Wilson",
+    role: "Physiotherapist",
+    status: "Application Review",
+    date: "2023-10-09",
+    source: "Job Board",
+    stage: "Screening",
+    email: "david.w@example.com",
+    phone: "+44 7700 900654"
+  },
+  {
+    id: "APP-006",
+    name: "Lisa Taylor",
+    role: "Registered Nurse",
+    status: "New Application",
+    date: "2023-10-08",
+    source: "Website",
+    stage: "New",
+    email: "lisa.t@example.com",
+    phone: "+44 7700 900987"
   }
 ];
 
@@ -86,7 +108,8 @@ const ApplicationDetailsPage = () => {
         "Interview Scheduled": "interview",
         "Application Review": "screening",
         "Assessment": "assessment",
-        "Offer Sent": "approved"
+        "Offer Sent": "approved",
+        "New Application": "pending"
       };
       setApplicationStatus(statusMap[candidate.status] || "pending");
     }
@@ -102,7 +125,7 @@ const ApplicationDetailsPage = () => {
           </Button>
           <h1 className="text-2xl font-bold">Candidate Not Found</h1>
         </div>
-        <p>The candidate you're looking for could not be found.</p>
+        <p>The candidate you're looking for could not be found. ID: {candidateId}</p>
       </div>
     );
   }

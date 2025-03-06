@@ -90,6 +90,76 @@ const mockCandidates = [
   },
 ];
 
+// Match these IDs with the ones in ApplicationDetailsPage.tsx
+const mockRecruitmentData = [
+  {
+    id: "APP-001",
+    name: "John Smith",
+    role: "Home Care Assistant",
+    status: "New",
+    date: "2023-10-15",
+    source: "Indeed",
+    stage: "Interview",
+    email: "john.s@example.com",
+    phone: "+44 7700 900123"
+  },
+  {
+    id: "APP-002",
+    name: "Sarah Johnson",
+    role: "Registered Nurse",
+    status: "Reviewing",
+    date: "2023-10-14",
+    source: "LinkedIn",
+    stage: "Screening",
+    email: "sarah.j@example.com",
+    phone: "+44 7700 900456"
+  },
+  {
+    id: "APP-003",
+    name: "Michael Brown",
+    role: "Care Coordinator",
+    status: "Interview",
+    date: "2023-10-12",
+    source: "Referral",
+    stage: "Assessment",
+    email: "michael.b@example.com",
+    phone: "+44 7700 900789"
+  },
+  {
+    id: "APP-004",
+    name: "Emily Davis",
+    role: "Home Care Assistant",
+    status: "Hired",
+    date: "2023-10-10",
+    source: "Job Fair",
+    stage: "Offer",
+    email: "emily.d@example.com",
+    phone: "+44 7700 900321"
+  },
+  {
+    id: "APP-005",
+    name: "David Wilson",
+    role: "Physiotherapist",
+    status: "Rejected",
+    date: "2023-10-09",
+    source: "Job Board",
+    stage: "Rejected",
+    email: "david.w@example.com",
+    phone: "+44 7700 900654"
+  },
+  {
+    id: "APP-006",
+    name: "Lisa Taylor",
+    role: "Registered Nurse",
+    status: "New",
+    date: "2023-10-08",
+    source: "Website",
+    stage: "New",
+    email: "lisa.t@example.com",
+    phone: "+44 7700 900987"
+  }
+];
+
 // Mock data for job postings
 const mockJobPostings = [
   {
@@ -206,6 +276,7 @@ const RecruitmentSection = () => {
   const jobsPages = Math.ceil(filteredJobs.length / itemsPerPage);
   
   const handleViewApplication = (candidateId: string) => {
+    // Use the correct URL format to match the route in App.tsx
     navigate(`/branch-dashboard/${id}/${branchName}/recruitment/application/${candidateId}`);
   };
   
