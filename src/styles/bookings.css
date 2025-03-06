@@ -78,25 +78,27 @@
   display: flex;
   height: 600px;
   position: relative;
+  background-color: white;
 }
 
-/* Scrolling container styles - modified to ensure proper scrolling */
+/* Scrolling container styles */
 .booking-scroll-container {
   display: flex;
   overflow: auto;
   height: 100%;
   position: relative;
   flex: 1;
+  background-color: white;
 }
 
-/* Time Column - Modified to scroll with content */
+/* Time Column */
 .time-column {
   width: 60px;
   min-width: 60px;
   flex-shrink: 0;
   border-right: 1px solid #e5e7eb;
   background-color: #f9fafb;
-  position: relative; /* Changed from sticky to relative */
+  position: relative;
   z-index: 10;
 }
 
@@ -107,6 +109,7 @@
   align-items: center;
   justify-content: center;
   position: relative;
+  background-color: #f9fafb;
 }
 
 .time-slot span {
@@ -128,10 +131,18 @@
   min-width: 140px;
   border-right: 1px solid #e5e7eb;
   position: relative;
+  background-color: white;
 }
 
 .day-column.today {
   background-color: rgba(59, 130, 246, 0.05);
+}
+
+/* Hour Cell */
+.hour-cell {
+  height: 60px;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: white;
 }
 
 /* Day Header - Fixed during vertical scroll */
@@ -161,12 +172,6 @@
 .day-content {
   position: relative;
   min-height: 1440px; /* 24 hours * 60px */
-}
-
-/* Hour Cell */
-.hour-cell {
-  height: 60px;
-  border-bottom: 1px solid #e5e7eb;
 }
 
 /* Booking Item */
