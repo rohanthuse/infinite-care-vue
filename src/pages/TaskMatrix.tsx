@@ -11,16 +11,23 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Filter, Download, ChevronDown, Search, Check, X, AlertCircle } from "lucide-react";
 
+// Define a consistent status type for all compliance items
+interface StatusInfo {
+  status: string;
+  date?: string;
+  expiresIn?: number;
+}
+
 interface TaskData {
   id: number;
   name: string;
   percentage: number;
-  workPermit: { status: string; date?: string; expiresIn?: number };
-  carInsurance: { status: string; date?: string; expiresIn?: number };
-  niNumber: { status: string };
-  drivingLicense: { status: string; date?: string; expiresIn?: number };
-  dvla: { status: string };
-  dbs: { status: string; date?: string; expiresIn?: number };
+  workPermit: StatusInfo;
+  carInsurance: StatusInfo;
+  niNumber: StatusInfo;
+  drivingLicense: StatusInfo;
+  dvla: StatusInfo;
+  dbs: StatusInfo;
 }
 
 const mockData: TaskData[] = [
@@ -104,7 +111,7 @@ const TaskMatrix = () => {
     return <X className="h-4 w-4 text-red-600" />;
   };
 
-  const renderStatus = (item: { status: string; date?: string; expiresIn?: number }) => {
+  const renderStatus = (item: StatusInfo) => {
     return (
       <div className="flex flex-col items-center space-y-1">
         <div className="flex items-center justify-center mb-1">
