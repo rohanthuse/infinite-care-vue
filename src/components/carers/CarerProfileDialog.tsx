@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   User, Phone, Mail, MapPin, Calendar, FileText, Heart, 
   Briefcase, Users, CheckCircle, XCircle, Clock, FileIcon, 
-  Alert, Download 
+  AlertCircle, Download 
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -142,7 +142,7 @@ export const CarerProfileDialog = ({ open, onOpenChange, carer }: CarerProfileDi
                               <XCircle className="w-4 h-4 mr-1" />
                             )}
                             {item.status === "pending" && (
-                              <Alert className="w-4 h-4 mr-1" />
+                              <AlertCircle className="w-4 h-4 mr-1" />
                             )}
                             {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
                           </Badge>
