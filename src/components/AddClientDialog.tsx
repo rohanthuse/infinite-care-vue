@@ -460,7 +460,7 @@ export function AddClientDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit">Add Client</Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Add Client</Button>
             </DialogFooter>
           </form>
         </Form>
