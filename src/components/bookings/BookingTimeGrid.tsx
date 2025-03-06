@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -226,7 +225,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-4 p-4">
-        {/* Clients Section */}
         <div>
           <h3 className="text-sm font-semibold mb-3 flex items-center">
             Clients
@@ -253,49 +251,44 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                     </div>
                   </div>
                   
-                  <div className="booking-grid-container" ref={gridRef}>
-                    <div className="time-column">
-                      {timeSlots.map((time, index) => (
-                        <div key={index} className="time-slot">
-                          <span>{time}</span>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="day-content">
-                      {timeSlots.map((_, timeIndex) => (
-                        <div key={timeIndex} className="hour-cell"></div>
-                      ))}
-                      
-                      {client.bookings?.filter(booking => isBookingOnDate(booking, date)).map(booking => {
-                        const position = getBookingPosition(booking.startTime, booking.endTime);
-                        
-                        return (
-                          <div
-                            key={booking.id}
-                            className={`booking-item booking-status-${booking.status}`}
-                            style={{ top: `${position.top}px`, height: `${position.height}px` }}
-                          >
-                            <div className="booking-time text-xs font-medium">
-                              {booking.startTime} - {booking.endTime}
-                            </div>
-                            <div className="booking-carer text-xs truncate">
-                              {booking.carerName}
-                            </div>
+                  <div className="booking-grid-container">
+                    <div className="booking-scroll-container">
+                      <div className="time-column">
+                        {timeSlots.map((time, index) => (
+                          <div key={index} className="time-slot">
+                            <span>{time}</span>
                           </div>
-                        );
-                      })}
+                        ))}
+                      </div>
                       
-                      {isToday(date) && (
-                        <div 
-                          className="current-time-line" 
-                          style={{ top: `${getCurrentTimePosition()}px` }}
-                        >
-                          <span className="current-time-label">
-                            {format(currentTime, 'HH:mm')}
-                          </span>
-                        </div>
-                      )}
+                      <div className="day-content">
+                        {timeSlots.map((_, timeIndex) => (
+                          <div key={timeIndex} className="hour-cell"></div>
+                        ))}
+                        
+                        {client.bookings?.filter(booking => isBookingOnDate(booking, date)).map(booking => {
+                          const position = getBookingPosition(booking.startTime, booking.endTime);
+                          
+                          return (
+                            <BookingEntry
+                              key={booking.id}
+                              booking={booking}
+                              position={position}
+                            />
+                          );
+                        })}
+                        
+                        {isToday(date) && (
+                          <div 
+                            className="current-time-line" 
+                            style={{ top: `${getCurrentTimePosition()}px` }}
+                          >
+                            <span className="current-time-label">
+                              {format(currentTime, 'HH:mm')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -317,60 +310,55 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                     </div>
                   </div>
                   
-                  <div className="booking-grid-container" ref={gridRef}>
-                    <div className="time-column">
-                      {timeSlots.map((time, index) => (
-                        <div key={index} className="time-slot">
-                          <span>{time}</span>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="day-columns">
-                      {weekDates.map((day, dayIndex) => (
-                        <div key={dayIndex} className={`day-column ${isToday(day) ? 'today' : ''}`}>
-                          <div className="day-header">
-                            <div className="day-name">{format(day, 'EEE')}</div>
-                            <div className="day-date">{format(day, 'd')}</div>
+                  <div className="booking-grid-container">
+                    <div className="booking-scroll-container">
+                      <div className="time-column">
+                        {timeSlots.map((time, index) => (
+                          <div key={index} className="time-slot">
+                            <span>{time}</span>
                           </div>
-                          
-                          <div className="day-content">
-                            {timeSlots.map((_, timeIndex) => (
-                              <div key={timeIndex} className="hour-cell"></div>
-                            ))}
+                        ))}
+                      </div>
+                      
+                      <div className="day-columns">
+                        {weekDates.map((day, dayIndex) => (
+                          <div key={dayIndex} className={`day-column ${isToday(day) ? 'today' : ''}`}>
+                            <div className="day-header">
+                              <div className="day-name">{format(day, 'EEE')}</div>
+                              <div className="day-date">{format(day, 'd')}</div>
+                            </div>
                             
-                            {client.bookings?.filter(booking => isBookingOnDate(booking, day)).map(booking => {
-                              const position = getBookingPosition(booking.startTime, booking.endTime);
+                            <div className="day-content">
+                              {timeSlots.map((_, timeIndex) => (
+                                <div key={timeIndex} className="hour-cell"></div>
+                              ))}
                               
-                              return (
-                                <div
-                                  key={booking.id}
-                                  className={`booking-item booking-status-${booking.status}`}
-                                  style={{ top: `${position.top}px`, height: `${position.height}px` }}
+                              {client.bookings?.filter(booking => isBookingOnDate(booking, day)).map(booking => {
+                                const position = getBookingPosition(booking.startTime, booking.endTime);
+                                
+                                return (
+                                  <BookingEntry
+                                    key={booking.id}
+                                    booking={booking}
+                                    position={position}
+                                  />
+                                );
+                              })}
+                              
+                              {isToday(day) && (
+                                <div 
+                                  className="current-time-line" 
+                                  style={{ top: `${getCurrentTimePosition()}px` }}
                                 >
-                                  <div className="booking-time text-xs font-medium">
-                                    {booking.startTime} - {booking.endTime}
-                                  </div>
-                                  <div className="booking-carer text-xs truncate">
-                                    {booking.carerName}
-                                  </div>
+                                  <span className="current-time-label">
+                                    {format(currentTime, 'HH:mm')}
+                                  </span>
                                 </div>
-                              );
-                            })}
-                            
-                            {isToday(day) && (
-                              <div 
-                                className="current-time-line" 
-                                style={{ top: `${getCurrentTimePosition()}px` }}
-                              >
-                                <span className="current-time-label">
-                                  {format(currentTime, 'HH:mm')}
-                                </span>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -379,7 +367,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
           )}
         </div>
         
-        {/* Carers Section */}
         <div>
           <h3 className="text-sm font-semibold mb-3 flex items-center">
             Carers
@@ -406,49 +393,44 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                     </div>
                   </div>
                   
-                  <div className="booking-grid-container" ref={gridRef}>
-                    <div className="time-column">
-                      {timeSlots.map((time, index) => (
-                        <div key={index} className="time-slot">
-                          <span>{time}</span>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="day-content">
-                      {timeSlots.map((_, timeIndex) => (
-                        <div key={timeIndex} className="hour-cell"></div>
-                      ))}
-                      
-                      {carer.bookings?.filter(booking => isBookingOnDate(booking, date)).map(booking => {
-                        const position = getBookingPosition(booking.startTime, booking.endTime);
-                        
-                        return (
-                          <div
-                            key={booking.id}
-                            className={`booking-item booking-status-${booking.status}`}
-                            style={{ top: `${position.top}px`, height: `${position.height}px` }}
-                          >
-                            <div className="booking-time text-xs font-medium">
-                              {booking.startTime} - {booking.endTime}
-                            </div>
-                            <div className="booking-client text-xs truncate">
-                              {booking.clientName}
-                            </div>
+                  <div className="booking-grid-container">
+                    <div className="booking-scroll-container">
+                      <div className="time-column">
+                        {timeSlots.map((time, index) => (
+                          <div key={index} className="time-slot">
+                            <span>{time}</span>
                           </div>
-                        );
-                      })}
+                        ))}
+                      </div>
                       
-                      {isToday(date) && (
-                        <div 
-                          className="current-time-line" 
-                          style={{ top: `${getCurrentTimePosition()}px` }}
-                        >
-                          <span className="current-time-label">
-                            {format(currentTime, 'HH:mm')}
-                          </span>
-                        </div>
-                      )}
+                      <div className="day-content">
+                        {timeSlots.map((_, timeIndex) => (
+                          <div key={timeIndex} className="hour-cell"></div>
+                        ))}
+                        
+                        {carer.bookings?.filter(booking => isBookingOnDate(booking, date)).map(booking => {
+                          const position = getBookingPosition(booking.startTime, booking.endTime);
+                          
+                          return (
+                            <BookingEntry
+                              key={booking.id}
+                              booking={booking}
+                              position={position}
+                            />
+                          );
+                        })}
+                        
+                        {isToday(date) && (
+                          <div 
+                            className="current-time-line" 
+                            style={{ top: `${getCurrentTimePosition()}px` }}
+                          >
+                            <span className="current-time-label">
+                              {format(currentTime, 'HH:mm')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -470,60 +452,55 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                     </div>
                   </div>
                   
-                  <div className="booking-grid-container" ref={gridRef}>
-                    <div className="time-column">
-                      {timeSlots.map((time, index) => (
-                        <div key={index} className="time-slot">
-                          <span>{time}</span>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="day-columns">
-                      {weekDates.map((day, dayIndex) => (
-                        <div key={dayIndex} className={`day-column ${isToday(day) ? 'today' : ''}`}>
-                          <div className="day-header">
-                            <div className="day-name">{format(day, 'EEE')}</div>
-                            <div className="day-date">{format(day, 'd')}</div>
+                  <div className="booking-grid-container">
+                    <div className="booking-scroll-container">
+                      <div className="time-column">
+                        {timeSlots.map((time, index) => (
+                          <div key={index} className="time-slot">
+                            <span>{time}</span>
                           </div>
-                          
-                          <div className="day-content">
-                            {timeSlots.map((_, timeIndex) => (
-                              <div key={timeIndex} className="hour-cell"></div>
-                            ))}
+                        ))}
+                      </div>
+                      
+                      <div className="day-columns">
+                        {weekDates.map((day, dayIndex) => (
+                          <div key={dayIndex} className={`day-column ${isToday(day) ? 'today' : ''}`}>
+                            <div className="day-header">
+                              <div className="day-name">{format(day, 'EEE')}</div>
+                              <div className="day-date">{format(day, 'd')}</div>
+                            </div>
                             
-                            {carer.bookings?.filter(booking => isBookingOnDate(booking, day)).map(booking => {
-                              const position = getBookingPosition(booking.startTime, booking.endTime);
+                            <div className="day-content">
+                              {timeSlots.map((_, timeIndex) => (
+                                <div key={timeIndex} className="hour-cell"></div>
+                              ))}
                               
-                              return (
-                                <div
-                                  key={booking.id}
-                                  className={`booking-item booking-status-${booking.status}`}
-                                  style={{ top: `${position.top}px`, height: `${position.height}px` }}
+                              {carer.bookings?.filter(booking => isBookingOnDate(booking, day)).map(booking => {
+                                const position = getBookingPosition(booking.startTime, booking.endTime);
+                                
+                                return (
+                                  <BookingEntry
+                                    key={booking.id}
+                                    booking={booking}
+                                    position={position}
+                                  />
+                                );
+                              })}
+                              
+                              {isToday(day) && (
+                                <div 
+                                  className="current-time-line" 
+                                  style={{ top: `${getCurrentTimePosition()}px` }}
                                 >
-                                  <div className="booking-time text-xs font-medium">
-                                    {booking.startTime} - {booking.endTime}
-                                  </div>
-                                  <div className="booking-client text-xs truncate">
-                                    {booking.clientName}
-                                  </div>
+                                  <span className="current-time-label">
+                                    {format(currentTime, 'HH:mm')}
+                                  </span>
                                 </div>
-                              );
-                            })}
-                            
-                            {isToday(day) && (
-                              <div 
-                                className="current-time-line" 
-                                style={{ top: `${getCurrentTimePosition()}px` }}
-                              >
-                                <span className="current-time-label">
-                                  {format(currentTime, 'HH:mm')}
-                                </span>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
