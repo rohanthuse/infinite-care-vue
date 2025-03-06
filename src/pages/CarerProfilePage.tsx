@@ -1,4 +1,4 @@
-<lov-code>
+
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -698,4 +698,148 @@ const CarerProfilePage = () => {
                                       <Download className="h-4 w-4" />
                                     </Button>
                                   </div>
-                                
+                                </div>
+                              </div>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Employment Tab */}
+              <TabsContent value="employment">
+                <Card className="mb-6">
+                  <CardHeader>
+                    <div className="flex items-center">
+                      <Briefcase className="h-5 w-5 mr-2 text-gray-600" />
+                      <CardTitle className="text-xl">Employment History</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      {employmentHistory.map((job, index) => (
+                        <div key={index} className="border-b pb-4 last:border-b-0 last:pb-0">
+                          <div className="flex flex-wrap items-start justify-between mb-2">
+                            <div>
+                              <h3 className="font-medium text-lg">{job.company}</h3>
+                              <p className="text-gray-600">{job.position}</p>
+                            </div>
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-0">
+                              {job.status}
+                            </Badge>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div className="flex items-center text-gray-600">
+                              <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                              <span>{job.startDate} - {job.endDate}</span>
+                            </div>
+                            
+                            {job.referenceDate && (
+                              <div className="flex items-center text-gray-600">
+                                <FileText className="h-4 w-4 mr-2 text-gray-500" />
+                                <span>Reference Date: {job.referenceDate}</span>
+                              </div>
+                            )}
+                            
+                            {job.referenceType && (
+                              <div className="flex items-center text-gray-600">
+                                <User className="h-4 w-4 mr-2 text-gray-500" />
+                                <span>Reference Type: {job.referenceType}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Statements Tab */}
+              <TabsContent value="statements">
+                <Card className="mb-6">
+                  <CardHeader>
+                    <div className="flex items-center">
+                      <FileText className="h-5 w-5 mr-2 text-gray-600" />
+                      <CardTitle className="text-xl">Supporting Statement</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="font-medium text-lg mb-2">Why are you interested in working with Med-Infinite?</h3>
+                        <p className="text-gray-700 bg-gray-50 p-4 rounded-md">
+                          {supportingStatement.whyInterested}
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-medium text-lg mb-2">Please tell us about your experience working with vulnerable people:</h3>
+                        <p className="text-gray-700 bg-gray-50 p-4 rounded-md">
+                          {supportingStatement.vulnerableExperience}
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-medium text-lg mb-2">Please tell us about your strengths and what makes you unique:</h3>
+                        <p className="text-gray-700 bg-gray-50 p-4 rounded-md whitespace-pre-line">
+                          {supportingStatement.strengths}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Documents Tab */}
+              <TabsContent value="documents">
+                <Card className="mb-6">
+                  <CardHeader>
+                    <div className="flex items-center">
+                      <FileText className="h-5 w-5 mr-2 text-gray-600" />
+                      <CardTitle className="text-xl">Documents</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {documents.map((doc, index) => (
+                        <Card key={index} className="border shadow-sm hover:shadow transition-shadow">
+                          <CardContent className="p-4">
+                            <div className="flex items-start space-x-3">
+                              <div className="bg-blue-50 p-2 rounded-md">
+                                <FileText className="h-8 w-8 text-blue-600" />
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="font-medium text-sm line-clamp-1" title={doc.name}>{doc.name}</h3>
+                                <p className="text-xs text-gray-500 mt-1">{doc.type}</p>
+                                <div className="flex items-center justify-between mt-3">
+                                  <div>
+                                    <p className="text-xs text-gray-500">{doc.uploadDate}</p>
+                                    <p className="text-xs text-gray-500">{doc.size}</p>
+                                  </div>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default CarerProfilePage;
