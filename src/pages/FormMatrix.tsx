@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { TabNavigation } from "@/components/TabNavigation";
 import { BranchHeader } from "@/components/BranchHeader";
@@ -66,21 +66,23 @@ const formRecords = [
 ];
 
 const FormMatrix = () => {
-  const [activeTab, setActiveTab] = useState("form-matrix");
+  const location = useLocation();
   const { id, branchName } = useParams();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("all");
+  
+  const activeTab = location.pathname.includes("form-matrix") ? "form-matrix" : "dashboard";
 
   const handleChangeTab = (value: string) => {
-    setActiveTab(value);
-    
     if (id && branchName) {
-      // Branch context navigation
-      navigate(`/branch-dashboard/${id}/${branchName}/${value === "dashboard" ? "" : value}`);
+      if (value === "dashboard") {
+        navigate(`/branch-dashboard/${id}/${branchName}`);
+      } else {
+        navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
+      }
     } else {
-      // Global context navigation
       if (value.includes("matrix") || value === "workflow") {
         navigate(`/workflow/${value}`);
       } else {
