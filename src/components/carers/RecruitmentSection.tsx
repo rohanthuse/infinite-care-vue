@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { UserPlus, Briefcase, Calendar, Filter, Clock, Plus, Search, Eye } from "lucide-react";
@@ -108,7 +107,6 @@ const RecruitmentSection = () => {
   const [jobSearchValue, setJobSearchValue] = useState("");
   const { toast } = useToast();
 
-  // Filter candidates based on search and stage
   const filteredCandidates = mockRecruitmentData.filter(candidate => {
     const matchesSearch = 
       candidate.name.toLowerCase().includes(searchValue.toLowerCase()) ||
@@ -120,7 +118,6 @@ const RecruitmentSection = () => {
     return matchesSearch && matchesStage;
   });
 
-  // Filter job postings based on search and status
   const filteredJobs = mockJobPostings.filter(job => {
     const matchesSearch = 
       job.title.toLowerCase().includes(jobSearchValue.toLowerCase()) ||
@@ -153,7 +150,6 @@ const RecruitmentSection = () => {
   };
 
   const handleViewJob = (jobId: string) => {
-    // This would navigate to a job details page in a real application
     toast({
       title: "Job Details",
       description: `Viewing details for job ${jobId}`,

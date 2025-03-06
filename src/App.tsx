@@ -21,6 +21,8 @@ import BranchDashboard from "./pages/BranchDashboard";
 import BranchAdmins from "./pages/BranchAdmins";
 import Agreement from "./pages/Agreement";
 import CarerProfilePage from "./pages/CarerProfilePage";
+import ApplicationDetailsPage from "./components/carers/ApplicationDetailsPage";
+import PostJobPage from "./components/carers/PostJobPage";
 import { useState } from "react";
 
 function App() {
@@ -52,8 +54,10 @@ function App() {
             <Route path="/branch-admins" element={<BranchAdmins />} />
             
             {/* Branch Dashboard Routes */}
-            <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
+            <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
             <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
+            <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
+            <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

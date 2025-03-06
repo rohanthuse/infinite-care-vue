@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, Routes, Route } from "react-router-dom";
 import { 
@@ -16,8 +15,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CarerFilters } from "./CarerFilters";
 import { AddCarerDialog } from "./AddCarerDialog";
 import RecruitmentSection from "./RecruitmentSection";
-import PostJobPage from "./PostJobPage";
-import ApplicationDetailsPage from "./ApplicationDetailsPage";
 import { useToast } from "@/hooks/use-toast";
 
 const mockCarers = [
@@ -201,162 +198,156 @@ export const CarersTab = ({ branchId }: CarersTabProps) => {
   }, [statusFilter, specializationFilter, availabilityFilter, searchValue]);
 
   return (
-    <Routes>
-      <Route path="recruitment/post-job" element={<PostJobPage />} />
-      <Route path="recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
-      <Route path="*" element={
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">Carers</h2>
-                <p className="text-gray-500 text-sm mt-1">
-                  Manage carers and care staff, view their details, and track assignments
-                </p>
-              </div>
-              <AddCarerDialog onAddCarer={handleAddCarer} />
-            </div>
-            
-            <Tabs defaultValue="carers" value={activeView} onValueChange={setActiveView}>
-              <TabsList className="mb-4">
-                <TabsTrigger value="carers">Active Carers</TabsTrigger>
-                <TabsTrigger value="recruitment">Recruitment</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="carers" className="mt-0">
-                <CarerFilters 
-                  searchValue={searchValue}
-                  setSearchValue={setSearchValue}
-                  statusFilter={statusFilter}
-                  setStatusFilter={setStatusFilter}
-                  specializationFilter={specializationFilter}
-                  setSpecializationFilter={setSpecializationFilter}
-                  availabilityFilter={availabilityFilter}
-                  setAvailabilityFilter={setAvailabilityFilter}
-                />
-              </TabsContent>
-              
-              <TabsContent value="recruitment" className="mt-0">
-                {/* Recruitment section is empty - RecruitmentSection component handles its own filtering */}
-              </TabsContent>
-            </Tabs>
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+      <div className="p-6 border-b border-gray-100">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">Carers</h2>
+            <p className="text-gray-500 text-sm mt-1">
+              Manage carers and care staff, view their details, and track assignments
+            </p>
+          </div>
+          <AddCarerDialog onAddCarer={handleAddCarer} />
+        </div>
+        
+        <Tabs defaultValue="carers" value={activeView} onValueChange={setActiveView}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="carers">Active Carers</TabsTrigger>
+            <TabsTrigger value="recruitment">Recruitment</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="carers" className="mt-0">
+            <CarerFilters 
+              searchValue={searchValue}
+              setSearchValue={setSearchValue}
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              specializationFilter={specializationFilter}
+              setSpecializationFilter={setSpecializationFilter}
+              availabilityFilter={availabilityFilter}
+              setAvailabilityFilter={setAvailabilityFilter}
+            />
+          </TabsContent>
+          
+          <TabsContent value="recruitment" className="mt-0">
+            {/* Recruitment section is empty - RecruitmentSection component handles its own filtering */}
+          </TabsContent>
+        </Tabs>
+      </div>
+      
+      {activeView === "carers" ? (
+        <>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-white hover:bg-gray-50/90">
+                  <TableHead className="text-gray-600 font-medium w-[100px]">Carer ID</TableHead>
+                  <TableHead className="text-gray-600 font-medium">Carer Name</TableHead>
+                  <TableHead className="text-gray-600 font-medium">Email Address</TableHead>
+                  <TableHead className="text-gray-600 font-medium">Specialization</TableHead>
+                  <TableHead className="text-gray-600 font-medium">Experience</TableHead>
+                  <TableHead className="text-gray-600 font-medium">Availability</TableHead>
+                  <TableHead className="text-gray-600 font-medium">Status</TableHead>
+                  <TableHead className="text-right"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedCarers.length > 0 ? (
+                  paginatedCarers.map((carer) => (
+                    <TableRow key={carer.id} className="hover:bg-gray-50 border-t border-gray-100">
+                      <TableCell className="font-medium">{carer.id}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm">
+                            {carer.avatar}
+                          </div>
+                          <span>{carer.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{carer.email}</TableCell>
+                      <TableCell>{carer.specialization}</TableCell>
+                      <TableCell>{carer.experience}</TableCell>
+                      <TableCell>{carer.availability}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="outline" 
+                          className={`
+                            ${carer.status === "Active" ? "bg-green-50 text-green-700 border-0" : ""}
+                            ${carer.status === "Inactive" ? "bg-red-50 text-red-700 border-0" : ""}
+                            ${carer.status === "On Leave" ? "bg-amber-50 text-amber-700 border-0" : ""}
+                            ${carer.status === "Training" ? "bg-purple-50 text-purple-700 border-0" : ""}
+                            px-4 py-1 rounded-full
+                          `}
+                        >
+                          {carer.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            onClick={() => handleViewCarer(carer.id)}
+                          >
+                            <EyeIcon className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <HelpCircle className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-6 text-gray-500">
+                      No carers found matching your search criteria.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
           
-          {activeView === "carers" ? (
-            <>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-white hover:bg-gray-50/90">
-                      <TableHead className="text-gray-600 font-medium w-[100px]">Carer ID</TableHead>
-                      <TableHead className="text-gray-600 font-medium">Carer Name</TableHead>
-                      <TableHead className="text-gray-600 font-medium">Email Address</TableHead>
-                      <TableHead className="text-gray-600 font-medium">Specialization</TableHead>
-                      <TableHead className="text-gray-600 font-medium">Experience</TableHead>
-                      <TableHead className="text-gray-600 font-medium">Availability</TableHead>
-                      <TableHead className="text-gray-600 font-medium">Status</TableHead>
-                      <TableHead className="text-right"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedCarers.length > 0 ? (
-                      paginatedCarers.map((carer) => (
-                        <TableRow key={carer.id} className="hover:bg-gray-50 border-t border-gray-100">
-                          <TableCell className="font-medium">{carer.id}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm">
-                                {carer.avatar}
-                              </div>
-                              <span>{carer.name}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>{carer.email}</TableCell>
-                          <TableCell>{carer.specialization}</TableCell>
-                          <TableCell>{carer.experience}</TableCell>
-                          <TableCell>{carer.availability}</TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant="outline" 
-                              className={`
-                                ${carer.status === "Active" ? "bg-green-50 text-green-700 border-0" : ""}
-                                ${carer.status === "Inactive" ? "bg-red-50 text-red-700 border-0" : ""}
-                                ${carer.status === "On Leave" ? "bg-amber-50 text-amber-700 border-0" : ""}
-                                ${carer.status === "Training" ? "bg-purple-50 text-purple-700 border-0" : ""}
-                                px-4 py-1 rounded-full
-                              `}
-                            >
-                              {carer.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8"
-                                onClick={() => handleViewCarer(carer.id)}
-                              >
-                                <EyeIcon className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <HelpCircle className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center py-6 text-gray-500">
-                          No carers found matching your search criteria.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+          {paginatedCarers.length > 0 && (
+            <div className="flex items-center justify-between p-4 border-t border-gray-100">
+              <div className="text-sm text-gray-500">
+                Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredCarers.length)} of {filteredCarers.length} carers
               </div>
-              
-              {paginatedCarers.length > 0 && (
-                <div className="flex items-center justify-between p-4 border-t border-gray-100">
-                  <div className="text-sm text-gray-500">
-                    Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredCarers.length)} of {filteredCarers.length} carers
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handlePreviousPage}
-                      disabled={currentPage === 1}
-                      className="h-8"
-                    >
-                      <ChevronLeft className="h-4 w-4 mr-1" />
-                      Previous
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleNextPage}
-                      disabled={currentPage === totalPages}
-                      className="h-8"
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="p-6">
-              <RecruitmentSection />
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handlePreviousPage}
+                  disabled={currentPage === 1}
+                  className="h-8"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Previous
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                  className="h-8"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
             </div>
           )}
+        </>
+      ) : (
+        <div className="p-6">
+          <RecruitmentSection />
         </div>
-      } />
-    </Routes>
+      )}
+    </div>
   );
 };
