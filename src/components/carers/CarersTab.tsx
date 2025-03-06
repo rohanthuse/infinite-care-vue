@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { 
   SearchIcon, Filter, UserCheck, Download, RefreshCw, 
   Plus, Edit, EyeIcon, HelpCircle, CheckCircle, 
@@ -11,7 +13,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CarerFilters } from "./CarerFilters";
-import { CarerProfileDialog } from "./CarerProfileDialog";
 
 const mockCarers = [
   {
@@ -117,14 +118,14 @@ interface CarersTabProps {
 }
 
 export const CarersTab = ({ branchId }: CarersTabProps) => {
+  const { id, branchName } = useParams();
+  const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [specializationFilter, setSpecializationFilter] = useState("all");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
-  const [selectedCarer, setSelectedCarer] = useState<any>(null);
-  const [profileOpen, setProfileOpen] = useState(false);
 
   const filteredCarers = mockCarers.filter(carer => {
     const matchesSearch = 
@@ -155,6 +156,10 @@ export const CarersTab = ({ branchId }: CarersTabProps) => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
+  };
+
+  const handleViewCarer = (carerId: string) => {
+    navigate(`/branch-dashboard/${id}/${branchName}/carers/${carerId}`);
   };
 
   useEffect(() => {
@@ -240,10 +245,7 @@ export const CarersTab = ({ branchId }: CarersTabProps) => {
                         variant="ghost" 
                         size="icon" 
                         className="h-8 w-8"
-                        onClick={() => {
-                          setSelectedCarer(carer);
-                          setProfileOpen(true);
-                        }}
+                        onClick={() => handleViewCarer(carer.id)}
                       >
                         <EyeIcon className="h-4 w-4" />
                       </Button>
@@ -296,14 +298,6 @@ export const CarersTab = ({ branchId }: CarersTabProps) => {
             </Button>
           </div>
         </div>
-      )}
-      
-      {selectedCarer && (
-        <CarerProfileDialog
-          open={profileOpen}
-          onOpenChange={setProfileOpen}
-          carer={selectedCarer}
-        />
       )}
     </div>
   );

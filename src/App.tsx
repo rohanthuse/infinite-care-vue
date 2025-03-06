@@ -20,6 +20,7 @@ import BranchDetails from "./pages/BranchDetails";
 import BranchDashboard from "./pages/BranchDashboard";
 import BranchAdmins from "./pages/BranchAdmins";
 import Agreement from "./pages/Agreement";
+import CarerProfilePage from "./pages/CarerProfilePage";
 import { useState } from "react";
 
 function App() {
@@ -52,6 +53,7 @@ function App() {
             
             {/* Branch Dashboard Routes */}
             <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
+            <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
