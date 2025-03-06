@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -245,8 +244,8 @@ const BranchDashboard = () => {
       />
       
       <main className="flex-1 container px-4 pt-4 pb-20 md:py-6 mx-auto">
-        <div className="flex flex-col justify-between items-start mb-4 md:mb-6">
-          <div className="w-full">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6">
+          <div className="w-full md:w-auto">
             <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
               <Button 
                 variant="ghost" 
@@ -282,47 +281,14 @@ const BranchDashboard = () => {
             </div>
           </div>
           
-          <div className="sticky top-[56px] md:static left-0 right-0 bg-white md:bg-transparent z-30 py-2 px-4 md:px-0 w-full md:w-auto mt-3 md:mt-4 border-b md:border-b-0 border-gray-100 shadow-sm md:shadow-none">
-            <div className="flex items-center justify-between w-full md:justify-end gap-2">
-              <div className="relative flex-1 md:w-auto md:max-w-[300px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input 
-                  placeholder="Search..." 
-                  className="pl-10 pr-4 py-2 rounded-full bg-white border-gray-200 md:w-[200px] md:focus:w-[300px] transition-all duration-300"
-                  value={searchValue}
-                  onChange={(e) => setSearchValue(e.target.value)}
-                />
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="h-9 w-9 rounded-full relative hidden md:flex"
-                >
-                  <Bell className="h-4 w-4" />
-                  <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-                </Button>
-                
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  className="h-9 bg-blue-600 hover:bg-blue-700 rounded-full px-3 shadow-sm"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  <span>New Booking</span>
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="h-9 w-9 rounded-full relative md:hidden"
-                >
-                  <Bell className="h-4 w-4" />
-                  <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-                </Button>
-              </div>
-            </div>
+          <div className="mt-4 md:mt-0">
+            <Button 
+              variant="default" 
+              className="h-9 bg-blue-600 hover:bg-blue-700 rounded-full px-3 shadow-sm"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              <span>New Booking</span>
+            </Button>
           </div>
         </div>
         
