@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { TabNavigation } from "@/components/TabNavigation";
@@ -76,10 +76,8 @@ const TaskMatrix = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   
-  // Set active tab based on route context
-  const activeTab = location.pathname.includes("/workflow/") 
-    ? "workflow" 
-    : "task-matrix";
+  // Always set activeTab to "workflow" for matrix pages
+  const activeTab = "workflow";
 
   const handleChangeTab = (value: string) => {
     if (id && branchName) {
@@ -87,13 +85,15 @@ const TaskMatrix = () => {
         navigate(`/branch-dashboard/${id}/${branchName}`);
       } else if (value === "workflow") {
         navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
+      } else if (value === "task-matrix" || value === "training-matrix" || value === "form-matrix") {
+        navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
       } else {
         navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
       }
     } else {
       if (value === "workflow") {
         navigate(`/workflow/task-matrix`);
-      } else if (value.includes("matrix")) {
+      } else if (value === "task-matrix" || value === "training-matrix" || value === "form-matrix") {
         navigate(`/workflow/${value}`);
       } else {
         navigate(`/${value}`);
