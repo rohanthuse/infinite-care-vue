@@ -4,6 +4,8 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { TabNavigation } from "@/components/TabNavigation";
 import { BranchHeader } from "@/components/BranchHeader";
 import FormMatrixContent from "@/components/workflow/FormMatrixContent";
+import { Button } from "@/components/ui/button";
+import { Download, Plus } from "lucide-react";
 
 const FormMatrix = () => {
   const { id, branchName } = useParams();
@@ -34,6 +36,8 @@ const FormMatrix = () => {
     }
   };
 
+  const displayBranchName = branchName ? decodeURIComponent(branchName) : "Med-Infinite Branch";
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -54,6 +58,24 @@ const FormMatrix = () => {
         />
         
         <div className="mt-6">
+          <div className="flex flex-col space-y-2 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">Form Matrix</h1>
+                <p className="text-muted-foreground">Form tracking</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" className="gap-1">
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+                <Button className="gap-1">
+                  <Plus className="h-4 w-4" />
+                  Add Form
+                </Button>
+              </div>
+            </div>
+          </div>
           <FormMatrixContent />
         </div>
       </main>
