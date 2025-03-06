@@ -1,0 +1,96 @@
+
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
+import { format, addDays, subDays } from "date-fns";
+
+interface DateNavigationProps {
+  currentDate: Date;
+  onDateChange: (date: Date) => void;
+  viewType: "daily" | "weekly";
+  onViewTypeChange: (viewType: "daily" | "weekly") => void;
+}
+
+export const DateNavigation: React.FC<DateNavigationProps> = ({
+  currentDate,
+  onDateChange,
+  viewType,
+  onViewTypeChange,
+}) => {
+  const handlePreviousDate = () => {
+    const newDate = viewType === "daily" 
+      ? subDays(currentDate, 1) 
+      : subDays(currentDate, 7);
+    onDateChange(newDate);
+  };
+
+  const handleNextDate = () => {
+    const newDate = viewType === "daily" 
+      ? addDays(currentDate, 1) 
+      : addDays(currentDate, 7);
+    onDateChange(newDate);
+  };
+
+  const handleToday = () => {
+    onDateChange(new Date());
+  };
+
+  return (
+    <div className="flex items-center space-x-2">
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={handlePreviousDate}
+        className="h-8 w-8 p-0"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+      
+      <div className="flex items-center space-x-1">
+        <CalendarIcon className="h-4 w-4 text-gray-500" />
+        <span className="text-sm font-medium">
+          {format(currentDate, viewType === "daily" ? "dd MMM yyyy" : "'Week of' dd MMM yyyy")}
+        </span>
+      </div>
+      
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={handleNextDate}
+        className="h-8 w-8 p-0"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+      
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={handleToday}
+        className="h-8 text-xs"
+      >
+        Today
+      </Button>
+
+      <div className="h-8 border-l border-gray-200 mx-2"></div>
+      
+      <div className="flex rounded-md overflow-hidden border border-gray-200">
+        <Button 
+          variant={viewType === "daily" ? "default" : "ghost"} 
+          size="sm" 
+          onClick={() => onViewTypeChange("daily")}
+          className={`h-8 rounded-none text-xs px-3 ${viewType === "daily" ? "bg-blue-600" : "bg-white text-gray-700"}`}
+        >
+          Daily
+        </Button>
+        <Button 
+          variant={viewType === "weekly" ? "default" : "ghost"} 
+          size="sm" 
+          onClick={() => onViewTypeChange("weekly")}
+          className={`h-8 rounded-none text-xs px-3 ${viewType === "weekly" ? "bg-blue-600" : "bg-white text-gray-700"}`}
+        >
+          Weekly
+        </Button>
+      </div>
+    </div>
+  );
+};

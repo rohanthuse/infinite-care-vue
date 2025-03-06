@@ -1,0 +1,249 @@
+
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, RefreshCw } from "lucide-react";
+import { DateNavigation } from "./DateNavigation";
+import { BookingFilters } from "./BookingFilters";
+import { BookingTimeGrid, Client, Carer, Booking } from "./BookingTimeGrid";
+import { toast } from "sonner";
+
+// Mock data
+const mockClients: Client[] = [
+  { id: "CL-001", name: "Pender, Eva", initials: "EP", bookingCount: 3 },
+  { id: "CL-002", name: "Fulcher, Patricia", initials: "FP", bookingCount: 2 },
+  { id: "CL-003", name: "Baulch, Ursula", initials: "BU", bookingCount: 1 },
+  { id: "CL-004", name: "Ren, Victoria", initials: "RV", bookingCount: 2 },
+  { id: "CL-005", name: "Iyaniwura, Ifeoluwa", initials: "II", bookingCount: 1 },
+  { id: "CL-006", name: "Careville Ltd", initials: "CL", bookingCount: 4 },
+];
+
+const mockCarers: Carer[] = [
+  { id: "CA-001", name: "Charuma, Charmaine", initials: "CC", bookingCount: 4 },
+  { id: "CA-002", name: "Warren, Susan", initials: "WS", bookingCount: 3 },
+  { id: "CA-003", name: "Ayo-Famure, Opeyemi", initials: "AF", bookingCount: 3 },
+  { id: "CA-004", name: "Smith, John", initials: "SJ", bookingCount: 2 },
+  { id: "CA-005", name: "Williams, Mary", initials: "WM", bookingCount: 1 },
+];
+
+const mockBookings: Booking[] = [
+  {
+    id: "BK-001",
+    clientId: "CL-001",
+    clientName: "Pender, Eva",
+    clientInitials: "EP",
+    carerId: "CA-001",
+    carerName: "Charuma, Charmaine",
+    startTime: "07:30",
+    endTime: "08:30",
+    date: new Date().toISOString().split('T')[0],
+    status: "done"
+  },
+  {
+    id: "BK-002",
+    clientId: "CL-001",
+    clientName: "Pender, Eva",
+    clientInitials: "EP",
+    carerId: "CA-002",
+    carerName: "Warren, Susan",
+    startTime: "12:15",
+    endTime: "13:45",
+    date: new Date().toISOString().split('T')[0],
+    status: "assigned"
+  },
+  {
+    id: "BK-003",
+    clientId: "CL-002",
+    clientName: "Fulcher, Patricia",
+    clientInitials: "FP",
+    carerId: "CA-001",
+    carerName: "Charuma, Charmaine",
+    startTime: "09:00",
+    endTime: "10:00",
+    date: new Date().toISOString().split('T')[0],
+    status: "done"
+  },
+  {
+    id: "BK-004",
+    clientId: "CL-003",
+    clientName: "Baulch, Ursula",
+    clientInitials: "BU",
+    carerId: "CA-002",
+    carerName: "Warren, Susan",
+    startTime: "10:30",
+    endTime: "11:30",
+    date: new Date().toISOString().split('T')[0],
+    status: "in-progress"
+  },
+  {
+    id: "BK-005",
+    clientId: "CL-004",
+    clientName: "Ren, Victoria",
+    clientInitials: "RV",
+    carerId: "CA-002",
+    carerName: "Warren, Susan",
+    startTime: "14:00",
+    endTime: "15:30",
+    date: new Date().toISOString().split('T')[0],
+    status: "assigned"
+  },
+  {
+    id: "BK-006",
+    clientId: "CL-004",
+    clientName: "Ren, Victoria",
+    clientInitials: "RV",
+    carerId: "CA-003",
+    carerName: "Ayo-Famure, Opeyemi",
+    startTime: "18:00",
+    endTime: "19:00",
+    date: new Date().toISOString().split('T')[0],
+    status: "cancelled"
+  },
+  {
+    id: "BK-007",
+    clientId: "CL-005",
+    clientName: "Iyaniwura, Ifeoluwa",
+    clientInitials: "II",
+    carerId: "CA-001",
+    carerName: "Charuma, Charmaine",
+    startTime: "16:00",
+    endTime: "17:00",
+    date: new Date().toISOString().split('T')[0],
+    status: "assigned"
+  },
+  {
+    id: "BK-008",
+    clientId: "CL-006",
+    clientName: "Careville Ltd",
+    clientInitials: "CL",
+    carerId: "CA-003",
+    carerName: "Ayo-Famure, Opeyemi",
+    startTime: "08:30",
+    endTime: "09:30",
+    date: new Date().toISOString().split('T')[0],
+    status: "departed"
+  },
+  {
+    id: "BK-009",
+    clientId: "CL-001",
+    clientName: "Pender, Eva",
+    clientInitials: "EP",
+    carerId: "CA-004",
+    carerName: "Smith, John",
+    startTime: "20:00",
+    endTime: "21:00",
+    date: new Date().toISOString().split('T')[0],
+    status: "assigned"
+  }
+];
+
+interface BookingsTabProps {
+  branchId: string;
+}
+
+export const BookingsTab: React.FC<BookingsTabProps> = ({ branchId }) => {
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [viewType, setViewType] = useState<"daily" | "weekly">("daily");
+  const [activeTab, setActiveTab] = useState<string>("planning");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [viewMode, setViewMode] = useState<"client" | "group">("client");
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["assigned", "in-progress"]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      toast.success("Bookings refreshed successfully");
+    }, 800);
+  };
+
+  const handleNewBooking = () => {
+    toast.success("New booking function triggered", {
+      description: "This feature will be implemented soon"
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full lg:w-auto">
+          <TabsList className="bg-white border border-gray-200 p-1 rounded-lg w-full lg:w-auto">
+            <TabsTrigger 
+              value="planning" 
+              className="flex-1 lg:flex-initial data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+            >
+              Planning
+            </TabsTrigger>
+            <TabsTrigger 
+              value="list" 
+              className="flex-1 lg:flex-initial data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+            >
+              List
+            </TabsTrigger>
+            <TabsTrigger 
+              value="report" 
+              className="flex-1 lg:flex-initial data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+            >
+              Report
+            </TabsTrigger>
+            <TabsTrigger 
+              value="client-group" 
+              className="flex-1 lg:flex-initial data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+            >
+              Client Group
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        
+        <div className="flex gap-3 w-full lg:w-auto justify-between">
+          <DateNavigation 
+            currentDate={currentDate}
+            onDateChange={setCurrentDate}
+            viewType={viewType}
+            onViewTypeChange={setViewType}
+          />
+          
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRefresh}
+              className="h-8 w-8 p-0"
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
+            
+            <Button 
+              className="h-8 bg-blue-600 hover:bg-blue-700"
+              size="sm"
+              onClick={handleNewBooking}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              New
+            </Button>
+          </div>
+        </div>
+      </div>
+      
+      <BookingFilters 
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        selectedStatuses={selectedStatuses}
+        onStatusChange={setSelectedStatuses}
+      />
+      
+      <BookingTimeGrid 
+        date={currentDate}
+        bookings={mockBookings}
+        clients={mockClients}
+        carers={mockCarers}
+        viewType={viewType}
+        viewMode={viewMode}
+      />
+    </div>
+  );
+};

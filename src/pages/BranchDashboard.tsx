@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TabNavigation } from "@/components/TabNavigation";
+import { BookingsTab } from "@/components/bookings/BookingsTab";
 import { 
   Card,
   CardContent,
@@ -671,6 +672,10 @@ const BranchDashboard = () => {
             </>
           )}
           
+          {activeTab === "bookings" && (
+            <BookingsTab branchId={id || "1"} />
+          )}
+          
           {activeTab === "clients" && (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-20 md:mb-0">
               <div className="p-6 border-b border-gray-100">
@@ -893,7 +898,7 @@ const BranchDashboard = () => {
             </div>
           )}
           
-          {activeTab !== "dashboard" && activeTab !== "clients" && (
+          {activeTab !== "dashboard" && activeTab !== "clients" && activeTab !== "bookings" && (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center mb-20 md:mb-0">
               <h2 className="text-xl font-medium text-gray-700 mb-2">
                 {activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace(/-/g, ' ')} Page
