@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -435,7 +434,6 @@ const BranchDashboard = () => {
     setCurrentPage(1);
   }, [statusFilter, regionFilter, clientSearchValue]);
   
-  // Render appropriate content based on activeTab
   const renderTabContent = () => {
     switch(activeTab) {
       case "dashboard":
@@ -809,19 +807,17 @@ const BranchDashboard = () => {
         );
       case "bookings":
         return <BookingsTab 
-                branchId={id} 
-                branchName={displayBranchName} 
+                branchId={id || ""} 
                 onNewBooking={handleNewBooking} 
               />;
       case "carers":
         return <CarersTab 
-                branchId={id} 
-                branchName={displayBranchName} 
+                branchId={id || ""} 
               />;
       case "reviews":
         return <ReviewsTab />;
       case "communications":
-        return <CommunicationsTab />;
+        return <CommunicationsTab branchId={id || ""} />;
       default:
         return (
           <div className="flex flex-col items-center justify-center min-h-[400px] text-gray-500">

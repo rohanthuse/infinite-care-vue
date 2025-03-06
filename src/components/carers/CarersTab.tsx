@@ -116,7 +116,7 @@ const mockCarers = [
   }
 ];
 
-interface CarersTabProps {
+export interface CarersTabProps {
   branchId: string;
 }
 
