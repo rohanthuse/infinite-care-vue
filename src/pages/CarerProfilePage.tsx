@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -29,7 +28,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-// Enhanced mock data for a single carer based on the screenshots
 const mockCarerData = {
   id: "CR-001",
   carerId: "111111",
@@ -62,7 +60,6 @@ const mockCarerData = {
   profileCompletion: 91
 };
 
-// Updated essentials items with status
 const essentials = [
   { name: "Work Permit & Nationality", status: "completed" },
   { name: "Vaccination", status: "completed" },
@@ -78,7 +75,6 @@ const essentials = [
   { name: "Documents & Additional Information", status: "pending" }
 ];
 
-// Updated employment history to match the screenshots
 const employmentHistory = [
   {
     company: "Volkswagen",
@@ -109,14 +105,12 @@ const employmentHistory = [
   }
 ];
 
-// Mock data for supporting statement
 const supportingStatement = {
   whyInterested: "I am interested in working with Brielle because of your dedication to providing high-quality, client-centered care. Your emphasis on being Safe, Well-led, Caring, Responsive, and Effective resonates strongly with my professional values, and I am eager to contribute my skills to support your mission.",
   vulnerableExperience: "While I don't have formal on-field experience, I have personal experience caring for a family member who required support due to illness. This involved assisting with daily tasks, offering emotional support, and ensuring their comfort and well-being. Through this, I've developed compassion, patience, and a deep understanding of the needs of vulnerable individuals.",
   strengths: "My strengths lie in my strong organisational skills, attention to detail, and ability to communicate effectively. I excel in managing schedules, ensuring smooth operations, and providing support to both staff and clients. My aspiration is to contribute to the seamless functioning of Brielle by maintaining high standards of efficiency and professionalism.\n\nWhat sets me apart is my proactive approach to problem-solving and my commitment to creating a supportive environment where everyone feels valued. I take pride in being adaptable, approachable, and always willing to go the extra mile to ensure that tasks are completed efficiently and effectively."
 };
 
-// Mock data for documents
 const documents = [
   {
     name: "Right_to_work_opeyemi.jpg",
@@ -138,7 +132,6 @@ const documents = [
   }
 ];
 
-// Mock data for skills
 const skills = [
   "Patience", "Friendly", "Cheerful", "Ability to think quickly", 
   "A good listener", "Kind", "Willingness to go the extra mile",
@@ -150,13 +143,10 @@ const skills = [
   "Supervision Experience", "Knowledge of Mental Capacity Act"
 ];
 
-// Mock data for type of work
 const typeOfWork = ["Personal Care", "Urgent Responder", "Home Help"];
 
-// Mock data for hobbies
 const hobbies = ["Listening to Music", "Cooking", "Reading"];
 
-// Mock employee information
 const employeeInfo = {
   employeeType: "PAYE",
   joinDate: "07-12-2023",
@@ -173,7 +163,6 @@ const employeeInfo = {
   enableMaxHours: false
 };
 
-// Profile completion checklist items
 const profileCompletionItems = [
   { name: "Personal Details", completed: true },
   { name: "Address", completed: true },
@@ -197,7 +186,6 @@ const CarerProfilePage = () => {
     navigate(`/branch-dashboard/${id}/${branchName}`);
   };
 
-  // In a real app, you would fetch the carer data based on carerId
   const carer = mockCarerData;
 
   return (
@@ -229,7 +217,6 @@ const CarerProfilePage = () => {
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left sidebar with basic info */}
           <div className="lg:col-span-1">
             <Card className="sticky top-20 mb-6">
               <CardContent className="p-6">
@@ -305,7 +292,6 @@ const CarerProfilePage = () => {
             </Card>
           </div>
 
-          {/* Main content area */}
           <div className="lg:col-span-3">
             <Tabs defaultValue="overview" onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid grid-cols-6 gap-2 mb-6 w-full">
@@ -317,7 +303,6 @@ const CarerProfilePage = () => {
                 <TabsTrigger value="documents">Documents</TabsTrigger>
               </TabsList>
 
-              {/* Overview Tab - Redesigned for a modern look */}
               <TabsContent value="overview">
                 <Card className="mb-6 overflow-hidden border-0 shadow-lg">
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b">
@@ -510,7 +495,6 @@ const CarerProfilePage = () => {
                 </Card>
               </TabsContent>
 
-              {/* Personal Details Tab */}
               <TabsContent value="personal">
                 <Card className="mb-6">
                   <CardHeader>
@@ -635,7 +619,6 @@ const CarerProfilePage = () => {
                 </Card>
               </TabsContent>
 
-              {/* Essentials Tab */}
               <TabsContent value="essentials">
                 <Card className="mb-6">
                   <CardHeader>
@@ -690,7 +673,7 @@ const CarerProfilePage = () => {
                                     <div className="flex items-center space-x-2">
                                       <FileText className="h-5 w-5 text-blue-500" />
                                       <div>
-                                        <p className="text-sm font-medium">Right to work_opeyemi.jpg</p>
+                                        <p className="text-sm font-medium">Right_to_work_opeyemi.jpg</p>
                                         <p className="text-xs text-gray-500">0.07 KB</p>
                                       </div>
                                     </div>
@@ -709,7 +692,6 @@ const CarerProfilePage = () => {
                 </Card>
               </TabsContent>
 
-              {/* Employment Tab */}
               <TabsContent value="employment">
                 <Card className="mb-6">
                   <CardHeader>
@@ -759,7 +741,6 @@ const CarerProfilePage = () => {
                 </Card>
               </TabsContent>
 
-              {/* Statements Tab */}
               <TabsContent value="statements">
                 <Card className="mb-6">
                   <CardHeader>
@@ -795,7 +776,6 @@ const CarerProfilePage = () => {
                 </Card>
               </TabsContent>
 
-              {/* Documents Tab */}
               <TabsContent value="documents">
                 <Card className="mb-6">
                   <CardHeader>
