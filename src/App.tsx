@@ -1,64 +1,47 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import SuperAdminLogin from "./pages/SuperAdminLogin";
 import Dashboard from "./pages/Dashboard";
-import Services from "./pages/Services";
+import BranchDashboard from "./pages/BranchDashboard";
+import BranchDetails from "./pages/BranchDetails";
+import BranchAdmins from "./pages/BranchAdmins";
 import Settings from "./pages/Settings";
+import Services from "./pages/Services";
+import ClientsList from "./pages/ClientsList";
+import MedicalMental from "./pages/MedicalMental";
+import BodyMapPoints from "./pages/BodyMapPoints";
 import Hobbies from "./pages/Hobbies";
 import Skills from "./pages/Skills";
-import MedicalMental from "./pages/MedicalMental";
 import TypeOfWork from "./pages/TypeOfWork";
-import BodyMapPoints from "./pages/BodyMapPoints";
-import Branch from "./pages/Branch";
-import BranchDetails from "./pages/BranchDetails";
-import BranchDashboard from "./pages/BranchDashboard";
-import BranchAdmins from "./pages/BranchAdmins";
 import Agreement from "./pages/Agreement";
-import { useState } from "react";
+import SuperAdminLogin from "./pages/SuperAdminLogin";
+import Branch from "./pages/Branch";
+import NotFound from "./pages/NotFound";
+import "./App.css";
 
 function App() {
-  // Create a new QueryClient instance inside the component
-  const [queryClient] = useState(() => new QueryClient());
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/super-admin" element={<SuperAdminLogin />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/agreement" element={<Agreement />} />
-            
-            {/* Key Parameters Routes */}
-            <Route path="/hobbies" element={<Hobbies />} />
-            <Route path="/skills" element={<Skills />} />
-            <Route path="/medical-mental" element={<MedicalMental />} />
-            <Route path="/type-of-work" element={<TypeOfWork />} />
-            <Route path="/body-map-points" element={<BodyMapPoints />} />
-            <Route path="/branch" element={<Branch />} />
-            <Route path="/branch-details/:id" element={<BranchDetails />} />
-            <Route path="/branch-admins" element={<BranchAdmins />} />
-            
-            {/* Branch Dashboard Routes */}
-            <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
-            
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
+        <Route path="/branch-details/:id/:branchName" element={<BranchDetails />} />
+        <Route path="/branch-admins/:id/:branchName" element={<BranchAdmins />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/services/:id/:branchName" element={<Services />} />
+        <Route path="/clients/:id/:branchName" element={<ClientsList />} />
+        <Route path="/medical-mental/:id/:branchName" element={<MedicalMental />} />
+        <Route path="/body-map-points/:id/:branchName" element={<BodyMapPoints />} />
+        <Route path="/hobbies/:id/:branchName" element={<Hobbies />} />
+        <Route path="/skills/:id/:branchName" element={<Skills />} />
+        <Route path="/type-of-work/:id/:branchName" element={<TypeOfWork />} />
+        <Route path="/agreement/:id/:branchName" element={<Agreement />} />
+        <Route path="/super-admin-login" element={<SuperAdminLogin />} />
+        <Route path="/branch" element={<Branch />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Router>
   );
 }
 
