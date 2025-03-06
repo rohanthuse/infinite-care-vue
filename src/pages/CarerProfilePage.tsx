@@ -1,4 +1,4 @@
-
+<lov-code>
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -7,7 +7,7 @@ import {
   Briefcase, Users, CheckCircle, XCircle, Clock, AlertCircle, 
   Download, ChevronLeft, Edit, ArrowLeft, FileIcon, Star,
   Clipboard, Award, UserCheck, HeartHandshake, ListChecks, Newspaper,
-  Plus
+  Plus, ChevronDown
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 // Enhanced mock data for a single carer based on the screenshots
 const mockCarerData = {
@@ -570,508 +576,135 @@ const CarerProfilePage = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                        <h3 className="font-medium flex items-center mb-2">
-                          <CheckCircle className="text-green-600 h-5 w-5 mr-2" />
-                          Work Permit & Nationality
-                          <Badge className="ml-auto bg-green-600">Completed</Badge>
-                        </h3>
-                        
-                        <div className="space-y-4">
-                          <div>
-                            <Label className="mb-1">N/A</Label>
-                          </div>
-                          
-                          <div>
-                            <Label className="mb-1">Work Permit:</Label>
-                            <div className="border rounded-md p-2 bg-white">Other</div>
-                          </div>
-                          
-                          <div>
-                            <Label className="mb-1 after:content-['*'] after:text-red-500 after:ml-0.5">Specify:</Label>
-                            <div className="border rounded-md p-2 bg-white">BRP</div>
-                          </div>
-                          
-                          <div>
-                            <Label className="mb-1">How many hours are you allowed to work in the UK per week?</Label>
-                            <div className="border rounded-md p-2 bg-white">Full-Time</div>
-                          </div>
-                          
-                          <div>
-                            <Label className="mb-1">Expiry Date:</Label>
-                            <div className="border rounded-md p-2 bg-white">13-05-2028</div>
-                          </div>
-                          
-                          <div>
-                            <Label className="mb-1 after:content-['*'] after:text-red-500 after:ml-0.5">Upload a Copy:</Label>
-                            <div className="border rounded p-3 bg-white mt-1">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-2">
-                                  <FileText className="h-5 w-5 text-blue-500" />
-                                  <div>
-                                    <p className="text-sm font-medium">Right to work_opeyemi.jpg</p>
-                                    <p className="text-xs text-gray-500">0.07 KB</p>
+                      <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="work-permit" className="bg-gray-50 p-4 rounded-lg border-0 mb-4">
+                          <AccordionTrigger className="py-0 hover:no-underline">
+                            <div className="flex items-center w-full justify-between pr-2">
+                              <div className="flex items-center">
+                                <CheckCircle className="text-green-600 h-5 w-5 mr-2" />
+                                <h3 className="font-medium">Work Permit & Nationality</h3>
+                              </div>
+                              <Badge className="ml-auto bg-green-600 mr-2">Completed</Badge>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-4">
+                            <div className="space-y-4">
+                              <div>
+                                <Label className="mb-1">N/A</Label>
+                              </div>
+                              
+                              <div>
+                                <Label className="mb-1">Work Permit:</Label>
+                                <div className="border rounded-md p-2 bg-white">Other</div>
+                              </div>
+                              
+                              <div>
+                                <Label className="mb-1 after:content-['*'] after:text-red-500 after:ml-0.5">Specify:</Label>
+                                <div className="border rounded-md p-2 bg-white">BRP</div>
+                              </div>
+                              
+                              <div>
+                                <Label className="mb-1">How many hours are you allowed to work in the UK per week?</Label>
+                                <div className="border rounded-md p-2 bg-white">Full-Time</div>
+                              </div>
+                              
+                              <div>
+                                <Label className="mb-1">Expiry Date:</Label>
+                                <div className="border rounded-md p-2 bg-white">13-05-2028</div>
+                              </div>
+                              
+                              <div>
+                                <Label className="mb-1 after:content-['*'] after:text-red-500 after:ml-0.5">Upload a Copy:</Label>
+                                <div className="border rounded p-3 bg-white mt-1">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2">
+                                      <FileText className="h-5 w-5 text-blue-500" />
+                                      <div>
+                                        <p className="text-sm font-medium">Right to work_opeyemi.jpg</p>
+                                        <p className="text-xs text-gray-500">0.07 KB</p>
+                                      </div>
+                                    </div>
+                                    <Button variant="ghost" size="sm">
+                                      <Download className="h-4 w-4" />
+                                    </Button>
                                   </div>
                                 </div>
-                                <Button variant="ghost" size="sm">
-                                  <Download className="h-4 w-4" />
-                                </Button>
+                              </div>
+                              
+                              <div>
+                                <Label className="mb-1">Right to Work/ECS Check:</Label>
+                                <div className="border rounded-md p-2 bg-gray-100 text-center text-gray-500 text-sm">
+                                  No file uploaded
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          
-                          <div>
-                            <Label className="mb-1">Right to Work/ECS Check:</Label>
-                            <div className="border rounded-md p-2 bg-gray-100 text-center text-gray-500 text-sm">
-                              No file uploaded
+                            
+                            <div className="mt-4 pt-3 border-t border-gray-200">
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <p className="text-sm">Full Name: Opeyemi Ayo-Famure</p>
+                                  <p className="text-sm">Confirmed By: Ayo-Famure, Opeyemi</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-sm">Confirmed On: 09/01/2025</p>
+                                  <Button variant="destructive" size="sm" className="mt-1">Unconfirm</Button>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
+                          </AccordionContent>
+                        </AccordionItem>
                         
-                        <div className="mt-4 pt-3 border-t border-gray-200">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <p className="text-sm">Full Name: Opeyemi Ayo-Famure</p>
-                              <p className="text-sm">Confirmed By: Ayo-Famure, Opeyemi</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm">Confirmed On: 09/01/2025</p>
-                              <Button variant="destructive" size="sm" className="mt-1">Unconfirm</Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Display other essentials as collapsed accordions */}
-                      {["Vaccination", "Car Insurance", "Name Change"].map((item, index) => (
-                        <div key={index} className="border rounded-lg overflow-hidden">
-                          <div className="flex items-center justify-between p-4 bg-white">
-                            <h3 className="font-medium">{item}</h3>
-                            <Badge className="bg-green-600">Completed</Badge>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      {/* Incomplete essentials */}
-                      <div className="border rounded-lg overflow-hidden border-red-200">
-                        <div className="flex items-center justify-between p-4 bg-white">
-                          <h3 className="font-medium">Bank Details</h3>
-                          <Badge variant="outline" className="bg-red-50 text-red-600">Missing</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Employment History Tab */}
-              <TabsContent value="employment">
-                <Card className="mb-6">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Briefcase className="h-5 w-5 mr-2 text-gray-600" />
-                        <CardTitle className="text-xl">Employment History</CardTitle>
-                      </div>
-                      <Button className="bg-blue-600">
-                        <Plus className="h-4 w-4 mr-1" />
-                        New
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <Tabs defaultValue="employment-history">
-                      <TabsList className="mb-4">
-                        <TabsTrigger value="employment-history">Employment History</TabsTrigger>
-                        <TabsTrigger value="employment-gap">Employment Gap</TabsTrigger>
-                        <TabsTrigger value="cv">CV</TabsTrigger>
-                      </TabsList>
-                      
-                      <TabsContent value="employment-history">
-                        <div className="overflow-x-auto">
-                          <table className="w-full border-collapse">
-                            <thead>
-                              <tr className="bg-gray-50">
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Organisation / Name</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference Date</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference Type</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {employmentHistory.map((job, index) => (
-                                <tr key={index} className="border-t border-gray-200">
-                                  <td className="px-4 py-3">{job.company}</td>
-                                  <td className="px-4 py-3">{job.startDate} - {job.endDate}</td>
-                                  <td className="px-4 py-3">{job.referenceDate || "-"}</td>
-                                  <td className="px-4 py-3">
-                                    <Badge className="bg-green-100 text-green-800 border-0">
-                                      {job.referenceType}
-                                    </Badge>
-                                  </td>
-                                  <td className="px-4 py-3">{job.status}</td>
-                                  <td className="px-4 py-3 text-right">
-                                    <Button variant="ghost" size="sm">
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </TabsContent>
-                      
-                      <TabsContent value="employment-gap">
-                        <p className="text-gray-500 italic">Employment gap information would be displayed here.</p>
-                      </TabsContent>
-                      
-                      <TabsContent value="cv">
-                        <p className="text-gray-500 italic">CV information would be displayed here.</p>
-                      </TabsContent>
-                    </Tabs>
-                  </CardContent>
-                </Card>
-                
-                <Card className="mb-6">
-                  <CardHeader>
-                    <div className="flex items-center">
-                      <Award className="h-5 w-5 mr-2 text-gray-600" />
-                      <CardTitle className="text-xl">General Accounting Settings</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <Label htmlFor="travelRate" className="mb-1">Travel Rate:</Label>
-                        <Input id="travelRate" value={employeeInfo.travelRate} placeholder="Select item..." readOnly />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="payslipConfig" className="mb-1">Payslip Configuration:</Label>
-                        <Input id="payslipConfig" value={employeeInfo.payslipConfig} placeholder="Select item..." readOnly />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="payrollNumber" className="mb-1">Payroll Number:</Label>
-                        <Input id="payrollNumber" value={employeeInfo.payrollNumber} readOnly />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="mb-6">
-                  <CardHeader>
-                    <div className="flex items-center">
-                      <Users className="h-5 w-5 mr-2 text-gray-600" />
-                      <CardTitle className="text-xl">Employee Information</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <Label className="mb-2">Employee Type:</Label>
-                        <RadioGroup defaultValue={employeeInfo.employeeType}>
-                          <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="PAYE" id="paye" disabled />
-                              <Label htmlFor="paye">PAYE</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="Self-Employed" id="self" disabled />
-                              <Label htmlFor="self">Self-Employed</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="Agency" id="agency" disabled />
-                              <Label htmlFor="agency">Agency</Label>
-                            </div>
-                          </div>
-                        </RadioGroup>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="joinDate" className="mb-1">Join Date:</Label>
-                        <Input id="joinDate" value={employeeInfo.joinDate} readOnly />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="agreement" className="mb-1">Agreement:</Label>
-                        <Input id="agreement" value={employeeInfo.agreement} placeholder="Select item..." readOnly />
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="expiryDate" checked={employeeInfo.expiryDate} disabled />
-                        <Label htmlFor="expiryDate">Expiry Date</Label>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="manager" className="mb-1">Manager:</Label>
-                        <Input id="manager" value={employeeInfo.manager} readOnly />
-                      </div>
-                    </div>
-                    
-                    <div className="mt-6 pt-4 border-t border-gray-200">
-                      <h3 className="font-medium mb-3">General</h3>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="canBookUrgent">Can this Staff member book urgent visits on the Careberry Carers App?</Label>
-                          <RadioGroup defaultValue={employeeInfo.canBookUrgent ? "yes" : "no"} className="flex space-x-4">
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="yes" id="yes-book" disabled />
-                              <Label htmlFor="yes-book">Yes</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="no" id="no-book" disabled />
-                              <Label htmlFor="no-book">No</Label>
-                            </div>
-                          </RadioGroup>
-                        </div>
+                        {/* Convert remaining essentials to accordion items */}
+                        {["Vaccination", "Car Insurance", "Name Change", "Driving License", "NI Number", "P45", "Proof of Address", "DBS"].map((item, index) => (
+                          <AccordionItem 
+                            key={index} 
+                            value={`item-${index}`} 
+                            className="border rounded-lg overflow-hidden border-0 mb-4"
+                          >
+                            <AccordionTrigger className="px-4 py-4 hover:no-underline bg-white">
+                              <div className="flex items-center w-full justify-between pr-2">
+                                <div className="flex items-center">
+                                  <CheckCircle className="text-green-600 h-5 w-5 mr-2" />
+                                  <h3 className="font-medium">{item}</h3>
+                                </div>
+                                <Badge className="ml-auto bg-green-600 mr-2">Completed</Badge>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-4 pb-4 pt-2 bg-white">
+                              <p className="text-gray-500">Details for {item} would be displayed here.</p>
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
                         
-                        <div>
-                          <Label className="mb-2">Show Staff in:</Label>
-                          <div className="flex space-x-4">
-                            <div className="flex items-center space-x-2">
-                              <Checkbox id="taskMatrix" checked={employeeInfo.showInTaskMatrix} disabled />
-                              <Label htmlFor="taskMatrix">Task Matrix</Label>
+                        {/* Incomplete essentials */}
+                        <AccordionItem value="bank-details" className="border rounded-lg overflow-hidden border-red-200 mb-4">
+                          <AccordionTrigger className="px-4 py-4 hover:no-underline bg-white">
+                            <div className="flex items-center w-full justify-between pr-2">
+                              <div className="flex items-center">
+                                <XCircle className="text-red-500 h-5 w-5 mr-2" />
+                                <h3 className="font-medium">Bank Details</h3>
+                              </div>
+                              <Badge variant="outline" className="ml-auto bg-red-50 text-red-600 mr-2">Missing</Badge>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <Checkbox id="trainingMatrix" checked={employeeInfo.showInTrainingMatrix} disabled />
-                              <Label htmlFor="trainingMatrix">Training Matrix</Label>
+                          </AccordionTrigger>
+                          <AccordionContent className="px-4 pb-4 pt-2 bg-white">
+                            <div className="p-4 bg-red-50 rounded-md">
+                              <p className="text-red-600 text-sm">This information needs to be provided.</p>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <Checkbox id="formMatrix" checked={employeeInfo.showInFormMatrix} disabled />
-                              <Label htmlFor="formMatrix">Form Matrix</Label>
-                            </div>
-                          </div>
-                        </div>
+                          </AccordionContent>
+                        </AccordionItem>
                         
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="enableMaxHours">Enable Max Hours restriction?</Label>
-                          <RadioGroup defaultValue={employeeInfo.enableMaxHours ? "yes" : "no"} className="flex space-x-4">
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="yes" id="yes-max" disabled />
-                              <Label htmlFor="yes-max">Yes</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="no" id="no-max" disabled />
-                              <Label htmlFor="no-max">No</Label>
-                            </div>
-                          </RadioGroup>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              {/* Supporting Statement Tab */}
-              <TabsContent value="statements">
-                <Card className="mb-6">
-                  <CardHeader>
-                    <div className="flex items-center">
-                      <Newspaper className="h-5 w-5 mr-2 text-gray-600" />
-                      <CardTitle className="text-xl">Supporting Statement</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      <div>
-                        <Label htmlFor="whyInterested" className="text-base font-medium after:content-['*'] after:text-red-500 after:ml-0.5">
-                          Why are you interested in working with us?
-                        </Label>
-                        <Textarea 
-                          id="whyInterested" 
-                          className="mt-2 min-h-32" 
-                          value={supportingStatement.whyInterested}
-                          readOnly
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="vulnerableExperience" className="text-base font-medium after:content-['*'] after:text-red-500 after:ml-0.5">
-                          What is your experience in working with vulnerable people?
-                        </Label>
-                        <Textarea 
-                          id="vulnerableExperience" 
-                          className="mt-2 min-h-32" 
-                          value={supportingStatement.vulnerableExperience}
-                          readOnly
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="strengths" className="text-base font-medium after:content-['*'] after:text-red-500 after:ml-0.5">
-                          Tell us about your strengths! What are your aspirations and qualities that make you different?
-                        </Label>
-                        <Textarea 
-                          id="strengths" 
-                          className="mt-2 min-h-32" 
-                          value={supportingStatement.strengths}
-                          readOnly
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="mb-6">
-                  <CardHeader>
-                    <div className="flex items-center">
-                      <ListChecks className="h-5 w-5 mr-2 text-gray-600" />
-                      <CardTitle className="text-xl">Skills</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2">
-                      {[
-                        "Patience", "Friendly", "Cheerful", "Ability to think quickly", 
-                        "A good listener", "Kind", "Willingness to go the extra mile",
-                        "First Aid Experience", "Supervision Experience", "Knowledge of Mental Capacity Act"
-                      ].map((skill, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Checkbox id={`skill-${index}`} checked={skills.includes(skill)} disabled />
-                          <Label htmlFor={`skill-${index}`}>{skill}</Label>
-                        </div>
-                      ))}
-                      {[
-                        "Pleasant", "Personable", "Ability to multi-task", "Punctual",
-                        "Empathetic", "Ability to take responsibility", "Knowledge of dementia",
-                        "Knowledge of Learning Disability", "Knowledge of Mental Health",
-                        "Challenging Behaviour Experience", "Lone Working Experience",
-                        "Knowledge of Safeguarding", "Good Communicator"
-                      ].map((skill, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Checkbox id={`skill-extra-${index}`} checked={skills.includes(skill)} disabled />
-                          <Label htmlFor={`skill-extra-${index}`}>{skill}</Label>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="mb-6">
-                  <CardHeader>
-                    <div className="flex items-center">
-                      <HeartHandshake className="h-5 w-5 mr-2 text-gray-600" />
-                      <CardTitle className="text-xl">Type of Work</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-y-2">
-                      {[
-                        "Night Shift", "Manual Handling", "Medication Support", 
-                        "Dementia Support", "Clients' Transport", "Sleep-in"
-                      ].map((work, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Checkbox id={`work-${index}`} checked={typeOfWork.includes(work)} disabled />
-                          <Label htmlFor={`work-${index}`}>{work}</Label>
-                        </div>
-                      ))}
-                      {[
-                        "Companionship", "Weekend Work", "Respite for Carers",
-                        "Urgent Responder", "Home Help"
-                      ].map((work, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Checkbox id={`work-mid-${index}`} checked={typeOfWork.includes(work)} disabled />
-                          <Label htmlFor={`work-mid-${index}`}>{work}</Label>
-                        </div>
-                      ))}
-                      {[
-                        "Personal Care", "Bank Holiday Work", "Learning Disability Support",
-                        "Fall Responder", "Live-in"
-                      ].map((work, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Checkbox id={`work-right-${index}`} checked={typeOfWork.includes(work)} disabled />
-                          <Label htmlFor={`work-right-${index}`}>{work}</Label>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="mb-6">
-                  <CardHeader>
-                    <div className="flex items-center">
-                      <Heart className="h-5 w-5 mr-2 text-gray-600" />
-                      <CardTitle className="text-xl">Hobbies</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-y-2">
-                      {[
-                        "Listening to Music", "Playing Musical Instruments", "Yoga",
-                        "Fishing", "Mountaineering", "Crochet"
-                      ].map((hobby, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Checkbox id={`hobby-${index}`} checked={hobbies.includes(hobby)} disabled />
-                          <Label htmlFor={`hobby-${index}`}>{hobby}</Label>
-                        </div>
-                      ))}
-                      {[
-                        "Swimming", "Dancing", "Cooking",
-                        "Fishkeeping", "Watching TV"
-                      ].map((hobby, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Checkbox id={`hobby-mid-${index}`} checked={hobbies.includes(hobby)} disabled />
-                          <Label htmlFor={`hobby-mid-${index}`}>{hobby}</Label>
-                        </div>
-                      ))}
-                      {[
-                        "Reading", "Walking", "Knitting",
-                        "Photography", "Gardening"
-                      ].map((hobby, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Checkbox id={`hobby-right-${index}`} checked={hobbies.includes(hobby)} disabled />
-                          <Label htmlFor={`hobby-right-${index}`}>{hobby}</Label>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Documents Tab */}
-              <TabsContent value="documents">
-                <Card className="mb-6">
-                  <CardHeader>
-                    <div className="flex items-center">
-                      <FileText className="h-5 w-5 mr-2 text-gray-600" />
-                      <CardTitle className="text-xl">Files & Documents</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {documents.map((doc, index) => (
-                        <div key={index} className="flex items-center justify-between p-4 bg-white rounded-lg border">
-                          <div className="flex items-center">
-                            <div className="bg-blue-50 p-2 rounded-full mr-3">
-                              <FileText className="h-5 w-5 text-blue-500" />
-                            </div>
-                            <div>
-                              <h4 className="font-medium">{doc.name}</h4>
-                              <p className="text-xs text-gray-500">
-                                {doc.type} • {doc.size} • Uploaded on {doc.uploadDate}
-                              </p>
-                            </div>
-                          </div>
-                          <Button variant="ghost" size="sm">
-                            <Download className="h-4 w-4 mr-1" />
-                            Download
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-};
-
-export default CarerProfilePage;
+                        {/* Pending essentials */}
+                        {["Individualised", "Documents & Additional Information"].map((item, index) => (
+                          <AccordionItem 
+                            key={index} 
+                            value={`pending-${index}`} 
+                            className="border rounded-lg overflow-hidden border-amber-200 mb-4"
+                          >
+                            <AccordionTrigger className="px-4 py-4 hover:no-underline bg-white">
+                              <div className="flex items-center w-full justify-between pr-2">
+                                <div className="flex items-center">
+                                  <Clock className="text-amber-500 h-5 w-5 mr-2" />
+                                  <h3 className="font-medium">{item}</h3>
+                                </div>
+                                <Badge variant="outline" className="ml-auto bg-amber-50 text-amber-600 mr-2">Pending</Badge>
