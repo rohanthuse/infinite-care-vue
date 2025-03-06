@@ -26,6 +26,7 @@ import PostJobPage from "./components/carers/PostJobPage";
 import Notifications from "./pages/Notifications";
 import TaskMatrix from "./pages/TaskMatrix";
 import TrainingMatrix from "./pages/TrainingMatrix";
+import FormMatrix from "./pages/FormMatrix";
 import { useState } from "react";
 
 function App() {
@@ -66,6 +67,8 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
             <Route path="/workflow/training-matrix" element={<TrainingMatrix />} />
             <Route path="/branch-dashboard/:id/:branchName/training-matrix" element={<TrainingMatrix />} />
+            <Route path="/workflow/form-matrix" element={<FormMatrix />} />
+            <Route path="/branch-dashboard/:id/:branchName/form-matrix" element={<FormMatrix />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

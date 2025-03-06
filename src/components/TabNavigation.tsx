@@ -53,6 +53,7 @@ const secondaryTabGroups = [
       { icon: Workflow, label: "Workflow", value: "workflow", description: "Process management" },
       { icon: ListChecks, label: "Task Matrix", value: "task-matrix", description: "Compliance tracking", path: "task-matrix" },
       { icon: ListChecks, label: "Training Matrix", value: "training-matrix", description: "Training tracking", path: "training-matrix" },
+      { icon: FileText, label: "Form Matrix", value: "form-matrix", description: "Form tracking", path: "form-matrix" },
       { icon: ListChecks, label: "Key Parameters", value: "parameters", description: "Track metrics" },
       { icon: Pill, label: "Medication", value: "medication", description: "Medicine tracking" },
       { icon: ClipboardList, label: "Care Plan", value: "care-plan", description: "Patient care plans" },

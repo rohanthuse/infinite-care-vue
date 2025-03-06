@@ -227,6 +227,9 @@ const TrainingMatrix = () => {
         case "training-matrix":
           navigate(`/branch-dashboard/${id}/${branchName}/training-matrix`);
           break;
+        case "form-matrix":
+          navigate(`/branch-dashboard/${id}/${branchName}/form-matrix`);
+          break;
         case "notifications":
           navigate(`/branch-dashboard/${id}/${branchName}/notifications`);
           break;
@@ -241,6 +244,9 @@ const TrainingMatrix = () => {
           break;
         case "training-matrix":
           navigate("/workflow/training-matrix");
+          break;
+        case "form-matrix":
+          navigate("/workflow/form-matrix");
           break;
         default:
           navigate(`/${value}`);
