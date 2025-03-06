@@ -3,8 +3,8 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { format, parse, isValid } from "date-fns";
-import { Calendar as CalendarIcon, Clock } from "lucide-react";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon, Clock, CheckCircle, Plus, Sun } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Popover,
   PopoverContent,
@@ -38,6 +39,8 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 
 const timeOptions = [
   "07:00", "07:30", "08:00", "08:30", "09:00", "09:30", 
@@ -55,6 +58,17 @@ const formSchema = z.object({
   }),
   startTime: z.string().min(1, { message: "Start time is required" }),
   endTime: z.string().min(1, { message: "End time is required" }),
+  services: z.array(z.string()).min(1, { message: "At least one service is required" }),
+  days: z.object({
+    all: z.boolean().optional(),
+    mon: z.boolean().optional(),
+    tue: z.boolean().optional(),
+    wed: z.boolean().optional(),
+    thu: z.boolean().optional(),
+    fri: z.boolean().optional(),
+    sat: z.boolean().optional(),
+    sun: z.boolean().optional(),
+  }),
   notes: z.string().optional(),
 });
 
@@ -70,6 +84,11 @@ interface Carer {
   name: string;
 }
 
+interface Service {
+  id: string;
+  name: string;
+}
+
 interface NewBookingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -77,6 +96,17 @@ interface NewBookingDialogProps {
   carers: Carer[];
   onCreateBooking: (bookingData: BookingFormValues) => void;
 }
+
+const mockServices: Service[] = [
+  { id: "svc-001", name: "Personal Care" },
+  { id: "svc-002", name: "Medication Management" },
+  { id: "svc-003", name: "Mobility Support" },
+  { id: "svc-004", name: "Meal Preparation" },
+  { id: "svc-005", name: "Companionship" },
+  { id: "svc-006", name: "Light Housekeeping" },
+  { id: "svc-007", name: "Transport Assistance" },
+  { id: "svc-008", name: "Shopping Assistance" },
+];
 
 export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
   open,
@@ -93,6 +123,17 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
       date: new Date(),
       startTime: "",
       endTime: "",
+      services: [],
+      days: {
+        all: false,
+        mon: false,
+        tue: false,
+        wed: false,
+        thu: false,
+        fri: false,
+        sat: false,
+        sun: false,
+      },
       notes: "",
     },
   });
@@ -107,10 +148,38 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
   };
 
   const startTime = form.watch("startTime");
+  const allDaysSelected = form.watch("days.all");
+
+  // Handle the "All" days checkbox
+  const handleAllDaysChange = (checked: boolean) => {
+    if (checked) {
+      form.setValue("days", {
+        all: true,
+        mon: true,
+        tue: true,
+        wed: true,
+        thu: true,
+        fri: true,
+        sat: true,
+        sun: true,
+      });
+    } else {
+      form.setValue("days", {
+        all: false,
+        mon: false,
+        tue: false,
+        wed: false,
+        thu: false,
+        fri: false,
+        sat: false,
+        sun: false,
+      });
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">Create New Booking</DialogTitle>
           <DialogDescription>
@@ -210,7 +279,7 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
                           selected={field.value}
                           onSelect={field.onChange}
                           initialFocus
-                          className="p-3 pointer-events-auto"
+                          className={cn("p-3 pointer-events-auto")}
                         />
                       </PopoverContent>
                     </Popover>
@@ -284,13 +353,209 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
 
             <FormField
               control={form.control}
+              name="services"
+              render={() => (
+                <FormItem>
+                  <div className="mb-4">
+                    <FormLabel className="text-base">Services</FormLabel>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {mockServices.map((service) => (
+                      <FormField
+                        key={service.id}
+                        control={form.control}
+                        name="services"
+                        render={({ field }) => {
+                          return (
+                            <FormItem
+                              key={service.id}
+                              className="flex flex-row items-start space-x-3 space-y-0"
+                            >
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value?.includes(service.id)}
+                                  onCheckedChange={(checked) => {
+                                    return checked
+                                      ? field.onChange([...field.value, service.id])
+                                      : field.onChange(
+                                          field.value?.filter(
+                                            (value) => value !== service.id
+                                          )
+                                        )
+                                  }}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                {service.name}
+                              </FormLabel>
+                            </FormItem>
+                          )
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="days"
+              render={() => (
+                <FormItem>
+                  <div className="mb-2">
+                    <FormLabel className="text-base">Days</FormLabel>
+                  </div>
+                  <div className="space-y-3">
+                    <FormField
+                      control={form.control}
+                      name="days.all"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                handleAllDaysChange(checked === true);
+                              }}
+                            />
+                          </FormControl>
+                          <FormLabel className="font-medium">All Days</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      <FormField
+                        control={form.control}
+                        name="days.mon"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value || allDaysSelected}
+                                onCheckedChange={field.onChange}
+                                disabled={allDaysSelected}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">Monday</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="days.tue"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value || allDaysSelected}
+                                onCheckedChange={field.onChange}
+                                disabled={allDaysSelected}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">Tuesday</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="days.wed"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value || allDaysSelected}
+                                onCheckedChange={field.onChange}
+                                disabled={allDaysSelected}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">Wednesday</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="days.thu"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value || allDaysSelected}
+                                onCheckedChange={field.onChange}
+                                disabled={allDaysSelected}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">Thursday</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="days.fri"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value || allDaysSelected}
+                                onCheckedChange={field.onChange}
+                                disabled={allDaysSelected}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">Friday</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="days.sat"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value || allDaysSelected}
+                                onCheckedChange={field.onChange}
+                                disabled={allDaysSelected}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">Saturday</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="days.sun"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value || allDaysSelected}
+                                onCheckedChange={field.onChange}
+                                disabled={allDaysSelected}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">Sunday</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="notes"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Notes (Optional)</FormLabel>
                   <FormControl>
-                    <Input
+                    <Textarea
                       placeholder="Add any additional notes here"
+                      className="resize-none"
                       {...field}
                     />
                   </FormControl>

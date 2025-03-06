@@ -329,6 +329,9 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         notes: bookingData.notes || undefined
       };
       
+      console.log("Selected services:", bookingData.services);
+      console.log("Selected days:", bookingData.days);
+      
       mockBookings.push(newBooking);
     }
   };
