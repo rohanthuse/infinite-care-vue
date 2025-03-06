@@ -188,41 +188,39 @@ const TaskMatrix = () => {
     setActiveTab(value);
     
     if (id && branchName) {
-      const encodedBranchName = encodeURIComponent(branchName);
-      
       switch (value) {
         case "dashboard":
-          navigate(`/branch-dashboard/${id}/${encodedBranchName}`);
+          navigate(`/branch-dashboard/${id}/${branchName}`);
           break;
         case "bookings":
-          navigate(`/branch-dashboard/${id}/${encodedBranchName}/bookings`);
+          navigate(`/branch-dashboard/${id}/${branchName}/bookings`);
           break;
         case "clients":
-          navigate(`/branch-dashboard/${id}/${encodedBranchName}/clients`);
+          navigate(`/branch-dashboard/${id}/${branchName}/clients`);
           break;
         case "carers":
-          navigate(`/branch-dashboard/${id}/${encodedBranchName}/carers`);
+          navigate(`/branch-dashboard/${id}/${branchName}/carers`);
           break;
         case "reviews":
-          navigate(`/branch-dashboard/${id}/${encodedBranchName}/reviews`);
+          navigate(`/branch-dashboard/${id}/${branchName}/reviews`);
           break;
         case "communication":
-          navigate(`/branch-dashboard/${id}/${encodedBranchName}/communication`);
+          navigate(`/branch-dashboard/${id}/${branchName}/communication`);
           break;
         case "workflow":
-          navigate(`/branch-dashboard/${id}/${encodedBranchName}/workflow`);
+          navigate(`/branch-dashboard/${id}/${branchName}/workflow`);
           break;
         case "task-matrix":
-          navigate(`/branch-dashboard/${id}/${encodedBranchName}/task-matrix`);
+          navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
           break;
         case "training-matrix":
-          navigate(`/branch-dashboard/${id}/${encodedBranchName}/training-matrix`);
+          navigate(`/branch-dashboard/${id}/${branchName}/training-matrix`);
           break;
         case "notifications":
-          navigate(`/branch-dashboard/${id}/${encodedBranchName}/notifications`);
+          navigate(`/branch-dashboard/${id}/${branchName}/notifications`);
           break;
         default:
-          navigate(`/branch-dashboard/${id}/${encodedBranchName}/${value}`);
+          navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
           break;
       }
     } else {
