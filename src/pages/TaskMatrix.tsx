@@ -186,32 +186,56 @@ const TaskMatrix = () => {
 
   const handleChangeTab = (value: string) => {
     setActiveTab(value);
+    
     if (id && branchName) {
+      const encodedBranchName = encodeURIComponent(branchName);
+      
       switch (value) {
         case "dashboard":
-          navigate(`/branch-dashboard/${id}/${branchName}`);
+          navigate(`/branch-dashboard/${id}/${encodedBranchName}`);
           break;
         case "bookings":
-          navigate(`/branch-dashboard/${id}/${branchName}/bookings`);
+          navigate(`/branch-dashboard/${id}/${encodedBranchName}/bookings`);
           break;
         case "clients":
-          navigate(`/branch-dashboard/${id}/${branchName}/clients`);
+          navigate(`/branch-dashboard/${id}/${encodedBranchName}/clients`);
           break;
         case "carers":
-          navigate(`/branch-dashboard/${id}/${branchName}/carers`);
+          navigate(`/branch-dashboard/${id}/${encodedBranchName}/carers`);
+          break;
+        case "reviews":
+          navigate(`/branch-dashboard/${id}/${encodedBranchName}/reviews`);
+          break;
+        case "communication":
+          navigate(`/branch-dashboard/${id}/${encodedBranchName}/communication`);
+          break;
+        case "workflow":
+          navigate(`/branch-dashboard/${id}/${encodedBranchName}/workflow`);
           break;
         case "task-matrix":
-          navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
+          navigate(`/branch-dashboard/${id}/${encodedBranchName}/task-matrix`);
           break;
         case "training-matrix":
-          navigate(`/branch-dashboard/${id}/${branchName}/training-matrix`);
+          navigate(`/branch-dashboard/${id}/${encodedBranchName}/training-matrix`);
+          break;
+        case "notifications":
+          navigate(`/branch-dashboard/${id}/${encodedBranchName}/notifications`);
           break;
         default:
+          navigate(`/branch-dashboard/${id}/${encodedBranchName}/${value}`);
           break;
       }
     } else {
-      if (value === "training-matrix") {
-        navigate("/workflow/training-matrix");
+      switch (value) {
+        case "task-matrix":
+          navigate("/workflow/task-matrix");
+          break;
+        case "training-matrix":
+          navigate("/workflow/training-matrix");
+          break;
+        default:
+          navigate(`/${value}`);
+          break;
       }
     }
   };
