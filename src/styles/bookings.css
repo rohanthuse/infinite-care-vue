@@ -79,6 +79,7 @@
   height: 600px;
   position: relative;
   background-color: white;
+  border: 1px solid #e5e7eb;
 }
 
 /* Scrolling container styles */
@@ -99,7 +100,7 @@
   border-right: 1px solid #e5e7eb;
   background-color: #f9fafb;
   position: relative;
-  z-index: 10;
+  z-index: 2;
 }
 
 .time-slot {
@@ -123,6 +124,7 @@
   flex: 1;
   min-width: 0;
   position: relative;
+  background-color: white;
 }
 
 /* Day Column */
@@ -132,6 +134,12 @@
   border-right: 1px solid #e5e7eb;
   position: relative;
   background-color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.day-column:last-child {
+  border-right: none;
 }
 
 .day-column.today {
@@ -143,6 +151,19 @@
   height: 60px;
   border-bottom: 1px solid #e5e7eb;
   background-color: white;
+  position: relative;
+  z-index: 1;
+}
+
+.hour-cell:after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background-color: #e5e7eb;
+  z-index: 1;
 }
 
 /* Day Header - Fixed during vertical scroll */
@@ -172,6 +193,8 @@
 .day-content {
   position: relative;
   min-height: 1440px; /* 24 hours * 60px */
+  background-color: white;
+  z-index: 1;
 }
 
 /* Booking Item */
