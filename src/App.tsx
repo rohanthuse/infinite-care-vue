@@ -87,8 +87,7 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/notifications" element={<Notifications />} />
             <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
             
-            {/* Branch workflow routes */}
-            <Route path="/branch-dashboard/:id/:branchName/workflow" element={<Navigate to={`/branch-dashboard/:id/:branchName/task-matrix`} replace />} />
+            {/* Branch workflow routes - note that these maintain their specific paths */}
             <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
             <Route path="/branch-dashboard/:id/:branchName/training-matrix" element={<TrainingMatrix />} />
             <Route path="/branch-dashboard/:id/:branchName/form-matrix" element={<FormMatrix />} />
