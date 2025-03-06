@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -32,7 +31,6 @@ import {
   ChevronRight
 } from "lucide-react";
 
-// Mock data for candidates
 const mockCandidates = [
   {
     id: "APP-001",
@@ -90,7 +88,6 @@ const mockCandidates = [
   },
 ];
 
-// Match these IDs with the ones in ApplicationDetailsPage.tsx
 const mockRecruitmentData = [
   {
     id: "APP-001",
@@ -160,7 +157,6 @@ const mockRecruitmentData = [
   }
 ];
 
-// Mock data for job postings
 const mockJobPostings = [
   {
     id: "JOB-001",
@@ -219,7 +215,6 @@ const RecruitmentSection = () => {
   
   const itemsPerPage = 5;
   
-  // Filter candidates based on search and filters
   useEffect(() => {
     let results = mockCandidates;
     
@@ -247,7 +242,6 @@ const RecruitmentSection = () => {
     setCurrentPage(1);
   }, [searchQuery, statusFilter, locationFilter, positionFilter]);
   
-  // Filter jobs based on search
   useEffect(() => {
     let results = mockJobPostings;
     
@@ -263,25 +257,26 @@ const RecruitmentSection = () => {
     setCurrentPage(1);
   }, [searchQuery]);
   
-  // Pagination for candidates
   const candidatesStart = (currentPage - 1) * itemsPerPage;
   const candidatesEnd = candidatesStart + itemsPerPage;
   const displayedCandidates = filteredCandidates.slice(candidatesStart, candidatesEnd);
   const candidatesPages = Math.ceil(filteredCandidates.length / itemsPerPage);
   
-  // Pagination for jobs
   const jobsStart = (currentPage - 1) * itemsPerPage;
   const jobsEnd = jobsStart + itemsPerPage;
   const displayedJobs = filteredJobs.slice(jobsStart, jobsEnd);
   const jobsPages = Math.ceil(filteredJobs.length / itemsPerPage);
   
   const handleViewApplication = (candidateId: string) => {
-    // Use the correct URL format to match the route in App.tsx
     navigate(`/branch-dashboard/${id}/${branchName}/recruitment/application/${candidateId}`);
   };
   
   const handlePostJob = () => {
     navigate(`/branch-dashboard/${id}/${branchName}/recruitment/post-job`);
+  };
+  
+  const handleEditJob = (jobId: string) => {
+    navigate(`/branch-dashboard/${id}/${branchName}/recruitment/edit-job/${jobId}`);
   };
   
   return (
@@ -485,6 +480,7 @@ const RecruitmentSection = () => {
                             variant="ghost"
                             size="sm"
                             className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                            onClick={() => handleEditJob(job.id)}
                           >
                             <FileText className="h-4 w-4 mr-2" /> Edit
                           </Button>
