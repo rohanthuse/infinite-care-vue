@@ -1,13 +1,7 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { 
-  User, Phone, Mail, MapPin, Calendar, FileText, Heart, 
-  Briefcase, Users, CheckCircle, XCircle, Clock, AlertCircle, 
-  Download, ChevronLeft, Edit, ArrowLeft, FileIcon, Star,
-  Clipboard, Award, UserCheck, HeartHandshake, ListChecks, Newspaper,
-  Plus, ChevronDown, BadgeCheck, Timer, Trophy, IdCard, Globe, ChevronRight
-} from "lucide-react";
+import { User, Phone, Mail, MapPin, Calendar, FileText, Heart, Briefcase, Users, CheckCircle, XCircle, Clock, AlertCircle, Download, ChevronLeft, Edit, ArrowLeft, FileIcon, Star, Clipboard, Award, UserCheck, HeartHandshake, ListChecks, Newspaper, Plus, ChevronDown, BadgeCheck, Timer, Trophy, IdCard, Globe, ChevronRight } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -21,13 +15,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 const mockCarerData = {
   id: "CR-001",
   carerId: "111111",
@@ -59,94 +47,104 @@ const mockCarerData = {
   rating: 5,
   profileCompletion: 91
 };
-
-const essentials = [
-  { id: "work-permit", name: "Work Permit & Nationality", status: "completed" },
-  { id: "vaccination", name: "Vaccination", status: "completed" },
-  { id: "car-insurance", name: "Car Insurance", status: "completed" },
-  { id: "name-change", name: "Name Change", status: "completed" },
-  { id: "driving-license", name: "Driving License", status: "completed" },
-  { id: "ni-number", name: "NI Number", status: "completed" },
-  { id: "p45", name: "P45", status: "completed" },
-  { id: "proof-address", name: "Proof of Address", status: "completed" },
-  { id: "dbs", name: "DBS", status: "completed" },
-  { id: "bank-details", name: "Bank Details", status: "missing" },
-  { id: "individualised", name: "Individualised", status: "pending" },
-  { id: "documents-info", name: "Documents & Additional Information", status: "pending" }
-];
-
-const employmentHistory = [
-  {
-    company: "Volkswagen",
-    position: "Administrator",
-    startDate: "Mar 2023",
-    endDate: "Mar 2024",
-    referenceDate: "09/01/2025",
-    referenceType: "Professional",
-    status: "Confirmed"
-  },
-  {
-    company: "Open University",
-    position: "Administrator",
-    startDate: "Aug 2022",
-    endDate: "Jan 2023",
-    referenceDate: "09/01/2025",
-    referenceType: "Professional",
-    status: "Confirmed"
-  },
-  {
-    company: "Krones LCS",
-    position: "Administrator",
-    startDate: "Apr 2016",
-    endDate: "Feb 2022",
-    referenceDate: "",
-    referenceType: "Professional",
-    status: "Confirmed"
-  }
-];
-
+const essentials = [{
+  id: "work-permit",
+  name: "Work Permit & Nationality",
+  status: "completed"
+}, {
+  id: "vaccination",
+  name: "Vaccination",
+  status: "completed"
+}, {
+  id: "car-insurance",
+  name: "Car Insurance",
+  status: "completed"
+}, {
+  id: "name-change",
+  name: "Name Change",
+  status: "completed"
+}, {
+  id: "driving-license",
+  name: "Driving License",
+  status: "completed"
+}, {
+  id: "ni-number",
+  name: "NI Number",
+  status: "completed"
+}, {
+  id: "p45",
+  name: "P45",
+  status: "completed"
+}, {
+  id: "proof-address",
+  name: "Proof of Address",
+  status: "completed"
+}, {
+  id: "dbs",
+  name: "DBS",
+  status: "completed"
+}, {
+  id: "bank-details",
+  name: "Bank Details",
+  status: "missing"
+}, {
+  id: "individualised",
+  name: "Individualised",
+  status: "pending"
+}, {
+  id: "documents-info",
+  name: "Documents & Additional Information",
+  status: "pending"
+}];
+const employmentHistory = [{
+  company: "Volkswagen",
+  position: "Administrator",
+  startDate: "Mar 2023",
+  endDate: "Mar 2024",
+  referenceDate: "09/01/2025",
+  referenceType: "Professional",
+  status: "Confirmed"
+}, {
+  company: "Open University",
+  position: "Administrator",
+  startDate: "Aug 2022",
+  endDate: "Jan 2023",
+  referenceDate: "09/01/2025",
+  referenceType: "Professional",
+  status: "Confirmed"
+}, {
+  company: "Krones LCS",
+  position: "Administrator",
+  startDate: "Apr 2016",
+  endDate: "Feb 2022",
+  referenceDate: "",
+  referenceType: "Professional",
+  status: "Confirmed"
+}];
 const supportingStatement = {
   whyInterested: "I am interested in working with Brielle because of your dedication to providing high-quality, client-centered care. Your emphasis on being Safe, Well-led, Caring, Responsive, and Effective resonates strongly with my professional values, and I am eager to contribute my skills to support your mission.",
   vulnerableExperience: "While I don't have formal on-field experience, I have personal experience caring for a family member who required support due to illness. This involved assisting with daily tasks, offering emotional support, and ensuring their comfort and well-being. Through this, I've developed compassion, patience, and a deep understanding of the needs of vulnerable individuals.",
   strengths: "My strengths lie in my strong organisational skills, attention to detail, and ability to communicate effectively. I excel in managing schedules, ensuring smooth operations, and providing support to both staff and clients. My aspiration is to contribute to the seamless functioning of Brielle by maintaining high standards of efficiency and professionalism.\n\nWhat sets me apart is my proactive approach to problem-solving and my commitment to creating a supportive environment where everyone feels valued. I take pride in being adaptable, approachable, and always willing to go the extra mile to ensure that tasks are completed efficiently and effectively."
 };
-
-const documents = [
-  {
-    name: "Right_to_work_opeyemi.jpg",
-    type: "Work Permit",
-    uploadDate: "10 Jan 2023",
-    size: "0.07 KB"
-  },
-  {
-    name: "ID_Verification.pdf",
-    type: "Identification",
-    uploadDate: "10 Jan 2023",
-    size: "1.2 MB"
-  },
-  {
-    name: "Vaccination_Certificate.pdf",
-    type: "Health Document",
-    uploadDate: "15 Feb 2023",
-    size: "3.1 MB"
-  }
-];
-
-const skills = [
-  "Patience", "Friendly", "Cheerful", "Ability to think quickly", 
-  "A good listener", "Kind", "Willingness to go the extra mile",
-  "Pleasant", "Personable", "Ability to multi-task", "Punctual",
-  "Empathetic", "Ability to take responsibility", "Knowledge of dementia",
-  "Knowledge of Learning Disability", "Knowledge of Mental Health",
-  "Challenging Behaviour Experience", "Lone Working Experience",
-  "Knowledge of Safeguarding", "Good Communicator", "First Aid Experience",
-  "Supervision Experience", "Knowledge of Mental Capacity Act"
-];
-
+const documents = [{
+  name: "Right_to_work_opeyemi.jpg",
+  type: "Work Permit",
+  uploadDate: "10 Jan 2023",
+  size: "0.07 KB"
+}, {
+  name: "ID_Verification.pdf",
+  type: "Identification",
+  uploadDate: "10 Jan 2023",
+  size: "1.2 MB"
+}, {
+  name: "Vaccination_Certificate.pdf",
+  type: "Health Document",
+  uploadDate: "15 Feb 2023",
+  size: "3.1 MB"
+}];
+const skills = ["Patience", "Friendly", "Cheerful", "Ability to think quickly", "A good listener", "Kind", "Willingness to go the extra mile", "Pleasant", "Personable", "Ability to multi-task", "Punctual", "Empathetic", "Ability to take responsibility", "Knowledge of dementia", "Knowledge of Learning Disability", "Knowledge of Mental Health", "Challenging Behaviour Experience", "Lone Working Experience", "Knowledge of Safeguarding", "Good Communicator", "First Aid Experience", "Supervision Experience", "Knowledge of Mental Capacity Act"];
 const typeOfWork = ["Personal Care", "Urgent Responder", "Home Help"];
-
 const hobbies = ["Listening to Music", "Cooking", "Reading"];
-
 const employeeInfo = {
   employeeType: "PAYE",
   joinDate: "07-12-2023",
@@ -154,7 +152,7 @@ const employeeInfo = {
   manager: "Iyaniwura, Ifeoluwa",
   expiryDate: false,
   travelRate: "",
-  payslipConfig: "", 
+  payslipConfig: "",
   payrollNumber: "",
   canBookUrgent: false,
   showInTaskMatrix: true,
@@ -162,33 +160,53 @@ const employeeInfo = {
   showInFormMatrix: true,
   enableMaxHours: false
 };
-
-const profileCompletionItems = [
-  { name: "Personal Details", completed: true },
-  { name: "Address", completed: true },
-  { name: "Essentials", completed: false },
-  { name: "Important Contact", completed: true },
-  { name: "Supporting Statement", completed: true },
-  { name: "Attendance", completed: true },
-  { name: "Employment History", completed: true },
-  { name: "Files", completed: true },
-  { name: "Hobbies", completed: true }, 
-  { name: "Skills", completed: true },
-  { name: "Type of Work", completed: true }
-];
-
+const profileCompletionItems = [{
+  name: "Personal Details",
+  completed: true
+}, {
+  name: "Address",
+  completed: true
+}, {
+  name: "Essentials",
+  completed: false
+}, {
+  name: "Important Contact",
+  completed: true
+}, {
+  name: "Supporting Statement",
+  completed: true
+}, {
+  name: "Attendance",
+  completed: true
+}, {
+  name: "Employment History",
+  completed: true
+}, {
+  name: "Files",
+  completed: true
+}, {
+  name: "Hobbies",
+  completed: true
+}, {
+  name: "Skills",
+  completed: true
+}, {
+  name: "Type of Work",
+  completed: true
+}];
 const CarerProfilePage = () => {
-  const { id, branchName, carerId } = useParams();
+  const {
+    id,
+    branchName,
+    carerId
+  } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
-
   const handleBack = () => {
     navigate(`/branch-dashboard/${id}/${branchName}`);
   };
-
   const carer = mockCarerData;
-
-  const renderStatusBadge = (status) => {
+  const renderStatusBadge = status => {
     switch (status) {
       case "completed":
         return <Badge className="bg-green-600 hover:bg-green-700">Completed</Badge>;
@@ -196,11 +214,11 @@ const CarerProfilePage = () => {
         return <Badge className="bg-red-600 hover:bg-red-700">Missing</Badge>;
       case "pending":
       default:
-        return null; // No badge for pending items
+        return null;
+      // No badge for pending items
     }
   };
-
-  const renderStatusIcon = (status) => {
+  const renderStatusIcon = status => {
     switch (status) {
       case "completed":
         return <CheckCircle className="text-green-600 h-5 w-5 mr-2" />;
@@ -211,18 +229,12 @@ const CarerProfilePage = () => {
         return <AlertCircle className="text-amber-600 h-5 w-5 mr-2" />;
     }
   };
-
-  return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+  return <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
       
       <main className="flex-1 container px-4 pt-4 pb-20 md:py-6 mx-auto">
         <div className="flex items-center mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={handleBack} 
-            className="mr-2"
-          >
+          <Button variant="ghost" onClick={handleBack} className="mr-2">
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back
           </Button>
@@ -253,15 +265,12 @@ const CarerProfilePage = () => {
                   </Avatar>
                   <h3 className="text-xl font-semibold text-center">{carer.name}</h3>
                   <p className="text-sm text-gray-500 text-center">{carer.jobTitle}</p>
-                  <Badge 
-                    variant="outline" 
-                    className={`
+                  <Badge variant="outline" className={`
                       mt-2
                       ${carer.status === "Active" ? "bg-green-50 text-green-700 border-0" : ""}
                       ${carer.status === "Inactive" ? "bg-red-50 text-red-700 border-0" : ""}
                       ${carer.status === "On Leave" ? "bg-amber-50 text-amber-700 border-0" : ""}
-                    `}
-                  >
+                    `}>
                     {carer.status}
                   </Badge>
                 </div>
@@ -298,18 +307,12 @@ const CarerProfilePage = () => {
                   <p className="text-xs text-gray-500 mb-4">Complete all required fields to activate this profile</p>
                   
                   <div className="space-y-1.5">
-                    {profileCompletionItems.map((item, index) => (
-                      <div key={index} className="flex items-center text-sm">
-                        {item.completed ? (
-                          <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-500 mr-2" />
-                        )}
+                    {profileCompletionItems.map((item, index) => <div key={index} className="flex items-center text-sm">
+                        {item.completed ? <CheckCircle className="h-4 w-4 text-green-500 mr-2" /> : <XCircle className="h-4 w-4 text-red-500 mr-2" />}
                         <span className={item.completed ? "text-gray-700" : "text-red-500 font-medium"}>
                           {item.name}
                         </span>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
                 </div>
               </CardContent>
@@ -435,9 +438,7 @@ const CarerProfilePage = () => {
                               <h3 className="text-sm font-medium">Rating</h3>
                             </div>
                             <div className="flex">
-                              {[...Array(5)].map((_, i) => (
-                                <Star key={i} className="h-6 w-6 fill-white" />
-                              ))}
+                              {[...Array(5)].map((_, i) => <Star key={i} className="h-6 w-6 fill-white" />)}
                             </div>
                           </CardContent>
                         </Card>
@@ -458,21 +459,8 @@ const CarerProfilePage = () => {
                       <div className="flex justify-center items-center">
                         <div className="relative w-44 h-44 flex items-center justify-center bg-white rounded-full">
                           <svg className="absolute w-44 h-44" viewBox="0 0 44 44">
-                            <circle 
-                              cx="22" cy="22" r="20" 
-                              fill="none" 
-                              stroke="#e5e7eb" 
-                              strokeWidth="4"
-                            />
-                            <circle 
-                              cx="22" cy="22" r="20" 
-                              fill="none" 
-                              stroke="#4ade80" 
-                              strokeWidth="4" 
-                              strokeLinecap="round"
-                              strokeDasharray={`${carer.profileCompletion * 1.26}, 126`} 
-                              transform="rotate(-90, 22, 22)"
-                            />
+                            <circle cx="22" cy="22" r="20" fill="none" stroke="#e5e7eb" strokeWidth="4" />
+                            <circle cx="22" cy="22" r="20" fill="none" stroke="#4ade80" strokeWidth="4" strokeLinecap="round" strokeDasharray={`${carer.profileCompletion * 1.26}, 126`} transform="rotate(-90, 22, 22)" />
                           </svg>
                           <div className="text-center z-10">
                             <span className="text-4xl font-bold text-gray-800">{carer.profileCompletion}%</span>
@@ -482,37 +470,25 @@ const CarerProfilePage = () => {
                       </div>
                       
                       <div className="space-y-3 bg-white p-4 rounded-lg shadow-sm">
-                        {profileCompletionItems.slice(0, 6).map((item, index) => (
-                          <div key={index} className="flex items-center p-2 rounded-md transition-colors hover:bg-gray-50">
+                        {profileCompletionItems.slice(0, 6).map((item, index) => <div key={index} className="flex items-center p-2 rounded-md transition-colors hover:bg-gray-50">
                             <div className={`rounded-full p-1 mr-3 ${item.completed ? "bg-green-100" : "bg-red-100"}`}>
-                              {item.completed ? (
-                                <CheckCircle className="h-5 w-5 text-green-600" />
-                              ) : (
-                                <XCircle className="h-5 w-5 text-red-600" />
-                              )}
+                              {item.completed ? <CheckCircle className="h-5 w-5 text-green-600" /> : <XCircle className="h-5 w-5 text-red-600" />}
                             </div>
                             <span className={`font-medium ${item.completed ? "text-gray-700" : "text-red-600"}`}>
                               {item.name}
                             </span>
-                          </div>
-                        ))}
+                          </div>)}
                       </div>
                       
                       <div className="space-y-3 bg-white p-4 rounded-lg shadow-sm">
-                        {profileCompletionItems.slice(6).map((item, index) => (
-                          <div key={index} className="flex items-center p-2 rounded-md transition-colors hover:bg-gray-50">
+                        {profileCompletionItems.slice(6).map((item, index) => <div key={index} className="flex items-center p-2 rounded-md transition-colors hover:bg-gray-50">
                             <div className={`rounded-full p-1 mr-3 ${item.completed ? "bg-green-100" : "bg-red-100"}`}>
-                              {item.completed ? (
-                                <CheckCircle className="h-5 w-5 text-green-600" />
-                              ) : (
-                                <XCircle className="h-5 w-5 text-red-600" />
-                              )}
+                              {item.completed ? <CheckCircle className="h-5 w-5 text-green-600" /> : <XCircle className="h-5 w-5 text-red-600" />}
                             </div>
                             <span className={`font-medium ${item.completed ? "text-gray-700" : "text-red-600"}`}>
                               {item.name}
                             </span>
-                          </div>
-                        ))}
+                          </div>)}
                       </div>
                     </div>
                   </CardContent>
@@ -654,12 +630,7 @@ const CarerProfilePage = () => {
                   <CardContent>
                     <div className="space-y-4">
                       <Accordion type="single" collapsible className="w-full">
-                        {essentials.map((item) => (
-                          <AccordionItem 
-                            key={item.id} 
-                            value={item.id} 
-                            className="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-4 overflow-hidden"
-                          >
+                        {essentials.map(item => <AccordionItem key={item.id} value={item.id} className="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-4 overflow-hidden">
                             <AccordionTrigger className="py-0 hover:no-underline">
                               <div className="flex items-center w-full justify-between pr-2">
                                 <div className="flex items-center">
@@ -668,13 +639,12 @@ const CarerProfilePage = () => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {renderStatusBadge(item.status)}
-                                  <ChevronRight className="h-5 w-5 text-gray-400 transition-transform duration-200" />
+                                  
                                 </div>
                               </div>
                             </AccordionTrigger>
                             <AccordionContent className="pt-4">
-                              {item.id === "work-permit" ? (
-                                <div className="space-y-4">
+                              {item.id === "work-permit" ? <div className="space-y-4">
                                   <div>
                                     <Label className="mb-1">N/A</Label>
                                   </div>
@@ -716,19 +686,11 @@ const CarerProfilePage = () => {
                                       </div>
                                     </div>
                                   </div>
-                                </div>
-                              ) : (
-                                <div className="py-2 text-gray-500 italic">
-                                  {item.status === "missing" ? 
-                                    "This information is required but not yet provided." : 
-                                    item.status === "pending" ? 
-                                      "This information is pending review." : 
-                                      "Details are available and have been verified."}
-                                </div>
-                              )}
+                                </div> : <div className="py-2 text-gray-500 italic">
+                                  {item.status === "missing" ? "This information is required but not yet provided." : item.status === "pending" ? "This information is pending review." : "Details are available and have been verified."}
+                                </div>}
                             </AccordionContent>
-                          </AccordionItem>
-                        ))}
+                          </AccordionItem>)}
                       </Accordion>
                     </div>
                   </CardContent>
@@ -745,8 +707,7 @@ const CarerProfilePage = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-6">
-                      {employmentHistory.map((job, index) => (
-                        <div key={index} className="border-b pb-4 last:border-b-0 last:pb-0">
+                      {employmentHistory.map((job, index) => <div key={index} className="border-b pb-4 last:border-b-0 last:pb-0">
                           <div className="flex flex-wrap items-start justify-between mb-2">
                             <div>
                               <h3 className="font-medium text-lg">{job.company}</h3>
@@ -763,22 +724,17 @@ const CarerProfilePage = () => {
                               <span>{job.startDate} - {job.endDate}</span>
                             </div>
                             
-                            {job.referenceDate && (
-                              <div className="flex items-center text-gray-600">
+                            {job.referenceDate && <div className="flex items-center text-gray-600">
                                 <FileText className="h-4 w-4 mr-2 text-gray-500" />
                                 <span>Reference Date: {job.referenceDate}</span>
-                              </div>
-                            )}
+                              </div>}
                             
-                            {job.referenceType && (
-                              <div className="flex items-center text-gray-600">
+                            {job.referenceType && <div className="flex items-center text-gray-600">
                                 <User className="h-4 w-4 mr-2 text-gray-500" />
                                 <span>Reference Type: {job.referenceType}</span>
-                              </div>
-                            )}
+                              </div>}
                           </div>
-                        </div>
-                      ))}
+                        </div>)}
                     </div>
                   </CardContent>
                 </Card>
@@ -829,8 +785,7 @@ const CarerProfilePage = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {documents.map((doc, index) => (
-                        <Card key={index} className="border shadow-sm hover:shadow transition-shadow">
+                      {documents.map((doc, index) => <Card key={index} className="border shadow-sm hover:shadow transition-shadow">
                           <CardContent className="p-4">
                             <div className="flex items-start space-x-3">
                               <div className="bg-blue-50 p-2 rounded-md">
@@ -851,8 +806,7 @@ const CarerProfilePage = () => {
                               </div>
                             </div>
                           </CardContent>
-                        </Card>
-                      ))}
+                        </Card>)}
                     </div>
                   </CardContent>
                 </Card>
@@ -861,8 +815,6 @@ const CarerProfilePage = () => {
           </div>
         </div>
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default CarerProfilePage;
