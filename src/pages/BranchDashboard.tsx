@@ -1,4 +1,4 @@
-<lov-code>
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -10,7 +10,7 @@ import {
   Phone, Mail, MapPin, Plus, Clock7,
   RefreshCw, Download, Filter, 
   ClipboardCheck, ThumbsUp, ArrowUp, ArrowDown,
-  ChevronDown, Edit, EyeIcon, HelpCircle,
+  ChevronDown, Edit, Eye, HelpCircle,
   CalendarIcon, ChevronLeft
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -171,6 +171,134 @@ const clients = [
     registeredOn: "02/01/2023"
   },
 ];
+
+// Dashboard Stat Component
+const DashboardStat = ({ title, value, change, icon, positive }: { 
+  title: string; 
+  value: string; 
+  change: string; 
+  icon: React.ReactNode;
+  positive: boolean;
+}) => {
+  return (
+    <Card>
+      <CardContent className="p-4 md:p-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="text-sm text-gray-500">{title}</p>
+            <h3 className="text-lg md:text-2xl font-bold mt-1">{value}</h3>
+            <div className={`flex items-center mt-1 text-xs ${positive ? 'text-green-600' : 'text-red-600'}`}>
+              {positive ? (
+                <ArrowUp className="h-3 w-3 mr-1" />
+              ) : (
+                <ArrowDown className="h-3 w-3 mr-1" />
+              )}
+              <span>{change}</span>
+            </div>
+          </div>
+          <div className="p-2 rounded-md bg-gray-50 border border-gray-100">
+            {icon}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Booking Item Component
+const BookingItem = ({ number, staff, client, time, status }: {
+  number: string;
+  staff: string;
+  client: string;
+  time: string;
+  status: string;
+}) => {
+  let statusColor = "bg-gray-100 text-gray-600";
+  if (status === "Done") statusColor = "bg-green-100 text-green-700";
+  else if (status === "Booked") statusColor = "bg-blue-100 text-blue-700";
+  else if (status === "Waiting") statusColor = "bg-amber-100 text-amber-700";
+
+  return (
+    <div className="py-2 border-b last:border-0 flex items-center justify-between">
+      <div className="flex items-center">
+        <div className="w-5 text-xs text-gray-500 mr-2">{number}.</div>
+        <div>
+          <div className="text-xs md:text-sm font-medium">{staff}</div>
+          <div className="text-xs text-gray-500">{client}</div>
+        </div>
+      </div>
+      <div className="flex items-center">
+        <div className="flex items-center mr-3">
+          <Clock className="h-3 w-3 text-gray-400 mr-1" />
+          <span className="text-xs text-gray-600">{time}</span>
+        </div>
+        <div className={`${statusColor} rounded-full px-2 py-0.5 text-xs font-medium`}>
+          {status}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Review Item Component
+const ReviewItem = ({ client, staff, date, rating, comment }: {
+  client: string;
+  staff: string;
+  date: string;
+  rating: number;
+  comment: string;
+}) => {
+  return (
+    <div className="py-2 border-b last:border-0">
+      <div className="flex justify-between">
+        <div>
+          <div className="text-xs md:text-sm font-medium">{client}</div>
+          <div className="text-xs text-gray-500">for {staff}</div>
+        </div>
+        <div className="text-xs text-gray-500">{date}</div>
+      </div>
+      <div className="flex items-center mt-1">
+        <div className="flex">
+          {Array(rating).fill(0).map((_, i) => (
+            <ThumbsUp key={i} className="h-3 w-3 text-yellow-500" />
+          ))}
+        </div>
+        <p className="ml-2 text-xs md:text-sm text-gray-700">{comment}</p>
+      </div>
+    </div>
+  );
+};
+
+// Action Item Component
+const ActionItem = ({ title, name, date, priority }: {
+  title: string;
+  name: string;
+  date: string;
+  priority: string;
+}) => {
+  let priorityColor = "bg-gray-100 text-gray-600";
+  if (priority === "High") priorityColor = "bg-red-100 text-red-700";
+  else if (priority === "Medium") priorityColor = "bg-amber-100 text-amber-700";
+  else if (priority === "Low") priorityColor = "bg-green-100 text-green-700";
+
+  return (
+    <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="font-medium text-sm">{title}</h4>
+        <div className={`${priorityColor} rounded-full px-2 py-0.5 text-xs font-medium`}>
+          {priority}
+        </div>
+      </div>
+      <div className="flex items-center justify-between text-xs">
+        <div className="text-gray-600">{name}</div>
+        <div className="flex items-center text-gray-500">
+          <CalendarIcon className="h-3 w-3 mr-1" />
+          {date}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const BranchDashboard = () => {
   const { id, branchName } = useParams();
@@ -736,4 +864,204 @@ const BranchDashboard = () => {
                     <ActionItem 
                       title="Medication Review" 
                       name="Baulch, Ursula" 
-                      date="Fri 17/01
+                      date="Fri 17/01/2025" 
+                      priority="Medium"
+                    />
+                    <ActionItem 
+                      title="Staff Training" 
+                      name="Warren, Susan" 
+                      date="Mon 20/01/2025" 
+                      priority="Medium"
+                    />
+                    <ActionItem 
+                      title="Client Assessment" 
+                      name="Ren, Victoria" 
+                      date="Wed 22/01/2025" 
+                      priority="Low"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+          
+          {activeTab === "clients" && (
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+              {/* Client tab content */}
+              <div className="flex justify-between p-4 border-b border-gray-100">
+                <h2 className="text-lg font-semibold">Clients</h2>
+                <Button 
+                  size="sm" 
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={handleNewClient}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Client
+                </Button>
+              </div>
+              
+              <div className="p-4 border-b border-gray-100 bg-gray-50/80">
+                <div className="flex flex-col md:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search clients..."
+                      className="pl-10 pr-4"
+                      value={clientSearchValue}
+                      onChange={(e) => setClientSearchValue(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="New Enquiries">New Enquiries</SelectItem>
+                        <SelectItem value="Actively Assessing">Actively Assessing</SelectItem>
+                        <SelectItem value="Closed Enquiries">Closed Enquiries</SelectItem>
+                        <SelectItem value="Former">Former</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Select value={regionFilter} onValueChange={setRegionFilter}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Region" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Regions</SelectItem>
+                        <SelectItem value="North">North</SelectItem>
+                        <SelectItem value="South">South</SelectItem>
+                        <SelectItem value="East">East</SelectItem>
+                        <SelectItem value="West">West</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          <span>{fromDate ? format(fromDate, 'PP') : 'Date Range'}</span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          initialFocus
+                          mode="range"
+                          defaultMonth={fromDate}
+                          selected={{
+                            from: fromDate,
+                            to: toDate,
+                          }}
+                          onSelect={(range) => {
+                            setFromDate(range?.from);
+                            setToDate(range?.to);
+                          }}
+                          numberOfMonths={1}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">Client ID</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead className="hidden md:table-cell">Contact</TableHead>
+                      <TableHead className="hidden md:table-cell">Location</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="hidden md:table-cell">Registered On</TableHead>
+                      <TableHead className="w-[100px] text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedClients.map((client) => (
+                      <TableRow key={client.id}>
+                        <TableCell className="font-medium">{client.id}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="h-7 w-7 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
+                              {client.avatar}
+                            </div>
+                            <div>
+                              <div className="font-medium text-sm">{client.name}</div>
+                              <div className="text-xs text-gray-500">{client.email}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">{client.phone}</TableCell>
+                        <TableCell className="hidden md:table-cell">{client.location}</TableCell>
+                        <TableCell>
+                          <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {client.status}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">{client.registeredOn}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              <div className="p-4 border-t border-gray-100 flex items-center justify-between">
+                <div className="text-sm text-gray-500">
+                  Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredClients.length)} of {filteredClients.length} clients
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Previous
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {activeTab === "bookings" && (
+            <BookingsTab />
+          )}
+          
+          {activeTab === "carers" && (
+            <CarersTab />
+          )}
+          
+          {activeTab === "reviews" && (
+            <ReviewsTab />
+          )}
+        </motion.div>
+      </main>
+    </div>
+  );
+};
+
+export default BranchDashboard;
