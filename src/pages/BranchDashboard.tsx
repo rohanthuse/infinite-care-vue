@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -46,6 +47,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
+import { AddClientDialog } from "@/components/AddClientDialog";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, Legend, LineChart,
@@ -193,6 +195,7 @@ const BranchDashboard = () => {
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState(1);
+  const [addClientDialogOpen, setAddClientDialogOpen] = useState(false);
   const itemsPerPage = 5;
   
   const displayBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
@@ -234,6 +237,12 @@ const BranchDashboard = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
+      
+      {/* Add Client Dialog */}
+      <AddClientDialog 
+        open={addClientDialogOpen} 
+        onOpenChange={setAddClientDialogOpen} 
+      />
       
       <main className="flex-1 container px-4 pt-4 pb-20 md:py-6 mx-auto">
         <div className="flex flex-col justify-between items-start mb-4 md:mb-6">
@@ -706,7 +715,10 @@ const BranchDashboard = () => {
                       Manage all registered clients, view their details, and take administrative actions
                     </p>
                   </div>
-                  <Button className="bg-blue-600 hover:bg-blue-700 rounded-md">
+                  <Button 
+                    className="bg-blue-600 hover:bg-blue-700 rounded-md"
+                    onClick={() => setAddClientDialogOpen(true)}
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Client
                   </Button>
@@ -780,6 +792,7 @@ const BranchDashboard = () => {
                           selected={fromDate}
                           onSelect={setFromDate}
                           initialFocus
+                          className="p-3 pointer-events-auto"
                         />
                       </PopoverContent>
                     </Popover>
@@ -802,6 +815,7 @@ const BranchDashboard = () => {
                           selected={toDate}
                           onSelect={setToDate}
                           initialFocus
+                          className="p-3 pointer-events-auto"
                         />
                       </PopoverContent>
                     </Popover>
