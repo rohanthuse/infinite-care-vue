@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   LayoutDashboard, Workflow, ListChecks, Users, 
@@ -26,6 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { toast } from "sonner";
 
 interface TabItem {
   icon: React.ElementType;
@@ -43,7 +43,6 @@ const primaryTabs: TabItem[] = [
   { icon: MessageSquare, label: "Communication", value: "communication", description: "Messages & emails" },
 ];
 
-// Group secondary tabs by category for better organization
 const secondaryTabGroups = [
   {
     label: "Operations",
@@ -83,7 +82,6 @@ const secondaryTabGroups = [
   },
 ];
 
-// Flatten the secondary tabs for easy access
 const secondaryTabs: TabItem[] = secondaryTabGroups.flatMap(group => group.items);
 
 interface TabNavigationProps {
@@ -97,15 +95,21 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
   const activeTabObject = allTabs.find(tab => tab.value === activeTab);
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Filter tabs based on search term
   const filteredTabs = allTabs.filter(tab => 
     tab.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
+  const handleQuickAdd = () => {
+    toast.success("Quick Add feature clicked", {
+      description: "This feature will be implemented soon",
+      position: "top-center",
+    });
+    console.log("Quick Add button clicked");
+  };
+  
   return (
     <div className="w-full">
       <div className="flex flex-col space-y-4">
-        {/* Mobile Header with Search and Actions - Only shown if not hidden */}
         {!hideActionsOnMobile && (
           <div className="flex items-center justify-between md:hidden bg-white p-3 rounded-lg shadow-sm">
             <Button variant="outline" size="icon" className="h-9 w-9 rounded-full">
@@ -118,14 +122,18 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                 <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
               </Button>
               
-              <Button variant="default" size="sm" className="rounded-full bg-blue-600 hover:bg-blue-700 h-9 w-9 p-0">
+              <Button 
+                variant="default" 
+                size="sm" 
+                className="rounded-full bg-blue-600 hover:bg-blue-700 h-9 w-9 p-0"
+                onClick={handleQuickAdd}
+              >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
           </div>
         )}
 
-        {/* Bottom Navigation for Mobile */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 z-30 md:hidden">
           <div className="flex justify-around">
             {primaryTabs.slice(0, 5).map((tab) => {
@@ -148,7 +156,6 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
               );
             })}
             
-            {/* More Menu Button */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -178,7 +185,6 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                 <div className="max-h-[50vh] overflow-y-auto p-1">
                   {filteredTabs.length > 0 ? (
                     <>
-                      {/* Display remaining primary tabs */}
                       {primaryTabs.slice(5).map((tab) => {
                         const Icon = tab.icon;
                         return (
@@ -200,7 +206,6 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                         );
                       })}
                       
-                      {/* Secondary tabs grouped by category */}
                       {secondaryTabGroups.map((group) => (
                         <div key={group.label} className="py-1">
                           <div className="px-3 py-1 text-xs font-semibold text-gray-500">
@@ -242,10 +247,8 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
           </div>
         </div>
 
-        {/* Desktop Navigation */}
         <div className="hidden md:flex md:flex-col md:space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            {/* Primary Tab Navigation as a scrollable row */}
             <div className="w-full overflow-x-auto hide-scrollbar bg-white border border-gray-100 rounded-xl shadow-sm">
               <Tabs 
                 value={activeTab} 
@@ -274,7 +277,6 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
             </div>
             
             <div className="flex items-center gap-2">
-              {/* Quick Search Popover */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="flex items-center gap-2 border-gray-200 bg-white hover:bg-gray-50 text-gray-700">
@@ -320,7 +322,6 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                 </PopoverContent>
               </Popover>
               
-              {/* Category-based Modular Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="flex items-center gap-2 border-gray-200 bg-white hover:bg-gray-50 text-gray-700">
@@ -361,7 +362,12 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              <Button variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700">
+              <Button 
+                variant="default" 
+                size="sm" 
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={handleQuickAdd}
+              >
                 <Paperclip className="h-4 w-4 mr-2" />
                 <span>Quick Add</span>
               </Button>
@@ -376,7 +382,6 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
         </div>
       </div>
       
-      {/* Add spacing at the bottom for mobile to prevent content from being hidden by the bottom bar */}
       <div className="pb-16 md:pb-0"></div>
     </div>
   );
