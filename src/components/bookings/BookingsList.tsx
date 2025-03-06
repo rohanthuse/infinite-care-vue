@@ -113,7 +113,7 @@ export const BookingsList: React.FC<BookingsListProps> = ({ bookings }) => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input 
-                placeholder="Search client, staff or booking ID" 
+                placeholder="Search client, carer or booking ID" 
                 className="pl-10 pr-4 py-2 rounded-md bg-white border-gray-200"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -150,7 +150,7 @@ export const BookingsList: React.FC<BookingsListProps> = ({ bookings }) => {
               <TableHead className="font-medium">Date</TableHead>
               <TableHead className="font-medium">Time</TableHead>
               <TableHead className="font-medium">Client</TableHead>
-              <TableHead className="font-medium">Staff</TableHead>
+              <TableHead className="font-medium">Carer</TableHead>
               <TableHead className="font-medium">Status</TableHead>
               <TableHead className="font-medium">Duration</TableHead>
               <TableHead className="font-medium text-right">Actions</TableHead>
