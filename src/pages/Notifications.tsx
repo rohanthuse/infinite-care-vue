@@ -3,7 +3,8 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { 
   Bell, Users, User, Calendar, Pill, FileText, 
   AlertTriangle, CheckCircle, RefreshCw, Filter,
-  ChevronDown, Eye, Clock, AlertCircle
+  ChevronDown, Eye, Clock, AlertCircle, Home,
+  MapPin, Phone, Mail, Plus
 } from "lucide-react";
 import { TabNavigation } from "@/components/TabNavigation";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -48,7 +49,6 @@ const Notifications = () => {
   const [view, setView] = useState("grid");
   const { toast } = useToast();
   
-  // Determine if we're in branch context
   const isInBranchContext = location.pathname.includes('/branch-dashboard/');
   
   const notificationCategories: NotificationCategory[] = [
@@ -138,19 +138,15 @@ const Notifications = () => {
   
   const handleCategoryClick = (categoryId: string) => {
     if (isInBranchContext && id && branchName) {
-      // If we're in branch context, navigate to the branch-specific notification page
       navigate(`/branch-dashboard/${id}/${branchName}/notifications/${categoryId}`);
     } else {
-      // If we're on the main notifications page
       navigate(`/notifications/${categoryId}`);
     }
   };
   
-  // Effect to handle selected category if present in URL
   useEffect(() => {
     if (categoryId) {
       console.log("Selected category:", categoryId);
-      // Add any logic needed for the selected category
     }
   }, [categoryId]);
 
@@ -169,10 +165,8 @@ const Notifications = () => {
   
   const handleNavigationChange = (value: string) => {
     if (value === "notifications") {
-      // Stay on the notifications page
       setTab(value);
     } else {
-      // Navigate to the selected tab
       if (isInBranchContext && id && branchName) {
         navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
       } else {
@@ -181,16 +175,74 @@ const Notifications = () => {
     }
   };
 
-  // Set active tab to notifications when page loads
   useEffect(() => {
     setTab("notifications");
   }, []);
-  
+
+  const handleNewBooking = () => {
+    if (isInBranchContext && id && branchName) {
+      navigate(`/branch-dashboard/${id}/${branchName}/bookings/new`);
+    } else {
+      navigate('/bookings/new');
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       <DashboardHeader />
       {!isInBranchContext && <DashboardNavbar />}
       <div className="container mx-auto px-4 py-6">
+        {isInBranchContext && (
+          <>
+            <div className="flex items-center text-sm text-gray-500 mb-6">
+              <Home className="h-4 w-4 mr-1" />
+              <span className="mr-2">
+                <a 
+                  href="/branches" 
+                  className="hover:text-blue-600 hover:underline"
+                >
+                  Branches
+                </a>
+              </span>
+              <span className="mx-2">&gt;</span>
+              <span className="font-medium text-gray-700">{branchName}</span>
+            </div>
+            
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+              <div className="flex flex-col">
+                <div className="flex items-center">
+                  <h1 className="text-4xl font-bold text-gray-900">{branchName}</h1>
+                  <Badge className="ml-3 bg-green-100 text-green-800 hover:bg-green-200">
+                    Active
+                  </Badge>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 mt-4 text-gray-600">
+                  <div className="flex items-center">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    <span>Milton Keynes, UK</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Phone className="h-4 w-4 mr-2" />
+                    <span>+44 20 7946 0958</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Mail className="h-4 w-4 mr-2" />
+                    <span>milton@med-infinite.com</span>
+                  </div>
+                </div>
+              </div>
+              
+              <Button
+                className="mt-4 md:mt-0 bg-blue-600 hover:bg-blue-700"
+                onClick={handleNewBooking}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                New Booking
+              </Button>
+            </div>
+          </>
+        )}
+        
         <TabNavigation activeTab={tab} onChange={handleNavigationChange} />
         
         <div className="mt-8">
