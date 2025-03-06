@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,7 +23,6 @@ import CarerProfilePage from "./pages/CarerProfilePage";
 import ApplicationDetailsPage from "./components/carers/ApplicationDetailsPage";
 import PostJobPage from "./components/carers/PostJobPage";
 import Notifications from "./pages/Notifications";
-import Workflow from "./pages/Workflow";
 import { useState } from "react";
 
 function App() {
@@ -45,7 +43,6 @@ function App() {
             <Route path="/services" element={<Services />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/agreement" element={<Agreement />} />
-            <Route path="/workflow" element={<Workflow />} />
             
             <Route path="/hobbies" element={<Hobbies />} />
             <Route path="/skills" element={<Skills />} />
@@ -62,7 +59,6 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
             <Route path="/branch-dashboard/:id/:branchName/notifications" element={<Notifications />} />
             <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
-            <Route path="/branch-dashboard/:id/:branchName/workflow" element={<Workflow />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
