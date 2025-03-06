@@ -81,6 +81,13 @@
   overflow: auto;
 }
 
+/* Daily Grid */
+.daily-grid {
+  display: flex;
+  height: 600px;
+  overflow: auto;
+}
+
 /* Time Column - Fixed position while scrolling */
 .time-column {
   width: 60px;
@@ -115,6 +122,37 @@
   overflow-x: auto; /* Allow horizontal scrolling */
 }
 
+/* Daily Content Container */
+.daily-content {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+
+/* Entity Row for Daily View */
+.entity-row {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  min-height: 80px;
+}
+
+.entity-info {
+  min-width: 180px;
+  width: 180px;
+  flex-shrink: 0;
+  padding: 8px;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+}
+
+.entity-timeline {
+  flex: 1;
+  position: relative;
+  overflow-x: auto;
+  min-width: 960px; /* 24 hours * 40px minimum width */
+}
+
 /* Day Column */
 .day-column {
   flex: 1;
@@ -141,6 +179,28 @@
   z-index: 5;
 }
 
+/* Time header for daily view */
+.time-header {
+  height: 40px;
+  display: flex;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  overflow: hidden;
+}
+
+.time-header-slot {
+  flex: 1;
+  min-width: 40px;
+  text-align: center;
+  font-size: 0.65rem;
+  color: #6b7280;
+  padding-top: 4px;
+  border-right: 1px solid #e5e7eb;
+}
+
 .day-name {
   font-weight: 500;
   font-size: 0.8rem;
@@ -164,11 +224,35 @@
   border-bottom: 1px solid #e5e7eb;
 }
 
+/* Hour Cell for Daily View */
+.hour-cell-daily {
+  min-width: 40px;
+  width: 40px;
+  height: 100%;
+  border-right: 1px solid #e5e7eb;
+}
+
 /* Booking Item */
 .booking-item {
   position: absolute;
   left: 2px;
   right: 2px;
+  background-color: #dcfce7;
+  border: 1px solid #86efac;
+  color: #166534;
+  border-radius: 4px;
+  padding: 4px;
+  z-index: 4;
+  overflow: hidden;
+  font-size: 0.75rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Daily view booking item */
+.booking-item-daily {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
   background-color: #dcfce7;
   border: 1px solid #86efac;
   color: #166534;
@@ -190,10 +274,31 @@
   z-index: 10;
 }
 
+/* Current Time Line for Daily View */
+.current-time-line-daily {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #ef4444;
+  z-index: 10;
+}
+
 .current-time-label {
   position: absolute;
   left: 0;
   top: -10px;
+  background-color: #ef4444;
+  color: white;
+  font-size: 0.65rem;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.current-time-label-daily {
+  position: absolute;
+  right: -26px;
+  top: 0;
   background-color: #ef4444;
   color: white;
   font-size: 0.65rem;

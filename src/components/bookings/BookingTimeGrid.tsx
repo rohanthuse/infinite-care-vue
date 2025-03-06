@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -57,8 +58,10 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   const [showHalfHours, setShowHalfHours] = useState(true);
   
   const weeklyGridRef = useRef<HTMLDivElement>(null);
+  const dailyGridRef = useRef<HTMLDivElement>(null);
   
   const hourHeight = 60; // height in px for one hour
+  const hourWidth = 40; // width in px for one hour in daily view
   
   const timeSlots = Array.from({ length: 24 }, (_, i) => 
     i.toString().padStart(2, '0') + ":00"
@@ -141,6 +144,12 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     return hours * hourHeight + (minutes / 60) * hourHeight;
   };
 
+  const getCurrentTimePositionDaily = () => {
+    const hours = currentTime.getHours();
+    const minutes = currentTime.getMinutes();
+    return hours * hourWidth + (minutes / 60) * hourWidth;
+  };
+
   const getCurrentTimePercentage = () => {
     const hours = currentTime.getHours();
     const minutes = currentTime.getMinutes();
@@ -159,6 +168,17 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     
     return { top: startPosition, height };
   };
+
+  const getBookingStyleDaily = (startTime: string, endTime: string) => {
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const [endHour, endMin] = endTime.split(':').map(Number);
+    
+    const startPosition = startHour * hourWidth + (startMin / 60) * hourWidth;
+    const endPosition = endHour * hourWidth + (endMin / 60) * hourWidth;
+    const width = endPosition - startPosition;
+    
+    return { left: startPosition, width };
+  };
   
   const isBookingOnDate = (booking: Booking, checkDate: Date) => {
     if (!booking.date) return false;
@@ -167,6 +187,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   };
   
   useEffect(() => {
+    // Scroll handling for weekly view
     if (viewType === "weekly" && isToday(date)) {
       const currentHour = new Date().getHours();
       const weeklyGridElements = document.querySelectorAll('.weekly-grid');
@@ -178,7 +199,124 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
         }
       });
     }
-  }, [viewType, date, hourHeight]);
+    
+    // Scroll handling for daily view
+    if (viewType === "daily" && isToday(date)) {
+      const currentHour = new Date().getHours();
+      if (dailyGridRef.current) {
+        const scrollTarget = Math.max(0, (currentHour - 2) * hourWidth);
+        dailyGridRef.current.scrollLeft = scrollTarget;
+      }
+    }
+  }, [viewType, date, hourHeight, hourWidth]);
+  
+  // Rendering the daily view according to the new design
+  const renderDailyView = (entities: Array<Client | Carer>, type: 'client' | 'carer') => {
+    const isClient = type === 'client';
+    const selectedId = isClient ? selectedClientId : selectedCarerId;
+    const colorClass = isClient ? 'blue' : 'purple';
+    
+    return (
+      <div className="daily-view">
+        {entities.map((entity, index) => (
+          <div key={entity.id} className={`entity-row ${
+            entity.id === selectedId ? 'selected-row' : index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+          }`}>
+            <div className="entity-info">
+              <div className={`h-10 w-10 rounded-full bg-${colorClass}-100 flex items-center justify-center text-${colorClass}-600 font-medium mr-2`}>
+                {entity.initials}
+              </div>
+              <div className="overflow-hidden">
+                <p className="text-sm font-medium truncate">{entity.name}</p>
+                <Badge className={`bg-${colorClass}-50 text-${colorClass}-700 font-normal text-xs`}>
+                  {entity.bookingCount} bookings
+                </Badge>
+              </div>
+            </div>
+            
+            <div className="entity-timeline" ref={dailyGridRef}>
+              <div className="time-header">
+                {timeSlots.map((time, index) => (
+                  <div key={index} className="time-header-slot">
+                    {time}
+                  </div>
+                ))}
+              </div>
+              
+              <div className="relative" style={{ height: '60px' }}>
+                {timeSlots.map((_, i) => (
+                  <div
+                    key={i}
+                    className="hour-cell-daily"
+                    style={{ 
+                      position: 'absolute', 
+                      left: `${i * hourWidth}px`,
+                      height: '100%'
+                    }}
+                  ></div>
+                ))}
+                
+                {isToday(date) && (
+                  <div 
+                    className="current-time-line-daily" 
+                    style={{ 
+                      left: `${getCurrentTimePositionDaily()}px`,
+                    }}
+                  >
+                    <span className="current-time-label-daily">
+                      {format(currentTime, 'HH:mm')}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Display bookings for this entity */}
+                {isClient
+                  ? (entity as Client).bookings.filter(booking => booking.date === date.toISOString().split('T')[0])
+                    .map(booking => {
+                      const style = getBookingStyleDaily(booking.startTime, booking.endTime);
+                      
+                      return (
+                        <div
+                          key={booking.id}
+                          className={`booking-item-daily booking-status-${booking.status}`}
+                          style={{ left: `${style.left}px`, width: `${style.width}px` }}
+                        >
+                          <div className="booking-time text-xs font-medium">
+                            {booking.startTime} - {booking.endTime}
+                          </div>
+                          <div className="booking-carer text-xs truncate">
+                            {booking.carerName}
+                          </div>
+                        </div>
+                      );
+                    })
+                  : (entity as Carer).bookings.filter(booking => booking.date === date.toISOString().split('T')[0])
+                    .map(booking => {
+                      const style = getBookingStyleDaily(booking.startTime, booking.endTime);
+                      
+                      return (
+                        <div
+                          key={booking.id}
+                          className={`booking-item-daily booking-status-${booking.status}`}
+                          style={{ left: `${style.left}px`, width: `${style.width}px` }}
+                        >
+                          <div className="booking-time text-xs font-medium">
+                            {booking.startTime} - {booking.endTime}
+                          </div>
+                          <div className="booking-client text-xs truncate">
+                            {booking.clientName}
+                          </div>
+                        </div>
+                      );
+                    })
+                }
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
   
   return (
     <div className={`${isFullScreen ? 'booking-fullscreen' : ''} bg-white rounded-lg border border-gray-200 shadow-sm`}>
@@ -241,98 +379,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
           </h3>
           
           {viewType === "daily" ? (
-            <div className="relative">
-              <div className="absolute top-0 left-0 w-full h-11 flex">
-                <div className="w-36 flex-shrink-0"></div>
-                <div className={`flex-grow ${showHalfHours ? 'grid-cols-48' : 'grid-cols-24'} grid gap-0`}>
-                  {timeSlots.map((time, i) => (
-                    <div 
-                      key={i} 
-                      className={`h-full text-center text-xs text-gray-500 border-r border-gray-100 ${
-                        showHalfHours ? (i % 2 === 0 ? 'border-gray-200' : 'border-gray-100') : 'border-gray-200'
-                      }`}
-                    >
-                      {showHalfHours ? (i % 2 === 0 ? time.split(':')[0] : '') : time}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              {new Date().toDateString() === date.toDateString() && (
-                <div 
-                  className="time-marker" 
-                  style={{ 
-                    left: `calc(${getCurrentTimePercentage()}% + 144px)`,
-                  }}
-                >
-                  <div className="time-marker-label">
-                    {currentTime.getHours().toString().padStart(2, '0')}:{currentTime.getMinutes().toString().padStart(2, '0')}
-                  </div>
-                </div>
-              )}
-              
-              <div className="mt-11 relative">
-                {displayedClients.map((client, index) => (
-                  <div 
-                    key={client.id} 
-                    className={`flex h-20 ${
-                      client.id === selectedClientId ? 'selected-row' : index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
-                    }`}
-                  >
-                    <div className="w-36 flex-shrink-0 p-2 border-r border-gray-200">
-                      <div className="flex items-center h-full">
-                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium mr-2">
-                          {client.initials}
-                        </div>
-                        <div className="overflow-hidden">
-                          <p className="text-sm font-medium truncate">{client.name}</p>
-                          <Badge className="bg-blue-50 text-blue-700 font-normal text-xs">
-                            {client.bookingCount} bookings
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className={`flex-grow ${showHalfHours ? 'grid-cols-48' : 'grid-cols-24'} grid gap-0 relative`}>
-                      {timeSlots.map((_, i) => (
-                        <div 
-                          key={i} 
-                          className={`h-full border-r ${
-                            showHalfHours ? (i % 2 === 0 ? 'border-gray-200' : 'border-gray-100') : 'border-gray-200'
-                          }`}
-                        ></div>
-                      ))}
-                      
-                      {client.bookings
-                        .filter(booking => booking.date === date.toISOString().split('T')[0])
-                        .map((booking) => {
-                          const [startHour, startMin] = booking.startTime.split(':').map(Number);
-                          const [endHour, endMin] = booking.endTime.split(':').map(Number);
-                          
-                          const startInMinutes = startHour * 60 + startMin;
-                          const endInMinutes = endHour * 60 + endMin;
-                          const dayInMinutes = 24 * 60;
-                          
-                          const startPos = (startInMinutes / dayInMinutes) * 100;
-                          const endPos = (endInMinutes / dayInMinutes) * 100;
-                          const width = endPos - startPos;
-                          
-                          return (
-                            <BookingEntry
-                              key={booking.id}
-                              booking={booking}
-                              startPos={startPos}
-                              width={width}
-                              type="client"
-                              displayMode="horizontal"
-                            />
-                          );
-                        })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            renderDailyView(displayedClients, 'client')
           ) : (
             <div className="weekly-view">
               {displayedClients.map((client) => (
@@ -422,98 +469,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
           </h3>
           
           {viewType === "daily" ? (
-            <div className="relative">
-              <div className="absolute top-0 left-0 w-full h-11 flex">
-                <div className="w-36 flex-shrink-0"></div>
-                <div className={`flex-grow ${showHalfHours ? 'grid-cols-48' : 'grid-cols-24'} grid gap-0`}>
-                  {timeSlots.map((time, i) => (
-                    <div 
-                      key={i} 
-                      className={`h-full text-center text-xs text-gray-500 border-r border-gray-100 ${
-                        showHalfHours ? (i % 2 === 0 ? 'border-gray-200' : 'border-gray-100') : 'border-gray-200'
-                      }`}
-                    >
-                      {showHalfHours ? (i % 2 === 0 ? time.split(':')[0] : '') : time}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              {new Date().toDateString() === date.toDateString() && (
-                <div 
-                  className="time-marker" 
-                  style={{ 
-                    left: `calc(${getCurrentTimePercentage()}% + 144px)`,
-                  }}
-                >
-                  <div className="time-marker-label">
-                    {currentTime.getHours().toString().padStart(2, '0')}:{currentTime.getMinutes().toString().padStart(2, '0')}
-                  </div>
-                </div>
-              )}
-              
-              <div className="mt-11 relative">
-                {displayedCarers.map((carer, index) => (
-                  <div 
-                    key={carer.id} 
-                    className={`flex h-20 ${
-                      carer.id === selectedCarerId ? 'selected-row' : index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
-                    }`}
-                  >
-                    <div className="w-36 flex-shrink-0 p-2 border-r border-gray-200">
-                      <div className="flex items-center h-full">
-                        <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-medium mr-2">
-                          {carer.initials}
-                        </div>
-                        <div className="overflow-hidden">
-                          <p className="text-sm font-medium truncate">{carer.name}</p>
-                          <Badge className="bg-purple-50 text-purple-700 font-normal text-xs">
-                            {carer.bookingCount} bookings
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className={`flex-grow ${showHalfHours ? 'grid-cols-48' : 'grid-cols-24'} grid gap-0 relative`}>
-                      {timeSlots.map((_, i) => (
-                        <div 
-                          key={i} 
-                          className={`h-full border-r ${
-                            showHalfHours ? (i % 2 === 0 ? 'border-gray-200' : 'border-gray-100') : 'border-gray-200'
-                          }`}
-                        ></div>
-                      ))}
-                      
-                      {carer.bookings
-                        .filter(booking => booking.date === date.toISOString().split('T')[0])
-                        .map((booking) => {
-                          const [startHour, startMin] = booking.startTime.split(':').map(Number);
-                          const [endHour, endMin] = booking.endTime.split(':').map(Number);
-                          
-                          const startInMinutes = startHour * 60 + startMin;
-                          const endInMinutes = endHour * 60 + endMin;
-                          const dayInMinutes = 24 * 60;
-                          
-                          const startPos = (startInMinutes / dayInMinutes) * 100;
-                          const endPos = (endInMinutes / dayInMinutes) * 100;
-                          const width = endPos - startPos;
-                          
-                          return (
-                            <BookingEntry
-                              key={booking.id}
-                              booking={booking}
-                              startPos={startPos}
-                              width={width}
-                              type="carer"
-                              displayMode="horizontal"
-                            />
-                          );
-                        })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            renderDailyView(displayedCarers, 'carer')
           ) : (
             <div className="weekly-view">
               {displayedCarers.map((carer) => (
