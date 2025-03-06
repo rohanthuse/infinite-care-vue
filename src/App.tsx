@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
@@ -28,6 +28,13 @@ import TaskMatrix from "./pages/TaskMatrix";
 import TrainingMatrix from "./pages/TrainingMatrix";
 import FormMatrix from "./pages/FormMatrix";
 import { useState } from "react";
+
+// Create a wrapper component for the redirection
+const FormsToFormMatrixRedirect = () => {
+  const location = useLocation();
+  const redirectTo = location.pathname.replace('/forms', '/form-matrix');
+  return <Navigate to={redirectTo} />;
+};
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -78,7 +85,7 @@ function App() {
             {/* Redirect old form route format to the new one */}
             <Route 
               path="/branch-dashboard/:id/:branchName/forms" 
-              element={<Navigate to={pathname => pathname.replace('/forms', '/form-matrix')} />} 
+              element={<FormsToFormMatrixRedirect />} 
             />
             
             <Route path="*" element={<NotFound />} />
