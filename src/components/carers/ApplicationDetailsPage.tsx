@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,6 @@ import { CheckCircle, MailIcon, MapPin, Phone, XCircle, Download, Clock, Briefca
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-// Mock data - would be replaced with actual data fetching in a real application
 const mockRecruitmentData = [
   {
     id: "APP-001",
@@ -98,11 +96,9 @@ const ApplicationDetailsPage = () => {
   const [adminNotes, setAdminNotes] = useState("");
   const [applicationStatus, setApplicationStatus] = useState("pending");
   
-  // Find the candidate based on the ID parameter
   const candidate = mockRecruitmentData.find(c => c.id === candidateId);
   
   useEffect(() => {
-    // Set initial application status based on the candidate data
     if (candidate) {
       const statusMap = {
         "Interview Scheduled": "interview",
@@ -163,7 +159,12 @@ const ApplicationDetailsPage = () => {
         <div className="flex items-center">
           <Button 
             variant="outline" 
-            onClick={() => navigate(`/branch-dashboard/${id}/${branchName}`, { state: { activeTab: 'recruitment' } })} 
+            onClick={() => navigate(`/branch-dashboard/${id}/${branchName}`, { 
+              state: { 
+                activeTab: 'carers',
+                carersSubTab: 'recruitment' 
+              } 
+            })} 
             className="mr-4"
           >
             <ChevronLeft className="h-4 w-4 mr-1" />

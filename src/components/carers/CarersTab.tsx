@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams, Routes, Route } from "react-router-dom";
+import { useNavigate, useParams, Routes, Route, useLocation } from "react-router-dom";
 import { 
   SearchIcon, Filter, UserCheck, Download, RefreshCw, 
   Edit, EyeIcon, HelpCircle, CheckCircle, 
@@ -123,6 +123,7 @@ interface CarersTabProps {
 export const CarersTab = ({ branchId }: CarersTabProps) => {
   const { id, branchName } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -132,6 +133,12 @@ export const CarersTab = ({ branchId }: CarersTabProps) => {
   const [carers, setCarers] = useState(mockCarers);
   const [activeView, setActiveView] = useState("carers");
   const itemsPerPage = 5;
+
+  useEffect(() => {
+    if (location.state && location.state.carersSubTab === 'recruitment') {
+      setActiveView('recruitment');
+    }
+  }, [location.state]);
 
   const filteredCarers = carers.filter(carer => {
     const matchesSearch = 
