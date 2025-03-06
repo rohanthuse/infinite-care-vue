@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { 
   LayoutDashboard, Workflow, ListChecks, Users, 
@@ -5,7 +6,8 @@ import {
   FileText, ClipboardCheck, Bell, ClipboardList, 
   FileUp, Folder, UserPlus, BarChart4, Settings, 
   Activity, Briefcase, PanelLeft, Paperclip,
-  ChevronDown, Menu, Search, Grid, Plus
+  ChevronDown, Menu, Search, Grid, Plus,
+  UserPlus2, FileSignature, CalendarPlus, Contact, UserRoundPlus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -99,12 +101,12 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
     tab.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  const handleQuickAdd = () => {
-    toast.success("Quick Add feature clicked", {
-      description: "This feature will be implemented soon",
+  const handleQuickAddAction = (action: string) => {
+    toast.success(`${action} action selected`, {
+      description: `The ${action.toLowerCase()} feature will be available soon`,
       position: "top-center",
     });
-    console.log("Quick Add button clicked");
+    console.log(`Quick Add action selected: ${action}`);
   };
   
   return (
@@ -122,14 +124,37 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                 <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
               </Button>
               
-              <Button 
-                variant="default" 
-                size="sm" 
-                className="rounded-full bg-blue-600 hover:bg-blue-700 h-9 w-9 p-0"
-                onClick={handleQuickAdd}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    className="rounded-full bg-blue-600 hover:bg-blue-700 h-9 w-9 p-0"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleQuickAddAction("New Client")} className="cursor-pointer">
+                    <UserPlus2 className="mr-2 h-4 w-4" />
+                    <span>New Client</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleQuickAddAction("New Booking")} className="cursor-pointer">
+                    <CalendarPlus className="mr-2 h-4 w-4" />
+                    <span>New Booking</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleQuickAddAction("New Agreement")} className="cursor-pointer">
+                    <FileSignature className="mr-2 h-4 w-4" />
+                    <span>New Agreement</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleQuickAddAction("New Staff")} className="cursor-pointer">
+                    <UserRoundPlus className="mr-2 h-4 w-4" />
+                    <span>New Staff</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         )}
@@ -362,15 +387,43 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              <Button 
-                variant="default" 
-                size="sm" 
-                className="bg-blue-600 hover:bg-blue-700"
-                onClick={handleQuickAdd}
-              >
-                <Paperclip className="h-4 w-4 mr-2" />
-                <span>Quick Add</span>
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Paperclip className="h-4 w-4 mr-2" />
+                    <span>Quick Add</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleQuickAddAction("New Client")} className="cursor-pointer">
+                    <UserPlus2 className="mr-2 h-4 w-4" />
+                    <span>New Client</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleQuickAddAction("New Booking")} className="cursor-pointer">
+                    <CalendarPlus className="mr-2 h-4 w-4" />
+                    <span>New Booking</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleQuickAddAction("New Agreement")} className="cursor-pointer">
+                    <FileSignature className="mr-2 h-4 w-4" />
+                    <span>New Agreement</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleQuickAddAction("New Staff")} className="cursor-pointer">
+                    <UserRoundPlus className="mr-2 h-4 w-4" />
+                    <span>New Staff</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleQuickAddAction("Upload Document")} className="cursor-pointer">
+                    <FileUp className="mr-2 h-4 w-4" />
+                    <span>Upload Document</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           
