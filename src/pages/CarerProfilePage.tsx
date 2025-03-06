@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
 const mockCarerData = {
   id: "CR-001",
   carerId: "111111",
@@ -47,6 +48,104 @@ const mockCarerData = {
   rating: 5,
   profileCompletion: 91
 };
+
+const allMockCarers = [
+  mockCarerData,
+  {
+    id: "CR-002",
+    carerId: "222222",
+    name: "Warren, Susan",
+    firstName: "Susan",
+    middleName: "",
+    surname: "Warren",
+    knownAs: "",
+    title: "Ms",
+    jobTitle: "Carer",
+    email: "susan.w@med-infinite.com",
+    phone: "+44 20 7946 5566",
+    mobile: "+44 07946556677",
+    location: "Milton Keynes, MK9 3NZ",
+    status: "Active",
+    avatar: "SW",
+    experience: "5 years",
+    specialization: "Elderly Care",
+    availability: "Part-time",
+    profileImage: null,
+    dateOfBirth: "15-04-1980",
+    gender: "Female",
+    pronouns: "She/Her",
+    joinedOn: "12/08/2019",
+    nationality: "British",
+    countryCode: "England",
+    supervisor: "Iyaniwura, Ifeoluwa",
+    introductionMethod: "Referral",
+    rating: 4,
+    profileCompletion: 85
+  },
+  {
+    id: "CR-003",
+    carerId: "333333",
+    name: "Ayo-Famure, Opeyemi",
+    firstName: "Opeyemi",
+    middleName: "",
+    surname: "Ayo-Famure",
+    knownAs: "",
+    title: "Mrs",
+    jobTitle: "Nurse",
+    email: "opeyemi.af@med-infinite.com",
+    phone: "+44 20 7946 7788",
+    mobile: "+44 07946778899",
+    location: "London, SW1A 1AA",
+    status: "On Leave",
+    avatar: "OA",
+    experience: "2 years",
+    specialization: "Nurse",
+    availability: "Part-time",
+    profileImage: null,
+    dateOfBirth: "22-06-1990",
+    gender: "Female",
+    pronouns: "",
+    joinedOn: "15/03/2022",
+    nationality: "British",
+    countryCode: "England",
+    supervisor: "Iyaniwura, Ifeoluwa",
+    introductionMethod: "Job Board",
+    rating: 4,
+    profileCompletion: 78
+  },
+  {
+    id: "CR-004",
+    carerId: "444444",
+    name: "Smith, John",
+    firstName: "John",
+    middleName: "",
+    surname: "Smith",
+    knownAs: "",
+    title: "Mr",
+    jobTitle: "Physiotherapist",
+    email: "john.s@med-infinite.com",
+    phone: "+44 20 7946 9900",
+    mobile: "+44 07946990011",
+    location: "Cambridge, CB2 1TN",
+    status: "Active",
+    avatar: "JS",
+    experience: "7 years",
+    specialization: "Physiotherapy",
+    availability: "Full-time",
+    profileImage: null,
+    dateOfBirth: "10-11-1975",
+    gender: "Male",
+    pronouns: "He/Him",
+    joinedOn: "03/06/2017",
+    nationality: "British",
+    countryCode: "England",
+    supervisor: "Iyaniwura, Ifeoluwa",
+    introductionMethod: "Agency",
+    rating: 5,
+    profileCompletion: 95
+  }
+];
+
 const essentials = [{
   id: "work-permit",
   name: "Work Permit & Nationality",
@@ -96,6 +195,7 @@ const essentials = [{
   name: "Documents & Additional Information",
   status: "pending"
 }];
+
 const employmentHistory = [{
   company: "Volkswagen",
   position: "Administrator",
@@ -121,11 +221,13 @@ const employmentHistory = [{
   referenceType: "Professional",
   status: "Confirmed"
 }];
+
 const supportingStatement = {
   whyInterested: "I am interested in working with Brielle because of your dedication to providing high-quality, client-centered care. Your emphasis on being Safe, Well-led, Caring, Responsive, and Effective resonates strongly with my professional values, and I am eager to contribute my skills to support your mission.",
   vulnerableExperience: "While I don't have formal on-field experience, I have personal experience caring for a family member who required support due to illness. This involved assisting with daily tasks, offering emotional support, and ensuring their comfort and well-being. Through this, I've developed compassion, patience, and a deep understanding of the needs of vulnerable individuals.",
   strengths: "My strengths lie in my strong organisational skills, attention to detail, and ability to communicate effectively. I excel in managing schedules, ensuring smooth operations, and providing support to both staff and clients. My aspiration is to contribute to the seamless functioning of Brielle by maintaining high standards of efficiency and professionalism.\n\nWhat sets me apart is my proactive approach to problem-solving and my commitment to creating a supportive environment where everyone feels valued. I take pride in being adaptable, approachable, and always willing to go the extra mile to ensure that tasks are completed efficiently and effectively."
 };
+
 const documents = [{
   name: "Right_to_work_opeyemi.jpg",
   type: "Work Permit",
@@ -142,9 +244,11 @@ const documents = [{
   uploadDate: "15 Feb 2023",
   size: "3.1 MB"
 }];
+
 const skills = ["Patience", "Friendly", "Cheerful", "Ability to think quickly", "A good listener", "Kind", "Willingness to go the extra mile", "Pleasant", "Personable", "Ability to multi-task", "Punctual", "Empathetic", "Ability to take responsibility", "Knowledge of dementia", "Knowledge of Learning Disability", "Knowledge of Mental Health", "Challenging Behaviour Experience", "Lone Working Experience", "Knowledge of Safeguarding", "Good Communicator", "First Aid Experience", "Supervision Experience", "Knowledge of Mental Capacity Act"];
 const typeOfWork = ["Personal Care", "Urgent Responder", "Home Help"];
 const hobbies = ["Listening to Music", "Cooking", "Reading"];
+
 const employeeInfo = {
   employeeType: "PAYE",
   joinDate: "07-12-2023",
@@ -160,6 +264,7 @@ const employeeInfo = {
   showInFormMatrix: true,
   enableMaxHours: false
 };
+
 const profileCompletionItems = [{
   name: "Personal Details",
   completed: true
@@ -194,6 +299,7 @@ const profileCompletionItems = [{
   name: "Type of Work",
   completed: true
 }];
+
 const CarerProfilePage = () => {
   const {
     id,
@@ -202,10 +308,20 @@ const CarerProfilePage = () => {
   } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
+  
   const handleBack = () => {
     navigate(`/branch-dashboard/${id}/${branchName}`);
   };
-  const carer = mockCarerData;
+  
+  const findCarerById = (id) => {
+    const foundCarer = allMockCarers.find(carer => carer.id === id);
+    if (foundCarer) return foundCarer;
+    
+    return allMockCarers.find(carer => carer.carerId === id) || allMockCarers[0];
+  };
+  
+  const carer = findCarerById(carerId);
+  
   const renderStatusBadge = status => {
     switch (status) {
       case "completed":
@@ -215,9 +331,9 @@ const CarerProfilePage = () => {
       case "pending":
       default:
         return null;
-      // No badge for pending items
     }
   };
+  
   const renderStatusIcon = status => {
     switch (status) {
       case "completed":
@@ -229,6 +345,7 @@ const CarerProfilePage = () => {
         return <AlertCircle className="text-amber-600 h-5 w-5 mr-2" />;
     }
   };
+  
   return <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
       
@@ -817,4 +934,5 @@ const CarerProfilePage = () => {
       </main>
     </div>;
 };
+
 export default CarerProfilePage;
