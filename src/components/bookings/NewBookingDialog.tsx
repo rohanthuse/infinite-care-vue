@@ -158,8 +158,6 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
     });
   };
 
-  const { fields, append, remove } = form.control._formValues.schedules;
-
   // Handle the "All" days checkbox for a specific schedule
   const handleAllDaysChange = (checked: boolean, index: number) => {
     const schedules = [...form.getValues("schedules")];
@@ -237,7 +235,7 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
                 name="clientId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-red-500 after:content-['*'] after:ml-0.5">Client</FormLabel>
+                    <FormLabel className="after:content-['*'] after:ml-0.5 after:text-primary">Client</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -265,7 +263,7 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
                 name="carerId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-red-500 after:content-['*'] after:ml-0.5">Carer</FormLabel>
+                    <FormLabel className="after:content-['*'] after:ml-0.5 after:text-primary">Carer</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
@@ -295,7 +293,7 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
                 name="fromDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-red-500 after:content-['*'] after:ml-0.5">From</FormLabel>
+                    <FormLabel className="after:content-['*'] after:ml-0.5 after:text-primary">From</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -335,7 +333,7 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
                 name="untilDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-red-500 after:content-['*'] after:ml-0.5">Until</FormLabel>
+                    <FormLabel className="after:content-['*'] after:ml-0.5 after:text-primary">Until</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -377,7 +375,7 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
                 <Separator className="flex-1 mx-4" />
               </div>
 
-              {form.getValues("schedules").map((schedule, index) => (
+              {form.watch("schedules").map((schedule, index) => (
                 <div key={index} className="border rounded-md p-4 bg-gray-50 relative">
                   {index > 0 && (
                     <Button 
@@ -397,7 +395,7 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
                       name={`schedules.${index}.startTime`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-red-500 after:content-['*'] after:ml-0.5">From</FormLabel>
+                          <FormLabel className="after:content-['*'] after:ml-0.5 after:text-primary">From</FormLabel>
                           <div className="flex items-center">
                             <Select
                               onValueChange={field.onChange}
@@ -428,7 +426,7 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
                       name={`schedules.${index}.endTime`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-red-500 after:content-['*'] after:ml-0.5">Until</FormLabel>
+                          <FormLabel className="after:content-['*'] after:ml-0.5 after:text-primary">Until</FormLabel>
                           <div className="flex items-center">
                             <Select
                               onValueChange={field.onChange}
@@ -467,7 +465,7 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
                       name={`schedules.${index}.services`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-red-500 after:content-['*'] after:ml-0.5">Services</FormLabel>
+                          <FormLabel className="after:content-['*'] after:ml-0.5 after:text-primary">Services</FormLabel>
                           <Select
                             onValueChange={(value) => {
                               const currentServices = field.value || [];
@@ -530,7 +528,7 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
                         <div className="mb-2">
                           <FormLabel>What Days:</FormLabel>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="grid grid-cols-4 md:grid-cols-8 gap-2 items-center">
                           <FormField
                             control={form.control}
                             name={`schedules.${index}.days.all`}
