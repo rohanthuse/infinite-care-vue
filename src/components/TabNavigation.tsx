@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { 
   LayoutDashboard, Workflow, ListChecks, Users, 
   Calendar, Star, MessageSquare, Pill, DollarSign, 
@@ -33,6 +34,7 @@ interface TabItem {
   label: string;
   value: string;
   description?: string;
+  path?: string;
 }
 
 const primaryTabs: TabItem[] = [
@@ -49,6 +51,7 @@ const secondaryTabGroups = [
     label: "Operations",
     items: [
       { icon: Workflow, label: "Workflow", value: "workflow", description: "Process management" },
+      { icon: ListChecks, label: "Task Matrix", value: "task-matrix", description: "Compliance tracking" },
       { icon: ListChecks, label: "Key Parameters", value: "parameters", description: "Track metrics" },
       { icon: Pill, label: "Medication", value: "medication", description: "Medicine tracking" },
       { icon: ClipboardList, label: "Care Plan", value: "care-plan", description: "Patient care plans" },
@@ -96,6 +99,9 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
   const allTabs = [...primaryTabs, ...secondaryTabs];
   const activeTabObject = allTabs.find(tab => tab.value === activeTab);
   const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
+  const { id, branchName } = useParams();
+  const location = useLocation();
   
   const filteredTabs = allTabs.filter(tab => 
     tab.label.toLowerCase().includes(searchTerm.toLowerCase())
@@ -107,6 +113,16 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
       position: "top-center",
     });
     console.log(`Quick Add action selected: ${action}`);
+  };
+
+  const handleTabChange = (value: string) => {
+    onChange(value);
+    
+    if (value === "task-matrix" && id && branchName) {
+      navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
+    } else if (value === "task-matrix") {
+      navigate("/workflow/task-matrix");
+    }
   };
   
   return (
@@ -279,7 +295,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
             <div className="w-full overflow-x-auto hide-scrollbar bg-white border border-gray-100 rounded-xl shadow-sm">
               <Tabs 
                 value={activeTab} 
-                onValueChange={onChange}
+                onValueChange={handleTabChange}
                 className="w-full"
               >
                 <TabsList className="bg-white p-1 rounded-xl w-full justify-start">

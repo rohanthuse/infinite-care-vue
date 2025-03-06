@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -10,10 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { 
-  Filter, Download, ChevronDown, Search, Check, X, AlertCircle, Clock,
-  Home, MapPin, Phone, Mail, Plus, CalendarPlus 
+  Filter, Download, ChevronDown, Search, Check, X, AlertCircle, Clock
 } from "lucide-react";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 
 interface StatusInfo {
   status: string;
@@ -196,8 +195,6 @@ const TaskMatrix = () => {
           branchName={branchName} 
           onNewBooking={handleNewBooking}
         />
-        
-        <TabNavigation activeTab={activeTab} onChange={setActiveTab} hideQuickAdd />
         
         <div className="mt-6 space-y-6">
           <div className="flex flex-col md:flex-row justify-between gap-4">

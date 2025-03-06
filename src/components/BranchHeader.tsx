@@ -75,25 +75,41 @@ export const BranchHeader: React.FC<BranchHeaderProps> = ({
         <div className="flex space-x-2 border-b border-gray-200 w-full">
           <Link 
             to={`/branch-dashboard/${id}/${branchName}`} 
-            className="px-4 py-2 text-gray-600 hover:text-blue-600 flex items-center gap-1 whitespace-nowrap"
+            className={`px-4 py-2 flex items-center gap-1 whitespace-nowrap ${
+              location.pathname === `/branch-dashboard/${id}/${branchName}` 
+                ? 'border-b-2 border-blue-600 text-blue-600 font-medium'
+                : 'text-gray-600 hover:text-blue-600'
+            }`}
           >
             <span>Dashboard</span>
           </Link>
           <Link 
             to={`/branch-dashboard/${id}/${branchName}/bookings`} 
-            className="px-4 py-2 text-gray-600 hover:text-blue-600 flex items-center gap-1 whitespace-nowrap"
+            className={`px-4 py-2 flex items-center gap-1 whitespace-nowrap ${
+              location.pathname.includes('/bookings') 
+                ? 'border-b-2 border-blue-600 text-blue-600 font-medium'
+                : 'text-gray-600 hover:text-blue-600'
+            }`}
           >
             <span>Bookings</span>
           </Link>
           <Link 
             to={`/branch-dashboard/${id}/${branchName}/clients`} 
-            className="px-4 py-2 text-gray-600 hover:text-blue-600 flex items-center gap-1 whitespace-nowrap"
+            className={`px-4 py-2 flex items-center gap-1 whitespace-nowrap ${
+              location.pathname.includes('/clients') 
+                ? 'border-b-2 border-blue-600 text-blue-600 font-medium'
+                : 'text-gray-600 hover:text-blue-600'
+            }`}
           >
             <span>Clients</span>
           </Link>
           <Link 
             to={`/branch-dashboard/${id}/${branchName}/carers`} 
-            className="px-4 py-2 text-gray-600 hover:text-blue-600 flex items-center gap-1 whitespace-nowrap"
+            className={`px-4 py-2 flex items-center gap-1 whitespace-nowrap ${
+              location.pathname.includes('/carers') 
+                ? 'border-b-2 border-blue-600 text-blue-600 font-medium'
+                : 'text-gray-600 hover:text-blue-600'
+            }`}
           >
             <span>Carers</span>
           </Link>
