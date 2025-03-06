@@ -322,10 +322,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
             
-            <Button className="h-8 bg-blue-600 hover:bg-blue-700" size="sm" onClick={handleNewBooking}>
-              <Plus className="h-4 w-4 mr-1" />
-              New
-            </Button>
+            
           </div>
         </div>
       </div>
