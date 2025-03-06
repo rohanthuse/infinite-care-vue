@@ -1,13 +1,17 @@
-
 import React, { useState, useEffect } from "react";
-import { X, Send, PlusCircle, Paperclip, Clock, ChevronDown, Save, BadgeCheck, Building2, CheckCheck, CircleCheck } from "lucide-react";
+import { 
+  X, Send, Clock, ChevronDown, Save, BadgeCheck, Building2, 
+  FileUp, Mail, Phone, User, Users, Bell
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -16,8 +20,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
-import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "sonner";
 
 // Mocked data - would come from an API
 const mockCarers = [
@@ -55,6 +57,26 @@ export const MessageComposer = ({
   const [content, setContent] = useState("");
   const [recipients, setRecipients] = useState<string[]>([]);
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
+  const [files, setFiles] = useState<File[]>([]);
+  const [messageType, setMessageType] = useState("");
+  const [branchAdmin, setBranchAdmin] = useState("");
+  const [staff, setStaff] = useState("");
+  const [client, setClient] = useState("");
+  const [actionRequired, setActionRequired] = useState(false);
+  const [adminEyesOnly, setAdminEyesOnly] = useState(false);
+  const [notificationMethods, setNotificationMethods] = useState({
+    email: false,
+    mobileApp: false,
+    otherEmail: false
+  });
+
+  // Font formatting state
+  const [fontFamily, setFontFamily] = useState("Sans Serif");
+  const [fontSize, setFontSize] = useState("14px");
+  const [isBold, setIsBold] = useState(false);
+  const [isItalic, setIsItalic] = useState(false);
+  const [isUnderline, setIsUnderline] = useState(false);
+
   const [showContactSelector, setShowContactSelector] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<{
     carers: string[];
@@ -164,7 +186,24 @@ export const MessageComposer = ({
   const handleScheduleSend = () => {
     toast.info("Schedule sending feature coming soon");
   };
-  
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = event.target.files;
+    if (fileList) {
+      setFiles(Array.from(fileList));
+      toast.success(`${fileList.length} file(s) selected`);
+    }
+  };
+
+  const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const fileList = event.dataTransfer.files;
+    if (fileList) {
+      setFiles(Array.from(fileList));
+      toast.success(`${fileList.length} file(s) uploaded`);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-gray-200 flex items-center justify-between">
@@ -201,226 +240,227 @@ export const MessageComposer = ({
         </div>
       </div>
       
-      {showContactSelector ? (
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-base font-medium">Select Recipients</h3>
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setShowContactSelector(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={handleApplyContacts}
-              >
-                <CheckCheck className="h-4 w-4 mr-2" />
-                Apply
-              </Button>
-            </div>
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="space-y-4">
+          {/* Message Type */}
+          <div>
+            <Label htmlFor="type" className="block text-sm font-medium mb-1">Type *</Label>
+            <Input
+              id="type"
+              value={messageType}
+              onChange={(e) => setMessageType(e.target.value)}
+              required
+            />
           </div>
-          
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-sm font-medium mb-2 flex items-center">
-                <BadgeCheck className="h-4 w-4 mr-1 text-blue-600" />
-                Carers
-              </h4>
-              <div className="space-y-2">
-                {mockCarers.map(carer => (
-                  <div 
-                    key={carer.id}
-                    className="flex items-center p-2 border border-gray-200 rounded-md hover:bg-gray-50"
-                  >
-                    <Checkbox 
-                      id={`carer-${carer.id}`}
-                      checked={selectedContacts.carers.includes(carer.id)}
-                      onCheckedChange={() => handleContactToggle(carer.id, "carers")}
-                      className="mr-2"
-                    />
-                    <Avatar className="h-6 w-6 mr-2">
-                      <AvatarFallback className="bg-gray-200 text-xs">
-                        {carer.avatar}
-                      </AvatarFallback>
-                    </Avatar>
-                    <Label 
-                      htmlFor={`carer-${carer.id}`}
-                      className="flex-1 cursor-pointer"
-                    >
-                      {carer.name}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="text-sm font-medium mb-2 flex items-center">
-                <Building2 className="h-4 w-4 mr-1 text-green-600" />
-                Clients
-              </h4>
-              <div className="space-y-2">
-                {mockClients.map(client => (
-                  <div 
-                    key={client.id}
-                    className="flex items-center p-2 border border-gray-200 rounded-md hover:bg-gray-50"
-                  >
-                    <Checkbox 
-                      id={`client-${client.id}`}
-                      checked={selectedContacts.clients.includes(client.id)}
-                      onCheckedChange={() => handleContactToggle(client.id, "clients")}
-                      className="mr-2"
-                    />
-                    <Avatar className="h-6 w-6 mr-2">
-                      <AvatarFallback className="bg-gray-200 text-xs">
-                        {client.avatar}
-                      </AvatarFallback>
-                    </Avatar>
-                    <Label 
-                      htmlFor={`client-${client.id}`}
-                      className="flex-1 cursor-pointer"
-                    >
-                      {client.name}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </div>
+
+          {/* Recipients Fields */}
+          <div>
+            <Label htmlFor="branchAdmin" className="block text-sm font-medium mb-1">Branch Admin</Label>
+            <Input
+              id="branchAdmin"
+              value={branchAdmin}
+              onChange={(e) => setBranchAdmin(e.target.value)}
+            />
           </div>
-        </div>
-      ) : (
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="to" className="block text-sm font-medium mb-1">To</Label>
-              <div className="flex items-center border border-gray-200 rounded-md p-2 focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-opacity-50">
-                <div className="flex flex-wrap gap-1 flex-1">
-                  {recipients.map(recipientId => {
-                    const contact = getContactDetails(recipientId);
-                    if (!contact) return null;
-                    
-                    return (
-                      <Badge 
-                        key={recipientId}
-                        variant="outline"
-                        className={cn(
-                          "px-2 py-1 gap-1 rounded-md",
-                          contact.type === "carer" 
-                            ? "bg-blue-50 text-blue-700 border-blue-200"
-                            : "bg-green-50 text-green-700 border-green-200"
-                        )}
-                      >
-                        {contact.type === "carer" ? (
-                          <BadgeCheck className="h-3 w-3" />
-                        ) : (
-                          <Building2 className="h-3 w-3" />
-                        )}
-                        <span>{contact.name}</span>
-                        <X 
-                          className="h-3 w-3 cursor-pointer" 
-                          onClick={() => setRecipients(prev => prev.filter(id => id !== recipientId))}
-                        />
-                      </Badge>
-                    );
-                  })}
-                  
-                  {recipients.length === 0 && (
-                    <span className="text-gray-400 text-sm">Select recipients...</span>
-                  )}
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="ml-auto"
-                  onClick={() => setShowContactSelector(true)}
-                >
-                  <PlusCircle className="h-4 w-4" />
-                </Button>
-              </div>
+
+          <div>
+            <Label htmlFor="staff" className="block text-sm font-medium mb-1">Staff</Label>
+            <Input
+              id="staff"
+              value={staff}
+              onChange={(e) => setStaff(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="client" className="block text-sm font-medium mb-1">Client</Label>
+            <Input
+              id="client"
+              value={client}
+              onChange={(e) => setClient(e.target.value)}
+            />
+          </div>
+
+          {/* Subject Field */}
+          <div>
+            <Label htmlFor="subject" className="block text-sm font-medium mb-1">Subject</Label>
+            <Input
+              id="subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+            />
+          </div>
+
+          {/* Rich Text Editor */}
+          <div>
+            <div className="mb-2 flex items-center gap-2 border border-gray-200 p-2 rounded-t-md bg-gray-50">
+              <select 
+                value={fontFamily}
+                onChange={(e) => setFontFamily(e.target.value)}
+                className="px-2 py-1 border rounded"
+              >
+                <option>Sans Serif</option>
+                <option>Serif</option>
+                <option>Monospace</option>
+              </select>
+
+              <select 
+                value={fontSize}
+                onChange={(e) => setFontSize(e.target.value)}
+                className="px-2 py-1 border rounded w-20"
+              >
+                {[12, 14, 16, 18, 20].map(size => (
+                  <option key={size}>{size}px</option>
+                ))}
+              </select>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn("px-2", isBold && "bg-gray-200")}
+                onClick={() => setIsBold(!isBold)}
+              >
+                B
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn("px-2", isItalic && "bg-gray-200")}
+                onClick={() => setIsItalic(!isItalic)}
+              >
+                I
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn("px-2", isUnderline && "bg-gray-200")}
+                onClick={() => setIsUnderline(!isUnderline)}
+              >
+                U
+              </Button>
             </div>
-            
-            <div>
-              <Label htmlFor="priority" className="block text-sm font-medium mb-1">Priority</Label>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-between"
-                  >
-                    <span className="flex items-center">
-                      {priority === "high" && <span className="h-2 w-2 rounded-full bg-red-500 mr-2"></span>}
-                      {priority === "medium" && <span className="h-2 w-2 rounded-full bg-yellow-500 mr-2"></span>}
-                      {priority === "low" && <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>}
-                      {priority.charAt(0).toUpperCase() + priority.slice(1)} Priority
-                    </span>
-                    <ChevronDown className="h-4 w-4 opacity-50" />
+
+            <Textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Type your message here..."
+              className={cn(
+                "min-h-[200px] font-[" + fontFamily + "]",
+                "text-[" + fontSize + "]",
+                isBold && "font-bold",
+                isItalic && "italic",
+                isUnderline && "underline"
+              )}
+            />
+          </div>
+
+          {/* File Upload */}
+          <div>
+            <Label className="block text-sm font-medium mb-1">File</Label>
+            <div 
+              className="border-2 border-dashed border-gray-300 rounded-md p-4"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleFileDrop}
+            >
+              <div className="text-center">
+                <FileUp className="mx-auto h-8 w-8 text-gray-400" />
+                <p className="mt-1 text-sm text-gray-600">
+                  Drop files here to upload or
+                </p>
+                <Input
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="file-upload"
+                />
+                <label htmlFor="file-upload">
+                  <Button variant="outline" size="sm" className="mt-2" asChild>
+                    <span>Select files...</span>
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-full">
-                  <DropdownMenuItem onClick={() => setPriority("high")}>
-                    <span className="h-2 w-2 rounded-full bg-red-500 mr-2"></span>
-                    <span>High Priority</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setPriority("medium")}>
-                    <span className="h-2 w-2 rounded-full bg-yellow-500 mr-2"></span>
-                    <span>Medium Priority</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setPriority("low")}>
-                    <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
-                    <span>Low Priority</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            
-            <div>
-              <Label htmlFor="subject" className="block text-sm font-medium mb-1">Subject</Label>
-              <Input
-                id="subject"
-                placeholder="Enter subject"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-              />
-            </div>
-            
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <Label htmlFor="message" className="block text-sm font-medium">Message</Label>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-7 px-2">
-                      Templates <ChevronDown className="h-3 w-3 ml-1" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Select Template</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {mockTemplates.map(template => (
-                      <DropdownMenuItem 
-                        key={template.id}
-                        onClick={() => handleApplyTemplate(template.id)}
-                      >
-                        {template.name}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                </label>
               </div>
-              <Textarea
-                id="message"
-                placeholder="Type your message here..."
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="min-h-[200px]"
+              {files.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">{files.length} file(s) selected</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Additional Options */}
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="actionRequired"
+                checked={actionRequired}
+                onCheckedChange={(checked) => setActionRequired(checked as boolean)}
               />
+              <Label htmlFor="actionRequired">Action Required?</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="adminEyesOnly"
+                checked={adminEyesOnly}
+                onCheckedChange={(checked) => setAdminEyesOnly(checked as boolean)}
+              />
+              <Label htmlFor="adminEyesOnly">Admin Eyes Only</Label>
+            </div>
+          </div>
+
+          {/* Notification Methods */}
+          <div>
+            <Label className="block text-sm font-medium mb-2">Send Notification By:</Label>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="emailNotif"
+                  checked={notificationMethods.email}
+                  onCheckedChange={(checked) => 
+                    setNotificationMethods(prev => ({ ...prev, email: checked as boolean }))
+                  }
+                />
+                <Label htmlFor="emailNotif" className="flex items-center">
+                  <Mail className="h-4 w-4 mr-1" />
+                  Email
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="mobileNotif"
+                  checked={notificationMethods.mobileApp}
+                  onCheckedChange={(checked) => 
+                    setNotificationMethods(prev => ({ ...prev, mobileApp: checked as boolean }))
+                  }
+                />
+                <Label htmlFor="mobileNotif" className="flex items-center">
+                  <Phone className="h-4 w-4 mr-1" />
+                  Mobile App
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="otherEmailNotif"
+                  checked={notificationMethods.otherEmail}
+                  onCheckedChange={(checked) => 
+                    setNotificationMethods(prev => ({ ...prev, otherEmail: checked as boolean }))
+                  }
+                />
+                <Label htmlFor="otherEmailNotif" className="flex items-center">
+                  <Mail className="h-4 w-4 mr-1" />
+                  Other Email Address
+                </Label>
+              </div>
             </div>
           </div>
         </div>
-      )}
-      
+      </div>
+
       <div className="p-4 border-t border-gray-200 bg-gray-50">
         <div className="flex items-center justify-between">
           <div>
