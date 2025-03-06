@@ -120,24 +120,6 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
 
   const handleTabChange = (value: string) => {
     onChange(value);
-    
-    if (id && branchName) {
-      if (value === "training-matrix" || value === "form-matrix" || value === "task-matrix") {
-        navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
-      } else if (value === "dashboard") {
-        navigate(`/branch-dashboard/${id}/${branchName}`);
-      } else {
-        navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
-      }
-    } else {
-      if (value === "training-matrix" || value === "form-matrix" || value === "task-matrix") {
-        navigate(`/workflow/${value}`);
-      } else if (value.includes("matrix") || value === "workflow") {
-        navigate(`/workflow/${value}`);
-      } else {
-        navigate(`/${value}`);
-      }
-    }
   };
   
   return (

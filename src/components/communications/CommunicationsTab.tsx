@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { MessageList } from "./MessageList";
 import { ContactSidebar } from "./ContactSidebar";
@@ -9,7 +10,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { MessageFilters } from "./MessageFilters";
 import { useToast } from "@/hooks/use-toast";
 
-export interface CommunicationsTabProps {
+interface CommunicationsTabProps {
   branchId: string;
 }
 
@@ -46,6 +47,7 @@ export const CommunicationsTab = ({ branchId }: CommunicationsTabProps) => {
   
   const handleContactSelect = (contactId: string) => {
     setSelectedContactId(contactId);
+    // On mobile, when selecting a contact directly start composing
     if (isMobile) {
       setIsComposing(true);
     }
@@ -53,6 +55,7 @@ export const CommunicationsTab = ({ branchId }: CommunicationsTabProps) => {
 
   const handleFilterChange = (filter: string) => {
     setSelectedFilter(filter);
+    // Don't clear selection here, let MessageList handle auto-selection
   };
 
   const handleFilterOptionsChange = (
@@ -63,11 +66,13 @@ export const CommunicationsTab = ({ branchId }: CommunicationsTabProps) => {
     setPriorityFilter(priority);
     setReadFilter(readStatus);
     setDateFilter(date);
+    // Don't clear selected message here, let MessageList handle auto-selection
   };
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
       <div className="flex h-[calc(100vh-230px)] min-h-[500px]">
+        {/* Left Sidebar - Contacts */}
         {(!isMobile || (!selectedMessageId && !isComposing)) && (
           <div className="w-full md:w-64 lg:w-80 border-r border-gray-200 flex flex-col">
             <ContactSidebar 
@@ -81,6 +86,7 @@ export const CommunicationsTab = ({ branchId }: CommunicationsTabProps) => {
           </div>
         )}
         
+        {/* Message List and Filters */}
         {(!isMobile || (selectedMessageId === null && !isComposing)) && (
           <div className={`${isMobile ? 'w-full' : isTablet ? 'w-1/2' : 'w-1/3'} border-r border-gray-200 flex flex-col`}>
             <div className="p-4 border-b border-gray-200">
@@ -117,6 +123,7 @@ export const CommunicationsTab = ({ branchId }: CommunicationsTabProps) => {
           </div>
         )}
         
+        {/* Message View or Composer */}
         {((!isMobile && (selectedMessageId || isComposing)) || 
           (isMobile && (selectedMessageId || isComposing))) && (
           <div className={`${isMobile ? 'w-full' : 'flex-1'} flex flex-col relative`}>

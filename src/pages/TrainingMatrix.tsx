@@ -73,9 +73,6 @@ const TrainingMatrix = () => {
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Check if we need to decode the branch name
-  const displayBranchName = branchName ? decodeURIComponent(branchName) : undefined;
-  
   const filteredData = trainingData.filter(
     staff => staff.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -85,11 +82,7 @@ const TrainingMatrix = () => {
     
     if (id && branchName) {
       // Branch context navigation
-      if (value === "dashboard") {
-        navigate(`/branch-dashboard/${id}/${branchName}`);
-      } else {
-        navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
-      }
+      navigate(`/branch-dashboard/${id}/${branchName}/${value === "dashboard" ? "" : value}`);
     } else {
       // Global context navigation
       if (value.includes("matrix") || value === "workflow") {
@@ -123,7 +116,7 @@ const TrainingMatrix = () => {
         {id && branchName && (
           <BranchHeader 
             id={id} 
-            branchName={displayBranchName || branchName} 
+            branchName={branchName} 
             onNewBooking={() => {}}
           />
         )}

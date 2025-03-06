@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -216,14 +217,12 @@ const mockBookings: Booking[] = [{
   status: "assigned"
 }];
 
-export interface BookingsTabProps {
+interface BookingsTabProps {
   branchId: string;
-  onNewBooking?: () => void;
 }
 
 export const BookingsTab: React.FC<BookingsTabProps> = ({
-  branchId,
-  onNewBooking
+  branchId
 }) => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [viewType, setViewType] = useState<"daily" | "weekly">("weekly"); // Default to weekly view
