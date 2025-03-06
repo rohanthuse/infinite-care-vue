@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { motion } from "framer-motion";
@@ -651,36 +652,38 @@ const BranchDashboard = () => {
           {activeTab === "clients" && (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-20 md:mb-0">
               <div className="p-6 border-b border-gray-100">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                   <div>
-                    <h2 className="text-xl font-bold text-gray-800">Clients</h2>
+                    <h2 className="text-2xl font-bold text-gray-800">Clients</h2>
                     <p className="text-gray-500 text-sm mt-1">
                       Manage all registered clients, view their details, and take administrative actions
                     </p>
                   </div>
-                  <Button className="bg-blue-600 hover:bg-blue-700 md:w-auto w-full">
+                  <Button className="bg-blue-600 hover:bg-blue-700 rounded-md">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Client
                   </Button>
                 </div>
                 
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-5 gap-4">
-                  <div className="md:col-span-2 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input 
-                      placeholder="Search client name, email or ID" 
-                      className="pl-10"
-                      value={clientSearchValue}
-                      onChange={(e) => setClientSearchValue(e.target.value)}
-                    />
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex-1 min-w-[240px]">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input 
+                        placeholder="Search client name, email or ID" 
+                        className="pl-10 pr-4 py-2 rounded-md bg-white border-gray-200"
+                        value={clientSearchValue}
+                        onChange={(e) => setClientSearchValue(e.target.value)}
+                      />
+                    </div>
                   </div>
                   
-                  <div>
+                  <div className="w-[180px]">
                     <Select 
                       value={statusFilter}
                       onValueChange={setStatusFilter}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full rounded-md border-gray-200">
                         <SelectValue placeholder="All Status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -694,9 +697,9 @@ const BranchDashboard = () => {
                     </Select>
                   </div>
                   
-                  <div>
+                  <div className="w-[180px]">
                     <Select value={regionFilter} onValueChange={setRegionFilter}>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full rounded-md border-gray-200">
                         <SelectValue placeholder="All Regions" />
                       </SelectTrigger>
                       <SelectContent>
@@ -711,52 +714,48 @@ const BranchDashboard = () => {
                     </Select>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
-                    <div className="flex-1">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start text-left font-normal"
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {fromDate ? format(fromDate, "dd/MM/yyyy") : "From date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <CalendarComponent
-                            mode="single"
-                            selected={fromDate}
-                            onSelect={setFromDate}
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    
-                    <div className="flex-1">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start text-left font-normal"
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {toDate ? format(toDate, "dd/MM/yyyy") : "To date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <CalendarComponent
-                            mode="single"
-                            selected={toDate}
-                            onSelect={setToDate}
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
+                  <div className="w-[180px]">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal border-gray-200 rounded-md"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {fromDate ? format(fromDate, "dd/MM/yyyy") : "From date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={fromDate}
+                          onSelect={setFromDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  
+                  <div className="w-[180px]">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal border-gray-200 rounded-md"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {toDate ? format(toDate, "dd/MM/yyyy") : "To date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={toDate}
+                          onSelect={setToDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
               </div>
@@ -764,24 +763,24 @@ const BranchDashboard = () => {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[100px]">Client ID</TableHead>
-                      <TableHead>Client Name</TableHead>
-                      <TableHead>Email Address</TableHead>
-                      <TableHead>Contact Number</TableHead>
-                      <TableHead>Company</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                    <TableRow className="bg-white hover:bg-gray-50/90">
+                      <TableHead className="text-gray-600 font-medium w-[100px]">Client ID</TableHead>
+                      <TableHead className="text-gray-600 font-medium">Client Name</TableHead>
+                      <TableHead className="text-gray-600 font-medium">Email Address</TableHead>
+                      <TableHead className="text-gray-600 font-medium">Contact Number</TableHead>
+                      <TableHead className="text-gray-600 font-medium">Company</TableHead>
+                      <TableHead className="text-gray-600 font-medium">Status</TableHead>
+                      <TableHead className="text-right"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paginatedClients.length > 0 ? (
                       paginatedClients.map((client) => (
-                        <TableRow key={client.id} className="hover:bg-gray-50">
+                        <TableRow key={client.id} className="hover:bg-gray-50 border-t border-gray-100">
                           <TableCell className="font-medium">{client.id}</TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm">
+                            <div className="flex items-center gap-3">
+                              <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm">
                                 {client.avatar}
                               </div>
                               <span>{client.name}</span>
@@ -794,9 +793,10 @@ const BranchDashboard = () => {
                             <Badge 
                               variant="outline" 
                               className={`
-                                ${client.status === "Active" ? "bg-green-50 text-green-700 border-green-200" : ""}
-                                ${client.status === "Inactive" ? "bg-gray-50 text-gray-700 border-gray-200" : ""}
-                                ${client.status === "Pending" ? "bg-amber-50 text-amber-700 border-amber-200" : ""}
+                                ${client.status === "Active" ? "bg-green-50 text-green-700 border-0" : ""}
+                                ${client.status === "Inactive" ? "bg-gray-50 text-gray-700 border-0" : ""}
+                                ${client.status === "Pending" ? "bg-amber-50 text-amber-700 border-0" : ""}
+                                px-4 py-1 rounded-full
                               `}
                             >
                               {client.status}
