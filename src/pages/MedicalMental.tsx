@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { DashboardNavbar } from "@/components/DashboardNavbar";
+import { TabNavigation } from "@/components/TabNavigation";
 import { ParameterTable } from "@/components/ParameterTable";
 import { Stethoscope, Plus } from "lucide-react";
 import { motion } from "framer-motion";
@@ -36,6 +36,7 @@ const categoriesData = [
 
 const MedicalMental = () => {
   const [activeTab, setActiveTab] = useState("conditions");
+  const [navigationTab, setNavigationTab] = useState("medicalMental");
   const [conditions, setConditions] = useState(conditionsData);
   const [categories, setCategories] = useState(categoriesData);
   const [filteredConditions, setFilteredConditions] = useState(conditions);
@@ -153,10 +154,14 @@ const MedicalMental = () => {
     }
   };
   
+  const handleNavigationChange = (value: string) => {
+    setNavigationTab(value);
+  };
+  
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
-      <DashboardNavbar />
+      <TabNavigation activeTab={navigationTab} onChange={handleNavigationChange} />
       
       <motion.main 
         className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"

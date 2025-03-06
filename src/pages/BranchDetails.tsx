@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { DashboardNavbar } from "@/components/DashboardNavbar";
+import { TabNavigation } from "@/components/TabNavigation";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
@@ -19,10 +18,9 @@ const BranchDetails = () => {
   const navigate = useNavigate();
   const [branchData, setBranchData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("branchDetails");
 
-  // Mock data for branch details
   useEffect(() => {
-    // In a real app, this would be an API call to fetch the branch by ID
     const fetchBranchData = () => {
       setLoading(true);
       setTimeout(() => {
@@ -84,6 +82,10 @@ const BranchDetails = () => {
     }
   };
 
+  const handleNavigationChange = (value: string) => {
+    setActiveTab(value);
+  };
+
   const StatCard = ({ icon: Icon, title, value, color }: { icon: any, title: string, value: number | string, color: string }) => (
     <div className={`bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex flex-col`}>
       <div className="flex items-center mb-2">
@@ -99,7 +101,7 @@ const BranchDetails = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
-      <DashboardNavbar />
+      <TabNavigation activeTab={activeTab} onChange={handleNavigationChange} />
       
       <motion.main 
         className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"

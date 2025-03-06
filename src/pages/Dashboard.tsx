@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { DashboardNavbar } from "@/components/DashboardNavbar";
+import { TabNavigation } from "@/components/TabNavigation";
 import { AdminsTable } from "@/components/AdminsTable";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
@@ -11,6 +11,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("dashboard"); // Set the active tab
   
   // In a real app, you would check auth status here
   useEffect(() => {
@@ -28,6 +29,11 @@ const Dashboard = () => {
     return () => clearTimeout(timer);
   }, []);
   
+  const handleNavigationChange = (value: string) => {
+    setActiveTab(value);
+    // In a real app, you would navigate to the appropriate page here
+  };
+  
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
@@ -42,7 +48,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
-      <DashboardNavbar />
+      <TabNavigation activeTab={activeTab} onChange={handleNavigationChange} />
       
       <motion.main 
         className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"
