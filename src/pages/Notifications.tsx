@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Bell, Users, User, Calendar, Pill, FileText, 
@@ -34,11 +34,15 @@ interface NotificationCategory {
 }
 
 const Notifications = () => {
-  const { id, branchName } = useParams<{ id: string; branchName: string }>();
+  const { id, branchName, categoryId } = useParams<{ id: string; branchName: string; categoryId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [tab, setTab] = useState("notifications");
   const [filter, setFilter] = useState("all");
   const { toast } = useToast();
+  
+  // Determine if we're in branch context
+  const isInBranchContext = location.pathname.includes('/branch-dashboard/');
   
   const notificationCategories: NotificationCategory[] = [
     {
@@ -126,18 +130,26 @@ const Notifications = () => {
   };
   
   const handleCategoryClick = (categoryId: string) => {
-    // Fix the navigation path to use the actual id and branchName values, not the parameter names
-    if (id && branchName) {
+    if (isInBranchContext && id && branchName) {
+      // If we're in branch context, navigate to the branch-specific notification page
       navigate(`/branch-dashboard/${id}/${branchName}/notifications/${categoryId}`);
     } else {
-      // Handle the case when accessed from the main notifications page
+      // If we're on the main notifications page
       navigate(`/notifications/${categoryId}`);
     }
   };
   
+  // Effect to handle selected category if present in URL
+  useEffect(() => {
+    if (categoryId) {
+      console.log("Selected category:", categoryId);
+      // Add any logic needed for the selected category
+    }
+  }, [categoryId]);
+  
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <BranchSidebar branchName={branchName || "Branch"} />
+      {isInBranchContext && <BranchSidebar branchName={branchName || "Branch"} />}
       <div className="flex-1">
         <DashboardHeader />
         <div className="container mx-auto px-4 py-6">
@@ -149,6 +161,11 @@ const Notifications = () => {
                 <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                   <Bell className="h-8 w-8 text-blue-600" />
                   Notification Overview
+                  {categoryId && (
+                    <Badge variant="outline" className="ml-2">
+                      {notificationCategories.find(c => c.id === categoryId)?.title || categoryId}
+                    </Badge>
+                  )}
                 </h1>
                 <p className="text-gray-500 mt-2">
                   Manage and monitor all notifications from different categories

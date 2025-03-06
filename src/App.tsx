@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,7 +26,6 @@ import Notifications from "./pages/Notifications";
 import { useState } from "react";
 
 function App() {
-  // Create a new QueryClient instance inside the component
   const [queryClient] = useState(() => new QueryClient());
 
   return (
@@ -41,11 +39,11 @@ function App() {
             <Route path="/super-admin" element={<SuperAdminLogin />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/notifications/:categoryId" element={<Notifications />} />
             <Route path="/services" element={<Services />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/agreement" element={<Agreement />} />
             
-            {/* Key Parameters Routes */}
             <Route path="/hobbies" element={<Hobbies />} />
             <Route path="/skills" element={<Skills />} />
             <Route path="/medical-mental" element={<MedicalMental />} />
@@ -55,7 +53,6 @@ function App() {
             <Route path="/branch-details/:id" element={<BranchDetails />} />
             <Route path="/branch-admins" element={<BranchAdmins />} />
             
-            {/* Branch Dashboard Routes */}
             <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
             <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
@@ -63,7 +60,6 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/notifications" element={<Notifications />} />
             <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
             
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

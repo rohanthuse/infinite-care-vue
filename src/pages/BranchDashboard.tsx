@@ -427,7 +427,7 @@ const BranchDashboard = () => {
   };
 
   const handleWorkflowNavigation = (path: string) => {
-    navigate(`/branch/${id}/${encodeURIComponent(displayBranchName)}/${path}`);
+    navigate(`/branch-dashboard/${id}/${encodeURIComponent(displayBranchName)}/${path}`);
   };
 
   useEffect(() => {
