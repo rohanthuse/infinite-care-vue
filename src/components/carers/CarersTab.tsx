@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
   SearchIcon, Filter, UserCheck, Download, RefreshCw, 
-  Plus, Edit, EyeIcon, HelpCircle, CheckCircle, 
+  Edit, EyeIcon, HelpCircle, CheckCircle, 
   ChevronLeft, ChevronRight 
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CarerFilters } from "./CarerFilters";
+import { AddCarerDialog } from "./AddCarerDialog";
+import { useToast } from "@/hooks/use-toast";
 
 const mockCarers = [
   {
@@ -120,14 +121,16 @@ interface CarersTabProps {
 export const CarersTab = ({ branchId }: CarersTabProps) => {
   const { id, branchName } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [specializationFilter, setSpecializationFilter] = useState("all");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [carers, setCarers] = useState(mockCarers);
   const itemsPerPage = 5;
 
-  const filteredCarers = mockCarers.filter(carer => {
+  const filteredCarers = carers.filter(carer => {
     const matchesSearch = 
       carer.name.toLowerCase().includes(searchValue.toLowerCase()) ||
       carer.email.toLowerCase().includes(searchValue.toLowerCase()) ||
@@ -162,6 +165,31 @@ export const CarersTab = ({ branchId }: CarersTabProps) => {
     navigate(`/branch-dashboard/${id}/${branchName}/carers/${carerId}`);
   };
 
+  const handleAddCarer = (data: any) => {
+    const newCarerId = `CR-${String(carers.length + 1).padStart(3, '0')}`;
+    
+    const newCarer = {
+      id: newCarerId,
+      name: `${data.lastName}, ${data.firstName}`,
+      email: data.email,
+      phone: data.phone,
+      location: data.location,
+      status: "Active",
+      avatar: `${data.firstName.charAt(0)}${data.lastName.charAt(0)}`,
+      experience: data.experience || "New hire",
+      specialization: data.specialization,
+      availability: data.availability
+    };
+    
+    setCarers([...carers, newCarer]);
+    
+    toast({
+      title: "Carer Added Successfully",
+      description: `${data.firstName} ${data.lastName} has been added to your carers list.`,
+      variant: "default",
+    });
+  };
+
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, specializationFilter, availabilityFilter, searchValue]);
@@ -176,10 +204,7 @@ export const CarersTab = ({ branchId }: CarersTabProps) => {
               Manage carers and care staff, view their details, and track assignments
             </p>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-700 rounded-md">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Carer
-          </Button>
+          <AddCarerDialog onAddCarer={handleAddCarer} />
         </div>
         
         <CarerFilters 
