@@ -17,36 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TabNavigation } from "@/components/TabNavigation";
 import { BookingsTab } from "@/components/bookings/BookingsTab";
-import { 
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { CarersTab } from "@/components/carers/CarersTab";
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { NewBookingDialog } from "@/components/bookings/NewBookingDialog";
 import {
@@ -774,6 +745,10 @@ const BranchDashboard = () => {
             <BookingsTab branchId={id || "1"} />
           )}
           
+          {activeTab === "carers" && (
+            <CarersTab branchId={id || "1"} />
+          )}
+          
           {activeTab === "clients" && (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-20 md:mb-0">
               <div className="p-6 border-b border-gray-100">
@@ -996,7 +971,7 @@ const BranchDashboard = () => {
             </div>
           )}
           
-          {activeTab !== "dashboard" && activeTab !== "clients" && activeTab !== "bookings" && (
+          {activeTab !== "dashboard" && activeTab !== "clients" && activeTab !== "bookings" && activeTab !== "carers" && (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center mb-20 md:mb-0">
               <h2 className="text-xl font-medium text-gray-700 mb-2">
                 {activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace(/-/g, ' ')} Page
