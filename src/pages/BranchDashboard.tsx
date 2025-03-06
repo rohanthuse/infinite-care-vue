@@ -48,6 +48,7 @@ import {
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { AddClientDialog } from "@/components/AddClientDialog";
+import { NewBookingDialog } from "@/components/bookings/NewBookingDialog";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, Legend, LineChart,
@@ -196,6 +197,7 @@ const BranchDashboard = () => {
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState(1);
   const [addClientDialogOpen, setAddClientDialogOpen] = useState(false);
+  const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
   const itemsPerPage = 5;
   
   const displayBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
@@ -230,6 +232,84 @@ const BranchDashboard = () => {
     }
   };
 
+  const handleNewBooking = () => {
+    setNewBookingDialogOpen(true);
+  };
+
+  const mockClients = [{
+    id: "CL-001",
+    name: "Pender, Eva",
+    initials: "EP",
+    bookingCount: 3
+  }, {
+    id: "CL-002",
+    name: "Fulcher, Patricia",
+    initials: "FP",
+    bookingCount: 2
+  }, {
+    id: "CL-003",
+    name: "Baulch, Ursula",
+    initials: "BU",
+    bookingCount: 1
+  }, {
+    id: "CL-004",
+    name: "Ren, Victoria",
+    initials: "RV",
+    bookingCount: 2
+  }, {
+    id: "CL-005",
+    name: "Iyaniwura, Ifeoluwa",
+    initials: "II",
+    bookingCount: 1
+  }, {
+    id: "CL-006",
+    name: "Careville Ltd",
+    initials: "CL",
+    bookingCount: 4
+  }, {
+    id: "CL-007",
+    name: "Johnson, Andrew",
+    initials: "JA",
+    bookingCount: 2
+  }, {
+    id: "CL-008",
+    name: "Mistry, Sanjay",
+    initials: "MS",
+    bookingCount: 3
+  }];
+
+  const mockCarers = [{
+    id: "CA-001",
+    name: "Charuma, Charmaine",
+    initials: "CC",
+    bookingCount: 4
+  }, {
+    id: "CA-002",
+    name: "Warren, Susan",
+    initials: "WS",
+    bookingCount: 3
+  }, {
+    id: "CA-003",
+    name: "Ayo-Famure, Opeyemi",
+    initials: "AF",
+    bookingCount: 3
+  }, {
+    id: "CA-004",
+    name: "Smith, John",
+    initials: "SJ",
+    bookingCount: 2
+  }, {
+    id: "CA-005",
+    name: "Williams, Mary",
+    initials: "WM",
+    bookingCount: 1
+  }];
+
+  const handleCreateBooking = (bookingData: any) => {
+    console.log("Creating new booking:", bookingData);
+    setNewBookingDialogOpen(false);
+  };
+
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, regionFilter, clientSearchValue]);
@@ -242,6 +322,15 @@ const BranchDashboard = () => {
       <AddClientDialog 
         open={addClientDialogOpen} 
         onOpenChange={setAddClientDialogOpen} 
+      />
+      
+      {/* New Booking Dialog */}
+      <NewBookingDialog
+        open={newBookingDialogOpen}
+        onOpenChange={setNewBookingDialogOpen}
+        clients={mockClients}
+        carers={mockCarers}
+        onCreateBooking={handleCreateBooking}
       />
       
       <main className="flex-1 container px-4 pt-4 pb-20 md:py-6 mx-auto">
@@ -286,6 +375,7 @@ const BranchDashboard = () => {
             <Button 
               variant="default" 
               className="h-9 bg-blue-600 hover:bg-blue-700 rounded-full px-3 shadow-sm"
+              onClick={handleNewBooking}
             >
               <Plus className="h-4 w-4 mr-1" />
               <span>New Booking</span>
@@ -971,7 +1061,7 @@ const ActionItem = ({
         </div>
         <div>
           <p className="font-medium">{title}</p>
-          <p className="text-sm text-gray-500">{name}</p>
+          <p className="text-xs text-gray-500">{name}</p>
         </div>
       </div>
       <div className="flex items-center gap-3">
