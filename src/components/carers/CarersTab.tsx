@@ -11,8 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CarerFilters } from "./CarerFilters";
+import { CarerProfileDialog } from "./CarerProfileDialog";
 
-// Mock data for carers
 const mockCarers = [
   {
     id: "CR-001",
@@ -123,8 +123,9 @@ export const CarersTab = ({ branchId }: CarersTabProps) => {
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
-  
-  // Filter carers based on search term, status, specialization, and availability
+  const [selectedCarer, setSelectedCarer] = useState<any>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+
   const filteredCarers = mockCarers.filter(carer => {
     const matchesSearch = 
       carer.name.toLowerCase().includes(searchValue.toLowerCase()) ||
@@ -137,20 +138,19 @@ export const CarersTab = ({ branchId }: CarersTabProps) => {
     
     return matchesSearch && matchesStatus && matchesSpecialization && matchesAvailability;
   });
-  
-  // Pagination
+
   const totalPages = Math.ceil(filteredCarers.length / itemsPerPage);
   const paginatedCarers = filteredCarers.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-  
+
   const handlePreviousPage = () => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
     }
   };
-  
+
   const handleNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
@@ -158,7 +158,6 @@ export const CarersTab = ({ branchId }: CarersTabProps) => {
   };
 
   useEffect(() => {
-    // Reset to first page when filters change
     setCurrentPage(1);
   }, [statusFilter, specializationFilter, availabilityFilter, searchValue]);
 
@@ -237,7 +236,15 @@ export const CarersTab = ({ branchId }: CarersTabProps) => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8"
+                        onClick={() => {
+                          setSelectedCarer(carer);
+                          setProfileOpen(true);
+                        }}
+                      >
                         <EyeIcon className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -289,6 +296,14 @@ export const CarersTab = ({ branchId }: CarersTabProps) => {
             </Button>
           </div>
         </div>
+      )}
+      
+      {selectedCarer && (
+        <CarerProfileDialog
+          open={profileOpen}
+          onOpenChange={setProfileOpen}
+          carer={selectedCarer}
+        />
       )}
     </div>
   );
