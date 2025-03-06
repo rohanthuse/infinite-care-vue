@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -58,7 +57,8 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   const [selectedCarerId, setSelectedCarerId] = useState<string | null>(null);
   const [showHalfHours, setShowHalfHours] = useState(true);
   
-  // Generate time slots with half-hour increments if enabled
+  const hourHeight = 60; // height in px for one hour
+  
   const timeSlots = showHalfHours
     ? Array.from({ length: 48 }, (_, i) => {
         const hour = Math.floor(i / 2);
@@ -69,7 +69,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
         i.toString().padStart(2, '0') + ":00"
       );
   
-  // Get week dates for weekly view
   const getWeekDates = () => {
     const weekStart = startOfWeek(date, { weekStartsOn: 1 }); // Monday as start of week
     return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -77,11 +76,9 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   
   const weekDates = getWeekDates();
   
-  // Toggle full screen mode
   const toggleFullScreen = () => {
     setIsFullScreen(!isFullScreen);
     
-    // Prevent body scrolling when in full screen
     if (!isFullScreen) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -89,7 +86,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     }
   };
   
-  // Handle ESC key to exit full screen
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isFullScreen) {
@@ -105,7 +101,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     };
   }, [isFullScreen]);
   
-  // Group bookings by client and carer
   const clientBookings = clients.map(client => {
     return {
       ...client,
@@ -120,7 +115,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     };
   });
   
-  // Filter the client/carer lists based on selection
   const displayedClients = selectedClientId 
     ? clientBookings.filter(c => c.id === selectedClientId)
     : clientBookings;
@@ -129,7 +123,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     ? carerBookings.filter(c => c.id === selectedCarerId)
     : carerBookings;
   
-  // Get current time to display time marker
   const [currentTime, setCurrentTime] = useState(new Date());
   
   useEffect(() => {
@@ -140,7 +133,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     return () => clearInterval(interval);
   }, []);
   
-  // Check if a date is today
   const isToday = (someDate: Date) => {
     const today = new Date();
     return someDate.getDate() === today.getDate() &&
@@ -148,7 +140,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
       someDate.getFullYear() === today.getFullYear();
   };
   
-  // Calculate time percentage for current time marker
   const getCurrentTimePercentage = () => {
     const totalMinutes = 24 * 60;
     const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
@@ -205,7 +196,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-4 p-4">
-        {/* Client Section */}
         <div>
           <h3 className="text-sm font-semibold mb-3 flex items-center">
             Clients
@@ -217,9 +207,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
           </h3>
           
           {viewType === "daily" ? (
-            // Daily view (horizontal time)
             <div className="relative">
-              {/* Time Indicator Header */}
               <div className="absolute top-0 left-0 w-full h-11 flex">
                 <div className="w-36 flex-shrink-0"></div>
                 <div className={`flex-grow ${showHalfHours ? 'grid-cols-48' : 'grid-cols-24'} grid gap-0`}>
@@ -236,7 +224,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                 </div>
               </div>
               
-              {/* Current Time Line - only show on current day */}
               {new Date().toDateString() === date.toDateString() && (
                 <div 
                   className="time-marker" 
@@ -250,7 +237,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                 </div>
               )}
               
-              {/* Client Rows */}
               <div className="mt-11 relative">
                 {displayedClients.map((client, index) => (
                   <div 
@@ -273,9 +259,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                       </div>
                     </div>
                     
-                    {/* Time Grid for Client */}
                     <div className={`flex-grow ${showHalfHours ? 'grid-cols-48' : 'grid-cols-24'} grid gap-0 relative`}>
-                      {/* Grid Background */}
                       {timeSlots.map((_, i) => (
                         <div 
                           key={i} 
@@ -285,14 +269,12 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                         ></div>
                       ))}
                       
-                      {/* Booking Entries */}
                       {client.bookings
                         .filter(booking => booking.date === date.toISOString().split('T')[0])
                         .map((booking) => {
                           const [startHour, startMin] = booking.startTime.split(':').map(Number);
                           const [endHour, endMin] = booking.endTime.split(':').map(Number);
                           
-                          // Calculate position and width based on time
                           const startInMinutes = startHour * 60 + startMin;
                           const endInMinutes = endHour * 60 + endMin;
                           const dayInMinutes = 24 * 60;
@@ -318,9 +300,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
               </div>
             </div>
           ) : (
-            // Weekly view (vertical time)
             <div className="weekly-grid clients-grid">
-              {/* Header with days */}
               <div className="weekly-grid-header">
                 <div className="time-column">
                   <div className="time-header">Time</div>
@@ -333,20 +313,15 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                 ))}
               </div>
               
-              {/* Grid body */}
               <div className="weekly-grid-body">
-                {/* Time slots */}
-                <div className="time-slots">
-                  {timeSlots
-                    .filter((_, i) => !showHalfHours || i % 2 === 0) // Only show full hours if half-hours are disabled
-                    .map((time, i) => (
-                      <div key={i} className="time-slot">
-                        <span>{time}</span>
-                      </div>
-                    ))}
-                </div>
+                {timeSlots
+                  .filter((_, i) => !showHalfHours || i % 2 === 0)
+                  .map((time, i) => (
+                    <div key={i} className="time-slot">
+                      <span>{time}</span>
+                    </div>
+                  ))}
                 
-                {/* Day columns for each client */}
                 {displayedClients.map((client) => (
                   <div 
                     key={client.id} 
@@ -367,27 +342,21 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                             key={dayIndex} 
                             className={`day-column ${isToday(day) ? 'today' : ''}`}
                           >
-                            {/* Time grid background */}
                             {timeSlots
                               .filter((_, i) => !showHalfHours || i % 2 === 0)
                               .map((_, timeIndex) => (
                                 <div key={timeIndex} className="time-cell"></div>
                               ))}
                             
-                            {/* Booking entries */}
                             {dayBookings.map((booking) => {
                               const [startHour, startMin] = booking.startTime.split(':').map(Number);
                               const [endHour, endMin] = booking.endTime.split(':').map(Number);
                               
-                              // Calculate position and height
                               const startInMinutes = startHour * 60 + startMin;
                               const endInMinutes = endHour * 60 + endMin;
-                              const hourHeight = 60; // height in px for one hour
                               
-                              // Adjust for half-hour display
                               const hourMultiplier = showHalfHours ? 0.5 : 1;
                               const displayedHours = showHalfHours ? 24 : 24;
-                              const scaleHeight = (hourHeight * displayedHours) / 24;
                               
                               const top = (startInMinutes / 60) * hourHeight / hourMultiplier;
                               const height = ((endInMinutes - startInMinutes) / 60) * hourHeight / hourMultiplier;
@@ -407,7 +376,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                               );
                             })}
                             
-                            {/* Current time indicator */}
                             {isToday(day) && (
                               <div 
                                 className="current-time-indicator" 
@@ -431,7 +399,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
           )}
         </div>
         
-        {/* Carer Section */}
         <div>
           <h3 className="text-sm font-semibold mb-3 flex items-center">
             Carers
@@ -443,9 +410,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
           </h3>
           
           {viewType === "daily" ? (
-            // Daily view (horizontal time)
             <div className="relative">
-              {/* Time Indicator Line */}
               <div className="absolute top-0 left-0 w-full h-11 flex">
                 <div className="w-36 flex-shrink-0"></div>
                 <div className={`flex-grow ${showHalfHours ? 'grid-cols-48' : 'grid-cols-24'} grid gap-0`}>
@@ -462,7 +427,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                 </div>
               </div>
               
-              {/* Current Time Line - only show on current day */}
               {new Date().toDateString() === date.toDateString() && (
                 <div 
                   className="time-marker" 
@@ -476,7 +440,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                 </div>
               )}
               
-              {/* Carer Rows */}
               <div className="mt-11 relative">
                 {displayedCarers.map((carer, index) => (
                   <div 
@@ -499,9 +462,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                       </div>
                     </div>
                     
-                    {/* Time Grid for Carer */}
                     <div className={`flex-grow ${showHalfHours ? 'grid-cols-48' : 'grid-cols-24'} grid gap-0 relative`}>
-                      {/* Grid Background */}
                       {timeSlots.map((_, i) => (
                         <div 
                           key={i} 
@@ -511,14 +472,12 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                         ></div>
                       ))}
                       
-                      {/* Booking Entries */}
                       {carer.bookings
                         .filter(booking => booking.date === date.toISOString().split('T')[0])
                         .map((booking) => {
                           const [startHour, startMin] = booking.startTime.split(':').map(Number);
                           const [endHour, endMin] = booking.endTime.split(':').map(Number);
                           
-                          // Calculate position and width based on time
                           const startInMinutes = startHour * 60 + startMin;
                           const endInMinutes = endHour * 60 + endMin;
                           const dayInMinutes = 24 * 60;
@@ -544,9 +503,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
               </div>
             </div>
           ) : (
-            // Weekly view (vertical time)
             <div className="weekly-grid carers-grid">
-              {/* Header with days */}
               <div className="weekly-grid-header">
                 <div className="time-column">
                   <div className="time-header">Time</div>
@@ -559,20 +516,15 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                 ))}
               </div>
               
-              {/* Grid body */}
               <div className="weekly-grid-body">
-                {/* Time slots */}
-                <div className="time-slots">
-                  {timeSlots
-                    .filter((_, i) => !showHalfHours || i % 2 === 0)
-                    .map((time, i) => (
-                      <div key={i} className="time-slot">
-                        <span>{time}</span>
-                      </div>
-                    ))}
-                </div>
+                {timeSlots
+                  .filter((_, i) => !showHalfHours || i % 2 === 0)
+                  .map((time, i) => (
+                    <div key={i} className="time-slot">
+                      <span>{time}</span>
+                    </div>
+                  ))}
                 
-                {/* Day columns for each carer */}
                 {displayedCarers.map((carer) => (
                   <div 
                     key={carer.id} 
@@ -593,27 +545,21 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                             key={dayIndex} 
                             className={`day-column ${isToday(day) ? 'today' : ''}`}
                           >
-                            {/* Time grid background */}
                             {timeSlots
                               .filter((_, i) => !showHalfHours || i % 2 === 0)
                               .map((_, timeIndex) => (
                                 <div key={timeIndex} className="time-cell"></div>
                               ))}
                             
-                            {/* Booking entries */}
                             {dayBookings.map((booking) => {
                               const [startHour, startMin] = booking.startTime.split(':').map(Number);
                               const [endHour, endMin] = booking.endTime.split(':').map(Number);
                               
-                              // Calculate position and height
                               const startInMinutes = startHour * 60 + startMin;
                               const endInMinutes = endHour * 60 + endMin;
-                              const hourHeight = 60; // height in px for one hour
                               
-                              // Adjust for half-hour display
                               const hourMultiplier = showHalfHours ? 0.5 : 1;
                               const displayedHours = showHalfHours ? 24 : 24;
-                              const scaleHeight = (hourHeight * displayedHours) / 24;
                               
                               const top = (startInMinutes / 60) * hourHeight / hourMultiplier;
                               const height = ((endInMinutes - startInMinutes) / 60) * hourHeight / hourMultiplier;
@@ -633,12 +579,11 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                               );
                             })}
                             
-                            {/* Current time indicator */}
                             {isToday(day) && (
                               <div 
                                 className="current-time-indicator" 
                                 style={{ 
-                                  top: `${(currentTime.getHours() * 60 + currentTime.getMinutes()) / 60 * 60}px` 
+                                  top: `${(currentTime.getHours() * 60 + currentTime.getMinutes()) / 60 * hourHeight}px` 
                                 }}
                               >
                                 <div className="current-time-label">
