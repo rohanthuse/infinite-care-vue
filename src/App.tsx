@@ -23,6 +23,7 @@ import CarerProfilePage from "./pages/CarerProfilePage";
 import ApplicationDetailsPage from "./components/carers/ApplicationDetailsPage";
 import PostJobPage from "./components/carers/PostJobPage";
 import Notifications from "./pages/Notifications";
+import TaskMatrix from "./pages/TaskMatrix";
 import { useState } from "react";
 
 function App() {
@@ -59,7 +60,8 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
             <Route path="/branch-dashboard/:id/:branchName/notifications" element={<Notifications />} />
             <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
-            
+            <Route path="/workflow/task-matrix" element={<TaskMatrix />} />
+            <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
