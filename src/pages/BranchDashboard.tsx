@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -101,6 +100,7 @@ const clients = [
     company: "Personal",
     status: "Active",
     avatar: "WS",
+    region: "North"
   },
   {
     id: "CL-2356",
@@ -108,8 +108,9 @@ const clients = [
     email: "john.michael@hotmail.com",
     phone: "+44 20 7946 1122",
     company: "Personal",
-    status: "Inactive",
+    status: "New Enquiries",
     avatar: "JM",
+    region: "South"
   },
   {
     id: "CL-9876",
@@ -117,8 +118,9 @@ const clients = [
     email: "lisa.rod@outlook.com",
     phone: "+44 20 7946 3344",
     company: "Care Solutions Ltd",
-    status: "Active",
+    status: "Actively Assessing",
     avatar: "LR",
+    region: "East"
   },
   {
     id: "CL-5432",
@@ -126,8 +128,9 @@ const clients = [
     email: "kate.w@company.co.uk",
     phone: "+44 20 7946 5566",
     company: "Personal",
-    status: "Pending",
+    status: "Closed Enquiries",
     avatar: "KW",
+    region: "West"
   },
   {
     id: "CL-7890",
@@ -135,8 +138,39 @@ const clients = [
     email: "r.johnson@gmail.com",
     phone: "+44 20 7946 7788",
     company: "Eldercare Services",
-    status: "Active",
+    status: "Former",
     avatar: "RJ",
+    region: "North"
+  },
+  {
+    id: "CL-1122",
+    name: "Emma Thompson",
+    email: "emma.t@gmail.com",
+    phone: "+44 20 7946 9900",
+    company: "Personal",
+    status: "New Enquiries",
+    avatar: "ET",
+    region: "South"
+  },
+  {
+    id: "CL-3344",
+    name: "David Wilson",
+    email: "d.wilson@company.org",
+    phone: "+44 20 7946 1234",
+    company: "Care Group UK",
+    status: "Active",
+    avatar: "DW",
+    region: "East"
+  },
+  {
+    id: "CL-5566",
+    name: "Olivia Parker",
+    email: "olivia.p@outlook.com",
+    phone: "+44 20 7946 5678",
+    company: "Personal",
+    status: "Actively Assessing",
+    avatar: "OP",
+    region: "West"
   },
 ];
 
@@ -161,9 +195,10 @@ const BranchDashboard = () => {
       client.email.toLowerCase().includes(clientSearchValue.toLowerCase()) ||
       client.id.toLowerCase().includes(clientSearchValue.toLowerCase());
     
-    const matchesStatus = statusFilter === "all" || client.status.toLowerCase() === statusFilter.toLowerCase();
+    const matchesStatus = statusFilter === "all" || client.status === statusFilter;
+    const matchesRegion = regionFilter === "all" || client.region === regionFilter;
     
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesRegion;
   });
   
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
@@ -183,6 +218,10 @@ const BranchDashboard = () => {
       setCurrentPage(currentPage + 1);
     }
   };
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, regionFilter, clientSearchValue]);
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
@@ -686,12 +725,14 @@ const BranchDashboard = () => {
                       <SelectTrigger className="w-full rounded-md border-gray-200">
                         <SelectValue placeholder="All Status" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white">
                         <SelectGroup>
                           <SelectItem value="all">All Status</SelectItem>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="inactive">Inactive</SelectItem>
-                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="New Enquiries">New Enquiries</SelectItem>
+                          <SelectItem value="Actively Assessing">Actively Assessing</SelectItem>
+                          <SelectItem value="Active">Active</SelectItem>
+                          <SelectItem value="Closed Enquiries">Closed Enquiries</SelectItem>
+                          <SelectItem value="Former">Former</SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>
@@ -702,13 +743,13 @@ const BranchDashboard = () => {
                       <SelectTrigger className="w-full rounded-md border-gray-200">
                         <SelectValue placeholder="All Regions" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white">
                         <SelectGroup>
                           <SelectItem value="all">All Regions</SelectItem>
-                          <SelectItem value="north">North</SelectItem>
-                          <SelectItem value="south">South</SelectItem>
-                          <SelectItem value="east">East</SelectItem>
-                          <SelectItem value="west">West</SelectItem>
+                          <SelectItem value="North">North</SelectItem>
+                          <SelectItem value="South">South</SelectItem>
+                          <SelectItem value="East">East</SelectItem>
+                          <SelectItem value="West">West</SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>
@@ -725,7 +766,7 @@ const BranchDashboard = () => {
                           {fromDate ? format(fromDate, "dd/MM/yyyy") : "From date"}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 bg-white" align="start">
                         <CalendarComponent
                           mode="single"
                           selected={fromDate}
@@ -747,7 +788,7 @@ const BranchDashboard = () => {
                           {toDate ? format(toDate, "dd/MM/yyyy") : "To date"}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 bg-white" align="start">
                         <CalendarComponent
                           mode="single"
                           selected={toDate}
@@ -794,8 +835,10 @@ const BranchDashboard = () => {
                               variant="outline" 
                               className={`
                                 ${client.status === "Active" ? "bg-green-50 text-green-700 border-0" : ""}
-                                ${client.status === "Inactive" ? "bg-gray-50 text-gray-700 border-0" : ""}
-                                ${client.status === "Pending" ? "bg-amber-50 text-amber-700 border-0" : ""}
+                                ${client.status === "New Enquiries" ? "bg-blue-50 text-blue-700 border-0" : ""}
+                                ${client.status === "Actively Assessing" ? "bg-purple-50 text-purple-700 border-0" : ""}
+                                ${client.status === "Closed Enquiries" ? "bg-gray-50 text-gray-700 border-0" : ""}
+                                ${client.status === "Former" ? "bg-amber-50 text-amber-700 border-0" : ""}
                                 px-4 py-1 rounded-full
                               `}
                             >
