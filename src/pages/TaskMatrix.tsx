@@ -76,18 +76,24 @@ const TaskMatrix = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   
-  // Always set activeTab to task-matrix for consistent menu highlighting
-  const activeTab = "task-matrix";
+  // Set active tab based on route context
+  const activeTab = location.pathname.includes("/workflow/") 
+    ? "workflow" 
+    : "task-matrix";
 
   const handleChangeTab = (value: string) => {
     if (id && branchName) {
       if (value === "dashboard") {
         navigate(`/branch-dashboard/${id}/${branchName}`);
+      } else if (value === "workflow") {
+        navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
       } else {
         navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
       }
     } else {
-      if (value.includes("matrix") || value === "workflow") {
+      if (value === "workflow") {
+        navigate(`/workflow/task-matrix`);
+      } else if (value.includes("matrix")) {
         navigate(`/workflow/${value}`);
       } else {
         navigate(`/${value}`);

@@ -74,18 +74,24 @@ const FormMatrix = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("all");
   
-  // Always set activeTab to form-matrix for consistent menu highlighting
-  const activeTab = "form-matrix";
+  // Set active tab based on route context
+  const activeTab = location.pathname.includes("/workflow/") 
+    ? "workflow" 
+    : "form-matrix";
 
   const handleChangeTab = (value: string) => {
     if (id && branchName) {
       if (value === "dashboard") {
         navigate(`/branch-dashboard/${id}/${branchName}`);
+      } else if (value === "workflow") {
+        navigate(`/branch-dashboard/${id}/${branchName}/form-matrix`);
       } else {
         navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
       }
     } else {
-      if (value.includes("matrix") || value === "workflow") {
+      if (value === "workflow") {
+        navigate(`/workflow/form-matrix`);
+      } else if (value.includes("matrix")) {
         navigate(`/workflow/${value}`);
       } else {
         navigate(`/${value}`);

@@ -100,7 +100,11 @@ interface TabNavigationProps {
 
 export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false, hideQuickAdd = false }: TabNavigationProps) => {
   const allTabs = [...primaryTabs, ...secondaryTabs];
-  const activeTabObject = allTabs.find(tab => tab.value === activeTab);
+  
+  const activeTabObject = activeTab === "workflow" 
+    ? secondaryTabGroups[0].items[0]  // Workflow tab
+    : allTabs.find(tab => tab.value === activeTab);
+    
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
   const { id, branchName } = useParams();
@@ -121,6 +125,9 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
   const handleTabChange = (value: string) => {
     onChange(value);
   };
+  
+  const isMatrixPageActive = activeTab === "workflow" || 
+    ["task-matrix", "training-matrix", "form-matrix"].includes(activeTab);
   
   return (
     <div className="w-full">
@@ -456,3 +463,4 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
     </div>
   );
 };
+
