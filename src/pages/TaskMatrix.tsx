@@ -5,11 +5,10 @@ import { TabNavigation } from "@/components/TabNavigation";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { Filter, Download, ChevronDown, Search, Check, X, AlertCircle } from "lucide-react";
+import { Filter, Download, ChevronDown, Search, Check, X, AlertCircle, Clock } from "lucide-react";
 
 // Define a consistent status type for all compliance items
 interface StatusInfo {
@@ -92,48 +91,87 @@ const TaskMatrix = () => {
   const [activeTab, setActiveTab] = useState("workflow");
   const [viewType, setViewType] = useState<"staff" | "client">("staff");
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState("percentage");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const filteredData = mockData.filter(row => 
     row.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusColor = (status: string) => {
-    if (status === "completed") return "bg-[#F2FCE2] text-green-700";
-    if (status === "n/a") return "bg-gray-100 text-gray-600";
-    if (status === "pending") return "bg-[#FEF7CD] text-amber-700";
-    return "bg-[#FFDEE2] text-red-600"; // missing or error
+  const sortedData = [...filteredData].sort((a, b) => {
+    if (sortField === "percentage") {
+      return sortDirection === "asc" ? a.percentage - b.percentage : b.percentage - a.percentage;
+    }
+    return sortDirection === "asc" 
+      ? a.name.localeCompare(b.name) 
+      : b.name.localeCompare(a.name);
+  });
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
   };
 
   const getStatusIcon = (status: string) => {
-    if (status === "completed") return <Check className="h-4 w-4 text-green-600" />;
-    if (status === "n/a") return null;
-    if (status === "pending") return <AlertCircle className="h-4 w-4 text-amber-600" />;
-    return <X className="h-4 w-4 text-red-600" />;
+    switch (status) {
+      case "completed":
+        return <Check className="h-5 w-5 text-green-600" />;
+      case "pending":
+        return <Clock className="h-5 w-5 text-amber-600" />;
+      case "missing":
+        return <X className="h-5 w-5 text-red-600" />;
+      case "n/a":
+      default:
+        return null;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed": return "bg-[#F2FCE2] text-green-700 border-green-200";
+      case "pending": return "bg-[#FEF7CD] text-amber-700 border-amber-200";
+      case "missing": return "bg-[#FFDEE2] text-red-600 border-red-200";
+      case "n/a":
+      default: return "bg-gray-100 text-gray-500 border-gray-200";
+    }
   };
 
   const renderStatus = (item: StatusInfo) => {
+    if (!item) return null;
+    
     return (
-      <div className="flex flex-col items-center space-y-1">
-        <div className="flex items-center justify-center mb-1">
+      <div className={cn(
+        "flex flex-col items-center justify-center rounded-md p-2 h-full min-h-[80px]",
+        getStatusColor(item.status)
+      )}>
+        <div className="mb-1">
           {getStatusIcon(item.status)}
         </div>
         
-        <div className="text-sm font-medium">
-          {item.status === "completed" && "Completed"}
-          {item.status === "n/a" && "N/A"}
-          {item.status === "missing" && "Missing"}
-          {item.status === "pending" && item.date}
-        </div>
+        {item.status === "completed" && <span className="text-sm">Completed</span>}
+        {item.status === "n/a" && <span className="text-sm">N/A</span>}
+        {item.status === "missing" && <span className="text-sm">Missing</span>}
         
-        {item.status === "pending" && item.expiresIn && (
-          <div className="text-xs">
-            Expires in {item.expiresIn} days
-          </div>
+        {item.status === "pending" && (
+          <>
+            <div className="text-sm font-medium">{item.date}</div>
+            <div className="text-xs mt-1">
+              {item.expiresIn && `Expires in ${item.expiresIn} days`}
+            </div>
+          </>
         )}
-        
-        <Checkbox className="mt-2" />
       </div>
     );
+  };
+
+  const getPercentageColor = (percentage: number) => {
+    if (percentage > 80) return "bg-green-100 text-green-800 border-green-200";
+    if (percentage > 50) return "bg-amber-100 text-amber-800 border-amber-200";
+    return "bg-red-100 text-red-800 border-red-200";
   };
 
   return (
@@ -194,8 +232,13 @@ const TaskMatrix = () => {
                   </Badge>
                 </div>
                 
-                <Button variant="ghost" size="sm" className="text-gray-500 gap-1">
-                  <span>Sort by: Percentage</span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-gray-500 gap-1"
+                  onClick={() => handleSort("percentage")}
+                >
+                  <span>Sort by: {sortField === "percentage" ? "Percentage" : "Name"}</span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </div>
@@ -207,69 +250,64 @@ const TaskMatrix = () => {
                   <TableHeader>
                     <TableRow className="bg-gray-50 hover:bg-gray-50">
                       <TableHead className="font-semibold text-gray-600 w-12 text-center">#</TableHead>
-                      <TableHead className="font-semibold text-gray-600">Full Name</TableHead>
-                      <TableHead className="font-semibold text-gray-600 text-center">Percentage</TableHead>
-                      <TableHead className="font-semibold text-gray-600 text-center w-32">
+                      <TableHead 
+                        className="font-semibold text-gray-600 cursor-pointer"
+                        onClick={() => handleSort("name")}
+                      >
+                        Full Name
+                      </TableHead>
+                      <TableHead 
+                        className="font-semibold text-gray-600 text-center cursor-pointer w-28"
+                        onClick={() => handleSort("percentage")}
+                      >
+                        Percentage
+                      </TableHead>
+                      <TableHead className="font-semibold text-gray-600 text-center">
                         Work Permit
                         <div className="text-xs font-normal">61%</div>
                       </TableHead>
-                      <TableHead className="font-semibold text-gray-600 text-center w-32">
+                      <TableHead className="font-semibold text-gray-600 text-center">
                         Car Insurance
                         <div className="text-xs font-normal">61%</div>
                       </TableHead>
-                      <TableHead className="font-semibold text-gray-600 text-center w-32">
+                      <TableHead className="font-semibold text-gray-600 text-center">
                         NI Number
                         <div className="text-xs font-normal">55%</div>
                       </TableHead>
-                      <TableHead className="font-semibold text-gray-600 text-center w-32">
+                      <TableHead className="font-semibold text-gray-600 text-center">
                         Driving License
                         <div className="text-xs font-normal">72%</div>
                       </TableHead>
-                      <TableHead className="font-semibold text-gray-600 text-center w-32">
+                      <TableHead className="font-semibold text-gray-600 text-center">
                         DVLA
                         <div className="text-xs font-normal">72%</div>
                       </TableHead>
-                      <TableHead className="font-semibold text-gray-600 text-center w-32">
+                      <TableHead className="font-semibold text-gray-600 text-center">
                         DBS
                         <div className="text-xs font-normal">55%</div>
                       </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredData.length > 0 ? (
-                      filteredData.map((row) => (
+                    {sortedData.length > 0 ? (
+                      sortedData.map((row) => (
                         <TableRow key={row.id} className="hover:bg-gray-50">
                           <TableCell className="text-center font-medium">{row.id}</TableCell>
                           <TableCell className="font-medium">{row.name}</TableCell>
                           <TableCell className="text-center">
-                            <Badge variant={row.percentage > 80 ? "default" : (row.percentage > 50 ? "secondary" : "outline")} 
-                                  className={cn(
-                                    "px-2 py-0.5 text-xs",
-                                    row.percentage > 80 ? "bg-green-100 text-green-800 hover:bg-green-100" : 
-                                    row.percentage > 50 ? "bg-amber-100 text-amber-800 hover:bg-amber-100" : 
-                                    "bg-red-100 text-red-800 hover:bg-red-100"
-                                  )}>
+                            <Badge className={cn(
+                              "px-2 py-0.5 text-sm font-medium border",
+                              getPercentageColor(row.percentage)
+                            )}>
                               {row.percentage}%
                             </Badge>
                           </TableCell>
-                          <TableCell className={cn("text-center p-2 rounded-md m-1", getStatusColor(row.workPermit.status))}>
-                            {renderStatus(row.workPermit)}
-                          </TableCell>
-                          <TableCell className={cn("text-center p-2 rounded-md m-1", getStatusColor(row.carInsurance.status))}>
-                            {renderStatus(row.carInsurance)}
-                          </TableCell>
-                          <TableCell className={cn("text-center p-2 rounded-md m-1", getStatusColor(row.niNumber.status))}>
-                            {renderStatus(row.niNumber)}
-                          </TableCell>
-                          <TableCell className={cn("text-center p-2 rounded-md m-1", getStatusColor(row.drivingLicense.status))}>
-                            {renderStatus(row.drivingLicense)}
-                          </TableCell>
-                          <TableCell className={cn("text-center p-2 rounded-md m-1", getStatusColor(row.dvla.status))}>
-                            {renderStatus(row.dvla)}
-                          </TableCell>
-                          <TableCell className={cn("text-center p-2 rounded-md m-1", getStatusColor(row.dbs.status))}>
-                            {renderStatus(row.dbs)}
-                          </TableCell>
+                          <TableCell className="p-1">{renderStatus(row.workPermit)}</TableCell>
+                          <TableCell className="p-1">{renderStatus(row.carInsurance)}</TableCell>
+                          <TableCell className="p-1">{renderStatus(row.niNumber)}</TableCell>
+                          <TableCell className="p-1">{renderStatus(row.drivingLicense)}</TableCell>
+                          <TableCell className="p-1">{renderStatus(row.dvla)}</TableCell>
+                          <TableCell className="p-1">{renderStatus(row.dbs)}</TableCell>
                         </TableRow>
                       ))
                     ) : (
@@ -283,10 +321,10 @@ const TaskMatrix = () => {
                 </Table>
               </div>
               
-              {filteredData.length > 0 && (
+              {sortedData.length > 0 && (
                 <div className="flex justify-between items-center py-4 px-6 border-t">
                   <div className="text-sm text-gray-500">
-                    Showing {filteredData.length} of {mockData.length} staff members
+                    Showing {sortedData.length} of {mockData.length} staff members
                   </div>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" disabled>
