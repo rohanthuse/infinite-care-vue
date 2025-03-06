@@ -1,6 +1,5 @@
-
-import { useState, useEffect } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { TabNavigation } from "@/components/TabNavigation";
 import { BranchHeader } from "@/components/BranchHeader";
@@ -17,6 +16,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import { toast } from "sonner";
 
 // Mock data for training records
 const trainingData = [
@@ -70,7 +70,6 @@ const TrainingMatrix = () => {
   const [activeTab, setActiveTab] = useState("training-matrix");
   const { id, branchName } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   
   const filteredData = trainingData.filter(
@@ -108,6 +107,20 @@ const TrainingMatrix = () => {
     }
   };
 
+  const handleAddTraining = () => {
+    toast.info("Add Training functionality will be implemented soon", {
+      description: "This feature is coming in a future update",
+      position: "top-center",
+    });
+  };
+
+  const handleExport = () => {
+    toast.info("Export functionality will be implemented soon", {
+      description: "This feature is coming in a future update",
+      position: "top-center",
+    });
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -133,15 +146,20 @@ const TrainingMatrix = () => {
               <p className="text-gray-500 mt-1">Monitor staff training compliance and certifications</p>
             </div>
             <div className="flex gap-3 items-center">
-              <Button variant="outline" size="sm" className="text-gray-700 border-gray-200">
-                <Filter className="h-4 w-4 mr-2" />
-                Filter
-              </Button>
-              <Button variant="outline" size="sm" className="text-gray-700 border-gray-200">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-gray-700 border-gray-200"
+                onClick={handleExport}
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+              <Button 
+                size="sm" 
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={handleAddTraining}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Training
               </Button>
