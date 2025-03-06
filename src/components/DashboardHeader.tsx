@@ -1,14 +1,12 @@
-
 import { LogOut, HelpCircle, Menu, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { useState, useEffect } from "react";
-
 export function DashboardHeader() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
+
   // Close mobile menu when resizing to desktop
   useEffect(() => {
     const handleResize = () => {
@@ -16,17 +14,13 @@ export function DashboardHeader() {
         setMobileMenuOpen(false);
       }
     };
-    
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [mobileMenuOpen]);
-  
   const handleLogout = () => {
     navigate('/super-admin');
   };
-  
-  return (
-    <header className="bg-white shadow-sm border-b border-gray-100 py-3 md:py-4 sticky top-0 z-50 w-full">
+  return <header className="bg-white shadow-sm border-b border-gray-100 py-3 md:py-4 sticky top-0 z-50 w-full">
       <div className="container mx-auto px-4 flex justify-between items-center relative">
         {/* Logo aligned to the left - simplified for mobile */}
         <div className="flex items-center gap-2 md:gap-4">
@@ -40,19 +34,13 @@ export function DashboardHeader() {
         
         {/* Mobile menu button */}
         <div className="md:hidden">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="text-blue-600 border border-blue-200 bg-white shadow-sm hover:bg-blue-50 rounded-full" 
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
+          <Button variant="outline" size="icon" className="text-blue-600 border border-blue-200 bg-white shadow-sm hover:bg-blue-50 rounded-full" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             <Menu className="h-5 w-5" />
           </Button>
         </div>
         
         {/* Content aligned to the right - Fixed for mobile viewing */}
-        <div 
-          className={`
+        <div className={`
             flex-col md:flex-row 
             fixed md:static 
             top-[56px] md:top-auto
@@ -69,13 +57,12 @@ export function DashboardHeader() {
             gap-3 md:gap-5 
             px-6 md:px-0 
             md:justify-end
-          `}
-          style={{ maxHeight: 'calc(100vh - 56px)', overflowY: 'auto' }}
-        >
+          `} style={{
+        maxHeight: 'calc(100vh - 56px)',
+        overflowY: 'auto'
+      }}>
           <div className="flex items-center gap-2 w-full md:w-auto">
-            <Button variant="ghost" size="sm" className="text-gray-700 font-medium hover:bg-gray-50/80 rounded-full transition-all w-full md:w-auto justify-start md:justify-center">
-              <HelpCircle className="h-4 w-4 mr-2 text-blue-600" /> Help Guide
-            </Button>
+            
           </div>
           
           <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm py-2 px-4 rounded-full border border-gray-100/60 shadow-sm w-full md:w-auto justify-between md:justify-start ml-0 md:ml-2">
@@ -91,17 +78,12 @@ export function DashboardHeader() {
           
           {/* Mobile logout option */}
           <div className="md:hidden w-full">
-            <Button 
-              variant="ghost" 
-              className="w-full flex justify-between items-center text-gray-700 hover:bg-gray-50/80 rounded-lg py-3"
-              onClick={handleLogout}
-            >
+            <Button variant="ghost" className="w-full flex justify-between items-center text-gray-700 hover:bg-gray-50/80 rounded-lg py-3" onClick={handleLogout}>
               <span className="font-medium">Logout</span>
               <LogOut className="h-5 w-5" />
             </Button>
           </div>
         </div>
       </div>
-    </header>
-  );
+    </header>;
 }
