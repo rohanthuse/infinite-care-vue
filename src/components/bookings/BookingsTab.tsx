@@ -6,6 +6,7 @@ import { DateNavigation } from "./DateNavigation";
 import { BookingFilters } from "./BookingFilters";
 import { BookingTimeGrid, Client, Carer, Booking } from "./BookingTimeGrid";
 import { BookingsList } from "./BookingsList";
+import { BookingReport } from "./BookingReport";
 import { toast } from "sonner";
 
 const mockClients: Client[] = [{
@@ -376,14 +377,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       )}
 
       {activeTab === "report" && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center">
-          <h2 className="text-xl font-medium text-gray-700 mb-2">
-            Booking Reports
-          </h2>
-          <p className="text-gray-500">
-            This feature is under development. Check back soon!
-          </p>
-        </div>
+        <BookingReport bookings={mockBookings} />
       )}
     </div>
   );
