@@ -97,80 +97,88 @@ const clients = [
     name: "Wendy Smith",
     email: "wendysmith@gmail.com",
     phone: "+44 20 7946 0587",
-    company: "Personal",
+    location: "Milton Keynes, MK9 3NZ",
     status: "Active",
     avatar: "WS",
-    region: "North"
+    region: "North",
+    registeredOn: "15/02/2023"
   },
   {
     id: "CL-2356",
     name: "John Michael",
     email: "john.michael@hotmail.com",
     phone: "+44 20 7946 1122",
-    company: "Personal",
+    location: "London, SW1A 1AA",
     status: "New Enquiries",
     avatar: "JM",
-    region: "South"
+    region: "South",
+    registeredOn: "22/05/2023"
   },
   {
     id: "CL-9876",
     name: "Lisa Rodrigues",
     email: "lisa.rod@outlook.com",
     phone: "+44 20 7946 3344",
-    company: "Care Solutions Ltd",
+    location: "Cambridge, CB2 1TN",
     status: "Actively Assessing",
     avatar: "LR",
-    region: "East"
+    region: "East",
+    registeredOn: "10/08/2023"
   },
   {
     id: "CL-5432",
     name: "Kate Williams",
     email: "kate.w@company.co.uk",
     phone: "+44 20 7946 5566",
-    company: "Personal",
+    location: "Bristol, BS1 5TR",
     status: "Closed Enquiries",
     avatar: "KW",
-    region: "West"
+    region: "West",
+    registeredOn: "05/11/2022"
   },
   {
     id: "CL-7890",
     name: "Robert Johnson",
     email: "r.johnson@gmail.com",
     phone: "+44 20 7946 7788",
-    company: "Eldercare Services",
+    location: "Manchester, M1 1AE",
     status: "Former",
     avatar: "RJ",
-    region: "North"
+    region: "North",
+    registeredOn: "18/09/2022"
   },
   {
     id: "CL-1122",
     name: "Emma Thompson",
     email: "emma.t@gmail.com",
     phone: "+44 20 7946 9900",
-    company: "Personal",
+    location: "Southampton, SO14 2AR",
     status: "New Enquiries",
     avatar: "ET",
-    region: "South"
+    region: "South",
+    registeredOn: "29/03/2023"
   },
   {
     id: "CL-3344",
     name: "David Wilson",
     email: "d.wilson@company.org",
     phone: "+44 20 7946 1234",
-    company: "Care Group UK",
+    location: "Norwich, NR1 3QU",
     status: "Active",
     avatar: "DW",
-    region: "East"
+    region: "East",
+    registeredOn: "13/07/2023"
   },
   {
     id: "CL-5566",
     name: "Olivia Parker",
     email: "olivia.p@outlook.com",
     phone: "+44 20 7946 5678",
-    company: "Personal",
+    location: "Exeter, EX1 1LB",
     status: "Actively Assessing",
     avatar: "OP",
-    region: "West"
+    region: "West",
+    registeredOn: "02/01/2023"
   },
 ];
 
@@ -313,7 +321,7 @@ const BranchDashboard = () => {
           activeTab={activeTab} 
           onChange={(value) => setActiveTab(value)} 
           hideActionsOnMobile={true}
-          hideQuickAdd={true} // Hide the Quick Add button on this page
+          hideQuickAdd={true}
         />
         
         <motion.div 
@@ -809,7 +817,8 @@ const BranchDashboard = () => {
                       <TableHead className="text-gray-600 font-medium">Client Name</TableHead>
                       <TableHead className="text-gray-600 font-medium">Email Address</TableHead>
                       <TableHead className="text-gray-600 font-medium">Contact Number</TableHead>
-                      <TableHead className="text-gray-600 font-medium">Company</TableHead>
+                      <TableHead className="text-gray-600 font-medium">Location</TableHead>
+                      <TableHead className="text-gray-600 font-medium">Registered On</TableHead>
                       <TableHead className="text-gray-600 font-medium">Status</TableHead>
                       <TableHead className="text-right"></TableHead>
                     </TableRow>
@@ -829,7 +838,8 @@ const BranchDashboard = () => {
                           </TableCell>
                           <TableCell>{client.email}</TableCell>
                           <TableCell>{client.phone}</TableCell>
-                          <TableCell>{client.company}</TableCell>
+                          <TableCell>{client.location}</TableCell>
+                          <TableCell>{client.registeredOn}</TableCell>
                           <TableCell>
                             <Badge 
                               variant="outline" 
