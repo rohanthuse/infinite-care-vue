@@ -79,6 +79,12 @@ export const MessageComposer = ({
     clients: []
   });
 
+  const [fontFamily, setFontFamily] = useState("Sans Serif");
+  const [fontSize, setFontSize] = useState("14px");
+  const [isBold, setIsBold] = useState(false);
+  const [isItalic, setIsItalic] = useState(false);
+  const [isUnderline, setIsUnderline] = useState(false);
+
   useEffect(() => {
     if (selectedContactId) {
       const isCarer = mockCarers.some(carer => carer.id === selectedContactId);
