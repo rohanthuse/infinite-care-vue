@@ -131,7 +131,7 @@ const Notifications = () => {
   
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <BranchSidebar />
+      <BranchSidebar branchName={branchName || "Branch"} />
       <div className="flex-1">
         <DashboardHeader />
         <div className="container mx-auto px-4 py-6">
