@@ -12,6 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Check, MessageCircleReply, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+interface ReviewsTabProps {
+  branchId?: string;
+}
+
 interface Review {
   id: string;
   author: string;
@@ -41,7 +45,7 @@ const mockReviews: Review[] = [
   },
 ];
 
-export const ReviewsTab = () => {
+export const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId }) => {
   const { toast } = useToast();
 
   const handleConfirmReview = (reviewId: string) => {
