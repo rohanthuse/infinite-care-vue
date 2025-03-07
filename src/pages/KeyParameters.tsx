@@ -52,6 +52,12 @@ interface ExpenseType extends BaseParameter {
   tax: number;
 }
 
+interface ColumnDef {
+  header: string;
+  accessorKey: string;
+  cell?: (value: any) => React.ReactNode;
+}
+
 const KeyParameters = () => {
   const navigate = useNavigate();
   const params = useParams();
@@ -116,7 +122,7 @@ const KeyParameters = () => {
     { id: 4, title: "Training fee", status: "Active", type: "Decrement", amount: 50, tax: 0 },
   ];
 
-  const reportTypeColumns = [
+  const reportTypeColumns: ColumnDef[] = [
     { header: "Title", accessorKey: "title" },
     { 
       header: "Status", 
@@ -129,7 +135,7 @@ const KeyParameters = () => {
     },
   ];
 
-  const fileCategoryColumns = [
+  const fileCategoryColumns: ColumnDef[] = [
     { header: "Title", accessorKey: "title" },
     { 
       header: "Status", 
@@ -142,7 +148,7 @@ const KeyParameters = () => {
     },
   ];
 
-  const bankHolidayColumns = [
+  const bankHolidayColumns: ColumnDef[] = [
     { header: "Title", accessorKey: "title" },
     { header: "Registered By", accessorKey: "registeredBy" },
     { header: "Registered On", accessorKey: "registeredOn" },
@@ -157,7 +163,7 @@ const KeyParameters = () => {
     },
   ];
 
-  const travelManagementColumns = [
+  const travelManagementColumns: ColumnDef[] = [
     { header: "Title", accessorKey: "title" },
     { header: "From Date", accessorKey: "fromDate" },
     { 
@@ -182,7 +188,7 @@ const KeyParameters = () => {
     },
   ];
 
-  const communicationTypeColumns = [
+  const communicationTypeColumns: ColumnDef[] = [
     { header: "Title", accessorKey: "title" },
     { 
       header: "Status", 
@@ -195,7 +201,7 @@ const KeyParameters = () => {
     },
   ];
 
-  const expenseTypeColumns = [
+  const expenseTypeColumns: ColumnDef[] = [
     { header: "Title", accessorKey: "title" },
     { header: "Type", accessorKey: "type" },
     { 
@@ -302,7 +308,7 @@ const KeyParameters = () => {
     }
   };
 
-  const getParameterColumns = (parameterType: string) => {
+  const getParameterColumns = (parameterType: string): ColumnDef[] => {
     switch (parameterType) {
       case "report-types":
         return reportTypeColumns;
@@ -506,8 +512,8 @@ const KeyParameters = () => {
                             <TableRow key={item.id}>
                               {getParameterColumns(paramType).map((column, colIndex) => (
                                 <TableCell key={`${item.id}-${colIndex}`} className="text-left">
-                                  {column.cell 
-                                    ? column.cell(item[column.accessorKey as keyof typeof item] as any)
+                                  {column.cell && column.accessorKey in item
+                                    ? column.cell(item[column.accessorKey as keyof typeof item])
                                     : item[column.accessorKey as keyof typeof item]?.toString()}
                                 </TableCell>
                               ))}
