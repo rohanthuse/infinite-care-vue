@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -263,8 +264,9 @@ const TaskMatrix = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewType, setViewType] = useState("staff");
   
-  // Ensure active tab is always set to task-matrix
-  const activeTab = "task-matrix";
+  const activeTab = location.pathname.includes("/workflow/") 
+    ? "workflow" 
+    : "task-matrix";
 
   const handleChangeTab = (value: string) => {
     if (id && branchName) {
@@ -278,7 +280,7 @@ const TaskMatrix = () => {
     } else {
       if (value === "workflow") {
         navigate(`/workflow/task-matrix`);
-      } else if (value.includes("matrix") || value === "medication") {
+      } else if (value.includes("matrix")) {
         navigate(`/workflow/${value}`);
       } else {
         navigate(`/${value}`);

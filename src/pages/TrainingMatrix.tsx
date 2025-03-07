@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -73,7 +74,9 @@ const TrainingMatrix = () => {
   const [searchTerm, setSearchTerm] = useState("");
   
   // Set active tab based on route context
-  const activeTab = "training-matrix";
+  const activeTab = location.pathname.includes("/workflow/") 
+    ? "workflow" 
+    : "training-matrix";
   
   const filteredData = trainingData.filter(
     staff => staff.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -84,14 +87,14 @@ const TrainingMatrix = () => {
       if (value === "dashboard") {
         navigate(`/branch-dashboard/${id}/${branchName}`);
       } else if (value === "workflow") {
-        navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
+        navigate(`/branch-dashboard/${id}/${branchName}/training-matrix`);
       } else {
         navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
       }
     } else {
       if (value === "workflow") {
-        navigate(`/workflow/task-matrix`);
-      } else if (value.includes("matrix") || value === "medication") {
+        navigate(`/workflow/training-matrix`);
+      } else if (value.includes("matrix")) {
         navigate(`/workflow/${value}`);
       } else {
         navigate(`/${value}`);
