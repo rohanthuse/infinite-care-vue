@@ -30,8 +30,16 @@ const Dashboard = () => {
   }, []);
   
   const handleNavigationChange = (value: string) => {
-    setActiveTab(value);
-    // In a real app, you would navigate to the appropriate page here
+    // Navigate to the appropriate page based on the selected tab
+    if (value === "dashboard") {
+      navigate("/dashboard");
+    } else if (value === "task-matrix" || value === "training-matrix" || value === "form-matrix" || value === "medication") {
+      navigate(`/workflow/${value}`);
+    } else if (value === "workflow") {
+      navigate("/workflow/task-matrix");
+    } else {
+      navigate(`/${value}`);
+    }
   };
   
   if (loading) {
