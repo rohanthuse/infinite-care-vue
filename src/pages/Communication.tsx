@@ -22,7 +22,9 @@ const Communication = () => {
         navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
       }
     } else {
-      if (value === "workflow" || ["task-matrix", "training-matrix", "form-matrix", "medication"].includes(value)) {
+      if (value === "dashboard") {
+        navigate("/dashboard");
+      } else if (value === "workflow" || ["task-matrix", "training-matrix", "form-matrix", "medication"].includes(value)) {
         const path = value === "workflow" ? "task-matrix" : value;
         navigate(`/workflow/${path}`);
       } else {
