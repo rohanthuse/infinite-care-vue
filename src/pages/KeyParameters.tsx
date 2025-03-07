@@ -344,6 +344,7 @@ const KeyParameters = () => {
                 setActiveTab(tab);
                 navigate(`/branch-dashboard/${id}/${branchName}/${tab}`);
               }}
+              hideQuickAdd={true}
             />
           </div>
         )}
