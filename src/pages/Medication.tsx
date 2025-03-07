@@ -44,8 +44,27 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+// Define the medication type to ensure type safety
+interface DosageTime {
+  enabled: boolean;
+  time: string;
+}
+
+interface Medication {
+  id: string;
+  name: string;
+  dosage: string;
+  morning: DosageTime;
+  lunch: DosageTime;
+  evening: DosageTime;
+  night: DosageTime;
+  startDate: string;
+  endDate: string;
+  notes: string;
+}
+
 // Sample medication data
-const initialMedications = [
+const initialMedications: Medication[] = [
   {
     id: "1",
     name: "Paracetamol",
@@ -90,23 +109,23 @@ const medicationFormSchema = z.object({
   dosage: z.string().min(1, "Dosage is required"),
   morning: z.object({
     enabled: z.boolean().default(false),
-    time: z.string().optional()
+    time: z.string().default("08:00")
   }),
   lunch: z.object({
     enabled: z.boolean().default(false),
-    time: z.string().optional()
+    time: z.string().default("13:00")
   }),
   evening: z.object({
     enabled: z.boolean().default(false),
-    time: z.string().optional()
+    time: z.string().default("19:00")
   }),
   night: z.object({
     enabled: z.boolean().default(false),
-    time: z.string().optional()
+    time: z.string().default("22:00")
   }),
   startDate: z.string().min(1, "Start date is required"),
-  endDate: z.string().optional(),
-  notes: z.string().optional()
+  endDate: z.string().default(""),
+  notes: z.string().default("")
 });
 
 type MedicationFormValues = z.infer<typeof medicationFormSchema>;
@@ -115,7 +134,7 @@ const Medication = () => {
   const { id, branchName } = useParams();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [medications, setMedications] = useState(initialMedications);
+  const [medications, setMedications] = useState<Medication[]>(initialMedications);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingMedication, setEditingMedication] = useState<string | null>(null);
   
@@ -185,12 +204,12 @@ const Medication = () => {
     if (editingMedication) {
       // Update existing medication
       setMedications(medications.map(med => 
-        med.id === editingMedication ? { ...data, id: med.id } : med
+        med.id === editingMedication ? { ...data, id: med.id } as Medication : med
       ));
       toast.success("Medication updated successfully");
     } else {
       // Add new medication
-      const newMedication = {
+      const newMedication: Medication = {
         ...data,
         id: Date.now().toString()
       };
@@ -672,3 +691,4 @@ const Medication = () => {
 };
 
 export default Medication;
+
