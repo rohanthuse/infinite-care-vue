@@ -1,12 +1,14 @@
 import React, { useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { 
-  LayoutDashboard, Workflow, ListChecks, Users, 
+  LayoutDashboard, Workflow, Users, 
   Calendar, Star, MessageSquare, Pill, DollarSign, 
-  FileText, ClipboardCheck, Bell, ClipboardList, 
+  FileText, Bell, 
   FileUp, Folder, UserPlus, BarChart4, Settings, 
   Activity, Briefcase, PanelLeft, Paperclip,
   ChevronDown, Menu, Search, Grid, Plus,
-  UserPlus2, FileSignature, CalendarPlus, Contact, UserRoundPlus
+  UserPlus2, FileSignature, CalendarPlus, Contact, UserRoundPlus,
+  CheckSquare, ClipboardList, FileSpreadsheet, ListChecks, Clipboard
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,6 +35,7 @@ interface TabItem {
   label: string;
   value: string;
   description?: string;
+  path?: string;
 }
 
 const primaryTabs: TabItem[] = [
@@ -49,8 +52,11 @@ const secondaryTabGroups = [
     label: "Operations",
     items: [
       { icon: Workflow, label: "Workflow", value: "workflow", description: "Process management" },
+      { icon: CheckSquare, label: "Task Matrix", value: "task-matrix", description: "Compliance tracking", path: "workflow/task-matrix" },
+      { icon: FileSpreadsheet, label: "Training Matrix", value: "training-matrix", description: "Training tracking", path: "workflow/training-matrix" },
+      { icon: FileText, label: "Form Matrix", value: "form-matrix", description: "Form tracking", path: "workflow/form-matrix" },
       { icon: ListChecks, label: "Key Parameters", value: "parameters", description: "Track metrics" },
-      { icon: Pill, label: "Medication", value: "medication", description: "Medicine tracking" },
+      { icon: Pill, label: "Medication", value: "medication", description: "Medicine tracking", path: "workflow/medication" },
       { icon: ClipboardList, label: "Care Plan", value: "care-plan", description: "Patient care plans" },
     ]
   },
@@ -60,7 +66,7 @@ const secondaryTabGroups = [
       { icon: DollarSign, label: "Accounting", value: "accounting", description: "Financial management" },
       { icon: FileText, label: "Agreements", value: "agreements", description: "Legal documents" },
       { icon: Bell, label: "Events & Logs", value: "events-logs", description: "Activity tracking" },
-      { icon: ClipboardCheck, label: "Attendance", value: "attendance", description: "Staff attendance" },
+      { icon: Clipboard, label: "Attendance", value: "attendance", description: "Staff attendance" },
     ]
   },
   {
@@ -94,13 +100,43 @@ interface TabNavigationProps {
 
 export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false, hideQuickAdd = false }: TabNavigationProps) => {
   const allTabs = [...primaryTabs, ...secondaryTabs];
-  const activeTabObject = allTabs.find(tab => tab.value === activeTab);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { id, branchName } = useParams();
+  
+  // Find the active tab object, considering both direct and workflow paths
+  const activeTabObject = allTabs.find(tab => {
+    if (tab.value === activeTab) return true;
+    if (tab.path && tab.path.endsWith(activeTab)) return true;
+    return false;
+  }) || secondaryTabGroups[0].items[0];
+  
   const [searchTerm, setSearchTerm] = useState("");
-  
-  const filteredTabs = allTabs.filter(tab => 
-    tab.label.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
+
+  const handleNavigate = (value: string) => {
+    const isBranchContext = Boolean(id && branchName);
+    const isWorkflowPath = ["task-matrix", "training-matrix", "form-matrix", "medication"].includes(value);
+    
+    if (isBranchContext) {
+      const basePath = `/branch-dashboard/${id}/${branchName}`;
+      if (value === "dashboard") {
+        navigate(basePath);
+      } else if (value === "workflow" || isWorkflowPath) {
+        navigate(`${basePath}/${isWorkflowPath ? value : 'task-matrix'}`);
+      } else {
+        navigate(`${basePath}/${value}`);
+      }
+    } else {
+      if (value === "workflow" || isWorkflowPath) {
+        navigate(`/workflow/${isWorkflowPath ? value : 'task-matrix'}`);
+      } else {
+        navigate(`/${value}`);
+      }
+    }
+    
+    onChange(value);
+  };
+
   const handleQuickAddAction = (action: string) => {
     toast.success(`${action} action selected`, {
       description: `The ${action.toLowerCase()} feature will be available soon`,
@@ -109,6 +145,10 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
     console.log(`Quick Add action selected: ${action}`);
   };
   
+  const filteredTabs = allTabs.filter(tab => 
+    tab.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="w-full">
       <div className="flex flex-col space-y-4">
@@ -175,7 +215,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                     "flex flex-col items-center justify-center gap-1 h-auto px-1 py-2 rounded-lg",
                     isActive ? "bg-blue-50 text-blue-600" : "text-gray-500"
                   )}
-                  onClick={() => onChange(tab.value)}
+                  onClick={() => handleNavigate(tab.value)}
                 >
                   <Icon className="h-5 w-5" />
                   <span className="text-xs">{tab.label}</span>
@@ -223,7 +263,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                               tab.value === activeTab ? "bg-blue-50 text-blue-600" : ""
                             )}
                             onClick={() => {
-                              onChange(tab.value);
+                              handleNavigate(tab.value);
                               setSearchTerm("");
                             }}
                           >
@@ -253,7 +293,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                                     item.value === activeTab ? "bg-blue-50 text-blue-600" : ""
                                   )}
                                   onClick={() => {
-                                    onChange(item.value);
+                                    handleNavigate(item.value);
                                     setSearchTerm("");
                                   }}
                                 >
@@ -279,7 +319,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
             <div className="w-full overflow-x-auto hide-scrollbar bg-white border border-gray-100 rounded-xl shadow-sm">
               <Tabs 
                 value={activeTab} 
-                onValueChange={onChange}
+                onValueChange={handleNavigate}
                 className="w-full"
               >
                 <TabsList className="bg-white p-1 rounded-xl w-full justify-start">
@@ -333,7 +373,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                               tab.value === activeTab ? "bg-blue-50 text-blue-600" : ""
                             )}
                             onClick={() => {
-                              onChange(tab.value);
+                              handleNavigate(tab.value);
                               setSearchTerm("");
                             }}
                           >
@@ -375,7 +415,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                                   "py-2 px-3 rounded-md my-1 text-sm cursor-pointer",
                                   isActive ? "bg-blue-50 text-blue-600" : "hover:bg-gray-50"
                                 )}
-                                onClick={() => onChange(item.value)}
+                                onClick={() => handleNavigate(item.value)}
                               >
                                 <Icon className="h-4 w-4 mr-2" />
                                 <span>{item.label}</span>

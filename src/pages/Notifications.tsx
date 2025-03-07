@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { 
@@ -9,7 +8,6 @@ import {
 } from "lucide-react";
 import { TabNavigation } from "@/components/TabNavigation";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -191,7 +189,7 @@ const Notifications = () => {
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       <DashboardHeader />
-      {!isInBranchContext && <DashboardNavbar />}
+      {!isInBranchContext && <TabNavigation activeTab={tab} onChange={handleNavigationChange} />}
       <div className="container mx-auto px-4 py-6">
         {isInBranchContext && (
           <>

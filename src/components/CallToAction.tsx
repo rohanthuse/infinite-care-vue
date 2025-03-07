@@ -2,6 +2,7 @@
 import { useEffect, useRef } from "react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const CallToAction = () => {
   const ctaRef = useRef<HTMLDivElement>(null);
@@ -48,20 +49,24 @@ const CallToAction = () => {
               Join thousands of healthcare professionals who are already elevating patient care with Med-Infinite.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
-              <CustomButton 
-                size="lg" 
-                variant="pill" 
-                className="bg-white text-blue-600 hover:bg-blue-50"
-              >
-                Get Started <ArrowRight className="ml-2 h-5 w-5" />
-              </CustomButton>
-              <CustomButton 
-                size="lg" 
-                variant="pill" 
-                className="bg-blue-700/30 text-white hover:bg-blue-700/50 backdrop-blur-sm border-blue-400/20"
-              >
-                Request Demo
-              </CustomButton>
+              <Link to="/super-admin">
+                <CustomButton 
+                  size="lg" 
+                  variant="pill" 
+                  className="bg-white text-blue-600 hover:bg-blue-50"
+                >
+                  Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                </CustomButton>
+              </Link>
+              <Link to="/super-admin">
+                <CustomButton 
+                  size="lg" 
+                  variant="pill" 
+                  className="bg-blue-700/30 text-white hover:bg-blue-700/50 backdrop-blur-sm border-blue-400/20"
+                >
+                  Request Demo
+                </CustomButton>
+              </Link>
             </div>
           </div>
         </div>
