@@ -19,6 +19,7 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { DashboardNavbar } from "@/components/DashboardNavbar";
 
 interface BaseParameter {
   id: string | number;
