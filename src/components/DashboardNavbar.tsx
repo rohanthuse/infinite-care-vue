@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   ChevronDown, ChevronUp, FileText, Home, 
@@ -124,41 +125,17 @@ export function DashboardNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeItem, setActiveItem] = useState("Home");
-  const [activeSubItem, setActiveSubItem] = useState("");
-  const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
   
   const handleNavClick = (label: string, path: string) => {
-    if (label === "Key Parameters") {
-      setIsSubmenuOpen(!isSubmenuOpen);
-    } else {
-      setActiveItem(label);
-      setIsSubmenuOpen(false);
-      navigate(path);
-    }
-  };
-
-  const handleSubNavClick = (label: string, path: string) => {
-    setActiveSubItem(label);
-    setActiveItem("Key Parameters");
+    setActiveItem(label);
     navigate(path);
   };
 
   const mainNavItems = [
     { label: "Home", icon: Home, path: "/dashboard" },
-    { label: "Key Parameters", icon: ListChecks, path: "#", hasSubmenu: true },
+    { label: "Key Parameters", icon: ListChecks, path: "/key-parameters" },
     { label: "Settings", icon: Settings, path: "/settings" },
     { label: "Agreement", icon: FileText, path: "/agreement" }
-  ];
-
-  const keyParametersSubItems = [
-    { label: "Services", icon: Briefcase, path: "/services" },
-    { label: "Hobbies", icon: Heart, path: "/hobbies" },
-    { label: "Skills", icon: Brain, path: "/skills" },
-    { label: "Medical & Mental", icon: Stethoscope, path: "/medical-mental" },
-    { label: "Type of Work", icon: ListChecks, path: "/type-of-work" },
-    { label: "Body Map Injuries", icon: ActivitySquare, path: "/body-map-points" },
-    { label: "Branch", icon: Building2, path: "/branch" },
-    { label: "Branch Admin", icon: Users, path: "/branch-admins" }
   ];
 
   useEffect(() => {
@@ -166,20 +143,12 @@ export function DashboardNavbar() {
     
     if (path === '/dashboard') {
       setActiveItem("Home");
-      setActiveSubItem("");
     } else if (path === '/settings') {
       setActiveItem("Settings");
-      setActiveSubItem("");
     } else if (path === '/agreement') {
       setActiveItem("Agreement");
-      setActiveSubItem("");
-    } else {
-      const submenuItem = keyParametersSubItems.find(item => item.path === path);
-      if (submenuItem) {
-        setActiveItem("Key Parameters");
-        setActiveSubItem(submenuItem.label);
-        setIsSubmenuOpen(true);
-      }
+    } else if (path === '/key-parameters' || path.includes('/key-parameters')) {
+      setActiveItem("Key Parameters");
     }
   }, [location.pathname]);
 
@@ -196,40 +165,11 @@ export function DashboardNavbar() {
                 path={item.path}
                 active={activeItem === item.label}
                 onClick={() => handleNavClick(item.label, item.path)}
-                hasSubmenu={item.hasSubmenu}
-                isSubmenuOpen={isSubmenuOpen && item.label === "Key Parameters"}
               />
             ))}
           </div>
         </div>
       </nav>
-      
-      <AnimatePresence>
-        {isSubmenuOpen && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="bg-gray-50/80 backdrop-blur-sm py-8 shadow-sm border-b border-gray-100"
-          >
-            <div className="container mx-auto px-4">
-              <div className="grid grid-cols-4 md:grid-cols-8 gap-4">
-                {keyParametersSubItems.map((item) => (
-                  <SubNavTile 
-                    key={item.label}
-                    icon={item.icon}
-                    label={item.label}
-                    path={item.path}
-                    active={activeSubItem === item.label}
-                    onClick={() => handleSubNavClick(item.label, item.path)}
-                  />
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

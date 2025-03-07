@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { 
-  ListChecks, ChevronRight, Search, Plus, 
+  ListChecks, ChevronRight, Search, 
   FileText, Calendar, Car, MessageSquare, DollarSign, Folder
 } from "lucide-react";
 import { 
@@ -467,20 +467,13 @@ const KeyParameters = () => {
             {["report-types", "file-categories", "bank-holidays", "travel-management", "communication-types", "expense-types"].map((paramType) => (
               <TabsContent key={paramType} value={paramType} className="p-0 border-0">
                 <div className="p-4 border-t-0 rounded-b-lg bg-white">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center mb-4">
                     <div className="flex items-center gap-2">
                       {getParameterTypeIcon(paramType)}
                       <h2 className="text-xl font-semibold text-gray-800">
                         {getParameterTypeTitle(paramType)}s
                       </h2>
                     </div>
-                    <Button 
-                      onClick={() => handleAddNew(paramType)}
-                      className="whitespace-nowrap"
-                    >
-                      <Plus className="h-4 w-4 mr-1" /> 
-                      New {getParameterTypeTitle(paramType)}
-                    </Button>
                   </div>
                   
                   <div className="relative overflow-hidden border rounded-lg">
