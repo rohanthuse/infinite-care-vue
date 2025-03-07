@@ -175,23 +175,29 @@ const TaskMatrix = () => {
             {isInBranchContext ? (
               <>
                 <BreadcrumbItem>
-                  <BreadcrumbLink as={Link} to={`/branch-dashboard/${id}/${branchName}`}>
-                    Dashboard
+                  <BreadcrumbLink asChild>
+                    <Link to={`/branch-dashboard/${id}/${branchName}`}>
+                      Dashboard
+                    </Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator>
                   <ChevronRight className="h-4 w-4" />
                 </BreadcrumbSeparator>
                 <BreadcrumbItem>
-                  <BreadcrumbLink as={Link} to={`/branch-dashboard/${id}/${branchName}/workflow`}>
-                    Workflow
+                  <BreadcrumbLink asChild>
+                    <Link to={`/branch-dashboard/${id}/${branchName}/workflow`}>
+                      Workflow
+                    </Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
               </>
             ) : (
               <BreadcrumbItem>
-                <BreadcrumbLink as={Link} to="/workflow">
-                  Workflow
+                <BreadcrumbLink asChild>
+                  <Link to="/workflow">
+                    Workflow
+                  </Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
             )}
