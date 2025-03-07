@@ -31,6 +31,8 @@ import TaskMatrix from "./pages/TaskMatrix";
 import TrainingMatrix from "./pages/TrainingMatrix";
 import FormMatrix from "./pages/FormMatrix";
 import Medication from "./pages/Medication";
+import Reviews from "./pages/Reviews";
+import Communication from "./pages/Communication";
 
 // Redirect components for consistent routing
 const FormsToFormMatrixRedirect = () => {
@@ -90,6 +92,8 @@ function App() {
             <Route path="/branch" element={<Branch />} />
             <Route path="/branch-details/:id" element={<BranchDetails />} />
             <Route path="/branch-admins" element={<BranchAdmins />} />
+            <Route path="/reviews" element={<Reviews />} />
+            <Route path="/communication" element={<Communication />} />
             
             {/* Global workflow routes */}
             <Route path="/workflow" element={<WorkflowRedirect />} />
@@ -110,6 +114,8 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
             <Route path="/branch-dashboard/:id/:branchName/notifications" element={<Notifications />} />
             <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
+            <Route path="/branch-dashboard/:id/:branchName/reviews" element={<Reviews />} />
+            <Route path="/branch-dashboard/:id/:branchName/communication" element={<Communication />} />
             
             {/* Branch workflow routes */}
             <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
