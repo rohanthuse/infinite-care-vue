@@ -507,7 +507,7 @@ const KeyParameters = () => {
                               {getParameterColumns(paramType).map((column, colIndex) => (
                                 <TableCell key={`${item.id}-${colIndex}`} className="text-left">
                                   {column.cell 
-                                    ? column.cell(item[column.accessorKey as keyof typeof item])
+                                    ? column.cell(item[column.accessorKey as keyof typeof item] as any)
                                     : item[column.accessorKey as keyof typeof item]?.toString()}
                                 </TableCell>
                               ))}
