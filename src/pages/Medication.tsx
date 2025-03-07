@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -21,15 +20,13 @@ const Medication = () => {
         navigate(`/branch-dashboard/${id}/${branchName}`);
       } else if (value === "workflow") {
         navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
-      } else if (["task-matrix", "training-matrix", "form-matrix", "medication"].includes(value)) {
-        navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
       } else {
         navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
       }
     } else {
       if (value === "workflow") {
         navigate(`/workflow/task-matrix`);
-      } else if (["task-matrix", "training-matrix", "form-matrix", "medication"].includes(value)) {
+      } else if (value.includes("matrix") || value === "medication") {
         navigate(`/workflow/${value}`);
       } else {
         navigate(`/${value}`);

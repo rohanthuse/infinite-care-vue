@@ -427,11 +427,7 @@ const BranchDashboard = () => {
   };
 
   const handleWorkflowNavigation = (path: string) => {
-    if (path === 'workflow') {
-      navigate(`/branch-dashboard/${id}/${encodeURIComponent(displayBranchName)}/task-matrix`);
-    } else {
-      navigate(`/branch-dashboard/${id}/${encodeURIComponent(displayBranchName)}/${path}`);
-    }
+    navigate(`/branch-dashboard/${id}/${encodeURIComponent(displayBranchName)}/${path}`);
   };
 
   useEffect(() => {
