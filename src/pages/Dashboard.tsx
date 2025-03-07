@@ -2,34 +2,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { TabNavigation } from "@/components/TabNavigation";
+import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { AdminsTable } from "@/components/AdminsTable";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { Home, ListChecks, Settings, FileText, Briefcase, Heart, Brain, Stethoscope, List, Activity, Users } from "lucide-react";
-
-// Navigation items
-const navigationItems = [
-  { icon: Home, label: "Home", path: "/dashboard" },
-  { icon: ListChecks, label: "Key Parameters", path: "/parameters" },
-  { icon: Settings, label: "Settings", path: "/settings" },
-  { icon: FileText, label: "Agreement", path: "/agreement" },
-  { icon: Briefcase, label: "Services", path: "/services" },
-  { icon: Heart, label: "Hobbies", path: "/hobbies" },
-  { icon: Brain, label: "Skills", path: "/skills" },
-  { icon: Stethoscope, label: "Medical & Mental", path: "/medical-mental" },
-  { icon: List, label: "Type of Work", path: "/type-of-work" },
-  { icon: Activity, label: "Body Map Injuries", path: "/body-map-points" },
-  { icon: FileText, label: "Branch", path: "/branch" },
-  { icon: Users, label: "Branch Admin", path: "/branch-admins" },
-];
+import { Bell, ListChecks, BookText, FileText, ClipboardCheck } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("dashboard"); // Set the active tab
-  const [selectedNavItem, setSelectedNavItem] = useState("Home");
   
   // In a real app, you would check auth status here
   useEffect(() => {
@@ -47,24 +30,6 @@ const Dashboard = () => {
     return () => clearTimeout(timer);
   }, []);
   
-  const handleNavigationChange = (value: string) => {
-    // Navigate to the appropriate page based on the selected tab
-    if (value === "dashboard") {
-      navigate("/dashboard");
-    } else if (value === "task-matrix" || value === "training-matrix" || value === "form-matrix" || value === "medication") {
-      navigate(`/workflow/${value}`);
-    } else if (value === "workflow") {
-      navigate("/workflow/task-matrix");
-    } else {
-      navigate(`/${value}`);
-    }
-  };
-
-  const handleNavItemClick = (path: string, label: string) => {
-    setSelectedNavItem(label);
-    navigate(path);
-  };
-  
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
@@ -79,7 +44,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
-      <TabNavigation activeTab={activeTab} onChange={handleNavigationChange} />
+      <DashboardNavbar />
       
       <motion.main 
         className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"
@@ -87,41 +52,66 @@ const Dashboard = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        {/* Navigation Cards - Top Row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          {navigationItems.slice(0, 4).map((item) => (
-            <div 
-              key={item.label}
-              className={`flex flex-col items-center justify-center py-6 px-4 rounded-xl shadow-sm cursor-pointer transition-all duration-200 ${
-                selectedNavItem === item.label ? 'bg-blue-100 border-blue-200' : 'bg-white hover:bg-gray-50 border-gray-100'
-              } border`}
-              onClick={() => handleNavItemClick(item.path, item.label)}
-            >
-              {item.icon && <item.icon className="w-6 h-6 text-blue-600 mb-2" />}
-              <span className="text-gray-700 font-medium">{item.label}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Navigation Cards - Bottom Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
-          {navigationItems.slice(4).map((item) => (
-            <div 
-              key={item.label}
-              className={`flex flex-col items-center justify-center py-6 px-4 rounded-xl shadow-sm cursor-pointer transition-all duration-200 ${
-                selectedNavItem === item.label ? 'bg-blue-100 border-blue-200' : 'bg-white hover:bg-gray-50 border-gray-100'
-              } border`}
-              onClick={() => handleNavItemClick(item.path, item.label)}
-            >
-              {item.icon && <item.icon className="w-6 h-6 text-gray-600 mb-2" />}
-              <span className="text-gray-700 font-medium text-center">{item.label}</span>
-            </div>
-          ))}
-        </div>
-        
         <div className="mb-6 md:mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Branch Administrators</h1>
           <p className="text-gray-500 mt-2 font-medium">Manage and monitor all branch administrators.</p>
+        </div>
+
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-gray-800 tracking-tight mb-4">Workflow</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card 
+              className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
+              onClick={() => navigate('/notifications')}
+            >
+              <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-3">
+                  <Bell className="h-6 w-6 text-blue-600" />
+                </div>
+                <h3 className="font-semibold text-gray-800">Notification Overview</h3>
+                <p className="text-sm text-gray-500 mt-1">System alerts and updates</p>
+              </CardContent>
+            </Card>
+
+            <Card 
+              className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
+              onClick={() => navigate('/tasks')}
+            >
+              <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-3">
+                  <ListChecks className="h-6 w-6 text-purple-600" />
+                </div>
+                <h3 className="font-semibold text-gray-800">Task Matrix</h3>
+                <p className="text-sm text-gray-500 mt-1">Manage priority tasks</p>
+              </CardContent>
+            </Card>
+
+            <Card 
+              className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
+              onClick={() => navigate('/training')}
+            >
+              <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
+                  <BookText className="h-6 w-6 text-green-600" />
+                </div>
+                <h3 className="font-semibold text-gray-800">Training Matrix</h3>
+                <p className="text-sm text-gray-500 mt-1">Staff development</p>
+              </CardContent>
+            </Card>
+
+            <Card 
+              className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
+              onClick={() => navigate('/forms')}
+            >
+              <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mb-3">
+                  <FileText className="h-6 w-6 text-amber-600" />
+                </div>
+                <h3 className="font-semibold text-gray-800">Form Matrix</h3>
+                <p className="text-sm text-gray-500 mt-1">Document templates</p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
         
         <AdminsTable />

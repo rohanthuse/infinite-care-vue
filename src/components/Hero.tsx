@@ -121,7 +121,7 @@ const Hero = () => {
                   src="/lovable-uploads/34823937-36c3-4d58-89bb-a99c71fb4dbf.png" 
                 />
                 
-                <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-gray-100 max-w-[220px]">
+                <div className="absolute bottom-6 left-6 bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-gray-100 max-w-[220px]">
                   <div className="flex justify-between items-center mb-2">
                     <h4 className="text-sm font-semibold text-gray-900">Weekly Report</h4>
                     <span className="text-xs text-green-600 font-medium">+24%</span>

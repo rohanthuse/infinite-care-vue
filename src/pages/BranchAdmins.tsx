@@ -1,32 +1,16 @@
 
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { TabNavigation } from "@/components/TabNavigation";
+import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { AdminsTable } from "@/components/AdminsTable";
 import { Users } from "lucide-react";
 import { motion } from "framer-motion";
 
 const BranchAdmins = () => {
-  const [activeTab, setActiveTab] = useState("branchAdmins"); // Set the active tab
-  const navigate = useNavigate();
-
-  const handleNavigationChange = (value: string) => {
-    if (value === "dashboard") {
-      navigate("/dashboard");
-    } else if (value === "task-matrix" || value === "training-matrix" || value === "form-matrix" || value === "medication") {
-      navigate(`/workflow/${value}`);
-    } else if (value === "workflow") {
-      navigate("/workflow/task-matrix");
-    } else {
-      navigate(`/${value}`);
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
-      <TabNavigation activeTab={activeTab} onChange={handleNavigationChange} />
+      <DashboardNavbar />
       
       <motion.main 
         className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"

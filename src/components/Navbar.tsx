@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Heart, Menu, X } from "lucide-react";
-import { Link } from "react-router-dom";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -64,15 +63,13 @@ const Navbar = () => {
 
         {/* Call to Action Button */}
         <div className="hidden md:block">
-          <Link to="/super-admin">
-            <CustomButton 
-              variant="pill" 
-              size="sm" 
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Get Started
-            </CustomButton>
-          </Link>
+          <CustomButton 
+            variant="pill" 
+            size="sm" 
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Get Started
+          </CustomButton>
         </div>
 
         {/* Mobile Menu Button */}
@@ -104,11 +101,9 @@ const Navbar = () => {
             </a>
           ))}
           <div className="pt-4">
-            <Link to="/super-admin" onClick={() => setIsMobileMenuOpen(false)}>
-              <CustomButton className="w-full bg-blue-600 hover:bg-blue-700">
-                Get Started
-              </CustomButton>
-            </Link>
+            <CustomButton className="w-full bg-blue-600 hover:bg-blue-700">
+              Get Started
+            </CustomButton>
           </div>
         </nav>
       </div>

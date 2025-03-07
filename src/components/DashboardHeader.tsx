@@ -23,7 +23,7 @@ export function DashboardHeader() {
   }, [mobileMenuOpen]);
   
   const handleLogout = () => {
-    navigate('/'); // Changed from '/super-admin' to '/' to redirect to index page
+    navigate('/super-admin');
   };
   
   return <header className="bg-white shadow-sm border-b border-gray-100 py-3 md:py-4 sticky top-0 z-50 w-full">
