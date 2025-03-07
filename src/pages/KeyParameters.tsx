@@ -330,10 +330,11 @@ const KeyParameters = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
+      <DashboardNavbar />
       
-      <div className="container mx-auto px-4 py-6">
+      <div className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full">
         {isInBranchContext && (
           <div className="mb-6">
             <TabNavigation 
