@@ -100,43 +100,26 @@ interface TabNavigationProps {
 
 export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false, hideQuickAdd = false }: TabNavigationProps) => {
   const allTabs = [...primaryTabs, ...secondaryTabs];
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { id, branchName } = useParams();
   
   // Find the active tab object, considering both direct and workflow paths
   const activeTabObject = allTabs.find(tab => {
     if (tab.value === activeTab) return true;
+    
+    // Handle the case where we're on a workflow page but the activeTab doesn't include "workflow/"
     if (tab.path && tab.path.endsWith(activeTab)) return true;
+    
     return false;
-  }) || secondaryTabGroups[0].items[0];
+  }) || secondaryTabGroups[0].items[0]; // Default to workflow tab if not found
   
   const [searchTerm, setSearchTerm] = useState("");
-
-  const handleNavigate = (value: string) => {
-    const isBranchContext = Boolean(id && branchName);
-    const isWorkflowPath = ["task-matrix", "training-matrix", "form-matrix", "medication"].includes(value);
-    
-    if (isBranchContext) {
-      const basePath = `/branch-dashboard/${id}/${branchName}`;
-      if (value === "dashboard") {
-        navigate(basePath);
-      } else if (value === "workflow" || isWorkflowPath) {
-        navigate(`${basePath}/${isWorkflowPath ? value : 'task-matrix'}`);
-      } else {
-        navigate(`${basePath}/${value}`);
-      }
-    } else {
-      if (value === "workflow" || isWorkflowPath) {
-        navigate(`/workflow/${isWorkflowPath ? value : 'task-matrix'}`);
-      } else {
-        navigate(`/${value}`);
-      }
-    }
-    
-    onChange(value);
-  };
-
+  const navigate = useNavigate();
+  const { id, branchName } = useParams();
+  const location = useLocation();
+  
+  const filteredTabs = allTabs.filter(tab => 
+    tab.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
   const handleQuickAddAction = (action: string) => {
     toast.success(`${action} action selected`, {
       description: `The ${action.toLowerCase()} feature will be available soon`,
@@ -144,11 +127,32 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
     });
     console.log(`Quick Add action selected: ${action}`);
   };
-  
-  const filteredTabs = allTabs.filter(tab => 
-    tab.label.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
+  const handleTabChange = (value: string) => {
+    // Check if this is a workflow matrix item that has a specific path
+    const tab = allTabs.find(t => t.value === value);
+    
+    if (tab && tab.path) {
+      // If it has a specific path, use that for navigation
+      if (id && branchName) {
+        // For branch-specific navigation, maintain the branch context
+        const pathWithoutWorkflow = tab.path.replace('workflow/', '');
+        navigate(`/branch-dashboard/${id}/${branchName}/${pathWithoutWorkflow}`);
+      } else {
+        // For global navigation, use the workflow path
+        navigate(`/${tab.path}`);
+      }
+    } else {
+      // Otherwise use the standard onChange handler
+      onChange(value);
+    }
+  };
+  
+  // Check if we're on a matrix page or workflow
+  const isMatrixPageActive = 
+    activeTab === "workflow" || 
+    ["task-matrix", "training-matrix", "form-matrix", "medication"].includes(activeTab);
+  
   return (
     <div className="w-full">
       <div className="flex flex-col space-y-4">
@@ -215,7 +219,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                     "flex flex-col items-center justify-center gap-1 h-auto px-1 py-2 rounded-lg",
                     isActive ? "bg-blue-50 text-blue-600" : "text-gray-500"
                   )}
-                  onClick={() => handleNavigate(tab.value)}
+                  onClick={() => onChange(tab.value)}
                 >
                   <Icon className="h-5 w-5" />
                   <span className="text-xs">{tab.label}</span>
@@ -263,7 +267,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                               tab.value === activeTab ? "bg-blue-50 text-blue-600" : ""
                             )}
                             onClick={() => {
-                              handleNavigate(tab.value);
+                              onChange(tab.value);
                               setSearchTerm("");
                             }}
                           >
@@ -293,7 +297,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                                     item.value === activeTab ? "bg-blue-50 text-blue-600" : ""
                                   )}
                                   onClick={() => {
-                                    handleNavigate(item.value);
+                                    onChange(item.value);
                                     setSearchTerm("");
                                   }}
                                 >
@@ -319,7 +323,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
             <div className="w-full overflow-x-auto hide-scrollbar bg-white border border-gray-100 rounded-xl shadow-sm">
               <Tabs 
                 value={activeTab} 
-                onValueChange={handleNavigate}
+                onValueChange={handleTabChange}
                 className="w-full"
               >
                 <TabsList className="bg-white p-1 rounded-xl w-full justify-start">
@@ -373,7 +377,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                               tab.value === activeTab ? "bg-blue-50 text-blue-600" : ""
                             )}
                             onClick={() => {
-                              handleNavigate(tab.value);
+                              onChange(tab.value);
                               setSearchTerm("");
                             }}
                           >
@@ -415,7 +419,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                                   "py-2 px-3 rounded-md my-1 text-sm cursor-pointer",
                                   isActive ? "bg-blue-50 text-blue-600" : "hover:bg-gray-50"
                                 )}
-                                onClick={() => handleNavigate(item.value)}
+                                onClick={() => onChange(item.value)}
                               >
                                 <Icon className="h-4 w-4 mr-2" />
                                 <span>{item.label}</span>

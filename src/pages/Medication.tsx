@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -9,22 +10,27 @@ const Medication = () => {
   const { id, branchName } = useParams();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Set the activeTab correctly for navigation
   const activeTab = "medication";
 
+  // Update handleChangeTab to properly navigate to workflow paths
   const handleChangeTab = (value: string) => {
     if (id && branchName) {
       if (value === "dashboard") {
         navigate(`/branch-dashboard/${id}/${branchName}`);
-      } else if (value === "workflow" || ["task-matrix", "training-matrix", "form-matrix", "medication"].includes(value)) {
-        const path = value === "workflow" ? "task-matrix" : value;
-        navigate(`/branch-dashboard/${id}/${branchName}/${path}`);
+      } else if (value === "workflow") {
+        navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
+      } else if (["task-matrix", "training-matrix", "form-matrix", "medication"].includes(value)) {
+        navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
       } else {
         navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
       }
     } else {
-      if (value === "workflow" || ["task-matrix", "training-matrix", "form-matrix", "medication"].includes(value)) {
-        const path = value === "workflow" ? "task-matrix" : value;
-        navigate(`/workflow/${path}`);
+      if (value === "workflow") {
+        navigate(`/workflow/task-matrix`);
+      } else if (["task-matrix", "training-matrix", "form-matrix", "medication"].includes(value)) {
+        navigate(`/workflow/${value}`);
       } else {
         navigate(`/${value}`);
       }
