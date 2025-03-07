@@ -276,20 +276,11 @@ export const MessageComposer = ({
           </div>
 
           <div>
-            <Label htmlFor="staff" className="block text-sm font-medium mb-1">Staff</Label>
+            <Label htmlFor="staff" className="block text-sm font-medium mb-1">Carer</Label>
             <Input
               id="staff"
               value={staff}
               onChange={(e) => setStaff(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="client" className="block text-sm font-medium mb-1">Client</Label>
-            <Input
-              id="client"
-              value={client}
-              onChange={(e) => setClient(e.target.value)}
             />
           </div>
 
