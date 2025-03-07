@@ -314,6 +314,16 @@ const BranchDashboard = () => {
   
   const displayBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
   
+  const handleChangeTab = (value: string) => {
+    setActiveTab(value);
+  };
+
+  const handleWorkflowNavigation = (path: string) => {
+    const value = path === 'workflow' ? 'task-matrix' : path;
+    navigate(`/branch-dashboard/${id}/${encodeURIComponent(displayBranchName)}/${value}`);
+    setActiveTab(value);
+  };
+
   const filteredClients = clients.filter(client => {
     const matchesSearch = 
       client.name.toLowerCase().includes(clientSearchValue.toLowerCase()) ||
@@ -426,14 +436,6 @@ const BranchDashboard = () => {
     setNewBookingDialogOpen(false);
   };
 
-  const handleWorkflowNavigation = (path: string) => {
-    if (path === 'workflow') {
-      navigate(`/branch-dashboard/${id}/${encodeURIComponent(displayBranchName)}/task-matrix`);
-    } else {
-      navigate(`/branch-dashboard/${id}/${encodeURIComponent(displayBranchName)}/${path}`);
-    }
-  };
-
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, regionFilter, clientSearchValue]);
@@ -507,7 +509,7 @@ const BranchDashboard = () => {
         
         <TabNavigation 
           activeTab={activeTab} 
-          onChange={(value) => setActiveTab(value)} 
+          onChange={handleChangeTab} 
           hideActionsOnMobile={true}
           hideQuickAdd={true}
         />
