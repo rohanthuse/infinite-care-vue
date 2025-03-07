@@ -33,6 +33,9 @@ import FormMatrix from "./pages/FormMatrix";
 import Medication from "./pages/Medication";
 import Reviews from "./pages/Reviews";
 import Communication from "./pages/Communication";
+import Bookings from "./pages/Bookings";
+import Clients from "./pages/Clients";
+import Carers from "./pages/Carers";
 
 // Redirect components for consistent routing
 const FormsToFormMatrixRedirect = () => {
@@ -80,6 +83,9 @@ function App() {
             <Route path="/services" element={<Services />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/agreement" element={<Agreement />} />
+            <Route path="/bookings" element={<Bookings />} />
+            <Route path="/clients" element={<Clients />} />
+            <Route path="/carers" element={<Carers />} />
             
             {/* Direct medication access now redirects to workflow section */}
             <Route path="/medication" element={<MedicationRedirect />} />
@@ -116,6 +122,9 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
             <Route path="/branch-dashboard/:id/:branchName/reviews" element={<Reviews />} />
             <Route path="/branch-dashboard/:id/:branchName/communication" element={<Communication />} />
+            <Route path="/branch-dashboard/:id/:branchName/bookings" element={<Bookings />} />
+            <Route path="/branch-dashboard/:id/:branchName/clients" element={<Clients />} />
+            <Route path="/branch-dashboard/:id/:branchName/carers" element={<Carers />} />
             
             {/* Branch workflow routes */}
             <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
