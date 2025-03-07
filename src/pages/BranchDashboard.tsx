@@ -21,6 +21,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { CommunicationsTab } from "@/components/communications/CommunicationsTab";
 import { ListChecks, BookText } from "lucide-react";
+
 const weeklyData = [{
   day: "Mon",
   visits: 12,
@@ -57,6 +58,7 @@ const weeklyData = [{
   bookings: 4,
   revenue: 380
 }];
+
 const monthlyRevenueData = [{
   name: "Jan",
   revenue: 4000
@@ -94,6 +96,7 @@ const monthlyRevenueData = [{
   name: "Dec",
   revenue: 11200
 }];
+
 const clientTypeData = [{
   name: "Returning",
   value: 68
@@ -101,7 +104,9 @@ const clientTypeData = [{
   name: "New",
   value: 32
 }];
+
 const COLORS = ["#4f46e5", "#a5b4fc"];
+
 const serviceData = [{
   name: "Home Care",
   usage: 45
@@ -115,6 +120,7 @@ const serviceData = [{
   name: "Therapy",
   usage: 9
 }];
+
 const clients = [{
   id: "CL-3421",
   name: "Wendy Smith",
@@ -196,6 +202,7 @@ const clients = [{
   region: "West",
   registeredOn: "02/01/2023"
 }];
+
 const DashboardStat = ({
   title,
   value,
@@ -227,6 +234,7 @@ const DashboardStat = ({
       </CardContent>
     </Card>;
 };
+
 const BookingItem = ({
   number,
   staff,
@@ -261,6 +269,7 @@ const BookingItem = ({
       </div>
     </div>;
 };
+
 const ReviewItem = ({
   client,
   staff,
@@ -290,6 +299,7 @@ const ReviewItem = ({
       </div>
     </div>;
 };
+
 const ActionItem = ({
   title,
   name,
@@ -319,6 +329,7 @@ const ActionItem = ({
       </div>
     </div>;
 };
+
 const BranchDashboard = () => {
   const {
     id,
@@ -435,6 +446,18 @@ const BranchDashboard = () => {
   const handleWorkflowNavigation = (path: string) => {
     navigate(`/branch-dashboard/${id}/${encodeURIComponent(displayBranchName)}/${path}`);
   };
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    if (newTab === "workflow") {
+      handleWorkflowNavigation("workflow");
+    } else if (newTab === "key-parameters") {
+      handleWorkflowNavigation("key-parameters");
+    } else if (newTab === "task-matrix") {
+      handleWorkflowNavigation("task-matrix");
+    } else if (newTab === "notifications") {
+      handleWorkflowNavigation("notifications");
+    }
+  };
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, regionFilter, clientSearchValue]);
@@ -486,18 +509,7 @@ const BranchDashboard = () => {
           </div>
         </div>
         
-        <TabNavigation activeTab={activeTab} onChange={value => {
-        setActiveTab(value);
-        if (value === "workflow") {
-          handleWorkflowNavigation("workflow");
-        } else if (value === "key-parameters") {
-          handleWorkflowNavigation("key-parameters");
-        } else if (value === "task-matrix") {
-          handleWorkflowNavigation("task-matrix");
-        } else if (value === "notifications") {
-          handleWorkflowNavigation("notifications");
-        }
-      }} hideActionsOnMobile={true} hideQuickAdd={true} />
+        <TabNavigation activeTab={activeTab} onChange={handleTabChange} hideActionsOnMobile={true} hideQuickAdd={true} />
         
         <motion.div key={activeTab} initial={{
         opacity: 0,
@@ -520,7 +532,7 @@ const BranchDashboard = () => {
                   </div>
                 </Button>
                 
-                <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
+                <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start" onClick={() => handleTabChange("bookings")}>
                   <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-green-100 flex items-center justify-center">
                     <Calendar className="h-3.5 md:h-4 w-3.5 md:w-4 text-green-600" />
                   </div>
@@ -540,7 +552,7 @@ const BranchDashboard = () => {
                   </div>
                 </Button>
                 
-                <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
+                <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start" onClick={() => handleTabChange("carers")}>
                   <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-purple-100 flex items-center justify-center">
                     <Users className="h-3.5 md:h-4 w-3.5 md:w-4 text-purple-600" />
                   </div>
@@ -989,4 +1001,5 @@ const BranchDashboard = () => {
       </main>
     </div>;
 };
+
 export default BranchDashboard;
