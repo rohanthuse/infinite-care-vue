@@ -3,10 +3,12 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Heart, Menu, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
   
   useEffect(() => {
     const handleScroll = () => {
@@ -25,6 +27,10 @@ const Navbar = () => {
   
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+  
+  const handleGetStarted = () => {
+    navigate("/super-admin");
   };
   
   const navItems = [
@@ -67,6 +73,7 @@ const Navbar = () => {
             variant="pill" 
             size="sm" 
             className="bg-blue-600 hover:bg-blue-700"
+            onClick={handleGetStarted}
           >
             Get Started
           </CustomButton>
@@ -101,7 +108,10 @@ const Navbar = () => {
             </a>
           ))}
           <div className="pt-4">
-            <CustomButton className="w-full bg-blue-600 hover:bg-blue-700">
+            <CustomButton 
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              onClick={handleGetStarted}
+            >
               Get Started
             </CustomButton>
           </div>
