@@ -43,6 +43,23 @@ const WorkflowRedirect = () => {
   return <Navigate to="/workflow/task-matrix" />;
 };
 
+// New redirect components for matrix pages and medication
+const TaskMatrixRedirect = () => {
+  return <Navigate to="/workflow/task-matrix" />;
+};
+
+const TrainingMatrixRedirect = () => {
+  return <Navigate to="/workflow/training-matrix" />;
+};
+
+const FormMatrixRedirect = () => {
+  return <Navigate to="/workflow/form-matrix" />;
+};
+
+const MedicationRedirect = () => {
+  return <Navigate to="/workflow/medication" />;
+};
+
 function App() {
   const [queryClient] = useState(() => new QueryClient());
 
@@ -61,7 +78,9 @@ function App() {
             <Route path="/services" element={<Services />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/agreement" element={<Agreement />} />
-            <Route path="/medication" element={<Medication />} />
+            
+            {/* Direct medication access now redirects to workflow section */}
+            <Route path="/medication" element={<MedicationRedirect />} />
             
             <Route path="/hobbies" element={<Hobbies />} />
             <Route path="/skills" element={<Skills />} />
@@ -77,11 +96,12 @@ function App() {
             <Route path="/workflow/task-matrix" element={<TaskMatrix />} />
             <Route path="/workflow/training-matrix" element={<TrainingMatrix />} />
             <Route path="/workflow/form-matrix" element={<FormMatrix />} />
+            <Route path="/workflow/medication" element={<Medication />} />
             
-            {/* Direct access to matrix pages from root */}
-            <Route path="/task-matrix" element={<Navigate to="/workflow/task-matrix" />} />
-            <Route path="/training-matrix" element={<Navigate to="/workflow/training-matrix" />} />
-            <Route path="/form-matrix" element={<Navigate to="/workflow/form-matrix" />} />
+            {/* Direct access to matrix pages from root now redirects to workflow section */}
+            <Route path="/task-matrix" element={<TaskMatrixRedirect />} />
+            <Route path="/training-matrix" element={<TrainingMatrixRedirect />} />
+            <Route path="/form-matrix" element={<FormMatrixRedirect />} />
             
             {/* Branch-specific routes */}
             <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />

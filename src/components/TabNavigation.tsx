@@ -52,11 +52,11 @@ const secondaryTabGroups = [
     label: "Operations",
     items: [
       { icon: Workflow, label: "Workflow", value: "workflow", description: "Process management" },
-      { icon: CheckSquare, label: "Task Matrix", value: "task-matrix", description: "Compliance tracking", path: "task-matrix" },
-      { icon: FileSpreadsheet, label: "Training Matrix", value: "training-matrix", description: "Training tracking", path: "training-matrix" },
-      { icon: FileText, label: "Form Matrix", value: "form-matrix", description: "Form tracking", path: "form-matrix" },
+      { icon: CheckSquare, label: "Task Matrix", value: "task-matrix", description: "Compliance tracking", path: "workflow/task-matrix" },
+      { icon: FileSpreadsheet, label: "Training Matrix", value: "training-matrix", description: "Training tracking", path: "workflow/training-matrix" },
+      { icon: FileText, label: "Form Matrix", value: "form-matrix", description: "Form tracking", path: "workflow/form-matrix" },
       { icon: ListChecks, label: "Key Parameters", value: "parameters", description: "Track metrics" },
-      { icon: Pill, label: "Medication", value: "medication", description: "Medicine tracking" },
+      { icon: Pill, label: "Medication", value: "medication", description: "Medicine tracking", path: "workflow/medication" },
       { icon: ClipboardList, label: "Care Plan", value: "care-plan", description: "Patient care plans" },
     ]
   },
@@ -101,10 +101,16 @@ interface TabNavigationProps {
 export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false, hideQuickAdd = false }: TabNavigationProps) => {
   const allTabs = [...primaryTabs, ...secondaryTabs];
   
-  const activeTabObject = activeTab === "workflow" 
-    ? secondaryTabGroups[0].items[0]  // Workflow tab
-    : allTabs.find(tab => tab.value === activeTab);
+  // Find the active tab object, considering both direct and workflow paths
+  const activeTabObject = allTabs.find(tab => {
+    if (tab.value === activeTab) return true;
     
+    // Handle the case where we're on a workflow page but the activeTab doesn't include "workflow/"
+    if (tab.path && tab.path.endsWith(activeTab)) return true;
+    
+    return false;
+  }) || secondaryTabGroups[0].items[0]; // Default to workflow tab if not found
+  
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
   const { id, branchName } = useParams();
@@ -123,11 +129,29 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
   };
 
   const handleTabChange = (value: string) => {
-    onChange(value);
+    // Check if this is a workflow matrix item that has a specific path
+    const tab = allTabs.find(t => t.value === value);
+    
+    if (tab && tab.path) {
+      // If it has a specific path, use that for navigation
+      if (id && branchName) {
+        // For branch-specific navigation, maintain the branch context
+        const pathWithoutWorkflow = tab.path.replace('workflow/', '');
+        navigate(`/branch-dashboard/${id}/${branchName}/${pathWithoutWorkflow}`);
+      } else {
+        // For global navigation, use the workflow path
+        navigate(`/${tab.path}`);
+      }
+    } else {
+      // Otherwise use the standard onChange handler
+      onChange(value);
+    }
   };
   
-  const isMatrixPageActive = activeTab === "workflow" || 
-    ["task-matrix", "training-matrix", "form-matrix"].includes(activeTab);
+  // Check if we're on a matrix page or workflow
+  const isMatrixPageActive = 
+    activeTab === "workflow" || 
+    ["task-matrix", "training-matrix", "form-matrix", "medication"].includes(activeTab);
   
   return (
     <div className="w-full">
@@ -463,4 +487,3 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
     </div>
   );
 };
-
