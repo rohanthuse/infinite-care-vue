@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { 
   LayoutDashboard, Workflow, ListChecks, Users, 
@@ -49,7 +50,7 @@ const secondaryTabGroups = [
     label: "Operations",
     items: [
       { icon: Workflow, label: "Workflow", value: "workflow", description: "Process management" },
-      { icon: ListChecks, label: "Key Parameters", value: "parameters", description: "Track metrics" },
+      { icon: ListChecks, label: "Key Parameters", value: "key-parameters", description: "Track metrics" },
       { icon: Pill, label: "Medication", value: "medication", description: "Medicine tracking" },
       { icon: ClipboardList, label: "Care Plan", value: "care-plan", description: "Patient care plans" },
     ]

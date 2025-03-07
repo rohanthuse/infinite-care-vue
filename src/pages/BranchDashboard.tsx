@@ -503,7 +503,19 @@ const BranchDashboard = () => {
         
         <TabNavigation 
           activeTab={activeTab} 
-          onChange={(value) => setActiveTab(value)} 
+          onChange={(value) => {
+            setActiveTab(value);
+            
+            if (value === "workflow") {
+              handleWorkflowNavigation("workflow");
+            } else if (value === "key-parameters") {
+              handleWorkflowNavigation("key-parameters");
+            } else if (value === "task-matrix") {
+              handleWorkflowNavigation("task-matrix");
+            } else if (value === "notifications") {
+              handleWorkflowNavigation("notifications");
+            }
+          }} 
           hideActionsOnMobile={true}
           hideQuickAdd={true}
         />
