@@ -43,7 +43,7 @@ const WorkflowRedirect = () => {
   return <Navigate to="/workflow/task-matrix" />;
 };
 
-// New redirect components for matrix pages and medication
+// Redirect components for matrix pages and medication
 const TaskMatrixRedirect = () => {
   return <Navigate to="/workflow/task-matrix" />;
 };
@@ -104,18 +104,18 @@ function App() {
             <Route path="/form-matrix" element={<FormMatrixRedirect />} />
             
             {/* Branch-specific routes */}
-            <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
+            <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
             <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
             <Route path="/branch-dashboard/:id/:branchName/notifications" element={<Notifications />} />
             <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
-            <Route path="/branch-dashboard/:id/:branchName/medication" element={<Medication />} />
             
-            {/* Branch workflow routes - note that these maintain their specific paths */}
+            {/* Branch workflow routes */}
             <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
             <Route path="/branch-dashboard/:id/:branchName/training-matrix" element={<TrainingMatrix />} />
             <Route path="/branch-dashboard/:id/:branchName/form-matrix" element={<FormMatrix />} />
+            <Route path="/branch-dashboard/:id/:branchName/medication" element={<Medication />} />
             
             {/* Redirect old form route format to the new one */}
             <Route 
