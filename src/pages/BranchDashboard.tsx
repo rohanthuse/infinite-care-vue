@@ -546,7 +546,7 @@ const BranchDashboard = () => {
                   </div>
                   <div>
                     <div className="font-medium text-xs md:text-sm">Carer</div>
-                    <div className="text-xs text-gray-500 hidden md:block">Manage staff</div>
+                    <div className="text-xs text-gray-500 hidden md:block">Manage carers</div>
                   </div>
                 </Button>
               </div>
