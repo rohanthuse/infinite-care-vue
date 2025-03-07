@@ -10,8 +10,6 @@ import {
 import { TabNavigation } from "@/components/TabNavigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CustomButton } from "@/components/ui/CustomButton";
-import { ParameterTable } from "@/components/ParameterTable";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
@@ -332,7 +330,7 @@ const KeyParameters = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-background">
       <DashboardHeader />
       
       <div className="container mx-auto px-4 py-6">
@@ -383,7 +381,7 @@ const KeyParameters = () => {
           </Breadcrumb>
         </div>
 
-        <Card className="mb-8">
+        <Card className="mb-8 border-none shadow-md">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
               <div className="flex items-center gap-4">
@@ -406,20 +404,12 @@ const KeyParameters = () => {
                     onChange={handleSearch}
                   />
                 </div>
-                
-                <Button 
-                  onClick={() => handleAddNew(activeSectionTab)}
-                  className="whitespace-nowrap"
-                >
-                  <Plus className="h-4 w-4 mr-1" /> 
-                  New {getParameterTypeTitle(activeSectionTab)}
-                </Button>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="mb-8">
+        <Card className="mb-8 border-none shadow-md">
           <Tabs value={activeSectionTab} onValueChange={setActiveSectionTab} className="w-full">
             <TabsList className="w-full grid grid-cols-3 md:grid-cols-6 p-0 rounded-t-lg rounded-b-none border-b bg-gray-50">
               <TabsTrigger 
