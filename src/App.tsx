@@ -26,6 +26,7 @@ import PostJobPage from "./components/carers/PostJobPage";
 import Notifications from "./pages/Notifications";
 import { useState } from "react";
 import TaskMatrix from "./pages/TaskMatrix";
+import Workflow from "./pages/Workflow";
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -55,6 +56,7 @@ function App() {
             <Route path="/branch-details/:id" element={<BranchDetails />} />
             <Route path="/branch-admins" element={<BranchAdmins />} />
             <Route path="/task-matrix" element={<TaskMatrix />} />
+            <Route path="/workflow" element={<Workflow />} />
             
             <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
             <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
@@ -63,6 +65,7 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/notifications" element={<Notifications />} />
             <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
             <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
+            <Route path="/branch-dashboard/:id/:branchName/workflow" element={<Workflow />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
