@@ -1,5 +1,6 @@
 
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { TabNavigation } from "@/components/TabNavigation";
 import { AdminsTable } from "@/components/AdminsTable";
@@ -8,10 +9,18 @@ import { motion } from "framer-motion";
 
 const BranchAdmins = () => {
   const [activeTab, setActiveTab] = useState("branchAdmins"); // Set the active tab
+  const navigate = useNavigate();
 
   const handleNavigationChange = (value: string) => {
-    setActiveTab(value);
-    // In a real app, you would navigate to the appropriate page here
+    if (value === "dashboard") {
+      navigate("/dashboard");
+    } else if (value === "task-matrix" || value === "training-matrix" || value === "form-matrix" || value === "medication") {
+      navigate(`/workflow/${value}`);
+    } else if (value === "workflow") {
+      navigate("/workflow/task-matrix");
+    } else {
+      navigate(`/${value}`);
+    }
   };
 
   return (
