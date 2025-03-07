@@ -1084,7 +1084,7 @@ const BranchDashboard = () => {
 
                 <Card 
                   className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200 shadow-sm"
-                  onClick={() => handleWorkflowNavigation('task-matrix')}
+                  onClick={() => handleWorkflowNavigation('tasks')}
                 >
                   <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                     <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-3">

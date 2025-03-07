@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { TabNavigation } from "@/components/TabNavigation";
+import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable } from "@/components/ParameterTable";
 import { Brain } from "lucide-react";
 import { motion } from "framer-motion";
@@ -30,7 +30,6 @@ const Skills = () => {
   const [skills, setSkills] = useState(skillsData);
   const [filteredData, setFilteredData] = useState(skills);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("skills"); // Set the active tab
   
   const columns = [
     {
@@ -86,15 +85,10 @@ const Skills = () => {
     setFilteredData(!searchQuery ? updatedSkills : filteredData);
   };
   
-  const handleNavigationChange = (value: string) => {
-    setActiveTab(value);
-    // In a real app, you would navigate to the appropriate page here
-  };
-  
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
-      <TabNavigation activeTab={activeTab} onChange={handleNavigationChange} />
+      <DashboardNavbar />
       
       <motion.main 
         className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"
