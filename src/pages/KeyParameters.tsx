@@ -14,11 +14,13 @@ import { Input } from "@/components/ui/input";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { ParameterTable } from "@/components/ParameterTable";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { DashboardHeader } from "@/components/DashboardHeader";
 
 // Define types for our different parameters
 interface BaseParameter {
@@ -55,10 +57,11 @@ const KeyParameters = () => {
   const navigate = useNavigate();
   const params = useParams();
   const { id, branchName } = params;
-  const [activeTab, setActiveTab] = useState("parameters");
+  const [activeTab, setActiveTab] = useState("key-parameters");
   const [activeSectionTab, setActiveSectionTab] = useState("report-types");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogTitle, setDialogTitle] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   
   // Determine if we're in a branch context
   const isInBranchContext = Boolean(id && branchName);
@@ -243,7 +246,7 @@ const KeyParameters = () => {
 
   const onSubmit = (data: any) => {
     console.log("Form submitted:", data);
-    toast.success("Parameter added successfully");
+    toast.success(`${getParameterTypeTitle(activeSectionTab)} added successfully`);
     setIsDialogOpen(false);
   };
 
@@ -323,156 +326,222 @@ const KeyParameters = () => {
     }
   };
 
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
   return (
-    <div className="container mx-auto p-4">
-      {isInBranchContext && (
-        <div className="mb-6">
-          <TabNavigation 
-            activeTab={activeTab} 
-            onChange={(tab) => {
-              setActiveTab(tab);
-              navigate(`/branch-dashboard/${id}/${branchName}/${tab}`);
-            }}
-          />
-        </div>
-      )}
+    <div className="flex flex-col min-h-screen">
+      <DashboardHeader />
       
-      <div className="mb-4">
-        <Breadcrumb>
-          <BreadcrumbList>
-            {isInBranchContext ? (
-              <>
+      <div className="container mx-auto px-4 py-6">
+        {isInBranchContext && (
+          <div className="mb-6">
+            <TabNavigation 
+              activeTab={activeTab} 
+              onChange={(tab) => {
+                setActiveTab(tab);
+                navigate(`/branch-dashboard/${id}/${branchName}/${tab}`);
+              }}
+            />
+          </div>
+        )}
+        
+        <div className="mb-4">
+          <Breadcrumb>
+            <BreadcrumbList>
+              {isInBranchContext ? (
+                <>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link to={`/branch-dashboard/${id}/${branchName}`}>
+                        Dashboard
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator>
+                    <ChevronRight className="h-4 w-4" />
+                  </BreadcrumbSeparator>
+                </>
+              ) : (
                 <BreadcrumbItem>
                   <BreadcrumbLink asChild>
-                    <Link to={`/branch-dashboard/${id}/${branchName}`}>
+                    <Link to="/dashboard">
                       Dashboard
                     </Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
-                <BreadcrumbSeparator>
-                  <ChevronRight className="h-4 w-4" />
-                </BreadcrumbSeparator>
-              </>
-            ) : (
+              )}
+              <BreadcrumbSeparator>
+                <ChevronRight className="h-4 w-4" />
+              </BreadcrumbSeparator>
               <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link to="/dashboard">
-                    Dashboard
-                  </Link>
-                </BreadcrumbLink>
+                <BreadcrumbLink>Key Parameters</BreadcrumbLink>
               </BreadcrumbItem>
-            )}
-            <BreadcrumbSeparator>
-              <ChevronRight className="h-4 w-4" />
-            </BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <BreadcrumbLink>Key Parameters</BreadcrumbLink>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
-
-      <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-2xl p-6 md:p-8 mb-8">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-white rounded-xl shadow-sm">
-              <ListChecks className="h-6 w-6 text-blue-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Key Parameters</h1>
-              <p className="text-gray-500 text-sm md:text-base">Manage system parameters and configurations</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input 
-                className="pl-9 bg-white border-gray-200 focus:border-blue-300 w-full sm:w-64" 
-                placeholder="Search parameters..."
-              />
-            </div>
-            
-            <CustomButton 
-              variant="pill" 
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20"
-              onClick={() => handleAddNew(activeSectionTab)}
-            >
-              <Plus className="mr-1.5 h-4 w-4" /> New {getParameterTypeTitle(activeSectionTab)}
-            </CustomButton>
-          </div>
+            </BreadcrumbList>
+          </Breadcrumb>
         </div>
-      </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
-        <Tabs value={activeSectionTab} onValueChange={setActiveSectionTab} className="w-full">
-          <TabsList className="w-full flex overflow-x-auto bg-gray-50 p-1 border-b border-gray-200">
-            <TabsTrigger 
-              value="report-types" 
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2"
-            >
-              <FileText className="h-4 w-4" />
-              <span>Report Types</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="file-categories" 
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2"
-            >
-              <Folder className="h-4 w-4" />
-              <span>File Categories</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="bank-holidays" 
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2"
-            >
-              <Calendar className="h-4 w-4" />
-              <span>Bank Holidays</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="travel-management" 
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2"
-            >
-              <Car className="h-4 w-4" />
-              <span>Travel Management</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="communication-types" 
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2"
-            >
-              <MessageSquare className="h-4 w-4" />
-              <span>Communication Types</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="expense-types" 
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2"
-            >
-              <DollarSign className="h-4 w-4" />
-              <span>Expense Types</span>
-            </TabsTrigger>
-          </TabsList>
+        <Card className="mb-8">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-100 rounded-xl">
+                  <ListChecks className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Key Parameters</h1>
+                  <p className="text-gray-500 text-sm md:text-base">Manage system parameters and configurations</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <div className="relative w-full md:w-auto">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input 
+                    className="pl-9 pr-4 py-2 w-full md:w-64" 
+                    placeholder="Search parameters..."
+                    value={searchQuery}
+                    onChange={handleSearch}
+                  />
+                </div>
+                
+                <Button 
+                  onClick={() => handleAddNew(activeSectionTab)}
+                  className="whitespace-nowrap"
+                >
+                  <Plus className="h-4 w-4 mr-1" /> 
+                  New {getParameterTypeTitle(activeSectionTab)}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-          {["report-types", "file-categories", "bank-holidays", "travel-management", "communication-types", "expense-types"].map((paramType) => (
-            <TabsContent key={paramType} value={paramType} className="p-0">
-              <ParameterTable
-                title={getParameterTypeTitle(paramType)}
-                icon={getParameterTypeIcon(paramType)}
-                columns={getParameterColumns(paramType)}
-                data={getParameterData(paramType)}
-                showFilter={false}
-                showActions={true}
-                addButton={
-                  <CustomButton 
-                    variant="pill" 
-                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20"
-                    onClick={() => handleAddNew(paramType)}
-                  >
-                    <Plus className="mr-1.5 h-4 w-4" /> New {getParameterTypeTitle(paramType)}
-                  </CustomButton>
-                }
-              />
-            </TabsContent>
-          ))}
-        </Tabs>
+        <Card className="mb-8">
+          <Tabs value={activeSectionTab} onValueChange={setActiveSectionTab} className="w-full">
+            <TabsList className="w-full grid grid-cols-3 md:grid-cols-6 p-0 rounded-t-lg rounded-b-none border-b bg-gray-50">
+              <TabsTrigger 
+                value="report-types" 
+                className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              >
+                <FileText className="h-4 w-4" />
+                <span className="hidden md:inline">Report Types</span>
+                <span className="md:hidden">Reports</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="file-categories" 
+                className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              >
+                <Folder className="h-4 w-4" />
+                <span className="hidden md:inline">File Categories</span>
+                <span className="md:hidden">Files</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="bank-holidays" 
+                className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              >
+                <Calendar className="h-4 w-4" />
+                <span className="hidden md:inline">Bank Holidays</span>
+                <span className="md:hidden">Holidays</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="travel-management" 
+                className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              >
+                <Car className="h-4 w-4" />
+                <span className="hidden md:inline">Travel Management</span>
+                <span className="md:hidden">Travel</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="communication-types" 
+                className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              >
+                <MessageSquare className="h-4 w-4" />
+                <span className="hidden md:inline">Communication Types</span>
+                <span className="md:hidden">Comms</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="expense-types" 
+                className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              >
+                <DollarSign className="h-4 w-4" />
+                <span className="hidden md:inline">Expense Types</span>
+                <span className="md:hidden">Expenses</span>
+              </TabsTrigger>
+            </TabsList>
+
+            {["report-types", "file-categories", "bank-holidays", "travel-management", "communication-types", "expense-types"].map((paramType) => (
+              <TabsContent key={paramType} value={paramType} className="p-0 border-0">
+                <div className="p-4 border-t-0 rounded-b-lg bg-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      {getParameterTypeIcon(paramType)}
+                      <h2 className="text-xl font-semibold text-gray-800">
+                        {getParameterTypeTitle(paramType)}s
+                      </h2>
+                    </div>
+                    <Button 
+                      onClick={() => handleAddNew(paramType)}
+                      className="whitespace-nowrap"
+                    >
+                      <Plus className="h-4 w-4 mr-1" /> 
+                      New {getParameterTypeTitle(paramType)}
+                    </Button>
+                  </div>
+                  
+                  <div className="relative overflow-hidden border rounded-lg">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          {getParameterColumns(paramType).map((column, index) => (
+                            <TableHead key={index} className="text-left font-semibold">
+                              {column.header}
+                            </TableHead>
+                          ))}
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {getParameterData(paramType)
+                          .filter(item => searchQuery 
+                            ? item.title.toLowerCase().includes(searchQuery.toLowerCase())
+                            : true)
+                          .map((item) => (
+                            <TableRow key={item.id}>
+                              {getParameterColumns(paramType).map((column, colIndex) => (
+                                <TableCell key={`${item.id}-${colIndex}`} className="text-left">
+                                  {column.cell 
+                                    ? column.cell(item[column.accessorKey as keyof typeof item])
+                                    : item[column.accessorKey as keyof typeof item]?.toString()}
+                                </TableCell>
+                              ))}
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                                    <ChevronRight className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        {getParameterData(paramType).filter(item => searchQuery 
+                          ? item.title.toLowerCase().includes(searchQuery.toLowerCase())
+                          : true).length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={getParameterColumns(paramType).length + 1} className="text-center py-6 text-gray-500">
+                              No data found
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
+        </Card>
       </div>
 
       {/* Dialog for adding new parameter */}
