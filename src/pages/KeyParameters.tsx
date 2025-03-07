@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { 
@@ -18,11 +17,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { DashboardHeader } from "@/components/DashboardHeader";
 
-// Define types for our different parameters
 interface BaseParameter {
   id: string | number;
   title: string;
@@ -63,10 +62,8 @@ const KeyParameters = () => {
   const [dialogTitle, setDialogTitle] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Determine if we're in a branch context
   const isInBranchContext = Boolean(id && branchName);
 
-  // Sample data
   const reportTypes: ReportType[] = [
     { id: 1, title: "General", status: "Active" },
     { id: 2, title: "Diet and Nutrition", status: "Active" },
@@ -119,7 +116,6 @@ const KeyParameters = () => {
     { id: 4, title: "Training fee", status: "Active", type: "Decrement", amount: 50, tax: 0 },
   ];
 
-  // Column definitions
   const reportTypeColumns = [
     { header: "Title", accessorKey: "title" },
     { 
@@ -223,7 +219,6 @@ const KeyParameters = () => {
     },
   ];
 
-  // Form for adding new parameter
   const form = useForm({
     defaultValues: {
       title: "",
@@ -544,7 +539,6 @@ const KeyParameters = () => {
         </Card>
       </div>
 
-      {/* Dialog for adding new parameter */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
