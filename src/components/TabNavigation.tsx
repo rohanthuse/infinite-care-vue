@@ -1,12 +1,14 @@
 import React, { useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { 
-  LayoutDashboard, Workflow, ListChecks, Users, 
+  LayoutDashboard, Workflow, Users, 
   Calendar, Star, MessageSquare, Pill, DollarSign, 
-  FileText, ClipboardCheck, Bell, ClipboardList, 
+  FileText, Bell, 
   FileUp, Folder, UserPlus, BarChart4, Settings, 
   Activity, Briefcase, PanelLeft, Paperclip,
   ChevronDown, Menu, Search, Grid, Plus,
-  UserPlus2, FileSignature, CalendarPlus, Contact, UserRoundPlus
+  UserPlus2, FileSignature, CalendarPlus, Contact, UserRoundPlus,
+  CheckSquare, ClipboardList, FileSpreadsheet, ListChecks, Clipboard
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,6 +35,7 @@ interface TabItem {
   label: string;
   value: string;
   description?: string;
+  path?: string;
 }
 
 const primaryTabs: TabItem[] = [
@@ -49,6 +52,9 @@ const secondaryTabGroups = [
     label: "Operations",
     items: [
       { icon: Workflow, label: "Workflow", value: "workflow", description: "Process management" },
+      { icon: CheckSquare, label: "Task Matrix", value: "task-matrix", description: "Compliance tracking", path: "task-matrix" },
+      { icon: FileSpreadsheet, label: "Training Matrix", value: "training-matrix", description: "Training tracking", path: "training-matrix" },
+      { icon: FileText, label: "Form Matrix", value: "form-matrix", description: "Form tracking", path: "form-matrix" },
       { icon: ListChecks, label: "Key Parameters", value: "parameters", description: "Track metrics" },
       { icon: Pill, label: "Medication", value: "medication", description: "Medicine tracking" },
       { icon: ClipboardList, label: "Care Plan", value: "care-plan", description: "Patient care plans" },
@@ -60,7 +66,7 @@ const secondaryTabGroups = [
       { icon: DollarSign, label: "Accounting", value: "accounting", description: "Financial management" },
       { icon: FileText, label: "Agreements", value: "agreements", description: "Legal documents" },
       { icon: Bell, label: "Events & Logs", value: "events-logs", description: "Activity tracking" },
-      { icon: ClipboardCheck, label: "Attendance", value: "attendance", description: "Staff attendance" },
+      { icon: Clipboard, label: "Attendance", value: "attendance", description: "Staff attendance" },
     ]
   },
   {
@@ -94,8 +100,15 @@ interface TabNavigationProps {
 
 export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false, hideQuickAdd = false }: TabNavigationProps) => {
   const allTabs = [...primaryTabs, ...secondaryTabs];
-  const activeTabObject = allTabs.find(tab => tab.value === activeTab);
+  
+  const activeTabObject = activeTab === "workflow" 
+    ? secondaryTabGroups[0].items[0]  // Workflow tab
+    : allTabs.find(tab => tab.value === activeTab);
+    
   const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
+  const { id, branchName } = useParams();
+  const location = useLocation();
   
   const filteredTabs = allTabs.filter(tab => 
     tab.label.toLowerCase().includes(searchTerm.toLowerCase())
@@ -108,6 +121,13 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
     });
     console.log(`Quick Add action selected: ${action}`);
   };
+
+  const handleTabChange = (value: string) => {
+    onChange(value);
+  };
+  
+  const isMatrixPageActive = activeTab === "workflow" || 
+    ["task-matrix", "training-matrix", "form-matrix"].includes(activeTab);
   
   return (
     <div className="w-full">
@@ -279,7 +299,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
             <div className="w-full overflow-x-auto hide-scrollbar bg-white border border-gray-100 rounded-xl shadow-sm">
               <Tabs 
                 value={activeTab} 
-                onValueChange={onChange}
+                onValueChange={handleTabChange}
                 className="w-full"
               >
                 <TabsList className="bg-white p-1 rounded-xl w-full justify-start">
@@ -443,3 +463,4 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
     </div>
   );
 };
+

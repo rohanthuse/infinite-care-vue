@@ -1,8 +1,9 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
@@ -23,7 +24,21 @@ import CarerProfilePage from "./pages/CarerProfilePage";
 import ApplicationDetailsPage from "./components/carers/ApplicationDetailsPage";
 import PostJobPage from "./components/carers/PostJobPage";
 import Notifications from "./pages/Notifications";
+import TaskMatrix from "./pages/TaskMatrix";
+import TrainingMatrix from "./pages/TrainingMatrix";
+import FormMatrix from "./pages/FormMatrix";
 import { useState } from "react";
+
+// Redirect components for consistent routing
+const FormsToFormMatrixRedirect = () => {
+  const location = useLocation();
+  const redirectTo = location.pathname.replace('/forms', '/form-matrix');
+  return <Navigate to={redirectTo} />;
+};
+
+const WorkflowRedirect = () => {
+  return <Navigate to="/workflow/task-matrix" />;
+};
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -53,12 +68,35 @@ function App() {
             <Route path="/branch-details/:id" element={<BranchDetails />} />
             <Route path="/branch-admins" element={<BranchAdmins />} />
             
+            {/* Global workflow routes */}
+            <Route path="/workflow" element={<WorkflowRedirect />} />
+            <Route path="/workflow/task-matrix" element={<TaskMatrix />} />
+            <Route path="/workflow/training-matrix" element={<TrainingMatrix />} />
+            <Route path="/workflow/form-matrix" element={<FormMatrix />} />
+            
+            {/* Direct access to matrix pages from root */}
+            <Route path="/task-matrix" element={<Navigate to="/workflow/task-matrix" />} />
+            <Route path="/training-matrix" element={<Navigate to="/workflow/training-matrix" />} />
+            <Route path="/form-matrix" element={<Navigate to="/workflow/form-matrix" />} />
+            
+            {/* Branch-specific routes */}
             <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
             <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
             <Route path="/branch-dashboard/:id/:branchName/notifications" element={<Notifications />} />
             <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
+            
+            {/* Branch workflow routes - note that these maintain their specific paths */}
+            <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
+            <Route path="/branch-dashboard/:id/:branchName/training-matrix" element={<TrainingMatrix />} />
+            <Route path="/branch-dashboard/:id/:branchName/form-matrix" element={<FormMatrix />} />
+            
+            {/* Redirect old form route format to the new one */}
+            <Route 
+              path="/branch-dashboard/:id/:branchName/forms" 
+              element={<FormsToFormMatrixRedirect />} 
+            />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

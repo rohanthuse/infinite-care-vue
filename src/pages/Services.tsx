@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { DashboardNavbar } from "@/components/DashboardNavbar";
+import { TabNavigation } from "@/components/TabNavigation";
 import { ServicesTable } from "@/components/ServicesTable";
 import { motion } from "framer-motion";
 import { Briefcase, Plus, Search, Filter, Download } from "lucide-react";
@@ -14,6 +15,7 @@ const Services = () => {
   const [filterDoubleHanded, setFilterDoubleHanded] = useState<boolean | null>(null);
   const [showAddServiceDialog, setShowAddServiceDialog] = useState(false);
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("services"); // Set the active tab
   
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -28,10 +30,15 @@ const Services = () => {
     setFilterDoubleHanded(doubleHanded);
   };
   
+  const handleNavigationChange = (value: string) => {
+    setActiveTab(value);
+    // In a real app, you would navigate to the appropriate page here
+  };
+  
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
-      <DashboardNavbar />
+      <TabNavigation activeTab={activeTab} onChange={handleNavigationChange} />
       
       <motion.main 
         className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"
