@@ -1,6 +1,7 @@
+
 import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { TabNavigation } from "@/components/TabNavigation";
+import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { motion } from "framer-motion";
 import { Settings as SettingsIcon, Building2, Save, XCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -22,8 +23,6 @@ const Settings = () => {
     email: "admin@medinfinitehealthcareservices.com",
   });
 
-  const [activeTab, setActiveTab] = useState("settings");
-
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -41,15 +40,10 @@ const Settings = () => {
     // Reset form to original values if needed
   };
 
-  const handleNavigationChange = (value: string) => {
-    setActiveTab(value);
-    // In a real app, you would navigate to the appropriate page here
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
-      <TabNavigation activeTab={activeTab} onChange={handleNavigationChange} />
+      <DashboardNavbar />
       
       <motion.main 
         className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"

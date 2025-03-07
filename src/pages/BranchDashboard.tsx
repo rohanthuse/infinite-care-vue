@@ -314,16 +314,6 @@ const BranchDashboard = () => {
   
   const displayBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
   
-  const handleChangeTab = (value: string) => {
-    setActiveTab(value);
-  };
-
-  const handleWorkflowNavigation = (path: string) => {
-    const value = path === 'workflow' ? 'task-matrix' : path;
-    navigate(`/branch-dashboard/${id}/${encodeURIComponent(displayBranchName)}/${value}`);
-    setActiveTab(value);
-  };
-
   const filteredClients = clients.filter(client => {
     const matchesSearch = 
       client.name.toLowerCase().includes(clientSearchValue.toLowerCase()) ||
@@ -436,6 +426,10 @@ const BranchDashboard = () => {
     setNewBookingDialogOpen(false);
   };
 
+  const handleWorkflowNavigation = (path: string) => {
+    navigate(`/branch-dashboard/${id}/${encodeURIComponent(displayBranchName)}/${path}`);
+  };
+
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, regionFilter, clientSearchValue]);
@@ -509,7 +503,7 @@ const BranchDashboard = () => {
         
         <TabNavigation 
           activeTab={activeTab} 
-          onChange={handleChangeTab} 
+          onChange={(value) => setActiveTab(value)} 
           hideActionsOnMobile={true}
           hideQuickAdd={true}
         />
@@ -1090,7 +1084,7 @@ const BranchDashboard = () => {
 
                 <Card 
                   className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200 shadow-sm"
-                  onClick={() => handleWorkflowNavigation('task-matrix')}
+                  onClick={() => handleWorkflowNavigation('tasks')}
                 >
                   <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                     <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-3">

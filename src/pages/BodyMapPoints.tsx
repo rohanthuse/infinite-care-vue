@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { TabNavigation } from "@/components/TabNavigation";
+import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable } from "@/components/ParameterTable";
 import { ActivitySquare } from "lucide-react";
 import { motion } from "framer-motion";
@@ -19,7 +18,6 @@ const BodyMapPoints = () => {
   const [points, setPoints] = useState(bodyMapPointsData);
   const [filteredData, setFilteredData] = useState(points);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("bodyMapPoints"); // Set the active tab
   
   const columns = [
     {
@@ -76,15 +74,10 @@ const BodyMapPoints = () => {
     setFilteredData(!searchQuery ? updatedPoints : filteredData);
   };
   
-  const handleNavigationChange = (value: string) => {
-    setActiveTab(value);
-    // In a real app, you would navigate to the appropriate page here
-  };
-  
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
-      <TabNavigation activeTab={activeTab} onChange={handleNavigationChange} />
+      <DashboardNavbar />
       
       <motion.main 
         className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"
