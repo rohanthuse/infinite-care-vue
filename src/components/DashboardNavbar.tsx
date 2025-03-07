@@ -158,8 +158,7 @@ export function DashboardNavbar() {
     { label: "Type of Work", icon: ListChecks, path: "/type-of-work" },
     { label: "Body Map Injuries", icon: ActivitySquare, path: "/body-map-points" },
     { label: "Branch", icon: Building2, path: "/branch" },
-    { label: "Branch Admin", icon: Users, path: "/branch-admins" },
-    { label: "Key Parameters", icon: ListChecks, path: "/key-parameters" },
+    { label: "Branch Admin", icon: Users, path: "/branch-admins" }
   ];
 
   useEffect(() => {
