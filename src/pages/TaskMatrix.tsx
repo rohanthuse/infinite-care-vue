@@ -46,9 +46,11 @@ const TaskMatrix = () => {
   
   const handleBackToWorkflow = () => {
     if (isInBranchContext) {
-      navigate(`/branch-dashboard/${id}/${branchName}/workflow`);
+      // Navigate back to dashboard with workflow module selected
+      navigate(`/branch-dashboard/${id}/${branchName}`, { state: { activeModule: "workflow" } });
     } else {
-      navigate('/workflow');
+      // Navigate to main dashboard with workflow module selected
+      navigate('/dashboard', { state: { activeModule: "workflow" } });
     }
   };
   
@@ -186,7 +188,7 @@ const TaskMatrix = () => {
                 </BreadcrumbSeparator>
                 <BreadcrumbItem>
                   <BreadcrumbLink asChild>
-                    <Link to={`/branch-dashboard/${id}/${branchName}/workflow`}>
+                    <Link to={`/branch-dashboard/${id}/${branchName}`} state={{ activeModule: "workflow" }}>
                       Workflow
                     </Link>
                   </BreadcrumbLink>
@@ -195,7 +197,7 @@ const TaskMatrix = () => {
             ) : (
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link to="/workflow">
+                  <Link to="/dashboard" state={{ activeModule: "workflow" }}>
                     Workflow
                   </Link>
                 </BreadcrumbLink>
