@@ -204,14 +204,57 @@ const Medication = () => {
     if (editingMedication) {
       // Update existing medication
       setMedications(medications.map(med => 
-        med.id === editingMedication ? { ...data, id: med.id } as Medication : med
+        med.id === editingMedication ? { 
+          id: med.id,
+          name: data.name,
+          dosage: data.dosage,
+          morning: {
+            enabled: data.morning.enabled,
+            time: data.morning.time
+          },
+          lunch: {
+            enabled: data.lunch.enabled,
+            time: data.lunch.time
+          },
+          evening: {
+            enabled: data.evening.enabled,
+            time: data.evening.time
+          },
+          night: {
+            enabled: data.night.enabled,
+            time: data.night.time
+          },
+          startDate: data.startDate,
+          endDate: data.endDate,
+          notes: data.notes
+        } : med
       ));
       toast.success("Medication updated successfully");
     } else {
-      // Add new medication
+      // Add new medication with all required properties explicitly assigned
       const newMedication: Medication = {
-        ...data,
-        id: Date.now().toString()
+        id: Date.now().toString(),
+        name: data.name,
+        dosage: data.dosage,
+        morning: {
+          enabled: data.morning.enabled,
+          time: data.morning.time
+        },
+        lunch: {
+          enabled: data.lunch.enabled,
+          time: data.lunch.time
+        },
+        evening: {
+          enabled: data.evening.enabled,
+          time: data.evening.time
+        },
+        night: {
+          enabled: data.night.enabled,
+          time: data.night.time
+        },
+        startDate: data.startDate,
+        endDate: data.endDate,
+        notes: data.notes
       };
       setMedications([...medications, newMedication]);
       toast.success("Medication added successfully");
@@ -691,4 +734,3 @@ const Medication = () => {
 };
 
 export default Medication;
-
