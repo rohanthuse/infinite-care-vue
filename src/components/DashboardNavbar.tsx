@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   ChevronDown, ChevronUp, FileText, Home, 
@@ -160,6 +159,7 @@ export function DashboardNavbar() {
     { label: "Body Map Injuries", icon: ActivitySquare, path: "/body-map-points" },
     { label: "Branch", icon: Building2, path: "/branch" },
     { label: "Branch Admin", icon: Users, path: "/branch-admins" },
+    { label: "Key Parameters", icon: ListChecks, path: "/key-parameters" },
   ];
 
   useEffect(() => {
