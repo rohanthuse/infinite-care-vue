@@ -1,11 +1,8 @@
-
 import { useEffect, useRef } from "react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { ArrowRight, Shield, BarChart3, Users, Play, CheckCircle } from "lucide-react";
-
 const Hero = () => {
   const heroRef = useRef<HTMLDivElement>(null);
-  
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
@@ -17,20 +14,16 @@ const Hero = () => {
     }, {
       threshold: 0.1
     });
-    
     if (heroRef.current) {
       observer.observe(heroRef.current);
     }
-    
     return () => {
       if (heroRef.current) {
         observer.unobserve(heroRef.current);
       }
     };
   }, []);
-  
-  return (
-    <section id="hero" className="relative py-12 md:py-16 lg:py-20 overflow-hidden">
+  return <section id="hero" className="relative py-12 md:py-16 lg:py-20 overflow-hidden">
       {/* Background Elements */}
       <div className="absolute w-[500px] h-[500px] rounded-full bg-gradient-to-r from-blue-100/60 to-blue-300/20 top-[-100px] right-[-200px] blur-3xl parallax" data-speed="0.05" aria-hidden="true"></div>
       <div className="absolute w-[600px] h-[600px] rounded-full bg-gradient-to-r from-cyan-100/40 to-blue-200/30 bottom-[-200px] left-[-200px] blur-3xl parallax" data-speed="0.1" aria-hidden="true"></div>
@@ -57,18 +50,11 @@ const Hero = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
-              <CustomButton 
-                size="lg" 
-                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 border-0 shadow-lg shadow-blue-500/20"
-              >
+              <CustomButton size="lg" className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 border-0 shadow-lg shadow-blue-500/20">
                 Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
               </CustomButton>
               
-              <CustomButton 
-                variant="outline" 
-                size="lg" 
-                className="bg-white/80 backdrop-blur-sm border-blue-200 text-blue-700 hover:bg-blue-50"
-              >
+              <CustomButton variant="outline" size="lg" className="bg-white/80 backdrop-blur-sm border-blue-200 text-blue-700 hover:bg-blue-50">
                 <Play className="mr-2 h-4 w-4 fill-blue-500" /> Watch Demo
               </CustomButton>
             </div>
@@ -114,12 +100,7 @@ const Hero = () => {
             <div className="relative">
               {/* Main Dashboard Display */}
               <div className="relative z-10 rounded-2xl overflow-hidden shadow-2xl bg-white p-2 rotate-1 transform hover:rotate-0 transition-all duration-500">
-                <img 
-                  alt="Med-Infinite Dashboard" 
-                  className="w-full h-full object-cover rounded-xl" 
-                  loading="lazy" 
-                  src="/lovable-uploads/34823937-36c3-4d58-89bb-a99c71fb4dbf.png" 
-                />
+                <img alt="Med-Infinite Dashboard" className="w-full h-full object-cover rounded-xl" loading="lazy" src="/lovable-uploads/d1823018-dfc1-41a0-8401-0b9de4112292.jpg" />
                 
                 <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-gray-100 max-w-[220px]">
                   <div className="flex justify-between items-center mb-2">
@@ -156,8 +137,8 @@ const Hero = () => {
               </div>
               
               <div className="absolute -bottom-[10px] left-[5%] z-30 animate-float" style={{
-                animationDelay: '1.5s'
-              }}>
+              animationDelay: '1.5s'
+            }}>
                 <div className="bg-white rounded-xl shadow-md p-3 max-w-[180px] -rotate-3">
                   <div className="flex items-center mb-2">
                     <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
@@ -181,16 +162,12 @@ const Hero = () => {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 items-center justify-items-center">
-            {['Mayo Clinic', 'Cleveland Clinic', 'Johns Hopkins', 'Mount Sinai', 'UC Health'].map((brand, index) => (
-              <div key={index} className="text-gray-400 font-semibold tracking-tight text-lg md:text-xl flex items-center justify-center h-12">
+            {['Mayo Clinic', 'Cleveland Clinic', 'Johns Hopkins', 'Mount Sinai', 'UC Health'].map((brand, index) => <div key={index} className="text-gray-400 font-semibold tracking-tight text-lg md:text-xl flex items-center justify-center h-12">
                 {brand}
-              </div>
-            ))}
+              </div>)}
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default Hero;
