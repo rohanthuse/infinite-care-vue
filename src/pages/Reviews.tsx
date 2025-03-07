@@ -1,15 +1,15 @@
+
 import { useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { TabNavigation } from "@/components/TabNavigation";
 import { BranchHeader } from "@/components/BranchHeader";
+import { ReviewsTab } from "@/components/reviews/ReviewsTab";
 
-const Medication = () => {
-  const location = useLocation();
+const Reviews = () => {
   const { id, branchName } = useParams();
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
-  const activeTab = "medication";
+  const activeTab = "reviews";
 
   const handleChangeTab = (value: string) => {
     if (id && branchName) {
@@ -22,7 +22,9 @@ const Medication = () => {
         navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
       }
     } else {
-      if (value === "workflow" || ["task-matrix", "training-matrix", "form-matrix", "medication"].includes(value)) {
+      if (value === "dashboard") {
+        navigate("/dashboard");
+      } else if (value === "workflow" || ["task-matrix", "training-matrix", "form-matrix", "medication"].includes(value)) {
         const path = value === "workflow" ? "task-matrix" : value;
         navigate(`/workflow/${path}`);
       } else {
@@ -40,7 +42,7 @@ const Medication = () => {
           <BranchHeader
             id={id}
             branchName={branchName}
-            onNewBooking={() => { }}
+            onNewBooking={() => {}}
           />
         )}
 
@@ -50,13 +52,12 @@ const Medication = () => {
           hideQuickAdd={true}
         />
 
-        <div className="mt-6 space-y-6">
-          <h1 className="text-2xl font-bold text-gray-800">Medication</h1>
-          <p className="text-gray-500 mt-1">Manage and track medications.</p>
+        <div className="mt-6">
+          <ReviewsTab branchId={id || ""} />
         </div>
       </main>
     </div>
   );
 };
 
-export default Medication;
+export default Reviews;

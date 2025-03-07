@@ -31,6 +31,8 @@ import TaskMatrix from "./pages/TaskMatrix";
 import TrainingMatrix from "./pages/TrainingMatrix";
 import FormMatrix from "./pages/FormMatrix";
 import Medication from "./pages/Medication";
+import Reviews from "./pages/Reviews";
+import Communication from "./pages/Communication";
 
 // Redirect components for consistent routing
 const FormsToFormMatrixRedirect = () => {
@@ -41,6 +43,23 @@ const FormsToFormMatrixRedirect = () => {
 
 const WorkflowRedirect = () => {
   return <Navigate to="/workflow/task-matrix" />;
+};
+
+// Redirect components for matrix pages and medication
+const TaskMatrixRedirect = () => {
+  return <Navigate to="/workflow/task-matrix" />;
+};
+
+const TrainingMatrixRedirect = () => {
+  return <Navigate to="/workflow/training-matrix" />;
+};
+
+const FormMatrixRedirect = () => {
+  return <Navigate to="/workflow/form-matrix" />;
+};
+
+const MedicationRedirect = () => {
+  return <Navigate to="/workflow/medication" />;
 };
 
 function App() {
@@ -61,7 +80,9 @@ function App() {
             <Route path="/services" element={<Services />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/agreement" element={<Agreement />} />
-            <Route path="/medication" element={<Medication />} />
+            
+            {/* Direct medication access now redirects to workflow section */}
+            <Route path="/medication" element={<MedicationRedirect />} />
             
             <Route path="/hobbies" element={<Hobbies />} />
             <Route path="/skills" element={<Skills />} />
@@ -71,31 +92,36 @@ function App() {
             <Route path="/branch" element={<Branch />} />
             <Route path="/branch-details/:id" element={<BranchDetails />} />
             <Route path="/branch-admins" element={<BranchAdmins />} />
+            <Route path="/reviews" element={<Reviews />} />
+            <Route path="/communication" element={<Communication />} />
             
             {/* Global workflow routes */}
             <Route path="/workflow" element={<WorkflowRedirect />} />
             <Route path="/workflow/task-matrix" element={<TaskMatrix />} />
             <Route path="/workflow/training-matrix" element={<TrainingMatrix />} />
             <Route path="/workflow/form-matrix" element={<FormMatrix />} />
+            <Route path="/workflow/medication" element={<Medication />} />
             
-            {/* Direct access to matrix pages from root */}
-            <Route path="/task-matrix" element={<Navigate to="/workflow/task-matrix" />} />
-            <Route path="/training-matrix" element={<Navigate to="/workflow/training-matrix" />} />
-            <Route path="/form-matrix" element={<Navigate to="/workflow/form-matrix" />} />
+            {/* Direct access to matrix pages from root now redirects to workflow section */}
+            <Route path="/task-matrix" element={<TaskMatrixRedirect />} />
+            <Route path="/training-matrix" element={<TrainingMatrixRedirect />} />
+            <Route path="/form-matrix" element={<FormMatrixRedirect />} />
             
             {/* Branch-specific routes */}
-            <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
+            <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
             <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
             <Route path="/branch-dashboard/:id/:branchName/notifications" element={<Notifications />} />
             <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
-            <Route path="/branch-dashboard/:id/:branchName/medication" element={<Medication />} />
+            <Route path="/branch-dashboard/:id/:branchName/reviews" element={<Reviews />} />
+            <Route path="/branch-dashboard/:id/:branchName/communication" element={<Communication />} />
             
-            {/* Branch workflow routes - note that these maintain their specific paths */}
+            {/* Branch workflow routes */}
             <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
             <Route path="/branch-dashboard/:id/:branchName/training-matrix" element={<TrainingMatrix />} />
             <Route path="/branch-dashboard/:id/:branchName/form-matrix" element={<FormMatrix />} />
+            <Route path="/branch-dashboard/:id/:branchName/medication" element={<Medication />} />
             
             {/* Redirect old form route format to the new one */}
             <Route 
