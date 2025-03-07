@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, Lock, User, AlertCircle, Eye, EyeOff, Heart } from "lucide-react";
+import { Heart, Lock, User, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,52 +58,42 @@ const SuperAdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Left section with image and welcome text */}
-      <div className="md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-500 text-white p-8 flex flex-col relative overflow-hidden">
-        {/* Wave pattern background */}
-        <div className="absolute inset-0 opacity-20">
-          <img 
-            src="/lovable-uploads/5b9a76b7-b6ff-4f96-ad2f-53a109a095be.png" 
-            alt="Wave pattern" 
-            className="w-full h-full object-cover"
-          />
-        </div>
-
-        <div className="z-10 mt-12 md:mt-20 mb-8">
-          <div className="flex items-center space-x-2 text-2xl font-semibold mb-4">
+    <div className="min-h-screen flex">
+      {/* Left section with gradient background */}
+      <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-500 text-white p-8 flex-col justify-center relative overflow-hidden">
+        <div className="z-10 max-w-lg">
+          <div className="flex items-center space-x-2 text-2xl font-semibold mb-6">
             <Heart className="h-7 w-7" />
             <span>Med-Infinite</span>
           </div>
           
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
+          <h1 className="text-4xl lg:text-5xl font-bold mb-6">
             Welcome to Med-Infinite
           </h1>
           
-          <p className="text-xl md:text-2xl mb-4 font-light">
-            Your Gateway to Effortless Management.
+          <p className="text-xl font-light mb-4">
+            Your Gateway to Effortless Management
           </p>
           
-          <p className="max-w-md text-blue-100 mb-8">
+          <p className="text-blue-100 mb-8 max-w-md">
             Streamline healthcare administration, improve patient care, and enhance operational efficiency with our comprehensive platform.
           </p>
         </div>
 
-        <div className="mt-auto z-10 hidden md:block mb-12">
-          <div className="rounded-xl overflow-hidden max-w-sm">
-            <img 
-              src="/lovable-uploads/5b9a76b7-b6ff-4f96-ad2f-53a109a095be.png" 
-              alt="Healthcare professional with patient" 
-              className="w-full h-auto object-cover"
-            />
-          </div>
+        {/* Wave pattern background */}
+        <div className="absolute inset-0 opacity-20">
+          <svg className="w-full h-full" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,800 C200,783.33 400,766.67 600,750 C800,733.33 1000,716.67 1200,700 L1200,1200 L0,1200 Z" fill="white" />
+            <path d="M0,400 C200,383.33 400,366.67 600,350 C800,333.33 1000,316.67 1200,300 L1200,1200 L0,1200 Z" fill="white" opacity="0.5" />
+            <path d="M0,600 C200,583.33 400,566.67 600,550 C800,533.33 1000,516.67 1200,500 L1200,1200 L0,1200 Z" fill="white" opacity="0.3" />
+          </svg>
         </div>
       </div>
 
       {/* Right section with login form */}
-      <div className="md:w-1/2 bg-white p-8 flex items-center justify-center">
+      <div className="w-full md:w-1/2 bg-white flex items-center justify-center p-6">
         <div className="max-w-md w-full">
-          <div className="mb-8 text-center md:text-left">
+          <div className="text-center md:text-left mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Med-Infinite</h2>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">Sign in</h3>
             <p className="text-gray-600">to continue to Med-Infinite</p>
