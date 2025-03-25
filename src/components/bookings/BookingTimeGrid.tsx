@@ -193,7 +193,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     }
 
     return (
-      <div className="booking-view daily-view h-full">
+      <div className={`booking-view ${viewType === "weekly" ? "weekly-view" : "daily-view"} h-full`}>
         <div className={`entity-header p-2 rounded-md ${entityType === "client" ? 'bg-blue-50' : 'bg-purple-50'}`}>
           <div className="flex items-center">
             <div className={`h-8 w-8 rounded-full ${entityType === "client" ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'} flex items-center justify-center text-sm font-medium mr-2`}>

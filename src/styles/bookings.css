@@ -283,6 +283,16 @@
   border-right: none;
 }
 
+/* Make day columns narrower in the weekly view to fit better */
+.weekly-view .day-column {
+  min-width: 100px;
+}
+
+/* Adjust scrollbar behavior for weekly view */
+.weekly-view .booking-scroll-container {
+  overflow-x: auto;
+}
+
 /* Booking Item */
 .booking-item {
   position: absolute;
@@ -372,4 +382,13 @@
   flex: 1;
   position: relative;
   min-width: 200px;
+}
+
+/* Weekly view specific styles */
+.weekly-view .booking-grid-container {
+  height: 600px;
+}
+
+.weekly-view .day-columns {
+  width: 100%;
 }
