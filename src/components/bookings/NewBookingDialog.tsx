@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, CheckCircle, Plus, X, Sun } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Plus, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -29,7 +29,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Popover,
   PopoverContent,
@@ -39,8 +38,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const timeOptions = [
   "07:00", "07:30", "08:00", "08:30", "09:00", "09:30", 
