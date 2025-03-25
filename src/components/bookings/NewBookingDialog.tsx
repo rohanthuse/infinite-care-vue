@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -185,20 +186,31 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
         form.setValue("carerId", initialData.carerId);
       }
       
-      const dayOfWeek = initialData.date.getDay();
-      const dayMapping = {
-        0: "sun",
-        1: "mon",
-        2: "tue",
-        3: "wed",
-        4: "thu",
-        5: "fri",
-        6: "sat"
-      };
-      
-      const dayKey = dayMapping[dayOfWeek as keyof typeof dayMapping];
-      if (dayKey) {
-        form.setValue(`schedules.0.days.${dayKey}`, true);
+      if (initialData.date) {
+        const dayOfWeek = initialData.date.getDay();
+        const dayMapping: Record<number, keyof typeof form.getValues().schedules[0].days> = {
+          0: "sun",
+          1: "mon",
+          2: "tue",
+          3: "wed",
+          4: "thu",
+          5: "fri",
+          6: "sat"
+        };
+        
+        const dayKey = dayMapping[dayOfWeek];
+        if (dayKey) {
+          // Update schedules array with the day of week
+          const updatedSchedules = [...form.getValues().schedules];
+          updatedSchedules[0] = {
+            ...updatedSchedules[0],
+            days: {
+              ...updatedSchedules[0].days,
+              [dayKey]: true
+            }
+          };
+          form.setValue("schedules", updatedSchedules);
+        }
       }
     }
   }, [open, initialData, form]);
@@ -759,4 +771,3 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
     </Dialog>
   );
 };
-
