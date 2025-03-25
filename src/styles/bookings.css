@@ -19,6 +19,67 @@
   display: none;  /* Chrome, Safari, Opera */
 }
 
+/* 4-column grid layout */
+.grid-container {
+  display: grid;
+  grid-template-columns: 250px 1fr 250px 1fr;
+  grid-template-areas: "clients client-calendar carers carer-calendar";
+  gap: 1px;
+  height: 700px;
+  background-color: #e5e7eb;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.entity-lists {
+  grid-area: clients;
+  background-color: white;
+  border-right: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.client-calendar {
+  grid-area: client-calendar;
+  background-color: white;
+  overflow: hidden;
+}
+
+.carer-lists {
+  grid-area: carers;
+  background-color: white;
+  border-right: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.carer-calendar {
+  grid-area: carer-calendar;
+  background-color: white;
+  overflow: hidden;
+}
+
+/* Media query for mobile devices */
+@media (max-width: 1024px) {
+  .grid-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+    grid-template-areas: 
+      "clients"
+      "client-calendar"
+      "carers"
+      "carer-calendar";
+    height: auto;
+  }
+
+  .entity-lists,
+  .client-calendar,
+  .carer-lists,
+  .carer-calendar {
+    height: 500px;
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+  }
+}
+
 /* Fullscreen mode styles */
 .booking-fullscreen {
   position: fixed;
@@ -28,8 +89,12 @@
   bottom: 0;
   z-index: 50;
   background-color: white;
-  overflow: auto;
+  overflow: hidden;
   padding: 1rem;
+}
+
+.booking-fullscreen .grid-container {
+  height: calc(100vh - 100px);
 }
 
 /* Time marker styles */
@@ -80,7 +145,6 @@
   height: 600px;
   position: relative;
   background-color: white;
-  border: 1px solid #e5e7eb;
 }
 
 /* Scrolling container styles */

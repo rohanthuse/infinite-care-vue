@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BookingEntry } from "./BookingEntry";
 import { EntitySelector } from "./EntitySelector";
+import { EntityList } from "./EntityList";
 import { Maximize2, Minimize2, Calendar, Clock } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO } from "date-fns";
 import "@/styles/bookings.css";
@@ -113,13 +115,13 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     };
   });
   
-  const displayedClients = selectedClientId 
-    ? clientBookings.filter(c => c.id === selectedClientId)
-    : clientBookings;
+  const displayedClient = selectedClientId 
+    ? clientBookings.find(c => c.id === selectedClientId)
+    : null;
     
-  const displayedCarers = selectedCarerId
-    ? carerBookings.filter(c => c.id === selectedCarerId)
-    : carerBookings;
+  const displayedCarer = selectedCarerId
+    ? carerBookings.find(c => c.id === selectedCarerId)
+    : null;
   
   const [currentTime, setCurrentTime] = useState(new Date());
   
@@ -173,6 +175,123 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     return { top: startPosition, height };
   };
 
+  const handleClientSelect = (clientId: string) => {
+    setSelectedClientId(clientId);
+  };
+
+  const handleCarerSelect = (carerId: string) => {
+    setSelectedCarerId(carerId);
+  };
+
+  const renderCalendar = (entityType: "client" | "carer", entity: Client | Carer | null) => {
+    if (!entity) {
+      return (
+        <div className="flex items-center justify-center h-full bg-gray-50 border rounded-md">
+          <p className="text-gray-500 text-sm">Select a {entityType} to view their schedule</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="booking-view daily-view h-full">
+        <div className={`entity-header p-2 rounded-md ${entityType === "client" ? 'bg-blue-50' : 'bg-purple-50'}`}>
+          <div className="flex items-center">
+            <div className={`h-8 w-8 rounded-full ${entityType === "client" ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'} flex items-center justify-center text-sm font-medium mr-2`}>
+              {entity.initials}
+            </div>
+            <div className="text-sm font-medium">{entity.name}</div>
+            <Badge className={`ml-2 ${entityType === "client" ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'} text-xs`}>
+              {entity.bookings?.length || 0} bookings
+            </Badge>
+          </div>
+        </div>
+                  
+        <div className="booking-grid-container" ref={gridRef}>
+          <div className="booking-scroll-container">
+            <div className="time-column">
+              {timeSlots.map((time, index) => (
+                <div key={index} className="time-slot">
+                  <span>{time}</span>
+                </div>
+              ))}
+            </div>
+                      
+            {viewType === "daily" ? (
+              <div className="day-content">
+                {timeSlots.map((_, timeIndex) => (
+                  <div key={timeIndex} className="hour-cell"></div>
+                ))}
+                        
+                {entity.bookings?.filter(booking => isBookingOnDate(booking, date)).map(booking => {
+                  const position = getBookingPosition(booking.startTime, booking.endTime);
+                          
+                  return (
+                    <BookingEntry
+                      key={booking.id}
+                      booking={booking}
+                      position={position}
+                    />
+                  );
+                })}
+                        
+                {isToday(date) && (
+                  <div 
+                    className="current-time-line" 
+                    style={{ top: `${getCurrentTimePosition()}px` }}
+                  >
+                    <span className="current-time-label">
+                      {format(currentTime, 'HH:mm')}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="day-columns">
+                {weekDates.map((day, dayIndex) => (
+                  <div key={dayIndex} className={`day-column ${isToday(day) ? 'today' : ''}`}>
+                    <div className="day-header">
+                      <div className="day-name">{format(day, 'EEE')}</div>
+                      <div className="day-date">{format(day, 'd')}</div>
+                    </div>
+                            
+                    <div className="day-content">
+                      {timeSlots.map((_, timeIndex) => (
+                        <div key={timeIndex} className="hour-cell"></div>
+                      ))}
+                              
+                      {entity.bookings?.filter(booking => isBookingOnDate(booking, day)).map(booking => {
+                        const position = getBookingPosition(booking.startTime, booking.endTime);
+                                
+                        return (
+                          <BookingEntry
+                            key={booking.id}
+                            booking={booking}
+                            position={position}
+                          />
+                        );
+                      })}
+                              
+                      {isToday(day) && (
+                        <div 
+                          className="current-time-line" 
+                          style={{ top: `${getCurrentTimePosition()}px` }}
+                        >
+                          <span className="current-time-label">
+                            {format(currentTime, 'HH:mm')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className={`${isFullScreen ? 'booking-fullscreen' : ''} bg-white rounded-lg border border-gray-200 shadow-sm`}>
       <div className="p-4 border-b border-gray-100 flex flex-wrap md:flex-nowrap items-center justify-between gap-3">
@@ -187,324 +306,46 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
           )}
         </div>
         
-        <div className="flex flex-1 flex-wrap md:flex-nowrap justify-end gap-3 md:gap-4">
-          <div className="w-full md:w-60">
-            <EntitySelector 
-              type="client"
-              entities={clients}
-              selectedEntity={selectedClientId}
-              onSelect={setSelectedClientId}
-            />
-          </div>
-          
-          <div className="w-full md:w-60">
-            <EntitySelector 
-              type="carer"
-              entities={carers}
-              selectedEntity={selectedCarerId}
-              onSelect={setSelectedCarerId}
-            />
-          </div>
-          
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={toggleFullScreen}
-            className="ml-2 h-10 w-10"
-            title={isFullScreen ? "Exit Full Screen" : "Full Screen"}
-          >
-            {isFullScreen ? (
-              <Minimize2 className="h-4 w-4" />
-            ) : (
-              <Maximize2 className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={toggleFullScreen}
+          className="ml-2 h-10 w-10"
+          title={isFullScreen ? "Exit Full Screen" : "Full Screen"}
+        >
+          {isFullScreen ? (
+            <Minimize2 className="h-4 w-4" />
+          ) : (
+            <Maximize2 className="h-4 w-4" />
+          )}
+        </Button>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-4 p-4">
-        <div>
-          <h3 className="text-sm font-semibold mb-3 flex items-center">
-            Clients
-            {selectedClientId && (
-              <Badge className="ml-2 bg-blue-50 text-blue-700 hover:bg-blue-100">
-                Selected: {displayedClients[0]?.name}
-              </Badge>
-            )}
-          </h3>
-          
-          {viewType === "daily" ? (
-            <div className="booking-view daily-view">
-              {displayedClients.map((client) => (
-                <div key={client.id} className="mb-6">
-                  <div className={`entity-header p-2 rounded-md ${client.id === selectedClientId ? 'bg-blue-50' : 'bg-gray-50'}`}>
-                    <div className="flex items-center">
-                      <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium mr-2">
-                        {client.initials}
-                      </div>
-                      <div className="text-sm font-medium">{client.name}</div>
-                      <Badge className="ml-2 bg-blue-50 text-blue-700 text-xs">
-                        {client.bookings?.length || 0} bookings
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="booking-grid-container">
-                    <div className="booking-scroll-container">
-                      <div className="time-column">
-                        {timeSlots.map((time, index) => (
-                          <div key={index} className="time-slot">
-                            <span>{time}</span>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      <div className="day-content">
-                        {timeSlots.map((_, timeIndex) => (
-                          <div key={timeIndex} className="hour-cell"></div>
-                        ))}
-                        
-                        {client.bookings?.filter(booking => isBookingOnDate(booking, date)).map(booking => {
-                          const position = getBookingPosition(booking.startTime, booking.endTime);
-                          
-                          return (
-                            <BookingEntry
-                              key={booking.id}
-                              booking={booking}
-                              position={position}
-                            />
-                          );
-                        })}
-                        
-                        {isToday(date) && (
-                          <div 
-                            className="current-time-line" 
-                            style={{ top: `${getCurrentTimePosition()}px` }}
-                          >
-                            <span className="current-time-label">
-                              {format(currentTime, 'HH:mm')}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="booking-view weekly-view">
-              {displayedClients.map((client) => (
-                <div key={client.id} className="mb-6">
-                  <div className={`entity-header p-2 rounded-md ${client.id === selectedClientId ? 'bg-blue-50' : 'bg-gray-50'}`}>
-                    <div className="flex items-center">
-                      <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium mr-2">
-                        {client.initials}
-                      </div>
-                      <div className="text-sm font-medium">{client.name}</div>
-                      <Badge className="ml-2 bg-blue-50 text-blue-700 text-xs">
-                        {client.bookings?.length || 0} bookings
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="booking-grid-container">
-                    <div className="booking-scroll-container">
-                      <div className="time-column">
-                        {timeSlots.map((time, index) => (
-                          <div key={index} className="time-slot">
-                            <span>{time}</span>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      <div className="day-columns">
-                        {weekDates.map((day, dayIndex) => (
-                          <div key={dayIndex} className={`day-column ${isToday(day) ? 'today' : ''}`}>
-                            <div className="day-header">
-                              <div className="day-name">{format(day, 'EEE')}</div>
-                              <div className="day-date">{format(day, 'd')}</div>
-                            </div>
-                            
-                            <div className="day-content">
-                              {timeSlots.map((_, timeIndex) => (
-                                <div key={timeIndex} className="hour-cell"></div>
-                              ))}
-                              
-                              {client.bookings?.filter(booking => isBookingOnDate(booking, day)).map(booking => {
-                                const position = getBookingPosition(booking.startTime, booking.endTime);
-                                
-                                return (
-                                  <BookingEntry
-                                    key={booking.id}
-                                    booking={booking}
-                                    position={position}
-                                  />
-                                );
-                              })}
-                              
-                              {isToday(day) && (
-                                <div 
-                                  className="current-time-line" 
-                                  style={{ top: `${getCurrentTimePosition()}px` }}
-                                >
-                                  <span className="current-time-label">
-                                    {format(currentTime, 'HH:mm')}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+      <div className="grid-container">
+        <div className="entity-lists">
+          <EntityList 
+            type="client"
+            entities={clients}
+            selectedEntityId={selectedClientId}
+            onSelect={handleClientSelect}
+          />
         </div>
         
-        <div>
-          <h3 className="text-sm font-semibold mb-3 flex items-center">
-            Carers
-            {selectedCarerId && (
-              <Badge className="ml-2 bg-purple-50 text-purple-700 hover:bg-purple-100">
-                Selected: {displayedCarers[0]?.name}
-              </Badge>
-            )}
-          </h3>
-          
-          {viewType === "daily" ? (
-            <div className="booking-view daily-view">
-              {displayedCarers.map((carer) => (
-                <div key={carer.id} className="mb-6">
-                  <div className={`entity-header p-2 rounded-md ${carer.id === selectedCarerId ? 'bg-purple-50' : 'bg-gray-50'}`}>
-                    <div className="flex items-center">
-                      <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-medium mr-2">
-                        {carer.initials}
-                      </div>
-                      <div className="text-sm font-medium">{carer.name}</div>
-                      <Badge className="ml-2 bg-purple-50 text-purple-700 text-xs">
-                        {carer.bookings?.length || 0} bookings
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="booking-grid-container">
-                    <div className="booking-scroll-container">
-                      <div className="time-column">
-                        {timeSlots.map((time, index) => (
-                          <div key={index} className="time-slot">
-                            <span>{time}</span>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      <div className="day-content">
-                        {timeSlots.map((_, timeIndex) => (
-                          <div key={timeIndex} className="hour-cell"></div>
-                        ))}
-                        
-                        {carer.bookings?.filter(booking => isBookingOnDate(booking, date)).map(booking => {
-                          const position = getBookingPosition(booking.startTime, booking.endTime);
-                          
-                          return (
-                            <BookingEntry
-                              key={booking.id}
-                              booking={booking}
-                              position={position}
-                            />
-                          );
-                        })}
-                        
-                        {isToday(date) && (
-                          <div 
-                            className="current-time-line" 
-                            style={{ top: `${getCurrentTimePosition()}px` }}
-                          >
-                            <span className="current-time-label">
-                              {format(currentTime, 'HH:mm')}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="booking-view weekly-view">
-              {displayedCarers.map((carer) => (
-                <div key={carer.id} className="mb-6">
-                  <div className={`entity-header p-2 rounded-md ${carer.id === selectedCarerId ? 'bg-purple-50' : 'bg-gray-50'}`}>
-                    <div className="flex items-center">
-                      <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-medium mr-2">
-                        {carer.initials}
-                      </div>
-                      <div className="text-sm font-medium">{carer.name}</div>
-                      <Badge className="ml-2 bg-purple-50 text-purple-700 text-xs">
-                        {carer.bookings?.length || 0} bookings
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="booking-grid-container">
-                    <div className="booking-scroll-container">
-                      <div className="time-column">
-                        {timeSlots.map((time, index) => (
-                          <div key={index} className="time-slot">
-                            <span>{time}</span>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      <div className="day-columns">
-                        {weekDates.map((day, dayIndex) => (
-                          <div key={dayIndex} className={`day-column ${isToday(day) ? 'today' : ''}`}>
-                            <div className="day-header">
-                              <div className="day-name">{format(day, 'EEE')}</div>
-                              <div className="day-date">{format(day, 'd')}</div>
-                            </div>
-                            
-                            <div className="day-content">
-                              {timeSlots.map((_, timeIndex) => (
-                                <div key={timeIndex} className="hour-cell"></div>
-                              ))}
-                              
-                              {carer.bookings?.filter(booking => isBookingOnDate(booking, day)).map(booking => {
-                                const position = getBookingPosition(booking.startTime, booking.endTime);
-                                
-                                return (
-                                  <BookingEntry
-                                    key={booking.id}
-                                    booking={booking}
-                                    position={position}
-                                  />
-                                );
-                              })}
-                              
-                              {isToday(day) && (
-                                <div 
-                                  className="current-time-line" 
-                                  style={{ top: `${getCurrentTimePosition()}px` }}
-                                >
-                                  <span className="current-time-label">
-                                    {format(currentTime, 'HH:mm')}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="client-calendar">
+          {renderCalendar("client", displayedClient)}
+        </div>
+        
+        <div className="carer-lists">
+          <EntityList 
+            type="carer"
+            entities={carers}
+            selectedEntityId={selectedCarerId}
+            onSelect={handleCarerSelect}
+          />
+        </div>
+        
+        <div className="carer-calendar">
+          {renderCalendar("carer", displayedCarer)}
         </div>
       </div>
     </div>
