@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -188,7 +187,7 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
       
       if (initialData.date) {
         const dayOfWeek = initialData.date.getDay();
-        const dayMapping: Record<number, keyof typeof form.getValues().schedules[0].days> = {
+        const dayMapping: Record<number, keyof BookingFormValues["schedules"][0]["days"]> = {
           0: "sun",
           1: "mon",
           2: "tue",
