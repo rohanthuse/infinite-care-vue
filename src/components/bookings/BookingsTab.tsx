@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -232,6 +231,12 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["assigned", "in-progress"]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState<boolean>(false);
+  const [newBookingData, setNewBookingData] = useState<{
+    date: Date;
+    startTime: string;
+    clientId?: string;
+    carerId?: string;
+  } | null>(null);
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -304,6 +309,17 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   };
 
   const handleNewBooking = () => {
+    setNewBookingData(null);
+    setNewBookingDialogOpen(true);
+  };
+
+  const handleContextMenuBooking = (date: Date, time: string, clientId?: string, carerId?: string) => {
+    setNewBookingData({
+      date,
+      startTime: time,
+      clientId,
+      carerId
+    });
     setNewBookingDialogOpen(true);
   };
 
@@ -334,6 +350,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       console.log("Selected days:", bookingData.days);
       
       mockBookings.push(newBooking);
+      toast.success("Booking created successfully");
     }
   };
 
@@ -383,7 +400,15 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
             onStatusChange={setSelectedStatuses} 
           />
           
-          <BookingTimeGrid date={currentDate} bookings={mockBookings} clients={mockClients} carers={mockCarers} viewType={viewType} viewMode={viewMode} />
+          <BookingTimeGrid 
+            date={currentDate} 
+            bookings={mockBookings} 
+            clients={mockClients} 
+            carers={mockCarers} 
+            viewType={viewType} 
+            viewMode={viewMode}
+            onCreateBooking={handleContextMenuBooking}
+          />
         </>}
 
       {activeTab === "list" && <BookingsList bookings={mockBookings} />}
@@ -396,6 +421,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         clients={mockClients}
         carers={mockCarers}
         onCreateBooking={handleCreateBooking}
+        initialData={newBookingData}
       />
     </div>;
 };

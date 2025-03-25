@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -101,6 +100,12 @@ interface NewBookingDialogProps {
   clients: Client[];
   carers: Carer[];
   onCreateBooking: (bookingData: BookingFormValues) => void;
+  initialData?: {
+    date?: Date;
+    startTime?: string;
+    clientId?: string;
+    carerId?: string;
+  } | null;
 }
 
 const mockServices: Service[] = [
@@ -120,6 +125,7 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
   clients,
   carers,
   onCreateBooking,
+  initialData = null,
 }) => {
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(formSchema),
@@ -149,6 +155,54 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
     },
   });
 
+  useEffect(() => {
+    if (open && initialData) {
+      if (initialData.date) {
+        form.setValue("fromDate", initialData.date);
+        form.setValue("untilDate", initialData.date);
+      }
+      
+      if (initialData.startTime) {
+        const [startHour, startMin] = initialData.startTime.split(':').map(Number);
+        let endHour = startHour + 1;
+        const endMin = startMin;
+
+        if (endHour >= 24) {
+          endHour = 23;
+        }
+
+        const endTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
+        
+        form.setValue("schedules.0.startTime", initialData.startTime);
+        form.setValue("schedules.0.endTime", endTime);
+      }
+      
+      if (initialData.clientId) {
+        form.setValue("clientId", initialData.clientId);
+      }
+      
+      if (initialData.carerId) {
+        form.setValue("carerId", initialData.carerId);
+      }
+      
+      const dayOfWeek = initialData.date.getDay();
+      const dayMapping = {
+        0: "sun",
+        1: "mon",
+        2: "tue",
+        3: "wed",
+        4: "thu",
+        5: "fri",
+        6: "sat"
+      };
+      
+      const dayKey = dayMapping[dayOfWeek as keyof typeof dayMapping];
+      if (dayKey) {
+        form.setValue(`schedules.0.days.${dayKey}`, true);
+      }
+    }
+  }, [open, initialData, form]);
+
   const handleSubmit = (values: BookingFormValues) => {
     onCreateBooking(values);
     form.reset();
@@ -158,7 +212,6 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
     });
   };
 
-  // Handle the "All" days checkbox for a specific schedule
   const handleAllDaysChange = (checked: boolean, index: number) => {
     const schedules = [...form.getValues("schedules")];
     
@@ -189,7 +242,6 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
     form.setValue("schedules", schedules);
   };
 
-  // Add a new schedule
   const addSchedule = () => {
     const schedules = [...form.getValues("schedules")];
     schedules.push({
@@ -210,7 +262,6 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
     form.setValue("schedules", schedules);
   };
 
-  // Remove a schedule
   const removeSchedule = (index: number) => {
     const schedules = [...form.getValues("schedules")];
     schedules.splice(index, 1);
@@ -708,3 +759,4 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
     </Dialog>
   );
 };
+

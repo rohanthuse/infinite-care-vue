@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { BookingEntry } from "./BookingEntry";
 import { EntitySelector } from "./EntitySelector";
 import { EntityList } from "./EntityList";
+import { BookingContextMenu } from "./BookingContextMenu";
 import { Maximize2, Minimize2, Calendar, Clock } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO } from "date-fns";
 import "@/styles/bookings.css";
@@ -46,6 +47,7 @@ interface BookingTimeGridProps {
   carers: Carer[];
   viewType: "daily" | "weekly";
   viewMode: "client" | "group";
+  onCreateBooking?: (date: Date, time: string, clientId?: string, carerId?: string) => void;
 }
 
 export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
@@ -55,6 +57,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   carers,
   viewType,
   viewMode,
+  onCreateBooking,
 }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -175,6 +178,25 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     return { top: startPosition, height };
   };
 
+  // New function to get time from Y position
+  const getTimeFromPosition = (yPosition: number): string => {
+    const totalMinutes = Math.floor((yPosition / hourHeight) * 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    // Round to nearest 30 min
+    const roundedMinutes = Math.round(minutes / 30) * 30;
+    const adjustedHours = hours + (roundedMinutes === 60 ? 1 : 0);
+    const adjustedMinutes = roundedMinutes === 60 ? 0 : roundedMinutes;
+    
+    return `${String(adjustedHours).padStart(2, '0')}:${String(adjustedMinutes).padStart(2, '0')}`;
+  };
+
+  const handleContextMenuBooking = (date: Date, time: string) => {
+    if (onCreateBooking) {
+      onCreateBooking(date, time, selectedClientId || undefined, selectedCarerId || undefined);
+    }
+  };
+
   const handleClientSelect = (clientId: string) => {
     setSelectedClientId(clientId);
   };
@@ -217,34 +239,48 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
             </div>
                       
             {viewType === "daily" ? (
-              <div className="day-content">
-                {timeSlots.map((_, timeIndex) => (
-                  <div key={timeIndex} className="hour-cell"></div>
-                ))}
+              <BookingContextMenu 
+                date={date} 
+                time="08:00" 
+                onCreateBooking={(date, time) => handleContextMenuBooking(date, time)}
+              >
+                <div className="day-content" 
+                  onContextMenu={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const y = e.clientY - rect.top;
+                    const time = getTimeFromPosition(y);
+                    // Update the context menu time based on where user clicked
+                    e.currentTarget.setAttribute('data-time', time);
+                  }}
+                >
+                  {timeSlots.map((_, timeIndex) => (
+                    <div key={timeIndex} className="hour-cell"></div>
+                  ))}
                         
-                {entity.bookings?.filter(booking => isBookingOnDate(booking, date)).map(booking => {
-                  const position = getBookingPosition(booking.startTime, booking.endTime);
+                  {entity.bookings?.filter(booking => isBookingOnDate(booking, date)).map(booking => {
+                    const position = getBookingPosition(booking.startTime, booking.endTime);
                           
-                  return (
-                    <BookingEntry
-                      key={booking.id}
-                      booking={booking}
-                      position={position}
-                    />
-                  );
-                })}
+                    return (
+                      <BookingEntry
+                        key={booking.id}
+                        booking={booking}
+                        position={position}
+                      />
+                    );
+                  })}
                         
-                {isToday(date) && (
-                  <div 
-                    className="current-time-line" 
-                    style={{ top: `${getCurrentTimePosition()}px` }}
-                  >
-                    <span className="current-time-label">
-                      {format(currentTime, 'HH:mm')}
-                    </span>
-                  </div>
-                )}
-              </div>
+                  {isToday(date) && (
+                    <div 
+                      className="current-time-line" 
+                      style={{ top: `${getCurrentTimePosition()}px` }}
+                    >
+                      <span className="current-time-label">
+                        {format(currentTime, 'HH:mm')}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </BookingContextMenu>
             ) : (
               <div className="day-columns">
                 {weekDates.map((day, dayIndex) => (
@@ -253,35 +289,49 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                       <div className="day-name">{format(day, 'EEE')}</div>
                       <div className="day-date">{format(day, 'd')}</div>
                     </div>
-                            
-                    <div className="day-content">
-                      {timeSlots.map((_, timeIndex) => (
-                        <div key={timeIndex} className="hour-cell"></div>
-                      ))}
-                              
-                      {entity.bookings?.filter(booking => isBookingOnDate(booking, day)).map(booking => {
-                        const position = getBookingPosition(booking.startTime, booking.endTime);
+                    
+                    <BookingContextMenu 
+                      date={day} 
+                      time="08:00" 
+                      onCreateBooking={(date, time) => handleContextMenuBooking(date, time)}
+                    >        
+                      <div className="day-content"
+                        onContextMenu={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const y = e.clientY - rect.top;
+                          const time = getTimeFromPosition(y);
+                          // Update the context menu time based on where user clicked
+                          e.currentTarget.setAttribute('data-time', time);
+                        }}
+                      >
+                        {timeSlots.map((_, timeIndex) => (
+                          <div key={timeIndex} className="hour-cell"></div>
+                        ))}
                                 
-                        return (
-                          <BookingEntry
-                            key={booking.id}
-                            booking={booking}
-                            position={position}
-                          />
-                        );
-                      })}
-                              
-                      {isToday(day) && (
-                        <div 
-                          className="current-time-line" 
-                          style={{ top: `${getCurrentTimePosition()}px` }}
-                        >
-                          <span className="current-time-label">
-                            {format(currentTime, 'HH:mm')}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                        {entity.bookings?.filter(booking => isBookingOnDate(booking, day)).map(booking => {
+                          const position = getBookingPosition(booking.startTime, booking.endTime);
+                                  
+                          return (
+                            <BookingEntry
+                              key={booking.id}
+                              booking={booking}
+                              position={position}
+                            />
+                          );
+                        })}
+                                
+                        {isToday(day) && (
+                          <div 
+                            className="current-time-line" 
+                            style={{ top: `${getCurrentTimePosition()}px` }}
+                          >
+                            <span className="current-time-label">
+                              {format(currentTime, 'HH:mm')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </BookingContextMenu>
                   </div>
                 ))}
               </div>
