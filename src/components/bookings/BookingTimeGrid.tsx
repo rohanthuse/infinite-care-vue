@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -63,7 +62,8 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedCarerId, setSelectedCarerId] = useState<string | null>(null);
   const [showHalfHours, setShowHalfHours] = useState(true);
-  
+  const [contextMenuTime, setContextMenuTime] = useState("08:00");
+
   const gridRef = useRef<HTMLDivElement>(null);
   
   const hourHeight = 60; // height in px for one hour
@@ -178,12 +178,10 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     return { top: startPosition, height };
   };
 
-  // New function to get time from Y position
   const getTimeFromPosition = (yPosition: number): string => {
     const totalMinutes = Math.floor((yPosition / hourHeight) * 60);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-    // Round to nearest 30 min
     const roundedMinutes = Math.round(minutes / 30) * 30;
     const adjustedHours = hours + (roundedMinutes === 60 ? 1 : 0);
     const adjustedMinutes = roundedMinutes === 60 ? 0 : roundedMinutes;
@@ -203,6 +201,13 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
 
   const handleCarerSelect = (carerId: string) => {
     setSelectedCarerId(carerId);
+  };
+
+  const handleContextMenuOpen = (e: React.MouseEvent, element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const time = getTimeFromPosition(y);
+    setContextMenuTime(time);
   };
 
   const renderCalendar = (entityType: "client" | "carer", entity: Client | Carer | null) => {
@@ -241,17 +246,11 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
             {viewType === "daily" ? (
               <BookingContextMenu 
                 date={date} 
-                time="08:00" 
+                time={contextMenuTime} 
                 onCreateBooking={(date, time) => handleContextMenuBooking(date, time)}
               >
                 <div className="day-content" 
-                  onContextMenu={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const y = e.clientY - rect.top;
-                    const time = getTimeFromPosition(y);
-                    // Update the context menu time based on where user clicked
-                    e.currentTarget.setAttribute('data-time', time);
-                  }}
+                  onContextMenu={(e) => handleContextMenuOpen(e, e.currentTarget)}
                 >
                   {timeSlots.map((_, timeIndex) => (
                     <div key={timeIndex} className="hour-cell"></div>
@@ -292,17 +291,11 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                     
                     <BookingContextMenu 
                       date={day} 
-                      time="08:00" 
+                      time={contextMenuTime}
                       onCreateBooking={(date, time) => handleContextMenuBooking(date, time)}
                     >        
                       <div className="day-content"
-                        onContextMenu={(e) => {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          const y = e.clientY - rect.top;
-                          const time = getTimeFromPosition(y);
-                          // Update the context menu time based on where user clicked
-                          e.currentTarget.setAttribute('data-time', time);
-                        }}
+                        onContextMenu={(e) => handleContextMenuOpen(e, e.currentTarget)}
                       >
                         {timeSlots.map((_, timeIndex) => (
                           <div key={timeIndex} className="hour-cell"></div>
@@ -401,3 +394,4 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     </div>
   );
 };
+
