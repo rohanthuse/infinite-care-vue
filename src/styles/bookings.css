@@ -392,3 +392,23 @@
 .weekly-view .day-columns {
   width: 100%;
 }
+
+/* Strengthening the border visibility in weekly view */
+.weekly-view .day-column {
+  border-right: 2px solid #e5e7eb !important;
+  overflow: visible !important;
+}
+
+.weekly-view .day-content {
+  border-right: 2px solid #e5e7eb !important;
+}
+
+.weekly-view .day-header {
+  border-right: 2px solid #e5e7eb !important;
+}
+
+/* Force vertical borders to be visible */
+.day-columns > div {
+  position: relative;
+  z-index: 1;
+}
