@@ -1,5 +1,6 @@
 
 import React, { useState } from "react";
+import { useParams, useLocation } from "react-router-dom";
 import { 
   Paperclip, Menu, Plus,
   UserPlus2, FileSignature, CalendarPlus, UserRoundPlus,
@@ -25,12 +26,22 @@ interface TabNavigationProps {
 }
 
 export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false, hideQuickAdd = false }: TabNavigationProps) => {
+  const params = useParams();
+  const location = useLocation();
+  const { id, branchName } = params;
+  
   const handleQuickAddAction = (action: string) => {
     toast.success(`${action} action selected`, {
       description: `The ${action.toLowerCase()} feature will be available soon`,
       position: "top-center",
     });
     console.log(`Quick Add action selected: ${action}`);
+  };
+  
+  // Handler for module changes
+  const handleModuleChange = (value: string) => {
+    // Invoke the parent's onChange handler
+    onChange(value);
   };
   
   return (
@@ -91,7 +102,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
 
         <div className="hidden md:flex md:flex-col md:space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <ModuleNavigation activeModule={activeTab} onModuleChange={onChange} />
+            <ModuleNavigation activeModule={activeTab} onModuleChange={handleModuleChange} />
             
             <div className="flex items-center gap-2">
               {!hideQuickAdd && (

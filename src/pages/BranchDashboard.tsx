@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Routes, Route } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { motion } from "framer-motion";
 import { Calendar, Users, BarChart4, Clock, FileText, AlertCircle, Search, Bell, ChevronRight, Home, ArrowUpRight, Phone, Mail, MapPin, Plus, Clock7, RefreshCw, Download, Filter, ClipboardCheck, ThumbsUp, ArrowUp, ArrowDown, ChevronDown, Edit, Eye, HelpCircle, CalendarIcon, ChevronLeft } from "lucide-react";
@@ -331,10 +331,7 @@ const ActionItem = ({
 };
 
 const BranchDashboard = () => {
-  const {
-    id,
-    branchName
-  } = useParams();
+  const { id, branchName } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [searchValue, setSearchValue] = useState("");
@@ -346,6 +343,7 @@ const BranchDashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [addClientDialogOpen, setAddClientDialogOpen] = useState(false);
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
+  
   const itemsPerPage = 5;
   const displayBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
   const filteredClients = clients.filter(client => {
@@ -356,22 +354,27 @@ const BranchDashboard = () => {
   });
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
   const paginatedClients = filteredClients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  
   const handlePreviousPage = () => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
     }
   };
+  
   const handleNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
   };
+  
   const handleNewBooking = () => {
     setNewBookingDialogOpen(true);
   };
+  
   const handleNewClient = () => {
     setAddClientDialogOpen(true);
   };
+  
   const mockClients = [{
     id: "CL-001",
     name: "Pender, Eva",
@@ -413,6 +416,7 @@ const BranchDashboard = () => {
     initials: "MS",
     bookingCount: 3
   }];
+  
   const mockCarers = [{
     id: "CA-001",
     name: "Charuma, Charmaine",
@@ -439,29 +443,38 @@ const BranchDashboard = () => {
     initials: "WM",
     bookingCount: 1
   }];
+  
   const handleCreateBooking = (bookingData: any) => {
     console.log("Creating new booking:", bookingData);
     setNewBookingDialogOpen(false);
   };
-  const handleWorkflowNavigation = (path: string) => {
-    navigate(`/branch-dashboard/${id}/${encodeURIComponent(displayBranchName)}/${path}`);
+  
+  const handleNavigation = (path: string) => {
+    navigate(`/branch-dashboard/${id}/${encodeURIComponent(displayBranchName || '')}/${path}`);
   };
+  
   const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);
-    if (newTab === "workflow") {
-      handleWorkflowNavigation("workflow");
-    } else if (newTab === "key-parameters") {
-      handleWorkflowNavigation("key-parameters");
+    
+    if (newTab === "key-parameters") {
+      handleNavigation("key-parameters");
     } else if (newTab === "task-matrix") {
-      handleWorkflowNavigation("task-matrix");
+      handleNavigation("task-matrix");
     } else if (newTab === "notifications") {
-      handleWorkflowNavigation("notifications");
+      handleNavigation("notifications");
+    } else if (newTab === "events-logs") {
+      handleNavigation("events-logs");
+    } else {
+      setActiveTab(newTab);
     }
   };
+  
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, regionFilter, clientSearchValue]);
-  return <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+  
+  return (
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
       
       <AddClientDialog open={addClientDialogOpen} onOpenChange={setAddClientDialogOpen} />
@@ -512,15 +525,16 @@ const BranchDashboard = () => {
         <TabNavigation activeTab={activeTab} onChange={handleTabChange} hideActionsOnMobile={true} hideQuickAdd={true} />
         
         <motion.div key={activeTab} initial={{
-        opacity: 0,
-        y: 10
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        duration: 0.3
-      }} className="mt-4 md:mt-6">
-          {activeTab === "dashboard" && <>
+          opacity: 0,
+          y: 10
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          duration: 0.3
+        }} className="mt-4 md:mt-6">
+          {activeTab === "dashboard" && (
+            <>
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start" onClick={handleNewClient}>
                   <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-blue-100 flex items-center justify-center">
@@ -539,16 +553,6 @@ const BranchDashboard = () => {
                   <div>
                     <div className="font-medium text-xs md:text-sm">Schedule</div>
                     <div className="text-xs text-gray-500 hidden md:block">View calendar</div>
-                  </div>
-                </Button>
-                
-                <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
-                  <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-amber-100 flex items-center justify-center">
-                    <FileText className="h-3.5 md:h-4 w-3.5 md:w-4 text-amber-600" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-xs md:text-sm">Reports</div>
-                    <div className="text-xs text-gray-500 hidden md:block">Generate reports</div>
                   </div>
                 </Button>
                 
@@ -699,307 +703,39 @@ const BranchDashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3 md:space-y-4">
-                      {serviceData.map((service, index) => <div key={index} className="flex items-center">
-                          <div className="w-24 md:w-32 font-medium text-xs md:text-sm">{service.name}</div>
-                          <div className="flex-1">
-                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-blue-600 rounded-full" style={{
-                          width: `${service.usage}%`
-                        }}></div>
-                            </div>
+                      {serviceData.map((service, index) => (
+                        <div key={service.name} className="relative pt-1">
+                          <div className="flex justify-between items-center mb-1">
+                            <div className="text-xs md:text-sm font-medium text-gray-700">{service.name}</div>
+                            <div className="text-xs text-gray-500">{service.usage}%</div>
                           </div>
-                          <div className="ml-3 text-xs md:text-sm font-medium">{service.usage}%</div>
-                        </div>)}
+                          <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-100">
+                            <div 
+                              style={{ width: `${service.usage}%` }} 
+                              className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${
+                                index === 0 ? 'bg-blue-500' : 
+                                index === 1 ? 'bg-green-500' : 
+                                index === 2 ? 'bg-purple-500' : 
+                                'bg-amber-500'
+                              }`}
+                            ></div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-                <Card>
-                  <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle className="text-base md:text-lg font-semibold">Today's Bookings</CardTitle>
-                      <CardDescription>Appointments for today</CardDescription>
-                    </div>
-                    <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
-                      View All
-                      <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="overflow-x-auto">
-                    <div className="space-y-1 min-w-[400px]">
-                      <BookingItem number="1" staff="Charuma, Charmaine" client="Fulcher, Patricia" time="07:30 - 08:30" status="Done" />
-                      <BookingItem number="2" staff="Ayo-Famure, Opeyemi" client="Ltd, Careville" time="08:30 - 09:15" status="Booked" />
-                      <BookingItem number="3" staff="Warren, Susan" client="Baulch, Ursula" time="10:00 - 11:00" status="Booked" />
-                      <BookingItem number="4" staff="Warren, Susan" client="Ren, Victoria" time="11:30 - 12:30" status="Waiting" />
-                      <BookingItem number="5" staff="Charuma, Charmaine" client="Iyaniwura, Ifeoluwa" time="14:00 - 15:00" status="Booked" />
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle className="text-base md:text-lg font-semibold">Latest Reviews</CardTitle>
-                      <CardDescription>Client feedback</CardDescription>
-                    </div>
-                    <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
-                      View All
-                      <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-                    </Button>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-1">
-                      <ReviewItem client="Pender, Eva" staff="Warren, Susan" date="26/01/2025" rating={5} comment="Excellent care and attention to detail." />
-                      <ReviewItem client="Pender, Eva" staff="Charuma, Charmaine" date="26/01/2025" rating={5} comment="Very professional and friendly service." />
-                      <ReviewItem client="Fulcher, Patricia" staff="Ayo-Famure, Opeyemi" date="22/01/2025" rating={4} comment="Good service but arrived a bit late." />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <Card className="mb-20 md:mb-6">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center">
-                    <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
-                    <CardTitle className="text-base md:text-lg font-semibold">Action Required</CardTitle>
-                  </div>
-                  <CardDescription>Tasks that need your immediate attention</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <ActionItem title="Care Plan Update" name="Iyaniwura, Ifeoluwa" date="Thu 30/01/2025" priority="High" />
-                    <ActionItem title="Medication Review" name="Baulch, Ursula" date="Fri 17/01/2025" priority="Medium" />
-                    <ActionItem title="Staff Training" name="Warren, Susan" date="Mon 20/01/2025" priority="Medium" />
-                    <ActionItem title="Client Assessment" name="Ren, Victoria" date="Wed 22/01/2025" priority="Low" />
-                  </div>
-                </CardContent>
-              </Card>
-            </>}
-          
-          {activeTab === "clients" && <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-              <div className="flex justify-between p-4 border-b border-gray-100">
-                <h2 className="text-lg font-semibold">Clients</h2>
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={handleNewClient}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Client
-                </Button>
-              </div>
-              
-              <div className="p-4 border-b border-gray-100 bg-gray-50/80">
-                <div className="flex flex-col md:flex-row gap-3">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input placeholder="Search clients..." className="pl-10 pr-4" value={clientSearchValue} onChange={e => setClientSearchValue(e.target.value)} />
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="New Enquiries">New Enquiries</SelectItem>
-                        <SelectItem value="Actively Assessing">Actively Assessing</SelectItem>
-                        <SelectItem value="Closed Enquiries">Closed Enquiries</SelectItem>
-                        <SelectItem value="Former">Former</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    <Select value={regionFilter} onValueChange={setRegionFilter}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Region" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Regions</SelectItem>
-                        <SelectItem value="North">North</SelectItem>
-                        <SelectItem value="South">South</SelectItem>
-                        <SelectItem value="East">East</SelectItem>
-                        <SelectItem value="West">West</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start">
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          <span>{fromDate ? format(fromDate, 'PP') : 'Date Range'}</span>
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <CalendarComponent initialFocus mode="range" defaultMonth={fromDate} selected={{
-                      from: fromDate,
-                      to: toDate
-                    }} onSelect={range => {
-                      setFromDate(range?.from);
-                      setToDate(range?.to);
-                    }} numberOfMonths={1} />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[100px]">Client ID</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead className="hidden md:table-cell">Contact</TableHead>
-                      <TableHead className="hidden md:table-cell">Location</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="hidden md:table-cell">Registered On</TableHead>
-                      <TableHead className="w-[100px] text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedClients.map(client => <TableRow key={client.id}>
-                        <TableCell className="font-medium">{client.id}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="h-7 w-7 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
-                              {client.avatar}
-                            </div>
-                            <div>
-                              <div className="font-medium text-sm">{client.name}</div>
-                              <div className="text-xs text-gray-500">{client.email}</div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">{client.phone}</TableCell>
-                        <TableCell className="hidden md:table-cell">{client.location}</TableCell>
-                        <TableCell>
-                          <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {client.status}
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">{client.registeredOn}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>)}
-                  </TableBody>
-                </Table>
-              </div>
-              
-              <div className="p-4 border-t border-gray-100 flex items-center justify-between">
-                <div className="text-sm text-gray-500">
-                  Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredClients.length)} of {filteredClients.length} clients
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handlePreviousPage} disabled={currentPage === 1}>
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Previous
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages}>
-                    Next
-                    <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
-              </div>
-            </div>}
-          
+            </>
+          )}
           {activeTab === "bookings" && <BookingsTab branchId={id || ""} />}
-          
           {activeTab === "carers" && <CarersTab branchId={id || ""} />}
-          
           {activeTab === "reviews" && <ReviewsTab />}
-          
           {activeTab === "communication" && <CommunicationsTab branchId={id || ""} />}
-          
-          {activeTab === "workflow" && <>
-              <div className="mb-6 md:mb-8">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Workflow Management</h1>
-                <p className="text-gray-500 mt-2 font-medium">Manage and monitor all workflow processes</p>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-                <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200 shadow-sm" onClick={() => handleWorkflowNavigation('notifications')}>
-                  <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                    <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-3">
-                      <Bell className="h-8 w-8 text-blue-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-800 text-lg">Notification Overview</h3>
-                    <p className="text-sm text-gray-500 mt-1">System alerts and updates</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200 shadow-sm" onClick={() => handleWorkflowNavigation('task-matrix')}>
-                  <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                    <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-3">
-                      <ListChecks className="h-8 w-8 text-purple-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-800 text-lg">Task Matrix</h3>
-                    <p className="text-sm text-gray-500 mt-1">Manage priority tasks</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200 shadow-sm" onClick={() => handleWorkflowNavigation('training')}>
-                  <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                    <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-3">
-                      <BookText className="h-8 w-8 text-green-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-800 text-lg">Training Matrix</h3>
-                    <p className="text-sm text-gray-500 mt-1">Staff development</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200 shadow-sm" onClick={() => handleWorkflowNavigation('forms')}>
-                  <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                    <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-3">
-                      <FileText className="h-8 w-8 text-amber-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-800 text-lg">Form Matrix</h3>
-                    <p className="text-sm text-gray-500 mt-1">Document templates</p>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-                <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200 shadow-sm" onClick={() => handleWorkflowNavigation('parameters')}>
-                  <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                    <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mb-3">
-                      <ListChecks className="h-8 w-8 text-indigo-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-800 text-lg">Key Parameters</h3>
-                    <p className="text-sm text-gray-500 mt-1">Track metrics</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200 shadow-sm" onClick={() => handleWorkflowNavigation('medication')}>
-                  <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                    <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-3">
-                      <ClipboardCheck className="h-8 w-8 text-red-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-800 text-lg">Medication</h3>
-                    <p className="text-sm text-gray-500 mt-1">Medicine tracking</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200 shadow-sm" onClick={() => handleWorkflowNavigation('care-plan')}>
-                  <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                    <div className="w-16 h-16 rounded-full bg-cyan-100 flex items-center justify-center mb-3">
-                      <ClipboardCheck className="h-8 w-8 text-cyan-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-800 text-lg">Care Plan</h3>
-                    <p className="text-sm text-gray-500 mt-1">Patient care plans</p>
-                  </CardContent>
-                </Card>
-              </div>
-            </>}
         </motion.div>
       </main>
-    </div>;
+    </div>
+  );
 };
 
 export default BranchDashboard;
