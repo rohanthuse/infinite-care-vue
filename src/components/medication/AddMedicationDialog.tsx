@@ -3,7 +3,7 @@ import React from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 
 interface AddMedicationDialogProps {
   open: boolean;
@@ -51,6 +52,9 @@ const formSchema = z.object({
   dosage: z.string().min(1, {
     message: "Dosage is required.",
   }),
+  route: z.string({
+    required_error: "Administration route is required."
+  }),
   frequency: z.string().min(1, {
     message: "Frequency is required.",
   }),
@@ -60,12 +64,18 @@ const formSchema = z.object({
   endDate: z.date({
     required_error: "End date is required.",
   }),
+  time: z.string().min(1, {
+    message: "Administration time is required.",
+  }),
   patient: z.string({
     required_error: "Patient is required.",
   }),
   prescribedBy: z.string({
     required_error: "Prescriber is required.",
   }),
+  remainingDoses: z.string().optional(),
+  storage: z.string().optional(),
+  specialInstructions: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -87,6 +97,20 @@ const mockPrescribers = [
   { id: "DOC-003", name: "Dr. Michael Scott" },
 ];
 
+const administrationRoutes = [
+  { value: "oral", label: "Oral" },
+  { value: "topical", label: "Topical" },
+  { value: "sublingual", label: "Sublingual" },
+  { value: "inhalation", label: "Inhalation" },
+  { value: "rectal", label: "Rectal" },
+  { value: "intravenous", label: "Intravenous (IV)" },
+  { value: "intramuscular", label: "Intramuscular (IM)" },
+  { value: "subcutaneous", label: "Subcutaneous" },
+  { value: "ophthalmic", label: "Ophthalmic (Eye)" },
+  { value: "otic", label: "Otic (Ear)" },
+  { value: "nasal", label: "Nasal" },
+];
+
 export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogProps) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -94,6 +118,10 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
       name: "",
       dosage: "",
       frequency: "",
+      time: "",
+      remainingDoses: "",
+      storage: "",
+      specialInstructions: "",
       notes: "",
     },
   });
@@ -101,7 +129,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     console.log(values);
     toast.success("Medication added successfully", {
-      description: `${values.name} has been added to the system.`,
+      description: `${values.name} has been added for ${mockPatients.find(p => p.id === values.patient)?.name}.`,
     });
     form.reset();
     onOpenChange(false);
@@ -109,11 +137,11 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[625px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Medication</DialogTitle>
           <DialogDescription>
-            Enter the details of the medication to add it to the system.
+            Enter the details of the medication to add it to the patient's record.
           </DialogDescription>
         </DialogHeader>
 
@@ -149,21 +177,48 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="frequency"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Frequency</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Twice daily" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="route"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Administration Route</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a route" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {administrationRoutes.map((route) => (
+                          <SelectItem key={route.value} value={route.value}>
+                            {route.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="frequency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Frequency</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Twice daily" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
               <FormField
                 control={form.control}
                 name="startDate"
@@ -239,6 +294,23 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="time"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Administration Time</FormLabel>
+                    <div className="relative">
+                      <FormControl>
+                        <Input type="time" placeholder="Select time" {...field} />
+                      </FormControl>
+                      <Clock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -293,14 +365,58 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="remainingDoses"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Remaining Doses (Optional)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="e.g. 30" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="storage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Storage Instructions (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Store in a cool, dry place" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="specialInstructions"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Special Instructions (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="e.g. Take with food, avoid alcohol" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes (Optional)</FormLabel>
+                  <FormLabel>Additional Notes (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Any additional information" {...field} />
+                    <Textarea placeholder="Any additional information" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
