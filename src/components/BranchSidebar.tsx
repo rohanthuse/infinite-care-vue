@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  LayoutDashboard, ListChecks, Users, 
+  LayoutDashboard, Workflow, ListChecks, Users, 
   Calendar, Star, MessageSquare, Pill, DollarSign, 
   FileText, ClipboardCheck, Bell, ClipboardList, 
   FileUp, Folder, UserPlus, BarChart4, Settings,
@@ -21,7 +22,8 @@ type MenuItem = {
 
 const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/branch-dashboard" },
-  { icon: ListChecks, label: "Key Parameters", path: "/key-parameters", expandable: true },
+  { icon: Workflow, label: "Workflow", path: "/branch-workflow", expandable: true },
+  { icon: ListChecks, label: "Key Parameters", path: "/branch-parameters", expandable: true },
   { icon: Users, label: "Staff", path: "/branch-staff", expandable: true },
   { icon: Users, label: "Client", path: "/branch-client", expandable: true },
   { icon: Calendar, label: "Bookings", path: "/branch-bookings" },
@@ -35,7 +37,7 @@ const menuItems: MenuItem[] = [
   { icon: ClipboardCheck, label: "Attendance", path: "/branch-attendance" },
   { icon: FileUp, label: "Form Builder", path: "/branch-form-builder" },
   { icon: Folder, label: "Documents", path: "/branch-documents" },
-  { icon: Bell, label: "Notifications", path: "/notifications", expandable: true },
+  { icon: Bell, label: "Notifications", path: "/branch-notifications", expandable: true },
   { icon: Folder, label: "Library", path: "/branch-library" },
   { icon: UserPlus, label: "Third Party Access", path: "/branch-third-party" },
   { icon: BarChart4, label: "Reports", path: "/branch-reports", expandable: true },
@@ -113,49 +115,13 @@ interface BranchSidebarProps {
 export const BranchSidebar = ({ branchName }: BranchSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeItem, setActiveItem] = useState<string>("");
+  const [activeItem, setActiveItem] = useState("Dashboard");
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [collapsed, setCollapsed] = useState(false);
   
-  const pathParts = location.pathname.split('/');
-  const branchId = pathParts[2] || '';
-  const encodedBranchName = pathParts[3] || '';
-  
-  useEffect(() => {
-    const currentPath = location.pathname;
-    
-    if (currentPath.includes('/key-parameters')) {
-      setActiveItem('Key Parameters');
-    } else if (currentPath.includes('/notifications')) {
-      setActiveItem('Notifications');
-    } else if (currentPath.includes('/task-matrix')) {
-      setActiveItem('Task Matrix');
-    } else if (currentPath.includes('/events-logs')) {
-      setActiveItem('Events & Logs');
-    } else if (currentPath.includes('/bookings')) {
-      setActiveItem('Bookings');
-    } else if (currentPath.includes('/communication')) {
-      setActiveItem('Communication');
-    } else {
-      setActiveItem('Dashboard');
-    }
-  }, [location.pathname]);
-  
   const handleItemClick = (item: MenuItem) => {
     setActiveItem(item.label);
-    
-    if (item.path === '/branch-dashboard') {
-      navigate(`/branch-dashboard/${branchId}/${encodedBranchName}`);
-    } else if (item.path === '/key-parameters') {
-      navigate(`/branch-dashboard/${branchId}/${encodedBranchName}/key-parameters`);
-    } else if (item.path === '/notifications') {
-      navigate(`/branch-dashboard/${branchId}/${encodedBranchName}/notifications`);
-    } else if (item.path === '/branch-events-logs') {
-      navigate(`/branch-dashboard/${branchId}/${encodedBranchName}/events-logs`);
-    } else {
-      const path = item.path.startsWith('/') ? item.path.substring(1) : item.path;
-      navigate(`/branch-dashboard/${branchId}/${encodedBranchName}/${path}`);
-    }
+    navigate(item.path);
   };
   
   const toggleExpand = (label: string) => {
@@ -167,7 +133,7 @@ export const BranchSidebar = ({ branchName }: BranchSidebarProps) => {
   };
   
   const isActive = (item: MenuItem) => {
-    return activeItem === item.label;
+    return location.pathname === item.path || activeItem === item.label;
   };
   
   const isExpanded = (label: string) => {

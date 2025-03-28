@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { 
   ListChecks, ChevronRight, Search, Plus, 
-  FileText, Calendar, Car, MessageSquare, DollarSign, Folder,
-  Home, MapPin, Phone, Mail
+  FileText, Calendar, Car, MessageSquare, DollarSign, Folder
 } from "lucide-react";
 import { 
   Tabs, TabsList, TabsTrigger, TabsContent 
@@ -21,7 +20,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
-import { BranchSidebar } from "@/components/BranchSidebar";
 
 interface BaseParameter {
   id: string | number;
@@ -30,18 +28,23 @@ interface BaseParameter {
 }
 
 interface ReportType extends BaseParameter {}
+
 interface FileCategory extends BaseParameter {}
+
 interface BankHoliday extends BaseParameter {
   registeredBy: string;
   registeredOn: string;
 }
+
 interface TravelManagement extends BaseParameter {
   fromDate: string;
   ratePerMile: number;
   ratePerHour: number;
   userType: string;
 }
+
 interface CommunicationType extends BaseParameter {}
+
 interface ExpenseType extends BaseParameter {
   type: "Increment" | "Decrement";
   amount: number;
@@ -57,15 +60,14 @@ interface ColumnDef {
 const KeyParameters = () => {
   const navigate = useNavigate();
   const params = useParams();
-  const location = useLocation();
   const { id, branchName } = params;
+  const [activeTab, setActiveTab] = useState("key-parameters");
   const [activeSectionTab, setActiveSectionTab] = useState("report-types");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogTitle, setDialogTitle] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   
   const isInBranchContext = Boolean(id && branchName);
-  const displayBranchName = isInBranchContext ? decodeURIComponent(branchName || "") : "";
 
   const reportTypes: ReportType[] = [
     { id: 1, title: "General", status: "Active" },
@@ -329,218 +331,211 @@ const KeyParameters = () => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      {isInBranchContext && (
-        <BranchSidebar branchName={displayBranchName} />
-      )}
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+      <DashboardHeader />
+      <DashboardNavbar />
       
-      {/* Main content */}
-      <div className="flex-1 overflow-auto">
-        {!isInBranchContext && (
-          <>
-            <DashboardHeader />
-            <DashboardNavbar />
-          </>
+      <div className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full">
+        {isInBranchContext && (
+          <div className="mb-6">
+            <TabNavigation 
+              activeTab={activeTab} 
+              onChange={(tab) => {
+                setActiveTab(tab);
+                navigate(`/branch-dashboard/${id}/${branchName}/${tab}`);
+              }}
+              hideQuickAdd={true}
+            />
+          </div>
         )}
         
-        <main className={`p-6 ${isInBranchContext ? 'ml-20 md:ml-64 pt-[4.5rem]' : ''}`}>
-          <div className="mb-4">
-            <Breadcrumb>
-              <BreadcrumbList>
-                {isInBranchContext ? (
-                  <>
-                    <BreadcrumbItem>
-                      <BreadcrumbLink asChild>
-                        <Link to={`/branch-dashboard/${id}/${branchName}`}>
-                          Dashboard
-                        </Link>
-                      </BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator>
-                      <ChevronRight className="h-4 w-4" />
-                    </BreadcrumbSeparator>
-                  </>
-                ) : (
+        <div className="mb-4">
+          <Breadcrumb>
+            <BreadcrumbList>
+              {isInBranchContext ? (
+                <>
                   <BreadcrumbItem>
                     <BreadcrumbLink asChild>
-                      <Link to="/dashboard">
+                      <Link to={`/branch-dashboard/${id}/${branchName}`}>
                         Dashboard
                       </Link>
                     </BreadcrumbLink>
                   </BreadcrumbItem>
-                )}
-                <BreadcrumbSeparator>
-                  <ChevronRight className="h-4 w-4" />
-                </BreadcrumbSeparator>
+                  <BreadcrumbSeparator>
+                    <ChevronRight className="h-4 w-4" />
+                  </BreadcrumbSeparator>
+                </>
+              ) : (
                 <BreadcrumbItem>
-                  <BreadcrumbLink>Key Parameters</BreadcrumbLink>
+                  <BreadcrumbLink asChild>
+                    <Link to="/dashboard">
+                      Dashboard
+                    </Link>
+                  </BreadcrumbLink>
                 </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
+              )}
+              <BreadcrumbSeparator>
+                <ChevronRight className="h-4 w-4" />
+              </BreadcrumbSeparator>
+              <BreadcrumbItem>
+                <BreadcrumbLink>Key Parameters</BreadcrumbLink>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
 
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Key Parameters</h1>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Calendar className="h-4 w-4 mr-2" />
-              New Booking
-            </Button>
-          </div>
-
-          <Card className="mb-8 border-none shadow-md">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-blue-100 rounded-xl">
-                    <ListChecks className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl md:text-2xl font-bold text-gray-800 tracking-tight">Key Parameters</h2>
-                    <p className="text-gray-500 text-sm md:text-base">Manage system parameters and configurations</p>
-                  </div>
+        <Card className="mb-8 border-none shadow-md">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-100 rounded-xl">
+                  <ListChecks className="h-6 w-6 text-blue-600" />
                 </div>
-                
-                <div className="flex items-center gap-3">
-                  <div className="relative w-full md:w-auto">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input 
-                      className="pl-9 pr-4 py-2 w-full md:w-64" 
-                      placeholder="Search parameters..."
-                      value={searchQuery}
-                      onChange={handleSearch}
-                    />
-                  </div>
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Key Parameters</h1>
+                  <p className="text-gray-500 text-sm md:text-base">Manage system parameters and configurations</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              
+              <div className="flex items-center gap-3">
+                <div className="relative w-full md:w-auto">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input 
+                    className="pl-9 pr-4 py-2 w-full md:w-64" 
+                    placeholder="Search parameters..."
+                    value={searchQuery}
+                    onChange={handleSearch}
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="mb-8 border-none shadow-md">
-            <Tabs value={activeSectionTab} onValueChange={setActiveSectionTab} className="w-full">
-              <TabsList className="w-full grid grid-cols-3 md:grid-cols-6 p-0 rounded-t-lg rounded-b-none border-b bg-gray-50">
-                <TabsTrigger 
-                  value="report-types" 
-                  className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
-                >
-                  <FileText className="h-4 w-4" />
-                  <span className="hidden md:inline">Report Types</span>
-                  <span className="md:hidden">Reports</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="file-categories" 
-                  className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
-                >
-                  <Folder className="h-4 w-4" />
-                  <span className="hidden md:inline">File Categories</span>
-                  <span className="md:hidden">Files</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="bank-holidays" 
-                  className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
-                >
-                  <Calendar className="h-4 w-4" />
-                  <span className="hidden md:inline">Bank Holidays</span>
-                  <span className="md:hidden">Holidays</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="travel-management" 
-                  className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
-                >
-                  <Car className="h-4 w-4" />
-                  <span className="hidden md:inline">Travel Management</span>
-                  <span className="md:hidden">Travel</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="communication-types" 
-                  className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  <span className="hidden md:inline">Communication Types</span>
-                  <span className="md:hidden">Comms</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="expense-types" 
-                  className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
-                >
-                  <DollarSign className="h-4 w-4" />
-                  <span className="hidden md:inline">Expense Types</span>
-                  <span className="md:hidden">Expenses</span>
-                </TabsTrigger>
-              </TabsList>
+        <Card className="mb-8 border-none shadow-md">
+          <Tabs value={activeSectionTab} onValueChange={setActiveSectionTab} className="w-full">
+            <TabsList className="w-full grid grid-cols-3 md:grid-cols-6 p-0 rounded-t-lg rounded-b-none border-b bg-gray-50">
+              <TabsTrigger 
+                value="report-types" 
+                className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              >
+                <FileText className="h-4 w-4" />
+                <span className="hidden md:inline">Report Types</span>
+                <span className="md:hidden">Reports</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="file-categories" 
+                className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              >
+                <Folder className="h-4 w-4" />
+                <span className="hidden md:inline">File Categories</span>
+                <span className="md:hidden">Files</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="bank-holidays" 
+                className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              >
+                <Calendar className="h-4 w-4" />
+                <span className="hidden md:inline">Bank Holidays</span>
+                <span className="md:hidden">Holidays</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="travel-management" 
+                className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              >
+                <Car className="h-4 w-4" />
+                <span className="hidden md:inline">Travel Management</span>
+                <span className="md:hidden">Travel</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="communication-types" 
+                className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              >
+                <MessageSquare className="h-4 w-4" />
+                <span className="hidden md:inline">Communication Types</span>
+                <span className="md:hidden">Comms</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="expense-types" 
+                className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              >
+                <DollarSign className="h-4 w-4" />
+                <span className="hidden md:inline">Expense Types</span>
+                <span className="md:hidden">Expenses</span>
+              </TabsTrigger>
+            </TabsList>
 
-              {["report-types", "file-categories", "bank-holidays", "travel-management", "communication-types", "expense-types"].map((paramType) => (
-                <TabsContent key={paramType} value={paramType} className="p-0 border-0">
-                  <div className="p-4 border-t-0 rounded-b-lg bg-white">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        {getParameterTypeIcon(paramType)}
-                        <h2 className="text-xl font-semibold text-gray-800">
-                          {getParameterTypeTitle(paramType)}s
-                        </h2>
-                      </div>
-                      <Button 
-                        onClick={() => handleAddNew(paramType)}
-                        className="whitespace-nowrap"
-                      >
-                        <Plus className="h-4 w-4 mr-1" /> 
-                        New {getParameterTypeTitle(paramType)}
-                      </Button>
+            {["report-types", "file-categories", "bank-holidays", "travel-management", "communication-types", "expense-types"].map((paramType) => (
+              <TabsContent key={paramType} value={paramType} className="p-0 border-0">
+                <div className="p-4 border-t-0 rounded-b-lg bg-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      {getParameterTypeIcon(paramType)}
+                      <h2 className="text-xl font-semibold text-gray-800">
+                        {getParameterTypeTitle(paramType)}s
+                      </h2>
                     </div>
-                    
-                    <div className="relative overflow-hidden border rounded-lg">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            {getParameterColumns(paramType).map((column, index) => (
-                              <TableHead key={index} className="text-left font-semibold">
-                                {column.header}
-                              </TableHead>
-                            ))}
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {getParameterData(paramType)
-                            .filter(item => searchQuery 
-                              ? item.title.toLowerCase().includes(searchQuery.toLowerCase())
-                              : true)
-                            .map((item) => (
-                              <TableRow key={item.id}>
-                                {getParameterColumns(paramType).map((column, colIndex) => (
-                                  <TableCell key={`${item.id}-${colIndex}`} className="text-left">
-                                    {column.cell && column.accessorKey in item
-                                      ? column.cell(item[column.accessorKey as keyof typeof item])
-                                      : item[column.accessorKey as keyof typeof item]?.toString()}
-                                  </TableCell>
-                                ))}
-                                <TableCell className="text-right">
-                                  <div className="flex justify-end gap-2">
-                                    <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                                      <ChevronRight className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          {getParameterData(paramType).filter(item => searchQuery 
+                    <Button 
+                      onClick={() => handleAddNew(paramType)}
+                      className="whitespace-nowrap"
+                    >
+                      <Plus className="h-4 w-4 mr-1" /> 
+                      New {getParameterTypeTitle(paramType)}
+                    </Button>
+                  </div>
+                  
+                  <div className="relative overflow-hidden border rounded-lg">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          {getParameterColumns(paramType).map((column, index) => (
+                            <TableHead key={index} className="text-left font-semibold">
+                              {column.header}
+                            </TableHead>
+                          ))}
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {getParameterData(paramType)
+                          .filter(item => searchQuery 
                             ? item.title.toLowerCase().includes(searchQuery.toLowerCase())
-                            : true).length === 0 && (
-                            <TableRow>
-                              <TableCell colSpan={getParameterColumns(paramType).length + 1} className="text-center py-6 text-gray-500">
-                                No data found
+                            : true)
+                          .map((item) => (
+                            <TableRow key={item.id}>
+                              {getParameterColumns(paramType).map((column, colIndex) => (
+                                <TableCell key={`${item.id}-${colIndex}`} className="text-left">
+                                  {column.cell && column.accessorKey in item
+                                    ? column.cell(item[column.accessorKey as keyof typeof item])
+                                    : item[column.accessorKey as keyof typeof item]?.toString()}
+                                </TableCell>
+                              ))}
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                                    <ChevronRight className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
+                          ))}
+                        {getParameterData(paramType).filter(item => searchQuery 
+                          ? item.title.toLowerCase().includes(searchQuery.toLowerCase())
+                          : true).length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={getParameterColumns(paramType).length + 1} className="text-center py-6 text-gray-500">
+                              No data found
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
                   </div>
-                </TabsContent>
-              ))}
-            </Tabs>
-          </Card>
-        </main>
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
+        </Card>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
