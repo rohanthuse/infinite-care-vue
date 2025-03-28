@@ -331,10 +331,7 @@ const ActionItem = ({
 };
 
 const BranchDashboard = () => {
-  const {
-    id,
-    branchName
-  } = useParams();
+  const { id, branchName } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [searchValue, setSearchValue] = useState("");
@@ -346,6 +343,7 @@ const BranchDashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [addClientDialogOpen, setAddClientDialogOpen] = useState(false);
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
+  
   const itemsPerPage = 5;
   const displayBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
   const filteredClients = clients.filter(client => {
@@ -356,22 +354,27 @@ const BranchDashboard = () => {
   });
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
   const paginatedClients = filteredClients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  
   const handlePreviousPage = () => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
     }
   };
+  
   const handleNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
   };
+  
   const handleNewBooking = () => {
     setNewBookingDialogOpen(true);
   };
+  
   const handleNewClient = () => {
     setAddClientDialogOpen(true);
   };
+  
   const mockClients = [{
     id: "CL-001",
     name: "Pender, Eva",
@@ -413,6 +416,7 @@ const BranchDashboard = () => {
     initials: "MS",
     bookingCount: 3
   }];
+  
   const mockCarers = [{
     id: "CA-001",
     name: "Charuma, Charmaine",
@@ -439,13 +443,16 @@ const BranchDashboard = () => {
     initials: "WM",
     bookingCount: 1
   }];
+  
   const handleCreateBooking = (bookingData: any) => {
     console.log("Creating new booking:", bookingData);
     setNewBookingDialogOpen(false);
   };
+  
   const handleWorkflowNavigation = (path: string) => {
     navigate(`/branch-dashboard/${id}/${encodeURIComponent(displayBranchName)}/${path}`);
   };
+  
   const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);
     if (newTab === "workflow") {
@@ -460,10 +467,13 @@ const BranchDashboard = () => {
       handleWorkflowNavigation("events-logs");
     }
   };
+  
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, regionFilter, clientSearchValue]);
-  return <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+  
+  return (
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
       
       <AddClientDialog open={addClientDialogOpen} onOpenChange={setAddClientDialogOpen} />
@@ -514,15 +524,16 @@ const BranchDashboard = () => {
         <TabNavigation activeTab={activeTab} onChange={handleTabChange} hideActionsOnMobile={true} hideQuickAdd={true} />
         
         <motion.div key={activeTab} initial={{
-        opacity: 0,
-        y: 10
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        duration: 0.3
-      }} className="mt-4 md:mt-6">
-          {activeTab === "dashboard" && <>
+          opacity: 0,
+          y: 10
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          duration: 0.3
+        }} className="mt-4 md:mt-6">
+          {activeTab === "dashboard" && (
+            <>
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start" onClick={handleNewClient}>
                   <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-blue-100 flex items-center justify-center">
@@ -700,4 +711,40 @@ const BranchDashboard = () => {
                     <CardDescription>Most requested services</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3 md
+                    <div className="space-y-3 md:space-y-4">
+                      {serviceData.map((service, index) => (
+                        <div key={service.name} className="relative pt-1">
+                          <div className="flex justify-between items-center mb-1">
+                            <div className="text-xs md:text-sm font-medium text-gray-700">{service.name}</div>
+                            <div className="text-xs text-gray-500">{service.usage}%</div>
+                          </div>
+                          <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-100">
+                            <div 
+                              style={{ width: `${service.usage}%` }} 
+                              className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${
+                                index === 0 ? 'bg-blue-500' : 
+                                index === 1 ? 'bg-green-500' : 
+                                index === 2 ? 'bg-purple-500' : 
+                                'bg-amber-500'
+                              }`}
+                            ></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
+          {activeTab === "bookings" && <BookingsTab />}
+          {activeTab === "carers" && <CarersTab />}
+          {activeTab === "reviews" && <ReviewsTab />}
+          {activeTab === "communication" && <CommunicationsTab />}
+        </motion.div>
+      </main>
+    </div>
+  );
+};
+
+export default BranchDashboard;
