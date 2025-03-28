@@ -157,7 +157,9 @@ const mockPatientData = {
       { name: "Calcium + Vitamin D", dosage: "500mg", frequency: "Daily", purpose: "Bone health" },
       { name: "Multivitamin", dosage: "1 tablet", frequency: "Morning", purpose: "Nutritional supplement" }
     ],
-    notes: "Patient struggles with appetite in the evenings. Family members have been advised to offer light protein-rich snacks in the afternoon."
+    notes: "Patient struggles with appetite in the evenings. Family members have been advised to offer light protein-rich snacks in the afternoon.",
+    hydrationPlan: "Minimum 8 glasses of water daily, monitored with checklist",
+    nutritionalNotes: "Patient struggles with maintaining adequate hydration. Family has been advised to encourage fluid intake throughout the day."
   },
   
   personalCare: {
