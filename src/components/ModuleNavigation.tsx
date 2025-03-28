@@ -96,6 +96,12 @@ export function ModuleNavigation({ activeModule, onModuleChange }: ModuleNavigat
   
   const activeModuleObj = allModules.find(module => module.value === activeModule);
   
+  // Extract branch context from the URL if present
+  const pathParts = location.pathname.split('/');
+  const isBranchDashboardPath = pathParts.includes('branch-dashboard');
+  const branchId = isBranchDashboardPath ? pathParts[2] : null;
+  const branchName = isBranchDashboardPath ? pathParts[3] : null;
+  
   // Handle keyboard shortcut to open command menu
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -108,6 +114,22 @@ export function ModuleNavigation({ activeModule, onModuleChange }: ModuleNavigat
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
   }, []);
+  
+  // Custom navigation handler to preserve branch context
+  const handleNavigateToModule = (moduleValue: string) => {
+    if (isBranchDashboardPath && branchId && branchName) {
+      // When in branch context, navigate within branch path
+      navigate(`/branch-dashboard/${branchId}/${branchName}/${moduleValue}`);
+    } else {
+      // For global navigation
+      if (moduleValue === 'dashboard') {
+        navigate('/dashboard');
+      } else {
+        navigate(`/${moduleValue}`);
+      }
+    }
+    onModuleChange(moduleValue);
+  };
   
   return (
     <div className="w-full">
@@ -127,7 +149,7 @@ export function ModuleNavigation({ activeModule, onModuleChange }: ModuleNavigat
                     "flex items-center gap-2 px-3 py-2 md:px-4 rounded-lg transition-all duration-200",
                     isActive ? "bg-blue-50 text-blue-600" : "text-gray-700 hover:bg-gray-50"
                   )}
-                  onClick={() => onModuleChange(module.value)}
+                  onClick={() => handleNavigateToModule(module.value)}
                 >
                   <Icon className="h-4 w-4" />
                   <span className="hidden md:inline">{module.label}</span>
@@ -200,7 +222,7 @@ export function ModuleNavigation({ activeModule, onModuleChange }: ModuleNavigat
                         <CommandItem
                           key={module.value}
                           onSelect={() => {
-                            onModuleChange(module.value);
+                            handleNavigateToModule(module.value);
                             setCommandOpen(false);
                           }}
                           className={cn(
@@ -243,7 +265,7 @@ export function ModuleNavigation({ activeModule, onModuleChange }: ModuleNavigat
                             <CommandItem
                               key={module.value}
                               onSelect={() => {
-                                onModuleChange(module.value);
+                                handleNavigateToModule(module.value);
                                 setCommandOpen(false);
                               }}
                               className={cn(

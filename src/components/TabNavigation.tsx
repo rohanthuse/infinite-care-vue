@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { 
   Paperclip, Menu, Plus,
   UserPlus2, FileSignature, CalendarPlus, UserRoundPlus,
@@ -28,6 +28,7 @@ interface TabNavigationProps {
 export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false, hideQuickAdd = false }: TabNavigationProps) => {
   const params = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const { id, branchName } = params;
   
   const handleQuickAddAction = (action: string) => {
@@ -38,8 +39,20 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
     console.log(`Quick Add action selected: ${action}`);
   };
   
-  // Handler for module changes
+  // Handler for module changes with better context preservation
   const handleModuleChange = (value: string) => {
+    // Preserve branch context if we're in a branch
+    if (id && branchName) {
+      navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
+    } else {
+      // Global navigation
+      if (value === 'dashboard') {
+        navigate('/dashboard');
+      } else {
+        navigate(`/${value}`);
+      }
+    }
+    
     // Invoke the parent's onChange handler
     onChange(value);
   };
