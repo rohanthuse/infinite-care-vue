@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import { 
   ListChecks, ChevronRight, Search, Plus, 
   FileText, Calendar, Car, MessageSquare, DollarSign, Folder
@@ -20,6 +20,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
+import { BranchSidebar } from "@/components/BranchSidebar";
 
 interface BaseParameter {
   id: string | number;
@@ -60,6 +61,7 @@ interface ColumnDef {
 const KeyParameters = () => {
   const navigate = useNavigate();
   const params = useParams();
+  const location = useLocation();
   const { id, branchName } = params;
   const [activeTab, setActiveTab] = useState("key-parameters");
   const [activeSectionTab, setActiveSectionTab] = useState("report-types");
@@ -68,6 +70,8 @@ const KeyParameters = () => {
   const [searchQuery, setSearchQuery] = useState("");
   
   const isInBranchContext = Boolean(id && branchName);
+  const pathParts = location.pathname.split('/');
+  const isBranchDashboardPath = pathParts.includes('branch-dashboard');
 
   const reportTypes: ReportType[] = [
     { id: 1, title: "General", status: "Active" },
@@ -332,17 +336,32 @@ const KeyParameters = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
-      <DashboardHeader />
-      <DashboardNavbar />
+      {!isInBranchContext && (
+        <>
+          <DashboardHeader />
+          <DashboardNavbar />
+        </>
+      )}
       
-      <div className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full">
+      {isInBranchContext && isBranchDashboardPath && (
+        <div className="flex">
+          <BranchSidebar branchName={decodeURIComponent(branchName || "")} />
+          <div className="flex-1 ml-[250px]">
+            {/* Branch dashboard specific content */}
+          </div>
+        </div>
+      )}
+      
+      <div className={`flex-1 px-4 md:px-8 py-6 md:py-8 w-full ${isInBranchContext && isBranchDashboardPath ? 'ml-[250px]' : ''}`}>
         {isInBranchContext && (
           <div className="mb-6">
             <TabNavigation 
               activeTab={activeTab} 
               onChange={(tab) => {
                 setActiveTab(tab);
-                navigate(`/branch-dashboard/${id}/${branchName}/${tab}`);
+                if (isBranchDashboardPath) {
+                  navigate(`/branch-dashboard/${id}/${branchName}/${tab}`);
+                }
               }}
               hideQuickAdd={true}
             />
