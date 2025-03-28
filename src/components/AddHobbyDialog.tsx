@@ -12,74 +12,58 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
-interface AddHobbyDialogProps {
-  onAdd: (hobby: { title: string; status: string }) => void;
-}
-
-export function AddHobbyDialog({ onAdd }: AddHobbyDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const { toast } = useToast();
+export function AddHobbyDialog({
+  open,
+  onOpenChange,
+  onAddHobby,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAddHobby: (hobby: string) => void;
+}) {
+  const [hobbyName, setHobbyName] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) {
-      toast({
-        title: "Title is required",
-        description: "Please enter a title for the hobby",
-        variant: "destructive",
-      });
-      return;
+    if (hobbyName.trim()) {
+      onAddHobby(hobbyName);
+      setHobbyName("");
+      onOpenChange(false);
+      toast.success("Hobby added successfully");
     }
-
-    onAdd({ title, status: "Active" });
-    setTitle("");
-    setOpen(false);
-    toast({
-      title: "Hobby added",
-      description: `${title} has been added successfully`,
-    });
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 rounded-full">
-          <Plus className="mr-1.5 h-4 w-4" /> New Hobby
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-xl">Add New Hobby</DialogTitle>
+          <DialogTitle>Add New Hobby</DialogTitle>
           <DialogDescription>
-            Enter the details for the new hobby
+            Enter the name of the hobby to add to the system.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="title" className="text-right">
-                Title
+              <Label htmlFor="hobby-name" className="text-right">
+                Hobby Name
               </Label>
               <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                id="hobby-name"
+                value={hobbyName}
+                onChange={(e) => setHobbyName(e.target.value)}
                 className="col-span-3"
-                placeholder="E.g., Swimming, Reading..."
+                autoFocus
               />
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
-              Add Hobby
-            </Button>
+            <Button type="submit">Add Hobby</Button>
           </DialogFooter>
         </form>
       </DialogContent>
