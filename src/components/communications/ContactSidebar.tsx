@@ -26,11 +26,18 @@ const mockClients = [
   { id: "client-4", name: "Ren, Victoria", avatar: "RV", status: "away", unread: 2 },
 ];
 
+// Adding mock groups
+const mockGroups = [
+  { id: "group-1", name: "All Carers", avatar: "AC", status: "online", unread: 1 },
+  { id: "group-2", name: "All Clients", avatar: "AC", status: "online", unread: 0 },
+  { id: "group-3", name: "Team Alpha", avatar: "TA", status: "online", unread: 3 },
+];
+
 interface ContactSidebarProps {
   branchId: string;
   onContactSelect: (contactId: string) => void;
-  contactType: "all" | "carers" | "clients";
-  onContactTypeChange: (type: "all" | "carers" | "clients") => void;
+  contactType: "all" | "carers" | "clients" | "groups";
+  onContactTypeChange: (type: "all" | "carers" | "clients" | "groups") => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
 }
@@ -66,12 +73,18 @@ export const ContactSidebar = ({
     return matchesSearch && matchesStatus;
   });
   
+  const filteredGroups = mockGroups.filter(group => {
+    const matchesSearch = group.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter.length === 0 || statusFilter.includes(group.status);
+    return matchesSearch && matchesStatus;
+  });
+  
   // Get contacts based on selected type
-  const displayContacts = contactType === "all" 
-    ? [...filteredCarers, ...filteredClients] 
-    : contactType === "carers" 
-      ? filteredCarers 
-      : filteredClients;
+  const displayContacts = 
+    contactType === "all" ? [...filteredCarers, ...filteredClients, ...filteredGroups] : 
+    contactType === "carers" ? filteredCarers : 
+    contactType === "clients" ? filteredClients :
+    filteredGroups;
   
   return (
     <>
@@ -107,6 +120,12 @@ export const ContactSidebar = ({
               onClick={() => onContactTypeChange('clients')}
             >
               Clients
+            </button>
+            <button 
+              className={`flex-1 text-sm py-2 px-4 ${contactType === 'groups' ? 'bg-white rounded-md shadow-sm' : ''}`}
+              onClick={() => onContactTypeChange('groups')}
+            >
+              Groups
             </button>
           </div>
           
@@ -145,6 +164,7 @@ export const ContactSidebar = ({
           {displayContacts.map((contact) => {
             const isClient = mockClients.some(client => client.id === contact.id);
             const isCarer = mockCarers.some(carer => carer.id === contact.id);
+            const isGroup = mockGroups.some(group => group.id === contact.id);
             
             return (
               <div
@@ -179,6 +199,10 @@ export const ContactSidebar = ({
                     ) : isCarer ? (
                       <Badge variant="outline" className="px-1.5 py-0 text-xs bg-blue-50 text-blue-700 border-blue-200">
                         Carer
+                      </Badge>
+                    ) : isGroup ? (
+                      <Badge variant="outline" className="px-1.5 py-0 text-xs bg-purple-50 text-purple-700 border-purple-200">
+                        Group
                       </Badge>
                     ) : (
                       <span>Contact</span>
