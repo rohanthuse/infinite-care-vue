@@ -7,6 +7,8 @@ import { Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { AddHobbyDialog } from "@/components/AddHobbyDialog";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 // Mock data for hobbies
 const hobbiesData = [
@@ -32,6 +34,7 @@ const Hobbies = () => {
   const [hobbies, setHobbies] = useState(hobbiesData);
   const [filteredData, setFilteredData] = useState(hobbies);
   const [searchQuery, setSearchQuery] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
   
   const columns = [
     {
@@ -70,15 +73,18 @@ const Hobbies = () => {
     }
   };
 
-  const handleAddHobby = (newHobby: { title: string; status: string }) => {
-    const newHobbyWithId = {
+  const handleAddHobby = (hobbyName: string) => {
+    const newHobby = {
       id: hobbies.length + 1,
-      ...newHobby
+      title: hobbyName,
+      status: "Active"
     };
     
-    const updatedHobbies = [...hobbies, newHobbyWithId];
+    const updatedHobbies = [...hobbies, newHobby];
     setHobbies(updatedHobbies);
-    setFilteredData(!searchQuery ? updatedHobbies : filteredData);
+    setFilteredData(!searchQuery ? updatedHobbies : updatedHobbies.filter(item => 
+      item.title.toLowerCase().includes(searchQuery.toLowerCase())
+    ));
   };
   
   return (
@@ -99,7 +105,23 @@ const Hobbies = () => {
           data={filteredData}
           onSearch={handleSearch}
           searchPlaceholder="Search hobbies..."
-          addButton={<AddHobbyDialog onAdd={handleAddHobby} />}
+          addButton={
+            <>
+              <Button 
+                onClick={() => setDialogOpen(true)}
+                size="sm"
+                className="flex items-center gap-1"
+              >
+                <Plus className="h-4 w-4" />
+                Add Hobby
+              </Button>
+              <AddHobbyDialog 
+                open={dialogOpen} 
+                onOpenChange={setDialogOpen} 
+                onAddHobby={handleAddHobby} 
+              />
+            </>
+          }
         />
       </motion.main>
     </div>
