@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { 
   Paperclip, Menu, Plus,
   UserPlus2, FileSignature, CalendarPlus, UserRoundPlus,
@@ -30,7 +30,6 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
       description: `The ${action.toLowerCase()} feature will be available soon`,
       position: "top-center",
     });
-    console.log(`Quick Add action selected: ${action}`);
   };
   
   return (
@@ -84,10 +83,6 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
             </div>
           </div>
         )}
-
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 z-30 md:hidden">
-          {/* Mobile navigation is now handled in ModuleNavigation */}
-        </div>
 
         <div className="hidden md:flex md:flex-col md:space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
