@@ -665,4 +665,4 @@ const CarePlanView = () => {
                             <div>
                               <p className="text-sm font-medium text-gray-500 mb-1">Medications</p>
                               <div className="grid grid-cols-1 gap-2">
-                                {mockPatientData.medications.map((medication, index) =>
+                                {mockPatientData.medications.map((medication, index) => (
