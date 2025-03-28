@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Routes, Route } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { motion } from "framer-motion";
 import { 
   Calendar, Users, BarChart4, Clock, FileText, AlertCircle, Search, Bell, ChevronRight, Home, ArrowUpRight, Phone, Mail, MapPin, Plus, Clock7, RefreshCw, Download, Filter, ClipboardCheck, ThumbsUp, ArrowUp, ArrowDown, ChevronDown, Edit, Eye, HelpCircle, CalendarIcon, ChevronLeft
@@ -500,6 +501,13 @@ const BranchDashboard = () => {
       <NewBookingDialog open={newBookingDialogOpen} onOpenChange={setNewBookingDialogOpen} clients={mockClients} carers={mockCarers} onCreateBooking={handleCreateBooking} />
       
       <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full">
+        {/* Add the Branch Info Header here */}
+        <BranchInfoHeader 
+          branchName={decodeURIComponent(branchName || "Med-Infinite Branch")} 
+          branchId={id || ""}
+          onNewBooking={handleNewBooking}
+        />
+        
         <div className="mb-6">
           <TabNavigation 
             activeTab={activeTab} 
