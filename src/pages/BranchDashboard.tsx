@@ -449,22 +449,20 @@ const BranchDashboard = () => {
     setNewBookingDialogOpen(false);
   };
   
-  const handleWorkflowNavigation = (path: string) => {
-    navigate(`/branch-dashboard/${id}/${encodeURIComponent(displayBranchName)}/${path}`);
+  const handleNavigation = (path: string) => {
+    navigate(`/branch-dashboard/${id}/${encodeURIComponent(displayBranchName || '')}/${path}`);
   };
   
   const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);
-    if (newTab === "workflow") {
-      handleWorkflowNavigation("workflow");
-    } else if (newTab === "key-parameters") {
-      handleWorkflowNavigation("key-parameters");
+    if (newTab === "key-parameters") {
+      handleNavigation("key-parameters");
     } else if (newTab === "task-matrix") {
-      handleWorkflowNavigation("task-matrix");
+      handleNavigation("task-matrix");
     } else if (newTab === "notifications") {
-      handleWorkflowNavigation("notifications");
+      handleNavigation("notifications");
     } else if (newTab === "events-logs") {
-      handleWorkflowNavigation("events-logs");
+      handleNavigation("events-logs");
     }
   };
   

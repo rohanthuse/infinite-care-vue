@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  LayoutDashboard, Workflow, ListChecks, Users, 
+  LayoutDashboard, ListChecks, Users, 
   Calendar, Star, MessageSquare, Pill, DollarSign, 
   FileText, ClipboardCheck, Bell, ClipboardList, 
   FileUp, Folder, UserPlus, BarChart4, Settings,
@@ -22,7 +22,6 @@ type MenuItem = {
 
 const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/branch-dashboard" },
-  { icon: Workflow, label: "Workflow", path: "/workflow", expandable: true },
   { icon: ListChecks, label: "Key Parameters", path: "/key-parameters", expandable: true },
   { icon: Users, label: "Staff", path: "/branch-staff", expandable: true },
   { icon: Users, label: "Client", path: "/branch-client", expandable: true },
@@ -128,9 +127,7 @@ export const BranchSidebar = ({ branchName }: BranchSidebarProps) => {
     // Determine active item based on current path
     const currentPath = location.pathname;
     
-    if (currentPath.includes('/workflow')) {
-      setActiveItem('Workflow');
-    } else if (currentPath.includes('/key-parameters')) {
+    if (currentPath.includes('/key-parameters')) {
       setActiveItem('Key Parameters');
     } else if (currentPath.includes('/notifications')) {
       setActiveItem('Notifications');
