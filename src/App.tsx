@@ -60,15 +60,14 @@ function App() {
             <Route path="/workflow" element={<Workflow />} />
             <Route path="/key-parameters" element={<KeyParameters />} />
             
+            {/* Branch Dashboard Routes */}
+            <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
             <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
+            
+            {/* Branch specific pages that are not integrated with the branch dashboard */}
             <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
-            <Route path="/branch-dashboard/:id/:branchName/notifications" element={<Notifications />} />
-            <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
-            <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
-            <Route path="/branch-dashboard/:id/:branchName/workflow" element={<Workflow />} />
-            <Route path="/branch-dashboard/:id/:branchName/key-parameters" element={<KeyParameters />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
