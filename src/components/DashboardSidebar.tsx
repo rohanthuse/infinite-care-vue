@@ -1,5 +1,5 @@
 
-import { Home, Settings, FileText, ChevronDown, ListChecks, Users, Calendar, Star, MessageSquare, Pill, DollarSign, ClipboardCheck, Bell, ClipboardList, FileUp, Folder, UserPlus, BarChart4, Brain, Heart, Activity, Briefcase, Stethoscope, Building2, ActivitySquare } from "lucide-react";
+import { Home, Settings, FileText, ChevronDown, ListChecks, Users, Calendar, Star, MessageSquare, Pill, DollarSign, ClipboardCheck, Bell, ClipboardList, FileUp, Folder, UserPlus, BarChart4, Brain, Heart, Activity, Briefcase, Stethoscope, Building2, ActivitySquare, Workflow } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -169,6 +169,7 @@ export function DashboardSidebar() {
   ];
   
   const operationalItems = [
+    { icon: Workflow, label: "Workflow", path: "/workflow" },
     { icon: Pill, label: "Medication", path: "/medication" },
     { icon: ClipboardList, label: "Care Plan", path: "/care-plan" },
     { icon: DollarSign, label: "Accounting", path: "/accounting" },
