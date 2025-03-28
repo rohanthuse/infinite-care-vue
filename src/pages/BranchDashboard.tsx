@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Routes, Route } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -729,6 +730,175 @@ const BranchDashboard = () => {
             </>
           )}
           {activeTab === "bookings" && <BookingsTab branchId={id || ""} />}
+          {activeTab === "clients" && (
+            <div className="space-y-4">
+              <div className="flex flex-col md:flex-row justify-between gap-4">
+                <div className="w-full md:w-auto flex space-x-2">
+                  <div className="relative flex-1 md:w-96">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                    <Input
+                      placeholder="Search clients..."
+                      className="pl-8 h-9"
+                      value={clientSearchValue}
+                      onChange={(e) => setClientSearchValue(e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
+                  <Select
+                    value={statusFilter}
+                    onValueChange={setStatusFilter}
+                  >
+                    <SelectTrigger className="w-[140px] h-9">
+                      <SelectValue placeholder="All Statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="New Enquiries">New Enquiries</SelectItem>
+                      <SelectItem value="Actively Assessing">Actively Assessing</SelectItem>
+                      <SelectItem value="Closed Enquiries">Closed Enquiries</SelectItem>
+                      <SelectItem value="Former">Former</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select
+                    value={regionFilter}
+                    onValueChange={setRegionFilter}
+                  >
+                    <SelectTrigger className="w-[140px] h-9">
+                      <SelectValue placeholder="All Regions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Regions</SelectItem>
+                      <SelectItem value="North">North</SelectItem>
+                      <SelectItem value="South">South</SelectItem>
+                      <SelectItem value="East">East</SelectItem>
+                      <SelectItem value="West">West</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Button variant="outline" size="sm" className="h-9">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <span>More Filters</span>
+                  </Button>
+                  
+                  <Button className="h-9 bg-blue-600 hover:bg-blue-700" onClick={handleNewClient}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    <span>Add Client</span>
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      <TableHead className="font-medium">Client ID</TableHead>
+                      <TableHead className="font-medium">Name</TableHead>
+                      <TableHead className="font-medium">Contact</TableHead>
+                      <TableHead className="font-medium">Location</TableHead>
+                      <TableHead className="font-medium">Status</TableHead>
+                      <TableHead className="font-medium">Region</TableHead>
+                      <TableHead className="font-medium">Registered On</TableHead>
+                      <TableHead className="font-medium text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedClients.map((client) => (
+                      <TableRow key={client.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">{client.id}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-medium mr-2">
+                              {client.avatar}
+                            </div>
+                            <span>{client.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="text-sm">{client.email}</span>
+                            <span className="text-xs text-gray-500">{client.phone}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{client.location}</TableCell>
+                        <TableCell>
+                          <div 
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              client.status === 'Active' ? 'bg-green-100 text-green-800' : 
+                              client.status === 'New Enquiries' ? 'bg-blue-100 text-blue-800' :
+                              client.status === 'Actively Assessing' ? 'bg-orange-100 text-orange-800' :
+                              client.status === 'Closed Enquiries' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            {client.status}
+                          </div>
+                        </TableCell>
+                        <TableCell>{client.region}</TableCell>
+                        <TableCell>{client.registeredOn}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    
+                    {paginatedClients.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8">
+                          <div className="flex flex-col items-center justify-center text-gray-500">
+                            <AlertCircle className="h-8 w-8 mb-2" />
+                            <h3 className="text-lg font-medium">No clients found</h3>
+                            <p className="text-sm">Try adjusting your search or filters</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+                
+                {filteredClients.length > 0 && (
+                  <div className="border-t border-gray-200 px-4 py-2 flex items-center justify-between">
+                    <div className="text-sm text-gray-500">
+                      Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredClients.length)}</span> of <span className="font-medium">{filteredClients.length}</span> clients
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handlePreviousPage} 
+                        disabled={currentPage === 1}
+                        className="h-8 w-8 p-0"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <div className="text-sm">
+                        Page <span className="font-medium">{currentPage}</span> of <span className="font-medium">{totalPages}</span>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleNextPage} 
+                        disabled={currentPage === totalPages}
+                        className="h-8 w-8 p-0"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           {activeTab === "carers" && <CarersTab branchId={id || ""} />}
           {activeTab === "reviews" && <ReviewsTab />}
           {activeTab === "communication" && <CommunicationsTab branchId={id || ""} />}
