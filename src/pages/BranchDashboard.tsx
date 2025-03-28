@@ -27,6 +27,7 @@ import { ListChecks, BookText } from "lucide-react";
 import KeyParametersContent from "@/components/keyparameters/KeyParametersContent";
 import WorkflowContent from "@/components/workflow/WorkflowContent";
 import { MedicationTab } from "@/components/medication/MedicationTab";
+import { CareTab } from "@/components/care/CareTab";
 
 const weeklyData = [{
   day: "Mon",
@@ -354,6 +355,7 @@ const BranchDashboard = () => {
       if (restPath.startsWith("communication")) return "communication";
       if (restPath.startsWith("notifications")) return "notifications";
       if (restPath.startsWith("medication")) return "medication";
+      if (restPath.startsWith("care-plan")) return "care-plan";
     }
     return "dashboard";
   });
@@ -1119,6 +1121,8 @@ const BranchDashboard = () => {
         )}
         
         {activeTab === "medication" && <MedicationTab branchId={id} branchName={branchName} />}
+        
+        {activeTab === "care-plan" && <CareTab branchId={id} branchName={branchName} />}
       </main>
     </div>
   );
