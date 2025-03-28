@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -182,12 +181,13 @@ const mockPrescribers = [
   { id: "DOC-003", name: "Dr. Michael Scott" },
 ];
 
-const mockAdministrators = [
-  { id: "ADMIN-001", name: "Nurse" },
-  { id: "ADMIN-002", name: "Caretaker" },
-  { id: "ADMIN-003", name: "Patient" },
-  { id: "ADMIN-004", name: "Family member" },
-  { id: "ADMIN-005", name: "Other" },
+const administratorOptions = [
+  { value: "given_by_carer", label: "Given by Carer" },
+  { value: "self_administer", label: "Self Administer" },
+  { value: "family", label: "Family" },
+  { value: "prompt", label: "Prompt" },
+  { value: "given_by_nurse", label: "Given by Nurse" },
+  { value: "assist", label: "Assist" },
 ];
 
 const administrationRoutes = [
@@ -261,7 +261,6 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
   const watchSelectionMode = form.watch("selectionMode");
   const medicationType = form.watch("medicationType");
 
-  // Set the selection mode in state when it changes in the form
   React.useEffect(() => {
     setSelectionMode(watchSelectionMode);
   }, [watchSelectionMode]);
@@ -302,7 +301,6 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
   };
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    // Add shifts to the form data
     const formData = {
       ...values,
       shifts
@@ -327,7 +325,6 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Section 0: New or Existing Medication */}
             <div className="space-y-4">
               <FormField
                 control={form.control}
@@ -394,7 +391,6 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               )}
             </div>
 
-            {/* Section 1: Patient Selection */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Select Patient</h3>
               <FormField
@@ -422,12 +418,10 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               />
             </div>
 
-            {/* Section 2: Medication Type */}
             <div className="space-y-4 p-4 bg-gray-50 rounded-md">
               <MedicationTypeSection form={form} />
             </div>
 
-            {/* Section 3: Medication Details */}
             {selectionMode === "newMedication" && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Medication Details</h3>
@@ -560,7 +554,6 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               </div>
             )}
 
-            {/* Section 4: Administration Details */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Administration Details</h3>
               
@@ -610,7 +603,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                 name="whoAdministrates"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Who Administrates</FormLabel>
+                    <FormLabel>Who Administrates*</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -618,9 +611,9 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {mockAdministrators.map((admin) => (
-                          <SelectItem key={admin.id} value={admin.id}>
-                            {admin.name}
+                        {administratorOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -648,7 +641,6 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               />
             </div>
 
-            {/* Section 5: Duration */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Duration</h3>
               
@@ -731,7 +723,6 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               </div>
             </div>
 
-            {/* Section 6: Prescription Details (conditional based on medication type) */}
             {medicationType === "prescription" && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Prescription Details</h3>
@@ -780,7 +771,6 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               </div>
             )}
 
-            {/* Section 7: Shift Management */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Shift Management</h3>
               <p className="text-sm text-gray-500">When should this medication be administered?</p>
@@ -847,7 +837,6 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               </Button>
             </div>
 
-            {/* Section 8: Quantity Tracking */}
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <Checkbox 
@@ -867,7 +856,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               </div>
 
               {trackQuantity && (
-                <div className="grid grid-cols-2 gap-4 pt-3">
+                <div className="grid grid-cols-2 gap-4 pl-6">
                   <FormField
                     control={form.control}
                     name="quantity"
@@ -875,13 +864,13 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                       <FormItem>
                         <FormLabel>Current Quantity</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="e.g. 30" {...field} />
+                          <Input type="number" placeholder="Enter quantity" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
+                  
                   <FormField
                     control={form.control}
                     name="reorderLevel"
@@ -889,12 +878,9 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                       <FormItem>
                         <FormLabel>Reorder Level</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="e.g. 5" {...field} />
+                          <Input type="number" placeholder="Enter reorder level" {...field} />
                         </FormControl>
                         <FormMessage />
-                        <FormDescription>
-                          You'll be notified when stock reaches this level
-                        </FormDescription>
                       </FormItem>
                     )}
                   />
@@ -902,29 +888,33 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               )}
             </div>
 
-            {/* Section 9: Additional Notes */}
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Additional Notes</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Any additional information about this medication"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Additional Notes</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Any additional information about this medication"
+                        className="min-h-[100px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
                 Cancel
               </Button>
-              <Button type="submit">Add Medication</Button>
+              <Button type="submit" className="w-full sm:w-auto">
+                Save Medication
+              </Button>
             </DialogFooter>
           </form>
         </Form>
