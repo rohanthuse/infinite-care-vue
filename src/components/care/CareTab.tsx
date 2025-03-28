@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Search, Plus, FileText, Download, 
   Filter, ChevronDown, Eye, Edit, Trash2, 
-  MoreHorizontal
+  MoreHorizontal, ClipboardCheck
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -22,8 +22,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock data for care plans
 const mockCarePlans = [
@@ -109,6 +127,15 @@ const mockCarePlans = [
   }
 ];
 
+// Available status options
+const statusOptions = [
+  { value: "Active", label: "Active", color: "text-green-600 bg-green-50 border-green-200" },
+  { value: "Under Review", label: "Under Review", color: "text-amber-600 bg-amber-50 border-amber-200" },
+  { value: "Archived", label: "Archived", color: "text-gray-600 bg-gray-50 border-gray-200" },
+  { value: "On Hold", label: "On Hold", color: "text-blue-600 bg-blue-50 border-blue-200" },
+  { value: "Completed", label: "Completed", color: "text-purple-600 bg-purple-50 border-purple-200" }
+];
+
 interface CareTabProps {
   branchId: string | undefined;
   branchName: string | undefined;
@@ -118,6 +145,12 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const { toast } = useToast();
+  
+  // State for the status change dialog
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   
   // Filter care plans based on search query
   const filteredCarePlans = mockCarePlans.filter(plan => 
@@ -152,6 +185,32 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const handleDeleteCarePlan = (id: string) => {
     console.log(`Delete care plan: ${id}`);
     // Implementation for deleting a care plan would go here
+  };
+
+  const openStatusChangeDialog = (id: string) => {
+    // Find the current status of the care plan
+    const plan = mockCarePlans.find(plan => plan.id === id);
+    if (plan) {
+      setSelectedPlan(id);
+      setSelectedStatus(plan.status);
+      setStatusDialogOpen(true);
+    }
+  };
+
+  const handleStatusChange = () => {
+    if (!selectedPlan || !selectedStatus) return;
+
+    // In a real application, this would make an API call to update the status
+    // For now, we'll just show a toast notification
+    toast({
+      title: "Status Updated",
+      description: `Care plan ${selectedPlan} status changed to ${selectedStatus}`,
+      variant: "default",
+    });
+
+    // Close the dialog
+    setStatusDialogOpen(false);
+    setSelectedPlan(null);
   };
   
   return (
@@ -232,6 +291,9 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
                       className={cn(
                         plan.status === "Active" ? "text-green-600 bg-green-50 border-green-200" :
                         plan.status === "Under Review" ? "text-amber-600 bg-amber-50 border-amber-200" :
+                        plan.status === "Archived" ? "text-gray-600 bg-gray-50 border-gray-200" :
+                        plan.status === "On Hold" ? "text-blue-600 bg-blue-50 border-blue-200" :
+                        plan.status === "Completed" ? "text-purple-600 bg-purple-50 border-purple-200" :
                         "text-gray-600 bg-gray-50 border-gray-200"
                       )}
                     >
@@ -251,6 +313,9 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleEditCarePlan(plan.id)}>
                           <Edit className="mr-2 h-4 w-4" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openStatusChangeDialog(plan.id)}>
+                          <ClipboardCheck className="mr-2 h-4 w-4" /> Change Status
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => handleDeleteCarePlan(plan.id)}
@@ -334,6 +399,50 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
           </div>
         )}
       </div>
+
+      {/* Status Change Dialog */}
+      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change Care Plan Status</DialogTitle>
+            <DialogDescription>
+              Update the status for this care plan.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="status" className="text-right text-sm font-medium">
+                Status
+              </label>
+              <div className="col-span-3">
+                <Select 
+                  value={selectedStatus} 
+                  onValueChange={setSelectedStatus}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleStatusChange} type="button">
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
