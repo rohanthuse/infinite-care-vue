@@ -1,6 +1,6 @@
 
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 
 // We need to extend the jsPDF type to include autotable
 declare module "jspdf" {
@@ -155,8 +155,8 @@ export const generateCarePlanPDF = (
     plan.assignedTo
   ]);
   
-  // Add care plans table
-  doc.autoTable({
+  // Add care plans table - fixing the autoTable call
+  autoTable(doc, {
     head: [tableColumn],
     body: tableRows,
     startY: 60,

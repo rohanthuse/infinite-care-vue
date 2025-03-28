@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Table, TableHeader, TableBody, TableHead, 
@@ -50,7 +49,6 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { generateCarePlanPDF } from "@/utils/pdfGenerator";
 
-// Mock data for care plans
 const mockCarePlans = [
   {
     id: "CP-001",
@@ -134,7 +132,6 @@ const mockCarePlans = [
   }
 ];
 
-// Available status options
 const statusOptions = [
   { value: "Active", label: "Active", color: "text-green-600 bg-green-50 border-green-200" },
   { value: "Under Review", label: "Under Review", color: "text-amber-600 bg-amber-50 border-amber-200" },
@@ -143,7 +140,6 @@ const statusOptions = [
   { value: "Completed", label: "Completed", color: "text-purple-600 bg-purple-50 border-purple-200" }
 ];
 
-// Mock data for providers/staff who can be assigned to care plans
 const assignedToOptions = [
   { value: "Dr. Sarah Johnson", label: "Dr. Sarah Johnson" },
   { value: "Dr. James Wilson", label: "Dr. James Wilson" },
@@ -163,22 +159,18 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const itemsPerPage = 5;
   const { toast } = useToast();
   
-  // State for the status change dialog
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   
-  // State for filters
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [assignedToFilter, setAssignedToFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [assignedToFilter, setAssignedToFilter] = useState<string>("all");
   const [dateRangeStart, setDateRangeStart] = useState<Date | undefined>(undefined);
   const [dateRangeEnd, setDateRangeEnd] = useState<Date | undefined>(undefined);
   const [isFiltering, setIsFiltering] = useState(false);
   
-  // Filter care plans based on search query and filters
   const filteredCarePlans = mockCarePlans.filter(plan => {
-    // Search query filter
     const matchesSearch = 
       plan.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       plan.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -187,16 +179,12 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
     
     if (!matchesSearch) return false;
     
-    // Status filter
-    if (statusFilter && plan.status !== statusFilter) return false;
+    if (statusFilter && statusFilter !== "all" && plan.status !== statusFilter) return false;
     
-    // Assigned to filter
-    if (assignedToFilter && plan.assignedTo !== assignedToFilter) return false;
+    if (assignedToFilter && assignedToFilter !== "all" && plan.assignedTo !== assignedToFilter) return false;
     
-    // Date range filters - check if last updated date is within range
     if (dateRangeStart && isBefore(plan.lastUpdated, dateRangeStart)) return false;
     if (dateRangeEnd) {
-      // Add one day to make the end date inclusive
       const endDatePlusOne = new Date(dateRangeEnd);
       endDatePlusOne.setDate(endDatePlusOne.getDate() + 1);
       if (isAfter(plan.lastUpdated, endDatePlusOne)) return false;
@@ -205,40 +193,33 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
     return true;
   });
   
-  // Paginate results
   const totalPages = Math.ceil(filteredCarePlans.length / itemsPerPage);
   const paginatedCarePlans = filteredCarePlans.slice(
     (currentPage - 1) * itemsPerPage, 
     currentPage * itemsPerPage
   );
 
-  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, statusFilter, assignedToFilter, dateRangeStart, dateRangeEnd]);
   
   const handleAddCarePlan = () => {
     console.log("Add care plan");
-    // Implementation for adding a new care plan would go here
   };
   
   const handleViewCarePlan = (id: string) => {
     console.log(`View care plan: ${id}`);
-    // Implementation for viewing a care plan would go here
   };
   
   const handleEditCarePlan = (id: string) => {
     console.log(`Edit care plan: ${id}`);
-    // Implementation for editing a care plan would go here
   };
   
   const handleDeleteCarePlan = (id: string) => {
     console.log(`Delete care plan: ${id}`);
-    // Implementation for deleting a care plan would go here
   };
 
   const openStatusChangeDialog = (id: string) => {
-    // Find the current status of the care plan
     const plan = mockCarePlans.find(plan => plan.id === id);
     if (plan) {
       setSelectedPlan(id);
@@ -250,27 +231,24 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const handleStatusChange = () => {
     if (!selectedPlan || !selectedStatus) return;
 
-    // In a real application, this would make an API call to update the status
-    // For now, we'll just show a toast notification
     toast({
       title: "Status Updated",
       description: `Care plan ${selectedPlan} status changed to ${selectedStatus}`,
       variant: "default",
     });
 
-    // Close the dialog
     setStatusDialogOpen(false);
     setSelectedPlan(null);
   };
 
   const handleFilterApply = () => {
-    setIsFiltering(statusFilter !== "" || assignedToFilter !== "" || !!dateRangeStart || !!dateRangeEnd);
+    setIsFiltering(statusFilter !== "all" || assignedToFilter !== "all" || !!dateRangeStart || !!dateRangeEnd);
     setFilterDialogOpen(false);
   };
 
   const handleClearFilters = () => {
-    setStatusFilter("");
-    setAssignedToFilter("");
+    setStatusFilter("all");
+    setAssignedToFilter("all");
     setDateRangeStart(undefined);
     setDateRangeEnd(undefined);
     setIsFiltering(false);
@@ -278,7 +256,6 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   };
 
   const handleExportToPDF = () => {
-    // Export all filtered care plans to PDF
     generateCarePlanPDF(
       filteredCarePlans,
       branchName || "Med-Infinite Branch",
@@ -337,7 +314,7 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
                           <SelectValue placeholder="All Statuses" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">All Statuses</SelectItem>
+                          <SelectItem value="all">All Statuses</SelectItem>
                           {statusOptions.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                               {option.label}
@@ -360,7 +337,7 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
                           <SelectValue placeholder="All Providers" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">All Providers</SelectItem>
+                          <SelectItem value="all">All Providers</SelectItem>
                           {assignedToOptions.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                               {option.label}
@@ -642,7 +619,6 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
         )}
       </div>
 
-      {/* Status Change Dialog */}
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
