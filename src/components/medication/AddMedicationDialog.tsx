@@ -47,6 +47,13 @@ interface AddMedicationDialogProps {
 }
 
 const formSchema = z.object({
+  // Medication mode
+  selectionMode: z.enum(["newMedication", "existingMedication"], {
+    required_error: "Medication selection mode is required.",
+  }).default("newMedication"),
+  
+  existingMedication: z.string().optional(),
+  
   // Patient information
   patient: z.string({
     required_error: "Patient is required.",
@@ -69,7 +76,8 @@ const formSchema = z.object({
   }),
   form: z.string().optional(),
   shape: z.string().optional(),
-  color: z.string().optional(),
+  color1: z.string().optional(),
+  color2: z.string().optional(),
   strengthAmount: z.string().optional(),
   strengthUnit: z.string().optional(),
   
@@ -84,6 +92,8 @@ const formSchema = z.object({
   // Prescription details
   prescribedBy: z.string().optional(),
   instructions: z.string().optional(),
+  whoAdministrates: z.string().optional(),
+  administrationNotes: z.string().optional(),
   
   // Quantity tracking
   trackQuantity: z.boolean().default(false),
@@ -158,10 +168,26 @@ const mockPatients = [
   { id: "CL-5566", name: "Olivia Parker" },
 ];
 
+const mockMedications = [
+  { id: "MED-001", name: "Aspirin 81mg" },
+  { id: "MED-002", name: "Lisinopril 10mg" },
+  { id: "MED-003", name: "Metformin 500mg" },
+  { id: "MED-004", name: "Atorvastatin 20mg" },
+  { id: "MED-005", name: "Levothyroxine 50mcg" },
+];
+
 const mockPrescribers = [
   { id: "DOC-001", name: "Dr. James Wilson" },
   { id: "DOC-002", name: "Dr. Emma Thompson" },
   { id: "DOC-003", name: "Dr. Michael Scott" },
+];
+
+const mockAdministrators = [
+  { id: "ADMIN-001", name: "Nurse" },
+  { id: "ADMIN-002", name: "Caretaker" },
+  { id: "ADMIN-003", name: "Patient" },
+  { id: "ADMIN-004", name: "Family member" },
+  { id: "ADMIN-005", name: "Other" },
 ];
 
 const administrationRoutes = [
@@ -201,6 +227,7 @@ const strengthUnits = [
 ];
 
 export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogProps) => {
+  const [selectionMode, setSelectionMode] = useState<"newMedication" | "existingMedication">("newMedication");
   const [shifts, setShifts] = useState<{ time: string; days: string[] }[]>([
     { time: "", days: [] }
   ]);
@@ -210,16 +237,20 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      selectionMode: "newMedication",
       medicationType: "prescription",
       name: "",
       dosage: "",
       route: "",
       form: "",
       shape: "",
-      color: "",
+      color1: "",
+      color2: "",
       strengthAmount: "",
       strengthUnit: "",
       instructions: "",
+      whoAdministrates: "",
+      administrationNotes: "",
       notes: "",
       trackQuantity: false,
       quantity: "",
@@ -227,7 +258,13 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
     },
   });
 
+  const watchSelectionMode = form.watch("selectionMode");
   const medicationType = form.watch("medicationType");
+
+  // Set the selection mode in state when it changes in the form
+  React.useEffect(() => {
+    setSelectionMode(watchSelectionMode);
+  }, [watchSelectionMode]);
 
   const handleAddShift = () => {
     setShifts([...shifts, { time: "", days: [] }]);
@@ -285,11 +322,78 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-center">Add New Medication</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-center">Med-Infinite Health Care Services - Medication</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Section 0: New or Existing Medication */}
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="selectionMode"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          setSelectionMode(value as "newMedication" | "existingMedication");
+                        }}
+                        defaultValue={field.value}
+                        className="flex space-x-4"
+                      >
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="newMedication" />
+                          </FormControl>
+                          <FormLabel className="font-medium">
+                            New Medication
+                          </FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="existingMedication" />
+                          </FormControl>
+                          <FormLabel className="font-medium">
+                            Existing Medication
+                          </FormLabel>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {selectionMode === "existingMedication" && (
+                <FormField
+                  control={form.control}
+                  name="existingMedication"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Select Medication</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a medication" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {mockMedications.map((medication) => (
+                            <SelectItem key={medication.id} value={medication.id}>
+                              {medication.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
+
             {/* Section 1: Patient Selection */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Select Patient</h3>
@@ -324,121 +428,142 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
             </div>
 
             {/* Section 3: Medication Details */}
+            {selectionMode === "newMedication" && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Medication Details</h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Medication Name*</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter medication name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="form"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Form</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select form" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {medicationForms.map((form) => (
+                              <SelectItem key={form.value} value={form.value}>
+                                {form.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="shape"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Shape</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. Round, Oval" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="color1"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Color 1</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. White, Blue" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="color2"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Color 2</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. Red, Yellow" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="strengthAmount"
+                    render={({ field }) => (
+                      <FormItem className="col-span-2">
+                        <FormLabel>Strength/Amount</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter strength amount" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="strengthUnit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Unit</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Unit" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {strengthUnits.map((unit) => (
+                              <SelectItem key={unit.value} value={unit.value}>
+                                {unit.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Section 4: Administration Details */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Medication Details</h3>
+              <h3 className="text-lg font-semibold">Administration Details</h3>
               
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Medication Name*</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter medication name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="form"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Form</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select form" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {medicationForms.map((form) => (
-                            <SelectItem key={form.value} value={form.value}>
-                              {form.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="shape"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Shape</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Round, Oval" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="color"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Color</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. White, Blue" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="strengthAmount"
-                  render={({ field }) => (
-                    <FormItem className="col-span-2">
-                      <FormLabel>Strength/Amount</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter strength amount" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="strengthUnit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Unit</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Unit" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {strengthUnits.map((unit) => (
-                            <SelectItem key={unit.value} value={unit.value}>
-                              {unit.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -479,9 +604,51 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="whoAdministrates"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Who Administrates</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select who administrates" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {mockAdministrators.map((admin) => (
+                          <SelectItem key={admin.id} value={admin.id}>
+                            {admin.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="administrationNotes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Administration Notes</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Notes on how to administer this medication"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
-            {/* Section 4: Duration */}
+            {/* Section 5: Duration */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Duration</h3>
               
@@ -564,7 +731,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               </div>
             </div>
 
-            {/* Section 5: Prescription Details (conditional based on medication type) */}
+            {/* Section 6: Prescription Details (conditional based on medication type) */}
             {medicationType === "prescription" && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Prescription Details</h3>
@@ -613,7 +780,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               </div>
             )}
 
-            {/* Section 6: Shift Management */}
+            {/* Section 7: Shift Management */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Shift Management</h3>
               <p className="text-sm text-gray-500">When should this medication be administered?</p>
@@ -680,7 +847,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               </Button>
             </div>
 
-            {/* Section 7: Quantity Tracking */}
+            {/* Section 8: Quantity Tracking */}
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <Checkbox 
@@ -735,7 +902,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               )}
             </div>
 
-            {/* Section 8: Additional Notes */}
+            {/* Section 9: Additional Notes */}
             <FormField
               control={form.control}
               name="notes"
