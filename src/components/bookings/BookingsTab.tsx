@@ -216,8 +216,9 @@ const mockBookings: Booking[] = [{
   status: "assigned"
 }];
 
-interface BookingsTabProps {
-  branchId: string;
+export interface BookingsTabProps {
+  branchId?: string;
+  branchName?: string;
 }
 
 export const BookingsTab: React.FC<BookingsTabProps> = ({

@@ -116,12 +116,13 @@ const mockCarers = [
   }
 ];
 
-interface CarersTabProps {
-  branchId: string;
+export interface CarersTabProps {
+  branchId?: string;
+  branchName?: string;
 }
 
-export const CarersTab = ({ branchId }: CarersTabProps) => {
-  const { id, branchName } = useParams();
+export const CarersTab = ({ branchId, branchName }: CarersTabProps) => {
+  const { id, branchName: paramBranchName } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -172,7 +173,7 @@ export const CarersTab = ({ branchId }: CarersTabProps) => {
   };
 
   const handleViewCarer = (carerId: string) => {
-    navigate(`/branch-dashboard/${id}/${branchName}/carers/${carerId}`);
+    navigate(`/branch-dashboard/${id}/${branchName}/${carerId}`);
   };
 
   const handleAddCarer = (data: any) => {
