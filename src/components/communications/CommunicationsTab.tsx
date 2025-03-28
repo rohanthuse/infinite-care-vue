@@ -11,10 +11,10 @@ import { MessageFilters } from "./MessageFilters";
 import { useToast } from "@/hooks/use-toast";
 
 interface CommunicationsTabProps {
-  branchId: string;
+  branchId?: string; // Make branchId optional
 }
 
-export const CommunicationsTab = ({ branchId }: CommunicationsTabProps) => {
+export const CommunicationsTab = ({ branchId = "" }: CommunicationsTabProps) => {
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [contactType, setContactType] = useState<"all" | "carers" | "clients">("all");

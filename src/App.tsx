@@ -34,50 +34,48 @@ function App() {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <TooltipProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/super-admin" element={<SuperAdminLogin />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/notifications/:categoryId" element={<Notifications />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/agreement" element={<Agreement />} />
-              
-              <Route path="/hobbies" element={<Hobbies />} />
-              <Route path="/skills" element={<Skills />} />
-              <Route path="/medical-mental" element={<MedicalMental />} />
-              <Route path="/type-of-work" element={<TypeOfWork />} />
-              <Route path="/body-map-points" element={<BodyMapPoints />} />
-              <Route path="/branch" element={<Branch />} />
-              <Route path="/branch-details/:id" element={<BranchDetails />} />
-              <Route path="/branch-admins" element={<BranchAdmins />} />
-              <Route path="/task-matrix" element={<TaskMatrix />} />
-              <Route path="/workflow" element={<Workflow />} />
-              <Route path="/key-parameters" element={<KeyParameters />} />
-              
-              <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
-              <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
-              <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
-              <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
-              <Route path="/branch-dashboard/:id/:branchName/notifications" element={<Notifications />} />
-              <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
-              <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
-              <Route path="/branch-dashboard/:id/:branchName/workflow" element={<Workflow />} />
-              <Route path="/branch-dashboard/:id/:branchName/key-parameters" element={<KeyParameters />} />
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Toaster />
-            <Sonner />
-          </TooltipProvider>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </React.StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <TooltipProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/super-admin" element={<SuperAdminLogin />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/notifications/:categoryId" element={<Notifications />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/agreement" element={<Agreement />} />
+            
+            <Route path="/hobbies" element={<Hobbies />} />
+            <Route path="/skills" element={<Skills />} />
+            <Route path="/medical-mental" element={<MedicalMental />} />
+            <Route path="/type-of-work" element={<TypeOfWork />} />
+            <Route path="/body-map-points" element={<BodyMapPoints />} />
+            <Route path="/branch" element={<Branch />} />
+            <Route path="/branch-details/:id" element={<BranchDetails />} />
+            <Route path="/branch-admins" element={<BranchAdmins />} />
+            <Route path="/task-matrix" element={<TaskMatrix />} />
+            <Route path="/workflow" element={<Workflow />} />
+            <Route path="/key-parameters" element={<KeyParameters />} />
+            
+            <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
+            <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
+            <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
+            <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
+            <Route path="/branch-dashboard/:id/:branchName/notifications" element={<Notifications />} />
+            <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
+            <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
+            <Route path="/branch-dashboard/:id/:branchName/workflow" element={<Workflow />} />
+            <Route path="/branch-dashboard/:id/:branchName/key-parameters" element={<KeyParameters />} />
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
+          <Sonner />
+        </TooltipProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 

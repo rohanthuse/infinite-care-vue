@@ -37,6 +37,7 @@ const BranchDashboard = () => {
   };
   
   const decodedBranchName = decodeURIComponent(branchName || "");
+  const branchId = id || ""; // Ensure branchId is always a string
   
   // Calculate main content area offset
   const contentOffset = "md:ml-[280px]";
@@ -75,13 +76,13 @@ const BranchDashboard = () => {
                   </div>
                 </ModuleContent>
               } />
-              <Route path="/bookings/*" element={<BookingsTab />} />
+              <Route path="/bookings/*" element={<BookingsTab branchId={branchId} />} />
               <Route path="/clients" element={
                 <ModuleContent title="Clients">
                   <p>Client management module coming soon.</p>
                 </ModuleContent>
               } />
-              <Route path="/carers/*" element={<CarersTab />} />
+              <Route path="/carers/*" element={<CarersTab branchId={branchId} />} />
               <Route path="/reviews" element={<ReviewsTab />} />
               <Route path="/workflow" element={
                 <iframe 
@@ -90,7 +91,7 @@ const BranchDashboard = () => {
                   title="Workflow"
                 />
               } />
-              <Route path="/communication" element={<CommunicationsTab />} />
+              <Route path="/communication" element={<CommunicationsTab branchId={branchId} />} />
               <Route path="/key-parameters" element={
                 <iframe 
                   src={`/key-parameters`} 
