@@ -48,6 +48,7 @@ import { format, isAfter, isBefore, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { generateCarePlanPDF } from "@/utils/pdfGenerator";
+import { CarePlanDetail } from "./CarePlanDetail";
 
 const mockCarePlans = [
   {
@@ -170,6 +171,8 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const [dateRangeEnd, setDateRangeEnd] = useState<Date | undefined>(undefined);
   const [isFiltering, setIsFiltering] = useState(false);
   
+  const [viewingCarePlan, setViewingCarePlan] = useState<typeof mockCarePlans[0] | null>(null);
+  
   const filteredCarePlans = mockCarePlans.filter(plan => {
     const matchesSearch = 
       plan.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -208,7 +211,10 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   };
   
   const handleViewCarePlan = (id: string) => {
-    console.log(`View care plan: ${id}`);
+    const planToView = mockCarePlans.find(plan => plan.id === id);
+    if (planToView) {
+      setViewingCarePlan(planToView);
+    }
   };
   
   const handleEditCarePlan = (id: string) => {
@@ -435,12 +441,12 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
       {isFiltering && (
         <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
           <span className="font-medium">Active filters:</span>
-          {statusFilter && (
+          {statusFilter !== "all" && (
             <Badge variant="outline" className="flex items-center gap-1 px-2 py-1">
               Status: {statusFilter}
             </Badge>
           )}
-          {assignedToFilter && (
+          {assignedToFilter !== "all" && (
             <Badge variant="outline" className="flex items-center gap-1 px-2 py-1">
               Assigned to: {assignedToFilter}
             </Badge>
@@ -661,6 +667,13 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {viewingCarePlan && (
+        <CarePlanDetail 
+          carePlan={viewingCarePlan} 
+          onClose={() => setViewingCarePlan(null)} 
+        />
+      )}
     </div>
   );
 };
