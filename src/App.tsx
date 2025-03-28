@@ -28,7 +28,6 @@ import { useState } from "react";
 import TaskMatrix from "./pages/TaskMatrix";
 import Workflow from "./pages/Workflow";
 import KeyParameters from "./pages/KeyParameters";
-import CarePlansPage from "./pages/CarePlansPage";
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -64,9 +63,6 @@ function App() {
             {/* Branch Dashboard Routes */}
             <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
             <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
-            
-            {/* Care Plans Route */}
-            <Route path="/branch-dashboard/:id/:branchName/care-plans" element={<CarePlansPage />} />
             
             {/* Branch specific pages that are not integrated with the branch dashboard */}
             <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
