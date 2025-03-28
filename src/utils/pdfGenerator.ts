@@ -155,7 +155,7 @@ export const generateCarePlanPDF = (
     plan.assignedTo
   ]);
   
-  // Add care plans table - fixing the autoTable call
+  // Add care plans table using autoTable
   autoTable(doc, {
     head: [tableColumn],
     body: tableRows,
