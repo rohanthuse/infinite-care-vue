@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -16,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { TabNavigation } from "@/components/TabNavigation";
 import { generatePDF } from "@/utils/pdfGenerator";
+import { toast } from "@/components/ui/use-toast";
 
 // Mock data for the care plan details
 const mockPatientData = {
@@ -186,6 +186,14 @@ const CarePlanView = () => {
     });
   };
 
+  const handleNewBooking = () => {
+    // Display a toast message for now, in a real app this would open a booking form
+    toast({
+      title: "New Booking",
+      description: "Booking functionality will be implemented soon.",
+    });
+  };
+
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case "Active": return "text-green-600 bg-green-50 border-green-200";
@@ -199,7 +207,11 @@ const CarePlanView = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <BranchInfoHeader branchId={branchId} branchName={branchName} />
+      <BranchInfoHeader 
+        branchId={branchId} 
+        branchName={branchName} 
+        onNewBooking={handleNewBooking} 
+      />
       
       <div className="flex-1 p-6 space-y-6">
         <TabNavigation
@@ -646,222 +658,4 @@ const CarePlanView = () => {
                               </div>
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-gray-500 mb-1">Meal Preferences</p>
-                              <ul className="space-y-1">
-                                {mockPatientData.nutrition.mealPreferences.map((pref, index) => (
-                                  <li key={index} className="text-sm flex items-start">
-                                    <span className="h-5 w-5 mr-2 text-blue-500 flex-shrink-0">•</span>
-                                    {pref}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500 mb-1">Hydration Plan</p>
-                              <p className="text-sm">{mockPatientData.nutrition.hydrationPlan}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500 mb-1">Notes</p>
-                              <p className="text-sm">{mockPatientData.nutrition.nutritionalNotes}</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    {/* Goals Tab */}
-                    <TabsContent value="goals" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Care Goals</CardTitle>
-                          <CardDescription>Tracking progress toward objectives</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            {mockPatientData.goals.map((goal, index) => (
-                              <div key={index} className="border rounded-lg p-4">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h3 className="font-medium">{goal.title}</h3>
-                                  <Badge variant="outline" className={getStatusBadgeClass(goal.status)}>
-                                    {goal.status}
-                                  </Badge>
-                                </div>
-                                <div className="space-y-2">
-                                  <div>
-                                    <p className="text-sm font-medium text-gray-500">Target</p>
-                                    <p className="text-sm">{goal.target}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-medium text-gray-500">Notes</p>
-                                    <p className="text-sm">{goal.notes}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    {/* Activities Tab */}
-                    <TabsContent value="activities" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Recent Activities</CardTitle>
-                          <CardDescription>Care activities and interventions</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            {mockPatientData.activities.map((activity, index) => (
-                              <div key={index} className="flex items-start border-b last:border-0 pb-3 last:pb-0">
-                                <div className="w-12 text-center flex-shrink-0">
-                                  <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mx-auto">
-                                    <Calendar className="h-5 w-5 text-blue-600" />
-                                  </div>
-                                </div>
-                                <div className="ml-4 flex-1">
-                                  <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-1">
-                                    <p className="font-medium">{activity.action}</p>
-                                    <p className="text-sm text-gray-500">{format(activity.date, 'MMM dd, yyyy')}</p>
-                                  </div>
-                                  <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                                    <p className="text-sm">{activity.performer}</p>
-                                    <Badge variant="outline" className={getStatusBadgeClass(activity.status)}>
-                                      {activity.status}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    {/* Notes Tab */}
-                    <TabsContent value="notes" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                          <div>
-                            <CardTitle className="text-lg">Care Notes</CardTitle>
-                            <CardDescription>Observations and updates</CardDescription>
-                          </div>
-                          <Button size="sm">
-                            <MessageCircle className="h-4 w-4 mr-2" />
-                            Add Note
-                          </Button>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            {mockPatientData.notes.map((note, index) => (
-                              <div key={index} className="border rounded-lg p-4">
-                                <div className="flex items-center justify-between mb-2">
-                                  <div className="flex items-center">
-                                    <Avatar className="h-6 w-6 mr-2">
-                                      <div className="bg-blue-100 text-blue-600 w-full h-full flex items-center justify-center text-xs">
-                                        {note.author.split(' ').map(n => n[0]).join('')}
-                                      </div>
-                                    </Avatar>
-                                    <p className="font-medium text-sm">{note.author}</p>
-                                  </div>
-                                  <p className="text-xs text-gray-500">{format(note.date, 'MMM dd, yyyy')}</p>
-                                </div>
-                                <p className="text-sm">{note.content}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    {/* Documents Tab */}
-                    <TabsContent value="documents" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                          <div>
-                            <CardTitle className="text-lg">Related Documents</CardTitle>
-                            <CardDescription>Reports and medical documentation</CardDescription>
-                          </div>
-                          <Button size="sm">
-                            <FileText className="h-4 w-4 mr-2" />
-                            Upload
-                          </Button>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            {mockPatientData.documents.map((doc, index) => (
-                              <div key={index} className="flex items-center justify-between border rounded-md p-3 hover:bg-gray-50 cursor-pointer">
-                                <div className="flex items-center">
-                                  <div className="h-10 w-10 rounded bg-blue-100 flex items-center justify-center mr-3">
-                                    <FileText className="h-5 w-5 text-blue-600" />
-                                  </div>
-                                  <div>
-                                    <p className="font-medium text-sm">{doc.name}</p>
-                                    <p className="text-xs text-gray-500">By {doc.author} • {format(doc.date, 'MMM dd, yyyy')}</p>
-                                  </div>
-                                </div>
-                                <Badge variant="outline">{doc.type}</Badge>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    {/* Assessments Tab */}
-                    <TabsContent value="assessments" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                          <div>
-                            <CardTitle className="text-lg">Clinical Assessments</CardTitle>
-                            <CardDescription>Evaluations and findings</CardDescription>
-                          </div>
-                          <Button size="sm">
-                            <FileCheck className="h-4 w-4 mr-2" />
-                            New Assessment
-                          </Button>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            {mockPatientData.assessments.map((assessment, index) => (
-                              <div key={index} className="border rounded-lg p-4">
-                                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
-                                  <div className="flex items-center">
-                                    <FileCheck className="h-5 w-5 text-blue-600 mr-2" />
-                                    <h3 className="font-medium">{assessment.name}</h3>
-                                  </div>
-                                  <div className="flex items-center mt-2 md:mt-0">
-                                    <p className="text-sm text-gray-500 mr-2">{format(assessment.date, 'MMM dd, yyyy')}</p>
-                                    <Badge variant="outline" className={getStatusBadgeClass(assessment.status)}>
-                                      {assessment.status}
-                                    </Badge>
-                                  </div>
-                                </div>
-                                <div className="space-y-2">
-                                  <div>
-                                    <p className="text-sm font-medium text-gray-500">Performed By</p>
-                                    <p className="text-sm">{assessment.performer}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-medium text-gray-500">Results</p>
-                                    <p className="text-sm">{assessment.results}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                  </Tabs>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default CarePlanView;
+                              <p className="text-sm font
