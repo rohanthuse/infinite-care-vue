@@ -737,10 +737,10 @@ const BranchDashboard = () => {
               </div>
             </>
           )}
-          {activeTab === "bookings" && <BookingsTab />}
-          {activeTab === "carers" && <CarersTab />}
+          {activeTab === "bookings" && <BookingsTab branchId={id || ""} />}
+          {activeTab === "carers" && <CarersTab branchId={id || ""} />}
           {activeTab === "reviews" && <ReviewsTab />}
-          {activeTab === "communication" && <CommunicationsTab />}
+          {activeTab === "communication" && <CommunicationsTab branchId={id || ""} />}
         </motion.div>
       </main>
     </div>
