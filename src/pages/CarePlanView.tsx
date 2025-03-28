@@ -666,3 +666,374 @@ const CarePlanView = () => {
                               <p className="text-sm font-medium text-gray-500 mb-1">Medications</p>
                               <div className="grid grid-cols-1 gap-2">
                                 {mockPatientData.medications.map((medication, index) => (
+                                  <div key={index} className="flex items-center justify-between border rounded-md p-2 bg-gray-50">
+                                    <div>
+                                      <p className="font-medium text-sm">{medication.name} ({medication.dosage})</p>
+                                      <p className="text-xs text-gray-500">{medication.frequency} - {medication.purpose}</p>
+                                    </div>
+                                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* About Me Tab */}
+                    <TabsContent value="aboutme" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">About Me</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Preferences</p>
+                              <ul className="list-disc list-inside">
+                                {mockPatientData.aboutMe.preferences.map((pref, index) => (
+                                  <li key={index} className="text-sm">{pref}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Routines</p>
+                              <ul className="list-disc list-inside">
+                                {mockPatientData.aboutMe.routines.map((routine, index) => (
+                                  <li key={index} className="text-sm">{routine}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Interests</p>
+                              <ul className="list-disc list-inside">
+                                {mockPatientData.aboutMe.interests.map((interest, index) => (
+                                  <li key={index} className="text-sm">{interest}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Dislikes</p>
+                              <ul className="list-disc list-inside">
+                                {mockPatientData.aboutMe.dislikes.map((dislike, index) => (
+                                  <li key={index} className="text-sm">{dislike}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* Goals Tab */}
+                    <TabsContent value="goals" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Goals</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.goals.map((goal, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{goal.title}</p>
+                                  <p className="text-sm text-gray-500">{goal.status}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{goal.target}</p>
+                                <p className="text-sm text-gray-500">{goal.notes}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* Equipment Tab */}
+                    <TabsContent value="equipment" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Equipment</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.equipment.map((equipment, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{equipment.name}</p>
+                                  <p className="text-sm text-gray-500">{equipment.type}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{equipment.status}</p>
+                                <p className="text-sm text-gray-500">{equipment.notes}</p>
+                                <p className="text-sm text-gray-500">{format(equipment.lastInspection, 'MMM dd, yyyy')}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* Dietary Tab */}
+                    <TabsContent value="dietary" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Dietary</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Dietary Restrictions</p>
+                              <div className="flex flex-wrap gap-1">
+                                {mockPatientData.dietaryRequirements.restrictions.map((restriction, index) => (
+                                  <Badge key={index} variant="outline" className="text-red-600 bg-red-50 border-red-200">
+                                    {restriction.name}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Meal Preferences</p>
+                              <div className="flex flex-wrap gap-1">
+                                {mockPatientData.dietaryRequirements.preferences.map((pref, index) => (
+                                  <Badge key={index} variant="outline" className="text-blue-600 bg-blue-50 border-blue-200">
+                                    {pref}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Hydration Plan</p>
+                              <p className="text-sm">{mockPatientData.dietaryRequirements.hydrationPlan}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Nutritional Notes</p>
+                              <p className="text-sm">{mockPatientData.dietaryRequirements.nutritionalNotes}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* Personal Care Tab */}
+                    <TabsContent value="personal-care" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Personal Care</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Routines</p>
+                              <ul className="list-disc list-inside">
+                                {mockPatientData.personalCare.routines.map((routine, index) => (
+                                  <li key={index} className="text-sm">{routine.activity} ({routine.frequency})</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Preferences</p>
+                              <ul className="list-disc list-inside">
+                                {mockPatientData.personalCare.preferences.map((pref, index) => (
+                                  <li key={index} className="text-sm">{pref}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Mobility</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm">{mockPatientData.personalCare.mobility.status}</p>
+                                <p className="text-sm">{mockPatientData.personalCare.mobility.transferAbility}</p>
+                                <p className="text-sm">{mockPatientData.personalCare.mobility.walkingDistance}</p>
+                                <p className="text-sm">{mockPatientData.personalCare.mobility.stairs}</p>
+                                <p className="text-sm">{mockPatientData.personalCare.mobility.notes}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* Risk Tab */}
+                    <TabsContent value="risk" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Risk</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.riskAssessments.map((risk, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{risk.type}</p>
+                                  <p className="text-sm text-gray-500">{risk.level}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{format(risk.lastAssessed, 'MMM dd, yyyy')}</p>
+                                <p className="text-sm text-gray-500">{risk.assessedBy}</p>
+                                <p className="text-sm text-gray-500">{risk.mitigationPlan}</p>
+                                <p className="text-sm text-gray-500">{format(risk.reviewDate, 'MMM dd, yyyy')}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* Service Plan Tab */}
+                    <TabsContent value="service-plan" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Service Plan</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.serviceActions.map((service, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{service.service}</p>
+                                  <p className="text-sm text-gray-500">{service.provider}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{service.frequency}</p>
+                                <p className="text-sm text-gray-500">{service.duration}</p>
+                                <p className="text-sm text-gray-500">{service.schedule}</p>
+                                <p className="text-sm text-gray-500">{service.goals.map((goal, goalIndex) => (
+                                  <span key={goalIndex} className="text-sm">{goal}</span>
+                                ))}</p>
+                                <p className="text-sm text-gray-500">{service.progress}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* Service Actions Tab */}
+                    <TabsContent value="actions" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Service Actions</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.serviceActions.map((service, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{service.service}</p>
+                                  <p className="text-sm text-gray-500">{service.provider}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{service.frequency}</p>
+                                <p className="text-sm text-gray-500">{service.duration}</p>
+                                <p className="text-sm text-gray-500">{service.schedule}</p>
+                                <p className="text-sm text-gray-500">{service.goals.map((goal, goalIndex) => (
+                                  <span key={goalIndex} className="text-sm">{goal}</span>
+                                ))}</p>
+                                <p className="text-sm text-gray-500">{service.progress}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* Activities Tab */}
+                    <TabsContent value="activities" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Activities</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.activities.map((activity, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{activity.action}</p>
+                                  <p className="text-sm text-gray-500">{activity.performer}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{activity.status}</p>
+                                <p className="text-sm text-gray-500">{format(activity.date, 'MMM dd, yyyy')}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* Notes Tab */}
+                    <TabsContent value="notes" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Notes</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.notes.map((note, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{note.author}</p>
+                                  <p className="text-sm text-gray-500">{format(note.date, 'MMM dd, yyyy')}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{note.content}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* Documents Tab */}
+                    <TabsContent value="documents" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Documents</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.documents.map((document, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{document.name}</p>
+                                  <p className="text-sm text-gray-500">{document.type}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{format(document.date, 'MMM dd, yyyy')}</p>
+                                <p className="text-sm text-gray-500">{document.author}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* Assessments Tab */}
+                    <TabsContent value="assessments" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Assessments</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.assessments.map((assessment, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{assessment.name}</p>
+                                  <p className="text-sm text-gray-500">{assessment.status}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{format(assessment.date, 'MMM dd, yyyy')}</p>
+                                <p className="text-sm text-gray-500">{assessment.performer}</p>
+                                <p className="text-sm text-gray-500">{assessment.results}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CarePlanView;
