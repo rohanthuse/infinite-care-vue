@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import { 
   ListChecks, ChevronRight, Search, Plus, 
-  FileText, Calendar, Car, MessageSquare, DollarSign, Folder
+  FileText, Calendar, Car, MessageSquare, DollarSign, Folder,
+  Home, MapPin, Phone, Mail
 } from "lucide-react";
 import { 
   Tabs, TabsList, TabsTrigger, TabsContent 
@@ -71,6 +72,7 @@ const KeyParameters = () => {
   const isInBranchContext = Boolean(id && branchName);
   const pathParts = location.pathname.split('/');
   const isBranchDashboardPath = pathParts.includes('branch-dashboard');
+  const displayBranchName = isInBranchContext ? decodeURIComponent(branchName || "") : "";
 
   const reportTypes: ReportType[] = [
     { id: 1, title: "General", status: "Active" },
@@ -333,6 +335,20 @@ const KeyParameters = () => {
     setSearchQuery(e.target.value);
   };
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    
+    if (isInBranchContext) {
+      navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
+    } else {
+      if (value === 'dashboard') {
+        navigate('/dashboard');
+      } else {
+        navigate(`/${value}`);
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       {!isInBranchContext && (
@@ -344,18 +360,48 @@ const KeyParameters = () => {
       
       <div className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full">
         {isInBranchContext && (
-          <div className="mb-6">
-            <TabNavigation 
-              activeTab={activeTab} 
-              onChange={(tab) => {
-                setActiveTab(tab);
-                if (isBranchDashboardPath) {
-                  navigate(`/branch-dashboard/${id}/${branchName}/${tab}`);
-                }
-              }}
-              hideQuickAdd={true}
-            />
-          </div>
+          <>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6">
+              <div className="w-full md:w-auto">
+                <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+                  <Button variant="ghost" size="sm" className="p-0 h-auto font-normal hover:bg-transparent hover:text-blue-600" onClick={() => navigate("/branch")}>
+                    <Home className="h-3 w-3 mr-1" />
+                    <span className="hidden md:inline">Branches</span>
+                  </Button>
+                  <ChevronRight className="h-3 w-3" />
+                  <span className="text-gray-700 font-medium text-xs md:text-sm truncate max-w-[150px] md:max-w-[200px]">{displayBranchName}</span>
+                </div>
+                
+                <h1 className="text-lg md:text-3xl font-bold text-gray-800 flex items-center">
+                  {displayBranchName}
+                  <Badge className="ml-2 md:ml-3 bg-green-100 text-green-800 hover:bg-green-200 font-normal text-xs md:text-sm" variant="outline">Active</Badge>
+                </h1>
+                
+                <div className="flex flex-wrap items-center gap-2 md:gap-3 mt-2">
+                  <div className="flex items-center text-xs md:text-sm text-gray-600">
+                    <MapPin className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1 text-gray-500" />
+                    <span>Milton Keynes, UK</span>
+                  </div>
+                  <div className="flex items-center text-xs md:text-sm text-gray-600">
+                    <Phone className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1 text-gray-500" />
+                    <span>+44 20 7946 0958</span>
+                  </div>
+                  <div className="flex items-center text-xs md:text-sm text-gray-600">
+                    <Mail className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1 text-gray-500" />
+                    <span>milton@med-infinite.com</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <TabNavigation 
+                activeTab={activeTab} 
+                onChange={handleTabChange}
+                hideQuickAdd={true}
+              />
+            </div>
+          </>
         )}
         
         <div className="mb-4">
