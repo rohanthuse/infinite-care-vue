@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, ListChecks, Users, 
   Calendar, Star, MessageSquare, Pill, DollarSign, 
@@ -90,6 +90,7 @@ interface ModuleNavigationProps {
 
 export function ModuleNavigation({ activeModule, onModuleChange }: ModuleNavigationProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [commandOpen, setCommandOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   

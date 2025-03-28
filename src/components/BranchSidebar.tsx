@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -118,13 +117,11 @@ export const BranchSidebar = ({ branchName }: BranchSidebarProps) => {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [collapsed, setCollapsed] = useState(false);
   
-  // Extract branch ID and name from the URL
   const pathParts = location.pathname.split('/');
   const branchId = pathParts[2] || '';
   const encodedBranchName = pathParts[3] || '';
   
   useEffect(() => {
-    // Determine active item based on current path
     const currentPath = location.pathname;
     
     if (currentPath.includes('/key-parameters')) {
@@ -133,6 +130,8 @@ export const BranchSidebar = ({ branchName }: BranchSidebarProps) => {
       setActiveItem('Notifications');
     } else if (currentPath.includes('/task-matrix')) {
       setActiveItem('Task Matrix');
+    } else if (currentPath.includes('/events-logs')) {
+      setActiveItem('Events & Logs');
     } else if (currentPath.includes('/bookings')) {
       setActiveItem('Bookings');
     } else if (currentPath.includes('/communication')) {
@@ -145,9 +144,14 @@ export const BranchSidebar = ({ branchName }: BranchSidebarProps) => {
   const handleItemClick = (item: MenuItem) => {
     setActiveItem(item.label);
     
-    // Construct the correct URL based on the item path and branch context
     if (item.path === '/branch-dashboard') {
       navigate(`/branch-dashboard/${branchId}/${encodedBranchName}`);
+    } else if (item.path === '/key-parameters') {
+      navigate(`/branch-dashboard/${branchId}/${encodedBranchName}/key-parameters`);
+    } else if (item.path === '/notifications') {
+      navigate(`/branch-dashboard/${branchId}/${encodedBranchName}/notifications`);
+    } else if (item.path === '/branch-events-logs') {
+      navigate(`/branch-dashboard/${branchId}/${encodedBranchName}/events-logs`);
     } else {
       const path = item.path.startsWith('/') ? item.path.substring(1) : item.path;
       navigate(`/branch-dashboard/${branchId}/${encodedBranchName}/${path}`);
