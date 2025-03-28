@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { Bell, ListChecks, BookText, FileText, ClipboardCheck, Search, Filter, Download } from "lucide-react";
+import { Bell, ListChecks, BookText, FileText, ClipboardCheck, Search, Filter, Download, DollarSign, ClipboardList, Folder } from "lucide-react";
 import { motion } from "framer-motion";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,14 @@ const Workflow = () => {
       }
     } else {
       navigate(`/${value}`);
+    }
+  };
+
+  const navigateTo = (path: string) => {
+    if (isInBranchContext && id && branchName) {
+      navigate(`/branch-dashboard/${id}/${branchName}/${path}`);
+    } else {
+      navigate(`/${path}`);
     }
   };
   
@@ -105,13 +113,7 @@ const Workflow = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               <Card 
                 className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
-                onClick={() => {
-                  if (isInBranchContext) {
-                    navigate(`/branch-dashboard/${id}/${branchName}/notifications`);
-                  } else {
-                    navigate('/notifications');
-                  }
-                }}
+                onClick={() => navigateTo('notifications')}
               >
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-3">
@@ -124,13 +126,7 @@ const Workflow = () => {
 
               <Card 
                 className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
-                onClick={() => {
-                  if (isInBranchContext) {
-                    navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
-                  } else {
-                    navigate('/task-matrix');
-                  }
-                }}
+                onClick={() => navigateTo('task-matrix')}
               >
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-3">
@@ -143,13 +139,7 @@ const Workflow = () => {
 
               <Card 
                 className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
-                onClick={() => {
-                  if (isInBranchContext) {
-                    navigate(`/branch-dashboard/${id}/${branchName}/training`);
-                  } else {
-                    navigate('/training');
-                  }
-                }}
+                onClick={() => navigateTo('training')}
               >
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-3">
@@ -162,13 +152,7 @@ const Workflow = () => {
 
               <Card 
                 className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
-                onClick={() => {
-                  if (isInBranchContext) {
-                    navigate(`/branch-dashboard/${id}/${branchName}/forms`);
-                  } else {
-                    navigate('/forms');
-                  }
-                }}
+                onClick={() => navigateTo('forms')}
               >
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-3">
@@ -186,13 +170,7 @@ const Workflow = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               <Card 
                 className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
-                onClick={() => {
-                  if (isInBranchContext) {
-                    navigate(`/branch-dashboard/${id}/${branchName}/key-parameters`);
-                  } else {
-                    navigate('/key-parameters');
-                  }
-                }}
+                onClick={() => navigateTo('key-parameters')}
               >
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mb-3">
@@ -205,13 +183,7 @@ const Workflow = () => {
 
               <Card 
                 className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
-                onClick={() => {
-                  if (isInBranchContext) {
-                    navigate(`/branch-dashboard/${id}/${branchName}/medication`);
-                  } else {
-                    navigate('/medication');
-                  }
-                }}
+                onClick={() => navigateTo('medication')}
               >
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-3">
@@ -224,20 +196,27 @@ const Workflow = () => {
 
               <Card 
                 className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
-                onClick={() => {
-                  if (isInBranchContext) {
-                    navigate(`/branch-dashboard/${id}/${branchName}/care-plan`);
-                  } else {
-                    navigate('/care-plan');
-                  }
-                }}
+                onClick={() => navigateTo('care-plan')}
               >
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <div className="w-16 h-16 rounded-full bg-cyan-100 flex items-center justify-center mb-3">
-                    <ClipboardCheck className="h-8 w-8 text-cyan-600" />
+                    <ClipboardList className="h-8 w-8 text-cyan-600" />
                   </div>
                   <h3 className="font-semibold text-gray-800 text-lg">Care Plan</h3>
                   <p className="text-sm text-gray-500 mt-1">Patient care plans</p>
+                </CardContent>
+              </Card>
+
+              <Card 
+                className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
+                onClick={() => navigateTo('events-logs')}
+              >
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                  <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center mb-3">
+                    <Bell className="h-8 w-8 text-orange-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-800 text-lg">Events & Logs</h3>
+                  <p className="text-sm text-gray-500 mt-1">Activity tracking</p>
                 </CardContent>
               </Card>
             </div>
