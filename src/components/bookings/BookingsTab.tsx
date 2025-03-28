@@ -217,11 +217,11 @@ const mockBookings: Booking[] = [{
 }];
 
 interface BookingsTabProps {
-  branchId?: string;
+  branchId: string;
 }
 
 export const BookingsTab: React.FC<BookingsTabProps> = ({
-  branchId = ""
+  branchId
 }) => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [viewType, setViewType] = useState<"daily" | "weekly">("weekly");
