@@ -28,6 +28,7 @@ import { useState } from "react";
 import TaskMatrix from "./pages/TaskMatrix";
 import Workflow from "./pages/Workflow";
 import KeyParameters from "./pages/KeyParameters";
+import CarePlanView from "./pages/CarePlanView";
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -68,6 +69,7 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
+            <Route path="/branch-dashboard/:id/:branchName/care-plan/:carePlanId" element={<CarePlanView />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

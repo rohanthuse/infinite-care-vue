@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   Table, TableHeader, TableBody, TableHead, 
   TableRow, TableCell, TableFooter
@@ -48,7 +50,6 @@ import { format, isAfter, isBefore, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { generateCarePlanPDF } from "@/utils/pdfGenerator";
-import { CarePlanDetail } from "./CarePlanDetail";
 
 const mockCarePlans = [
   {
@@ -159,6 +160,7 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
@@ -170,8 +172,6 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const [dateRangeStart, setDateRangeStart] = useState<Date | undefined>(undefined);
   const [dateRangeEnd, setDateRangeEnd] = useState<Date | undefined>(undefined);
   const [isFiltering, setIsFiltering] = useState(false);
-  
-  const [viewingCarePlan, setViewingCarePlan] = useState<typeof mockCarePlans[0] | null>(null);
   
   const filteredCarePlans = mockCarePlans.filter(plan => {
     const matchesSearch = 
@@ -211,9 +211,8 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   };
   
   const handleViewCarePlan = (id: string) => {
-    const planToView = mockCarePlans.find(plan => plan.id === id);
-    if (planToView) {
-      setViewingCarePlan(planToView);
+    if (branchId && branchName) {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan/${id}`);
     }
   };
   
@@ -667,13 +666,6 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {viewingCarePlan && (
-        <CarePlanDetail 
-          carePlan={viewingCarePlan} 
-          onClose={() => setViewingCarePlan(null)} 
-        />
-      )}
     </div>
   );
 };
