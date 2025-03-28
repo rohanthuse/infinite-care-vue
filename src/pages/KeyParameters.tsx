@@ -20,7 +20,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
-import { BranchSidebar } from "@/components/BranchSidebar";
 
 interface BaseParameter {
   id: string | number;
@@ -343,16 +342,7 @@ const KeyParameters = () => {
         </>
       )}
       
-      {isInBranchContext && isBranchDashboardPath && (
-        <div className="flex">
-          <BranchSidebar branchName={decodeURIComponent(branchName || "")} />
-          <div className="flex-1 ml-[250px]">
-            {/* Branch dashboard specific content */}
-          </div>
-        </div>
-      )}
-      
-      <div className={`flex-1 px-4 md:px-8 py-6 md:py-8 w-full ${isInBranchContext && isBranchDashboardPath ? 'ml-[250px]' : ''}`}>
+      <div className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full">
         {isInBranchContext && (
           <div className="mb-6">
             <TabNavigation 
