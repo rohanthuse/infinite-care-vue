@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import MedChartData from "./MedChartData";
 
 interface PatientMedicationDetailProps {
   patientId: string;
@@ -331,7 +332,10 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
             </div>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            {/* Enhanced MAR Chart Visualization */}
+            <MedChartData patientId={patientId} viewType="patient" />
+            
+            <div className="overflow-x-auto mt-6">
               <Table>
                 <TableHeader>
                   <TableRow>
