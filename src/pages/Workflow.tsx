@@ -167,7 +167,7 @@ const Workflow = () => {
           
           <div className="mb-8">
             <h2 className="text-xl font-bold text-gray-800 tracking-tight mb-4">Additional Workflows</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               <Card 
                 className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
                 onClick={() => navigateTo('key-parameters')}
@@ -204,19 +204,6 @@ const Workflow = () => {
                   </div>
                   <h3 className="font-semibold text-gray-800 text-lg">Care Plan</h3>
                   <p className="text-sm text-gray-500 mt-1">Patient care plans</p>
-                </CardContent>
-              </Card>
-
-              <Card 
-                className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
-                onClick={() => navigateTo('events-logs')}
-              >
-                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                  <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center mb-3">
-                    <Bell className="h-8 w-8 text-orange-600" />
-                  </div>
-                  <h3 className="font-semibold text-gray-800 text-lg">Events & Logs</h3>
-                  <p className="text-sm text-gray-500 mt-1">Activity tracking</p>
                 </CardContent>
               </Card>
             </div>
