@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Table, TableHeader, TableBody, TableHead, 
   TableRow, TableCell, TableFooter
@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Search, Plus, FileText, Download, 
   Filter, ChevronDown, Eye, Edit, Trash2, 
-  MoreHorizontal, ClipboardCheck
+  MoreHorizontal, ClipboardCheck, Calendar
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -39,9 +39,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { format } from "date-fns";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format, isAfter, isBefore, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { generateCarePlanPDF } from "@/utils/pdfGenerator";
 
 // Mock data for care plans
 const mockCarePlans = [
@@ -136,6 +143,15 @@ const statusOptions = [
   { value: "Completed", label: "Completed", color: "text-purple-600 bg-purple-50 border-purple-200" }
 ];
 
+// Mock data for providers/staff who can be assigned to care plans
+const assignedToOptions = [
+  { value: "Dr. Sarah Johnson", label: "Dr. Sarah Johnson" },
+  { value: "Dr. James Wilson", label: "Dr. James Wilson" },
+  { value: "Dr. Emma Lewis", label: "Dr. Emma Lewis" },
+  { value: "Nurse David Brown", label: "Nurse David Brown" },
+  { value: "Nurse Michael Scott", label: "Nurse Michael Scott" }
+];
+
 interface CareTabProps {
   branchId: string | undefined;
   branchName: string | undefined;
@@ -152,13 +168,42 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   
-  // Filter care plans based on search query
-  const filteredCarePlans = mockCarePlans.filter(plan => 
-    plan.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    plan.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    plan.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    plan.assignedTo.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // State for filters
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [assignedToFilter, setAssignedToFilter] = useState<string>("");
+  const [dateRangeStart, setDateRangeStart] = useState<Date | undefined>(undefined);
+  const [dateRangeEnd, setDateRangeEnd] = useState<Date | undefined>(undefined);
+  const [isFiltering, setIsFiltering] = useState(false);
+  
+  // Filter care plans based on search query and filters
+  const filteredCarePlans = mockCarePlans.filter(plan => {
+    // Search query filter
+    const matchesSearch = 
+      plan.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      plan.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      plan.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      plan.assignedTo.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    
+    // Status filter
+    if (statusFilter && plan.status !== statusFilter) return false;
+    
+    // Assigned to filter
+    if (assignedToFilter && plan.assignedTo !== assignedToFilter) return false;
+    
+    // Date range filters - check if last updated date is within range
+    if (dateRangeStart && isBefore(plan.lastUpdated, dateRangeStart)) return false;
+    if (dateRangeEnd) {
+      // Add one day to make the end date inclusive
+      const endDatePlusOne = new Date(dateRangeEnd);
+      endDatePlusOne.setDate(endDatePlusOne.getDate() + 1);
+      if (isAfter(plan.lastUpdated, endDatePlusOne)) return false;
+    }
+    
+    return true;
+  });
   
   // Paginate results
   const totalPages = Math.ceil(filteredCarePlans.length / itemsPerPage);
@@ -166,6 +211,11 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
     (currentPage - 1) * itemsPerPage, 
     currentPage * itemsPerPage
   );
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, assignedToFilter, dateRangeStart, dateRangeEnd]);
   
   const handleAddCarePlan = () => {
     console.log("Add care plan");
@@ -212,6 +262,35 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
     setStatusDialogOpen(false);
     setSelectedPlan(null);
   };
+
+  const handleFilterApply = () => {
+    setIsFiltering(statusFilter !== "" || assignedToFilter !== "" || !!dateRangeStart || !!dateRangeEnd);
+    setFilterDialogOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    setStatusFilter("");
+    setAssignedToFilter("");
+    setDateRangeStart(undefined);
+    setDateRangeEnd(undefined);
+    setIsFiltering(false);
+    setFilterDialogOpen(false);
+  };
+
+  const handleExportToPDF = () => {
+    // Export all filtered care plans to PDF
+    generateCarePlanPDF(
+      filteredCarePlans,
+      branchName || "Med-Infinite Branch",
+      isFiltering ? "Filtered Care Plans" : "All Care Plans"
+    );
+    
+    toast({
+      title: "Export Successful",
+      description: "Care plans have been exported to PDF",
+      variant: "default",
+    });
+  };
   
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -230,12 +309,141 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
           </div>
           
           <div className="flex gap-2">
-            <Button variant="outline" size="icon">
-              <Filter className="h-4 w-4" />
-            </Button>
+            <Dialog open={filterDialogOpen} onOpenChange={setFilterDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className={cn(isFiltering && "border-blue-500 bg-blue-50 text-blue-600")}>
+                  <Filter className="mr-2 h-4 w-4" />
+                  {isFiltering ? "Filters Applied" : "Filter"}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Filter Care Plans</DialogTitle>
+                  <DialogDescription>
+                    Apply filters to narrow down the care plans list.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="status-filter" className="text-right text-sm font-medium">
+                      Status
+                    </label>
+                    <div className="col-span-3">
+                      <Select
+                        value={statusFilter}
+                        onValueChange={setStatusFilter}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Statuses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">All Statuses</SelectItem>
+                          {statusOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="assigned-filter" className="text-right text-sm font-medium">
+                      Assigned To
+                    </label>
+                    <div className="col-span-3">
+                      <Select
+                        value={assignedToFilter}
+                        onValueChange={setAssignedToFilter}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Providers" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">All Providers</SelectItem>
+                          {assignedToOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label className="text-right text-sm font-medium">
+                      Date Range
+                    </label>
+                    <div className="col-span-3 flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">From:</span>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !dateRangeStart && "text-muted-foreground"
+                              )}
+                            >
+                              <Calendar className="mr-2 h-4 w-4" />
+                              {dateRangeStart ? format(dateRangeStart, "MMM dd, yyyy") : <span>Pick a date</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={dateRangeStart}
+                              onSelect={setDateRangeStart}
+                              initialFocus
+                              className="p-3 pointer-events-auto"
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">To:</span>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !dateRangeEnd && "text-muted-foreground"
+                              )}
+                            >
+                              <Calendar className="mr-2 h-4 w-4" />
+                              {dateRangeEnd ? format(dateRangeEnd, "MMM dd, yyyy") : <span>Pick a date</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={dateRangeEnd}
+                              onSelect={setDateRangeEnd}
+                              initialFocus
+                              className="p-3 pointer-events-auto"
+                              disabled={(date) => dateRangeStart ? isBefore(date, dateRangeStart) : false}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button variant="outline" onClick={handleClearFilters}>
+                    Clear Filters
+                  </Button>
+                  <Button onClick={handleFilterApply}>
+                    Apply Filters
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             
-            <Button variant="outline">
-              <FileText className="mr-2 h-4 w-4" />
+            <Button variant="outline" onClick={handleExportToPDF}>
+              <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
             
@@ -246,6 +454,40 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
           </div>
         </div>
       </div>
+
+      {isFiltering && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+          <span className="font-medium">Active filters:</span>
+          {statusFilter && (
+            <Badge variant="outline" className="flex items-center gap-1 px-2 py-1">
+              Status: {statusFilter}
+            </Badge>
+          )}
+          {assignedToFilter && (
+            <Badge variant="outline" className="flex items-center gap-1 px-2 py-1">
+              Assigned to: {assignedToFilter}
+            </Badge>
+          )}
+          {dateRangeStart && (
+            <Badge variant="outline" className="flex items-center gap-1 px-2 py-1">
+              From: {format(dateRangeStart, "MMM dd, yyyy")}
+            </Badge>
+          )}
+          {dateRangeEnd && (
+            <Badge variant="outline" className="flex items-center gap-1 px-2 py-1">
+              To: {format(dateRangeEnd, "MMM dd, yyyy")}
+            </Badge>
+          )}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-0"
+            onClick={handleClearFilters}
+          >
+            Clear all
+          </Button>
+        </div>
+      )}
       
       <div className="bg-white overflow-hidden rounded-xl border border-gray-200 shadow-sm">
         <Table>
