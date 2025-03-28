@@ -736,4 +736,3 @@ const BranchDashboard = () => {
                 </CardHeader>
                 <CardContent className="overflow-x-auto">
                   <div className="space-y-1 min-w-[400px]">
-                    <
