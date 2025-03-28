@@ -5,7 +5,7 @@ import { MessageList } from "./MessageList";
 import { MessageView } from "./MessageView";
 import { MessageComposer } from "./MessageComposer";
 import { MessageFilters } from "./MessageFilters";
-import { PlusCircle } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export interface CommunicationsTabProps {
@@ -18,7 +18,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({ branchId =
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [showComposer, setShowComposer] = useState(false);
-  const [filterType, setFilterType] = useState<"all" | "carers" | "clients">("all");
+  const [filterType, setFilterType] = useState<"all" | "carers" | "clients" | "groups">("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [readFilter, setReadFilter] = useState<string>("all");
@@ -34,6 +34,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({ branchId =
   // Handler to open composer
   const handleNewMessage = () => {
     setShowComposer(true);
+    setSelectedMessageId(null);
   };
 
   // Handler to close composer
@@ -45,6 +46,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({ branchId =
   const handleContactSelect = (contactId: string) => {
     setSelectedContactId(contactId);
     setShowComposer(true);
+    setSelectedMessageId(null);
   };
 
   // Handler for message selection
@@ -59,77 +61,74 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({ branchId =
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-      <h2 className="text-2xl font-bold mb-4">Communications</h2>
-      <p className="text-gray-500 mb-4">Branch: {branchName} (ID: {branchId})</p>
+    <div className="flex h-[calc(100vh-4rem)] bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      {/* Left column - Contacts */}
+      <div className="w-1/4 border-r border-gray-200 flex flex-col">
+        <ContactSidebar 
+          branchId={branchId || "1"}
+          onContactSelect={handleContactSelect}
+          contactType={filterType}
+          onContactTypeChange={(type) => setFilterType(type)}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+        />
+      </div>
       
-      <div className="flex flex-col space-y-4">
-        <div className="flex justify-between items-center">
+      {/* Middle column - Message list */}
+      <div className="w-1/3 border-r border-gray-200 flex flex-col">
+        <div className="p-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold mb-4">Messages</h3>
           <MessageFilters 
             selectedFilter={filterType}
-            onFilterChange={(filter) => setFilterType(filter as "all" | "carers" | "clients")}
+            onFilterChange={(filter) => setFilterType(filter as "all" | "carers" | "clients" | "groups")}
             priorityFilter={priorityFilter}
             readFilter={readFilter}
             dateFilter={dateFilter}
             onFilterOptionsChange={handleFilterOptionsChange}
           />
-          <Button onClick={handleNewMessage} className="ml-2">
-            <PlusCircle className="h-4 w-4 mr-2" />
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          <MessageList 
+            branchId={branchId || "1"}
+            onMessageSelect={handleMessageSelect}
+            selectedMessageId={selectedMessageId}
+            selectedFilter={filterType}
+            searchTerm={searchTerm}
+            priorityFilter={priorityFilter}
+            readFilter={readFilter}
+            dateFilter={dateFilter}
+          />
+        </div>
+        <div className="p-3 border-t border-gray-200">
+          <Button className="w-full flex items-center justify-center" onClick={handleNewMessage}>
+            <Plus className="h-4 w-4 mr-2" />
             New Message
           </Button>
         </div>
-        
-        <div className="flex h-[70vh] border border-gray-200 rounded-lg overflow-hidden">
-          {/* Left sidebar - Contacts */}
-          <div className="w-1/4 border-r border-gray-200 flex flex-col bg-white">
-            <ContactSidebar 
-              branchId={branchId || "1"}
-              onContactSelect={handleContactSelect}
-              contactType={filterType}
-              onContactTypeChange={(type) => setFilterType(type)}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-            />
+      </div>
+      
+      {/* Right column - Message view or composer */}
+      <div className="flex-1 flex flex-col">
+        {showComposer ? (
+          <MessageComposer 
+            branchId={branchId || "1"}
+            onClose={handleCloseComposer}
+            selectedContactId={selectedContactId}
+          />
+        ) : selectedMessageId ? (
+          <MessageView 
+            messageId={selectedMessageId}
+            onReply={handleReply}
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full bg-gray-50">
+            <p className="text-gray-400 mb-4">Select a message to view or start a new conversation</p>
+            <Button variant="outline" onClick={handleNewMessage}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Message
+            </Button>
           </div>
-          
-          {/* Middle column - Message list */}
-          <div className="w-1/3 border-r border-gray-200 flex flex-col bg-white">
-            <MessageList 
-              branchId={branchId || "1"}
-              onMessageSelect={handleMessageSelect}
-              selectedMessageId={selectedMessageId}
-              selectedFilter={filterType}
-              searchTerm={searchTerm}
-              priorityFilter={priorityFilter}
-              readFilter={readFilter}
-              dateFilter={dateFilter}
-            />
-          </div>
-          
-          {/* Right column - Message view or composer */}
-          <div className="flex-1 bg-white">
-            {showComposer ? (
-              <MessageComposer 
-                branchId={branchId || "1"}
-                onClose={handleCloseComposer}
-                selectedContactId={selectedContactId}
-              />
-            ) : selectedMessageId ? (
-              <MessageView 
-                messageId={selectedMessageId}
-                onReply={handleReply}
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full bg-gray-50">
-                <p className="text-gray-400 mb-4">Select a message to view or start a new conversation</p>
-                <Button variant="outline" onClick={handleNewMessage}>
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  New Message
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -2,9 +2,8 @@
 import React, { useState } from "react";
 import { format } from "date-fns";
 import { 
-  ArrowLeft, Reply, ReplyAll, Forward, 
-  MoreHorizontal, Download, Trash, Star, Flag,
-  Paperclip, AlertCircle, BadgeCheck, Building2
+  ArrowLeft, ArrowRight, MoreHorizontal, Reply, 
+  Download, Paperclip
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -95,22 +94,14 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-        <div className="flex items-center">
-          <Button variant="ghost" size="icon" className="md:hidden mr-2">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h2 className="text-lg font-semibold">{message.subject}</h2>
-          {message.priority === "high" && (
-            <Badge variant="destructive" className="ml-2">High Priority</Badge>
-          )}
-        </div>
+        <h2 className="text-lg font-semibold truncate">{message.subject}</h2>
         
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" title="Reply" onClick={onReply}>
-            <Reply className="h-4 w-4" />
+          <Button variant="ghost" size="icon" title="Previous">
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" title="Forward">
-            <Forward className="h-4 w-4" />
+          <Button variant="ghost" size="icon" title="Next">
+            <ArrowRight className="h-4 w-4" />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -119,26 +110,17 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <Star className="h-4 w-4 mr-2" />
-                <span>Mark as important</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Flag className="h-4 w-4 mr-2" />
-                <span>Flag message</span>
-              </DropdownMenuItem>
+              <DropdownMenuItem>Mark as unread</DropdownMenuItem>
+              <DropdownMenuItem>Forward</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Trash className="h-4 w-4 mr-2" />
-                <span>Delete</span>
-              </DropdownMenuItem>
+              <DropdownMenuItem>Delete</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
       
       <div className="flex-1 overflow-y-auto p-4">
-        <div className="mb-6">
+        <div className="mb-4">
           <div className="flex items-start">
             <Avatar className="h-10 w-10 mr-3">
               <AvatarFallback className="bg-gray-200">
@@ -152,14 +134,12 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
                 
                 {message.sender.type === "carer" && (
                   <Badge variant="outline" className="ml-2 px-1.5 py-0 text-xs bg-blue-50 text-blue-700 border-blue-200">
-                    <BadgeCheck className="h-3 w-3 mr-1" />
                     Carer
                   </Badge>
                 )}
                 
                 {message.sender.type === "client" && (
                   <Badge variant="outline" className="ml-2 px-1.5 py-0 text-xs bg-green-50 text-green-700 border-green-200">
-                    <Building2 className="h-3 w-3 mr-1" />
                     Client
                   </Badge>
                 )}
@@ -170,12 +150,12 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
               </div>
               
               <div className="text-sm text-gray-500">
-                {format(message.timestamp, "PPpp")}
+                {format(message.timestamp, "MMMM d, yyyy, h:mm a")}
               </div>
             </div>
           </div>
           
-          <div className="mt-4 text-sm whitespace-pre-line">
+          <div className="mt-6 text-sm whitespace-pre-line">
             {message.content}
           </div>
           
@@ -203,69 +183,9 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
             </div>
           )}
         </div>
-        
-        {/* Thread */}
-        {message.thread && message.thread.length > 0 && (
-          <div className="mt-8 border-t border-gray-200 pt-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium">Previous messages ({message.thread.length})</h3>
-              <Button
-                variant="link"
-                size="sm"
-                onClick={() => setShowFullThread(!showFullThread)}
-              >
-                {showFullThread ? "Hide" : "Show"} thread
-              </Button>
-            </div>
-            
-            {showFullThread && (
-              <div className="space-y-6">
-                {message.thread.map((reply) => (
-                  <div key={reply.id} className="pl-4 border-l-2 border-gray-200">
-                    <div className="flex items-start">
-                      <Avatar className="h-8 w-8 mr-3">
-                        <AvatarFallback className="bg-gray-200 text-xs">
-                          {reply.sender.avatar}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center">
-                          <div className="font-medium text-sm">{reply.sender.name}</div>
-                          
-                          {reply.sender.type === "carer" && (
-                            <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-blue-50 text-blue-700 border-blue-200">
-                              <BadgeCheck className="h-3 w-3 mr-1" />
-                              <span>Carer</span>
-                            </Badge>
-                          )}
-                          
-                          {reply.sender.type === "client" && (
-                            <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-green-50 text-green-700 border-green-200">
-                              <Building2 className="h-3 w-3 mr-1" />
-                              <span>Client</span>
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        <div className="text-xs text-gray-500">
-                          {format(reply.timestamp, "PPpp")}
-                        </div>
-                        
-                        <div className="mt-2 text-sm whitespace-pre-line">
-                          {reply.content}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </div>
       
-      <div className="p-4 border-t border-gray-200 bg-gray-50">
+      <div className="p-4 border-t border-gray-200">
         <Button className="w-full" onClick={onReply}>
           <Reply className="h-4 w-4 mr-2" />
           Reply

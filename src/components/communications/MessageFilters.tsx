@@ -1,18 +1,16 @@
 
-import React, { useState } from "react";
-import { Check, ChevronDown, SlidersHorizontal } from "lucide-react";
+import React from "react";
+import { SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuCheckboxItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface MessageFiltersProps {
   selectedFilter: string;
@@ -31,45 +29,40 @@ export const MessageFilters = ({
   dateFilter,
   onFilterOptionsChange 
 }: MessageFiltersProps) => {
-  const [localPriorityFilter, setLocalPriorityFilter] = useState<string | undefined>(priorityFilter || "all");
-  const [localReadFilter, setLocalReadFilter] = useState<string | undefined>(readFilter || "all");
-  const [localDateFilter, setLocalDateFilter] = useState<string | undefined>(dateFilter || "all");
-
   const handlePriorityChange = (value: string) => {
-    setLocalPriorityFilter(value);
     if (onFilterOptionsChange) {
-      onFilterOptionsChange(value, localReadFilter, localDateFilter);
+      onFilterOptionsChange(value, readFilter, dateFilter);
     }
   };
 
   const handleReadStatusChange = (value: string) => {
-    setLocalReadFilter(value);
     if (onFilterOptionsChange) {
-      onFilterOptionsChange(localPriorityFilter, value, localDateFilter);
+      onFilterOptionsChange(priorityFilter, value, dateFilter);
     }
   };
 
   const handleDateFilterChange = (value: string) => {
-    setLocalDateFilter(value);
     if (onFilterOptionsChange) {
-      onFilterOptionsChange(localPriorityFilter, localReadFilter, value);
+      onFilterOptionsChange(priorityFilter, readFilter, value);
     }
   };
 
   return (
-    <div className="flex flex-col space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Messages</h3>
+    <div className="flex flex-col space-y-2">
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex-1">
+          {/* Empty space for alignment */}
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="gap-1">
               <SlidersHorizontal className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Filters</span>
+              <span>Filters</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel>Message Status</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={localReadFilter} onValueChange={handleReadStatusChange}>
+            <DropdownMenuRadioGroup value={readFilter} onValueChange={handleReadStatusChange}>
               <DropdownMenuRadioItem value="all">All Messages</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="read">Read</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="unread">Unread</DropdownMenuRadioItem>
@@ -78,7 +71,7 @@ export const MessageFilters = ({
             <DropdownMenuSeparator />
             
             <DropdownMenuLabel>Priority</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={localPriorityFilter} onValueChange={handlePriorityChange}>
+            <DropdownMenuRadioGroup value={priorityFilter} onValueChange={handlePriorityChange}>
               <DropdownMenuRadioItem value="all">All Priorities</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="high">High</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="medium">Medium</DropdownMenuRadioItem>
@@ -88,7 +81,7 @@ export const MessageFilters = ({
             <DropdownMenuSeparator />
             
             <DropdownMenuLabel>Date Range</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={localDateFilter} onValueChange={handleDateFilterChange}>
+            <DropdownMenuRadioGroup value={dateFilter} onValueChange={handleDateFilterChange}>
               <DropdownMenuRadioItem value="all">All Time</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="today">Today</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="week">This Week</DropdownMenuRadioItem>
@@ -98,14 +91,32 @@ export const MessageFilters = ({
         </DropdownMenu>
       </div>
       
-      <Tabs value={selectedFilter} onValueChange={onFilterChange} className="w-full">
-        <TabsList className="w-full grid grid-cols-4">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="carers">Carers</TabsTrigger>
-          <TabsTrigger value="clients">Clients</TabsTrigger>
-          <TabsTrigger value="groups">Groups</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="w-full flex overflow-hidden bg-gray-100 rounded-md">
+        <button 
+          className={`flex-1 text-sm py-2 px-4 ${selectedFilter === 'all' ? 'bg-white rounded-md shadow-sm' : ''}`}
+          onClick={() => onFilterChange('all')}
+        >
+          All
+        </button>
+        <button 
+          className={`flex-1 text-sm py-2 px-4 ${selectedFilter === 'carers' ? 'bg-white rounded-md shadow-sm' : ''}`}
+          onClick={() => onFilterChange('carers')}
+        >
+          Carers
+        </button>
+        <button 
+          className={`flex-1 text-sm py-2 px-4 ${selectedFilter === 'clients' ? 'bg-white rounded-md shadow-sm' : ''}`}
+          onClick={() => onFilterChange('clients')}
+        >
+          Clients
+        </button>
+        <button 
+          className={`flex-1 text-sm py-2 px-4 ${selectedFilter === 'groups' ? 'bg-white rounded-md shadow-sm' : ''}`}
+          onClick={() => onFilterChange('groups')}
+        >
+          Groups
+        </button>
+      </div>
     </div>
   );
 };

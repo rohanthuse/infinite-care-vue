@@ -1,8 +1,7 @@
 import React, { useEffect } from "react";
 import { format } from "date-fns";
 import { 
-  Star, FileText, User, Users, AlertCircle,
-  BadgeCheck, Building2
+  FileText, AlertCircle
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -59,7 +58,7 @@ const mockMessages = [
   },
   {
     id: "msg-5",
-    sender: { id: "admin", name: "Branch Admin", type: "admin" },
+    sender: { id: "admin", name: "Branch Admin", avatar: "B", type: "admin" },
     recipients: [
       { id: "carer-1", name: "Charuma, Charmaine", type: "carer" },
       { id: "carer-2", name: "Warren, Susan", type: "carer" },
@@ -75,7 +74,7 @@ const mockMessages = [
   },
   {
     id: "msg-6",
-    sender: { id: "admin", name: "Branch Admin", type: "admin" },
+    sender: { id: "admin", name: "Branch Admin", avatar: "B", type: "admin" },
     recipients: [
       { id: "client-1", name: "Pender, Eva", type: "client" },
       { id: "client-2", name: "Fulcher, Patricia", type: "client" },
@@ -177,35 +176,35 @@ export const MessageList = ({
   };
 
   // Check if selected message is in filtered results
-  const selectedMessageExists = selectedMessageId && filteredMessages.some(msg => msg.id === selectedMessageId);
+  const selectedMessageExists = selectedMessageId && mockMessages.some(msg => msg.id === selectedMessageId);
   
   // Effect to auto-select first message if current selection doesn't exist
   useEffect(() => {
-    // If no message is selected and we have filtered messages, select the first one
-    if ((!selectedMessageId || !selectedMessageExists) && filteredMessages.length > 0) {
-      onMessageSelect(filteredMessages[0].id);
+    // If no message is selected and we have messages, select the first one
+    if ((!selectedMessageId || !selectedMessageExists) && mockMessages.length > 0) {
+      onMessageSelect(mockMessages[0].id);
     }
-  }, [filteredMessages, selectedMessageId, selectedMessageExists, onMessageSelect]);
+  }, [mockMessages, selectedMessageId, selectedMessageExists, onMessageSelect]);
   
   return (
-    <div className="divide-y divide-gray-100">
-      {filteredMessages.length > 0 ? (
-        filteredMessages.map((message) => (
+    <div>
+      {mockMessages.length > 0 ? (
+        mockMessages.map((message) => (
           <div 
             key={message.id}
             className={cn(
-              "p-3 hover:bg-gray-50 cursor-pointer",
+              "p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100",
               selectedMessageId === message.id ? "bg-blue-50 hover:bg-blue-50" : "",
               !message.isRead ? "bg-gray-50" : ""
             )}
             onClick={() => onMessageSelect(message.id)}
           >
-            <div className="flex items-start gap-3">
+            <div className="flex items-start">
               <div className="h-9 w-9 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium shrink-0">
-                {message.sender.avatar || message.sender.name.charAt(0)}
+                {message.sender.avatar}
               </div>
               
-              <div className="flex-1 min-w-0">
+              <div className="ml-3 flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center">
                     <span className={cn(
@@ -217,15 +216,13 @@ export const MessageList = ({
                     
                     {message.sender.type === "carer" && (
                       <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-blue-50 text-blue-700 border-blue-200">
-                        <BadgeCheck className="h-3 w-3 mr-1" />
-                        <span className="hidden md:inline">Carer</span>
+                        Carer
                       </Badge>
                     )}
                     
                     {message.sender.type === "client" && (
                       <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-green-50 text-green-700 border-green-200">
-                        <Building2 className="h-3 w-3 mr-1" />
-                        <span className="hidden md:inline">Client</span>
+                        Client
                       </Badge>
                     )}
                     
@@ -239,28 +236,22 @@ export const MessageList = ({
                   </span>
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <div className={cn(
-                    "text-sm truncate max-w-[200px]",
-                    !message.isRead ? "font-medium" : "text-gray-700"
-                  )}>
-                    {message.subject}
-                  </div>
-                  
-                  <div className="flex items-center">
-                    {message.hasAttachments && (
-                      <FileText className="h-3 w-3 text-gray-400 ml-1" />
-                    )}
-                    
-                    {message.recipients.length > 1 && (
-                      <Users className="h-3 w-3 text-gray-400 ml-1" />
-                    )}
-                  </div>
+                <div className={cn(
+                  "text-sm truncate",
+                  !message.isRead ? "font-medium" : "text-gray-700"
+                )}>
+                  {message.subject}
                 </div>
                 
-                <p className="text-xs text-gray-500 truncate mt-1">
-                  {message.content}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-gray-500 truncate mt-1">
+                    {message.content}
+                  </p>
+                  
+                  {message.hasAttachments && (
+                    <FileText className="h-3 w-3 text-gray-400 ml-1 shrink-0" />
+                  )}
+                </div>
               </div>
             </div>
           </div>

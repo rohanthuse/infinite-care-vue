@@ -1,8 +1,7 @@
 
 import React, { useState } from "react";
-import { Search, UserRound, Users, BadgeCheck, Building2, Filter } from "lucide-react";
+import { Search, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
@@ -10,6 +9,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 // Mocked data - would come from an API
 const mockCarers = [
@@ -76,34 +76,43 @@ export const ContactSidebar = ({
   return (
     <>
       <div className="p-4 border-b border-gray-200">
-        <h3 className="text-lg font-semibold mb-3">Contacts</h3>
+        <h3 className="text-lg font-semibold mb-4">Contacts</h3>
         
-        <div className="relative mb-3">
+        <div className="relative mb-4">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
           <Input
             placeholder="Search contacts..."
-            className="pl-9"
+            className="pl-9 bg-gray-50"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
         
-        <div className="flex items-center justify-between">
-          <Tabs
-            value={contactType}
-            onValueChange={(value) => onContactTypeChange(value as "all" | "carers" | "clients")}
-            className="w-full"
-          >
-            <TabsList className="grid grid-cols-3 w-full">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="carers">Carers</TabsTrigger>
-              <TabsTrigger value="clients">Clients</TabsTrigger>
-            </TabsList>
-          </Tabs>
+        <div className="flex items-center justify-between mb-2">
+          <div className="w-full flex overflow-hidden bg-gray-100 rounded-md">
+            <button 
+              className={`flex-1 text-sm py-2 px-4 ${contactType === 'all' ? 'bg-white rounded-md shadow-sm' : ''}`}
+              onClick={() => onContactTypeChange('all')}
+            >
+              All
+            </button>
+            <button 
+              className={`flex-1 text-sm py-2 px-4 ${contactType === 'carers' ? 'bg-white rounded-md shadow-sm' : ''}`}
+              onClick={() => onContactTypeChange('carers')}
+            >
+              Carers
+            </button>
+            <button 
+              className={`flex-1 text-sm py-2 px-4 ${contactType === 'clients' ? 'bg-white rounded-md shadow-sm' : ''}`}
+              onClick={() => onContactTypeChange('clients')}
+            >
+              Clients
+            </button>
+          </div>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="ml-2">
+              <Button variant="ghost" size="icon" className="ml-1">
                 <Filter className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -157,22 +166,20 @@ export const ContactSidebar = ({
                   <div className="flex items-center justify-between">
                     <div className="font-medium text-sm">{contact.name}</div>
                     {contact.unread > 0 && (
-                      <div className="bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      <div className="bg-blue-600 text-white text-xs rounded-full h-5 min-w-5 px-1 flex items-center justify-center">
                         {contact.unread}
                       </div>
                     )}
                   </div>
                   <div className="text-xs text-gray-500 flex items-center mt-0.5">
                     {isClient ? (
-                      <>
-                        <Building2 className="h-3 w-3 mr-1" />
-                        <span>Client</span>
-                      </>
+                      <Badge variant="outline" className="px-1.5 py-0 text-xs bg-green-50 text-green-700 border-green-200">
+                        Client
+                      </Badge>
                     ) : isCarer ? (
-                      <>
-                        <BadgeCheck className="h-3 w-3 mr-1" />
-                        <span>Carer</span>
-                      </>
+                      <Badge variant="outline" className="px-1.5 py-0 text-xs bg-blue-50 text-blue-700 border-blue-200">
+                        Carer
+                      </Badge>
                     ) : (
                       <span>Contact</span>
                     )}
