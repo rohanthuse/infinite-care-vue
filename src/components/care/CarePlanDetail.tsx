@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { 
   X, User, Info, Calendar, FileText, FileCheck, 
   MessageCircle, AlertTriangle, Clock, Activity,
-  ChevronRight, FileEdit, Download 
+  ChevronRight, FileEdit, Download, Pill 
 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -138,91 +138,98 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ carePlan, onClos
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
+        {/* Enhanced Header */}
+        <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 border-b rounded-t-xl flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
+            <div className="w-12 h-12 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xl font-medium shadow-sm">
               {carePlan.avatar}
             </div>
             <div>
-              <h2 className="text-xl font-bold">{carePlan.patientName}</h2>
-              <div className="flex items-center space-x-2 text-sm text-gray-500">
-                <span>Patient ID: {carePlan.patientId}</span>
-                <span>•</span>
-                <span>Plan ID: {carePlan.id}</span>
+              <h2 className="text-xl font-bold text-gray-800">{carePlan.patientName}</h2>
+              <div className="flex items-center flex-wrap gap-2 text-sm text-gray-500">
+                <span className="bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">Patient ID: {carePlan.patientId}</span>
+                <span className="bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">Plan ID: {carePlan.id}</span>
               </div>
             </div>
           </div>
           
           <div className="flex items-center space-x-2">
-            <Button variant="outline" onClick={handlePrintCarePlan} className="flex items-center gap-2">
+            <Button variant="outline" onClick={handlePrintCarePlan} className="flex items-center gap-1 bg-white">
               <Download className="h-4 w-4" />
               <span>Export</span>
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button variant="outline" className="flex items-center gap-1 bg-white">
               <FileEdit className="h-4 w-4" />
               <span>Edit</span>
             </Button>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-5 w-5" />
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full bg-white hover:bg-red-50 hover:text-red-600">
+              <X className="h-4 w-4" />
             </Button>
           </div>
         </div>
         
-        {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
+        {/* Content with scrolling */}
+        <div className="flex-1 overflow-auto p-6 bg-gray-50">
           <div className="flex flex-col md:flex-row md:items-start gap-6">
             {/* Left column - Summary */}
             <div className="w-full md:w-1/3">
-              <Card>
-                <CardHeader className="pb-2">
+              <Card className="shadow-md border-blue-100 overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 pb-2">
                   <CardTitle className="text-lg">Care Plan Summary</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 p-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Status</p>
-                    <Badge variant="outline" className={getStatusBadgeClass(carePlan.status)}>
+                    <p className="text-sm font-medium text-gray-500 mb-1">Status</p>
+                    <Badge variant="outline" className={`${getStatusBadgeClass(carePlan.status)} py-1 px-2`}>
                       {carePlan.status}
                     </Badge>
                   </div>
                   
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Assigned To</p>
+                    <p className="text-sm font-medium text-gray-500 mb-1">Assigned To</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <Avatar className="h-6 w-6">
-                        <div className="bg-blue-100 text-blue-600 w-full h-full flex items-center justify-center text-xs">
+                      <Avatar className="h-7 w-7 border-2 border-white shadow-sm">
+                        <div className="bg-blue-600 text-white w-full h-full flex items-center justify-center text-xs font-bold">
                           {carePlan.assignedTo.split(' ').map(n => n[0]).join('')}
                         </div>
                       </Avatar>
-                      <span className="text-sm">{carePlan.assignedTo}</span>
+                      <span className="text-sm font-medium">{carePlan.assignedTo}</span>
                     </div>
                   </div>
                   
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Created On</p>
-                    <p className="text-sm">{format(carePlan.dateCreated, 'MMM dd, yyyy')}</p>
+                  <div className="flex flex-col sm:flex-row sm:gap-4">
+                    <div className="sm:w-1/2">
+                      <p className="text-sm font-medium text-gray-500 mb-1">Created On</p>
+                      <p className="text-sm flex items-center">
+                        <Calendar className="h-3.5 w-3.5 mr-1 text-blue-600" />
+                        {format(carePlan.dateCreated, 'MMM dd, yyyy')}
+                      </p>
+                    </div>
+                    
+                    <div className="sm:w-1/2 mt-3 sm:mt-0">
+                      <p className="text-sm font-medium text-gray-500 mb-1">Last Updated</p>
+                      <p className="text-sm flex items-center">
+                        <Clock className="h-3.5 w-3.5 mr-1 text-blue-600" />
+                        {format(carePlan.lastUpdated, 'MMM dd, yyyy')}
+                      </p>
+                    </div>
                   </div>
                   
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Last Updated</p>
-                    <p className="text-sm">{format(carePlan.lastUpdated, 'MMM dd, yyyy')}</p>
-                  </div>
-                  
-                  <Separator />
+                  <Separator className="my-2" />
                   
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-2">Quick Actions</p>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Quick Actions</p>
                     <div className="space-y-2">
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <MessageCircle className="h-4 w-4 mr-2" />
+                      <Button variant="outline" size="sm" className="w-full justify-start bg-white hover:bg-blue-50 border-blue-100">
+                        <MessageCircle className="h-4 w-4 mr-2 text-blue-600" />
                         <span>Add Note</span>
                       </Button>
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Clock className="h-4 w-4 mr-2" />
+                      <Button variant="outline" size="sm" className="w-full justify-start bg-white hover:bg-blue-50 border-blue-100">
+                        <Clock className="h-4 w-4 mr-2 text-blue-600" />
                         <span>Schedule Follow-up</span>
                       </Button>
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Activity className="h-4 w-4 mr-2" />
+                      <Button variant="outline" size="sm" className="w-full justify-start bg-white hover:bg-blue-50 border-blue-100">
+                        <Activity className="h-4 w-4 mr-2 text-blue-600" />
                         <span>Record Activity</span>
                       </Button>
                     </div>
@@ -234,119 +241,140 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ carePlan, onClos
             {/* Right column - Tabs */}
             <div className="w-full md:w-2/3">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="w-full justify-start overflow-x-auto mb-4">
-                  <TabsTrigger value="personal" className="flex items-center gap-1">
-                    <User className="h-4 w-4" />
-                    <span>Personal</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="aboutme" className="flex items-center gap-1">
-                    <Info className="h-4 w-4" />
-                    <span>About Me</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="goals" className="flex items-center gap-1">
-                    <FileCheck className="h-4 w-4" />
-                    <span>Goals</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="activities" className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    <span>Activities</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="notes" className="flex items-center gap-1">
-                    <MessageCircle className="h-4 w-4" />
-                    <span>Notes</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="documents" className="flex items-center gap-1">
-                    <FileText className="h-4 w-4" />
-                    <span>Documents</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="assessments" className="flex items-center gap-1">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span>Assessments</span>
-                  </TabsTrigger>
-                </TabsList>
+                <div className="bg-white rounded-lg shadow-sm border border-blue-100 p-1 mb-4 sticky top-0 z-10">
+                  <TabsList className="w-full bg-gray-50/80 backdrop-blur-sm">
+                    <TabsTrigger value="personal" className="flex items-center gap-1">
+                      <User className="h-4 w-4" />
+                      <span>Personal</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="aboutme" className="flex items-center gap-1">
+                      <Info className="h-4 w-4" />
+                      <span>About Me</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="goals" className="flex items-center gap-1">
+                      <FileCheck className="h-4 w-4" />
+                      <span>Goals</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="activities" className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      <span>Activities</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="notes" className="flex items-center gap-1">
+                      <MessageCircle className="h-4 w-4" />
+                      <span>Notes</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="documents" className="flex items-center gap-1">
+                      <FileText className="h-4 w-4" />
+                      <span>Documents</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="assessments" className="flex items-center gap-1">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span>Assessments</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
                 
                 {/* Personal Information Tab */}
                 <TabsContent value="personal" className="space-y-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">Personal Information</CardTitle>
+                  <Card className="shadow-md border-blue-100 overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 pb-2">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <User className="h-5 w-5 text-blue-600" />
+                        Personal Information
+                      </CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-5">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Full Name</p>
-                          <p className="text-sm">{carePlan.patientName}</p>
+                        <div className="space-y-3">
+                          <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            <p className="text-sm font-medium text-gray-500 mb-1">Full Name</p>
+                            <p className="text-base font-medium">{carePlan.patientName}</p>
+                          </div>
+                          
+                          <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            <p className="text-sm font-medium text-gray-500 mb-1">Gender</p>
+                            <p className="text-base">{mockPatientData.gender}</p>
+                          </div>
+                          
+                          <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            <p className="text-sm font-medium text-gray-500 mb-1">Date of Birth</p>
+                            <p className="text-base">{format(mockPatientData.dateOfBirth, 'MMM dd, yyyy')}</p>
+                            <p className="text-sm text-gray-500">Age: {new Date().getFullYear() - mockPatientData.dateOfBirth.getFullYear()} years</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Patient ID</p>
-                          <p className="text-sm">{carePlan.patientId}</p>
+                        
+                        <div className="space-y-3">
+                          <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            <p className="text-sm font-medium text-gray-500 mb-1">Patient ID</p>
+                            <p className="text-base font-medium">{carePlan.patientId}</p>
+                          </div>
+                          
+                          <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            <p className="text-sm font-medium text-gray-500 mb-1">Phone</p>
+                            <p className="text-base">{mockPatientData.phone}</p>
+                          </div>
+                          
+                          <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            <p className="text-sm font-medium text-gray-500 mb-1">Email</p>
+                            <p className="text-base">{mockPatientData.email}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Gender</p>
-                          <p className="text-sm">{mockPatientData.gender}</p>
+                        
+                        <div className="md:col-span-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                          <p className="text-sm font-medium text-gray-500 mb-1">Address</p>
+                          <p className="text-base">{mockPatientData.address}</p>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Date of Birth</p>
-                          <p className="text-sm">{format(mockPatientData.dateOfBirth, 'MMM dd, yyyy')} (Age: {new Date().getFullYear() - mockPatientData.dateOfBirth.getFullYear()})</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Address</p>
-                          <p className="text-sm">{mockPatientData.address}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Phone</p>
-                          <p className="text-sm">{mockPatientData.phone}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Email</p>
-                          <p className="text-sm">{mockPatientData.email}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Preferred Language</p>
-                          <p className="text-sm">{mockPatientData.preferredLanguage}</p>
-                        </div>
-                        <div className="md:col-span-2">
-                          <p className="text-sm font-medium text-gray-500">Emergency Contact</p>
-                          <p className="text-sm">{mockPatientData.emergencyContact}</p>
+                        
+                        <div className="md:col-span-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                          <p className="text-sm font-medium text-gray-500 mb-1">Emergency Contact</p>
+                          <p className="text-base">{mockPatientData.emergencyContact}</p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                   
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">Medical Information</CardTitle>
+                  <Card className="shadow-md border-blue-100 overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 pb-2">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-blue-600" />
+                        Medical Information
+                      </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
+                    <CardContent className="p-5">
+                      <div className="space-y-5">
                         <div>
-                          <p className="text-sm font-medium text-gray-500 mb-1">Allergies</p>
-                          <div className="flex flex-wrap gap-1">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Allergies</p>
+                          <div className="flex flex-wrap gap-2">
                             {mockPatientData.allergies.map((allergy, index) => (
-                              <Badge key={index} variant="outline" className="text-red-600 bg-red-50 border-red-200">
+                              <Badge key={index} variant="outline" className="text-red-600 bg-red-50 border-red-200 px-3 py-1">
                                 {allergy}
                               </Badge>
                             ))}
                           </div>
                         </div>
+                        
                         <div>
-                          <p className="text-sm font-medium text-gray-500 mb-1">Medical Conditions</p>
-                          <div className="flex flex-wrap gap-1">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Medical Conditions</p>
+                          <div className="flex flex-wrap gap-2">
                             {mockPatientData.medicalConditions.map((condition, index) => (
-                              <Badge key={index} variant="outline" className="text-blue-600 bg-blue-50 border-blue-200">
+                              <Badge key={index} variant="outline" className="text-blue-600 bg-blue-50 border-blue-200 px-3 py-1">
                                 {condition}
                               </Badge>
                             ))}
                           </div>
                         </div>
+                        
                         <div>
-                          <p className="text-sm font-medium text-gray-500 mb-1">Medications</p>
-                          <div className="grid grid-cols-1 gap-2">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Medications</p>
+                          <div className="grid grid-cols-1 gap-3">
                             {mockPatientData.medications.map((medication, index) => (
-                              <div key={index} className="flex items-center justify-between border rounded-md p-2 bg-gray-50">
-                                <div>
-                                  <p className="font-medium text-sm">{medication.name} ({medication.dosage})</p>
-                                  <p className="text-xs text-gray-500">{medication.frequency} - {medication.purpose}</p>
+                              <div key={index} className="flex items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="mr-3 p-2 bg-blue-100 rounded-lg">
+                                  <Pill className="h-5 w-5 text-blue-600" />
+                                </div>
+                                <div className="flex-1">
+                                  <p className="font-medium">{medication.name} ({medication.dosage})</p>
+                                  <p className="text-sm text-gray-500">{medication.frequency} - {medication.purpose}</p>
                                 </div>
                                 <ChevronRight className="h-4 w-4 text-gray-400" />
                               </div>
@@ -360,34 +388,40 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ carePlan, onClos
                 
                 {/* About Me Tab */}
                 <TabsContent value="aboutme" className="space-y-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">Preferences</CardTitle>
+                  <Card className="shadow-md border-blue-100 overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 pb-2">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Info className="h-5 w-5 text-blue-600" />
+                        Preferences
+                      </CardTitle>
                       <CardDescription>Personal preferences to be aware of when providing care</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-1">
+                    <CardContent className="p-5">
+                      <ul className="space-y-2">
                         {mockPatientData.aboutMe.preferences.map((pref, index) => (
-                          <li key={index} className="text-sm flex items-start">
-                            <span className="h-5 w-5 mr-2 text-blue-500 flex-shrink-0">•</span>
-                            {pref}
+                          <li key={index} className="flex items-start p-2 bg-gray-50 rounded-lg border border-gray-100">
+                            <span className="text-blue-600 mr-2 flex-shrink-0">•</span>
+                            <span className="text-gray-700">{pref}</span>
                           </li>
                         ))}
                       </ul>
                     </CardContent>
                   </Card>
                   
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">Daily Routines</CardTitle>
+                  <Card className="shadow-md border-blue-100 overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 pb-2">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-blue-600" />
+                        Daily Routines
+                      </CardTitle>
                       <CardDescription>Regular activities and schedule preferences</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-1">
+                    <CardContent className="p-5">
+                      <ul className="space-y-2">
                         {mockPatientData.aboutMe.routines.map((routine, index) => (
-                          <li key={index} className="text-sm flex items-start">
-                            <span className="h-5 w-5 mr-2 text-blue-500 flex-shrink-0">•</span>
-                            {routine}
+                          <li key={index} className="flex items-start p-2 bg-gray-50 rounded-lg border border-gray-100">
+                            <span className="text-blue-600 mr-2 flex-shrink-0">•</span>
+                            <span className="text-gray-700">{routine}</span>
                           </li>
                         ))}
                       </ul>
@@ -395,32 +429,36 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ carePlan, onClos
                   </Card>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">Interests & Hobbies</CardTitle>
+                    <Card className="shadow-md border-blue-100 overflow-hidden">
+                      <CardHeader className="bg-gradient-to-r from-gray-50 to-green-50 pb-2">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <span className="text-green-600">Interests & Hobbies</span>
+                        </CardTitle>
                       </CardHeader>
-                      <CardContent>
-                        <ul className="space-y-1">
+                      <CardContent className="p-5">
+                        <ul className="space-y-2">
                           {mockPatientData.aboutMe.interests.map((interest, index) => (
-                            <li key={index} className="text-sm flex items-start">
-                              <span className="h-5 w-5 mr-2 text-green-500 flex-shrink-0">•</span>
-                              {interest}
+                            <li key={index} className="flex items-start p-2 bg-gray-50 rounded-lg border border-gray-100">
+                              <span className="text-green-600 mr-2 flex-shrink-0">•</span>
+                              <span className="text-gray-700">{interest}</span>
                             </li>
                           ))}
                         </ul>
                       </CardContent>
                     </Card>
                     
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">Dislikes & Concerns</CardTitle>
+                    <Card className="shadow-md border-blue-100 overflow-hidden">
+                      <CardHeader className="bg-gradient-to-r from-gray-50 to-red-50 pb-2">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <span className="text-red-600">Dislikes & Concerns</span>
+                        </CardTitle>
                       </CardHeader>
-                      <CardContent>
-                        <ul className="space-y-1">
+                      <CardContent className="p-5">
+                        <ul className="space-y-2">
                           {mockPatientData.aboutMe.dislikes.map((dislike, index) => (
-                            <li key={index} className="text-sm flex items-start">
-                              <span className="h-5 w-5 mr-2 text-red-500 flex-shrink-0">•</span>
-                              {dislike}
+                            <li key={index} className="flex items-start p-2 bg-gray-50 rounded-lg border border-gray-100">
+                              <span className="text-red-600 mr-2 flex-shrink-0">•</span>
+                              <span className="text-gray-700">{dislike}</span>
                             </li>
                           ))}
                         </ul>
@@ -431,29 +469,37 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ carePlan, onClos
                 
                 {/* Goals Tab */}
                 <TabsContent value="goals" className="space-y-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">Care Goals</CardTitle>
+                  <Card className="shadow-md border-blue-100 overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 pb-2">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <FileCheck className="h-5 w-5 text-blue-600" />
+                        Care Goals
+                      </CardTitle>
                       <CardDescription>Tracking progress toward objectives</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-5">
                       <div className="space-y-4">
                         {mockPatientData.goals.map((goal, index) => (
-                          <div key={index} className="border rounded-lg p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <h3 className="font-medium">{goal.title}</h3>
+                          <div key={index} className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                            <div className="flex items-center justify-between p-3 border-b bg-gray-50">
+                              <h3 className="font-medium flex items-center">
+                                <FileCheck className="h-4 w-4 mr-2 text-blue-600" />
+                                {goal.title}
+                              </h3>
                               <Badge variant="outline" className={getStatusBadgeClass(goal.status)}>
                                 {goal.status}
                               </Badge>
                             </div>
-                            <div className="space-y-2">
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Target</p>
-                                <p className="text-sm">{goal.target}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Notes</p>
-                                <p className="text-sm">{goal.notes}</p>
+                            <div className="p-3">
+                              <div className="grid grid-cols-1 gap-3">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500 mb-1">Target</p>
+                                  <p className="p-2 bg-gray-50 rounded border border-gray-100">{goal.target}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500 mb-1">Notes</p>
+                                  <p className="p-2 bg-gray-50 rounded border border-gray-100">{goal.notes}</p>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -465,22 +511,23 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ carePlan, onClos
                 
                 {/* Activities Tab */}
                 <TabsContent value="activities" className="space-y-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">Recent Activities</CardTitle>
+                  <Card className="shadow-md border-blue-100 overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 pb-2">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-blue-600" />
+                        Recent Activities
+                      </CardTitle>
                       <CardDescription>Care activities and interventions</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-5">
                       <div className="space-y-4">
                         {mockPatientData.activities.map((activity, index) => (
                           <div key={index} className="flex items-start border-b last:border-0 pb-3 last:pb-0">
-                            <div className="w-12 text-center flex-shrink-0">
-                              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mx-auto">
-                                <Calendar className="h-5 w-5 text-blue-600" />
-                              </div>
+                            <div className="p-2 bg-blue-100 rounded-full flex-shrink-0">
+                              <Calendar className="h-5 w-5 text-blue-600" />
                             </div>
                             <div className="ml-4 flex-1">
-                              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-1">
+                              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
                                 <p className="font-medium">{activity.action}</p>
                                 <p className="text-sm text-gray-500">{format(activity.date, 'MMM dd, yyyy')}</p>
                               </div>
@@ -500,33 +547,38 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ carePlan, onClos
                 
                 {/* Notes Tab */}
                 <TabsContent value="notes" className="space-y-4">
-                  <Card>
-                    <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                  <Card className="shadow-md border-blue-100 overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 pb-2 flex flex-row items-center justify-between">
                       <div>
-                        <CardTitle className="text-lg">Care Notes</CardTitle>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <MessageCircle className="h-5 w-5 text-blue-600" />
+                          Care Notes
+                        </CardTitle>
                         <CardDescription>Observations and updates</CardDescription>
                       </div>
-                      <Button size="sm">
+                      <Button size="sm" className="bg-blue-600">
                         <MessageCircle className="h-4 w-4 mr-2" />
                         Add Note
                       </Button>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-5">
                       <div className="space-y-4">
                         {mockPatientData.notes.map((note, index) => (
-                          <div key={index} className="border rounded-lg p-4">
-                            <div className="flex items-center justify-between mb-2">
+                          <div key={index} className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+                            <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center">
-                                <Avatar className="h-6 w-6 mr-2">
-                                  <div className="bg-blue-100 text-blue-600 w-full h-full flex items-center justify-center text-xs">
+                                <Avatar className="h-7 w-7 mr-2">
+                                  <div className="bg-blue-600 text-white w-full h-full flex items-center justify-center text-xs font-bold">
                                     {note.author.split(' ').map(n => n[0]).join('')}
                                   </div>
                                 </Avatar>
-                                <p className="font-medium text-sm">{note.author}</p>
+                                <p className="font-medium">{note.author}</p>
                               </div>
-                              <p className="text-xs text-gray-500">{format(note.date, 'MMM dd, yyyy')}</p>
+                              <p className="text-sm text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
+                                {format(note.date, 'MMM dd, yyyy')}
+                              </p>
                             </div>
-                            <p className="text-sm">{note.content}</p>
+                            <p className="p-3 bg-gray-50 rounded-lg border border-gray-100">{note.content}</p>
                           </div>
                         ))}
                       </div>
@@ -536,31 +588,34 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ carePlan, onClos
                 
                 {/* Documents Tab */}
                 <TabsContent value="documents" className="space-y-4">
-                  <Card>
-                    <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                  <Card className="shadow-md border-blue-100 overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 pb-2 flex flex-row items-center justify-between">
                       <div>
-                        <CardTitle className="text-lg">Related Documents</CardTitle>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <FileText className="h-5 w-5 text-blue-600" />
+                          Related Documents
+                        </CardTitle>
                         <CardDescription>Reports and medical documentation</CardDescription>
                       </div>
-                      <Button size="sm">
+                      <Button size="sm" className="bg-blue-600">
                         <FileText className="h-4 w-4 mr-2" />
                         Upload
                       </Button>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
+                    <CardContent className="p-5">
+                      <div className="space-y-3">
                         {mockPatientData.documents.map((doc, index) => (
-                          <div key={index} className="flex items-center justify-between border rounded-md p-3 hover:bg-gray-50 cursor-pointer">
+                          <div key={index} className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                             <div className="flex items-center">
-                              <div className="h-10 w-10 rounded bg-blue-100 flex items-center justify-center mr-3">
+                              <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center mr-3">
                                 <FileText className="h-5 w-5 text-blue-600" />
                               </div>
                               <div>
-                                <p className="font-medium text-sm">{doc.name}</p>
+                                <p className="font-medium">{doc.name}</p>
                                 <p className="text-xs text-gray-500">By {doc.author} • {format(doc.date, 'MMM dd, yyyy')}</p>
                               </div>
                             </div>
-                            <Badge variant="outline">{doc.type}</Badge>
+                            <Badge variant="outline" className="px-3 py-1 bg-gray-50">{doc.type}</Badge>
                           </div>
                         ))}
                       </div>
@@ -570,22 +625,25 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ carePlan, onClos
                 
                 {/* Assessments Tab */}
                 <TabsContent value="assessments" className="space-y-4">
-                  <Card>
-                    <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                  <Card className="shadow-md border-blue-100 overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 pb-2 flex flex-row items-center justify-between">
                       <div>
-                        <CardTitle className="text-lg">Clinical Assessments</CardTitle>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <AlertTriangle className="h-5 w-5 text-blue-600" />
+                          Clinical Assessments
+                        </CardTitle>
                         <CardDescription>Evaluations and findings</CardDescription>
                       </div>
-                      <Button size="sm">
+                      <Button size="sm" className="bg-blue-600">
                         <FileCheck className="h-4 w-4 mr-2" />
                         New Assessment
                       </Button>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-5">
                       <div className="space-y-4">
                         {mockPatientData.assessments.map((assessment, index) => (
-                          <div key={index} className="border rounded-lg p-4">
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
+                          <div key={index} className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between p-3 border-b bg-gray-50">
                               <div className="flex items-center">
                                 <FileCheck className="h-5 w-5 text-blue-600 mr-2" />
                                 <h3 className="font-medium">{assessment.name}</h3>
@@ -597,14 +655,14 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ carePlan, onClos
                                 </Badge>
                               </div>
                             </div>
-                            <div className="space-y-2">
+                            <div className="p-3 space-y-3">
                               <div>
-                                <p className="text-sm font-medium text-gray-500">Performed By</p>
-                                <p className="text-sm">{assessment.performer}</p>
+                                <p className="text-sm font-medium text-gray-500 mb-1">Performed By</p>
+                                <p className="p-2 bg-gray-50 rounded border border-gray-100">{assessment.performer}</p>
                               </div>
                               <div>
-                                <p className="text-sm font-medium text-gray-500">Results</p>
-                                <p className="text-sm">{assessment.results}</p>
+                                <p className="text-sm font-medium text-gray-500 mb-1">Results</p>
+                                <p className="p-2 bg-gray-50 rounded border border-gray-100">{assessment.results}</p>
                               </div>
                             </div>
                           </div>
@@ -621,4 +679,3 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ carePlan, onClos
     </div>
   );
 };
-

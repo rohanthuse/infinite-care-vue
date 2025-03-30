@@ -397,133 +397,153 @@ const CarePlanView = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       <BranchInfoHeader 
         branchId={branchId || ""} 
         branchName={branchName || ""} 
         onNewBooking={handleNewBooking} 
       />
       
-      <div className="flex-1 p-6 space-y-6">
+      <div className="flex-1 p-4 md:p-6 space-y-6">
         <TabNavigation
           activeTab="care-plan"
           onChange={(tab) => navigate(`/branch-dashboard/${branchId}/${branchName}/${tab}`)}
         />
         
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-          {/* Page Header with Logo */}
-          <div className="border-b pb-4 mb-6">
-            <div className="flex items-center justify-between">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-md overflow-hidden">
+          {/* Enhanced Header with Logo */}
+          <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-b p-6">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
-                <div className="mr-4 bg-blue-50 p-2 rounded-lg">
-                  <h3 className="text-blue-700 font-bold">Med-Infinite</h3>
+                <div className="mr-4 bg-white p-3 rounded-lg shadow-sm border border-blue-200">
+                  <h3 className="text-blue-700 text-lg font-bold">Med-Infinite</h3>
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold">Care Plan Management</h1>
-                  <p className="text-gray-500">Comprehensive patient care documentation</p>
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Care Plan Management</h1>
+                  <p className="text-gray-600">Comprehensive patient care documentation</p>
                 </div>
               </div>
             </div>
-          </div>
-          
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan`)}
-                className="h-8 w-8 rounded-full"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <h1 className="text-2xl font-bold">Care Plan Details</h1>
-            </div>
             
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" onClick={handlePrintCarePlan} className="flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                <span>Export</span>
-              </Button>
-              <Button variant="outline" className="flex items-center gap-2">
-                <FileEdit className="h-4 w-4" />
-                <span>Edit</span>
-              </Button>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan`)}
+                  className="h-9 w-9 rounded-full bg-white shadow-sm border border-gray-200"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <h2 className="text-xl md:text-2xl font-bold text-gray-800">Care Plan Details</h2>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <Button variant="outline" onClick={handlePrintCarePlan} className="flex items-center gap-2 bg-white">
+                  <Download className="h-4 w-4" />
+                  <span>Export PDF</span>
+                </Button>
+                <Button variant="default" className="flex items-center gap-2">
+                  <FileEdit className="h-4 w-4" />
+                  <span>Edit Plan</span>
+                </Button>
+              </div>
             </div>
           </div>
           
           {carePlan && (
-            <div className="flex flex-col space-y-6">
-              {/* Patient Header */}
-              <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg font-medium">
+            <div className="p-6">
+              {/* Patient Header - Enhanced */}
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-4 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-blue-100 shadow-sm mb-6">
+                <div className="w-20 h-20 rounded-xl bg-blue-600 text-white flex items-center justify-center text-2xl font-bold shadow-md">
                   {carePlan.avatar}
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold">{carePlan.patientName}</h2>
-                  <div className="flex items-center space-x-2 text-sm text-gray-500">
-                    <span>Patient ID: {carePlan.patientId}</span>
-                    <span>•</span>
-                    <span>Plan ID: {carePlan.id}</span>
-                    <span>•</span>
-                    <Badge variant="outline" className={getStatusBadgeClass(carePlan.status)}>
+                <div className="flex-1">
+                  <h2 className="text-2xl md:text-3xl font-bold">{carePlan.patientName}</h2>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-2 text-sm">
+                    <div className="flex items-center px-3 py-1 bg-blue-50 rounded-full border border-blue-100">
+                      <User className="h-3 w-3 mr-1 text-blue-600" />
+                      <span>Patient ID: {carePlan.patientId}</span>
+                    </div>
+                    <div className="flex items-center px-3 py-1 bg-blue-50 rounded-full border border-blue-100">
+                      <FileText className="h-3 w-3 mr-1 text-blue-600" />
+                      <span>Plan ID: {carePlan.id}</span>
+                    </div>
+                    <Badge variant="outline" className={`${getStatusBadgeClass(carePlan.status)} px-3 py-1 rounded-full`}>
                       {carePlan.status}
                     </Badge>
                   </div>
                 </div>
+                <div className="flex flex-col items-start md:items-end text-sm">
+                  <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100 mb-2">
+                    <Calendar className="h-3 w-3 text-blue-600" />
+                    <span>Created: {format(carePlan.dateCreated, 'MMM dd, yyyy')}</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100">
+                    <Clock className="h-3 w-3 text-blue-600" />
+                    <span>Updated: {format(carePlan.lastUpdated, 'MMM dd, yyyy')}</span>
+                  </div>
+                </div>
               </div>
               
-              <div className="flex flex-col md:flex-row gap-6">
-                {/* Left sidebar */}
-                <div className="w-full md:w-1/4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">Care Plan Summary</CardTitle>
+              <div className="flex flex-col lg:flex-row gap-6">
+                {/* Left sidebar - Enhanced */}
+                <div className="w-full lg:w-1/4">
+                  <Card className="sticky top-6 shadow-md border-blue-100 overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 pb-3">
+                      <CardTitle className="text-lg text-gray-800">Care Plan Summary</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 p-4">
                       <div>
-                        <p className="text-sm font-medium text-gray-500">Status</p>
-                        <Badge variant="outline" className={getStatusBadgeClass(carePlan.status)}>
+                        <p className="text-sm font-medium text-gray-500 mb-1">Status</p>
+                        <Badge variant="outline" className={`${getStatusBadgeClass(carePlan.status)} text-sm py-1 px-3`}>
                           {carePlan.status}
                         </Badge>
                       </div>
                       
                       <div>
-                        <p className="text-sm font-medium text-gray-500">Assigned To</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Avatar className="h-6 w-6">
-                            <div className="bg-blue-100 text-blue-600 w-full h-full flex items-center justify-center text-xs">
+                        <p className="text-sm font-medium text-gray-500 mb-1">Assigned To</p>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-7 w-7 border-2 border-white shadow-sm">
+                            <div className="bg-blue-600 text-white w-full h-full flex items-center justify-center text-xs font-bold">
                               {carePlan.assignedTo.split(' ').map(n => n[0]).join('')}
                             </div>
                           </Avatar>
-                          <span className="text-sm">{carePlan.assignedTo}</span>
+                          <span className="text-sm font-medium">{carePlan.assignedTo}</span>
                         </div>
                       </div>
                       
                       <div>
-                        <p className="text-sm font-medium text-gray-500">Created On</p>
-                        <p className="text-sm">{format(carePlan.dateCreated, 'MMM dd, yyyy')}</p>
+                        <p className="text-sm font-medium text-gray-500 mb-1">Created On</p>
+                        <p className="text-sm flex items-center">
+                          <Calendar className="h-3 w-3 mr-1 text-blue-600" />
+                          {format(carePlan.dateCreated, 'MMM dd, yyyy')}
+                        </p>
                       </div>
                       
                       <div>
-                        <p className="text-sm font-medium text-gray-500">Last Updated</p>
-                        <p className="text-sm">{format(carePlan.lastUpdated, 'MMM dd, yyyy')}</p>
+                        <p className="text-sm font-medium text-gray-500 mb-1">Last Updated</p>
+                        <p className="text-sm flex items-center">
+                          <Clock className="h-3 w-3 mr-1 text-blue-600" />
+                          {format(carePlan.lastUpdated, 'MMM dd, yyyy')}
+                        </p>
                       </div>
                       
-                      <Separator />
+                      <Separator className="my-2" />
                       
                       <div>
-                        <p className="text-sm font-medium text-gray-500 mb-2">Quick Actions</p>
+                        <p className="text-sm font-medium text-gray-700 mb-2">Quick Actions</p>
                         <div className="space-y-2">
-                          <Button variant="outline" size="sm" className="w-full justify-start">
-                            <MessageCircle className="h-4 w-4 mr-2" />
+                          <Button variant="outline" size="sm" className="w-full justify-start bg-white hover:bg-blue-50 border-blue-100">
+                            <MessageCircle className="h-4 w-4 mr-2 text-blue-600" />
                             <span>Add Note</span>
                           </Button>
-                          <Button variant="outline" size="sm" className="w-full justify-start">
-                            <Clock className="h-4 w-4 mr-2" />
+                          <Button variant="outline" size="sm" className="w-full justify-start bg-white hover:bg-blue-50 border-blue-100">
+                            <Clock className="h-4 w-4 mr-2 text-blue-600" />
                             <span>Schedule Follow-up</span>
                           </Button>
-                          <Button variant="outline" size="sm" className="w-full justify-start">
-                            <Activity className="h-4 w-4 mr-2" />
+                          <Button variant="outline" size="sm" className="w-full justify-start bg-white hover:bg-blue-50 border-blue-100">
+                            <Activity className="h-4 w-4 mr-2 text-blue-600" />
                             <span>Record Activity</span>
                           </Button>
                         </div>
@@ -532,510 +552,74 @@ const CarePlanView = () => {
                   </Card>
                 </div>
                 
-                {/* Main content */}
-                <div className="w-full md:w-3/4">
+                {/* Main content - Enhanced */}
+                <div className="w-full lg:w-3/4">
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="w-full justify-start overflow-x-auto mb-4">
-                      <TabsTrigger value="personal" className="flex items-center gap-1">
-                        <User className="h-4 w-4" />
-                        <span>Personal</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="aboutme" className="flex items-center gap-1">
-                        <Info className="h-4 w-4" />
-                        <span>About Me</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="goals" className="flex items-center gap-1">
-                        <FileCheck className="h-4 w-4" />
-                        <span>Goals</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="equipment" className="flex items-center gap-1">
-                        <Wrench className="h-4 w-4" />
-                        <span>Equipment</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="dietary" className="flex items-center gap-1">
-                        <Utensils className="h-4 w-4" />
-                        <span>Dietary</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="personal-care" className="flex items-center gap-1">
-                        <Bath className="h-4 w-4" />
-                        <span>Personal Care</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="risk" className="flex items-center gap-1">
-                        <ShieldAlert className="h-4 w-4" />
-                        <span>Risk</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="service-plan" className="flex items-center gap-1">
-                        <ClipboardList className="h-4 w-4" />
-                        <span>Service Plan</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="actions" className="flex items-center gap-1">
-                        <FileBarChart2 className="h-4 w-4" />
-                        <span>Service Actions</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="activities" className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>Activities</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="notes" className="flex items-center gap-1">
-                        <MessageCircle className="h-4 w-4" />
-                        <span>Notes</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="documents" className="flex items-center gap-1">
-                        <FileText className="h-4 w-4" />
-                        <span>Documents</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="assessments" className="flex items-center gap-1">
-                        <AlertTriangle className="h-4 w-4" />
-                        <span>Assessments</span>
-                      </TabsTrigger>
-                    </TabsList>
+                    <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-t-lg border border-blue-100 p-2 sticky top-0 z-10">
+                      <TabsList className="w-full bg-white/80 backdrop-blur-sm border border-gray-100 rounded-lg shadow-sm">
+                        <TabsTrigger value="personal" className="flex items-center gap-1">
+                          <User className="h-4 w-4" />
+                          <span>Personal</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="aboutme" className="flex items-center gap-1">
+                          <Info className="h-4 w-4" />
+                          <span>About Me</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="goals" className="flex items-center gap-1">
+                          <FileCheck className="h-4 w-4" />
+                          <span>Goals</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="equipment" className="flex items-center gap-1">
+                          <Wrench className="h-4 w-4" />
+                          <span>Equipment</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="dietary" className="flex items-center gap-1">
+                          <Utensils className="h-4 w-4" />
+                          <span>Dietary</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="personal-care" className="flex items-center gap-1">
+                          <Bath className="h-4 w-4" />
+                          <span>Personal Care</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="risk" className="flex items-center gap-1">
+                          <ShieldAlert className="h-4 w-4" />
+                          <span>Risk</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="service-plan" className="flex items-center gap-1">
+                          <ClipboardList className="h-4 w-4" />
+                          <span>Service Plan</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="actions" className="flex items-center gap-1">
+                          <FileBarChart2 className="h-4 w-4" />
+                          <span>Service Actions</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="activities" className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>Activities</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="notes" className="flex items-center gap-1">
+                          <MessageCircle className="h-4 w-4" />
+                          <span>Notes</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="documents" className="flex items-center gap-1">
+                          <FileText className="h-4 w-4" />
+                          <span>Documents</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="assessments" className="flex items-center gap-1">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span>Assessments</span>
+                        </TabsTrigger>
+                      </TabsList>
+                    </div>
                     
-                    {/* Personal Information Tab */}
-                    <TabsContent value="personal" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Personal Information</CardTitle>
+                    {/* Personal Information Tab - Enhanced */}
+                    <TabsContent value="personal" className="space-y-6 mt-6">
+                      <Card className="overflow-hidden shadow-sm border-blue-100">
+                        <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 pb-3">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <User className="h-5 w-5 text-blue-600" />
+                            Personal Information
+                          </CardTitle>
+                          <CardDescription>Basic patient demographic information</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Full Name</p>
-                              <p className="text-sm">{carePlan.patientName}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Patient ID</p>
-                              <p className="text-sm">{carePlan.patientId}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Gender</p>
-                              <p className="text-sm">{mockPatientData.gender}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Date of Birth</p>
-                              <p className="text-sm">{format(mockPatientData.dateOfBirth, 'MMM dd, yyyy')} (Age: {new Date().getFullYear() - mockPatientData.dateOfBirth.getFullYear()})</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Address</p>
-                              <p className="text-sm">{mockPatientData.address}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Phone</p>
-                              <p className="text-sm">{mockPatientData.phone}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Email</p>
-                              <p className="text-sm">{mockPatientData.email}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Preferred Language</p>
-                              <p className="text-sm">{mockPatientData.preferredLanguage}</p>
-                            </div>
-                            <div className="md:col-span-2">
-                              <p className="text-sm font-medium text-gray-500">Emergency Contact</p>
-                              <p className="text-sm">{mockPatientData.emergencyContact}</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Medical Information</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <div>
-                              <p className="text-sm font-medium text-gray-500 mb-1">Allergies</p>
-                              <div className="flex flex-wrap gap-1">
-                                {mockPatientData.allergies.map((allergy, index) => (
-                                  <Badge key={index} variant="outline" className="text-red-600 bg-red-50 border-red-200">
-                                    {allergy}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500 mb-1">Medical Conditions</p>
-                              <div className="flex flex-wrap gap-1">
-                                {mockPatientData.medicalConditions.map((condition, index) => (
-                                  <Badge key={index} variant="outline" className="text-blue-600 bg-blue-50 border-blue-200">
-                                    {condition}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500 mb-1">Medications</p>
-                              <div className="grid grid-cols-1 gap-2">
-                                {mockPatientData.medications.map((medication, index) => (
-                                  <div key={index} className="flex items-center justify-between border rounded-md p-2 bg-gray-50">
-                                    <div>
-                                      <p className="font-medium text-sm">{medication.name} ({medication.dosage})</p>
-                                      <p className="text-xs text-gray-500">{medication.frequency} - {medication.purpose}</p>
-                                    </div>
-                                    <ChevronRight className="h-4 w-4 text-gray-400" />
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    {/* About Me Tab */}
-                    <TabsContent value="aboutme" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">About Me</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Preferences</p>
-                              <ul className="list-disc list-inside">
-                                {mockPatientData.aboutMe.preferences.map((pref, index) => (
-                                  <li key={index} className="text-sm">{pref}</li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Routines</p>
-                              <ul className="list-disc list-inside">
-                                {mockPatientData.aboutMe.routines.map((routine, index) => (
-                                  <li key={index} className="text-sm">{routine}</li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Interests</p>
-                              <ul className="list-disc list-inside">
-                                {mockPatientData.aboutMe.interests.map((interest, index) => (
-                                  <li key={index} className="text-sm">{interest}</li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Dislikes</p>
-                              <ul className="list-disc list-inside">
-                                {mockPatientData.aboutMe.dislikes.map((dislike, index) => (
-                                  <li key={index} className="text-sm">{dislike}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    {/* Goals Tab */}
-                    <TabsContent value="goals" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Goals</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {mockPatientData.goals.map((goal, index) => (
-                              <div key={index} className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-500">{goal.title}</p>
-                                  <p className="text-sm text-gray-500">{goal.status}</p>
-                                </div>
-                                <p className="text-sm text-gray-500">{goal.target}</p>
-                                <p className="text-sm text-gray-500">{goal.notes}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    {/* Equipment Tab */}
-                    <TabsContent value="equipment" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Equipment</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {mockPatientData.equipment.map((equipment, index) => (
-                              <div key={index} className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-500">{equipment.name}</p>
-                                  <p className="text-sm text-gray-500">{equipment.type}</p>
-                                </div>
-                                <p className="text-sm text-gray-500">{equipment.status}</p>
-                                <p className="text-sm text-gray-500">{equipment.notes}</p>
-                                <p className="text-sm text-gray-500">{format(equipment.lastInspection, 'MMM dd, yyyy')}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    {/* Dietary Tab */}
-                    <TabsContent value="dietary" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Dietary</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Dietary Restrictions</p>
-                              <div className="flex flex-wrap gap-1">
-                                {mockPatientData.dietaryRequirements.restrictions.map((restriction, index) => (
-                                  <Badge key={index} variant="outline" className="text-red-600 bg-red-50 border-red-200">
-                                    {restriction.name}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Meal Preferences</p>
-                              <div className="flex flex-wrap gap-1">
-                                {mockPatientData.dietaryRequirements.preferences.map((pref, index) => (
-                                  <Badge key={index} variant="outline" className="text-blue-600 bg-blue-50 border-blue-200">
-                                    {pref}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Hydration Plan</p>
-                              <p className="text-sm">{mockPatientData.dietaryRequirements.hydrationPlan}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Nutritional Notes</p>
-                              <p className="text-sm">{mockPatientData.dietaryRequirements.nutritionalNotes}</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    {/* Personal Care Tab */}
-                    <TabsContent value="personal-care" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Personal Care</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Routines</p>
-                              <ul className="list-disc list-inside">
-                                {mockPatientData.personalCare.routines.map((routine, index) => (
-                                  <li key={index} className="text-sm">{routine.activity} ({routine.frequency})</li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Preferences</p>
-                              <ul className="list-disc list-inside">
-                                {mockPatientData.personalCare.preferences.map((pref, index) => (
-                                  <li key={index} className="text-sm">{pref}</li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Mobility</p>
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm">{mockPatientData.personalCare.mobility.status}</p>
-                                <p className="text-sm">{mockPatientData.personalCare.mobility.transferAbility}</p>
-                                <p className="text-sm">{mockPatientData.personalCare.mobility.walkingDistance}</p>
-                                <p className="text-sm">{mockPatientData.personalCare.mobility.stairs}</p>
-                                <p className="text-sm">{mockPatientData.personalCare.mobility.notes}</p>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    {/* Risk Tab */}
-                    <TabsContent value="risk" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Risk</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {mockPatientData.riskAssessments.map((risk, index) => (
-                              <div key={index} className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-500">{risk.type}</p>
-                                  <p className="text-sm text-gray-500">{risk.level}</p>
-                                </div>
-                                <p className="text-sm text-gray-500">{format(risk.lastAssessed, 'MMM dd, yyyy')}</p>
-                                <p className="text-sm text-gray-500">{risk.assessedBy}</p>
-                                <p className="text-sm text-gray-500">{risk.mitigationPlan}</p>
-                                <p className="text-sm text-gray-500">{format(risk.reviewDate, 'MMM dd, yyyy')}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    {/* Service Plan Tab */}
-                    <TabsContent value="service-plan" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Service Plan</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {mockPatientData.serviceActions.map((service, index) => (
-                              <div key={index} className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-500">{service.service}</p>
-                                  <p className="text-sm text-gray-500">{service.provider}</p>
-                                </div>
-                                <p className="text-sm text-gray-500">{service.frequency}</p>
-                                <p className="text-sm text-gray-500">{service.duration}</p>
-                                <p className="text-sm text-gray-500">{service.schedule}</p>
-                                <p className="text-sm text-gray-500">{service.goals.map((goal, goalIndex) => (
-                                  <span key={goalIndex} className="text-sm">{goal}</span>
-                                ))}</p>
-                                <p className="text-sm text-gray-500">{service.progress}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    {/* Service Actions Tab */}
-                    <TabsContent value="actions" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Service Actions</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {mockPatientData.serviceActions.map((service, index) => (
-                              <div key={index} className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-500">{service.service}</p>
-                                  <p className="text-sm text-gray-500">{service.provider}</p>
-                                </div>
-                                <p className="text-sm text-gray-500">{service.frequency}</p>
-                                <p className="text-sm text-gray-500">{service.duration}</p>
-                                <p className="text-sm text-gray-500">{service.schedule}</p>
-                                <p className="text-sm text-gray-500">{service.goals.map((goal, goalIndex) => (
-                                  <span key={goalIndex} className="text-sm">{goal}</span>
-                                ))}</p>
-                                <p className="text-sm text-gray-500">{service.progress}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    {/* Activities Tab */}
-                    <TabsContent value="activities" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Activities</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {mockPatientData.activities.map((activity, index) => (
-                              <div key={index} className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-500">{activity.action}</p>
-                                  <p className="text-sm text-gray-500">{activity.performer}</p>
-                                </div>
-                                <p className="text-sm text-gray-500">{activity.status}</p>
-                                <p className="text-sm text-gray-500">{format(activity.date, 'MMM dd, yyyy')}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    {/* Notes Tab */}
-                    <TabsContent value="notes" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Notes</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {mockPatientData.notes.map((note, index) => (
-                              <div key={index} className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-500">{note.author}</p>
-                                  <p className="text-sm text-gray-500">{format(note.date, 'MMM dd, yyyy')}</p>
-                                </div>
-                                <p className="text-sm text-gray-500">{note.content}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    {/* Documents Tab */}
-                    <TabsContent value="documents" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Documents</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {mockPatientData.documents.map((document, index) => (
-                              <div key={index} className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-500">{document.name}</p>
-                                  <p className="text-sm text-gray-500">{document.type}</p>
-                                </div>
-                                <p className="text-sm text-gray-500">{format(document.date, 'MMM dd, yyyy')}</p>
-                                <p className="text-sm text-gray-500">{document.author}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    {/* Assessments Tab */}
-                    <TabsContent value="assessments" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Assessments</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {mockPatientData.assessments.map((assessment, index) => (
-                              <div key={index} className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-500">{assessment.name}</p>
-                                  <p className="text-sm text-gray-500">{assessment.status}</p>
-                                </div>
-                                <p className="text-sm text-gray-500">{format(assessment.date, 'MMM dd, yyyy')}</p>
-                                <p className="text-sm text-gray-500">{assessment.performer}</p>
-                                <p className="text-sm text-gray-500">{assessment.results}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                  </Tabs>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default CarePlanView;
+                        <CardContent className="p-6">
