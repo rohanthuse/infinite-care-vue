@@ -7,7 +7,9 @@ import {
   ShieldAlert, Utensils, Bath, Wrench, ClipboardList, FileBarChart2,
   MapPin, Phone, Mail, Flag, Heart, AlertCircle, CircleUser, AlarmClock,
   Target, Award, CheckCircle, CheckCircle2, Hourglass, XCircle, BookOpen,
-  UserCog, Rocket, BrainCircuit, ArrowUpRight, List, ListChecks, Timeline
+  UserCog, Rocket, BrainCircuit, ArrowUpRight, List, ListChecks, 
+  // Add the missing icons
+  Plus, Share, Edit
 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -223,19 +225,352 @@ interface PatientData {
   serviceActions: ServiceAction[];
 }
 
-interface CarePlan {
-  id: string;
-  patientName: string;
-  patientId: string;
-  dateCreated: Date;
-  lastUpdated: Date;
-  status: string;
-  assignedTo: string;
-  avatar: string;
-}
-
+// Initialize mockPatientData with all required properties
 const mockPatientData: PatientData = {
-  // ... (same as original mockPatientData)
+  gender: "Male",
+  dateOfBirth: new Date("1950-06-15"),
+  address: "123 Main Street, Milton Keynes, MK9 3NZ",
+  phone: "+44 7700 900123",
+  email: "john.michael@example.com",
+  emergencyContact: "Sarah Michael (Daughter) - +44 7700 900456",
+  preferredLanguage: "English",
+  allergies: ["Penicillin", "Dust", "Pollen"],
+  medicalConditions: ["Type 2 Diabetes", "Hypertension", "Arthritis"],
+  medications: [
+    {
+      name: "Metformin",
+      dosage: "500mg",
+      frequency: "Twice daily",
+      purpose: "Diabetes management"
+    },
+    {
+      name: "Lisinopril",
+      dosage: "10mg",
+      frequency: "Once daily",
+      purpose: "Blood pressure control"
+    },
+    {
+      name: "Paracetamol",
+      dosage: "500mg",
+      frequency: "As needed",
+      purpose: "Pain relief"
+    }
+  ],
+  aboutMe: {
+    preferences: [
+      "Prefers to be called 'John' rather than 'Mr. Michael'",
+      "Likes to have a cup of tea before bed",
+      "Prefers shower in the morning rather than evening"
+    ],
+    routines: [
+      "Wakes up at 7:00 AM",
+      "Takes morning medication with breakfast at 8:00 AM",
+      "Afternoon walk at 2:00 PM weather permitting",
+      "Evening medication at 8:00 PM"
+    ],
+    interests: ["Reading", "Classical Music", "Chess", "Gardening", "History"],
+    dislikes: ["Loud environments", "Spicy food", "Being rushed"]
+  },
+  goals: [
+    {
+      title: "Improve mobility",
+      status: "In Progress",
+      target: "Walk without a cane by December",
+      notes: "Making good progress with physical therapy"
+    },
+    {
+      title: "Better diabetes management",
+      status: "Active",
+      target: "Maintain HbA1c below 7.0",
+      notes: "Diet adjustments needed"
+    }
+  ],
+  activities: [
+    {
+      date: new Date("2023-10-20"),
+      action: "Physical Therapy Session",
+      performer: "Sarah Johnson",
+      status: "Completed"
+    },
+    {
+      date: new Date("2023-10-18"),
+      action: "Blood Pressure Check",
+      performer: "Dr. Robert Chen",
+      status: "Completed"
+    }
+  ],
+  notes: [
+    {
+      date: new Date("2023-10-15"),
+      author: "Dr. Sarah Johnson",
+      content: "Patient reported increased pain in left knee. Recommended gentle exercises and temporary increase in pain medication."
+    },
+    {
+      date: new Date("2023-10-10"),
+      author: "Nurse Michael Smith",
+      content: "Medication review completed. No changes to current regimen needed."
+    }
+  ],
+  documents: [
+    {
+      name: "Hospital Discharge Summary",
+      date: new Date("2023-09-15"),
+      type: "Medical Record",
+      author: "Dr. Williams"
+    },
+    {
+      name: "Physical Therapy Plan",
+      date: new Date("2023-09-20"),
+      type: "Care Plan",
+      author: "Sarah Johnson, PT"
+    }
+  ],
+  assessments: [
+    {
+      name: "Cognitive Assessment",
+      date: new Date("2023-09-10"),
+      status: "Completed",
+      performer: "Dr. James Wilson",
+      results: "Normal cognitive function for age"
+    },
+    {
+      name: "Fall Risk Assessment",
+      date: new Date("2023-09-12"),
+      status: "Completed",
+      performer: "Sarah Johnson, PT",
+      results: "Moderate risk - preventive measures implemented"
+    }
+  ],
+  vitalSigns: [
+    {
+      date: new Date("2023-10-20"),
+      type: "Blood Pressure",
+      value: "138/85 mmHg",
+      notes: "Slightly elevated but within acceptable range"
+    },
+    {
+      date: new Date("2023-10-20"),
+      type: "Heart Rate",
+      value: "72 bpm",
+      notes: "Regular rhythm"
+    }
+  ],
+  careTeam: [
+    {
+      name: "Dr. Sarah Johnson",
+      role: "Primary Care Physician",
+      phone: "+44 7700 900789",
+      email: "s.johnson@medinfinite.com"
+    },
+    {
+      name: "Michael Smith",
+      role: "Registered Nurse",
+      phone: "+44 7700 900321",
+      email: "m.smith@medinfinite.com"
+    }
+  ],
+  familyContacts: [
+    {
+      name: "Sarah Michael",
+      relationship: "Daughter",
+      phone: "+44 7700 900456",
+      email: "sarah.michael@example.com",
+      isPrimary: true
+    },
+    {
+      name: "James Michael",
+      relationship: "Son",
+      phone: "+44 7700 900457",
+      email: "james.michael@example.com",
+      isPrimary: false
+    }
+  ],
+  nutrition: {
+    dietaryRestrictions: ["Low sodium", "Diabetic diet"],
+    mealPreferences: ["Enjoys fish", "Prefers vegetables to be well-cooked"],
+    hydrationPlan: "Minimum 8 glasses of water daily",
+    nutritionalNotes: "Monitor fruit intake due to diabetes"
+  },
+  socialWorker: {
+    name: "Emma Watson",
+    phone: "+44 7700 900654",
+    email: "e.watson@medinfinite.com",
+    lastVisit: new Date("2023-10-05"),
+    nextVisit: new Date("2023-11-05"),
+    notes: "Discussing community resources for social engagement"
+  },
+  equipment: [
+    {
+      name: "Walker",
+      type: "Mobility Aid",
+      status: "In use",
+      notes: "Patient using it for longer walks outside",
+      lastInspection: new Date("2023-09-01")
+    },
+    {
+      name: "Shower Chair",
+      type: "Bathroom Safety",
+      status: "In use",
+      notes: "Working well, no issues",
+      lastInspection: new Date("2023-09-01")
+    }
+  ],
+  dietaryRequirements: {
+    mealPlan: "Diabetic meal plan - 1800 calories daily",
+    restrictions: [
+      {
+        name: "Sugar",
+        reason: "Diabetes management",
+        severity: "High"
+      },
+      {
+        name: "Salt",
+        reason: "Hypertension management",
+        severity: "Moderate"
+      }
+    ],
+    preferences: ["Fish", "Chicken", "Green vegetables"],
+    supplements: [
+      {
+        name: "Vitamin D",
+        dosage: "1000 IU",
+        frequency: "Once daily",
+        purpose: "Bone health"
+      },
+      {
+        name: "Calcium",
+        dosage: "600mg",
+        frequency: "Once daily with meal",
+        purpose: "Bone health"
+      }
+    ],
+    notes: "Patient dislikes red meat",
+    hydrationPlan: "8-10 glasses of water daily",
+    nutritionalNotes: "Encourage whole grains and complex carbohydrates"
+  },
+  personalCare: {
+    routines: [
+      {
+        activity: "Bathing",
+        frequency: "Daily",
+        assistance: "Minimal assistance entering/exiting shower",
+        notes: "Prefers morning showers"
+      },
+      {
+        activity: "Grooming",
+        frequency: "Daily",
+        assistance: "Independent",
+        notes: "May need occasional reminders"
+      }
+    ],
+    preferences: ["Prefers electric razor", "Likes to wear own clothes"],
+    mobility: {
+      status: "Ambulatory with assistance",
+      transferAbility: "Requires minimal assistance",
+      walkingDistance: "Up to 100 meters with walker",
+      stairs: "Can manage 5-6 steps with handrail",
+      notes: "Better mobility in the morning, fatigue in evening"
+    }
+  },
+  riskAssessments: [
+    {
+      type: "Fall Risk",
+      level: "Moderate",
+      lastAssessed: new Date("2023-09-15"),
+      assessedBy: "Sarah Johnson, PT",
+      mitigationPlan: "Use of walker, removal of trip hazards, night light",
+      reviewDate: new Date("2023-12-15")
+    },
+    {
+      type: "Skin Integrity",
+      level: "Low",
+      lastAssessed: new Date("2023-09-15"),
+      assessedBy: "Michael Smith, RN",
+      mitigationPlan: "Regular position changes, proper hydration",
+      reviewDate: new Date("2023-12-15")
+    }
+  ],
+  individualizedPlan: {
+    longTermGoals: [
+      {
+        goal: "Improve mobility to walk independently",
+        targetDate: new Date("2024-03-01"),
+        status: "In Progress",
+        progress: "Currently using walker for support, working on strength exercises"
+      },
+      {
+        goal: "Better manage blood sugar levels",
+        targetDate: new Date("2023-12-31"),
+        status: "In Progress",
+        progress: "Diet adjustments ongoing, monitoring blood glucose regularly"
+      },
+      {
+        goal: "Increase social engagement",
+        targetDate: new Date("2024-01-15"),
+        status: "Not Started",
+        progress: "Planning to attend community center activities starting next month"
+      }
+    ],
+    strengths: [
+      "Strong motivation to improve health",
+      "Good cognitive function",
+      "Supportive family network",
+      "Adherent to medication regimen"
+    ],
+    challenges: [
+      "Mobility limitations due to arthritis",
+      "Managing multiple chronic conditions",
+      "Occasional memory lapses with daily routines",
+      "Limited social engagement outside family"
+    ],
+    preferences: [
+      "Prefers morning appointments",
+      "Likes to be involved in care decisions",
+      "Prefers detailed explanations of care changes",
+      "Values consistency in caregivers"
+    ]
+  },
+  serviceActions: [
+    {
+      service: "Physical Therapy",
+      provider: "Sarah Johnson, PT",
+      frequency: "Twice weekly",
+      duration: "45 minutes",
+      schedule: "Mondays and Thursdays at 10:00 AM",
+      goals: [
+        "Improve strength in lower extremities",
+        "Enhance balance and coordination",
+        "Increase walking distance without assistance"
+      ],
+      progress: "Showing steady improvement in strength and balance"
+    },
+    {
+      service: "Medication Management",
+      provider: "Michael Smith, RN",
+      frequency: "Weekly",
+      duration: "30 minutes",
+      schedule: "Wednesdays at 2:00 PM",
+      goals: [
+        "Ensure medication compliance",
+        "Monitor for side effects",
+        "Adjust medication timing for optimal effect"
+      ],
+      progress: "Good adherence to medication schedule, no significant side effects reported"
+    },
+    {
+      service: "Dietary Counseling",
+      provider: "Lisa Chen, Dietitian",
+      frequency: "Monthly",
+      duration: "60 minutes",
+      schedule: "First Tuesday of each month at 11:00 AM",
+      goals: [
+        "Optimize diabetic diet",
+        "Ensure adequate nutrition",
+        "Manage weight appropriately"
+      ],
+      progress: "Diet adjustments helping with blood sugar control, weight stable"
+    }
+  ]
 };
 
 const mockCarePlans: CarePlan[] = [
@@ -523,495 +858,4 @@ const CarePlanView = () => {
                                 <p className="text-xs font-medium text-gray-500">Date of Birth</p>
                                 <p className="text-sm font-medium">{format(mockPatientData.dateOfBirth, 'MMMM d, yyyy')} ({new Date().getFullYear() - mockPatientData.dateOfBirth.getFullYear()} years)</p>
                               </div>
-                              <div className="space-y-1 p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors duration-200">
-                                <p className="text-xs font-medium text-gray-500">Language</p>
-                                <p className="text-sm font-medium">{mockPatientData.preferredLanguage}</p>
-                              </div>
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <MapPin className="h-4 w-4 text-blue-600" />
-                                <h3 className="text-sm font-semibold">Address</h3>
-                              </div>
-                              <div className="bg-gray-50 p-3 rounded-lg hover:bg-blue-50 transition-colors duration-200">
-                                <p className="text-sm">{mockPatientData.address}</p>
-                              </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <Phone className="h-4 w-4 text-blue-600" />
-                                  <h3 className="text-sm font-semibold">Phone</h3>
-                                </div>
-                                <div className="bg-gray-50 p-3 rounded-lg hover:bg-blue-50 transition-colors duration-200">
-                                  <p className="text-sm">{mockPatientData.phone}</p>
-                                </div>
-                              </div>
-                              
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <Mail className="h-4 w-4 text-blue-600" />
-                                  <h3 className="text-sm font-semibold">Email</h3>
-                                </div>
-                                <div className="bg-gray-50 p-3 rounded-lg hover:bg-blue-50 transition-colors duration-200">
-                                  <p className="text-sm">{mockPatientData.email}</p>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <AlertCircle className="h-4 w-4 text-red-500" />
-                                <h3 className="text-sm font-semibold">Emergency Contact</h3>
-                              </div>
-                              <div className="bg-red-50 p-3 rounded-lg border border-red-100">
-                                <p className="text-sm">{mockPatientData.emergencyContact}</p>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                        
-                        <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border-blue-100">
-                          <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3">
-                            <div className="flex items-center gap-2">
-                              <Heart className="h-5 w-5 text-pink-500" />
-                              <CardTitle className="text-lg font-bold text-gray-800">About Me</CardTitle>
-                            </div>
-                            <CardDescription>Preferences, routines and interests</CardDescription>
-                          </CardHeader>
-                          <CardContent className="p-5 space-y-4">
-                            <div className="space-y-3">
-                              <div className="flex items-center gap-2">
-                                <Flag className="h-4 w-4 text-green-500" />
-                                <h3 className="text-sm font-semibold">Preferences</h3>
-                              </div>
-                              <div className="space-y-2">
-                                {mockPatientData.aboutMe.preferences.map((preference, index) => (
-                                  <div key={index} className="bg-green-50 p-3 rounded-lg border-l-4 border-green-200 hover:shadow-sm transition-all duration-200">
-                                    <p className="text-sm">{preference}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            
-                            <div className="space-y-3">
-                              <div className="flex items-center gap-2">
-                                <AlarmClock className="h-4 w-4 text-amber-500" />
-                                <h3 className="text-sm font-semibold">Daily Routines</h3>
-                              </div>
-                              <div className="space-y-2">
-                                {mockPatientData.aboutMe.routines.map((routine, index) => (
-                                  <div key={index} className="bg-amber-50 p-3 rounded-lg border-l-4 border-amber-200 hover:shadow-sm transition-all duration-200">
-                                    <p className="text-sm">{routine}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-3">
-                                <div className="flex items-center gap-2">
-                                  <Heart className="h-4 w-4 text-red-500" />
-                                  <h3 className="text-sm font-semibold">Interests</h3>
-                                </div>
-                                <div className="bg-gray-50 rounded-lg p-4">
-                                  <div className="flex flex-wrap gap-2">
-                                    {mockPatientData.aboutMe.interests.map((interest, index) => (
-                                      <Badge key={index} variant="outline" className="bg-white border-blue-200 text-blue-700 hover:bg-blue-50">
-                                        {interest}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              <div className="space-y-3">
-                                <div className="flex items-center gap-2">
-                                  <AlertTriangle className="h-4 w-4 text-red-500" />
-                                  <h3 className="text-sm font-semibold">Dislikes</h3>
-                                </div>
-                                <div className="bg-gray-50 rounded-lg p-4">
-                                  <div className="flex flex-wrap gap-2">
-                                    {mockPatientData.aboutMe.dislikes.map((dislike, index) => (
-                                      <Badge key={index} variant="outline" className="bg-white border-red-200 text-red-700 hover:bg-red-50">
-                                        {dislike}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                        
-                        <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border-blue-100 md:col-span-2">
-                          <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3">
-                            <div className="flex items-center gap-2">
-                              <User className="h-5 w-5 text-purple-600" />
-                              <CardTitle className="text-lg font-bold text-gray-800">Family Contacts</CardTitle>
-                            </div>
-                            <CardDescription>Family members and primary contacts</CardDescription>
-                          </CardHeader>
-                          <CardContent className="p-5">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {mockPatientData.familyContacts.map((contact, index) => (
-                                <div 
-                                  key={index} 
-                                  className={`p-4 rounded-lg border ${contact.isPrimary ? 'bg-purple-50 border-purple-200' : 'bg-gray-50 border-gray-200'} hover:shadow-md transition-all duration-300`}
-                                >
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex items-center gap-3">
-                                      <Avatar className={`h-10 w-10 rounded-lg ${contact.isPrimary ? 'bg-purple-600' : 'bg-gray-500'}`}>
-                                        <div className="w-full h-full flex items-center justify-center text-white font-bold">
-                                          {contact.name.split(' ').map(n => n[0]).join('')}
-                                        </div>
-                                      </Avatar>
-                                      <div>
-                                        <h4 className="font-semibold">{contact.name}</h4>
-                                        <p className="text-sm text-gray-600">{contact.relationship}</p>
-                                      </div>
-                                    </div>
-                                    {contact.isPrimary && (
-                                      <Badge variant="outline" className="bg-purple-100 border-purple-200 text-purple-700">
-                                        Primary
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  
-                                  <div className="mt-4 grid grid-cols-1 gap-2">
-                                    <div className="flex items-center gap-2 text-sm">
-                                      <Phone className="h-3.5 w-3.5 text-gray-500" />
-                                      <span>{contact.phone}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm">
-                                      <Mail className="h-3.5 w-3.5 text-gray-500" />
-                                      <span>{contact.email}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="medical">
-                      <div className="space-y-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Medical Information</CardTitle>
-                            <CardDescription>Conditions, medications, and assessments</CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <p>Medical information tab content</p>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="diet">
-                      <div className="space-y-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Dietary Requirements</CardTitle>
-                            <CardDescription>Nutrition plan and restrictions</CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <p>Diet tab content</p>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="care">
-                      <div className="space-y-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Personal Care</CardTitle>
-                            <CardDescription>Care routines and assistance needed</CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <p>Care tab content</p>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="risks">
-                      <div className="space-y-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Risk Assessments</CardTitle>
-                            <CardDescription>Identified risks and mitigation plans</CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <p>Risks tab content</p>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="equipment">
-                      <div className="space-y-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Equipment</CardTitle>
-                            <CardDescription>Assistive devices and medical equipment</CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <p>Equipment tab content</p>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="plan" className="mt-6">
-                      <div className="grid grid-cols-1 gap-6">
-                        <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border-blue-100">
-                          <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3">
-                            <div className="flex items-center gap-2">
-                              <Target className="h-5 w-5 text-blue-600" />
-                              <CardTitle className="text-lg font-bold text-gray-800">Long-Term Goals</CardTitle>
-                            </div>
-                            <CardDescription>Objectives and progress tracking</CardDescription>
-                          </CardHeader>
-                          <CardContent className="p-5 space-y-4">
-                            {mockPatientData.individualizedPlan.longTermGoals.map((goal, index) => (
-                              <div key={index} className="border rounded-lg p-4 hover:shadow-sm transition-all">
-                                <div className="flex items-start justify-between mb-3">
-                                  <div className="flex items-start gap-3">
-                                    {goal.status === "Completed" ? (
-                                      <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
-                                    ) : goal.status === "In Progress" ? (
-                                      <Hourglass className="h-5 w-5 text-amber-500 mt-0.5" />
-                                    ) : (
-                                      <Clock className="h-5 w-5 text-gray-400 mt-0.5" />
-                                    )}
-                                    <div>
-                                      <h3 className="font-medium text-gray-800">{goal.goal}</h3>
-                                      <p className="text-sm text-gray-500 mt-1">{goal.progress}</p>
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <Badge 
-                                      variant="outline" 
-                                      className={`
-                                        ${goal.status === "Completed" ? "bg-green-50 text-green-700 border-green-200" : 
-                                          goal.status === "In Progress" ? "bg-amber-50 text-amber-700 border-amber-200" : 
-                                          "bg-gray-50 text-gray-700 border-gray-200"}
-                                      `}
-                                    >
-                                      {goal.status}
-                                    </Badge>
-                                  </div>
-                                </div>
-                                <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="h-3.5 w-3.5" />
-                                    <span>Target: {format(goal.targetDate, 'MMM dd, yyyy')}</span>
-                                  </div>
-                                  
-                                  <Button variant="ghost" size="sm" className="text-xs h-7 px-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50">
-                                    <ArrowUpRight className="h-3 w-3 mr-1" />
-                                    Update Progress
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                          </CardContent>
-                        </Card>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border-blue-100">
-                            <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3">
-                              <div className="flex items-center gap-2">
-                                <Award className="h-5 w-5 text-green-600" />
-                                <CardTitle className="text-lg font-bold text-gray-800">Strengths & Abilities</CardTitle>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="p-5">
-                              <ul className="space-y-2">
-                                {mockPatientData.individualizedPlan.strengths.map((strength, index) => (
-                                  <li key={index} className="flex items-start gap-2">
-                                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                                    <span className="text-sm">{strength}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </CardContent>
-                          </Card>
-                          
-                          <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border-blue-100">
-                            <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3">
-                              <div className="flex items-center gap-2">
-                                <AlertCircle className="h-5 w-5 text-amber-500" />
-                                <CardTitle className="text-lg font-bold text-gray-800">Challenges</CardTitle>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="p-5">
-                              <ul className="space-y-2">
-                                {mockPatientData.individualizedPlan.challenges.map((challenge, index) => (
-                                  <li key={index} className="flex items-start gap-2">
-                                    <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                                    <span className="text-sm">{challenge}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </CardContent>
-                          </Card>
-                        </div>
-                        
-                        <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border-blue-100">
-                          <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3 flex flex-row items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <ListChecks className="h-5 w-5 text-purple-600" />
-                              <CardTitle className="text-lg font-bold text-gray-800">Service Actions</CardTitle>
-                            </div>
-                            <Button size="sm" variant="outline" className="gap-1">
-                              <Plus className="h-4 w-4" />
-                              Add Service
-                            </Button>
-                          </CardHeader>
-                          <CardContent className="p-5 space-y-6">
-                            {mockPatientData.serviceActions.map((service, index) => (
-                              <div key={index} className="border rounded-lg overflow-hidden">
-                                <div className="bg-gray-50 p-4 border-b">
-                                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                                    <div className="flex items-center gap-3">
-                                      {service.service === "Physical Therapy" ? (
-                                        <div className="h-10 w-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
-                                          <Activity className="h-5 w-5" />
-                                        </div>
-                                      ) : service.service === "Medication Management" ? (
-                                        <div className="h-10 w-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
-                                          <FileCheck className="h-5 w-5" />
-                                        </div>
-                                      ) : service.service === "Dietary Counseling" ? (
-                                        <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
-                                          <Utensils className="h-5 w-5" />
-                                        </div>
-                                      ) : (
-                                        <div className="h-10 w-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
-                                          <UserCog className="h-5 w-5" />
-                                        </div>
-                                      )}
-                                      <div>
-                                        <h3 className="font-medium">{service.service}</h3>
-                                        <p className="text-sm text-gray-500">Provider: {service.provider}</p>
-                                      </div>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                      <Badge variant="outline" className="bg-white">
-                                        <Clock className="h-3 w-3 mr-1" />
-                                        {service.frequency}
-                                      </Badge>
-                                      <Badge variant="outline" className="bg-white">
-                                        <Calendar className="h-3 w-3 mr-1" />
-                                        {service.schedule}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="p-4">
-                                  <div className="space-y-4">
-                                    <div>
-                                      <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                                        <Target className="h-4 w-4 text-blue-600" />
-                                        Goals
-                                      </h4>
-                                      <ul className="space-y-1 pl-6 list-disc text-sm">
-                                        {service.goals.map((goal, goalIndex) => (
-                                          <li key={goalIndex}>{goal}</li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                    <div>
-                                      <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                                        <Timeline className="h-4 w-4 text-green-600" />
-                                        Progress
-                                      </h4>
-                                      <p className="text-sm bg-gray-50 p-3 rounded-md">{service.progress}</p>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </CardContent>
-                        </Card>
-                        
-                        <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border-blue-100">
-                          <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3">
-                            <div className="flex items-center gap-2">
-                              <BookOpen className="h-5 w-5 text-blue-600" />
-                              <CardTitle className="text-lg font-bold text-gray-800">Individualized Care Approach</CardTitle>
-                            </div>
-                            <CardDescription>Care preferences and approaches</CardDescription>
-                          </CardHeader>
-                          <CardContent className="p-5">
-                            <div className="space-y-4">
-                              <div>
-                                <h4 className="font-medium mb-2 flex items-center gap-1 text-gray-700">
-                                  <Flag className="h-4 w-4 text-blue-600" />
-                                  Care Preferences
-                                </h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                  {mockPatientData.individualizedPlan.preferences.map((preference, index) => (
-                                    <div key={index} className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                                      <p className="text-sm">{preference}</p>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                              
-                              <Separator />
-                              
-                              <div className="flex items-center justify-between">
-                                <div className="flex gap-2">
-                                  <Button variant="outline" size="sm" className="gap-1">
-                                    <FileText className="h-4 w-4" />
-                                    Print Care Plan
-                                  </Button>
-                                  <Button variant="outline" size="sm" className="gap-1">
-                                    <Share className="h-4 w-4" />
-                                    Share with Team
-                                  </Button>
-                                </div>
-                                <Button variant="default" size="sm" className="gap-1">
-                                  <Edit className="h-4 w-4" />
-                                  Edit Plan
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="reports">
-                      <div className="space-y-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Reports</CardTitle>
-                            <CardDescription>Generated reports and analytics</CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <p>Reports tab content</p>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default CarePlanView;
+                              <div className="space-y-1 p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition
