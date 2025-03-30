@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -20,7 +19,6 @@ import { TabNavigation } from "@/components/TabNavigation";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { toast } from "@/components/ui/use-toast";
 
-// Define interfaces for our data structures
 interface Medication {
   name: string;
   dosage: string;
@@ -234,7 +232,6 @@ interface CarePlan {
   avatar: string;
 }
 
-// Mock data with the correct typing
 const mockPatientData: PatientData = {
   gender: "Male",
   dateOfBirth: new Date("1956-03-15"),
@@ -527,7 +524,6 @@ const mockPatientData: PatientData = {
   ]
 };
 
-// Placeholder for care plan data
 const mockCarePlans: CarePlan[] = [
   {
     id: "CP-001",
@@ -558,7 +554,6 @@ const CarePlanView = () => {
   const [carePlan, setCarePlan] = useState<CarePlan | null>(null);
 
   useEffect(() => {
-    // In a real app, fetch care plan data from API
     const plan = mockCarePlans.find(p => p.id === carePlanId);
     if (plan) {
       setCarePlan(plan);
@@ -568,7 +563,6 @@ const CarePlanView = () => {
   const handlePrintCarePlan = () => {
     if (!carePlan) return;
     
-    // Use the PDF generator utility
     generatePDF({
       id: parseInt(carePlan.id.replace('CP-', '')),
       title: `Care Plan for ${carePlan.patientName}`,
@@ -579,7 +573,6 @@ const CarePlanView = () => {
   };
 
   const handleNewBooking = () => {
-    // Display a toast message for now, in a real app this would open a booking form
     toast({
       title: "New Booking",
       description: "Booking functionality will be implemented soon.",
@@ -621,7 +614,6 @@ const CarePlanView = () => {
         />
         
         <div className="bg-white rounded-xl border border-gray-200 shadow-md overflow-hidden">
-          {/* Enhanced Header with Logo */}
           <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-b p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
@@ -663,7 +655,6 @@ const CarePlanView = () => {
           
           {carePlan && (
             <div className="p-6">
-              {/* Patient Header - Enhanced */}
               <div className="flex flex-col md:flex-row items-start md:items-center gap-4 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-blue-100 shadow-sm mb-6">
                 <div className="w-20 h-20 rounded-xl bg-blue-600 text-white flex items-center justify-center text-2xl font-bold shadow-md">
                   {carePlan.avatar}
@@ -697,7 +688,6 @@ const CarePlanView = () => {
               </div>
               
               <div className="flex flex-col lg:flex-row gap-6">
-                {/* Left sidebar - Enhanced */}
                 <div className="w-full lg:w-1/4">
                   <Card className="sticky top-6 shadow-md border-blue-100 overflow-hidden">
                     <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 pb-3">
@@ -762,7 +752,6 @@ const CarePlanView = () => {
                   </Card>
                 </div>
                 
-                {/* Main content area - Enhanced with Tabs */}
                 <div className="flex-1">
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="mb-4 w-full md:w-auto">
@@ -800,10 +789,8 @@ const CarePlanView = () => {
                       </TabsTrigger>
                     </TabsList>
                     
-                    {/* Personal Tab Content - Enhanced, modern UI */}
                     <TabsContent value="personal" className="mt-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Personal Information */}
                         <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border-blue-100">
                           <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3">
                             <div className="flex items-center gap-2">
@@ -872,7 +859,6 @@ const CarePlanView = () => {
                           </CardContent>
                         </Card>
                         
-                        {/* About Me Section */}
                         <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border-blue-100">
                           <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3">
                             <div className="flex items-center gap-2">
@@ -946,7 +932,6 @@ const CarePlanView = () => {
                           </CardContent>
                         </Card>
                         
-                        {/* Family Contacts */}
                         <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border-blue-100 md:col-span-2">
                           <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3">
                             <div className="flex items-center gap-2">
@@ -999,7 +984,6 @@ const CarePlanView = () => {
                       </div>
                     </TabsContent>
                     
-                    {/* Medical Tab Content - Placeholder */}
                     <TabsContent value="medical">
                       <div className="space-y-6">
                         <Card>
@@ -1008,14 +992,12 @@ const CarePlanView = () => {
                             <CardDescription>Conditions, medications, and assessments</CardDescription>
                           </CardHeader>
                           <CardContent>
-                            {/* Medical information would go here */}
                             <p>Medical information tab content</p>
                           </CardContent>
                         </Card>
                       </div>
                     </TabsContent>
                     
-                    {/* Diet Tab Content - Placeholder */}
                     <TabsContent value="diet">
                       <div className="space-y-6">
                         <Card>
@@ -1024,14 +1006,12 @@ const CarePlanView = () => {
                             <CardDescription>Nutrition plan and restrictions</CardDescription>
                           </CardHeader>
                           <CardContent>
-                            {/* Diet information would go here */}
                             <p>Diet tab content</p>
                           </CardContent>
                         </Card>
                       </div>
                     </TabsContent>
                     
-                    {/* Care Tab Content - Placeholder */}
                     <TabsContent value="care">
                       <div className="space-y-6">
                         <Card>
@@ -1040,14 +1020,12 @@ const CarePlanView = () => {
                             <CardDescription>Care routines and assistance needed</CardDescription>
                           </CardHeader>
                           <CardContent>
-                            {/* Personal care information would go here */}
                             <p>Care tab content</p>
                           </CardContent>
                         </Card>
                       </div>
                     </TabsContent>
                     
-                    {/* Risks Tab Content - Placeholder */}
                     <TabsContent value="risks">
                       <div className="space-y-6">
                         <Card>
@@ -1056,14 +1034,12 @@ const CarePlanView = () => {
                             <CardDescription>Identified risks and mitigation plans</CardDescription>
                           </CardHeader>
                           <CardContent>
-                            {/* Risk information would go here */}
                             <p>Risks tab content</p>
                           </CardContent>
                         </Card>
                       </div>
                     </TabsContent>
                     
-                    {/* Equipment Tab Content - Placeholder */}
                     <TabsContent value="equipment">
                       <div className="space-y-6">
                         <Card>
@@ -1072,14 +1048,12 @@ const CarePlanView = () => {
                             <CardDescription>Assistive devices and medical equipment</CardDescription>
                           </CardHeader>
                           <CardContent>
-                            {/* Equipment information would go here */}
                             <p>Equipment tab content</p>
                           </CardContent>
                         </Card>
                       </div>
                     </TabsContent>
                     
-                    {/* Plan Tab Content - Placeholder */}
                     <TabsContent value="plan">
                       <div className="space-y-6">
                         <Card>
@@ -1088,14 +1062,12 @@ const CarePlanView = () => {
                             <CardDescription>Goals, services, and individualized plan</CardDescription>
                           </CardHeader>
                           <CardContent>
-                            {/* Care plan information would go here */}
                             <p>Plan tab content</p>
                           </CardContent>
                         </Card>
                       </div>
                     </TabsContent>
                     
-                    {/* Reports Tab Content - Placeholder */}
                     <TabsContent value="reports">
                       <div className="space-y-6">
                         <Card>
@@ -1104,7 +1076,6 @@ const CarePlanView = () => {
                             <CardDescription>Generated reports and analytics</CardDescription>
                           </CardHeader>
                           <CardContent>
-                            {/* Reports information would go here */}
                             <p>Reports tab content</p>
                           </CardContent>
                         </Card>
