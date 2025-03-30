@@ -8,7 +8,6 @@ import {
   MapPin, Phone, Mail, Flag, Heart, AlertCircle, CircleUser, AlarmClock,
   Target, Award, CheckCircle, CheckCircle2, Hourglass, XCircle, BookOpen,
   UserCog, Rocket, BrainCircuit, ArrowUpRight, List, ListChecks, 
-  // Add the missing icons
   Plus, Share, Edit
 } from "lucide-react";
 import { format } from "date-fns";
@@ -22,6 +21,17 @@ import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { TabNavigation } from "@/components/TabNavigation";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { toast } from "@/components/ui/use-toast";
+
+interface CarePlan {
+  id: string;
+  patientName: string;
+  patientId: string;
+  dateCreated: Date;
+  lastUpdated: Date;
+  status: string;
+  assignedTo: string;
+  avatar: string;
+}
 
 interface Medication {
   name: string;
@@ -225,7 +235,6 @@ interface PatientData {
   serviceActions: ServiceAction[];
 }
 
-// Initialize mockPatientData with all required properties
 const mockPatientData: PatientData = {
   gender: "Male",
   dateOfBirth: new Date("1950-06-15"),
@@ -858,4 +867,52 @@ const CarePlanView = () => {
                                 <p className="text-xs font-medium text-gray-500">Date of Birth</p>
                                 <p className="text-sm font-medium">{format(mockPatientData.dateOfBirth, 'MMMM d, yyyy')} ({new Date().getFullYear() - mockPatientData.dateOfBirth.getFullYear()} years)</p>
                               </div>
-                              <div className="space-y-1 p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition
+                              <div className="space-y-1 p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors duration-200">
+                                <p className="text-xs font-medium text-gray-500">Address</p>
+                                <p className="text-sm font-medium">{mockPatientData.address}</p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="medical" className="mt-6">
+                      {/* Medical tab content will go here */}
+                    </TabsContent>
+                    
+                    <TabsContent value="diet" className="mt-6">
+                      {/* Diet tab content will go here */}
+                    </TabsContent>
+                    
+                    <TabsContent value="care" className="mt-6">
+                      {/* Care tab content will go here */}
+                    </TabsContent>
+                    
+                    <TabsContent value="risks" className="mt-6">
+                      {/* Risks tab content will go here */}
+                    </TabsContent>
+                    
+                    <TabsContent value="equipment" className="mt-6">
+                      {/* Equipment tab content will go here */}
+                    </TabsContent>
+                    
+                    <TabsContent value="plan" className="mt-6">
+                      {/* Plan tab content will go here */}
+                    </TabsContent>
+                    
+                    <TabsContent value="reports" className="mt-6">
+                      {/* Reports tab content will go here */}
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CarePlanView;
