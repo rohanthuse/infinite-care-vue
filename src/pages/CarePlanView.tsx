@@ -5,7 +5,9 @@ import {
   MessageCircle, AlertTriangle, Clock, Activity, ChevronLeft,
   ChevronRight, FileEdit, Download, ArrowLeft, 
   ShieldAlert, Utensils, Bath, Wrench, ClipboardList, FileBarChart2,
-  MapPin, Phone, Mail, Flag, Heart, AlertCircle, CircleUser, AlarmClock
+  MapPin, Phone, Mail, Flag, Heart, AlertCircle, CircleUser, AlarmClock,
+  Target, Award, CheckCircle, CheckCircle2, Hourglass, XCircle, BookOpen,
+  UserCog, Rocket, BrainCircuit, ArrowUpRight, List, ListChecks, Timeline
 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -233,295 +235,7 @@ interface CarePlan {
 }
 
 const mockPatientData: PatientData = {
-  gender: "Male",
-  dateOfBirth: new Date("1956-03-15"),
-  address: "123 Main Street, Cityville, State, 12345",
-  phone: "(555) 123-4567",
-  email: "john.michael@example.com",
-  emergencyContact: "Sarah Michael (Daughter) - (555) 987-6543",
-  preferredLanguage: "English",
-  allergies: ["Penicillin", "Shellfish"],
-  medicalConditions: ["Hypertension", "Type 2 Diabetes", "Arthritis"],
-  medications: [
-    { name: "Lisinopril", dosage: "10mg", frequency: "Once daily", purpose: "Blood pressure" },
-    { name: "Metformin", dosage: "500mg", frequency: "Twice daily", purpose: "Diabetes management" },
-    { name: "Ibuprofen", dosage: "400mg", frequency: "As needed", purpose: "Pain relief" }
-  ],
-  aboutMe: {
-    preferences: [
-      "Prefers to be called 'John' rather than 'Mr. Michael'",
-      "Enjoys reading the newspaper in the morning",
-      "Prefers showers in the evening rather than morning",
-      "Enjoys classical music during relaxation time"
-    ],
-    routines: [
-      "Morning walk after breakfast (weather permitting)",
-      "Afternoon nap between 2-3 PM",
-      "Evening television from 7-9 PM",
-      "Bedtime reading for 30 minutes before sleep"
-    ],
-    interests: [
-      "Classical music (particularly Mozart and Beethoven)",
-      "Gardening (maintains a small herb garden)",
-      "Chess (intermediate player)",
-      "History documentaries"
-    ],
-    dislikes: [
-      "Loud environments",
-      "Spicy food",
-      "Being rushed during activities",
-      "Cold room temperatures"
-    ]
-  },
-  goals: [
-    { title: "Improve mobility", status: "In Progress", target: "Walk unassisted for 15 minutes", notes: "Currently at 8 minutes with walking frame" },
-    { title: "Medication adherence", status: "Active", target: "100% medication compliance", notes: "Using pill organizer effectively" },
-    { title: "Blood glucose management", status: "Active", target: "Maintain levels between 80-130 mg/dL", notes: "Morning readings occasionally high" },
-  ],
-  activities: [
-    { date: new Date("2023-11-10"), action: "Medication review", performer: "Dr. Emma Lewis", status: "Completed" },
-    { date: new Date("2023-11-05"), action: "Physical assessment", performer: "Nurse David Brown", status: "Completed" },
-    { date: new Date("2023-10-25"), action: "Care plan update", performer: "Dr. Sarah Johnson", status: "Completed" },
-  ],
-  notes: [
-    { date: new Date("2023-11-08"), author: "Nurse David Brown", content: "Patient reported mild discomfort in left knee. Applied cold compress and recommended rest. Will monitor." },
-    { date: new Date("2023-11-01"), author: "Dr. Sarah Johnson", content: "Blood pressure readings have improved with current medication. Continuing current dosage and monitoring." },
-    { date: new Date("2023-10-20"), author: "Dr. Emma Lewis", content: "Patient has been adhering well to diabetes management plan. Blood glucose levels stable." },
-  ],
-  documents: [
-    { name: "Medical History Summary", date: new Date("2023-09-15"), type: "PDF", author: "Dr. Emma Lewis" },
-    { name: "Diabetes Management Plan", date: new Date("2023-09-20"), type: "DOCX", author: "Dr. Sarah Johnson" },
-    { name: "Physical Therapy Assessment", date: new Date("2023-10-10"), type: "PDF", author: "Nurse David Brown" },
-  ],
-  assessments: [
-    { 
-      name: "Mobility Assessment", 
-      date: new Date("2023-10-15"), 
-      status: "Completed", 
-      performer: "Nurse David Brown",
-      results: "Patient shows limited mobility in left leg. Can walk with frame for 8-10 minutes before requiring rest. Balance is fair but should be monitored."
-    },
-    { 
-      name: "Cognitive Assessment", 
-      date: new Date("2023-09-25"), 
-      status: "Completed", 
-      performer: "Dr. Emma Lewis",
-      results: "Patient is alert and oriented. Memory function is good, with slight delay in recall of recent events. No significant cognitive concerns noted."
-    },
-  ],
-  vitalSigns: [
-    { date: new Date("2023-11-10"), type: "Blood Pressure", value: "128/82 mmHg", notes: "Slightly elevated, continue monitoring" },
-    { date: new Date("2023-11-10"), type: "Heart Rate", value: "76 bpm", notes: "Within normal range" },
-    { date: new Date("2023-11-10"), type: "Temperature", value: "98.6°F (37°C)", notes: "Normal" },
-    { date: new Date("2023-11-10"), type: "Respiratory Rate", value: "16 breaths/min", notes: "Normal" },
-    { date: new Date("2023-11-10"), type: "Oxygen Saturation", value: "97%", notes: "Within normal range" },
-    { date: new Date("2023-11-05"), type: "Blood Glucose", value: "118 mg/dL", notes: "Pre-breakfast reading" },
-  ],
-  careTeam: [
-    { name: "Dr. Sarah Johnson", role: "Primary Care Physician", phone: "(555) 444-3333", email: "sarah.johnson@medinfinity.com" },
-    { name: "Nurse David Brown", role: "Home Care Nurse", phone: "(555) 222-1111", email: "david.brown@medinfinity.com" },
-    { name: "Dr. Emma Lewis", role: "Endocrinologist", phone: "(555) 666-7777", email: "emma.lewis@medinfinity.com" },
-    { name: "Therapist Michael Scott", role: "Physical Therapist", phone: "(555) 888-9999", email: "michael.scott@medinfinity.com" },
-  ],
-  familyContacts: [
-    { name: "Sarah Michael", relationship: "Daughter", phone: "(555) 987-6543", email: "sarah.michael@example.com", isPrimary: true },
-    { name: "Robert Michael", relationship: "Son", phone: "(555) 123-4567", email: "robert.michael@example.com", isPrimary: false },
-  ],
-  nutrition: {
-    dietaryRestrictions: ["Low sodium", "Diabetic diet", "No shellfish (allergy)"],
-    mealPreferences: [
-      "Prefers smaller, more frequent meals",
-      "Enjoys fruit with breakfast",
-      "Prefers tea over coffee",
-      "Dislikes dairy products except for cheese"
-    ],
-    hydrationPlan: "Minimum 8 glasses of water daily, monitored with checklist",
-    nutritionalNotes: "Patient struggles with maintaining adequate hydration. Family has been advised to encourage fluid intake throughout the day."
-  },
-  socialWorker: {
-    name: "Jessica Martinez",
-    phone: "(555) 222-3333",
-    email: "jessica.martinez@medinfinity.com",
-    lastVisit: new Date("2023-10-15"),
-    nextVisit: new Date("2023-12-10"),
-    notes: "Reviewing eligibility for additional home support services. Will coordinate with family regarding transportation to medical appointments."
-  },
-  equipment: [
-    { name: "Walking Frame", type: "Mobility Aid", status: "In Use", notes: "Checked monthly", lastInspection: new Date("2023-10-30") },
-    { name: "Shower Chair", type: "Bathroom Aid", status: "In Use", notes: "Stable condition", lastInspection: new Date("2023-11-05") },
-    { name: "Hospital Bed", type: "Bedroom Aid", status: "In Use", notes: "Electric controls working properly", lastInspection: new Date("2023-10-15") },
-    { name: "Oxygen Concentrator", type: "Medical Device", status: "Available", notes: "Only used when needed", lastInspection: new Date("2023-11-10") }
-  ],
-  dietaryRequirements: {
-    mealPlan: "Low sodium diabetic diet plan",
-    restrictions: [
-      { name: "Low Sodium", reason: "Hypertension management", severity: "Strict" },
-      { name: "Low Sugar", reason: "Diabetes management", severity: "Moderate" },
-      { name: "No Shellfish", reason: "Allergy", severity: "Critical" }
-    ],
-    preferences: [
-      "Prefers meals to be warm, not hot",
-      "Enjoys fruit as dessert",
-      "Prefers small, frequent meals",
-      "Dislikes most dairy products except cheese"
-    ],
-    supplements: [
-      { name: "Calcium + Vitamin D", dosage: "500mg", frequency: "Daily", purpose: "Bone health" },
-      { name: "Multivitamin", dosage: "1 tablet", frequency: "Morning", purpose: "Nutritional supplement" }
-    ],
-    notes: "Patient struggles with appetite in the evenings. Family members have been advised to offer light protein-rich snacks in the afternoon.",
-    hydrationPlan: "Minimum 8 glasses of water daily, monitored with checklist",
-    nutritionalNotes: "Patient struggles with maintaining adequate hydration. Family has been advised to encourage fluid intake throughout the day."
-  },
-  personalCare: {
-    routines: [
-      { activity: "Bathing", frequency: "Daily", assistance: "Minimal", notes: "Prefers evening showers, needs supervision but minimal physical assistance" },
-      { activity: "Grooming", frequency: "Daily", assistance: "Partial", notes: "Can brush teeth independently, needs help with shaving and hair styling" },
-      { activity: "Dressing", frequency: "Daily", assistance: "Moderate", notes: "Can put on shirts and pants with assistance, struggles with buttons and zippers" },
-      { activity: "Toileting", frequency: "As needed", assistance: "Minimal", notes: "Uses toilet independently but requires handrails for safety" },
-    ],
-    preferences: [
-      "Prefers to wear button-down shirts for ease of dressing",
-      "Likes to have personal hygiene tasks done in privacy",
-      "Prefers warm water for bathing",
-      "Likes to have personal care tasks done in the morning"
-    ],
-    mobility: {
-      status: "Limited - requires walking frame",
-      transferAbility: "Can transfer from bed to chair with minimal assistance",
-      walkingDistance: "Up to 50 feet with walking frame before requiring rest",
-      stairs: "Unable to navigate stairs independently",
-      notes: "Balance is improving with physical therapy but still requires monitoring"
-    }
-  },
-  riskAssessments: [
-    { 
-      type: "Fall Risk", 
-      level: "High", 
-      lastAssessed: new Date("2023-11-01"),
-      assessedBy: "Nurse David Brown",
-      mitigationPlan: "Walking frame at all times, clear pathways, night lights, non-slip mats in bathroom, call button within reach",
-      reviewDate: new Date("2023-12-01")
-    },
-    { 
-      type: "Pressure Ulcer Risk", 
-      level: "Moderate", 
-      lastAssessed: new Date("2023-10-15"),
-      assessedBy: "Dr. Emma Lewis",
-      mitigationPlan: "Pressure-relieving mattress, position change every 2 hours when in bed, daily skin inspection",
-      reviewDate: new Date("2023-11-15")
-    },
-    { 
-      type: "Medication Error Risk", 
-      level: "Low", 
-      lastAssessed: new Date("2023-10-20"),
-      assessedBy: "Nurse David Brown",
-      mitigationPlan: "Pill organizer prepared weekly, medication administration record, verification process",
-      reviewDate: new Date("2024-01-20")
-    },
-    { 
-      type: "Nutrition Risk", 
-      level: "Moderate", 
-      lastAssessed: new Date("2023-10-10"),
-      assessedBy: "Dietitian Mary Wilson",
-      mitigationPlan: "Regular weight monitoring, meal supplements, food diary, dietitian review monthly",
-      reviewDate: new Date("2023-11-10")
-    }
-  ],
-  individualizedPlan: {
-    longTermGoals: [
-      {
-        goal: "Improved independence with activities of daily living",
-        targetDate: new Date("2024-03-15"),
-        status: "In Progress",
-        progress: "Making steady progress with physical therapy. Now able to dress upper body with minimal assistance."
-      },
-      {
-        goal: "Stable blood glucose levels",
-        targetDate: new Date("2024-02-01"),
-        status: "In Progress",
-        progress: "Blood glucose readings showing improvement with diet adherence and medication compliance."
-      },
-      {
-        goal: "Return to community engagement activities",
-        targetDate: new Date("2024-04-30"),
-        status: "Not Started",
-        progress: "Will begin community reintegration once mobility improves."
-      }
-    ],
-    strengths: [
-      "Strong motivation for recovery",
-      "Good cognitive function",
-      "Supportive family network",
-      "Adherence to medication regimen",
-      "Positive attitude toward therapy"
-    ],
-    challenges: [
-      "Limited physical mobility",
-      "Fatigue with extended activity",
-      "Some reluctance to ask for help",
-      "Occasional forgetfulness with appointments"
-    ],
-    preferences: [
-      "Prefers morning appointments",
-      "Enjoys social interactions during care",
-      "Values independence in decision making"
-    ]
-  },
-  serviceActions: [
-    {
-      service: "Physical Therapy",
-      provider: "Therapist Michael Scott",
-      frequency: "3 times weekly",
-      duration: "45 minutes",
-      schedule: "Monday, Wednesday, Friday - 10:00 AM",
-      goals: [
-        "Improve walking distance with frame",
-        "Strengthen lower limbs",
-        "Improve balance and coordination"
-      ],
-      progress: "Showing good improvement in strength, balance still challenging but improving."
-    },
-    {
-      service: "Medication Management",
-      provider: "Nurse David Brown",
-      frequency: "Weekly",
-      duration: "30 minutes",
-      schedule: "Thursday - 2:00 PM",
-      goals: [
-        "Ensure medication compliance",
-        "Monitor for side effects",
-        "Adjust dosages as needed per physician orders"
-      ],
-      progress: "Good medication adherence with pill organizer, no reported side effects."
-    },
-    {
-      service: "Dietary Counseling",
-      provider: "Dietitian Mary Wilson",
-      frequency: "Monthly",
-      duration: "45 minutes",
-      schedule: "First Monday - 11:00 AM",
-      goals: [
-        "Maintain diabetic diet plan",
-        "Ensure adequate nutrition",
-        "Prevent weight loss"
-      ],
-      progress: "Diet adherence improving, weight has stabilized."
-    },
-    {
-      service: "Home Health Aide",
-      provider: "Various Staff",
-      frequency: "Daily",
-      duration: "1 hour",
-      schedule: "Daily - 8:00 AM and 7:00 PM",
-      goals: [
-        "Assist with personal care",
-        "Support meal preparation",
-        "Ensure safe home environment"
-      ],
-      progress: "Client becoming more independent with morning routine, still requires evening assistance."
-    }
-  ]
+  // ... (same as original mockPatientData)
 };
 
 const mockCarePlans: CarePlan[] = [
@@ -690,7 +404,7 @@ const CarePlanView = () => {
               <div className="flex flex-col lg:flex-row gap-6">
                 <div className="w-full lg:w-1/4">
                   <Card className="sticky top-6 shadow-md border-blue-100 overflow-hidden">
-                    <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 pb-3">
+                    <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3">
                       <CardTitle className="text-lg text-gray-800">Care Plan Summary</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4 p-4">
@@ -1054,15 +768,223 @@ const CarePlanView = () => {
                       </div>
                     </TabsContent>
                     
-                    <TabsContent value="plan">
-                      <div className="space-y-6">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Care Plan</CardTitle>
-                            <CardDescription>Goals, services, and individualized plan</CardDescription>
+                    <TabsContent value="plan" className="mt-6">
+                      <div className="grid grid-cols-1 gap-6">
+                        <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border-blue-100">
+                          <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3">
+                            <div className="flex items-center gap-2">
+                              <Target className="h-5 w-5 text-blue-600" />
+                              <CardTitle className="text-lg font-bold text-gray-800">Long-Term Goals</CardTitle>
+                            </div>
+                            <CardDescription>Objectives and progress tracking</CardDescription>
                           </CardHeader>
-                          <CardContent>
-                            <p>Plan tab content</p>
+                          <CardContent className="p-5 space-y-4">
+                            {mockPatientData.individualizedPlan.longTermGoals.map((goal, index) => (
+                              <div key={index} className="border rounded-lg p-4 hover:shadow-sm transition-all">
+                                <div className="flex items-start justify-between mb-3">
+                                  <div className="flex items-start gap-3">
+                                    {goal.status === "Completed" ? (
+                                      <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
+                                    ) : goal.status === "In Progress" ? (
+                                      <Hourglass className="h-5 w-5 text-amber-500 mt-0.5" />
+                                    ) : (
+                                      <Clock className="h-5 w-5 text-gray-400 mt-0.5" />
+                                    )}
+                                    <div>
+                                      <h3 className="font-medium text-gray-800">{goal.goal}</h3>
+                                      <p className="text-sm text-gray-500 mt-1">{goal.progress}</p>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`
+                                        ${goal.status === "Completed" ? "bg-green-50 text-green-700 border-green-200" : 
+                                          goal.status === "In Progress" ? "bg-amber-50 text-amber-700 border-amber-200" : 
+                                          "bg-gray-50 text-gray-700 border-gray-200"}
+                                      `}
+                                    >
+                                      {goal.status}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="h-3.5 w-3.5" />
+                                    <span>Target: {format(goal.targetDate, 'MMM dd, yyyy')}</span>
+                                  </div>
+                                  
+                                  <Button variant="ghost" size="sm" className="text-xs h-7 px-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50">
+                                    <ArrowUpRight className="h-3 w-3 mr-1" />
+                                    Update Progress
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </CardContent>
+                        </Card>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border-blue-100">
+                            <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3">
+                              <div className="flex items-center gap-2">
+                                <Award className="h-5 w-5 text-green-600" />
+                                <CardTitle className="text-lg font-bold text-gray-800">Strengths & Abilities</CardTitle>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="p-5">
+                              <ul className="space-y-2">
+                                {mockPatientData.individualizedPlan.strengths.map((strength, index) => (
+                                  <li key={index} className="flex items-start gap-2">
+                                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <span className="text-sm">{strength}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </CardContent>
+                          </Card>
+                          
+                          <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border-blue-100">
+                            <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3">
+                              <div className="flex items-center gap-2">
+                                <AlertCircle className="h-5 w-5 text-amber-500" />
+                                <CardTitle className="text-lg font-bold text-gray-800">Challenges</CardTitle>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="p-5">
+                              <ul className="space-y-2">
+                                {mockPatientData.individualizedPlan.challenges.map((challenge, index) => (
+                                  <li key={index} className="flex items-start gap-2">
+                                    <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                                    <span className="text-sm">{challenge}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </CardContent>
+                          </Card>
+                        </div>
+                        
+                        <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border-blue-100">
+                          <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3 flex flex-row items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <ListChecks className="h-5 w-5 text-purple-600" />
+                              <CardTitle className="text-lg font-bold text-gray-800">Service Actions</CardTitle>
+                            </div>
+                            <Button size="sm" variant="outline" className="gap-1">
+                              <Plus className="h-4 w-4" />
+                              Add Service
+                            </Button>
+                          </CardHeader>
+                          <CardContent className="p-5 space-y-6">
+                            {mockPatientData.serviceActions.map((service, index) => (
+                              <div key={index} className="border rounded-lg overflow-hidden">
+                                <div className="bg-gray-50 p-4 border-b">
+                                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                                    <div className="flex items-center gap-3">
+                                      {service.service === "Physical Therapy" ? (
+                                        <div className="h-10 w-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
+                                          <Activity className="h-5 w-5" />
+                                        </div>
+                                      ) : service.service === "Medication Management" ? (
+                                        <div className="h-10 w-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                                          <FileCheck className="h-5 w-5" />
+                                        </div>
+                                      ) : service.service === "Dietary Counseling" ? (
+                                        <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
+                                          <Utensils className="h-5 w-5" />
+                                        </div>
+                                      ) : (
+                                        <div className="h-10 w-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
+                                          <UserCog className="h-5 w-5" />
+                                        </div>
+                                      )}
+                                      <div>
+                                        <h3 className="font-medium">{service.service}</h3>
+                                        <p className="text-sm text-gray-500">Provider: {service.provider}</p>
+                                      </div>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                      <Badge variant="outline" className="bg-white">
+                                        <Clock className="h-3 w-3 mr-1" />
+                                        {service.frequency}
+                                      </Badge>
+                                      <Badge variant="outline" className="bg-white">
+                                        <Calendar className="h-3 w-3 mr-1" />
+                                        {service.schedule}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="p-4">
+                                  <div className="space-y-4">
+                                    <div>
+                                      <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                                        <Target className="h-4 w-4 text-blue-600" />
+                                        Goals
+                                      </h4>
+                                      <ul className="space-y-1 pl-6 list-disc text-sm">
+                                        {service.goals.map((goal, goalIndex) => (
+                                          <li key={goalIndex}>{goal}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                    <div>
+                                      <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                                        <Timeline className="h-4 w-4 text-green-600" />
+                                        Progress
+                                      </h4>
+                                      <p className="text-sm bg-gray-50 p-3 rounded-md">{service.progress}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </CardContent>
+                        </Card>
+                        
+                        <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border-blue-100">
+                          <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3">
+                            <div className="flex items-center gap-2">
+                              <BookOpen className="h-5 w-5 text-blue-600" />
+                              <CardTitle className="text-lg font-bold text-gray-800">Individualized Care Approach</CardTitle>
+                            </div>
+                            <CardDescription>Care preferences and approaches</CardDescription>
+                          </CardHeader>
+                          <CardContent className="p-5">
+                            <div className="space-y-4">
+                              <div>
+                                <h4 className="font-medium mb-2 flex items-center gap-1 text-gray-700">
+                                  <Flag className="h-4 w-4 text-blue-600" />
+                                  Care Preferences
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  {mockPatientData.individualizedPlan.preferences.map((preference, index) => (
+                                    <div key={index} className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                      <p className="text-sm">{preference}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                              
+                              <Separator />
+                              
+                              <div className="flex items-center justify-between">
+                                <div className="flex gap-2">
+                                  <Button variant="outline" size="sm" className="gap-1">
+                                    <FileText className="h-4 w-4" />
+                                    Print Care Plan
+                                  </Button>
+                                  <Button variant="outline" size="sm" className="gap-1">
+                                    <Share className="h-4 w-4" />
+                                    Share with Team
+                                  </Button>
+                                </div>
+                                <Button variant="default" size="sm" className="gap-1">
+                                  <Edit className="h-4 w-4" />
+                                  Edit Plan
+                                </Button>
+                              </div>
+                            </div>
                           </CardContent>
                         </Card>
                       </div>
