@@ -4,11 +4,7 @@ import {
   User, Info, Calendar, FileText, FileCheck, 
   MessageCircle, AlertTriangle, Clock, Activity, ChevronLeft,
   ChevronRight, FileEdit, Download, ArrowLeft, 
-  ShieldAlert, Utensils, Bath, Wrench, ClipboardList, FileBarChart2,
-  MapPin, Phone, Mail, Flag, Heart, AlertCircle, CircleUser, AlarmClock,
-  Target, Award, CheckCircle, CheckCircle2, Hourglass, XCircle, BookOpen,
-  UserCog, Rocket, BrainCircuit, ArrowUpRight, List, ListChecks, 
-  Plus, Share, Edit
+  ShieldAlert, Utensils, Bath, Wrench, ClipboardList, FileBarChart2
 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -22,567 +18,306 @@ import { TabNavigation } from "@/components/TabNavigation";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { toast } from "@/components/ui/use-toast";
 
-interface CarePlan {
-  id: string;
-  patientName: string;
-  patientId: string;
-  dateCreated: Date;
-  lastUpdated: Date;
-  status: string;
-  assignedTo: string;
-  avatar: string;
-}
-
-interface Medication {
-  name: string;
-  dosage: string;
-  frequency: string;
-  purpose: string;
-}
-
-interface AboutMe {
-  preferences: string[];
-  routines: string[];
-  interests: string[];
-  dislikes: string[];
-}
-
-interface Goal {
-  title: string;
-  status: string;
-  target: string;
-  notes: string;
-}
-
-interface Activity {
-  date: Date;
-  action: string;
-  performer: string;
-  status: string;
-}
-
-interface Note {
-  date: Date;
-  author: string;
-  content: string;
-}
-
-interface Document {
-  name: string;
-  date: Date;
-  type: string;
-  author: string;
-}
-
-interface Assessment {
-  name: string;
-  date: Date;
-  status: string;
-  performer: string;
-  results: string;
-}
-
-interface VitalSign {
-  date: Date;
-  type: string;
-  value: string;
-  notes: string;
-}
-
-interface CareTeamMember {
-  name: string;
-  role: string;
-  phone: string;
-  email: string;
-}
-
-interface FamilyContact {
-  name: string;
-  relationship: string;
-  phone: string;
-  email: string;
-  isPrimary: boolean;
-}
-
-interface Nutrition {
-  dietaryRestrictions: string[];
-  mealPreferences: string[];
-  hydrationPlan: string;
-  nutritionalNotes: string;
-}
-
-interface SocialWorker {
-  name: string;
-  phone: string;
-  email: string;
-  lastVisit: Date;
-  nextVisit: Date;
-  notes: string;
-}
-
-interface Equipment {
-  name: string;
-  type: string;
-  status: string;
-  notes: string;
-  lastInspection: Date;
-}
-
-interface DietaryRestriction {
-  name: string;
-  reason: string;
-  severity: string;
-}
-
-interface Supplement {
-  name: string;
-  dosage: string;
-  frequency: string;
-  purpose: string;
-}
-
-interface DietaryRequirements {
-  mealPlan: string;
-  restrictions: DietaryRestriction[];
-  preferences: string[];
-  supplements: Supplement[];
-  notes: string;
-  hydrationPlan: string;
-  nutritionalNotes: string;
-}
-
-interface PersonalCareActivity {
-  activity: string;
-  frequency: string;
-  assistance: string;
-  notes: string;
-}
-
-interface MobilityStatus {
-  status: string;
-  transferAbility: string;
-  walkingDistance: string;
-  stairs: string;
-  notes: string;
-}
-
-interface PersonalCare {
-  routines: PersonalCareActivity[];
-  preferences: string[];
-  mobility: MobilityStatus;
-}
-
-interface RiskAssessment {
-  type: string;
-  level: string;
-  lastAssessed: Date;
-  assessedBy: string;
-  mitigationPlan: string;
-  reviewDate: Date;
-}
-
-interface LongTermGoal {
-  goal: string;
-  targetDate: Date;
-  status: string;
-  progress: string;
-}
-
-interface IndividualizedPlan {
-  longTermGoals: LongTermGoal[];
-  strengths: string[];
-  challenges: string[];
-  preferences: string[];
-}
-
-interface ServiceAction {
-  service: string;
-  provider: string;
-  frequency: string;
-  duration: string;
-  schedule: string;
-  goals: string[];
-  progress: string;
-}
-
-interface PatientData {
-  gender: string;
-  dateOfBirth: Date;
-  address: string;
-  phone: string;
-  email: string;
-  emergencyContact: string;
-  preferredLanguage: string;
-  allergies: string[];
-  medicalConditions: string[];
-  medications: Medication[];
-  aboutMe: AboutMe;
-  goals: Goal[];
-  activities: Activity[];
-  notes: Note[];
-  documents: Document[];
-  assessments: Assessment[];
-  vitalSigns: VitalSign[];
-  careTeam: CareTeamMember[];
-  familyContacts: FamilyContact[];
-  nutrition: Nutrition;
-  socialWorker: SocialWorker;
-  equipment: Equipment[];
-  dietaryRequirements: DietaryRequirements;
-  personalCare: PersonalCare;
-  riskAssessments: RiskAssessment[];
-  individualizedPlan: IndividualizedPlan;
-  serviceActions: ServiceAction[];
-}
-
-const mockPatientData: PatientData = {
+// Mock data for the care plan details
+const mockPatientData = {
   gender: "Male",
-  dateOfBirth: new Date("1950-06-15"),
-  address: "123 Main Street, Milton Keynes, MK9 3NZ",
-  phone: "+44 7700 900123",
+  dateOfBirth: new Date("1956-03-15"),
+  address: "123 Main Street, Cityville, State, 12345",
+  phone: "(555) 123-4567",
   email: "john.michael@example.com",
-  emergencyContact: "Sarah Michael (Daughter) - +44 7700 900456",
+  emergencyContact: "Sarah Michael (Daughter) - (555) 987-6543",
   preferredLanguage: "English",
-  allergies: ["Penicillin", "Dust", "Pollen"],
-  medicalConditions: ["Type 2 Diabetes", "Hypertension", "Arthritis"],
+  allergies: ["Penicillin", "Shellfish"],
+  medicalConditions: ["Hypertension", "Type 2 Diabetes", "Arthritis"],
   medications: [
-    {
-      name: "Metformin",
-      dosage: "500mg",
-      frequency: "Twice daily",
-      purpose: "Diabetes management"
-    },
-    {
-      name: "Lisinopril",
-      dosage: "10mg",
-      frequency: "Once daily",
-      purpose: "Blood pressure control"
-    },
-    {
-      name: "Paracetamol",
-      dosage: "500mg",
-      frequency: "As needed",
-      purpose: "Pain relief"
-    }
+    { name: "Lisinopril", dosage: "10mg", frequency: "Once daily", purpose: "Blood pressure" },
+    { name: "Metformin", dosage: "500mg", frequency: "Twice daily", purpose: "Diabetes management" },
+    { name: "Ibuprofen", dosage: "400mg", frequency: "As needed", purpose: "Pain relief" }
   ],
   aboutMe: {
     preferences: [
       "Prefers to be called 'John' rather than 'Mr. Michael'",
-      "Likes to have a cup of tea before bed",
-      "Prefers shower in the morning rather than evening"
+      "Enjoys reading the newspaper in the morning",
+      "Prefers showers in the evening rather than morning",
+      "Enjoys classical music during relaxation time"
     ],
     routines: [
-      "Wakes up at 7:00 AM",
-      "Takes morning medication with breakfast at 8:00 AM",
-      "Afternoon walk at 2:00 PM weather permitting",
-      "Evening medication at 8:00 PM"
+      "Morning walk after breakfast (weather permitting)",
+      "Afternoon nap between 2-3 PM",
+      "Evening television from 7-9 PM",
+      "Bedtime reading for 30 minutes before sleep"
     ],
-    interests: ["Reading", "Classical Music", "Chess", "Gardening", "History"],
-    dislikes: ["Loud environments", "Spicy food", "Being rushed"]
+    interests: [
+      "Classical music (particularly Mozart and Beethoven)",
+      "Gardening (maintains a small herb garden)",
+      "Chess (intermediate player)",
+      "History documentaries"
+    ],
+    dislikes: [
+      "Loud environments",
+      "Spicy food",
+      "Being rushed during activities",
+      "Cold room temperatures"
+    ]
   },
   goals: [
-    {
-      title: "Improve mobility",
-      status: "In Progress",
-      target: "Walk without a cane by December",
-      notes: "Making good progress with physical therapy"
-    },
-    {
-      title: "Better diabetes management",
-      status: "Active",
-      target: "Maintain HbA1c below 7.0",
-      notes: "Diet adjustments needed"
-    }
+    { title: "Improve mobility", status: "In Progress", target: "Walk unassisted for 15 minutes", notes: "Currently at 8 minutes with walking frame" },
+    { title: "Medication adherence", status: "Active", target: "100% medication compliance", notes: "Using pill organizer effectively" },
+    { title: "Blood glucose management", status: "Active", target: "Maintain levels between 80-130 mg/dL", notes: "Morning readings occasionally high" },
   ],
   activities: [
-    {
-      date: new Date("2023-10-20"),
-      action: "Physical Therapy Session",
-      performer: "Sarah Johnson",
-      status: "Completed"
-    },
-    {
-      date: new Date("2023-10-18"),
-      action: "Blood Pressure Check",
-      performer: "Dr. Robert Chen",
-      status: "Completed"
-    }
+    { date: new Date("2023-11-10"), action: "Medication review", performer: "Dr. Emma Lewis", status: "Completed" },
+    { date: new Date("2023-11-05"), action: "Physical assessment", performer: "Nurse David Brown", status: "Completed" },
+    { date: new Date("2023-10-25"), action: "Care plan update", performer: "Dr. Sarah Johnson", status: "Completed" },
   ],
   notes: [
-    {
-      date: new Date("2023-10-15"),
-      author: "Dr. Sarah Johnson",
-      content: "Patient reported increased pain in left knee. Recommended gentle exercises and temporary increase in pain medication."
-    },
-    {
-      date: new Date("2023-10-10"),
-      author: "Nurse Michael Smith",
-      content: "Medication review completed. No changes to current regimen needed."
-    }
+    { date: new Date("2023-11-08"), author: "Nurse David Brown", content: "Patient reported mild discomfort in left knee. Applied cold compress and recommended rest. Will monitor." },
+    { date: new Date("2023-11-01"), author: "Dr. Sarah Johnson", content: "Blood pressure readings have improved with current medication. Continuing current dosage and monitoring." },
+    { date: new Date("2023-10-20"), author: "Dr. Emma Lewis", content: "Patient has been adhering well to diabetes management plan. Blood glucose levels stable." },
   ],
   documents: [
-    {
-      name: "Hospital Discharge Summary",
-      date: new Date("2023-09-15"),
-      type: "Medical Record",
-      author: "Dr. Williams"
-    },
-    {
-      name: "Physical Therapy Plan",
-      date: new Date("2023-09-20"),
-      type: "Care Plan",
-      author: "Sarah Johnson, PT"
-    }
+    { name: "Medical History Summary", date: new Date("2023-09-15"), type: "PDF", author: "Dr. Emma Lewis" },
+    { name: "Diabetes Management Plan", date: new Date("2023-09-20"), type: "DOCX", author: "Dr. Sarah Johnson" },
+    { name: "Physical Therapy Assessment", date: new Date("2023-10-10"), type: "PDF", author: "Nurse David Brown" },
   ],
   assessments: [
-    {
-      name: "Cognitive Assessment",
-      date: new Date("2023-09-10"),
-      status: "Completed",
-      performer: "Dr. James Wilson",
-      results: "Normal cognitive function for age"
+    { 
+      name: "Mobility Assessment", 
+      date: new Date("2023-10-15"), 
+      status: "Completed", 
+      performer: "Nurse David Brown",
+      results: "Patient shows limited mobility in left leg. Can walk with frame for 8-10 minutes before requiring rest. Balance is fair but should be monitored."
     },
-    {
-      name: "Fall Risk Assessment",
-      date: new Date("2023-09-12"),
-      status: "Completed",
-      performer: "Sarah Johnson, PT",
-      results: "Moderate risk - preventive measures implemented"
-    }
+    { 
+      name: "Cognitive Assessment", 
+      date: new Date("2023-09-25"), 
+      status: "Completed", 
+      performer: "Dr. Emma Lewis",
+      results: "Patient is alert and oriented. Memory function is good, with slight delay in recall of recent events. No significant cognitive concerns noted."
+    },
   ],
   vitalSigns: [
-    {
-      date: new Date("2023-10-20"),
-      type: "Blood Pressure",
-      value: "138/85 mmHg",
-      notes: "Slightly elevated but within acceptable range"
-    },
-    {
-      date: new Date("2023-10-20"),
-      type: "Heart Rate",
-      value: "72 bpm",
-      notes: "Regular rhythm"
-    }
+    { date: new Date("2023-11-10"), type: "Blood Pressure", value: "128/82 mmHg", notes: "Slightly elevated, continue monitoring" },
+    { date: new Date("2023-11-10"), type: "Heart Rate", value: "76 bpm", notes: "Within normal range" },
+    { date: new Date("2023-11-10"), type: "Temperature", value: "98.6°F (37°C)", notes: "Normal" },
+    { date: new Date("2023-11-10"), type: "Respiratory Rate", value: "16 breaths/min", notes: "Normal" },
+    { date: new Date("2023-11-10"), type: "Oxygen Saturation", value: "97%", notes: "Within normal range" },
+    { date: new Date("2023-11-05"), type: "Blood Glucose", value: "118 mg/dL", notes: "Pre-breakfast reading" },
   ],
   careTeam: [
-    {
-      name: "Dr. Sarah Johnson",
-      role: "Primary Care Physician",
-      phone: "+44 7700 900789",
-      email: "s.johnson@medinfinite.com"
-    },
-    {
-      name: "Michael Smith",
-      role: "Registered Nurse",
-      phone: "+44 7700 900321",
-      email: "m.smith@medinfinite.com"
-    }
+    { name: "Dr. Sarah Johnson", role: "Primary Care Physician", phone: "(555) 444-3333", email: "sarah.johnson@medinfinity.com" },
+    { name: "Nurse David Brown", role: "Home Care Nurse", phone: "(555) 222-1111", email: "david.brown@medinfinity.com" },
+    { name: "Dr. Emma Lewis", role: "Endocrinologist", phone: "(555) 666-7777", email: "emma.lewis@medinfinity.com" },
+    { name: "Therapist Michael Scott", role: "Physical Therapist", phone: "(555) 888-9999", email: "michael.scott@medinfinity.com" },
   ],
   familyContacts: [
-    {
-      name: "Sarah Michael",
-      relationship: "Daughter",
-      phone: "+44 7700 900456",
-      email: "sarah.michael@example.com",
-      isPrimary: true
-    },
-    {
-      name: "James Michael",
-      relationship: "Son",
-      phone: "+44 7700 900457",
-      email: "james.michael@example.com",
-      isPrimary: false
-    }
+    { name: "Sarah Michael", relationship: "Daughter", phone: "(555) 987-6543", email: "sarah.michael@example.com", isPrimary: true },
+    { name: "Robert Michael", relationship: "Son", phone: "(555) 123-4567", email: "robert.michael@example.com", isPrimary: false },
   ],
   nutrition: {
-    dietaryRestrictions: ["Low sodium", "Diabetic diet"],
-    mealPreferences: ["Enjoys fish", "Prefers vegetables to be well-cooked"],
-    hydrationPlan: "Minimum 8 glasses of water daily",
-    nutritionalNotes: "Monitor fruit intake due to diabetes"
+    dietaryRestrictions: ["Low sodium", "Diabetic diet", "No shellfish (allergy)"],
+    mealPreferences: [
+      "Prefers smaller, more frequent meals",
+      "Enjoys fruit with breakfast",
+      "Prefers tea over coffee",
+      "Dislikes dairy products except for cheese"
+    ],
+    hydrationPlan: "Minimum 8 glasses of water daily, monitored with checklist",
+    nutritionalNotes: "Patient struggles with maintaining adequate hydration. Family has been advised to encourage fluid intake throughout the day."
   },
   socialWorker: {
-    name: "Emma Watson",
-    phone: "+44 7700 900654",
-    email: "e.watson@medinfinite.com",
-    lastVisit: new Date("2023-10-05"),
-    nextVisit: new Date("2023-11-05"),
-    notes: "Discussing community resources for social engagement"
+    name: "Jessica Martinez",
+    phone: "(555) 222-3333",
+    email: "jessica.martinez@medinfinity.com",
+    lastVisit: new Date("2023-10-15"),
+    nextVisit: new Date("2023-12-10"),
+    notes: "Reviewing eligibility for additional home support services. Will coordinate with family regarding transportation to medical appointments."
   },
   equipment: [
-    {
-      name: "Walker",
-      type: "Mobility Aid",
-      status: "In use",
-      notes: "Patient using it for longer walks outside",
-      lastInspection: new Date("2023-09-01")
-    },
-    {
-      name: "Shower Chair",
-      type: "Bathroom Safety",
-      status: "In use",
-      notes: "Working well, no issues",
-      lastInspection: new Date("2023-09-01")
-    }
+    { name: "Walking Frame", type: "Mobility Aid", status: "In Use", notes: "Checked monthly", lastInspection: new Date("2023-10-30") },
+    { name: "Shower Chair", type: "Bathroom Aid", status: "In Use", notes: "Stable condition", lastInspection: new Date("2023-11-05") },
+    { name: "Hospital Bed", type: "Bedroom Aid", status: "In Use", notes: "Electric controls working properly", lastInspection: new Date("2023-10-15") },
+    { name: "Oxygen Concentrator", type: "Medical Device", status: "Available", notes: "Only used when needed", lastInspection: new Date("2023-11-10") }
   ],
+  
   dietaryRequirements: {
-    mealPlan: "Diabetic meal plan - 1800 calories daily",
+    mealPlan: "Low sodium diabetic diet plan",
     restrictions: [
-      {
-        name: "Sugar",
-        reason: "Diabetes management",
-        severity: "High"
-      },
-      {
-        name: "Salt",
-        reason: "Hypertension management",
-        severity: "Moderate"
-      }
+      { name: "Low Sodium", reason: "Hypertension management", severity: "Strict" },
+      { name: "Low Sugar", reason: "Diabetes management", severity: "Moderate" },
+      { name: "No Shellfish", reason: "Allergy", severity: "Critical" }
     ],
-    preferences: ["Fish", "Chicken", "Green vegetables"],
+    preferences: [
+      "Prefers meals to be warm, not hot",
+      "Enjoys fruit as dessert",
+      "Prefers small, frequent meals",
+      "Dislikes most dairy products except cheese"
+    ],
     supplements: [
-      {
-        name: "Vitamin D",
-        dosage: "1000 IU",
-        frequency: "Once daily",
-        purpose: "Bone health"
-      },
-      {
-        name: "Calcium",
-        dosage: "600mg",
-        frequency: "Once daily with meal",
-        purpose: "Bone health"
-      }
+      { name: "Calcium + Vitamin D", dosage: "500mg", frequency: "Daily", purpose: "Bone health" },
+      { name: "Multivitamin", dosage: "1 tablet", frequency: "Morning", purpose: "Nutritional supplement" }
     ],
-    notes: "Patient dislikes red meat",
-    hydrationPlan: "8-10 glasses of water daily",
-    nutritionalNotes: "Encourage whole grains and complex carbohydrates"
+    notes: "Patient struggles with appetite in the evenings. Family members have been advised to offer light protein-rich snacks in the afternoon.",
+    hydrationPlan: "Minimum 8 glasses of water daily, monitored with checklist",
+    nutritionalNotes: "Patient struggles with maintaining adequate hydration. Family has been advised to encourage fluid intake throughout the day."
   },
+  
   personalCare: {
     routines: [
-      {
-        activity: "Bathing",
-        frequency: "Daily",
-        assistance: "Minimal assistance entering/exiting shower",
-        notes: "Prefers morning showers"
-      },
-      {
-        activity: "Grooming",
-        frequency: "Daily",
-        assistance: "Independent",
-        notes: "May need occasional reminders"
-      }
+      { activity: "Bathing", frequency: "Daily", assistance: "Minimal", notes: "Prefers evening showers, needs supervision but minimal physical assistance" },
+      { activity: "Grooming", frequency: "Daily", assistance: "Partial", notes: "Can brush teeth independently, needs help with shaving and hair styling" },
+      { activity: "Dressing", frequency: "Daily", assistance: "Moderate", notes: "Can put on shirts and pants with assistance, struggles with buttons and zippers" },
+      { activity: "Toileting", frequency: "As needed", assistance: "Minimal", notes: "Uses toilet independently but requires handrails for safety" },
     ],
-    preferences: ["Prefers electric razor", "Likes to wear own clothes"],
+    preferences: [
+      "Prefers to wear button-down shirts for ease of dressing",
+      "Likes to have personal hygiene tasks done in privacy",
+      "Prefers warm water for bathing",
+      "Likes to have personal care tasks done in the morning"
+    ],
     mobility: {
-      status: "Ambulatory with assistance",
-      transferAbility: "Requires minimal assistance",
-      walkingDistance: "Up to 100 meters with walker",
-      stairs: "Can manage 5-6 steps with handrail",
-      notes: "Better mobility in the morning, fatigue in evening"
+      status: "Limited - requires walking frame",
+      transferAbility: "Can transfer from bed to chair with minimal assistance",
+      walkingDistance: "Up to 50 feet with walking frame before requiring rest",
+      stairs: "Unable to navigate stairs independently",
+      notes: "Balance is improving with physical therapy but still requires monitoring"
     }
   },
+  
   riskAssessments: [
-    {
-      type: "Fall Risk",
-      level: "Moderate",
-      lastAssessed: new Date("2023-09-15"),
-      assessedBy: "Sarah Johnson, PT",
-      mitigationPlan: "Use of walker, removal of trip hazards, night light",
-      reviewDate: new Date("2023-12-15")
+    { 
+      type: "Fall Risk", 
+      level: "High", 
+      lastAssessed: new Date("2023-11-01"),
+      assessedBy: "Nurse David Brown",
+      mitigationPlan: "Walking frame at all times, clear pathways, night lights, non-slip mats in bathroom, call button within reach",
+      reviewDate: new Date("2023-12-01")
     },
-    {
-      type: "Skin Integrity",
-      level: "Low",
-      lastAssessed: new Date("2023-09-15"),
-      assessedBy: "Michael Smith, RN",
-      mitigationPlan: "Regular position changes, proper hydration",
-      reviewDate: new Date("2023-12-15")
+    { 
+      type: "Pressure Ulcer Risk", 
+      level: "Moderate", 
+      lastAssessed: new Date("2023-10-15"),
+      assessedBy: "Dr. Emma Lewis",
+      mitigationPlan: "Pressure-relieving mattress, position change every 2 hours when in bed, daily skin inspection",
+      reviewDate: new Date("2023-11-15")
+    },
+    { 
+      type: "Medication Error Risk", 
+      level: "Low", 
+      lastAssessed: new Date("2023-10-20"),
+      assessedBy: "Nurse David Brown",
+      mitigationPlan: "Pill organizer prepared weekly, medication administration record, verification process",
+      reviewDate: new Date("2024-01-20")
+    },
+    { 
+      type: "Nutrition Risk", 
+      level: "Moderate", 
+      lastAssessed: new Date("2023-10-10"),
+      assessedBy: "Dietitian Mary Wilson",
+      mitigationPlan: "Regular weight monitoring, meal supplements, food diary, dietitian review monthly",
+      reviewDate: new Date("2023-11-10")
     }
   ],
+  
   individualizedPlan: {
     longTermGoals: [
       {
-        goal: "Improve mobility to walk independently",
-        targetDate: new Date("2024-03-01"),
+        goal: "Improved independence with activities of daily living",
+        targetDate: new Date("2024-03-15"),
         status: "In Progress",
-        progress: "Currently using walker for support, working on strength exercises"
+        progress: "Making steady progress with physical therapy. Now able to dress upper body with minimal assistance."
       },
       {
-        goal: "Better manage blood sugar levels",
-        targetDate: new Date("2023-12-31"),
+        goal: "Stable blood glucose levels",
+        targetDate: new Date("2024-02-01"),
         status: "In Progress",
-        progress: "Diet adjustments ongoing, monitoring blood glucose regularly"
+        progress: "Blood glucose readings showing improvement with diet adherence and medication compliance."
       },
       {
-        goal: "Increase social engagement",
-        targetDate: new Date("2024-01-15"),
+        goal: "Return to community engagement activities",
+        targetDate: new Date("2024-04-30"),
         status: "Not Started",
-        progress: "Planning to attend community center activities starting next month"
+        progress: "Will begin community reintegration once mobility improves."
       }
     ],
     strengths: [
-      "Strong motivation to improve health",
+      "Strong motivation for recovery",
       "Good cognitive function",
       "Supportive family network",
-      "Adherent to medication regimen"
+      "Adherence to medication regimen",
+      "Positive attitude toward therapy"
     ],
     challenges: [
-      "Mobility limitations due to arthritis",
-      "Managing multiple chronic conditions",
-      "Occasional memory lapses with daily routines",
-      "Limited social engagement outside family"
+      "Limited physical mobility",
+      "Fatigue with extended activity",
+      "Some reluctance to ask for help",
+      "Occasional forgetfulness with appointments"
     ],
     preferences: [
       "Prefers morning appointments",
-      "Likes to be involved in care decisions",
-      "Prefers detailed explanations of care changes",
-      "Values consistency in caregivers"
+      "Enjoys social interactions during care",
+      "Values independence in decision making"
     ]
   },
+  
   serviceActions: [
     {
       service: "Physical Therapy",
-      provider: "Sarah Johnson, PT",
-      frequency: "Twice weekly",
+      provider: "Therapist Michael Scott",
+      frequency: "3 times weekly",
       duration: "45 minutes",
-      schedule: "Mondays and Thursdays at 10:00 AM",
+      schedule: "Monday, Wednesday, Friday - 10:00 AM",
       goals: [
-        "Improve strength in lower extremities",
-        "Enhance balance and coordination",
-        "Increase walking distance without assistance"
+        "Improve walking distance with frame",
+        "Strengthen lower limbs",
+        "Improve balance and coordination"
       ],
-      progress: "Showing steady improvement in strength and balance"
+      progress: "Showing good improvement in strength, balance still challenging but improving."
     },
     {
       service: "Medication Management",
-      provider: "Michael Smith, RN",
+      provider: "Nurse David Brown",
       frequency: "Weekly",
       duration: "30 minutes",
-      schedule: "Wednesdays at 2:00 PM",
+      schedule: "Thursday - 2:00 PM",
       goals: [
         "Ensure medication compliance",
         "Monitor for side effects",
-        "Adjust medication timing for optimal effect"
+        "Adjust dosages as needed per physician orders"
       ],
-      progress: "Good adherence to medication schedule, no significant side effects reported"
+      progress: "Good medication adherence with pill organizer, no reported side effects."
     },
     {
       service: "Dietary Counseling",
-      provider: "Lisa Chen, Dietitian",
+      provider: "Dietitian Mary Wilson",
       frequency: "Monthly",
-      duration: "60 minutes",
-      schedule: "First Tuesday of each month at 11:00 AM",
+      duration: "45 minutes",
+      schedule: "First Monday - 11:00 AM",
       goals: [
-        "Optimize diabetic diet",
+        "Maintain diabetic diet plan",
         "Ensure adequate nutrition",
-        "Manage weight appropriately"
+        "Prevent weight loss"
       ],
-      progress: "Diet adjustments helping with blood sugar control, weight stable"
+      progress: "Diet adherence improving, weight has stabilized."
+    },
+    {
+      service: "Home Health Aide",
+      provider: "Various Staff",
+      frequency: "Daily",
+      duration: "1 hour",
+      schedule: "Daily - 8:00 AM and 7:00 PM",
+      goals: [
+        "Assist with personal care",
+        "Support meal preparation",
+        "Ensure safe home environment"
+      ],
+      progress: "Client becoming more independent with morning routine, still requires evening assistance."
     }
   ]
 };
 
-const mockCarePlans: CarePlan[] = [
+// Placeholder for care plan data
+const mockCarePlans = [
   {
     id: "CP-001",
     patientName: "John Michael",
@@ -603,15 +338,17 @@ const mockCarePlans: CarePlan[] = [
     assignedTo: "Dr. James Wilson",
     avatar: "ET"
   }
+  // More care plans...
 ];
 
 const CarePlanView = () => {
   const { id: branchId, branchName, carePlanId } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("personal");
-  const [carePlan, setCarePlan] = useState<CarePlan | null>(null);
+  const [carePlan, setCarePlan] = useState<typeof mockCarePlans[0] | null>(null);
 
   useEffect(() => {
+    // In a real app, fetch care plan data from API
     const plan = mockCarePlans.find(p => p.id === carePlanId);
     if (plan) {
       setCarePlan(plan);
@@ -621,6 +358,7 @@ const CarePlanView = () => {
   const handlePrintCarePlan = () => {
     if (!carePlan) return;
     
+    // Use the PDF generator utility
     generatePDF({
       id: parseInt(carePlan.id.replace('CP-', '')),
       title: `Care Plan for ${carePlan.patientName}`,
@@ -631,6 +369,7 @@ const CarePlanView = () => {
   };
 
   const handleNewBooking = () => {
+    // Display a toast message for now, in a real app this would open a booking form
     toast({
       title: "New Booking",
       description: "Booking functionality will be implemented soon.",
@@ -658,151 +397,134 @@ const CarePlanView = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen">
       <BranchInfoHeader 
         branchId={branchId || ""} 
         branchName={branchName || ""} 
         onNewBooking={handleNewBooking} 
       />
       
-      <div className="flex-1 p-4 md:p-6 space-y-6">
+      <div className="flex-1 p-6 space-y-6">
         <TabNavigation
           activeTab="care-plan"
           onChange={(tab) => navigate(`/branch-dashboard/${branchId}/${branchName}/${tab}`)}
         />
         
-        <div className="bg-white rounded-xl border border-gray-200 shadow-md overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-b p-6">
-            <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          {/* Page Header with Logo */}
+          <div className="border-b pb-4 mb-6">
+            <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <div className="mr-4 bg-white p-3 rounded-lg shadow-sm border border-blue-200">
-                  <h3 className="text-blue-700 text-lg font-bold">Med-Infinite</h3>
+                <div className="mr-4 bg-blue-50 p-2 rounded-lg">
+                  <h3 className="text-blue-700 font-bold">Med-Infinite</h3>
                 </div>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Care Plan Management</h1>
-                  <p className="text-gray-600">Comprehensive patient care documentation</p>
+                  <h1 className="text-2xl font-bold">Care Plan Management</h1>
+                  <p className="text-gray-500">Comprehensive patient care documentation</p>
                 </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan`)}
-                  className="h-9 w-9 rounded-full bg-white shadow-sm border border-gray-200"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <h2 className="text-xl md:text-2xl font-bold text-gray-800">Care Plan Details</h2>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <Button variant="outline" onClick={handlePrintCarePlan} className="flex items-center gap-2 bg-white">
-                  <Download className="h-4 w-4" />
-                  <span>Export PDF</span>
-                </Button>
-                <Button variant="default" className="flex items-center gap-2">
-                  <FileEdit className="h-4 w-4" />
-                  <span>Edit Plan</span>
-                </Button>
               </div>
             </div>
           </div>
           
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan`)}
+                className="h-8 w-8 rounded-full"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <h1 className="text-2xl font-bold">Care Plan Details</h1>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" onClick={handlePrintCarePlan} className="flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                <span>Export</span>
+              </Button>
+              <Button variant="outline" className="flex items-center gap-2">
+                <FileEdit className="h-4 w-4" />
+                <span>Edit</span>
+              </Button>
+            </div>
+          </div>
+          
           {carePlan && (
-            <div className="p-6">
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-4 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-blue-100 shadow-sm mb-6">
-                <div className="w-20 h-20 rounded-xl bg-blue-600 text-white flex items-center justify-center text-2xl font-bold shadow-md">
+            <div className="flex flex-col space-y-6">
+              {/* Patient Header */}
+              <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg font-medium">
                   {carePlan.avatar}
                 </div>
-                <div className="flex-1">
-                  <h2 className="text-2xl md:text-3xl font-bold">{carePlan.patientName}</h2>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-2 text-sm">
-                    <div className="flex items-center px-3 py-1 bg-blue-50 rounded-full border border-blue-100">
-                      <User className="h-3 w-3 mr-1 text-blue-600" />
-                      <span>Patient ID: {carePlan.patientId}</span>
-                    </div>
-                    <div className="flex items-center px-3 py-1 bg-blue-50 rounded-full border border-blue-100">
-                      <FileText className="h-3 w-3 mr-1 text-blue-600" />
-                      <span>Plan ID: {carePlan.id}</span>
-                    </div>
-                    <Badge variant="outline" className={`${getStatusBadgeClass(carePlan.status)} px-3 py-1 rounded-full`}>
+                <div>
+                  <h2 className="text-2xl font-bold">{carePlan.patientName}</h2>
+                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <span>Patient ID: {carePlan.patientId}</span>
+                    <span>•</span>
+                    <span>Plan ID: {carePlan.id}</span>
+                    <span>•</span>
+                    <Badge variant="outline" className={getStatusBadgeClass(carePlan.status)}>
                       {carePlan.status}
                     </Badge>
                   </div>
                 </div>
-                <div className="flex flex-col items-start md:items-end text-sm">
-                  <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100 mb-2">
-                    <Calendar className="h-3 w-3 text-blue-600" />
-                    <span>Created: {format(carePlan.dateCreated, 'MMM dd, yyyy')}</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100">
-                    <Clock className="h-3 w-3 text-blue-600" />
-                    <span>Updated: {format(carePlan.lastUpdated, 'MMM dd, yyyy')}</span>
-                  </div>
-                </div>
               </div>
               
-              <div className="flex flex-col lg:flex-row gap-6">
-                <div className="w-full lg:w-1/4">
-                  <Card className="sticky top-6 shadow-md border-blue-100 overflow-hidden">
-                    <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3">
-                      <CardTitle className="text-lg text-gray-800">Care Plan Summary</CardTitle>
+              <div className="flex flex-col md:flex-row gap-6">
+                {/* Left sidebar */}
+                <div className="w-full md:w-1/4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg">Care Plan Summary</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4 p-4">
+                    <CardContent className="space-y-4">
                       <div>
-                        <p className="text-sm font-medium text-gray-500 mb-1">Status</p>
-                        <Badge variant="outline" className={`${getStatusBadgeClass(carePlan.status)} text-sm py-1 px-3`}>
+                        <p className="text-sm font-medium text-gray-500">Status</p>
+                        <Badge variant="outline" className={getStatusBadgeClass(carePlan.status)}>
                           {carePlan.status}
                         </Badge>
                       </div>
                       
                       <div>
-                        <p className="text-sm font-medium text-gray-500 mb-1">Assigned To</p>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-7 w-7 border-2 border-white shadow-sm">
-                            <div className="bg-blue-600 text-white w-full h-full flex items-center justify-center text-xs font-bold">
+                        <p className="text-sm font-medium text-gray-500">Assigned To</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Avatar className="h-6 w-6">
+                            <div className="bg-blue-100 text-blue-600 w-full h-full flex items-center justify-center text-xs">
                               {carePlan.assignedTo.split(' ').map(n => n[0]).join('')}
                             </div>
                           </Avatar>
-                          <span className="text-sm font-medium">{carePlan.assignedTo}</span>
+                          <span className="text-sm">{carePlan.assignedTo}</span>
                         </div>
                       </div>
                       
                       <div>
-                        <p className="text-sm font-medium text-gray-500 mb-1">Created On</p>
-                        <p className="text-sm flex items-center">
-                          <Calendar className="h-3 w-3 mr-1 text-blue-600" />
-                          {format(carePlan.dateCreated, 'MMM dd, yyyy')}
-                        </p>
+                        <p className="text-sm font-medium text-gray-500">Created On</p>
+                        <p className="text-sm">{format(carePlan.dateCreated, 'MMM dd, yyyy')}</p>
                       </div>
                       
                       <div>
-                        <p className="text-sm font-medium text-gray-500 mb-1">Last Updated</p>
-                        <p className="text-sm flex items-center">
-                          <Clock className="h-3 w-3 mr-1 text-blue-600" />
-                          {format(carePlan.lastUpdated, 'MMM dd, yyyy')}
-                        </p>
+                        <p className="text-sm font-medium text-gray-500">Last Updated</p>
+                        <p className="text-sm">{format(carePlan.lastUpdated, 'MMM dd, yyyy')}</p>
                       </div>
                       
-                      <Separator className="my-2" />
+                      <Separator />
                       
                       <div>
-                        <p className="text-sm font-medium text-gray-700 mb-2">Quick Actions</p>
+                        <p className="text-sm font-medium text-gray-500 mb-2">Quick Actions</p>
                         <div className="space-y-2">
-                          <Button variant="outline" size="sm" className="w-full justify-start bg-white hover:bg-blue-50 border-blue-100">
-                            <MessageCircle className="h-4 w-4 mr-2 text-blue-600" />
+                          <Button variant="outline" size="sm" className="w-full justify-start">
+                            <MessageCircle className="h-4 w-4 mr-2" />
                             <span>Add Note</span>
                           </Button>
-                          <Button variant="outline" size="sm" className="w-full justify-start bg-white hover:bg-blue-50 border-blue-100">
-                            <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
-                            <span>Record Incident</span>
+                          <Button variant="outline" size="sm" className="w-full justify-start">
+                            <Clock className="h-4 w-4 mr-2" />
+                            <span>Schedule Follow-up</span>
                           </Button>
-                          <Button variant="outline" size="sm" className="w-full justify-start bg-white hover:bg-blue-50 border-blue-100">
-                            <FileCheck className="h-4 w-4 mr-2 text-green-600" />
-                            <span>Update Status</span>
+                          <Button variant="outline" size="sm" className="w-full justify-start">
+                            <Activity className="h-4 w-4 mr-2" />
+                            <span>Record Activity</span>
                           </Button>
                         </div>
                       </div>
@@ -810,99 +532,500 @@ const CarePlanView = () => {
                   </Card>
                 </div>
                 
-                <div className="flex-1">
+                {/* Main content */}
+                <div className="w-full md:w-3/4">
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="mb-4 w-full md:w-auto">
-                      <TabsTrigger value="personal" className="flex items-center gap-2">
+                    <TabsList className="w-full justify-start overflow-x-auto mb-4">
+                      <TabsTrigger value="personal" className="flex items-center gap-1">
                         <User className="h-4 w-4" />
                         <span>Personal</span>
                       </TabsTrigger>
-                      <TabsTrigger value="medical" className="flex items-center gap-2">
-                        <Activity className="h-4 w-4" />
-                        <span>Medical</span>
+                      <TabsTrigger value="aboutme" className="flex items-center gap-1">
+                        <Info className="h-4 w-4" />
+                        <span>About Me</span>
                       </TabsTrigger>
-                      <TabsTrigger value="diet" className="flex items-center gap-2">
-                        <Utensils className="h-4 w-4" />
-                        <span>Diet</span>
+                      <TabsTrigger value="goals" className="flex items-center gap-1">
+                        <FileCheck className="h-4 w-4" />
+                        <span>Goals</span>
                       </TabsTrigger>
-                      <TabsTrigger value="care" className="flex items-center gap-2">
-                        <Bath className="h-4 w-4" />
-                        <span>Care</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="risks" className="flex items-center gap-2">
-                        <ShieldAlert className="h-4 w-4" />
-                        <span>Risks</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="equipment" className="flex items-center gap-2">
+                      <TabsTrigger value="equipment" className="flex items-center gap-1">
                         <Wrench className="h-4 w-4" />
                         <span>Equipment</span>
                       </TabsTrigger>
-                      <TabsTrigger value="plan" className="flex items-center gap-2">
-                        <ClipboardList className="h-4 w-4" />
-                        <span>Plan</span>
+                      <TabsTrigger value="dietary" className="flex items-center gap-1">
+                        <Utensils className="h-4 w-4" />
+                        <span>Dietary</span>
                       </TabsTrigger>
-                      <TabsTrigger value="reports" className="flex items-center gap-2">
+                      <TabsTrigger value="personal-care" className="flex items-center gap-1">
+                        <Bath className="h-4 w-4" />
+                        <span>Personal Care</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="risk" className="flex items-center gap-1">
+                        <ShieldAlert className="h-4 w-4" />
+                        <span>Risk</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="service-plan" className="flex items-center gap-1">
+                        <ClipboardList className="h-4 w-4" />
+                        <span>Service Plan</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="actions" className="flex items-center gap-1">
                         <FileBarChart2 className="h-4 w-4" />
-                        <span>Reports</span>
+                        <span>Service Actions</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="activities" className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        <span>Activities</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="notes" className="flex items-center gap-1">
+                        <MessageCircle className="h-4 w-4" />
+                        <span>Notes</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="documents" className="flex items-center gap-1">
+                        <FileText className="h-4 w-4" />
+                        <span>Documents</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="assessments" className="flex items-center gap-1">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span>Assessments</span>
                       </TabsTrigger>
                     </TabsList>
                     
-                    <TabsContent value="personal" className="mt-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border-blue-100">
-                          <CardHeader className="bg-gradient-to-r from-blue-50 to-white pb-3">
-                            <div className="flex items-center gap-2">
-                              <CircleUser className="h-5 w-5 text-blue-600" />
-                              <CardTitle className="text-lg font-bold text-gray-800">Personal Information</CardTitle>
+                    {/* Personal Information Tab */}
+                    <TabsContent value="personal" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Personal Information</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Full Name</p>
+                              <p className="text-sm">{carePlan.patientName}</p>
                             </div>
-                            <CardDescription>Basic information and demographics</CardDescription>
-                          </CardHeader>
-                          <CardContent className="p-5 space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-1 p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors duration-200">
-                                <p className="text-xs font-medium text-gray-500">Gender</p>
-                                <p className="text-sm font-medium">{mockPatientData.gender}</p>
-                              </div>
-                              <div className="space-y-1 p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors duration-200">
-                                <p className="text-xs font-medium text-gray-500">Date of Birth</p>
-                                <p className="text-sm font-medium">{format(mockPatientData.dateOfBirth, 'MMMM d, yyyy')} ({new Date().getFullYear() - mockPatientData.dateOfBirth.getFullYear()} years)</p>
-                              </div>
-                              <div className="space-y-1 p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors duration-200">
-                                <p className="text-xs font-medium text-gray-500">Address</p>
-                                <p className="text-sm font-medium">{mockPatientData.address}</p>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Patient ID</p>
+                              <p className="text-sm">{carePlan.patientId}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Gender</p>
+                              <p className="text-sm">{mockPatientData.gender}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Date of Birth</p>
+                              <p className="text-sm">{format(mockPatientData.dateOfBirth, 'MMM dd, yyyy')} (Age: {new Date().getFullYear() - mockPatientData.dateOfBirth.getFullYear()})</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Address</p>
+                              <p className="text-sm">{mockPatientData.address}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Phone</p>
+                              <p className="text-sm">{mockPatientData.phone}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Email</p>
+                              <p className="text-sm">{mockPatientData.email}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Preferred Language</p>
+                              <p className="text-sm">{mockPatientData.preferredLanguage}</p>
+                            </div>
+                            <div className="md:col-span-2">
+                              <p className="text-sm font-medium text-gray-500">Emergency Contact</p>
+                              <p className="text-sm">{mockPatientData.emergencyContact}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Medical Information</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-sm font-medium text-gray-500 mb-1">Allergies</p>
+                              <div className="flex flex-wrap gap-1">
+                                {mockPatientData.allergies.map((allergy, index) => (
+                                  <Badge key={index} variant="outline" className="text-red-600 bg-red-50 border-red-200">
+                                    {allergy}
+                                  </Badge>
+                                ))}
                               </div>
                             </div>
-                          </CardContent>
-                        </Card>
-                      </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500 mb-1">Medical Conditions</p>
+                              <div className="flex flex-wrap gap-1">
+                                {mockPatientData.medicalConditions.map((condition, index) => (
+                                  <Badge key={index} variant="outline" className="text-blue-600 bg-blue-50 border-blue-200">
+                                    {condition}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500 mb-1">Medications</p>
+                              <div className="grid grid-cols-1 gap-2">
+                                {mockPatientData.medications.map((medication, index) => (
+                                  <div key={index} className="flex items-center justify-between border rounded-md p-2 bg-gray-50">
+                                    <div>
+                                      <p className="font-medium text-sm">{medication.name} ({medication.dosage})</p>
+                                      <p className="text-xs text-gray-500">{medication.frequency} - {medication.purpose}</p>
+                                    </div>
+                                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </TabsContent>
                     
-                    <TabsContent value="medical" className="mt-6">
-                      {/* Medical tab content will go here */}
+                    {/* About Me Tab */}
+                    <TabsContent value="aboutme" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">About Me</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Preferences</p>
+                              <ul className="list-disc list-inside">
+                                {mockPatientData.aboutMe.preferences.map((pref, index) => (
+                                  <li key={index} className="text-sm">{pref}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Routines</p>
+                              <ul className="list-disc list-inside">
+                                {mockPatientData.aboutMe.routines.map((routine, index) => (
+                                  <li key={index} className="text-sm">{routine}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Interests</p>
+                              <ul className="list-disc list-inside">
+                                {mockPatientData.aboutMe.interests.map((interest, index) => (
+                                  <li key={index} className="text-sm">{interest}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Dislikes</p>
+                              <ul className="list-disc list-inside">
+                                {mockPatientData.aboutMe.dislikes.map((dislike, index) => (
+                                  <li key={index} className="text-sm">{dislike}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </TabsContent>
                     
-                    <TabsContent value="diet" className="mt-6">
-                      {/* Diet tab content will go here */}
+                    {/* Goals Tab */}
+                    <TabsContent value="goals" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Goals</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.goals.map((goal, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{goal.title}</p>
+                                  <p className="text-sm text-gray-500">{goal.status}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{goal.target}</p>
+                                <p className="text-sm text-gray-500">{goal.notes}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
                     </TabsContent>
                     
-                    <TabsContent value="care" className="mt-6">
-                      {/* Care tab content will go here */}
+                    {/* Equipment Tab */}
+                    <TabsContent value="equipment" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Equipment</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.equipment.map((equipment, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{equipment.name}</p>
+                                  <p className="text-sm text-gray-500">{equipment.type}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{equipment.status}</p>
+                                <p className="text-sm text-gray-500">{equipment.notes}</p>
+                                <p className="text-sm text-gray-500">{format(equipment.lastInspection, 'MMM dd, yyyy')}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
                     </TabsContent>
                     
-                    <TabsContent value="risks" className="mt-6">
-                      {/* Risks tab content will go here */}
+                    {/* Dietary Tab */}
+                    <TabsContent value="dietary" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Dietary</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Dietary Restrictions</p>
+                              <div className="flex flex-wrap gap-1">
+                                {mockPatientData.dietaryRequirements.restrictions.map((restriction, index) => (
+                                  <Badge key={index} variant="outline" className="text-red-600 bg-red-50 border-red-200">
+                                    {restriction.name}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Meal Preferences</p>
+                              <div className="flex flex-wrap gap-1">
+                                {mockPatientData.dietaryRequirements.preferences.map((pref, index) => (
+                                  <Badge key={index} variant="outline" className="text-blue-600 bg-blue-50 border-blue-200">
+                                    {pref}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Hydration Plan</p>
+                              <p className="text-sm">{mockPatientData.dietaryRequirements.hydrationPlan}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Nutritional Notes</p>
+                              <p className="text-sm">{mockPatientData.dietaryRequirements.nutritionalNotes}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </TabsContent>
                     
-                    <TabsContent value="equipment" className="mt-6">
-                      {/* Equipment tab content will go here */}
+                    {/* Personal Care Tab */}
+                    <TabsContent value="personal-care" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Personal Care</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Routines</p>
+                              <ul className="list-disc list-inside">
+                                {mockPatientData.personalCare.routines.map((routine, index) => (
+                                  <li key={index} className="text-sm">{routine.activity} ({routine.frequency})</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Preferences</p>
+                              <ul className="list-disc list-inside">
+                                {mockPatientData.personalCare.preferences.map((pref, index) => (
+                                  <li key={index} className="text-sm">{pref}</li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-500">Mobility</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm">{mockPatientData.personalCare.mobility.status}</p>
+                                <p className="text-sm">{mockPatientData.personalCare.mobility.transferAbility}</p>
+                                <p className="text-sm">{mockPatientData.personalCare.mobility.walkingDistance}</p>
+                                <p className="text-sm">{mockPatientData.personalCare.mobility.stairs}</p>
+                                <p className="text-sm">{mockPatientData.personalCare.mobility.notes}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </TabsContent>
                     
-                    <TabsContent value="plan" className="mt-6">
-                      {/* Plan tab content will go here */}
+                    {/* Risk Tab */}
+                    <TabsContent value="risk" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Risk</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.riskAssessments.map((risk, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{risk.type}</p>
+                                  <p className="text-sm text-gray-500">{risk.level}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{format(risk.lastAssessed, 'MMM dd, yyyy')}</p>
+                                <p className="text-sm text-gray-500">{risk.assessedBy}</p>
+                                <p className="text-sm text-gray-500">{risk.mitigationPlan}</p>
+                                <p className="text-sm text-gray-500">{format(risk.reviewDate, 'MMM dd, yyyy')}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
                     </TabsContent>
                     
-                    <TabsContent value="reports" className="mt-6">
-                      {/* Reports tab content will go here */}
+                    {/* Service Plan Tab */}
+                    <TabsContent value="service-plan" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Service Plan</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.serviceActions.map((service, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{service.service}</p>
+                                  <p className="text-sm text-gray-500">{service.provider}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{service.frequency}</p>
+                                <p className="text-sm text-gray-500">{service.duration}</p>
+                                <p className="text-sm text-gray-500">{service.schedule}</p>
+                                <p className="text-sm text-gray-500">{service.goals.map((goal, goalIndex) => (
+                                  <span key={goalIndex} className="text-sm">{goal}</span>
+                                ))}</p>
+                                <p className="text-sm text-gray-500">{service.progress}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* Service Actions Tab */}
+                    <TabsContent value="actions" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Service Actions</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.serviceActions.map((service, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{service.service}</p>
+                                  <p className="text-sm text-gray-500">{service.provider}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{service.frequency}</p>
+                                <p className="text-sm text-gray-500">{service.duration}</p>
+                                <p className="text-sm text-gray-500">{service.schedule}</p>
+                                <p className="text-sm text-gray-500">{service.goals.map((goal, goalIndex) => (
+                                  <span key={goalIndex} className="text-sm">{goal}</span>
+                                ))}</p>
+                                <p className="text-sm text-gray-500">{service.progress}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* Activities Tab */}
+                    <TabsContent value="activities" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Activities</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.activities.map((activity, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{activity.action}</p>
+                                  <p className="text-sm text-gray-500">{activity.performer}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{activity.status}</p>
+                                <p className="text-sm text-gray-500">{format(activity.date, 'MMM dd, yyyy')}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* Notes Tab */}
+                    <TabsContent value="notes" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Notes</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.notes.map((note, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{note.author}</p>
+                                  <p className="text-sm text-gray-500">{format(note.date, 'MMM dd, yyyy')}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{note.content}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* Documents Tab */}
+                    <TabsContent value="documents" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Documents</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.documents.map((document, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{document.name}</p>
+                                  <p className="text-sm text-gray-500">{document.type}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{format(document.date, 'MMM dd, yyyy')}</p>
+                                <p className="text-sm text-gray-500">{document.author}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* Assessments Tab */}
+                    <TabsContent value="assessments" className="space-y-4">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">Assessments</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {mockPatientData.assessments.map((assessment, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-500">{assessment.name}</p>
+                                  <p className="text-sm text-gray-500">{assessment.status}</p>
+                                </div>
+                                <p className="text-sm text-gray-500">{format(assessment.date, 'MMM dd, yyyy')}</p>
+                                <p className="text-sm text-gray-500">{assessment.performer}</p>
+                                <p className="text-sm text-gray-500">{assessment.results}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
                     </TabsContent>
                   </Tabs>
                 </div>
