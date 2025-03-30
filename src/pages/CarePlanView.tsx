@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -746,4 +747,291 @@ const CarePlanView = () => {
                             <MessageCircle className="h-4 w-4 mr-2 text-blue-600" />
                             <span>Add Note</span>
                           </Button>
-                          <Button variant
+                          <Button variant="outline" size="sm" className="w-full justify-start bg-white hover:bg-blue-50 border-blue-100">
+                            <Clock className="h-4 w-4 mr-2 text-blue-600" />
+                            <span>Schedule Follow-up</span>
+                          </Button>
+                          <Button variant="outline" size="sm" className="w-full justify-start bg-white hover:bg-blue-50 border-blue-100">
+                            <Activity className="h-4 w-4 mr-2 text-blue-600" />
+                            <span>Record Activity</span>
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                {/* Main content - Enhanced */}
+                <div className="w-full lg:w-3/4">
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-t-lg border border-blue-100 p-2 sticky top-0 z-10">
+                      <TabsList className="w-full bg-white/80 backdrop-blur-sm border border-gray-100 rounded-lg shadow-sm">
+                        <TabsTrigger value="personal" className="flex items-center gap-1">
+                          <User className="h-4 w-4" />
+                          <span>Personal</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="aboutme" className="flex items-center gap-1">
+                          <Info className="h-4 w-4" />
+                          <span>About Me</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="goals" className="flex items-center gap-1">
+                          <FileCheck className="h-4 w-4" />
+                          <span>Goals</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="equipment" className="flex items-center gap-1">
+                          <Wrench className="h-4 w-4" />
+                          <span>Equipment</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="dietary" className="flex items-center gap-1">
+                          <Utensils className="h-4 w-4" />
+                          <span>Dietary</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="personal-care" className="flex items-center gap-1">
+                          <Bath className="h-4 w-4" />
+                          <span>Personal Care</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="risk" className="flex items-center gap-1">
+                          <ShieldAlert className="h-4 w-4" />
+                          <span>Risk</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="service-plan" className="flex items-center gap-1">
+                          <ClipboardList className="h-4 w-4" />
+                          <span>Service Plan</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="actions" className="flex items-center gap-1">
+                          <FileBarChart2 className="h-4 w-4" />
+                          <span>Service Actions</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="activities" className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>Activities</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="notes" className="flex items-center gap-1">
+                          <MessageCircle className="h-4 w-4" />
+                          <span>Notes</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="documents" className="flex items-center gap-1">
+                          <FileText className="h-4 w-4" />
+                          <span>Documents</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="assessments" className="flex items-center gap-1">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span>Assessments</span>
+                        </TabsTrigger>
+                      </TabsList>
+                    </div>
+                    
+                    {/* Personal Information Tab - Enhanced */}
+                    <TabsContent value="personal" className="space-y-6 mt-6">
+                      <Card className="overflow-hidden shadow-sm border-blue-100">
+                        <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 pb-3">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <User className="h-5 w-5 text-blue-600" />
+                            Personal Information
+                          </CardTitle>
+                          <CardDescription>Basic patient demographic information</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-3">
+                              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                <p className="text-sm font-medium text-gray-500 mb-1">Full Name</p>
+                                <p className="text-base font-medium">{carePlan.patientName}</p>
+                              </div>
+                              
+                              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                <p className="text-sm font-medium text-gray-500 mb-1">Gender</p>
+                                <p className="text-base">{mockPatientData.gender}</p>
+                              </div>
+                              
+                              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                <p className="text-sm font-medium text-gray-500 mb-1">Date of Birth</p>
+                                <p className="text-base">{format(mockPatientData.dateOfBirth, 'MMM dd, yyyy')}</p>
+                                <p className="text-sm text-gray-500">Age: {new Date().getFullYear() - mockPatientData.dateOfBirth.getFullYear()} years</p>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-3">
+                              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                <p className="text-sm font-medium text-gray-500 mb-1">Patient ID</p>
+                                <p className="text-base font-medium">{carePlan.patientId}</p>
+                              </div>
+                              
+                              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                <p className="text-sm font-medium text-gray-500 mb-1">Phone</p>
+                                <p className="text-base">{mockPatientData.phone}</p>
+                              </div>
+                              
+                              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                <p className="text-sm font-medium text-gray-500 mb-1">Email</p>
+                                <p className="text-base">{mockPatientData.email}</p>
+                              </div>
+                            </div>
+                            
+                            <div className="md:col-span-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                              <p className="text-sm font-medium text-gray-500 mb-1">Preferred Language</p>
+                              <p className="text-base">{mockPatientData.preferredLanguage}</p>
+                            </div>
+                            
+                            <div className="md:col-span-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                              <p className="text-sm font-medium text-gray-500 mb-1">Address</p>
+                              <p className="text-base">{mockPatientData.address}</p>
+                            </div>
+                            
+                            <div className="md:col-span-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                              <p className="text-sm font-medium text-gray-500 mb-1">Emergency Contact</p>
+                              <p className="text-base">{mockPatientData.emergencyContact}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="overflow-hidden shadow-sm border-blue-100">
+                        <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 pb-3">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <FileText className="h-5 w-5 text-blue-600" />
+                            Medical Information
+                          </CardTitle>
+                          <CardDescription>Health conditions and medications</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                          <div className="space-y-6">
+                            <div>
+                              <p className="text-sm font-medium text-gray-700 mb-2">Allergies</p>
+                              <div className="flex flex-wrap gap-2">
+                                {mockPatientData.allergies.map((allergy, index) => (
+                                  <Badge key={index} variant="outline" className="text-red-600 bg-red-50 border-red-200 px-3 py-1">
+                                    {allergy}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <p className="text-sm font-medium text-gray-700 mb-2">Medical Conditions</p>
+                              <div className="flex flex-wrap gap-2">
+                                {mockPatientData.medicalConditions.map((condition, index) => (
+                                  <Badge key={index} variant="outline" className="text-blue-600 bg-blue-50 border-blue-200 px-3 py-1">
+                                    {condition}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <p className="text-sm font-medium text-gray-700 mb-2">Medications</p>
+                              <div className="grid grid-cols-1 gap-3">
+                                {mockPatientData.medications.map((medication, index) => (
+                                  <div key={index} className="flex items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="mr-3 p-2 bg-blue-100 rounded-lg">
+                                      <Pill className="h-5 w-5 text-blue-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="font-medium">{medication.name} ({medication.dosage})</p>
+                                      <p className="text-sm text-gray-500">{medication.frequency} - {medication.purpose}</p>
+                                    </div>
+                                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    {/* About Me Tab */}
+                    <TabsContent value="aboutme" className="space-y-4 mt-6">
+                      <Card className="shadow-md border-blue-100 overflow-hidden">
+                        <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 pb-2">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <Info className="h-5 w-5 text-blue-600" />
+                            Preferences
+                          </CardTitle>
+                          <CardDescription>Personal preferences to be aware of when providing care</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-5">
+                          <ul className="space-y-2">
+                            {mockPatientData.aboutMe.preferences.map((pref, index) => (
+                              <li key={index} className="flex items-start p-2 bg-gray-50 rounded-lg border border-gray-100">
+                                <span className="text-blue-600 mr-2 flex-shrink-0">•</span>
+                                <span className="text-gray-700">{pref}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="shadow-md border-blue-100 overflow-hidden">
+                        <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 pb-2">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <Calendar className="h-5 w-5 text-blue-600" />
+                            Daily Routines
+                          </CardTitle>
+                          <CardDescription>Regular activities and schedule preferences</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-5">
+                          <ul className="space-y-2">
+                            {mockPatientData.aboutMe.routines.map((routine, index) => (
+                              <li key={index} className="flex items-start p-2 bg-gray-50 rounded-lg border border-gray-100">
+                                <span className="text-blue-600 mr-2 flex-shrink-0">•</span>
+                                <span className="text-gray-700">{routine}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </CardContent>
+                      </Card>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Card className="shadow-md border-blue-100 overflow-hidden">
+                          <CardHeader className="bg-gradient-to-r from-gray-50 to-green-50 pb-2">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                              <span className="text-green-600">Interests & Hobbies</span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-5">
+                            <ul className="space-y-2">
+                              {mockPatientData.aboutMe.interests.map((interest, index) => (
+                                <li key={index} className="flex items-start p-2 bg-gray-50 rounded-lg border border-gray-100">
+                                  <span className="text-green-600 mr-2 flex-shrink-0">•</span>
+                                  <span className="text-gray-700">{interest}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </CardContent>
+                        </Card>
+                        
+                        <Card className="shadow-md border-blue-100 overflow-hidden">
+                          <CardHeader className="bg-gradient-to-r from-gray-50 to-red-50 pb-2">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                              <span className="text-red-600">Dislikes & Concerns</span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-5">
+                            <ul className="space-y-2">
+                              {mockPatientData.aboutMe.dislikes.map((dislike, index) => (
+                                <li key={index} className="flex items-start p-2 bg-gray-50 rounded-lg border border-gray-100">
+                                  <span className="text-red-600 mr-2 flex-shrink-0">•</span>
+                                  <span className="text-gray-700">{dislike}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </TabsContent>
+                    
+                    {/* Additional tabs would be implemented here */}
+                    
+                  </Tabs>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CarePlanView;
