@@ -23,10 +23,8 @@ import { format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { CommunicationsTab } from "@/components/communications/CommunicationsTab";
-import { ListChecks, BookText } from "lucide-react";
-import KeyParametersContent from "@/components/keyparameters/KeyParametersContent";
-import WorkflowContent from "@/components/workflow/WorkflowContent";
 import { MedicationTab } from "@/components/medication/MedicationTab";
+import ReviewsTab from "@/components/reviews/ReviewsTab";
 import { CareTab } from "@/components/care/CareTab";
 import NotificationsOverview from "@/components/workflow/NotificationsOverview";
 import TaskMatrix from "./TaskMatrix";
@@ -770,6 +768,7 @@ const BranchDashboard = () => {
         {activeTab === "medication" && <MedicationTab branchId={id} branchName={branchName} />}
         {activeTab === "reviews" && <ReviewsTab branchId={id} branchName={branchName} />}
         {activeTab === "care" && <CareTab branchId={id} branchName={branchName} />}
+      
       </main>
     </div>
   );
