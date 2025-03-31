@@ -32,7 +32,7 @@ const WorkflowContent = ({
 
   const handleTaskMatrixClick = () => {
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/task-matrix`);
+      navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/task-matrix`);
     } else {
       navigate(`/task-matrix`);
     }
@@ -40,7 +40,7 @@ const WorkflowContent = ({
   
   const handleTrainingMatrixClick = () => {
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/training-matrix`);
+      navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/training-matrix`);
     } else {
       navigate(`/training-matrix`);
     }
@@ -48,19 +48,18 @@ const WorkflowContent = ({
   
   const handleFormMatrixClick = () => {
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/form-matrix`);
+      navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-matrix`);
     } else {
       navigate(`/form-matrix`);
     }
   };
   
-  return <>
+  return (
+    <>
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Workflow Management</h1>
         <p className="text-gray-500 mt-2 font-medium">Manage and monitor all workflow processes</p>
       </div>
-      
-      
       
       <motion.div initial={{
       opacity: 0
@@ -149,7 +148,8 @@ const WorkflowContent = ({
           </div>
         </div>
       </motion.div>
-    </>;
+    </>
+  );
 };
 
 export default WorkflowContent;
