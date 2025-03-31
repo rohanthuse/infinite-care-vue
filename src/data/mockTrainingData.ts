@@ -179,9 +179,15 @@ export const generateTrainingMatrix = (): TrainingMatrix => {
           expiryDate = expiryDateObj.toISOString().split('T')[0];
           
           // If current date is past expiry date, ensure status is 'expired'
-          if (new Date() > expiryDateObj && status === 'completed') {
-            data[staff.id][training.id] = { status: 'expired', completionDate, expiryDate };
-            continue;
+          const currentStatus = status;
+          if (new Date() > expiryDateObj && currentStatus === 'completed') {
+            data[staff.id][training.id] = { 
+              status: 'expired', 
+              completionDate, 
+              expiryDate 
+            };
+            // Skip the rest of the current iteration and move to the next one
+            return; // Using return instead of continue in the forEach callback
           }
         }
         
