@@ -30,6 +30,7 @@ import KeyParameters from "./pages/KeyParameters";
 import CarePlanView from "./pages/CarePlanView";
 import TaskMatrix from "./pages/TaskMatrix";
 import TrainingMatrix from "./pages/TrainingMatrix";
+import FormMatrix from "./pages/FormMatrix";
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -61,6 +62,7 @@ function App() {
             <Route path="/workflow" element={<Workflow />} />
             <Route path="/task-matrix" element={<TaskMatrix />} />
             <Route path="/training-matrix" element={<TrainingMatrix />} />
+            <Route path="/form-matrix" element={<FormMatrix />} />
             <Route path="/key-parameters" element={<KeyParameters />} />
             
             {/* Branch Dashboard Routes */}
@@ -72,6 +74,8 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
             <Route path="/branch-dashboard/:id/:branchName/care-plan/:carePlanId" element={<CarePlanView />} />
+            <Route path="/branch-dashboard/:id/:branchName/training-matrix" element={<TrainingMatrix />} />
+            <Route path="/branch-dashboard/:id/:branchName/form-matrix" element={<FormMatrix />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
