@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Heart, ListCheck, BookOpen, Flame, Music, ThumbsUp, Clock, Coffee, Star, BookOpen2, Calendar, Bookmark } from "lucide-react";
+import { Heart, ListCheck, BookOpen, Flame, Music, ThumbsUp, Clock, Coffee, Star, BookText, Calendar, Bookmark } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
@@ -102,7 +102,7 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({ aboutMe }) => {
                   {index % 2 === 0 ? (
                     <Music className="h-4 w-4 mr-2 text-purple-500 flex-shrink-0 mt-0.5" />
                   ) : (
-                    <BookOpen2 className="h-4 w-4 mr-2 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <BookText className="h-4 w-4 mr-2 text-purple-500 flex-shrink-0 mt-0.5" />
                   )}
                   <span className="font-medium">{interest}</span>
                 </div>
