@@ -99,26 +99,23 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
   ];
 
   return (
-    <div className="mt-6">
-      <h2 className="text-xl font-bold text-gray-800 tracking-tight mb-4">Notification Overview</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        {notificationData.map((notification, index) => (
-          <NotificationCard
-            key={index}
-            title={notification.title}
-            count={notification.count}
-            icon={notification.icon}
-            color={notification.color}
-            bgColor={notification.bgColor}
-            borderColor={notification.borderColor}
-            description={notification.description}
-            onClick={() => {
-              console.log(`Clicked on ${notification.title}`);
-              handleNavigate(notification.path);
-            }}
-          />
-        ))}
-      </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+      {notificationData.map((notification, index) => (
+        <NotificationCard
+          key={index}
+          title={notification.title}
+          count={notification.count}
+          icon={notification.icon}
+          color={notification.color}
+          bgColor={notification.bgColor}
+          borderColor={notification.borderColor}
+          description={notification.description}
+          onClick={() => {
+            console.log(`Clicked on ${notification.title}`);
+            handleNavigate(notification.path);
+          }}
+        />
+      ))}
     </div>
   );
 };

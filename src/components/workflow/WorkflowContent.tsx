@@ -8,7 +8,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import NotificationsOverview from "./NotificationsOverview";
 
 interface WorkflowContentProps {
   branchId?: string;
@@ -63,8 +62,6 @@ const WorkflowContent = ({
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Workflow Management</h1>
         <p className="text-gray-500 mt-2 font-medium">Manage and monitor all workflow processes</p>
       </div>
-      
-      <NotificationsOverview branchId={effectiveBranchId} branchName={effectiveBranchName} />
       
       <motion.div initial={{
       opacity: 0
