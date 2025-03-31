@@ -31,11 +31,11 @@ const WorkflowContent = ({
   };
 
   const handleTaskMatrixClick = () => {
-    toast({
-      title: "Feature Coming Soon",
-      description: "The Task Matrix feature is currently under development.",
-      variant: "default",
-    });
+    if (branchId && branchName) {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/task-matrix`);
+    } else {
+      navigate(`/task-matrix`);
+    }
   };
   
   return <>

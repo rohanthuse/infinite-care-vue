@@ -23,11 +23,7 @@ const Workflow = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   
   const handleTaskMatrixClick = () => {
-    toast({
-      title: "Feature Coming Soon",
-      description: "The Task Matrix feature is currently under development.",
-      variant: "default",
-    });
+    navigate('/task-matrix');
   };
   
   return (
@@ -146,7 +142,7 @@ const Workflow = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               <Card 
                 className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
-                onClick={() => navigate('/parameters')}
+                onClick={() => navigate('/key-parameters')}
               >
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mb-3">
