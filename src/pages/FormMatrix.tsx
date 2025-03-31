@@ -19,18 +19,8 @@ import FormFilter from "@/components/forms/FormFilter";
 import FormSort, { SortOption } from "@/components/forms/FormSort";
 import FormExport from "@/components/forms/FormExport";
 import AddFormDialog from "@/components/forms/AddFormDialog";
-import { DashboardHeader } from "@/components/DashboardHeader";
-import { BranchInfoHeader } from "@/components/BranchInfoHeader";
-import { TabNavigation } from "@/components/TabNavigation";
-import { useNavigate } from "react-router-dom";
 
-interface FormMatrixProps {
-  branchId?: string;
-  branchName?: string;
-}
-
-const FormMatrix: React.FC<FormMatrixProps> = ({ branchId, branchName }) => {
-  const navigate = useNavigate();
+const FormMatrix: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<FormCategory | 'all'>('all');
   const [matrixData, setMatrixData] = useState<FormMatrixType>(getFormMatrix());
@@ -39,8 +29,8 @@ const FormMatrix: React.FC<FormMatrixProps> = ({ branchId, branchName }) => {
   const [addFormOpen, setAddFormOpen] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>({ field: "name", direction: "asc" });
   const categories = getFormCategories();
-  const [activeTab, setActiveTab] = useState("form-matrix");
   
+  // Advanced filter state
   const [advancedFilters, setAdvancedFilters] = useState<{
     categories: FormCategory[];
     statuses: FormStatus[];
@@ -51,6 +41,7 @@ const FormMatrix: React.FC<FormMatrixProps> = ({ branchId, branchName }) => {
     expiryRange: "all"
   });
   
+  // Apply all filters and sorting to the data
   useEffect(() => {
     let staffMatches = matrixData.staffMembers.filter(staff => 
       staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -63,18 +54,23 @@ const FormMatrix: React.FC<FormMatrixProps> = ({ branchId, branchName }) => {
       form.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
+    // Apply advanced category filters if any are selected
     if (advancedFilters.categories.length > 0) {
       formsMatches = formsMatches.filter(form => 
         advancedFilters.categories.includes(form.category)
       );
     } 
+    // Otherwise apply the tab filter
     else if (categoryFilter !== 'all') {
       formsMatches = formsMatches.filter(form => 
         form.category === categoryFilter
       );
     }
     
+    // Apply status filters if any are selected
     if (advancedFilters.statuses.length > 0) {
+      // This is more complex as we need to check the status for each staff member
+      // We'll keep staff members who have at least one form with the selected status
       staffMatches = staffMatches.filter(staff => {
         return formsMatches.some(form => {
           const cell = matrixData.data[staff.id]?.[form.id];
@@ -83,9 +79,11 @@ const FormMatrix: React.FC<FormMatrixProps> = ({ branchId, branchName }) => {
       });
     }
     
+    // Apply expiry range filter
     if (advancedFilters.expiryRange !== "all") {
       const today = new Date();
       
+      // If filtering for expired forms
       if (advancedFilters.expiryRange === "expired") {
         staffMatches = staffMatches.filter(staff => {
           return formsMatches.some(form => {
@@ -94,6 +92,7 @@ const FormMatrix: React.FC<FormMatrixProps> = ({ branchId, branchName }) => {
           });
         });
       } 
+      // If filtering for forms expiring in X days
       else {
         const days = parseInt(advancedFilters.expiryRange.replace("days", ""));
         const futureDate = new Date(today);
@@ -112,6 +111,7 @@ const FormMatrix: React.FC<FormMatrixProps> = ({ branchId, branchName }) => {
       }
     }
     
+    // Apply sorting
     const sortedStaff = [...staffMatches].sort((a, b) => {
       if (sortOption.field === "name") {
         return sortOption.direction === "asc" 
@@ -143,11 +143,14 @@ const FormMatrix: React.FC<FormMatrixProps> = ({ branchId, branchName }) => {
   };
   
   const handleAddForm = (formData: any) => {
+    // Add the new form to the mock data
     const updatedForms = [...matrixData.forms, formData];
     
+    // Update the matrix data with the new form
     const updatedMatrixData = {
       ...matrixData,
       forms: updatedForms,
+      // Initialize the new form with "not-started" status for all staff
       data: {
         ...matrixData.data,
         ...Object.fromEntries(
@@ -191,30 +194,8 @@ const FormMatrix: React.FC<FormMatrixProps> = ({ branchId, branchName }) => {
     
     return total > 0 ? Math.round((completed / total) * 100) : 0;
   };
-
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    
-    if (branchId && branchName) {
-      if (tab === "overview") {
-        navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}`);
-      } else {
-        navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/${tab}`);
-      }
-    } else {
-      navigate(`/${tab}`);
-    }
-  };
-
-  const handleNewBooking = () => {
-    if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/bookings`);
-    } else {
-      navigate('/bookings');
-    }
-  };
   
-  const formMatrixContent = (
+  return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Form Matrix</h1>
@@ -407,33 +388,6 @@ const FormMatrix: React.FC<FormMatrixProps> = ({ branchId, branchName }) => {
           </TableBody>
         </Table>
       </div>
-    </div>
-  );
-  
-  if (!branchId && !branchName) {
-    return formMatrixContent;
-  }
-  
-  return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
-      <DashboardHeader />
-      
-      <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full">
-        <BranchInfoHeader 
-          branchName={branchName || "Med-Infinite Branch"} 
-          branchId={branchId || ""}
-          onNewBooking={handleNewBooking}
-        />
-        
-        <div className="mb-6">
-          <TabNavigation 
-            activeTab={activeTab} 
-            onChange={handleTabChange}
-          />
-        </div>
-        
-        {formMatrixContent}
-      </main>
     </div>
   );
 };

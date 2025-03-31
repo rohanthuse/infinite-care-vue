@@ -31,7 +31,6 @@ import { CareTab } from "@/components/care/CareTab";
 import NotificationsOverview from "@/components/workflow/NotificationsOverview";
 import TaskMatrix from "./TaskMatrix";
 import TrainingMatrix from "./TrainingMatrix";
-import FormMatrix from "./FormMatrix";
 
 const weeklyData = [{
   day: "Mon",
@@ -357,7 +356,6 @@ const BranchDashboard = () => {
     if (path.startsWith("workflow")) return "workflow";
     if (path.startsWith("task-matrix")) return "task-matrix";
     if (path.startsWith("training-matrix")) return "training-matrix";
-    if (path.startsWith("form-matrix")) return "form-matrix";
     if (path.startsWith("bookings")) return "bookings";
     if (path.startsWith("carers")) return "carers";
     if (path.startsWith("clients")) return "clients";
@@ -513,15 +511,11 @@ const BranchDashboard = () => {
         navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
       } else if (tab === "training-matrix") {
         navigate(`/branch-dashboard/${id}/${branchName}/training-matrix`);
-      } else if (tab === "form-matrix") {
-        navigate(`/branch-dashboard/${id}/${branchName}/form-matrix`);
       } else {
         navigate(`/branch-dashboard/${id}/${branchName}/${tab}`);
       }
     }
   };
-
-  const decodedBranchName = branchName ? decodeURIComponent(branchName) : "Med-Infinite Branch";
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
@@ -533,7 +527,7 @@ const BranchDashboard = () => {
       
       <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full">
         <BranchInfoHeader 
-          branchName={decodedBranchName} 
+          branchName={decodeURIComponent(branchName || "Med-Infinite Branch")} 
           branchId={id || ""}
           onNewBooking={handleNewBooking}
         />
@@ -573,6 +567,16 @@ const BranchDashboard = () => {
                 <div>
                   <div className="font-medium text-xs md:text-sm">Schedule</div>
                   <div className="text-xs text-gray-500 hidden md:block">View calendar</div>
+                </div>
+              </Button>
+              
+              <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
+                <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-amber-100 flex items-center justify-center">
+                  <FileText className="h-3.5 md:h-4 w-3.5 md:w-4 text-amber-600" />
+                </div>
+                <div>
+                  <div className="font-medium text-xs md:text-sm">Reports</div>
+                  <div className="text-xs text-gray-500 hidden md:block">Generate reports</div>
                 </div>
               </Button>
               
@@ -723,19 +727,157 @@ const BranchDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3 md:space-y-4">
-                    {serviceData.map((service, index) => (
-                      <div key={index} className="flex items-center">
+                    {serviceData.map((service, index) => <div key={index} className="flex items-center">
                         <div className="w-24 md:w-32 font-medium text-xs md:text-sm">{service.name}</div>
                         <div className="flex-1">
                           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                             <div className="h-full bg-blue-600 rounded-full" style={{
-                              width: `${service.usage}%`
-                            }}></div>
+                          width: `${service.usage}%`
+                        }}></div>
                           </div>
                         </div>
-                        <div className="w-10 text-right text-xs md:text-sm font-medium">{service.usage}%</div>
-                      </div>
-                    ))}
+                        <div className="ml-3 text-xs md:text-sm font-medium">{service.usage}%</div>
+                      </div>)}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base md:text-lg font-semibold">Today's Bookings</CardTitle>
+                      <CardDescription>Appointments for today</CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+                      View All
+                      <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="overflow-x-auto">
+                  <div className="space-y-1 min-w-[400px]">
+                    <BookingItem
+                      number="1"
+                      staff="Dr. James Wilson"
+                      client="Wendy Smith"
+                      time="09:00 AM"
+                      status="Done"
+                    />
+                    <BookingItem
+                      number="2"
+                      staff="Nurse Sarah Johnson"
+                      client="John Michael"
+                      time="10:30 AM"
+                      status="Done"
+                    />
+                    <BookingItem
+                      number="3"
+                      staff="Dr. Emma Thompson"
+                      client="Lisa Rodrigues"
+                      time="11:45 AM"
+                      status="Booked"
+                    />
+                    <BookingItem
+                      number="4"
+                      staff="Nurse David Wilson"
+                      client="Kate Williams"
+                      time="02:15 PM"
+                      status="Waiting"
+                    />
+                    <BookingItem
+                      number="5"
+                      staff="Dr. Michael Scott"
+                      client="Robert Johnson"
+                      time="03:30 PM"
+                      status="Booked"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base md:text-lg font-semibold">Recent Reviews</CardTitle>
+                  <CardDescription>Latest client feedback</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-1">
+                    <ReviewItem
+                      client="Wendy S."
+                      staff="Dr. James Wilson"
+                      date="Today"
+                      rating={5}
+                      comment="Excellent service and care. Very attentive to my needs."
+                    />
+                    <ReviewItem
+                      client="John M."
+                      staff="Nurse Sarah Johnson"
+                      date="Yesterday"
+                      rating={4}
+                      comment="Professional and caring. Would recommend."
+                    />
+                    <ReviewItem
+                      client="Lisa R."
+                      staff="Dr. Emma Thompson"
+                      date="2 days ago"
+                      rating={5}
+                      comment="Amazing experience. Dr. Thompson was very thorough."
+                    />
+                    <ReviewItem
+                      client="Kate W."
+                      staff="The Clinic"
+                      date="3 days ago"
+                      rating={3}
+                      comment="Good service but had to wait a bit longer than expected."
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base md:text-lg font-semibold">Action Items</CardTitle>
+                      <CardDescription>Tasks requiring attention</CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+                      View All Tasks
+                      <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <ActionItem
+                      title="Follow up with client"
+                      name="Wendy Smith"
+                      date="Today"
+                      priority="High"
+                    />
+                    <ActionItem
+                      title="Review care plan"
+                      name="John Michael"
+                      date="Tomorrow"
+                      priority="Medium"
+                    />
+                    <ActionItem
+                      title="Schedule assessment"
+                      name="Lisa Rodrigues"
+                      date="May 15"
+                      priority="Low"
+                    />
+                    <ActionItem
+                      title="Update medical records"
+                      name="Kate Williams"
+                      date="May 16"
+                      priority="Medium"
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -743,67 +885,263 @@ const BranchDashboard = () => {
           </motion.div>
         )}
         
-        {activeTab === "key-parameters" && (
-          <KeyParametersContent branchId={id || ""} />
+        {activeTab === "key-parameters" && <KeyParametersContent branchId={id} branchName={branchName} />}
+        
+        {activeTab === "workflow" && <WorkflowContent branchId={id} branchName={branchName} />}
+      
+        {activeTab === "task-matrix" && <TaskMatrix />}
+        
+        {activeTab === "training-matrix" && <TrainingMatrix />}
+      
+        {activeTab === "bookings" && <BookingsTab branchId={id} branchName={branchName} />}
+      
+        {activeTab === "carers" && <CarersTab branchId={id} branchName={branchName} />}
+        
+        {activeTab === "clients" && (
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+              <h2 className="text-2xl font-bold">Clients</h2>
+              
+              <div className="flex flex-col md:flex-row gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search clients..."
+                    className="pl-10 pr-4 w-full"
+                    value={clientSearchValue}
+                    onChange={(e) => setClientSearchValue(e.target.value)}
+                  />
+                </div>
+                
+                <div className="flex gap-2">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="New Enquiries">New Enquiries</SelectItem>
+                      <SelectItem value="Actively Assessing">Actively Assessing</SelectItem>
+                      <SelectItem value="Closed Enquiries">Closed Enquiries</SelectItem>
+                      <SelectItem value="Former">Former</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={regionFilter} onValueChange={setRegionFilter}>
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue placeholder="Filter by region" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Regions</SelectItem>
+                      <SelectItem value="North">North</SelectItem>
+                      <SelectItem value="South">South</SelectItem>
+                      <SelectItem value="East">East</SelectItem>
+                      <SelectItem value="West">West</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Button variant="outline" size="icon">
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <Button onClick={handleNewClient}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Client
+                </Button>
+              </div>
+            </div>
+            
+            <div className="bg-white overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px]">Client ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="hidden md:table-cell">Email</TableHead>
+                    <TableHead className="hidden md:table-cell">Phone</TableHead>
+                    <TableHead className="hidden lg:table-cell">Location</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="hidden lg:table-cell">Registered</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedClients.map((client) => (
+                    <TableRow key={client.id}>
+                      <TableCell className="font-medium">{client.id}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-medium">
+                            {client.avatar}
+                          </div>
+                          <div>
+                            <div className="font-medium">{client.name}</div>
+                            <div className="text-xs text-gray-500">{client.region}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {client.email}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {client.phone}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {client.location}
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="outline" 
+                          className={
+                            client.status === "Active" ? "text-green-600 bg-green-50 border-green-200" :
+                            client.status === "New Enquiries" ? "text-blue-600 bg-blue-50 border-blue-200" :
+                            client.status === "Actively Assessing" ? "text-amber-600 bg-amber-50 border-amber-200" :
+                            client.status === "Closed Enquiries" ? "text-gray-600 bg-gray-50 border-gray-200" :
+                            "text-red-600 bg-red-50 border-red-200"
+                          }
+                        >
+                          {client.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {client.registeredOn}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              
+              {filteredClients.length > 0 ? (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
+                  <div className="text-sm text-gray-500">
+                    Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredClients.length)} of {filteredClients.length} clients
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handlePreviousPage} 
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" />
+                      Previous
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleNextPage} 
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-8 text-center">
+                  <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                    <Search className="h-6 w-6 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">No clients found</h3>
+                  <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
+                </div>
+              )}
+            </div>
+          </div>
         )}
         
-        {activeTab === "workflow" && (
-          <WorkflowContent 
-            branchId={id || ""} 
-            branchName={decodedBranchName}
-          />
+        {activeTab === "reviews" && <ReviewsTab branchId={id} branchName={branchName} />}
+        
+        {activeTab === "communication" && <CommunicationsTab branchId={id} branchName={branchName} />}
+        
+        {activeTab === "notifications" && restPath === "notifications" && (
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+            <h2 className="text-2xl font-bold mb-4">Notifications</h2>
+            <p className="text-gray-500 mb-6">Branch: {decodeURIComponent(branchName || "")} (ID: {id})</p>
+            
+            <NotificationsOverview branchId={id} branchName={branchName} />
+          </div>
         )}
         
-        {activeTab === "task-matrix" && (
-          <TaskMatrix 
-            branchId={id || ""} 
-            branchName={decodedBranchName}
-          />
+        {activeTab === "notifications" && restPath !== "notifications" && (
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+            <h2 className="text-2xl font-bold mb-4">Notifications</h2>
+            <p className="text-gray-500">Branch: {branchName} (ID: {id})</p>
+            
+            <div className="mt-6 space-y-4">
+              <div className="p-4 border border-blue-200 rounded-lg bg-blue-50 flex items-start">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                  <Bell className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium">System Update</h3>
+                  <p className="text-sm text-gray-600 mt-1">The Med-Infinite system will be updated tonight at 2 AM. Expected downtime: 30 minutes.</p>
+                  <div className="text-xs text-gray-500 mt-2">2 hours ago</div>
+                </div>
+              </div>
+              
+              <div className="p-4 border border-amber-200 rounded-lg bg-amber-50 flex items-start">
+                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium">New Protocol</h3>
+                  <p className="text-sm text-gray-600 mt-1">Updated safety protocols have been published. Please review and acknowledge by Friday.</p>
+                  <div className="text-xs text-gray-500 mt-2">Yesterday</div>
+                </div>
+              </div>
+              
+              <div className="p-4 border border-green-200 rounded-lg bg-green-50 flex items-start">
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                  <Users className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium">New Client Assigned</h3>
+                  <p className="text-sm text-gray-600 mt-1">Emma Thompson has been assigned to your branch. Initial assessment scheduled for next week.</p>
+                  <div className="text-xs text-gray-500 mt-2">2 days ago</div>
+                </div>
+              </div>
+              
+              <div className="p-4 border border-purple-200 rounded-lg bg-purple-50 flex items-start">
+                <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                  <Calendar className="h-4 w-4 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Upcoming Training</h3>
+                  <p className="text-sm text-gray-600 mt-1">Mandatory training session on new medication dispensing procedures on May 15th at 10 AM.</p>
+                  <div className="text-xs text-gray-500 mt-2">3 days ago</div>
+                </div>
+              </div>
+              
+              <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 flex items-start">
+                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                  <FileText className="h-4 w-4 text-gray-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Document Expiring</h3>
+                  <p className="text-sm text-gray-600 mt-1">Annual service agreement for Robert Johnson is expiring in 15 days. Please initiate renewal process.</p>
+                  <div className="text-xs text-gray-500 mt-2">5 days ago</div>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
         
-        {activeTab === "training-matrix" && (
-          <TrainingMatrix 
-            branchId={id || ""} 
-            branchName={decodedBranchName}
-          />
-        )}
+        {activeTab === "medication" && <MedicationTab branchId={id} branchName={branchName} />}
         
-        {activeTab === "form-matrix" && (
-          <FormMatrix 
-            branchId={id || ""} 
-            branchName={decodedBranchName}
-          />
-        )}
-        
-        {activeTab === "bookings" && (
-          <BookingsTab branchId={id || ""} />
-        )}
-        
-        {activeTab === "carers" && (
-          <CarersTab branchId={id || ""} />
-        )}
-        
-        {activeTab === "communications" && (
-          <CommunicationsTab branchId={id || ""} />
-        )}
-        
-        {activeTab === "medication" && (
-          <MedicationTab 
-            branchId={id || ""} 
-            branchName={branchName || ""}
-          />
-        )}
-        
-        {activeTab === "reviews" && (
-          <ReviewsTab branchId={id || ""} />
-        )}
-        
-        {activeTab === "care" && (
-          <CareTab 
-            branchId={id || ""} 
-            branchName={branchName || ""}
-          />
-        )}
+        {activeTab === "care-plan" && <CareTab branchId={id} branchName={branchName} />}
       </main>
     </div>
   );

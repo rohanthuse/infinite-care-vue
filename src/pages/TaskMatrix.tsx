@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getTaskColumns, filterTasksByView } from "@/data/mockTaskData";
@@ -18,13 +19,9 @@ interface DragItem {
   sourceColumn: string;
 }
 
-interface TaskMatrixProps {
-  branchId?: string;
-}
-
-const TaskMatrix: React.FC<TaskMatrixProps> = ({ branchId }) => {
+const TaskMatrix: React.FC = () => {
   const navigate = useNavigate();
-  const { id: branchIdParam, branchName } = useParams<{id: string, branchName: string}>();
+  const { id: branchId, branchName } = useParams<{id: string, branchName: string}>();
   const [taskView, setTaskView] = useState<TaskView>("staff");
   const [columns, setColumns] = useState<TaskColumnType[]>(getTaskColumns());
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,6 +29,7 @@ const TaskMatrix: React.FC<TaskMatrixProps> = ({ branchId }) => {
   const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
   const [addToColumn, setAddToColumn] = useState<TaskStatus>("todo");
   
+  // Filter columns based on search and view
   useEffect(() => {
     const allColumns = getTaskColumns();
     
@@ -48,6 +46,7 @@ const TaskMatrix: React.FC<TaskMatrixProps> = ({ branchId }) => {
       }));
       setColumns(filteredColumns);
     } else {
+      // Apply view filter without search
       const viewFilteredColumns = allColumns.map(column => ({
         ...column,
         tasks: filterTasksByView(column.tasks, taskView)
@@ -75,13 +74,16 @@ const TaskMatrix: React.FC<TaskMatrixProps> = ({ branchId }) => {
     
     if (sourceColumn === targetColumn) return;
     
+    // Find the task in the source column
     const sourceColumnObj = columns.find(col => col.id === sourceColumn);
     if (!sourceColumnObj) return;
     
     const taskToMove = sourceColumnObj.tasks.find(task => task.id === taskId);
     if (!taskToMove) return;
     
+    // Update columns state
     const updatedColumns = columns.map(column => {
+      // Remove from source column
       if (column.id === sourceColumn) {
         return {
           ...column,
@@ -89,6 +91,7 @@ const TaskMatrix: React.FC<TaskMatrixProps> = ({ branchId }) => {
         };
       }
       
+      // Add to target column
       if (column.id === targetColumn) {
         return {
           ...column,
@@ -134,6 +137,7 @@ const TaskMatrix: React.FC<TaskMatrixProps> = ({ branchId }) => {
       ...(taskView === 'client' ? { clientId: 'client-new', clientName: "New Client" } : { staffId: 'staff-new', staffName: "Staff Member" })
     };
     
+    // Add the new task to the appropriate column
     const updatedColumns = columns.map(column => {
       if (column.id === taskData.status) {
         return {
