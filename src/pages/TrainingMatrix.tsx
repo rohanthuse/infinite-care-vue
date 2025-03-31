@@ -20,7 +20,11 @@ import TrainingSort, { SortOption } from "@/components/training/TrainingSort";
 import TrainingExport from "@/components/training/TrainingExport";
 import AddTrainingDialog from "@/components/training/AddTrainingDialog";
 
-const TrainingMatrix: React.FC = () => {
+interface TrainingMatrixProps {
+  branchId?: string;
+}
+
+const TrainingMatrix: React.FC<TrainingMatrixProps> = ({ branchId }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<TrainingCategory | 'all'>('all');
   const [matrixData, setMatrixData] = useState<TrainingMatrixType>(getTrainingMatrix());

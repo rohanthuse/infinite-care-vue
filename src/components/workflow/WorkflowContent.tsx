@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 
-interface WorkflowContentProps {
+export interface WorkflowContentProps {
   branchId?: string;
   branchName?: string;
 }

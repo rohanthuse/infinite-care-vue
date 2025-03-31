@@ -20,7 +20,11 @@ import FormSort, { SortOption } from "@/components/forms/FormSort";
 import FormExport from "@/components/forms/FormExport";
 import AddFormDialog from "@/components/forms/AddFormDialog";
 
-const FormMatrix: React.FC = () => {
+interface FormMatrixProps {
+  branchId?: string;
+}
+
+const FormMatrix: React.FC<FormMatrixProps> = ({ branchId }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<FormCategory | 'all'>('all');
   const [matrixData, setMatrixData] = useState<FormMatrixType>(getFormMatrix());
@@ -30,7 +34,6 @@ const FormMatrix: React.FC = () => {
   const [sortOption, setSortOption] = useState<SortOption>({ field: "name", direction: "asc" });
   const categories = getFormCategories();
   
-  // Advanced filter state
   const [advancedFilters, setAdvancedFilters] = useState<{
     categories: FormCategory[];
     statuses: FormStatus[];
@@ -41,7 +44,6 @@ const FormMatrix: React.FC = () => {
     expiryRange: "all"
   });
   
-  // Apply all filters and sorting to the data
   useEffect(() => {
     let staffMatches = matrixData.staffMembers.filter(staff => 
       staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -54,23 +56,18 @@ const FormMatrix: React.FC = () => {
       form.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
-    // Apply advanced category filters if any are selected
     if (advancedFilters.categories.length > 0) {
       formsMatches = formsMatches.filter(form => 
         advancedFilters.categories.includes(form.category)
       );
     } 
-    // Otherwise apply the tab filter
     else if (categoryFilter !== 'all') {
       formsMatches = formsMatches.filter(form => 
         form.category === categoryFilter
       );
     }
     
-    // Apply status filters if any are selected
     if (advancedFilters.statuses.length > 0) {
-      // This is more complex as we need to check the status for each staff member
-      // We'll keep staff members who have at least one form with the selected status
       staffMatches = staffMatches.filter(staff => {
         return formsMatches.some(form => {
           const cell = matrixData.data[staff.id]?.[form.id];
@@ -79,11 +76,9 @@ const FormMatrix: React.FC = () => {
       });
     }
     
-    // Apply expiry range filter
     if (advancedFilters.expiryRange !== "all") {
       const today = new Date();
       
-      // If filtering for expired forms
       if (advancedFilters.expiryRange === "expired") {
         staffMatches = staffMatches.filter(staff => {
           return formsMatches.some(form => {
@@ -92,7 +87,6 @@ const FormMatrix: React.FC = () => {
           });
         });
       } 
-      // If filtering for forms expiring in X days
       else {
         const days = parseInt(advancedFilters.expiryRange.replace("days", ""));
         const futureDate = new Date(today);
@@ -111,7 +105,6 @@ const FormMatrix: React.FC = () => {
       }
     }
     
-    // Apply sorting
     const sortedStaff = [...staffMatches].sort((a, b) => {
       if (sortOption.field === "name") {
         return sortOption.direction === "asc" 
@@ -143,14 +136,11 @@ const FormMatrix: React.FC = () => {
   };
   
   const handleAddForm = (formData: any) => {
-    // Add the new form to the mock data
     const updatedForms = [...matrixData.forms, formData];
     
-    // Update the matrix data with the new form
     const updatedMatrixData = {
       ...matrixData,
       forms: updatedForms,
-      // Initialize the new form with "not-started" status for all staff
       data: {
         ...matrixData.data,
         ...Object.fromEntries(

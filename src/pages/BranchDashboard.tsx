@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Routes, Route, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -688,9 +687,7 @@ const BranchDashboard = () => {
               </Card>
             </div>
             
-            {/* Additional charts and data visualizations */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-              {/* Revenue Trend */}
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base md:text-lg font-semibold">Revenue Trend</CardTitle>
@@ -727,7 +724,6 @@ const BranchDashboard = () => {
                 </CardContent>
               </Card>
               
-              {/* Popular Services */}
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base md:text-lg font-semibold">Popular Services</CardTitle>
@@ -760,19 +756,22 @@ const BranchDashboard = () => {
         )}
         
         {activeTab === "workflow" && (
-          <WorkflowContent branchId={id || ""} onNavigate={handleWorkflowNavigation} />
+          <WorkflowContent 
+            branchId={id || ""} 
+            branchName={branchName}
+          />
         )}
         
         {activeTab === "task-matrix" && (
-          <TaskMatrix branchId={id || ""} />
+          <TaskMatrix />
         )}
         
         {activeTab === "training-matrix" && (
-          <TrainingMatrix branchId={id || ""} />
+          <TrainingMatrix />
         )}
         
         {activeTab === "form-matrix" && (
-          <FormMatrix branchId={id || ""} />
+          <FormMatrix />
         )}
         
         {activeTab === "bookings" && (
@@ -788,7 +787,10 @@ const BranchDashboard = () => {
         )}
         
         {activeTab === "medication" && (
-          <MedicationTab branchId={id || ""} />
+          <MedicationTab 
+            branchId={id || ""} 
+            branchName={branchName || ""}
+          />
         )}
         
         {activeTab === "reviews" && (
@@ -796,7 +798,10 @@ const BranchDashboard = () => {
         )}
         
         {activeTab === "care" && (
-          <CareTab branchId={id || ""} />
+          <CareTab 
+            branchId={id || ""} 
+            branchName={branchName || ""}
+          />
         )}
       </main>
     </div>
