@@ -6,7 +6,7 @@ import {
   PopoverTrigger 
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Download, FileSpreadsheet, FilePdf, FileText } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, File } from "lucide-react";
 import { TrainingMatrix } from "@/types/training";
 import { toast } from "@/hooks/use-toast";
 
@@ -120,7 +120,7 @@ const TrainingExport: React.FC<TrainingExportProps> = ({ matrixData }) => {
             className="justify-start gap-2 px-2 py-1.5 h-auto"
             onClick={handleExportPDF}
           >
-            <FilePdf className="h-4 w-4" />
+            <File className="h-4 w-4" />
             <span>Export as PDF</span>
           </Button>
         </div>
