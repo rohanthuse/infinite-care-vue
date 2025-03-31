@@ -53,6 +53,10 @@ const NotificationCard = ({
           <Button
             variant="ghost"
             className={cn("text-sm font-medium hover:bg-opacity-10", color)}
+            onClick={(e) => {
+              e.stopPropagation(); // Stop propagation to prevent double navigation
+              if (onClick) onClick();
+            }}
           >
             View All
           </Button>
