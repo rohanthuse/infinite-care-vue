@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { TabNavigation } from "@/components/TabNavigation";
 import { BookingsTab } from "@/components/bookings/BookingsTab";
 import { CarersTab } from "@/components/carers/CarersTab";
-import ReviewsTab from "@/components/reviews/ReviewsTab";
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { NewBookingDialog } from "@/components/bookings/NewBookingDialog";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -29,6 +28,8 @@ import { CareTab } from "@/components/care/CareTab";
 import NotificationsOverview from "@/components/workflow/NotificationsOverview";
 import TaskMatrix from "./TaskMatrix";
 import TrainingMatrix from "./TrainingMatrix";
+import { keyParametersContent as KeyParametersContent } from "@/components/keyparameters/KeyParametersContent";
+import { WorkflowContent } from "@/components/workflow/WorkflowContent";
 
 const weeklyData = [{
   day: "Mon",
@@ -757,11 +758,11 @@ const BranchDashboard = () => {
           </motion.div>
         )}
         
-        {activeTab === "key-parameters" && <KeyParametersContent branchId={id} branchName={branchName} />}
-        {activeTab === "workflow" && <WorkflowContent branchId={id} branchName={branchName} />}
-        {activeTab === "task-matrix" && <TaskMatrix branchId={id} branchName={branchName} />}
-        {activeTab === "training-matrix" && <TrainingMatrix branchId={id} branchName={branchName} />}
-        {activeTab === "notifications" && <NotificationsOverview branchId={id} branchName={branchName} />}
+        {activeTab === "key-parameters" && <KeyParametersContent branchId={id || ""} branchName={branchName || ""} />}
+        {activeTab === "workflow" && <WorkflowContent branchId={id || ""} branchName={branchName || ""} />}
+        {activeTab === "task-matrix" && <TaskMatrix branchId={id || ""} branchName={branchName || ""} />}
+        {activeTab === "training-matrix" && <TrainingMatrix branchId={id || ""} branchName={branchName || ""} />}
+        {activeTab === "notifications" && <NotificationsOverview branchId={id || ""} branchName={branchName || ""} />}
         {activeTab === "bookings" && <BookingsTab />}
         {activeTab === "carers" && <CarersTab />}
         {activeTab === "communications" && <CommunicationsTab branchId={id} branchName={branchName} />}
