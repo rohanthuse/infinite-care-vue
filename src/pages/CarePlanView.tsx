@@ -24,6 +24,9 @@ import { CarePlanTabBar } from "@/components/care/CarePlanTabBar";
 import { NotesTab } from "@/components/care/tabs/NotesTab";
 import { DocumentsTab } from "@/components/care/tabs/DocumentsTab";
 import { AssessmentsTab } from "@/components/care/tabs/AssessmentsTab";
+import { ActivitiesTab } from "@/components/care/tabs/ActivitiesTab";
+import { EquipmentTab } from "@/components/care/tabs/EquipmentTab";
+import { DietaryTab } from "@/components/care/tabs/DietaryTab";
 import { getStatusBadgeClass, getRiskLevelClass, calculateProgressPercentage } from "@/utils/statusHelpers";
 import { mockPatientData } from "@/data/mockPatientData";
 
@@ -303,89 +306,8 @@ const CarePlanView = () => {
                       <GoalsTab goals={mockPatientData.goals} />
                     </TabsContent>
                     
-                    <TabsContent value="equipment" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Equipment</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {mockPatientData.equipment.map((equipment, index) => (
-                              <div key={index} className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-500">{equipment.name}</p>
-                                  <p className="text-sm text-gray-500">{equipment.type}</p>
-                                </div>
-                                <p className="text-sm text-gray-500">{equipment.status}</p>
-                                <p className="text-sm text-gray-500">{equipment.notes}</p>
-                                <p className="text-sm text-gray-500">{format(equipment.lastInspection, 'MMM dd, yyyy')}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
-                    <TabsContent value="dietary" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Dietary</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Dietary Restrictions</p>
-                              <div className="flex flex-wrap gap-1">
-                                {mockPatientData.dietaryRequirements.restrictions.map((restriction, index) => (
-                                  <Badge key={index} variant="outline" className="text-red-600 bg-red-50 border-red-200">
-                                    {restriction.name}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Meal Preferences</p>
-                              <div className="flex flex-wrap gap-1">
-                                {mockPatientData.dietaryRequirements.preferences.map((pref, index) => (
-                                  <Badge key={index} variant="outline" className="text-blue-600 bg-blue-50 border-blue-200">
-                                    {pref}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Hydration Plan</p>
-                              <p className="text-sm">{mockPatientData.dietaryRequirements.hydrationPlan}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Nutritional Notes</p>
-                              <p className="text-sm">{mockPatientData.dietaryRequirements.nutritionalNotes}</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                    
                     <TabsContent value="activities" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Activities</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {mockPatientData.activities.map((activity, index) => (
-                              <div key={index} className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-500">{activity.action}</p>
-                                  <p className="text-sm text-gray-500">{activity.performer}</p>
-                                </div>
-                                <p className="text-sm text-gray-500">{activity.status}</p>
-                                <p className="text-sm text-gray-500">{format(activity.date, 'MMM dd, yyyy')}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
+                      <ActivitiesTab activities={mockPatientData.activities} />
                     </TabsContent>
                     
                     <TabsContent value="notes" className="space-y-4">
@@ -398,6 +320,14 @@ const CarePlanView = () => {
                     
                     <TabsContent value="assessments" className="space-y-4">
                       <AssessmentsTab assessments={mockPatientData.assessments} />
+                    </TabsContent>
+                    
+                    <TabsContent value="equipment" className="space-y-4">
+                      <EquipmentTab equipment={mockPatientData.equipment} />
+                    </TabsContent>
+                    
+                    <TabsContent value="dietary" className="space-y-4">
+                      <DietaryTab dietaryRequirements={mockPatientData.dietaryRequirements} />
                     </TabsContent>
                   </Tabs>
                 </div>
