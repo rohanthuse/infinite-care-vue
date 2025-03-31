@@ -16,9 +16,10 @@ interface Document {
 
 interface DocumentsTabProps {
   documents: Document[];
+  onUploadDocument?: () => void;
 }
 
-export const DocumentsTab: React.FC<DocumentsTabProps> = ({ documents }) => {
+export const DocumentsTab: React.FC<DocumentsTabProps> = ({ documents, onUploadDocument }) => {
   const getDocumentTypeIcon = (type: string) => {
     switch (type) {
       case "PDF":
@@ -50,7 +51,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ documents }) => {
               <FileText className="h-5 w-5 text-blue-600" />
               <CardTitle className="text-lg">Documents</CardTitle>
             </div>
-            <Button size="sm" className="gap-1">
+            <Button size="sm" className="gap-1" onClick={onUploadDocument}>
               <Plus className="h-4 w-4" />
               <span>Upload Document</span>
             </Button>

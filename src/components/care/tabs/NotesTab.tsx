@@ -15,9 +15,10 @@ interface Note {
 
 interface NotesTabProps {
   notes: Note[];
+  onAddNote?: () => void;
 }
 
-export const NotesTab: React.FC<NotesTabProps> = ({ notes }) => {
+export const NotesTab: React.FC<NotesTabProps> = ({ notes, onAddNote }) => {
   return (
     <div className="space-y-4">
       <Card>
@@ -27,7 +28,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({ notes }) => {
               <MessageCircle className="h-5 w-5 text-blue-600" />
               <CardTitle className="text-lg">Care Notes</CardTitle>
             </div>
-            <Button size="sm" className="gap-1">
+            <Button size="sm" className="gap-1" onClick={onAddNote}>
               <Plus className="h-4 w-4" />
               <span>Add Note</span>
             </Button>

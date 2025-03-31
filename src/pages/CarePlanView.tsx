@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -42,6 +41,7 @@ import { CarePlanSidebar } from "@/components/care/CarePlanSidebar";
 import { AddNoteDialog } from "@/components/care/dialogs/AddNoteDialog";
 import { ScheduleFollowUpDialog } from "@/components/care/dialogs/ScheduleFollowUpDialog";
 import { RecordActivityDialog } from "@/components/care/dialogs/RecordActivityDialog";
+import { UploadDocumentDialog } from "@/components/care/dialogs/UploadDocumentDialog";
 
 const mockCarePlans = [
   {
@@ -72,10 +72,10 @@ const CarePlanView = () => {
   const [activeTab, setActiveTab] = useState("personal");
   const [carePlan, setCarePlan] = useState<typeof mockCarePlans[0] | null>(null);
   
-  // State for dialogs
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [followUpDialogOpen, setFollowUpDialogOpen] = useState(false);
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+  const [documentDialogOpen, setDocumentDialogOpen] = useState(false);
 
   useEffect(() => {
     const plan = mockCarePlans.find(p => p.id === carePlanId);
@@ -103,12 +103,9 @@ const CarePlanView = () => {
     });
   };
 
-  // Handle saving a new note
   const handleSaveNote = (note: { content: string; date: Date }) => {
-    // In a real application, this would send the data to an API
     console.log("Saving note:", note);
     
-    // Add the note to the mockPatientData (simulating a data update)
     const newNote = {
       date: note.date,
       author: carePlan?.assignedTo || "Care Provider",
@@ -123,9 +120,7 @@ const CarePlanView = () => {
     });
   };
 
-  // Handle scheduling a follow-up
   const handleSaveFollowUp = (followUp: any) => {
-    // In a real application, this would send the data to an API
     console.log("Scheduling follow-up:", followUp);
     
     toast({
@@ -134,12 +129,9 @@ const CarePlanView = () => {
     });
   };
 
-  // Handle recording an activity
   const handleSaveActivity = (activity: any) => {
-    // In a real application, this would send the data to an API
     console.log("Recording activity:", activity);
     
-    // Add the activity to the mockPatientData (simulating a data update)
     const newActivity = {
       date: activity.date,
       action: activity.action,
@@ -155,12 +147,30 @@ const CarePlanView = () => {
     });
   };
 
-  // Custom props for the sidebar to handle dialog opening
+  const handleSaveDocument = (document: { name: string; date: Date; type: string; author: string; file: File }) => {
+    console.log("Uploading document:", document);
+    
+    const newDocument = {
+      name: document.name,
+      date: document.date,
+      type: document.type,
+      author: document.author
+    };
+    
+    mockPatientData.documents.unshift(newDocument);
+    
+    toast({
+      title: "Document uploaded",
+      description: `The document "${document.name}" has been uploaded.`
+    });
+  };
+
   const sidebarProps = {
     carePlan: carePlan!,
     onAddNote: () => setNoteDialogOpen(true),
     onScheduleFollowUp: () => setFollowUpDialogOpen(true),
-    onRecordActivity: () => setActivityDialogOpen(true)
+    onRecordActivity: () => setActivityDialogOpen(true),
+    onUploadDocument: () => setDocumentDialogOpen(true)
   };
 
   return (
@@ -229,6 +239,7 @@ const CarePlanView = () => {
                     onAddNote={() => setNoteDialogOpen(true)}
                     onScheduleFollowUp={() => setFollowUpDialogOpen(true)}
                     onRecordActivity={() => setActivityDialogOpen(true)}
+                    onUploadDocument={() => setDocumentDialogOpen(true)}
                   />}
                 </div>
                 
@@ -347,15 +358,24 @@ const CarePlanView = () => {
                     </TabsContent>
                     
                     <TabsContent value="activities" className="space-y-4">
-                      <ActivitiesTab activities={mockPatientData.activities} />
+                      <ActivitiesTab 
+                        activities={mockPatientData.activities} 
+                        onAddActivity={() => setActivityDialogOpen(true)}
+                      />
                     </TabsContent>
                     
                     <TabsContent value="notes" className="space-y-4">
-                      <NotesTab notes={mockPatientData.notes} />
+                      <NotesTab 
+                        notes={mockPatientData.notes} 
+                        onAddNote={() => setNoteDialogOpen(true)}
+                      />
                     </TabsContent>
                     
                     <TabsContent value="documents" className="space-y-4">
-                      <DocumentsTab documents={mockPatientData.documents} />
+                      <DocumentsTab 
+                        documents={mockPatientData.documents} 
+                        onUploadDocument={() => setDocumentDialogOpen(true)}
+                      />
                     </TabsContent>
                     
                     <TabsContent value="assessments" className="space-y-4">
@@ -393,7 +413,6 @@ const CarePlanView = () => {
         </div>
       </div>
       
-      {/* Dialogs */}
       <AddNoteDialog 
         open={noteDialogOpen} 
         onOpenChange={setNoteDialogOpen}
@@ -410,6 +429,12 @@ const CarePlanView = () => {
         open={activityDialogOpen} 
         onOpenChange={setActivityDialogOpen}
         onSave={handleSaveActivity}
+      />
+      
+      <UploadDocumentDialog
+        open={documentDialogOpen}
+        onOpenChange={setDocumentDialogOpen}
+        onSave={handleSaveDocument}
       />
     </div>
   );

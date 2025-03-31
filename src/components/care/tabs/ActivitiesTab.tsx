@@ -16,9 +16,10 @@ interface ActivityItem {
 
 interface ActivitiesTabProps {
   activities: ActivityItem[];
+  onAddActivity?: () => void;
 }
 
-export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ activities }) => {
+export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ activities, onAddActivity }) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Completed": return "bg-green-50 text-green-700 border-green-200";
@@ -38,7 +39,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ activities }) => {
               <Activity className="h-5 w-5 text-indigo-600" />
               <CardTitle className="text-lg">Activities</CardTitle>
             </div>
-            <Button size="sm" className="gap-1">
+            <Button size="sm" className="gap-1" onClick={onAddActivity}>
               <Plus className="h-4 w-4" />
               <span>Add Activity</span>
             </Button>
