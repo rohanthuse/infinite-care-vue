@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { 
   X, User, Info, Calendar, FileText, FileCheck, 
@@ -115,7 +116,6 @@ const mockPatientData = {
     { name: "Hospital Bed", type: "Bedroom Aid", status: "In Use", notes: "Electric controls working properly", lastInspection: new Date("2023-10-15") },
     { name: "Oxygen Concentrator", type: "Medical Device", status: "Available", notes: "Only used when needed", lastInspection: new Date("2023-11-10") }
   ],
-  
   dietaryRequirements: {
     mealPlan: "Low sodium diabetic diet plan",
     restrictions: [
@@ -641,4 +641,245 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ carePlan, onClos
                                 </Avatar>
                                 <p className="font-medium text-sm">{note.author}</p>
                               </div>
-                              <p className="text-xs text-gray-50
+                              <p className="text-xs text-gray-500">{format(note.date, 'MMM dd, yyyy')}</p>
+                            </div>
+                            <p className="text-sm bg-gray-50 p-3 rounded-md border border-gray-100">
+                              {note.content}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="documents" className="space-y-4">
+                  <Card>
+                    <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg">Documents</CardTitle>
+                        <CardDescription>Medical reports and assessments</CardDescription>
+                      </div>
+                      <Button size="sm">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Upload Document
+                      </Button>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {mockPatientData.documents.map((doc, index) => (
+                          <div key={index} className="flex items-center justify-between border rounded-md p-3 hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center">
+                              <div className="p-2 bg-blue-100 rounded-md mr-3">
+                                <FileText className="h-5 w-5 text-blue-600" />
+                              </div>
+                              <div>
+                                <p className="font-medium">{doc.name}</p>
+                                <p className="text-xs text-gray-500">
+                                  Added {format(doc.date, 'MMM dd, yyyy')} • {doc.type} • {doc.author}
+                                </p>
+                              </div>
+                            </div>
+                            <Button variant="ghost" size="sm">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="assessments" className="space-y-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg">Assessments</CardTitle>
+                      <CardDescription>Professional evaluations</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-6">
+                        {mockPatientData.assessments.map((assessment, index) => (
+                          <div key={index} className="border rounded-lg overflow-hidden">
+                            <div className="bg-gradient-to-r from-blue-50 to-white p-4 border-b">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                  <div className="p-2 rounded-full bg-blue-100 mr-3">
+                                    <AlertTriangle className="h-5 w-5 text-blue-600" />
+                                  </div>
+                                  <div>
+                                    <h3 className="font-medium">{assessment.name}</h3>
+                                    <p className="text-xs text-gray-500">
+                                      {format(assessment.date, 'MMM dd, yyyy')} by {assessment.performer}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Badge variant="outline" className={getStatusBadgeClass(assessment.status)}>
+                                  {assessment.status}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="p-4">
+                              <p className="text-sm font-medium mb-1">Results & Observations</p>
+                              <p className="text-sm bg-gray-50 p-3 rounded-md border border-gray-100">
+                                {assessment.results}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="equipment" className="space-y-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg">Medical Equipment</CardTitle>
+                      <CardDescription>Devices and aids in use</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {mockPatientData.equipment.map((item, index) => (
+                          <div key={index} className="border rounded-lg p-4 bg-white hover:shadow-sm transition-shadow">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                              <div className="flex items-center mb-2 md:mb-0">
+                                <div className="p-2 bg-blue-100 rounded-md mr-3">
+                                  <Wrench className="h-5 w-5 text-blue-600" />
+                                </div>
+                                <div>
+                                  <h3 className="font-medium">{item.name}</h3>
+                                  <p className="text-xs text-gray-500">{item.type}</p>
+                                </div>
+                              </div>
+                              <Badge 
+                                variant="outline" 
+                                className={item.status === "In Use" ? "text-green-600 bg-green-50 border-green-200" : "text-amber-600 bg-amber-50 border-amber-200"}
+                              >
+                                {item.status}
+                              </Badge>
+                            </div>
+                            <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <p className="text-sm font-medium text-gray-700">Notes</p>
+                                <p className="text-sm text-gray-600">{item.notes}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-700">Last Inspection</p>
+                                <p className="text-sm text-gray-600">{format(item.lastInspection, 'MMM dd, yyyy')}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="dietary" className="space-y-4">
+                  <Card>
+                    <CardHeader className="pb-2 bg-gradient-to-r from-green-50 to-white">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Utensils className="h-5 w-5 text-green-600" />
+                        <span>Nutrition Plan</span>
+                      </CardTitle>
+                      <CardDescription>Dietary requirements and preferences</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="mb-6">
+                        <div className="flex items-center mb-2">
+                          <Pill className="h-5 w-5 text-blue-600 mr-2" />
+                          <h3 className="font-medium">Meal Plan</h3>
+                        </div>
+                        <p className="text-sm px-7">{mockPatientData.dietaryRequirements.mealPlan}</p>
+                      </div>
+                      
+                      <div className="mb-6">
+                        <div className="flex items-center mb-2">
+                          <ShieldAlert className="h-5 w-5 text-red-600 mr-2" />
+                          <h3 className="font-medium">Dietary Restrictions</h3>
+                        </div>
+                        <div className="space-y-2 px-7">
+                          {mockPatientData.dietaryRequirements.restrictions.map((restriction, index) => (
+                            <div key={index} className="flex items-center justify-between border rounded-md p-2 bg-red-50/50 border-red-100">
+                              <div>
+                                <p className="font-medium text-sm">{restriction.name}</p>
+                                <p className="text-xs text-gray-500">{restriction.reason}</p>
+                              </div>
+                              <Badge 
+                                variant="outline" 
+                                className={
+                                  restriction.severity === "Critical" ? "text-red-600 bg-red-50 border-red-200" : 
+                                  restriction.severity === "Strict" ? "text-amber-600 bg-amber-50 border-amber-200" : 
+                                  "text-blue-600 bg-blue-50 border-blue-200"
+                                }
+                              >
+                                {restriction.severity}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="mb-6">
+                        <div className="flex items-center mb-2">
+                          <ThumbsUp className="h-5 w-5 text-green-600 mr-2" />
+                          <h3 className="font-medium">Food Preferences</h3>
+                        </div>
+                        <ul className="space-y-2 px-7">
+                          {mockPatientData.dietaryRequirements.preferences.map((pref, index) => (
+                            <li key={index} className="text-sm flex items-start">
+                              <CheckCircle2 className="h-4 w-4 mr-2 text-green-500 flex-shrink-0 mt-0.5" />
+                              <span>{pref}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      
+                      <div className="mb-6">
+                        <div className="flex items-center mb-2">
+                          <Droplets className="h-5 w-5 text-blue-600 mr-2" />
+                          <h3 className="font-medium">Hydration Plan</h3>
+                        </div>
+                        <p className="text-sm px-7">{mockPatientData.dietaryRequirements.hydrationPlan}</p>
+                      </div>
+                      
+                      <div className="mb-6">
+                        <div className="flex items-center mb-2">
+                          <Battery className="h-5 w-5 text-purple-600 mr-2" />
+                          <h3 className="font-medium">Supplements</h3>
+                        </div>
+                        <div className="space-y-2 px-7">
+                          {mockPatientData.dietaryRequirements.supplements.map((supplement, index) => (
+                            <div key={index} className="flex items-center justify-between border rounded-md p-2 bg-purple-50/50 border-purple-100">
+                              <div>
+                                <p className="font-medium text-sm">{supplement.name}</p>
+                                <p className="text-xs text-gray-500">{supplement.purpose}</p>
+                              </div>
+                              <p className="text-xs bg-white px-2 py-1 rounded border border-gray-200">
+                                {supplement.dosage}, {supplement.frequency}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex items-center mb-2">
+                          <ScrollText className="h-5 w-5 text-gray-600 mr-2" />
+                          <h3 className="font-medium">Nutritional Notes</h3>
+                        </div>
+                        <p className="text-sm bg-gray-50 p-3 rounded-md border border-gray-100 px-7">
+                          {mockPatientData.dietaryRequirements.nutritionalNotes}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
