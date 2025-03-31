@@ -42,24 +42,81 @@ export const mockPatientData = {
     ]
   },
   goals: [
-    { title: "Improve mobility", status: "In Progress", target: "Walk unassisted for 15 minutes", notes: "Currently at 8 minutes with walking frame" },
-    { title: "Medication adherence", status: "Active", target: "100% medication compliance", notes: "Using pill organizer effectively" },
-    { title: "Blood glucose management", status: "Active", target: "Maintain levels between 80-130 mg/dL", notes: "Morning readings occasionally high" },
+    { 
+      title: "Improve mobility", 
+      status: "In Progress", 
+      target: "Walk unassisted for 15 minutes", 
+      notes: "Currently at 8 minutes with walking frame" 
+    },
+    { 
+      title: "Medication adherence", 
+      status: "Active", 
+      target: "100% medication compliance", 
+      notes: "Using pill organizer effectively" 
+    },
+    { 
+      title: "Blood glucose management", 
+      status: "Active", 
+      target: "Maintain levels between 80-130 mg/dL", 
+      notes: "Morning readings occasionally high" 
+    },
   ],
   activities: [
-    { date: new Date("2023-11-10"), action: "Medication review", performer: "Dr. Emma Lewis", status: "Completed" },
-    { date: new Date("2023-11-05"), action: "Physical assessment", performer: "Nurse David Brown", status: "Completed" },
-    { date: new Date("2023-10-25"), action: "Care plan update", performer: "Dr. Sarah Johnson", status: "Completed" },
+    { 
+      date: new Date("2023-11-10"), 
+      action: "Medication review", 
+      performer: "Dr. Emma Lewis", 
+      status: "Completed" 
+    },
+    { 
+      date: new Date("2023-11-05"), 
+      action: "Physical assessment", 
+      performer: "Nurse David Brown", 
+      status: "Completed" 
+    },
+    { 
+      date: new Date("2023-10-25"), 
+      action: "Care plan update", 
+      performer: "Dr. Sarah Johnson", 
+      status: "Completed" 
+    },
   ],
   notes: [
-    { date: new Date("2023-11-08"), author: "Nurse David Brown", content: "Patient reported mild discomfort in left knee. Applied cold compress and recommended rest. Will monitor." },
-    { date: new Date("2023-11-01"), author: "Dr. Sarah Johnson", content: "Blood pressure readings have improved with current medication. Continuing current dosage and monitoring." },
-    { date: new Date("2023-10-20"), author: "Dr. Emma Lewis", content: "Patient has been adhering well to diabetes management plan. Blood glucose levels stable." },
+    { 
+      date: new Date("2023-11-08"), 
+      author: "Nurse David Brown", 
+      content: "Patient reported mild discomfort in left knee. Applied cold compress and recommended rest. Will monitor." 
+    },
+    { 
+      date: new Date("2023-11-01"), 
+      author: "Dr. Sarah Johnson", 
+      content: "Blood pressure readings have improved with current medication. Continuing current dosage and monitoring." 
+    },
+    { 
+      date: new Date("2023-10-20"), 
+      author: "Dr. Emma Lewis", 
+      content: "Patient has been adhering well to diabetes management plan. Blood glucose levels stable." 
+    },
   ],
   documents: [
-    { name: "Medical History Summary", date: new Date("2023-09-15"), type: "PDF", author: "Dr. Emma Lewis" },
-    { name: "Diabetes Management Plan", date: new Date("2023-09-20"), type: "DOCX", author: "Dr. Sarah Johnson" },
-    { name: "Physical Therapy Assessment", date: new Date("2023-10-10"), type: "PDF", author: "Nurse David Brown" },
+    { 
+      name: "Medical History Summary", 
+      date: new Date("2023-09-15"), 
+      type: "PDF", 
+      author: "Dr. Emma Lewis" 
+    },
+    { 
+      name: "Diabetes Management Plan", 
+      date: new Date("2023-09-20"), 
+      type: "DOCX", 
+      author: "Dr. Sarah Johnson" 
+    },
+    { 
+      name: "Physical Therapy Assessment", 
+      date: new Date("2023-10-10"), 
+      type: "PDF", 
+      author: "Nurse David Brown" 
+    },
   ],
   assessments: [
     { 
@@ -78,10 +135,34 @@ export const mockPatientData = {
     },
   ],
   equipment: [
-    { name: "Walking Frame", type: "Mobility Aid", status: "In Use", notes: "Checked monthly", lastInspection: new Date("2023-10-30") },
-    { name: "Shower Chair", type: "Bathroom Aid", status: "In Use", notes: "Stable condition", lastInspection: new Date("2023-11-05") },
-    { name: "Hospital Bed", type: "Bedroom Aid", status: "In Use", notes: "Electric controls working properly", lastInspection: new Date("2023-10-15") },
-    { name: "Oxygen Concentrator", type: "Medical Device", status: "Available", notes: "Only used when needed", lastInspection: new Date("2023-11-10") }
+    { 
+      name: "Walking Frame", 
+      type: "Mobility Aid", 
+      status: "In Use", 
+      notes: "Checked monthly", 
+      lastInspection: new Date("2023-10-30") 
+    },
+    { 
+      name: "Shower Chair", 
+      type: "Bathroom Aid", 
+      status: "In Use", 
+      notes: "Stable condition", 
+      lastInspection: new Date("2023-11-05") 
+    },
+    { 
+      name: "Hospital Bed", 
+      type: "Bedroom Aid", 
+      status: "In Use", 
+      notes: "Electric controls working properly", 
+      lastInspection: new Date("2023-10-15") 
+    },
+    { 
+      name: "Oxygen Concentrator", 
+      type: "Medical Device", 
+      status: "Available", 
+      notes: "Only used when needed", 
+      lastInspection: new Date("2023-11-10") 
+    }
   ],
   dietaryRequirements: {
     mealPlan: "Low sodium diabetic diet plan",
