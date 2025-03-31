@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import NotificationsOverview from "@/components/workflow/NotificationsOverview";
 import {
   Card,
   CardContent,
@@ -303,7 +304,10 @@ const Notifications = () => {
             </div>
           </div>
           
-          <div className="mb-6">
+          {/* Add NotificationsOverview component here */}
+          <NotificationsOverview branchId={id} branchName={branchName} />
+          
+          <div className="mb-6 mt-8">
             <Tabs defaultValue={view} onValueChange={setView} className="w-full">
               <div className="flex items-center justify-between">
                 <TabsList className="grid w-[180px] grid-cols-2">
