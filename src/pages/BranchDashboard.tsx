@@ -541,17 +541,19 @@ const BranchDashboard = () => {
         </div>
         
         {activeTab === "overview" && (
-          <motion.div key={activeTab} initial={{
-            opacity: 0,
-            y: 10
-          }} animate={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            duration: 0.3
-          }} className="mt-4 md:mt-6">
+          <motion.div 
+            key={activeTab} 
+            initial={{ opacity: 0, y: 10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.3 }} 
+            className="mt-4 md:mt-6"
+          >
             <div className="grid grid-cols-2 gap-3 mb-6">
-              <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start" onClick={handleNewClient}>
+              <Button 
+                variant="outline" 
+                className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start" 
+                onClick={handleNewClient}
+              >
                 <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-blue-100 flex items-center justify-center">
                   <Plus className="h-3.5 md:h-4 w-3.5 md:w-4 text-blue-600" />
                 </div>
@@ -561,7 +563,11 @@ const BranchDashboard = () => {
                 </div>
               </Button>
               
-              <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start" onClick={() => handleTabChange("bookings")}>
+              <Button 
+                variant="outline" 
+                className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start" 
+                onClick={() => handleTabChange("bookings")}
+              >
                 <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-green-100 flex items-center justify-center">
                   <Calendar className="h-3.5 md:h-4 w-3.5 md:w-4 text-green-600" />
                 </div>
@@ -581,7 +587,11 @@ const BranchDashboard = () => {
                 </div>
               </Button>
               
-              <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start" onClick={() => handleTabChange("carers")}>
+              <Button 
+                variant="outline" 
+                className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start" 
+                onClick={() => handleTabChange("carers")}
+              >
                 <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-purple-100 flex items-center justify-center">
                   <Users className="h-3.5 md:h-4 w-3.5 md:w-4 text-purple-600" />
                 </div>
@@ -728,13 +738,41 @@ const BranchDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3 md:space-y-4">
-                    {serviceData.map((service, index) => <div key={index} className="flex items-center">
+                    {serviceData.map((service, index) => (
+                      <div key={index} className="flex items-center">
                         <div className="w-24 md:w-32 font-medium text-xs md:text-sm">{service.name}</div>
                         <div className="flex-1">
                           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-600 rounded-full" style={{
-                          width: `${service.usage}%`
-                        }}></div>
+                            <div 
+                              className="h-full bg-blue-600 rounded-full" 
+                              style={{ width: `${service.usage}%` }}
+                            ></div>
                           </div>
                         </div>
                         <div className="ml-3 text-xs md:text-sm font-medium">{service.usage}%</div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </motion.div>
+        )}
+        
+        {activeTab === "key-parameters" && <KeyParametersContent branchId={id} branchName={paramBranchName} />}
+        {activeTab === "workflow" && <WorkflowContent branchId={id} branchName={paramBranchName} />}
+        {activeTab === "task-matrix" && <TaskMatrix branchId={id} branchName={paramBranchName} />}
+        {activeTab === "training-matrix" && <TrainingMatrix branchId={id} branchName={paramBranchName} />}
+        {activeTab === "notifications" && <NotificationsOverview branchId={id} branchName={paramBranchName} />}
+        {activeTab === "bookings" && <BookingsTab />}
+        {activeTab === "carers" && <CarersTab />}
+        {activeTab === "communications" && <CommunicationsTab />}
+        {activeTab === "medication" && <MedicationTab />}
+        {activeTab === "reviews" && <ReviewsTab />}
+        {activeTab === "care" && <CareTab />}
+      </main>
+    </div>
+  );
+};
+
+export default BranchDashboard;
