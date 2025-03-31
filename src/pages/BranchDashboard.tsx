@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, Routes, Route } from "react-router-dom";
+import { useParams, useNavigate, Routes, Route, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { motion } from "framer-motion";
@@ -345,6 +345,8 @@ const BranchDashboard = () => {
     "*": restPath
   } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  
   const [activeTab, setActiveTab] = useState(() => {
     if (restPath) {
       if (restPath.startsWith("key-parameters")) return "key-parameters";
@@ -360,6 +362,24 @@ const BranchDashboard = () => {
     }
     return "dashboard";
   });
+
+  useEffect(() => {
+    if (restPath) {
+      if (restPath.startsWith("key-parameters")) setActiveTab("key-parameters");
+      else if (restPath.startsWith("workflow")) setActiveTab("workflow");
+      else if (restPath.startsWith("bookings")) setActiveTab("bookings");
+      else if (restPath.startsWith("carers")) setActiveTab("carers");
+      else if (restPath.startsWith("clients")) setActiveTab("clients");
+      else if (restPath.startsWith("reviews")) setActiveTab("reviews");
+      else if (restPath.startsWith("communication")) setActiveTab("communication");
+      else if (restPath.startsWith("notifications")) setActiveTab("notifications");
+      else if (restPath.startsWith("medication")) setActiveTab("medication");
+      else if (restPath.startsWith("care-plan")) setActiveTab("care-plan");
+      else setActiveTab("dashboard");
+    } else {
+      setActiveTab("dashboard");
+    }
+  }, [restPath, location.pathname]);
 
   const [searchValue, setSearchValue] = useState("");
   const [clientSearchValue, setClientSearchValue] = useState("");
@@ -491,10 +511,6 @@ const BranchDashboard = () => {
       handleWorkflowNavigation("notifications");
     }
   };
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [statusFilter, regionFilter, clientSearchValue]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
@@ -736,15 +752,17 @@ const BranchDashboard = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
               <Card>
-                <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base md:text-lg font-semibold">Today's Bookings</CardTitle>
-                    <CardDescription>Appointments for today</CardDescription>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base md:text-lg font-semibold">Today's Bookings</CardTitle>
+                      <CardDescription>Appointments for today</CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+                      View All
+                      <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                  <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
-                    View All
-                    <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-                  </Button>
                 </CardHeader>
                 <CardContent className="overflow-x-auto">
                   <div className="space-y-1 min-w-[400px]">
@@ -788,15 +806,9 @@ const BranchDashboard = () => {
               </Card>
               
               <Card>
-                <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base md:text-lg font-semibold">Recent Reviews</CardTitle>
-                    <CardDescription>Latest client feedback</CardDescription>
-                  </div>
-                  <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
-                    View All
-                    <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-                  </Button>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base md:text-lg font-semibold">Recent Reviews</CardTitle>
+                  <CardDescription>Latest client feedback</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-1">
