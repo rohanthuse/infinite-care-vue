@@ -28,6 +28,7 @@ import KeyParametersContent from "@/components/keyparameters/KeyParametersConten
 import WorkflowContent from "@/components/workflow/WorkflowContent";
 import { MedicationTab } from "@/components/medication/MedicationTab";
 import { CareTab } from "@/components/care/CareTab";
+import NotificationsOverview from "@/components/workflow/NotificationsOverview";
 
 const weeklyData = [{
   day: "Mon",
@@ -832,7 +833,7 @@ const BranchDashboard = () => {
               </Card>
             </div>
             
-            <div className="grid grid-cols-1 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
               <Card>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
@@ -1056,7 +1057,16 @@ const BranchDashboard = () => {
         
         {activeTab === "communication" && <CommunicationsTab branchId={id} branchName={branchName} />}
         
-        {activeTab === "notifications" && (
+        {activeTab === "notifications" && restPath === "notifications" && (
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+            <h2 className="text-2xl font-bold mb-4">Notifications</h2>
+            <p className="text-gray-500 mb-6">Branch: {decodeURIComponent(branchName || "")} (ID: {id})</p>
+            
+            <NotificationsOverview branchId={id} branchName={branchName} />
+          </div>
+        )}
+        
+        {activeTab === "notifications" && restPath !== "notifications" && (
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
             <h2 className="text-2xl font-bold mb-4">Notifications</h2>
             <p className="text-gray-500">Branch: {branchName} (ID: {id})</p>

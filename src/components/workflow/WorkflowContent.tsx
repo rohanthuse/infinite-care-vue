@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Bell, ListChecks, BookText, FileText, ClipboardCheck, Search, Filter, Download } from "lucide-react";
 import { motion } from "framer-motion";
@@ -6,10 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
+
 interface WorkflowContentProps {
   branchId?: string;
   branchName?: string;
 }
+
 const WorkflowContent = ({
   branchId,
   branchName
@@ -17,6 +20,7 @@ const WorkflowContent = ({
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  
   const handleNavigate = (path: string) => {
     if (branchId && branchName) {
       navigate(`/branch-dashboard/${branchId}/${branchName}/${path}`);
@@ -24,6 +28,7 @@ const WorkflowContent = ({
       navigate(`/${path}`);
     }
   };
+  
   return <>
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Workflow Management</h1>
@@ -121,4 +126,5 @@ const WorkflowContent = ({
       </motion.div>
     </>;
 };
+
 export default WorkflowContent;
