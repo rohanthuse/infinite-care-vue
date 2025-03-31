@@ -797,7 +797,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ carePlan, onClos
                           <div className="md:col-span-2">
                             <h4 className="font-medium mb-2 flex items-center">
                               <Pill className="h-4 w-4 mr-2 text-purple-600" />
-                              Nutritional Supplements
+                              <span>Nutritional Supplements</span>
                             </h4>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               {mockPatientData.dietaryRequirements.supplements.map((supplement, index) => (
