@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, ListChecks, BookText, FileText, ClipboardCheck, Search, Filter, Download } from "lucide-react";
@@ -14,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import NotificationsOverview from "@/components/workflow/NotificationsOverview";
 
 const Workflow = () => {
   const navigate = useNavigate();
@@ -72,7 +72,9 @@ const Workflow = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="mb-8">
+          <NotificationsOverview />
+          
+          <div className="mb-8 mt-8">
             <h2 className="text-xl font-bold text-gray-800 tracking-tight mb-4">Core Workflow Elements</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               <Card 
