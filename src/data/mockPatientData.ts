@@ -102,5 +102,64 @@ export const mockPatientData = {
     ],
     hydrationPlan: "Minimum 8 glasses of water daily, monitored with checklist",
     nutritionalNotes: "Patient struggles with maintaining adequate hydration. Family has been advised to encourage fluid intake throughout the day."
-  }
+  },
+  personalCare: {
+    routines: [
+      { activity: "Morning hygiene", frequency: "Daily" },
+      { activity: "Evening bath", frequency: "3 times per week" },
+      { activity: "Hair washing", frequency: "Twice weekly" },
+      { activity: "Nail care", frequency: "Weekly" }
+    ],
+    preferences: [
+      "Prefers warmer water temperature",
+      "Likes to use own toiletries",
+      "Prefers male caregiver for personal care",
+      "Likes to dress in button-up shirts"
+    ],
+    mobility: {
+      status: "Limited mobility",
+      transferAbility: "Requires one-person assist",
+      walkingDistance: "Up to 10 meters with frame",
+      stairs: "Unable to manage stairs",
+      notes: "Better mobility in the morning, fatigue increases throughout day"
+    }
+  },
+  riskAssessments: [
+    {
+      type: "Fall Risk",
+      level: "Moderate",
+      lastAssessed: new Date("2023-10-20"),
+      assessedBy: "Nurse David Brown",
+      mitigationPlan: "Walking frame use, clear pathways, night light",
+      reviewDate: new Date("2023-12-20")
+    },
+    {
+      type: "Pressure Ulcer Risk",
+      level: "Low",
+      lastAssessed: new Date("2023-10-15"),
+      assessedBy: "Dr. Emma Lewis",
+      mitigationPlan: "Regular position changes, pressure relieving mattress",
+      reviewDate: new Date("2023-12-15")
+    }
+  ],
+  serviceActions: [
+    {
+      service: "Personal Care",
+      provider: "Home Care Assistant",
+      frequency: "Daily",
+      duration: "45 minutes",
+      schedule: "Morning and Evening",
+      goals: ["Improve hygiene", "Maintain dignity"],
+      progress: "Meeting needs"
+    },
+    {
+      service: "Medication Management",
+      provider: "Nurse",
+      frequency: "Weekly",
+      duration: "30 minutes",
+      schedule: "Monday mornings",
+      goals: ["Medication compliance", "Health monitoring"],
+      progress: "Stable"
+    }
+  ]
 };
