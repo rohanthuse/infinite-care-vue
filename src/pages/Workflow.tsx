@@ -30,10 +30,6 @@ const Workflow = () => {
     navigate('/training-matrix');
   };
   
-  const handleFormMatrixClick = () => {
-    navigate('/form-matrix');
-  };
-  
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -132,7 +128,7 @@ const Workflow = () => {
 
               <Card 
                 className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
-                onClick={handleFormMatrixClick}
+                onClick={() => navigate('/forms')}
               >
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-3">
