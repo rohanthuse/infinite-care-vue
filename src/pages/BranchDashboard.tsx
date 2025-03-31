@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Routes, Route, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -687,7 +688,9 @@ const BranchDashboard = () => {
               </Card>
             </div>
             
+            {/* Additional charts and data visualizations */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
+              {/* Revenue Trend */}
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base md:text-lg font-semibold">Revenue Trend</CardTitle>
@@ -724,6 +727,7 @@ const BranchDashboard = () => {
                 </CardContent>
               </Card>
               
+              {/* Popular Services */}
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base md:text-lg font-semibold">Popular Services</CardTitle>
@@ -731,8 +735,72 @@ const BranchDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3 md:space-y-4">
-                    {serviceData.map((service, index) => <div key={index} className="flex items-center">
+                    {serviceData.map((service, index) => (
+                      <div key={index} className="flex items-center">
                         <div className="w-24 md:w-32 font-medium text-xs md:text-sm">{service.name}</div>
                         <div className="flex-1">
                           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                             <div className="h-full bg-blue-600 rounded-full" style={{
+                              width: `${service.usage}%`
+                            }}></div>
+                          </div>
+                        </div>
+                        <div className="w-10 text-right text-xs md:text-sm font-medium">{service.usage}%</div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </motion.div>
+        )}
+        
+        {activeTab === "key-parameters" && (
+          <KeyParametersContent branchId={id || ""} />
+        )}
+        
+        {activeTab === "workflow" && (
+          <WorkflowContent branchId={id || ""} onNavigate={handleWorkflowNavigation} />
+        )}
+        
+        {activeTab === "task-matrix" && (
+          <TaskMatrix branchId={id || ""} />
+        )}
+        
+        {activeTab === "training-matrix" && (
+          <TrainingMatrix branchId={id || ""} />
+        )}
+        
+        {activeTab === "form-matrix" && (
+          <FormMatrix branchId={id || ""} />
+        )}
+        
+        {activeTab === "bookings" && (
+          <BookingsTab branchId={id || ""} />
+        )}
+        
+        {activeTab === "carers" && (
+          <CarersTab branchId={id || ""} />
+        )}
+        
+        {activeTab === "communications" && (
+          <CommunicationsTab branchId={id || ""} />
+        )}
+        
+        {activeTab === "medication" && (
+          <MedicationTab branchId={id || ""} />
+        )}
+        
+        {activeTab === "reviews" && (
+          <ReviewsTab branchId={id || ""} />
+        )}
+        
+        {activeTab === "care" && (
+          <CareTab branchId={id || ""} />
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default BranchDashboard;
