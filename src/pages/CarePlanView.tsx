@@ -17,6 +17,10 @@ import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { TabNavigation } from "@/components/TabNavigation";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { toast } from "@/components/ui/use-toast";
+import { PatientHeader } from "@/components/care/PatientHeader";
+import { AboutMeTab } from "@/components/care/tabs/AboutMeTab";
+import { CarePlanTabBar } from "@/components/care/CarePlanTabBar";
+import { getStatusBadgeClass, getRiskLevelClass, calculateProgressPercentage } from "@/utils/statusHelpers";
 
 // Mock data for the care plan details
 const mockPatientData = {
@@ -338,7 +342,6 @@ const mockCarePlans = [
     assignedTo: "Dr. James Wilson",
     avatar: "ET"
   }
-  // More care plans...
 ];
 
 const CarePlanView = () => {
@@ -374,26 +377,6 @@ const CarePlanView = () => {
       title: "New Booking",
       description: "Booking functionality will be implemented soon.",
     });
-  };
-
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case "Active": return "text-green-600 bg-green-50 border-green-200";
-      case "In Progress": return "text-blue-600 bg-blue-50 border-blue-200";
-      case "Completed": return "text-purple-600 bg-purple-50 border-purple-200";
-      case "Under Review": return "text-amber-600 bg-amber-50 border-amber-200";
-      case "Archived": return "text-gray-600 bg-gray-50 border-gray-200";
-      default: return "text-gray-600 bg-gray-50 border-gray-200";
-    }
-  };
-
-  const getRiskLevelClass = (level: string) => {
-    switch (level) {
-      case "High": return "text-red-600 bg-red-50 border-red-200";
-      case "Moderate": return "text-amber-600 bg-amber-50 border-amber-200";
-      case "Low": return "text-green-600 bg-green-50 border-green-200";
-      default: return "text-gray-600 bg-gray-50 border-gray-200";
-    }
   };
 
   return (
@@ -454,23 +437,7 @@ const CarePlanView = () => {
           {carePlan && (
             <div className="flex flex-col space-y-6">
               {/* Patient Header */}
-              <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg font-medium">
-                  {carePlan.avatar}
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold">{carePlan.patientName}</h2>
-                  <div className="flex items-center space-x-2 text-sm text-gray-500">
-                    <span>Patient ID: {carePlan.patientId}</span>
-                    <span>•</span>
-                    <span>Plan ID: {carePlan.id}</span>
-                    <span>•</span>
-                    <Badge variant="outline" className={getStatusBadgeClass(carePlan.status)}>
-                      {carePlan.status}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
+              <PatientHeader carePlan={carePlan} />
               
               <div className="flex flex-col md:flex-row gap-6">
                 {/* Left sidebar */}
@@ -535,60 +502,7 @@ const CarePlanView = () => {
                 {/* Main content */}
                 <div className="w-full md:w-3/4">
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="w-full justify-start overflow-x-auto mb-4">
-                      <TabsTrigger value="personal" className="flex items-center gap-1">
-                        <User className="h-4 w-4" />
-                        <span>Personal</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="aboutme" className="flex items-center gap-1">
-                        <Info className="h-4 w-4" />
-                        <span>About Me</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="goals" className="flex items-center gap-1">
-                        <FileCheck className="h-4 w-4" />
-                        <span>Goals</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="equipment" className="flex items-center gap-1">
-                        <Wrench className="h-4 w-4" />
-                        <span>Equipment</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="dietary" className="flex items-center gap-1">
-                        <Utensils className="h-4 w-4" />
-                        <span>Dietary</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="personal-care" className="flex items-center gap-1">
-                        <Bath className="h-4 w-4" />
-                        <span>Personal Care</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="risk" className="flex items-center gap-1">
-                        <ShieldAlert className="h-4 w-4" />
-                        <span>Risk</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="service-plan" className="flex items-center gap-1">
-                        <ClipboardList className="h-4 w-4" />
-                        <span>Service Plan</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="actions" className="flex items-center gap-1">
-                        <FileBarChart2 className="h-4 w-4" />
-                        <span>Service Actions</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="activities" className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>Activities</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="notes" className="flex items-center gap-1">
-                        <MessageCircle className="h-4 w-4" />
-                        <span>Notes</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="documents" className="flex items-center gap-1">
-                        <FileText className="h-4 w-4" />
-                        <span>Documents</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="assessments" className="flex items-center gap-1">
-                        <AlertTriangle className="h-4 w-4" />
-                        <span>Assessments</span>
-                      </TabsTrigger>
-                    </TabsList>
+                    <CarePlanTabBar activeTab={activeTab} onChange={setActiveTab} />
                     
                     {/* Personal Information Tab */}
                     <TabsContent value="personal" className="space-y-4">
@@ -683,49 +597,9 @@ const CarePlanView = () => {
                       </Card>
                     </TabsContent>
                     
-                    {/* About Me Tab */}
+                    {/* About Me Tab - Using the improved AboutMeTab component */}
                     <TabsContent value="aboutme" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">About Me</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Preferences</p>
-                              <ul className="list-disc list-inside">
-                                {mockPatientData.aboutMe.preferences.map((pref, index) => (
-                                  <li key={index} className="text-sm">{pref}</li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Routines</p>
-                              <ul className="list-disc list-inside">
-                                {mockPatientData.aboutMe.routines.map((routine, index) => (
-                                  <li key={index} className="text-sm">{routine}</li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Interests</p>
-                              <ul className="list-disc list-inside">
-                                {mockPatientData.aboutMe.interests.map((interest, index) => (
-                                  <li key={index} className="text-sm">{interest}</li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Dislikes</p>
-                              <ul className="list-disc list-inside">
-                                {mockPatientData.aboutMe.dislikes.map((dislike, index) => (
-                                  <li key={index} className="text-sm">{dislike}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                      <AboutMeTab aboutMe={mockPatientData.aboutMe} />
                     </TabsContent>
                     
                     {/* Goals Tab */}
