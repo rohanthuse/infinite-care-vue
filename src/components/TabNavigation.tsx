@@ -6,8 +6,7 @@ import {
   FileUp, Folder, UserPlus, BarChart4, Settings, 
   Activity, Briefcase, PanelLeft, Paperclip,
   ChevronDown, Menu, Search, Grid, Plus,
-  UserPlus2, FileSignature, CalendarPlus, Contact, UserRoundPlus,
-  Book
+  UserPlus2, FileSignature, CalendarPlus, Contact, UserRoundPlus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -53,9 +52,6 @@ const secondaryTabGroups = [
       { icon: Workflow, label: "Workflow", value: "workflow", description: "Process management" },
       { icon: ListChecks, label: "Key Parameters", value: "key-parameters", description: "Track metrics" },
       { icon: Pill, label: "Medication", value: "medication", description: "Medicine tracking" },
-      { icon: ListChecks, label: "Task Matrix", value: "task-matrix", description: "Manage priority tasks" },
-      { icon: Book, label: "Training Matrix", value: "training", description: "Staff development" },
-      { icon: FileText, label: "Form Matrix", value: "forms", description: "Document templates" },
     ]
   },
   {
