@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -37,6 +38,10 @@ import { mockPatientData } from "@/data/mockPatientData";
 import { cn } from "@/lib/utils";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { CarePlanSidebar } from "@/components/care/CarePlanSidebar";
+import { AddNoteDialog } from "@/components/care/dialogs/AddNoteDialog";
+import { ScheduleFollowUpDialog } from "@/components/care/dialogs/ScheduleFollowUpDialog";
+import { RecordActivityDialog } from "@/components/care/dialogs/RecordActivityDialog";
 
 const mockCarePlans = [
   {
@@ -66,6 +71,11 @@ const CarePlanView = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("personal");
   const [carePlan, setCarePlan] = useState<typeof mockCarePlans[0] | null>(null);
+  
+  // State for dialogs
+  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const [followUpDialogOpen, setFollowUpDialogOpen] = useState(false);
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
 
   useEffect(() => {
     const plan = mockCarePlans.find(p => p.id === carePlanId);
@@ -91,6 +101,66 @@ const CarePlanView = () => {
       title: "New Booking",
       description: "Booking functionality will be implemented soon.",
     });
+  };
+
+  // Handle saving a new note
+  const handleSaveNote = (note: { content: string; date: Date }) => {
+    // In a real application, this would send the data to an API
+    console.log("Saving note:", note);
+    
+    // Add the note to the mockPatientData (simulating a data update)
+    const newNote = {
+      date: note.date,
+      author: carePlan?.assignedTo || "Care Provider",
+      content: note.content
+    };
+    
+    mockPatientData.notes.unshift(newNote);
+    
+    toast({
+      title: "Note added",
+      description: "The note has been successfully added to the patient's record."
+    });
+  };
+
+  // Handle scheduling a follow-up
+  const handleSaveFollowUp = (followUp: any) => {
+    // In a real application, this would send the data to an API
+    console.log("Scheduling follow-up:", followUp);
+    
+    toast({
+      title: "Follow-up scheduled",
+      description: `Follow-up "${followUp.title}" scheduled for ${format(followUp.date, 'MMM dd, yyyy')} at ${followUp.time}.`
+    });
+  };
+
+  // Handle recording an activity
+  const handleSaveActivity = (activity: any) => {
+    // In a real application, this would send the data to an API
+    console.log("Recording activity:", activity);
+    
+    // Add the activity to the mockPatientData (simulating a data update)
+    const newActivity = {
+      date: activity.date,
+      action: activity.action,
+      performer: activity.performer,
+      status: activity.status
+    };
+    
+    mockPatientData.activities.unshift(newActivity);
+    
+    toast({
+      title: "Activity recorded",
+      description: `The activity "${activity.action}" has been recorded.`
+    });
+  };
+
+  // Custom props for the sidebar to handle dialog opening
+  const sidebarProps = {
+    carePlan: carePlan!,
+    onAddNote: () => setNoteDialogOpen(true),
+    onScheduleFollowUp: () => setFollowUpDialogOpen(true),
+    onRecordActivity: () => setActivityDialogOpen(true)
   };
 
   return (
@@ -154,61 +224,12 @@ const CarePlanView = () => {
               
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="w-full md:w-1/4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">Care Plan Summary</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Status</p>
-                        <Badge variant="outline" className={getStatusBadgeClass(carePlan.status)}>
-                          {carePlan.status}
-                        </Badge>
-                      </div>
-                      
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Assigned To</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Avatar className="h-6 w-6">
-                            <div className="bg-blue-100 text-blue-600 w-full h-full flex items-center justify-center text-xs">
-                              {carePlan.assignedTo.split(' ').map(n => n[0]).join('')}
-                            </div>
-                          </Avatar>
-                          <span className="text-sm">{carePlan.assignedTo}</span>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Created On</p>
-                        <p className="text-sm">{format(carePlan.dateCreated, 'MMM dd, yyyy')}</p>
-                      </div>
-                      
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Last Updated</p>
-                        <p className="text-sm">{format(carePlan.lastUpdated, 'MMM dd, yyyy')}</p>
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 mb-2">Quick Actions</p>
-                        <div className="space-y-2">
-                          <Button variant="outline" size="sm" className="w-full justify-start">
-                            <MessageCircle className="h-4 w-4 mr-2" />
-                            <span>Add Note</span>
-                          </Button>
-                          <Button variant="outline" size="sm" className="w-full justify-start">
-                            <Clock className="h-4 w-4 mr-2" />
-                            <span>Schedule Follow-up</span>
-                          </Button>
-                          <Button variant="outline" size="sm" className="w-full justify-start">
-                            <Activity className="h-4 w-4 mr-2" />
-                            <span>Record Activity</span>
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  {carePlan && <CarePlanSidebar 
+                    carePlan={carePlan} 
+                    onAddNote={() => setNoteDialogOpen(true)}
+                    onScheduleFollowUp={() => setFollowUpDialogOpen(true)}
+                    onRecordActivity={() => setActivityDialogOpen(true)}
+                  />}
                 </div>
                 
                 <div className="w-full md:w-3/4">
@@ -371,6 +392,25 @@ const CarePlanView = () => {
           )}
         </div>
       </div>
+      
+      {/* Dialogs */}
+      <AddNoteDialog 
+        open={noteDialogOpen} 
+        onOpenChange={setNoteDialogOpen}
+        onSave={handleSaveNote}
+      />
+      
+      <ScheduleFollowUpDialog 
+        open={followUpDialogOpen} 
+        onOpenChange={setFollowUpDialogOpen}
+        onSave={handleSaveFollowUp}
+      />
+      
+      <RecordActivityDialog 
+        open={activityDialogOpen} 
+        onOpenChange={setActivityDialogOpen}
+        onSave={handleSaveActivity}
+      />
     </div>
   );
 };

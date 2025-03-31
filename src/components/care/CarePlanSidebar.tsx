@@ -20,9 +20,17 @@ interface CarePlanSidebarProps {
     assignedTo: string;
     avatar: string;
   };
+  onAddNote?: () => void;
+  onScheduleFollowUp?: () => void;
+  onRecordActivity?: () => void;
 }
 
-export const CarePlanSidebar: React.FC<CarePlanSidebarProps> = ({ carePlan }) => {
+export const CarePlanSidebar: React.FC<CarePlanSidebarProps> = ({ 
+  carePlan,
+  onAddNote,
+  onScheduleFollowUp,
+  onRecordActivity 
+}) => {
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -63,15 +71,30 @@ export const CarePlanSidebar: React.FC<CarePlanSidebarProps> = ({ carePlan }) =>
         <div>
           <p className="text-sm font-medium text-gray-500 mb-2">Quick Actions</p>
           <div className="space-y-2">
-            <Button variant="outline" size="sm" className="w-full justify-start">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full justify-start"
+              onClick={onAddNote}
+            >
               <MessageCircle className="h-4 w-4 mr-2" />
               <span>Add Note</span>
             </Button>
-            <Button variant="outline" size="sm" className="w-full justify-start">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full justify-start"
+              onClick={onScheduleFollowUp}
+            >
               <Clock className="h-4 w-4 mr-2" />
               <span>Schedule Follow-up</span>
             </Button>
-            <Button variant="outline" size="sm" className="w-full justify-start">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full justify-start"
+              onClick={onRecordActivity}
+            >
               <Activity className="h-4 w-4 mr-2" />
               <span>Record Activity</span>
             </Button>
