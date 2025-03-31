@@ -46,6 +46,14 @@ const WorkflowContent = ({
     }
   };
   
+  const handleFormMatrixClick = () => {
+    if (branchId && branchName) {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/form-matrix`);
+    } else {
+      navigate(`/form-matrix`);
+    }
+  };
+  
   return <>
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Workflow Management</h1>
@@ -94,7 +102,7 @@ const WorkflowContent = ({
               </CardContent>
             </Card>
 
-            <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200" onClick={() => handleNavigate('forms')}>
+            <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200" onClick={handleFormMatrixClick}>
               <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                 <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-3">
                   <FileText className="h-8 w-8 text-amber-600" />
