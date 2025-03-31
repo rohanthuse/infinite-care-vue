@@ -3,8 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { TabNavigation } from "@/components/TabNavigation";
-import { BranchSidebar } from "@/components/BranchSidebar";
-import { getTaskColumns, mockTasks, filterTasksByView } from "@/data/mockTaskData";
+import { getTaskColumns, filterTasksByView } from "@/data/mockTaskData";
 import { Task, TaskColumn as TaskColumnType, TaskStatus, TaskView } from "@/types/task";
 import TaskColumn from "@/components/tasks/TaskColumn";
 import AddTaskDialog from "@/components/tasks/AddTaskDialog";
@@ -16,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
+import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 
 interface DragItem {
   taskId: string;
@@ -123,7 +123,7 @@ const TaskMatrix: React.FC = () => {
   const addNewTask = (taskData: {
     title: string;
     description: string;
-    priority: TaskStatus;
+    priority: any;
     status: TaskStatus;
     assignee?: string;
   }) => {
@@ -160,100 +160,77 @@ const TaskMatrix: React.FC = () => {
   };
   
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
-      <DashboardHeader />
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Task Matrix</h1>
+        <p className="text-gray-500 mt-2">Organize, assign, and track tasks efficiently</p>
+      </div>
       
-      {branchId && branchName && (
-        <BranchSidebar branchName={branchName} />
-      )}
-      
-      <main className={`flex-1 transition-all duration-300 ${branchId ? 'md:ml-64' : ''}`}>
-        <div className="container px-4 pt-6 pb-20 md:py-8 mx-auto">
-          <div className="mb-6">
-            <TabNavigation 
-              activeTab={branchId ? "workflow" : "tasks"} 
-              onChange={(value) => {
-                if (branchId && branchName) {
-                  navigate(`/branch-dashboard/${branchId}/${branchName}/${value}`);
-                } else {
-                  navigate(`/${value}`);
-                }
-              }}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search tasks..."
+              className="pl-10 pr-4"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           
-          <div className="mb-6 md:mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Task Matrix</h1>
-            <p className="text-gray-500 mt-2 font-medium">Organize, assign, and track tasks efficiently</p>
-          </div>
-          
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mb-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search tasks..."
-                  className="pl-10 pr-4"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              
-              <div className="flex gap-3 flex-wrap">
-                <Tabs value={taskView} onValueChange={(value) => setTaskView(value as TaskView)} className="w-auto">
-                  <TabsList className="bg-gray-100">
-                    <TabsTrigger value="staff" className="flex items-center gap-1 data-[state=active]:bg-white">
-                      <Users className="h-4 w-4" />
-                      <span className="hidden sm:inline">Staff</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="client" className="flex items-center gap-1 data-[state=active]:bg-white">
-                      <UserRound className="h-4 w-4" />
-                      <span className="hidden sm:inline">Client</span>
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-                
-                <Button variant="outline" className="gap-2 whitespace-nowrap">
-                  <Filter className="h-4 w-4" />
-                  <span className="hidden sm:inline">Filter</span>
-                </Button>
-                
-                <Button variant="outline" className="gap-2 whitespace-nowrap">
-                  <SlidersHorizontal className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sort</span>
-                </Button>
-                
-                <Button 
-                  variant="default" 
-                  className="gap-2 whitespace-nowrap bg-blue-600 hover:bg-blue-700"
-                  onClick={() => {
-                    setAddToColumn("todo");
-                    setIsAddTaskDialogOpen(true);
-                  }}
-                >
-                  <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">Add Task</span>
-                </Button>
-              </div>
-            </div>
-          </div>
-          
-          <div className="overflow-x-auto pb-6">
-            <div className="flex gap-4 min-w-max">
-              {columns.map(column => (
-                <TaskColumn
-                  key={column.id}
-                  column={column}
-                  onDragStart={handleDragStart}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                  onAddTask={handleAddTask}
-                />
-              ))}
-            </div>
+          <div className="flex gap-3 flex-wrap">
+            <Tabs value={taskView} onValueChange={(value) => setTaskView(value as TaskView)} className="w-auto">
+              <TabsList className="bg-gray-100">
+                <TabsTrigger value="staff" className="flex items-center gap-1 data-[state=active]:bg-white">
+                  <Users className="h-4 w-4" />
+                  <span className="hidden sm:inline">Staff</span>
+                </TabsTrigger>
+                <TabsTrigger value="client" className="flex items-center gap-1 data-[state=active]:bg-white">
+                  <UserRound className="h-4 w-4" />
+                  <span className="hidden sm:inline">Client</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            <Button variant="outline" className="gap-2 whitespace-nowrap">
+              <Filter className="h-4 w-4" />
+              <span className="hidden sm:inline">Filter</span>
+            </Button>
+            
+            <Button variant="outline" className="gap-2 whitespace-nowrap">
+              <SlidersHorizontal className="h-4 w-4" />
+              <span className="hidden sm:inline">Sort</span>
+            </Button>
+            
+            <Button 
+              variant="default" 
+              className="gap-2 whitespace-nowrap bg-blue-600 hover:bg-blue-700"
+              onClick={() => {
+                setAddToColumn("todo");
+                setIsAddTaskDialogOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Add Task</span>
+            </Button>
           </div>
         </div>
-      </main>
+      </div>
+      
+      <div className="overflow-x-auto pb-6">
+        <div className="flex gap-4 min-w-max">
+          {columns.map(column => (
+            <TaskColumn
+              key={column.id}
+              column={column}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onAddTask={handleAddTask}
+            />
+          ))}
+        </div>
+      </div>
       
       <AddTaskDialog
         isOpen={isAddTaskDialogOpen}

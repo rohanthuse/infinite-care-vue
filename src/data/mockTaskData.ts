@@ -1,198 +1,177 @@
 
-import { Task, TaskColumn, TaskStatus } from "@/types/task";
+import { Task, TaskColumn, TaskStatus, TaskView } from "@/types/task";
 
-// Helper function to generate random dates
-const randomDate = (start: Date, end: Date) => {
-  return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime())).toISOString().split('T')[0];
-};
-
-// Generate mock tasks
+// Sample tasks data
 export const mockTasks: Task[] = [
   {
     id: "task-1",
     title: "Complete client assessment",
-    description: "Perform initial assessment for new client John Smith",
+    description: "Conduct initial assessment for new client John Doe",
     status: "todo",
     priority: "high",
     assignee: "Sarah Johnson",
-    assigneeAvatar: "/placeholder.svg",
-    dueDate: randomDate(new Date(), new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
-    createdAt: randomDate(new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), new Date()),
+    assigneeAvatar: "/avatars/sarah.jpg",
+    dueDate: "2025-04-15",
+    createdAt: "2025-04-01",
     tags: ["assessment", "new-client"],
     clientId: "client-1",
-    clientName: "John Smith"
+    clientName: "John Doe"
   },
   {
     id: "task-2",
-    title: "Medication review",
-    description: "Review and update medication plan for Emma Thompson",
-    status: "in-progress",
-    priority: "urgent",
-    assignee: "Dr. Michael Chen",
-    assigneeAvatar: "/placeholder.svg",
-    dueDate: randomDate(new Date(), new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)),
-    createdAt: randomDate(new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), new Date()),
-    tags: ["medication", "review"],
+    title: "Schedule follow-up appointment",
+    description: "Book a follow-up session with Emma Wilson for treatment review",
+    status: "todo",
+    priority: "medium",
+    assignee: "Michael Brown",
+    assigneeAvatar: "/avatars/michael.jpg",
+    dueDate: "2025-04-10",
+    createdAt: "2025-04-02",
+    tags: ["follow-up", "appointment"],
     clientId: "client-2",
-    clientName: "Emma Thompson"
+    clientName: "Emma Wilson"
   },
   {
     id: "task-3",
-    title: "Equipment installation",
-    description: "Install mobility aids in Robert Wilson's home",
-    status: "done",
-    priority: "medium",
-    assignee: "Alex Turner",
-    assigneeAvatar: "/placeholder.svg",
-    dueDate: randomDate(new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), new Date()),
-    createdAt: randomDate(new Date(Date.now() - 20 * 24 * 60 * 60 * 1000), new Date()),
-    tags: ["equipment", "installation"],
+    title: "Review medication plan",
+    description: "Check and update medication plan for Robert Smith",
+    status: "in-progress",
+    priority: "high",
+    assignee: "Dr. Lisa Adams",
+    assigneeAvatar: "/avatars/lisa.jpg",
+    dueDate: "2025-04-05",
+    createdAt: "2025-04-02",
+    tags: ["medication", "review"],
     clientId: "client-3",
-    clientName: "Robert Wilson"
+    clientName: "Robert Smith"
   },
   {
     id: "task-4",
-    title: "Care plan update",
-    description: "Update care plan based on recent assessment findings",
-    status: "review",
-    priority: "high",
-    assignee: "Elizabeth Parker",
-    assigneeAvatar: "/placeholder.svg",
-    dueDate: randomDate(new Date(), new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)),
-    createdAt: randomDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), new Date()),
-    tags: ["care-plan", "update"],
-    clientId: "client-4",
-    clientName: "Patricia Davis"
+    title: "Update patient records",
+    description: "Enter latest test results and notes into patient management system",
+    status: "in-progress",
+    priority: "medium",
+    assignee: "James Wilson",
+    assigneeAvatar: "/avatars/james.jpg",
+    dueDate: "2025-04-07",
+    createdAt: "2025-04-03",
+    tags: ["admin", "records"],
+    staffId: "staff-1",
+    staffName: "James Wilson"
   },
   {
     id: "task-5",
     title: "Staff training session",
-    description: "Conduct training on new care protocols",
-    status: "backlog",
-    priority: "medium",
-    assignee: "Training Department",
-    assigneeAvatar: "/placeholder.svg",
-    dueDate: randomDate(new Date(), new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)),
-    createdAt: randomDate(new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), new Date()),
-    tags: ["training", "staff"],
-    staffId: "staff-dept",
-    staffName: "Training Team"
+    description: "Conduct training on new care protocols for junior staff members",
+    status: "todo",
+    priority: "low",
+    assignee: "Emily Parker",
+    assigneeAvatar: "/avatars/emily.jpg",
+    dueDate: "2025-04-20",
+    createdAt: "2025-04-01",
+    tags: ["training", "staff-development"],
+    staffId: "staff-2",
+    staffName: "Emily Parker"
   },
   {
     id: "task-6",
-    title: "Medication delivery",
-    description: "Arrange delivery of prescription medications",
-    status: "todo",
-    priority: "high",
-    assignee: "Pharmacy Liaison",
-    assigneeAvatar: "/placeholder.svg",
-    dueDate: randomDate(new Date(), new Date(Date.now() + 1 * 24 * 60 * 60 * 1000)),
-    createdAt: randomDate(new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), new Date()),
-    tags: ["medication", "delivery"],
-    clientId: "client-5",
-    clientName: "James Brown"
+    title: "Equipment maintenance",
+    description: "Schedule routine maintenance for medical equipment",
+    status: "backlog",
+    priority: "low",
+    assignee: "Thomas Green",
+    assigneeAvatar: "/avatars/thomas.jpg",
+    dueDate: "2025-04-25",
+    createdAt: "2025-03-28",
+    tags: ["maintenance", "equipment"],
+    staffId: "staff-3",
+    staffName: "Thomas Green"
   },
   {
     id: "task-7",
-    title: "Follow-up call",
-    description: "Schedule follow-up call with family members",
-    status: "in-progress",
-    priority: "low",
-    assignee: "Client Relations",
-    assigneeAvatar: "/placeholder.svg",
-    dueDate: randomDate(new Date(), new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)),
-    createdAt: randomDate(new Date(Date.now() - 8 * 24 * 60 * 60 * 1000), new Date()),
-    tags: ["follow-up", "family"],
-    clientId: "client-6",
-    clientName: "Mary Johnson"
+    title: "Client consultation call",
+    description: "Call with Jane Doe to discuss treatment options",
+    status: "review",
+    priority: "high",
+    assignee: "Dr. Mark Johnson",
+    assigneeAvatar: "/avatars/mark.jpg",
+    dueDate: "2025-04-06",
+    createdAt: "2025-04-03",
+    tags: ["consultation", "call"],
+    clientId: "client-4",
+    clientName: "Jane Doe"
   },
   {
     id: "task-8",
-    title: "Documentation review",
-    description: "Review and approve care documentation",
-    status: "review",
-    priority: "medium",
-    assignee: "Documentation Team",
-    assigneeAvatar: "/placeholder.svg",
-    dueDate: randomDate(new Date(), new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)),
-    createdAt: randomDate(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), new Date()),
-    tags: ["documentation", "review"],
-    staffId: "staff-doc",
-    staffName: "Documentation Team"
+    title: "Prepare care plan",
+    description: "Develop comprehensive care plan for new patient",
+    status: "done",
+    priority: "high",
+    assignee: "Dr. Patricia Lee",
+    assigneeAvatar: "/avatars/patricia.jpg",
+    dueDate: "2025-04-02",
+    createdAt: "2025-03-30",
+    tags: ["care-plan", "new-patient"],
+    clientId: "client-5",
+    clientName: "David Williams"
   },
   {
     id: "task-9",
-    title: "Emergency protocol update",
-    description: "Update emergency response protocols",
-    status: "backlog",
-    priority: "high",
-    assignee: "Safety Officer",
-    assigneeAvatar: "/placeholder.svg",
-    dueDate: randomDate(new Date(), new Date(Date.now() + 10 * 24 * 60 * 60 * 1000)),
-    createdAt: randomDate(new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), new Date()),
-    tags: ["emergency", "protocol"],
-    staffId: "staff-safety",
-    staffName: "Safety Department"
-  },
-  {
-    id: "task-10",
-    title: "Client feedback collection",
-    description: "Collect feedback from recent service users",
+    title: "Process referral",
+    description: "Handle incoming referral from Cambridge General Hospital",
     status: "done",
-    priority: "low",
-    assignee: "Quality Assurance",
-    assigneeAvatar: "/placeholder.svg",
-    dueDate: randomDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), new Date()),
-    createdAt: randomDate(new Date(Date.now() - 25 * 24 * 60 * 60 * 1000), new Date()),
-    tags: ["feedback", "quality"],
-    staffId: "staff-qa",
-    staffName: "QA Team"
+    priority: "medium",
+    assignee: "Amanda White",
+    assigneeAvatar: "/avatars/amanda.jpg",
+    dueDate: "2025-04-01",
+    createdAt: "2025-03-29",
+    tags: ["referral", "admin"],
+    staffId: "staff-4",
+    staffName: "Amanda White"
   }
 ];
 
-// Generate the columns for the task board
+// Filter tasks based on the selected view (staff or client)
+export const filterTasksByView = (tasks: Task[], view: TaskView): Task[] => {
+  if (view === "staff") {
+    return tasks.filter(task => task.staffId || !task.clientId);
+  } else {
+    return tasks.filter(task => task.clientId);
+  }
+};
+
+// Get task columns with their respective tasks
 export const getTaskColumns = (): TaskColumn[] => {
-  const columns: TaskColumn[] = [
+  return [
     {
       id: "backlog",
       title: "Backlog",
       tasks: mockTasks.filter(task => task.status === "backlog"),
-      color: "bg-gray-200"
+      color: "bg-gray-100"
     },
     {
       id: "todo",
       title: "To Do",
       tasks: mockTasks.filter(task => task.status === "todo"),
-      color: "bg-blue-200"
+      color: "bg-blue-100"
     },
     {
       id: "in-progress",
       title: "In Progress",
       tasks: mockTasks.filter(task => task.status === "in-progress"),
-      color: "bg-yellow-200"
+      color: "bg-amber-100"
     },
     {
       id: "review",
       title: "Review",
       tasks: mockTasks.filter(task => task.status === "review"),
-      color: "bg-purple-200"
+      color: "bg-purple-100"
     },
     {
       id: "done",
       title: "Done",
       tasks: mockTasks.filter(task => task.status === "done"),
-      color: "bg-green-200"
+      color: "bg-green-100"
     }
   ];
-  
-  return columns;
-};
-
-// Filter tasks by view (staff or client)
-export const filterTasksByView = (tasks: Task[], view: 'staff' | 'client'): Task[] => {
-  if (view === 'staff') {
-    return tasks.filter(task => task.staffId || (!task.clientId && !task.staffId));
-  } else {
-    return tasks.filter(task => task.clientId);
-  }
 };

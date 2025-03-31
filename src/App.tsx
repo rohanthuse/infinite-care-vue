@@ -70,7 +70,6 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
             <Route path="/branch-dashboard/:id/:branchName/care-plan/:carePlanId" element={<CarePlanView />} />
-            <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
