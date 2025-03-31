@@ -766,9 +766,9 @@ const BranchDashboard = () => {
         {activeTab === "notifications" && <NotificationsOverview branchId={id} branchName={branchName} />}
         {activeTab === "bookings" && <BookingsTab />}
         {activeTab === "carers" && <CarersTab />}
-        {activeTab === "communications" && <CommunicationsTab />}
+        {activeTab === "communications" && <CommunicationsTab branchId={id} branchName={branchName} />}
         {activeTab === "medication" && <MedicationTab branchId={id} branchName={branchName} />}
-        {activeTab === "reviews" && <ReviewsTab />}
+        {activeTab === "reviews" && <ReviewsTab branchId={id} branchName={branchName} />}
         {activeTab === "care" && <CareTab branchId={id} branchName={branchName} />}
       </main>
     </div>
