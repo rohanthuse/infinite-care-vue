@@ -4,7 +4,8 @@ import {
   User, Info, Calendar, FileText, FileCheck, 
   MessageCircle, AlertTriangle, Clock, Activity, ChevronLeft,
   ChevronRight, FileEdit, Download, ArrowLeft, 
-  ShieldAlert, Utensils, Bath, Wrench, ClipboardList, FileBarChart2
+  ShieldAlert, Utensils, Bath, Wrench, ClipboardList, FileBarChart2,
+  Phone, Mail, Heart, MapPin, ExternalLink, Edit2, Shield
 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,8 @@ import { ServicePlanTab } from "@/components/care/tabs/ServicePlanTab";
 import { ServiceActionsTab } from "@/components/care/tabs/ServiceActionsTab";
 import { getStatusBadgeClass, getRiskLevelClass, calculateProgressPercentage } from "@/utils/statusHelpers";
 import { mockPatientData } from "@/data/mockPatientData";
+import { cn } from "@/lib/utils";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 const mockCarePlans = [
   {
@@ -210,90 +213,100 @@ const CarePlanView = () => {
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <CarePlanTabBar activeTab={activeTab} onChange={setActiveTab} />
                     
-                    <TabsContent value="personal" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Personal Information</CardTitle>
+                    <TabsContent value="personal" className="space-y-6">
+                      <Card className="overflow-hidden border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                        <CardHeader className="pb-3 bg-gradient-to-r from-med-50 to-white border-b border-med-100">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <User className="h-5 w-5 text-med-600" />
+                            <span className="bg-gradient-to-r from-med-700 to-med-500 bg-clip-text text-transparent">Personal Information</span>
+                          </CardTitle>
+                          <CardDescription>Patient demographic and contact details</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Full Name</p>
-                              <p className="text-sm">{carePlan.patientName}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Patient ID</p>
-                              <p className="text-sm">{carePlan.patientId}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Gender</p>
-                              <p className="text-sm">{mockPatientData.gender}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Date of Birth</p>
-                              <p className="text-sm">{format(mockPatientData.dateOfBirth, 'MMM dd, yyyy')} (Age: {new Date().getFullYear() - mockPatientData.dateOfBirth.getFullYear()})</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Address</p>
-                              <p className="text-sm">{mockPatientData.address}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Phone</p>
-                              <p className="text-sm">{mockPatientData.phone}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Email</p>
-                              <p className="text-sm">{mockPatientData.email}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500">Preferred Language</p>
-                              <p className="text-sm">{mockPatientData.preferredLanguage}</p>
-                            </div>
+                        <CardContent className="p-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <InfoCard 
+                              icon={<User className="h-5 w-5 text-med-500" />}
+                              title="Basic Information"
+                              items={[
+                                { label: "Full Name", value: carePlan.patientName },
+                                { label: "Patient ID", value: carePlan.patientId },
+                                { label: "Gender", value: mockPatientData.gender },
+                                { label: "Date of Birth", value: `${format(mockPatientData.dateOfBirth, 'MMM dd, yyyy')} (Age: ${new Date().getFullYear() - mockPatientData.dateOfBirth.getFullYear()})` }
+                              ]}
+                            />
+                            
+                            <InfoCard 
+                              icon={<Phone className="h-5 w-5 text-med-500" />}
+                              title="Contact Information"
+                              items={[
+                                { label: "Address", value: mockPatientData.address },
+                                { label: "Phone", value: mockPatientData.phone },
+                                { label: "Email", value: mockPatientData.email },
+                                { label: "Preferred Language", value: mockPatientData.preferredLanguage }
+                              ]}
+                            />
+                            
                             <div className="md:col-span-2">
-                              <p className="text-sm font-medium text-gray-500">Emergency Contact</p>
-                              <p className="text-sm">{mockPatientData.emergencyContact}</p>
+                              <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                                <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+                                  <Shield className="h-5 w-5 mr-2 text-med-600" />
+                                  Emergency Contact
+                                </h3>
+                                <div className="p-4 rounded-lg bg-med-50 border border-med-100">
+                                  <p className="text-gray-700">{mockPatientData.emergencyContact}</p>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </CardContent>
                       </Card>
                       
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Medical Information</CardTitle>
+                      <Card className="overflow-hidden border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                        <CardHeader className="pb-3 bg-gradient-to-r from-med-50 to-white border-b border-med-100">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <Heart className="h-5 w-5 text-med-600" />
+                            <span className="bg-gradient-to-r from-med-700 to-med-500 bg-clip-text text-transparent">Medical Information</span>
+                          </CardTitle>
+                          <CardDescription>Allergies, conditions, and current medications</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <div>
-                              <p className="text-sm font-medium text-gray-500 mb-1">Allergies</p>
-                              <div className="flex flex-wrap gap-1">
+                        <CardContent className="p-6">
+                          <div className="space-y-6">
+                            <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                              <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+                                <AlertTriangle className="h-5 w-5 mr-2 text-red-500" />
+                                Allergies
+                              </h3>
+                              <div className="flex flex-wrap gap-2">
                                 {mockPatientData.allergies.map((allergy, index) => (
-                                  <Badge key={index} variant="outline" className="text-red-600 bg-red-50 border-red-200">
+                                  <Badge key={index} variant="outline" className="bg-red-50 text-red-700 border-red-200 px-3 py-1 hover:bg-red-100 transition-colors">
                                     {allergy}
                                   </Badge>
                                 ))}
                               </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500 mb-1">Medical Conditions</p>
-                              <div className="flex flex-wrap gap-1">
+                            
+                            <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                              <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+                                <FileBarChart2 className="h-5 w-5 mr-2 text-med-600" />
+                                Medical Conditions
+                              </h3>
+                              <div className="flex flex-wrap gap-2">
                                 {mockPatientData.medicalConditions.map((condition, index) => (
-                                  <Badge key={index} variant="outline" className="text-blue-600 bg-blue-50 border-blue-200">
+                                  <Badge key={index} variant="outline" className="bg-med-50 text-med-700 border-med-200 px-3 py-1 hover:bg-med-100 transition-colors">
                                     {condition}
                                   </Badge>
                                 ))}
                               </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-500 mb-1">Medications</p>
-                              <div className="grid grid-cols-1 gap-2">
+                            
+                            <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                              <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+                                <Activity className="h-5 w-5 mr-2 text-med-600" />
+                                Medications
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {mockPatientData.medications.map((medication, index) => (
-                                  <div key={index} className="flex items-center justify-between border rounded-md p-2 bg-gray-50">
-                                    <div>
-                                      <p className="font-medium text-sm">{medication.name} ({medication.dosage})</p>
-                                      <p className="text-xs text-gray-500">{medication.frequency} - {medication.purpose}</p>
-                                    </div>
-                                    <ChevronRight className="h-4 w-4 text-gray-400" />
-                                  </div>
+                                  <MedicationCard key={index} medication={medication} />
                                 ))}
                               </div>
                             </div>
@@ -357,6 +370,73 @@ const CarePlanView = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+interface InfoCardProps {
+  icon: React.ReactNode;
+  title: string;
+  items: { label: string; value: string }[];
+}
+
+const InfoCard: React.FC<InfoCardProps> = ({ icon, title, items }) => {
+  return (
+    <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+      <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+        {icon}
+        <span className="ml-2">{title}</span>
+      </h3>
+      <div className="space-y-3">
+        {items.map((item, index) => (
+          <div key={index} className="grid grid-cols-2 gap-2">
+            <p className="text-sm font-medium text-gray-500">{item.label}</p>
+            <p className="text-sm text-gray-700">{item.value}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+interface MedicationCardProps {
+  medication: {
+    name: string;
+    dosage: string;
+    frequency: string;
+    purpose: string;
+  };
+}
+
+const MedicationCard: React.FC<MedicationCardProps> = ({ medication }) => {
+  return (
+    <HoverCard>
+      <HoverCardTrigger asChild>
+        <div className="p-4 rounded-lg bg-white border border-med-100 hover:border-med-300 shadow-sm hover:shadow-md transition-all cursor-pointer">
+          <div className="flex justify-between items-start">
+            <div>
+              <h4 className="font-medium text-med-700">{medication.name}</h4>
+              <p className="text-sm text-gray-600">{medication.dosage}</p>
+            </div>
+            <Badge variant="outline" className="bg-med-50 text-med-600 border-med-200">
+              {medication.frequency}
+            </Badge>
+          </div>
+        </div>
+      </HoverCardTrigger>
+      <HoverCardContent className="w-80">
+        <div className="space-y-2">
+          <h4 className="font-semibold text-med-700">{medication.name}</h4>
+          <div className="grid grid-cols-2 gap-y-2 text-sm">
+            <span className="text-gray-500">Dosage:</span>
+            <span>{medication.dosage}</span>
+            <span className="text-gray-500">Frequency:</span>
+            <span>{medication.frequency}</span>
+            <span className="text-gray-500">Purpose:</span>
+            <span>{medication.purpose}</span>
+          </div>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
   );
 };
 
