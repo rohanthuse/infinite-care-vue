@@ -36,6 +36,7 @@ import { getStatusBadgeClass, getRiskLevelClass, calculateProgressPercentage } f
 import { mockPatientData } from "@/data/mockPatientData";
 import { cn } from "@/lib/utils";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { DashboardHeader } from "@/components/DashboardHeader";
 
 const mockCarePlans = [
   {
@@ -94,6 +95,7 @@ const CarePlanView = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <DashboardHeader />
       <BranchInfoHeader 
         branchId={branchId || ""} 
         branchName={branchName || ""} 
