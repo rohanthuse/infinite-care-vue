@@ -23,7 +23,7 @@ import { format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { CommunicationsTab } from "@/components/communications/CommunicationsTab";
-import { ListChecks, BookText } from "lucide-react";
+import { ListChecks, Book } from "lucide-react";
 import KeyParametersContent from "@/components/keyparameters/KeyParametersContent";
 import WorkflowContent from "@/components/workflow/WorkflowContent";
 import { MedicationTab } from "@/components/medication/MedicationTab";
@@ -483,6 +483,7 @@ const BranchDashboard = () => {
 
   const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);
+    
     if (newTab === "workflow") {
       handleWorkflowNavigation("workflow");
     } else if (newTab === "key-parameters") {
@@ -526,17 +527,17 @@ const BranchDashboard = () => {
               if (tab === "dashboard") {
                 navigate(`/branch-dashboard/${id}/${branchName}`);
               } else if (tab === "key-parameters") {
-                navigate(`/branch-dashboard/${id}/${branchName}/key-parameters`);
+                navigate(`/branch-dashboard/${id}/${branchName}/key-parameters");
               } else if (tab === "workflow") {
-                navigate(`/branch-dashboard/${id}/${branchName}/workflow`);
+                navigate(`/branch-dashboard/${id}/${branchName}/workflow");
               } else if (tab === "task-matrix") {
-                navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
+                navigate(`/branch-dashboard/${id}/${branchName}/task-matrix");
               } else if (tab === "training") {
-                navigate(`/branch-dashboard/${id}/${branchName}/training`);
+                navigate(`/branch-dashboard/${id}/${branchName}/training");
               } else if (tab === "forms") {
-                navigate(`/branch-dashboard/${id}/${branchName}/forms`);
+                navigate(`/branch-dashboard/${id}/${branchName}/forms");
               } else if (tab === "notifications") {
-                navigate(`/branch-dashboard/${id}/${branchName}/notifications`);
+                navigate(`/branch-dashboard/${id}/${branchName}/notifications");
               } else {
                 navigate(`/branch-dashboard/${id}/${branchName}/${tab}`);
               }
@@ -572,16 +573,6 @@ const BranchDashboard = () => {
                 <div>
                   <div className="font-medium text-xs md:text-sm">Schedule</div>
                   <div className="text-xs text-gray-500 hidden md:block">View calendar</div>
-                </div>
-              </Button>
-              
-              <Button variant="outline" className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start">
-                <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-amber-100 flex items-center justify-center">
-                  <FileText className="h-3.5 md:h-4 w-3.5 md:w-4 text-amber-600" />
-                </div>
-                <div>
-                  <div className="font-medium text-xs md:text-sm">Reports</div>
-                  <div className="text-xs text-gray-500 hidden md:block">Generate reports</div>
                 </div>
               </Button>
               
@@ -1147,7 +1138,7 @@ const BranchDashboard = () => {
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-2">
-                <BookText className="h-6 w-6 text-gray-700" />
+                <Book className="h-6 w-6 text-gray-700" />
                 <h1 className="text-2xl font-semibold text-gray-700">Training Matrix</h1>
               </div>
             </div>
