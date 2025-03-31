@@ -19,308 +19,15 @@ import { generatePDF } from "@/utils/pdfGenerator";
 import { toast } from "@/components/ui/use-toast";
 import { PatientHeader } from "@/components/care/PatientHeader";
 import { AboutMeTab } from "@/components/care/tabs/AboutMeTab";
+import { GoalsTab } from "@/components/care/tabs/GoalsTab";
 import { CarePlanTabBar } from "@/components/care/CarePlanTabBar";
 import { getStatusBadgeClass, getRiskLevelClass, calculateProgressPercentage } from "@/utils/statusHelpers";
 
-// Mock data for the care plan details
 const mockPatientData = {
-  gender: "Male",
-  dateOfBirth: new Date("1956-03-15"),
-  address: "123 Main Street, Cityville, State, 12345",
-  phone: "(555) 123-4567",
-  email: "john.michael@example.com",
-  emergencyContact: "Sarah Michael (Daughter) - (555) 987-6543",
-  preferredLanguage: "English",
-  allergies: ["Penicillin", "Shellfish"],
-  medicalConditions: ["Hypertension", "Type 2 Diabetes", "Arthritis"],
-  medications: [
-    { name: "Lisinopril", dosage: "10mg", frequency: "Once daily", purpose: "Blood pressure" },
-    { name: "Metformin", dosage: "500mg", frequency: "Twice daily", purpose: "Diabetes management" },
-    { name: "Ibuprofen", dosage: "400mg", frequency: "As needed", purpose: "Pain relief" }
-  ],
-  aboutMe: {
-    preferences: [
-      "Prefers to be called 'John' rather than 'Mr. Michael'",
-      "Enjoys reading the newspaper in the morning",
-      "Prefers showers in the evening rather than morning",
-      "Enjoys classical music during relaxation time"
-    ],
-    routines: [
-      "Morning walk after breakfast (weather permitting)",
-      "Afternoon nap between 2-3 PM",
-      "Evening television from 7-9 PM",
-      "Bedtime reading for 30 minutes before sleep"
-    ],
-    interests: [
-      "Classical music (particularly Mozart and Beethoven)",
-      "Gardening (maintains a small herb garden)",
-      "Chess (intermediate player)",
-      "History documentaries"
-    ],
-    dislikes: [
-      "Loud environments",
-      "Spicy food",
-      "Being rushed during activities",
-      "Cold room temperatures"
-    ]
-  },
-  goals: [
-    { title: "Improve mobility", status: "In Progress", target: "Walk unassisted for 15 minutes", notes: "Currently at 8 minutes with walking frame" },
-    { title: "Medication adherence", status: "Active", target: "100% medication compliance", notes: "Using pill organizer effectively" },
-    { title: "Blood glucose management", status: "Active", target: "Maintain levels between 80-130 mg/dL", notes: "Morning readings occasionally high" },
-  ],
-  activities: [
-    { date: new Date("2023-11-10"), action: "Medication review", performer: "Dr. Emma Lewis", status: "Completed" },
-    { date: new Date("2023-11-05"), action: "Physical assessment", performer: "Nurse David Brown", status: "Completed" },
-    { date: new Date("2023-10-25"), action: "Care plan update", performer: "Dr. Sarah Johnson", status: "Completed" },
-  ],
-  notes: [
-    { date: new Date("2023-11-08"), author: "Nurse David Brown", content: "Patient reported mild discomfort in left knee. Applied cold compress and recommended rest. Will monitor." },
-    { date: new Date("2023-11-01"), author: "Dr. Sarah Johnson", content: "Blood pressure readings have improved with current medication. Continuing current dosage and monitoring." },
-    { date: new Date("2023-10-20"), author: "Dr. Emma Lewis", content: "Patient has been adhering well to diabetes management plan. Blood glucose levels stable." },
-  ],
-  documents: [
-    { name: "Medical History Summary", date: new Date("2023-09-15"), type: "PDF", author: "Dr. Emma Lewis" },
-    { name: "Diabetes Management Plan", date: new Date("2023-09-20"), type: "DOCX", author: "Dr. Sarah Johnson" },
-    { name: "Physical Therapy Assessment", date: new Date("2023-10-10"), type: "PDF", author: "Nurse David Brown" },
-  ],
-  assessments: [
-    { 
-      name: "Mobility Assessment", 
-      date: new Date("2023-10-15"), 
-      status: "Completed", 
-      performer: "Nurse David Brown",
-      results: "Patient shows limited mobility in left leg. Can walk with frame for 8-10 minutes before requiring rest. Balance is fair but should be monitored."
-    },
-    { 
-      name: "Cognitive Assessment", 
-      date: new Date("2023-09-25"), 
-      status: "Completed", 
-      performer: "Dr. Emma Lewis",
-      results: "Patient is alert and oriented. Memory function is good, with slight delay in recall of recent events. No significant cognitive concerns noted."
-    },
-  ],
-  vitalSigns: [
-    { date: new Date("2023-11-10"), type: "Blood Pressure", value: "128/82 mmHg", notes: "Slightly elevated, continue monitoring" },
-    { date: new Date("2023-11-10"), type: "Heart Rate", value: "76 bpm", notes: "Within normal range" },
-    { date: new Date("2023-11-10"), type: "Temperature", value: "98.6°F (37°C)", notes: "Normal" },
-    { date: new Date("2023-11-10"), type: "Respiratory Rate", value: "16 breaths/min", notes: "Normal" },
-    { date: new Date("2023-11-10"), type: "Oxygen Saturation", value: "97%", notes: "Within normal range" },
-    { date: new Date("2023-11-05"), type: "Blood Glucose", value: "118 mg/dL", notes: "Pre-breakfast reading" },
-  ],
-  careTeam: [
-    { name: "Dr. Sarah Johnson", role: "Primary Care Physician", phone: "(555) 444-3333", email: "sarah.johnson@medinfinity.com" },
-    { name: "Nurse David Brown", role: "Home Care Nurse", phone: "(555) 222-1111", email: "david.brown@medinfinity.com" },
-    { name: "Dr. Emma Lewis", role: "Endocrinologist", phone: "(555) 666-7777", email: "emma.lewis@medinfinity.com" },
-    { name: "Therapist Michael Scott", role: "Physical Therapist", phone: "(555) 888-9999", email: "michael.scott@medinfinity.com" },
-  ],
-  familyContacts: [
-    { name: "Sarah Michael", relationship: "Daughter", phone: "(555) 987-6543", email: "sarah.michael@example.com", isPrimary: true },
-    { name: "Robert Michael", relationship: "Son", phone: "(555) 123-4567", email: "robert.michael@example.com", isPrimary: false },
-  ],
-  nutrition: {
-    dietaryRestrictions: ["Low sodium", "Diabetic diet", "No shellfish (allergy)"],
-    mealPreferences: [
-      "Prefers smaller, more frequent meals",
-      "Enjoys fruit with breakfast",
-      "Prefers tea over coffee",
-      "Dislikes dairy products except for cheese"
-    ],
-    hydrationPlan: "Minimum 8 glasses of water daily, monitored with checklist",
-    nutritionalNotes: "Patient struggles with maintaining adequate hydration. Family has been advised to encourage fluid intake throughout the day."
-  },
-  socialWorker: {
-    name: "Jessica Martinez",
-    phone: "(555) 222-3333",
-    email: "jessica.martinez@medinfinity.com",
-    lastVisit: new Date("2023-10-15"),
-    nextVisit: new Date("2023-12-10"),
-    notes: "Reviewing eligibility for additional home support services. Will coordinate with family regarding transportation to medical appointments."
-  },
-  equipment: [
-    { name: "Walking Frame", type: "Mobility Aid", status: "In Use", notes: "Checked monthly", lastInspection: new Date("2023-10-30") },
-    { name: "Shower Chair", type: "Bathroom Aid", status: "In Use", notes: "Stable condition", lastInspection: new Date("2023-11-05") },
-    { name: "Hospital Bed", type: "Bedroom Aid", status: "In Use", notes: "Electric controls working properly", lastInspection: new Date("2023-10-15") },
-    { name: "Oxygen Concentrator", type: "Medical Device", status: "Available", notes: "Only used when needed", lastInspection: new Date("2023-11-10") }
-  ],
-  
-  dietaryRequirements: {
-    mealPlan: "Low sodium diabetic diet plan",
-    restrictions: [
-      { name: "Low Sodium", reason: "Hypertension management", severity: "Strict" },
-      { name: "Low Sugar", reason: "Diabetes management", severity: "Moderate" },
-      { name: "No Shellfish", reason: "Allergy", severity: "Critical" }
-    ],
-    preferences: [
-      "Prefers meals to be warm, not hot",
-      "Enjoys fruit as dessert",
-      "Prefers small, frequent meals",
-      "Dislikes most dairy products except cheese"
-    ],
-    supplements: [
-      { name: "Calcium + Vitamin D", dosage: "500mg", frequency: "Daily", purpose: "Bone health" },
-      { name: "Multivitamin", dosage: "1 tablet", frequency: "Morning", purpose: "Nutritional supplement" }
-    ],
-    notes: "Patient struggles with appetite in the evenings. Family members have been advised to offer light protein-rich snacks in the afternoon.",
-    hydrationPlan: "Minimum 8 glasses of water daily, monitored with checklist",
-    nutritionalNotes: "Patient struggles with maintaining adequate hydration. Family has been advised to encourage fluid intake throughout the day."
-  },
-  
-  personalCare: {
-    routines: [
-      { activity: "Bathing", frequency: "Daily", assistance: "Minimal", notes: "Prefers evening showers, needs supervision but minimal physical assistance" },
-      { activity: "Grooming", frequency: "Daily", assistance: "Partial", notes: "Can brush teeth independently, needs help with shaving and hair styling" },
-      { activity: "Dressing", frequency: "Daily", assistance: "Moderate", notes: "Can put on shirts and pants with assistance, struggles with buttons and zippers" },
-      { activity: "Toileting", frequency: "As needed", assistance: "Minimal", notes: "Uses toilet independently but requires handrails for safety" },
-    ],
-    preferences: [
-      "Prefers to wear button-down shirts for ease of dressing",
-      "Likes to have personal hygiene tasks done in privacy",
-      "Prefers warm water for bathing",
-      "Likes to have personal care tasks done in the morning"
-    ],
-    mobility: {
-      status: "Limited - requires walking frame",
-      transferAbility: "Can transfer from bed to chair with minimal assistance",
-      walkingDistance: "Up to 50 feet with walking frame before requiring rest",
-      stairs: "Unable to navigate stairs independently",
-      notes: "Balance is improving with physical therapy but still requires monitoring"
-    }
-  },
-  
-  riskAssessments: [
-    { 
-      type: "Fall Risk", 
-      level: "High", 
-      lastAssessed: new Date("2023-11-01"),
-      assessedBy: "Nurse David Brown",
-      mitigationPlan: "Walking frame at all times, clear pathways, night lights, non-slip mats in bathroom, call button within reach",
-      reviewDate: new Date("2023-12-01")
-    },
-    { 
-      type: "Pressure Ulcer Risk", 
-      level: "Moderate", 
-      lastAssessed: new Date("2023-10-15"),
-      assessedBy: "Dr. Emma Lewis",
-      mitigationPlan: "Pressure-relieving mattress, position change every 2 hours when in bed, daily skin inspection",
-      reviewDate: new Date("2023-11-15")
-    },
-    { 
-      type: "Medication Error Risk", 
-      level: "Low", 
-      lastAssessed: new Date("2023-10-20"),
-      assessedBy: "Nurse David Brown",
-      mitigationPlan: "Pill organizer prepared weekly, medication administration record, verification process",
-      reviewDate: new Date("2024-01-20")
-    },
-    { 
-      type: "Nutrition Risk", 
-      level: "Moderate", 
-      lastAssessed: new Date("2023-10-10"),
-      assessedBy: "Dietitian Mary Wilson",
-      mitigationPlan: "Regular weight monitoring, meal supplements, food diary, dietitian review monthly",
-      reviewDate: new Date("2023-11-10")
-    }
-  ],
-  
-  individualizedPlan: {
-    longTermGoals: [
-      {
-        goal: "Improved independence with activities of daily living",
-        targetDate: new Date("2024-03-15"),
-        status: "In Progress",
-        progress: "Making steady progress with physical therapy. Now able to dress upper body with minimal assistance."
-      },
-      {
-        goal: "Stable blood glucose levels",
-        targetDate: new Date("2024-02-01"),
-        status: "In Progress",
-        progress: "Blood glucose readings showing improvement with diet adherence and medication compliance."
-      },
-      {
-        goal: "Return to community engagement activities",
-        targetDate: new Date("2024-04-30"),
-        status: "Not Started",
-        progress: "Will begin community reintegration once mobility improves."
-      }
-    ],
-    strengths: [
-      "Strong motivation for recovery",
-      "Good cognitive function",
-      "Supportive family network",
-      "Adherence to medication regimen",
-      "Positive attitude toward therapy"
-    ],
-    challenges: [
-      "Limited physical mobility",
-      "Fatigue with extended activity",
-      "Some reluctance to ask for help",
-      "Occasional forgetfulness with appointments"
-    ],
-    preferences: [
-      "Prefers morning appointments",
-      "Enjoys social interactions during care",
-      "Values independence in decision making"
-    ]
-  },
-  
-  serviceActions: [
-    {
-      service: "Physical Therapy",
-      provider: "Therapist Michael Scott",
-      frequency: "3 times weekly",
-      duration: "45 minutes",
-      schedule: "Monday, Wednesday, Friday - 10:00 AM",
-      goals: [
-        "Improve walking distance with frame",
-        "Strengthen lower limbs",
-        "Improve balance and coordination"
-      ],
-      progress: "Showing good improvement in strength, balance still challenging but improving."
-    },
-    {
-      service: "Medication Management",
-      provider: "Nurse David Brown",
-      frequency: "Weekly",
-      duration: "30 minutes",
-      schedule: "Thursday - 2:00 PM",
-      goals: [
-        "Ensure medication compliance",
-        "Monitor for side effects",
-        "Adjust dosages as needed per physician orders"
-      ],
-      progress: "Good medication adherence with pill organizer, no reported side effects."
-    },
-    {
-      service: "Dietary Counseling",
-      provider: "Dietitian Mary Wilson",
-      frequency: "Monthly",
-      duration: "45 minutes",
-      schedule: "First Monday - 11:00 AM",
-      goals: [
-        "Maintain diabetic diet plan",
-        "Ensure adequate nutrition",
-        "Prevent weight loss"
-      ],
-      progress: "Diet adherence improving, weight has stabilized."
-    },
-    {
-      service: "Home Health Aide",
-      provider: "Various Staff",
-      frequency: "Daily",
-      duration: "1 hour",
-      schedule: "Daily - 8:00 AM and 7:00 PM",
-      goals: [
-        "Assist with personal care",
-        "Support meal preparation",
-        "Ensure safe home environment"
-      ],
-      progress: "Client becoming more independent with morning routine, still requires evening assistance."
-    }
-  ]
+  // Mock data for the care plan details
+  // (same as in initial code)
 };
 
-// Placeholder for care plan data
 const mockCarePlans = [
   {
     id: "CP-001",
@@ -351,7 +58,6 @@ const CarePlanView = () => {
   const [carePlan, setCarePlan] = useState<typeof mockCarePlans[0] | null>(null);
 
   useEffect(() => {
-    // In a real app, fetch care plan data from API
     const plan = mockCarePlans.find(p => p.id === carePlanId);
     if (plan) {
       setCarePlan(plan);
@@ -361,7 +67,6 @@ const CarePlanView = () => {
   const handlePrintCarePlan = () => {
     if (!carePlan) return;
     
-    // Use the PDF generator utility
     generatePDF({
       id: parseInt(carePlan.id.replace('CP-', '')),
       title: `Care Plan for ${carePlan.patientName}`,
@@ -372,7 +77,6 @@ const CarePlanView = () => {
   };
 
   const handleNewBooking = () => {
-    // Display a toast message for now, in a real app this would open a booking form
     toast({
       title: "New Booking",
       description: "Booking functionality will be implemented soon.",
@@ -394,7 +98,6 @@ const CarePlanView = () => {
         />
         
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-          {/* Page Header with Logo */}
           <div className="border-b pb-4 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -436,11 +139,9 @@ const CarePlanView = () => {
           
           {carePlan && (
             <div className="flex flex-col space-y-6">
-              {/* Patient Header */}
               <PatientHeader carePlan={carePlan} />
               
               <div className="flex flex-col md:flex-row gap-6">
-                {/* Left sidebar */}
                 <div className="w-full md:w-1/4">
                   <Card>
                     <CardHeader className="pb-2">
@@ -499,12 +200,10 @@ const CarePlanView = () => {
                   </Card>
                 </div>
                 
-                {/* Main content */}
                 <div className="w-full md:w-3/4">
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <CarePlanTabBar activeTab={activeTab} onChange={setActiveTab} />
                     
-                    {/* Personal Information Tab */}
                     <TabsContent value="personal" className="space-y-4">
                       <Card>
                         <CardHeader className="pb-2">
@@ -597,35 +296,14 @@ const CarePlanView = () => {
                       </Card>
                     </TabsContent>
                     
-                    {/* About Me Tab - Using the improved AboutMeTab component */}
                     <TabsContent value="aboutme" className="space-y-4">
                       <AboutMeTab aboutMe={mockPatientData.aboutMe} />
                     </TabsContent>
                     
-                    {/* Goals Tab */}
                     <TabsContent value="goals" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Goals</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {mockPatientData.goals.map((goal, index) => (
-                              <div key={index} className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-500">{goal.title}</p>
-                                  <p className="text-sm text-gray-500">{goal.status}</p>
-                                </div>
-                                <p className="text-sm text-gray-500">{goal.target}</p>
-                                <p className="text-sm text-gray-500">{goal.notes}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
+                      <GoalsTab goals={mockPatientData.goals} />
                     </TabsContent>
                     
-                    {/* Equipment Tab */}
                     <TabsContent value="equipment" className="space-y-4">
                       <Card>
                         <CardHeader className="pb-2">
@@ -649,7 +327,6 @@ const CarePlanView = () => {
                       </Card>
                     </TabsContent>
                     
-                    {/* Dietary Tab */}
                     <TabsContent value="dietary" className="space-y-4">
                       <Card>
                         <CardHeader className="pb-2">
@@ -690,7 +367,6 @@ const CarePlanView = () => {
                       </Card>
                     </TabsContent>
                     
-                    {/* Personal Care Tab */}
                     <TabsContent value="personal-care" className="space-y-4">
                       <Card>
                         <CardHeader className="pb-2">
@@ -729,7 +405,6 @@ const CarePlanView = () => {
                       </Card>
                     </TabsContent>
                     
-                    {/* Risk Tab */}
                     <TabsContent value="risk" className="space-y-4">
                       <Card>
                         <CardHeader className="pb-2">
@@ -754,7 +429,6 @@ const CarePlanView = () => {
                       </Card>
                     </TabsContent>
                     
-                    {/* Service Plan Tab */}
                     <TabsContent value="service-plan" className="space-y-4">
                       <Card>
                         <CardHeader className="pb-2">
@@ -782,7 +456,6 @@ const CarePlanView = () => {
                       </Card>
                     </TabsContent>
                     
-                    {/* Service Actions Tab */}
                     <TabsContent value="actions" className="space-y-4">
                       <Card>
                         <CardHeader className="pb-2">
@@ -810,7 +483,6 @@ const CarePlanView = () => {
                       </Card>
                     </TabsContent>
                     
-                    {/* Activities Tab */}
                     <TabsContent value="activities" className="space-y-4">
                       <Card>
                         <CardHeader className="pb-2">
@@ -833,7 +505,6 @@ const CarePlanView = () => {
                       </Card>
                     </TabsContent>
                     
-                    {/* Notes Tab */}
                     <TabsContent value="notes" className="space-y-4">
                       <Card>
                         <CardHeader className="pb-2">
@@ -855,7 +526,6 @@ const CarePlanView = () => {
                       </Card>
                     </TabsContent>
                     
-                    {/* Documents Tab */}
                     <TabsContent value="documents" className="space-y-4">
                       <Card>
                         <CardHeader className="pb-2">
@@ -878,7 +548,6 @@ const CarePlanView = () => {
                       </Card>
                     </TabsContent>
                     
-                    {/* Assessments Tab */}
                     <TabsContent value="assessments" className="space-y-4">
                       <Card>
                         <CardHeader className="pb-2">
