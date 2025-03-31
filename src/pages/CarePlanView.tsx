@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -22,6 +21,9 @@ import { PatientHeader } from "@/components/care/PatientHeader";
 import { AboutMeTab } from "@/components/care/tabs/AboutMeTab";
 import { GoalsTab } from "@/components/care/tabs/GoalsTab";
 import { CarePlanTabBar } from "@/components/care/CarePlanTabBar";
+import { NotesTab } from "@/components/care/tabs/NotesTab";
+import { DocumentsTab } from "@/components/care/tabs/DocumentsTab";
+import { AssessmentsTab } from "@/components/care/tabs/AssessmentsTab";
 import { getStatusBadgeClass, getRiskLevelClass, calculateProgressPercentage } from "@/utils/statusHelpers";
 import { mockPatientData } from "@/data/mockPatientData";
 
@@ -387,69 +389,15 @@ const CarePlanView = () => {
                     </TabsContent>
                     
                     <TabsContent value="notes" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Notes</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {mockPatientData.notes.map((note, index) => (
-                              <div key={index} className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-500">{note.author}</p>
-                                  <p className="text-sm text-gray-500">{format(note.date, 'MMM dd, yyyy')}</p>
-                                </div>
-                                <p className="text-sm text-gray-500">{note.content}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
+                      <NotesTab notes={mockPatientData.notes} />
                     </TabsContent>
                     
                     <TabsContent value="documents" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Documents</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {mockPatientData.documents.map((document, index) => (
-                              <div key={index} className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-500">{document.name}</p>
-                                  <p className="text-sm text-gray-500">{document.type}</p>
-                                </div>
-                                <p className="text-sm text-gray-500">{format(document.date, 'MMM dd, yyyy')}</p>
-                                <p className="text-sm text-gray-500">{document.author}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
+                      <DocumentsTab documents={mockPatientData.documents} />
                     </TabsContent>
                     
                     <TabsContent value="assessments" className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">Assessments</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {mockPatientData.assessments.map((assessment, index) => (
-                              <div key={index} className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-500">{assessment.name}</p>
-                                  <p className="text-sm text-gray-500">{assessment.status}</p>
-                                </div>
-                                <p className="text-sm text-gray-500">{format(assessment.date, 'MMM dd, yyyy')}</p>
-                                <p className="text-sm text-gray-500">{assessment.performer}</p>
-                                <p className="text-sm text-gray-500">{assessment.results}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
+                      <AssessmentsTab assessments={mockPatientData.assessments} />
                     </TabsContent>
                   </Tabs>
                 </div>
