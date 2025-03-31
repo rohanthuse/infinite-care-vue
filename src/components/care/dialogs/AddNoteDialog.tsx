@@ -3,7 +3,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarIcon, MessageCircle, X } from "lucide-react";
+import { CalendarIcon, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
@@ -58,7 +58,11 @@ export function AddNoteDialog({ open, onOpenChange, onSave }: AddNoteDialogProps
   });
 
   function onSubmit(data: FormValues) {
-    onSave(data);
+    // Here's the fix - we now explicitly pass the expected properties from our validated data
+    onSave({
+      content: data.content,
+      date: data.date
+    });
     form.reset();
     onOpenChange(false);
     toast({
