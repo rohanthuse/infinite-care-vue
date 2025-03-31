@@ -3,7 +3,7 @@ import React from "react";
 import { 
   User, Info, Calendar, FileText, FileCheck, 
   MessageCircle, AlertTriangle, Clock, Activity, 
-  Wrench, Utensils
+  Wrench, Utensils, Bath, ShieldAlert, Clipboard, ClipboardCheck
 } from "lucide-react";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -50,6 +50,22 @@ export const CarePlanTabBar: React.FC<CarePlanTabBarProps> = ({ activeTab, onCha
       <TabsTrigger value="dietary" className="flex items-center gap-1">
         <Utensils className="h-4 w-4" />
         <span>Dietary</span>
+      </TabsTrigger>
+      <TabsTrigger value="personalcare" className="flex items-center gap-1">
+        <Bath className="h-4 w-4" />
+        <span>Personal Care</span>
+      </TabsTrigger>
+      <TabsTrigger value="risk" className="flex items-center gap-1">
+        <ShieldAlert className="h-4 w-4" />
+        <span>Risk</span>
+      </TabsTrigger>
+      <TabsTrigger value="serviceplan" className="flex items-center gap-1">
+        <Clipboard className="h-4 w-4" />
+        <span>Service Plan</span>
+      </TabsTrigger>
+      <TabsTrigger value="serviceactions" className="flex items-center gap-1">
+        <ClipboardCheck className="h-4 w-4" />
+        <span>Service Actions</span>
       </TabsTrigger>
     </TabsList>
   );

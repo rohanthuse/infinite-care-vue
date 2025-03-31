@@ -27,6 +27,10 @@ import { AssessmentsTab } from "@/components/care/tabs/AssessmentsTab";
 import { ActivitiesTab } from "@/components/care/tabs/ActivitiesTab";
 import { EquipmentTab } from "@/components/care/tabs/EquipmentTab";
 import { DietaryTab } from "@/components/care/tabs/DietaryTab";
+import { PersonalCareTab } from "@/components/care/tabs/PersonalCareTab";
+import { RiskTab } from "@/components/care/tabs/RiskTab";
+import { ServicePlanTab } from "@/components/care/tabs/ServicePlanTab";
+import { ServiceActionsTab } from "@/components/care/tabs/ServiceActionsTab";
 import { getStatusBadgeClass, getRiskLevelClass, calculateProgressPercentage } from "@/utils/statusHelpers";
 import { mockPatientData } from "@/data/mockPatientData";
 
@@ -328,6 +332,22 @@ const CarePlanView = () => {
                     
                     <TabsContent value="dietary" className="space-y-4">
                       <DietaryTab dietaryRequirements={mockPatientData.dietaryRequirements} />
+                    </TabsContent>
+                    
+                    <TabsContent value="personalcare" className="space-y-4">
+                      <PersonalCareTab personalCare={mockPatientData.personalCare} />
+                    </TabsContent>
+                    
+                    <TabsContent value="risk" className="space-y-4">
+                      <RiskTab riskAssessments={mockPatientData.riskAssessments} />
+                    </TabsContent>
+                    
+                    <TabsContent value="serviceplan" className="space-y-4">
+                      <ServicePlanTab serviceActions={mockPatientData.serviceActions} />
+                    </TabsContent>
+                    
+                    <TabsContent value="serviceactions" className="space-y-4">
+                      <ServiceActionsTab serviceActions={mockPatientData.serviceActions} />
                     </TabsContent>
                   </Tabs>
                 </div>
