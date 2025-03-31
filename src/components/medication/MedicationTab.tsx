@@ -1,483 +1,713 @@
 
-import React, { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { format } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
-import { 
-  Table, TableBody, TableCell, TableHead, 
-  TableHeader, TableRow 
-} from "@/components/ui/table";
-import {
-  Dialog, DialogContent, DialogDescription, DialogFooter,
-  DialogHeader, DialogTitle, DialogClose
-} from "@/components/ui/dialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
-import {
-  Card, CardContent, CardDescription, CardHeader, CardTitle
-} from "@/components/ui/card";
-import {
-  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
-} from "@/components/ui/tooltip";
-import {
-  Pagination, PaginationContent, PaginationItem,
-  PaginationNext, PaginationLink, PaginationPrevious
-} from "@/components/ui/pagination";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuSeparator, DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useToast } from "@/components/ui/use-toast";
+import { format } from "date-fns";
 import {
-  AlertCircle, AlertTriangle, Calendar, CheckCircle, Clock, Download,
-  Edit, Eye, FileText, MoreHorizontal, Pill, Plus, RefreshCw, Search, 
-  Trash2, Clock4
+  Pill, Calendar, Clock, Search, Plus, Download, Filter, 
+  CheckCircle, Clock4, Eye, Edit, AlertCircle, RefreshCw, Trash2, 
+  MoreHorizontal, FileText, AlertTriangle
 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { cn } from "@/lib/utils";
 
 export interface MedicationTabProps {
-  branchId?: string;
-  branchName?: string;
+  branchId: string;
+  branchName: string;
 }
 
-// Mock data
-const mockMedications = [
-  {
-    id: "MED-001",
-    name: "Amoxicillin",
-    patientName: "John Smith",
-    patientId: "PT-12345",
-    prescribedBy: "Dr. Sarah Johnson",
-    dosage: "250mg",
-    frequency: "3 times daily",
-    startDate: new Date("2023-06-15"),
-    status: "Active",
-    nextDue: new Date("2023-06-15T14:30:00"),
-    avatar: "JS"
-  },
-  {
-    id: "MED-002",
-    name: "Lisinopril",
-    patientName: "Mary Williams",
-    patientId: "PT-67890",
-    prescribedBy: "Dr. James Wilson",
-    dosage: "10mg",
-    frequency: "Once daily",
-    startDate: new Date("2023-05-22"),
-    status: "Active",
-    nextDue: new Date("2023-06-15T09:00:00"),
-    avatar: "MW"
-  },
-  {
-    id: "MED-003",
-    name: "Metformin",
-    patientName: "Robert Johnson",
-    patientId: "PT-45678",
-    prescribedBy: "Dr. Emily Chen",
-    dosage: "500mg",
-    frequency: "Twice daily",
-    startDate: new Date("2023-04-10"),
-    status: "On Hold",
-    nextDue: null,
-    avatar: "RJ"
-  }
-];
-
-const upcomingAdministrations = [
-  {
-    id: "ADM-001",
-    patientName: "John Smith",
-    patientId: "PT-12345",
-    medicationName: "Amoxicillin",
-    medicationId: "MED-001",
-    dosage: "250mg",
-    scheduledTime: new Date("2023-06-15T14:30:00"),
-    status: "Due Soon",
-    avatar: "JS"
-  },
-  {
-    id: "ADM-002",
-    patientName: "Mary Williams",
-    patientId: "PT-67890",
-    medicationName: "Lisinopril",
-    medicationId: "MED-002",
-    dosage: "10mg",
-    scheduledTime: new Date("2023-06-15T09:00:00"),
-    status: "Scheduled",
-    avatar: "MW"
-  }
-];
-
-const recentAdministrations = [
-  {
-    id: "ADM-003",
-    patientName: "John Smith",
-    patientId: "PT-12345",
-    medicationName: "Amoxicillin",
-    medicationId: "MED-001",
-    dosage: "250mg",
-    administeredTime: new Date("2023-06-14T14:30:00"),
-    administeredBy: "Nurse Alice",
-    status: "Administered",
-    notes: "Patient took medication without issues",
-    avatar: "JS"
-  },
-  {
-    id: "ADM-004",
-    patientName: "Robert Johnson",
-    patientId: "PT-45678",
-    medicationName: "Metformin",
-    medicationId: "MED-003",
-    dosage: "500mg",
-    administeredTime: new Date("2023-06-14T10:15:00"),
-    administeredBy: "Nurse Thomas",
-    status: "Administered",
-    notes: "Patient complained of mild nausea",
-    avatar: "RJ"
-  }
-];
-
 export const MedicationTab: React.FC<MedicationTabProps> = ({ branchId, branchName }) => {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
+  const [medicationModalOpen, setMedicationModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [addMedicationDialogOpen, setAddMedicationDialogOpen] = useState(false);
-  const [recordDialogOpen, setRecordDialogOpen] = useState(false);
-  const [selectedMedication, setSelectedMedication] = useState<null | string>(null);
-  const [administrationDate, setAdministrationDate] = useState<string>(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
-  const [administrationNotes, setAdministrationNotes] = useState<string>("");
+  const [administrationDate, setAdministrationDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [adminTime, setAdminTime] = useState('08:00');
   const { toast } = useToast();
-  const itemsPerPage = 5;
-
-  const filteredMedications = mockMedications.filter(med => {
-    const matchesSearch = 
-      med.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      med.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      med.patientId.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === "all" || med.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
   
-  const totalPages = Math.ceil(filteredMedications.length / itemsPerPage);
-  const paginatedMedications = filteredMedications.slice(
-    (currentPage - 1) * itemsPerPage, 
-    currentPage * itemsPerPage
-  );
-
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case "Active":
-        return "text-green-600 bg-green-50 border-green-200";
-      case "Completed":
-        return "text-purple-600 bg-purple-50 border-purple-200";
-      case "On Hold":
-        return "text-amber-600 bg-amber-50 border-amber-200";
-      case "Discontinued":
-        return "text-red-600 bg-red-50 border-red-200";
-      default:
-        return "text-gray-600 bg-gray-50 border-gray-200";
+  // Sample medication data
+  const mockMedications = [
+    {
+      id: "MED-001",
+      name: "Lisinopril",
+      patient: { name: "John Smith", initials: "JS" },
+      dosage: "10mg",
+      frequency: "Once daily",
+      startDate: "2023-04-12",
+      endDate: "2023-10-12",
+      status: "Active",
+      nextDue: "08:00 AM",
+      instructions: "Take with water in the morning",
+      recentAdministrations: [
+        { date: "2023-04-12", time: "08:00", status: "Administered" },
+        { date: "2023-04-13", time: "08:00", status: "Administered" },
+        { date: "2023-04-14", time: "08:00", status: "Administered" }
+      ]
+    },
+    {
+      id: "MED-002",
+      name: "Metformin",
+      patient: { name: "Emma Johnson", initials: "EJ" },
+      dosage: "500mg",
+      frequency: "Twice daily",
+      startDate: "2023-03-28",
+      endDate: "2023-09-28",
+      status: "Active", 
+      nextDue: "08:00 AM",
+      instructions: "Take with meals",
+      recentAdministrations: [
+        { date: "2023-04-12", time: "08:00", status: "Administered" },
+        { date: "2023-04-12", time: "20:00", status: "Administered" },
+        { date: "2023-04-13", time: "08:00", status: "Administered" }
+      ]
+    },
+    {
+      id: "MED-003",
+      name: "Simvastatin",
+      patient: { name: "Robert Davis", initials: "RD" },
+      dosage: "20mg",
+      frequency: "Once daily",
+      startDate: "2023-02-15",
+      endDate: "2023-08-15",
+      status: "Pending Review",
+      nextDue: "20:00 PM",
+      instructions: "Take in the evening",
+      recentAdministrations: [
+        { date: "2023-04-11", time: "20:00", status: "Administered" },
+        { date: "2023-04-12", time: "20:00", status: "Administered" },
+        { date: "2023-04-13", time: "20:00", status: "Missed" }
+      ]
+    },
+    {
+      id: "MED-004",
+      name: "Levothyroxine",
+      patient: { name: "Patricia Wilson", initials: "PW" },
+      dosage: "75mcg",
+      frequency: "Once daily",
+      startDate: "2023-01-10",
+      endDate: "2023-07-10",
+      status: "Active",
+      nextDue: "07:00 AM",
+      instructions: "Take on an empty stomach",
+      recentAdministrations: [
+        { date: "2023-04-12", time: "07:00", status: "Administered" },
+        { date: "2023-04-13", time: "07:00", status: "Administered" },
+        { date: "2023-04-14", time: "07:00", status: "Administered" }
+      ]
+    },
+    {
+      id: "MED-005",
+      name: "Amlodipine",
+      patient: { name: "Michael Brown", initials: "MB" },
+      dosage: "5mg",
+      frequency: "Once daily",
+      startDate: "2023-03-05",
+      endDate: "2023-09-05",
+      status: "Discontinued",
+      nextDue: "N/A",
+      instructions: "Take at the same time each day",
+      recentAdministrations: [
+        { date: "2023-03-30", time: "09:00", status: "Administered" },
+        { date: "2023-03-31", time: "09:00", status: "Administered" },
+        { date: "2023-04-01", time: "09:00", status: "Discontinued" }
+      ]
     }
-  };
+  ];
 
-  const getAdminStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case "Administered":
-        return "text-green-600 bg-green-50 border-green-200";
-      case "Due Soon":
-        return "text-amber-600 bg-amber-50 border-amber-200";
-      case "Scheduled":
-        return "text-blue-600 bg-blue-50 border-blue-200";
-      case "Missed":
-        return "text-red-600 bg-red-50 border-red-200";
-      default:
-        return "text-gray-600 bg-gray-50 border-gray-200";
+  // Sample upcoming administration data
+  const upcomingAdministrations = [
+    {
+      id: "ADM-001",
+      medication: "Lisinopril",
+      patient: { name: "John Smith", initials: "JS" },
+      dosage: "10mg",
+      date: "2023-04-15",
+      time: "08:00",
+      status: "Scheduled"
+    },
+    {
+      id: "ADM-002",
+      medication: "Metformin",
+      patient: { name: "Emma Johnson", initials: "EJ" },
+      dosage: "500mg",
+      date: "2023-04-15",
+      time: "08:00",
+      status: "Scheduled"
+    },
+    {
+      id: "ADM-003",
+      medication: "Metformin",
+      patient: { name: "Emma Johnson", initials: "EJ" },
+      dosage: "500mg",
+      date: "2023-04-15",
+      time: "20:00",
+      status: "Scheduled"
+    },
+    {
+      id: "ADM-004",
+      medication: "Simvastatin",
+      patient: { name: "Robert Davis", initials: "RD" },
+      dosage: "20mg",
+      date: "2023-04-15",
+      time: "20:00",
+      status: "Scheduled"
+    },
+    {
+      id: "ADM-005",
+      medication: "Levothyroxine",
+      patient: { name: "Patricia Wilson", initials: "PW" },
+      dosage: "75mcg",
+      date: "2023-04-15",
+      time: "07:00",
+      status: "Scheduled"
     }
+  ];
+
+  // Sample recent administration data
+  const recentAdministrations = [
+    {
+      id: "RADM-001",
+      medication: "Lisinopril",
+      patient: { name: "John Smith", initials: "JS" },
+      dosage: "10mg",
+      date: "2023-04-14",
+      time: "08:00",
+      status: "Administered",
+      administeredBy: "Sarah Johnson"
+    },
+    {
+      id: "RADM-002",
+      medication: "Metformin",
+      patient: { name: "Emma Johnson", initials: "EJ" },
+      dosage: "500mg",
+      date: "2023-04-14",
+      time: "08:00",
+      status: "Administered",
+      administeredBy: "David Taylor"
+    },
+    {
+      id: "RADM-003",
+      medication: "Metformin",
+      patient: { name: "Emma Johnson", initials: "EJ" },
+      dosage: "500mg",
+      date: "2023-04-13",
+      time: "20:00",
+      status: "Administered",
+      administeredBy: "Michael Brown"
+    },
+    {
+      id: "RADM-004",
+      medication: "Simvastatin",
+      patient: { name: "Robert Davis", initials: "RD" },
+      dosage: "20mg",
+      date: "2023-04-13",
+      time: "20:00",
+      status: "Administered",
+      administeredBy: "Sarah Johnson"
+    },
+    {
+      id: "RADM-005",
+      medication: "Levothyroxine",
+      patient: { name: "Patricia Wilson", initials: "PW" },
+      dosage: "75mcg",
+      date: "2023-04-14",
+      time: "07:00",
+      status: "Missed",
+      administeredBy: "N/A"
+    }
+  ];
+
+  const handleAddMedication = () => {
+    setMedicationModalOpen(true);
   };
 
-  const handleRecordAdministration = (medicationId: string) => {
-    setSelectedMedication(medicationId);
-    setRecordDialogOpen(true);
-  };
-
-  const handleSubmitAdministration = () => {
-    console.log("Recording administration for:", selectedMedication);
-    console.log("Date/Time:", administrationDate);
-    console.log("Notes:", administrationNotes);
-    
+  const handleAdministerMedication = (medicationId: string) => {
     toast({
-      title: "Administration Recorded",
-      description: "The medication administration has been successfully recorded.",
+      title: "Medication Administered",
+      description: `Medication ${medicationId} has been marked as administered.`,
     });
-    
-    setRecordDialogOpen(false);
-    setSelectedMedication(null);
-    setAdministrationNotes("");
   };
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-sm">
-      <h2 className="text-2xl font-bold mb-4">Medication Management</h2>
-      <p className="text-gray-500 mb-6">Track and manage medications for clients.</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Medication Management for {branchName}</h2>
+        <div className="flex space-x-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              type="search"
+              placeholder="Search medications..."
+              className="w-64 pl-8"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+            />
+          </div>
+          <Button size="sm" onClick={handleAddMedication}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Medication
+          </Button>
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+        </div>
+      </div>
       
-      <Tabs defaultValue="medications" className="w-full">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <TabsList className="grid grid-cols-3 w-full md:w-auto">
-            <TabsTrigger value="medications" className="flex items-center">
-              <Pill className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Medications</span>
-            </TabsTrigger>
-            <TabsTrigger value="schedule" className="flex items-center">
-              <Calendar className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Schedule</span>
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center">
-              <Clock4 className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">History</span>
-            </TabsTrigger>
-          </TabsList>
-          
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 md:min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search medications..."
-                className="pl-10 pr-4 w-full"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-medium">Active Medications</CardTitle>
+            <CardDescription>Currently prescribed</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-4">
+              <div className="p-2 rounded-full bg-blue-100">
+                <Pill className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold">24</div>
+                <div className="text-sm text-gray-500">across 8 patients</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-medium">Today's Administrations</CardTitle>
+            <CardDescription>To be given</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-4">
+              <div className="p-2 rounded-full bg-green-100">
+                <Clock className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold">12</div>
+                <div className="text-sm text-gray-500">remaining today</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-medium">Upcoming Refills</CardTitle>
+            <CardDescription>Next 7 days</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-4">
+              <div className="p-2 rounded-full bg-amber-100">
+                <Calendar className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold">5</div>
+                <div className="text-sm text-gray-500">prescriptions to refill</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-medium">Medication Alerts</CardTitle>
+            <CardDescription>Require attention</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-4">
+              <div className="p-2 rounded-full bg-red-100">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold">3</div>
+                <div className="text-sm text-gray-500">missed or late</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Medication Status</CardTitle>
+          <CardDescription>Current medication status for Branch ID: {branchId}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex space-x-4 mb-4">
+            <Badge className="px-3 py-1 bg-blue-100 text-blue-800 hover:bg-blue-200">All (24)</Badge>
+            <Badge className="px-3 py-1 bg-green-100 text-green-800 hover:bg-green-200">Active (18)</Badge>
+            <Badge className="px-3 py-1 bg-amber-100 text-amber-800 hover:bg-amber-200">Pending Review (3)</Badge>
+            <Badge className="px-3 py-1 bg-red-100 text-red-800 hover:bg-red-200">Discontinued (3)</Badge>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Medication Administration Chart</CardTitle>
+          <CardDescription>View and manage medications</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="p-4 border rounded-lg bg-gray-50 text-center">
+              <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-2" />
+              <div className="text-lg font-bold">36</div>
+              <div className="text-xs text-gray-500">Administered</div>
+              <div className="text-xs text-gray-500">Last 7 days</div>
             </div>
             
-            <Button onClick={() => setAddMedicationDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Medication
-            </Button>
-          </div>
-        </div>
-        
-        <TabsContent value="medications" className="space-y-4">
-          {/* Simplified medication list content */}
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="On Hold">On Hold</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
-                  <SelectItem value="Discontinued">Discontinued</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="p-4 border rounded-lg bg-gray-50 text-center">
+              <Clock className="h-6 w-6 text-blue-500 mx-auto mb-2" />
+              <div className="text-lg font-bold">12</div>
+              <div className="text-xs text-gray-500">Scheduled</div>
+              <div className="text-xs text-gray-500">Today</div>
             </div>
-            <Button variant="outline">
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
+            
+            <div className="p-4 border rounded-lg bg-gray-50 text-center">
+              <Calendar className="h-6 w-6 text-purple-500 mx-auto mb-2" />
+              <div className="text-lg font-bold">84</div>
+              <div className="text-xs text-gray-500">Scheduled</div>
+              <div className="text-xs text-gray-500">Next 7 days</div>
+            </div>
+            
+            <div className="p-4 border rounded-lg bg-gray-50 text-center">
+              <AlertTriangle className="h-6 w-6 text-red-500 mx-auto mb-2" />
+              <div className="text-lg font-bold">3</div>
+              <div className="text-xs text-gray-500">Missed</div>
+              <div className="text-xs text-gray-500">Last 7 days</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Active Medications</CardTitle>
+          <CardDescription>All current medications</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Medication</TableHead>
+                  <TableHead>Patient</TableHead>
+                  <TableHead>Dosage</TableHead>
+                  <TableHead>Frequency</TableHead>
+                  <TableHead>Start Date</TableHead>
+                  <TableHead>End Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Next Due</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {mockMedications.map((med) => (
+                  <TableRow key={med.id}>
+                    <TableCell className="font-medium">{med.name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <Avatar className="h-8 w-8 mr-2">
+                          <AvatarFallback className="bg-blue-100 text-blue-600">
+                            {med.patient.initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium text-sm">{med.patient.name}</div>
+                          <div className="text-xs text-gray-500">{med.id}</div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{med.dosage}</TableCell>
+                    <TableCell>{med.frequency}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <Calendar className="h-3.5 w-3.5 text-gray-500 mr-1" />
+                        <span>{med.startDate}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <Calendar className="h-3.5 w-3.5 text-gray-500 mr-1" />
+                        <span>{med.endDate}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={
+                        med.status === "Active" ? "bg-green-100 text-green-800" :
+                        med.status === "Pending Review" ? "bg-amber-100 text-amber-800" :
+                        "bg-red-100 text-red-800"
+                      }>
+                        {med.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <Clock className="h-3.5 w-3.5 text-gray-500 mr-1" />
+                        <span>{med.status === "Discontinued" ? "N/A" : format(new Date(), 'dd MMM hh:mm a')}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-1">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8"
+                                onClick={() => handleAdministerMedication(med.id)}
+                              >
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Mark as administered</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit Medication
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            
+                            <DropdownMenuItem>
+                              <AlertCircle className="h-4 w-4 mr-2" />
+                              Mark as Missed
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuItem>
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              Set Reminder
+                            </DropdownMenuItem>
+                          
+                            <DropdownMenuItem className="text-red-600">
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Discontinue
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                
+                {mockMedications.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-4 text-gray-500">
+                      No medications found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
           
-          <Card>
-            <CardContent className="p-0">
+          <div className="mt-4 flex justify-end">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    href="#" 
+                    className={cn(
+                      currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                    )}
+                  />
+                </PaginationItem>
+                
+                <PaginationItem>
+                  <PaginationLink href="#" isActive={currentPage === 1}>
+                    1
+                  </PaginationLink>
+                </PaginationItem>
+                
+                <PaginationItem>
+                  <PaginationNext 
+                    href="#" 
+                    className={cn(
+                      currentPage === 3 ? "pointer-events-none opacity-50" : ""
+                    )}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <div className="grid grid-cols-1 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Upcoming Administrations</CardTitle>
+            <CardDescription>Scheduled for today</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-end space-x-2 mb-4">
+              <Button variant="outline" size="sm">
+                <Calendar className="h-4 w-4 mr-2" />
+                View Schedule
+              </Button>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Print MAR
+              </Button>
+            </div>
+            
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[100px]">ID</TableHead>
                     <TableHead>Medication</TableHead>
                     <TableHead>Patient</TableHead>
+                    <TableHead>Dosage</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Time</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedMedications.map((medication) => (
-                    <TableRow key={medication.id}>
-                      <TableCell className="font-medium">{medication.id}</TableCell>
-                      <TableCell className="font-medium">{medication.name}</TableCell>
+                  {upcomingAdministrations.map((admin) => (
+                    <TableRow key={admin.id}>
+                      <TableCell className="font-medium">{admin.medication}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8">
+                        <div className="flex items-center">
+                          <Avatar className="h-8 w-8 mr-2">
                             <AvatarFallback className="bg-blue-100 text-blue-600">
-                              {medication.avatar}
+                              {admin.patient.initials}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-medium text-sm">{medication.patientName}</div>
-                            <div className="text-xs text-gray-500">{medication.patientId}</div>
+                            <div className="font-medium text-sm">{admin.patient.name}</div>
                           </div>
                         </div>
                       </TableCell>
+                      <TableCell>{admin.dosage}</TableCell>
                       <TableCell>
-                        <Badge 
-                          variant="outline" 
-                          className={getStatusBadgeClass(medication.status)}
-                        >
-                          {medication.status}
+                        <div className="flex items-center">
+                          <Calendar className="h-3.5 w-3.5 text-gray-500 mr-1" />
+                          <span>{format(new Date(admin.date), 'dd MMM yyyy')}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <Clock className="h-3.5 w-3.5 text-gray-500 mr-1" />
+                          <span>{format(new Date(`2023-01-01T${admin.time}`), 'hh:mm a')}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={
+                          admin.status === "Administered" ? "bg-green-100 text-green-800" :
+                          admin.status === "Scheduled" ? "bg-blue-100 text-blue-800" :
+                          "bg-red-100 text-red-800"
+                        }>
+                          {admin.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8"
-                            onClick={() => handleRecordAdministration(medication.id)}
-                            disabled={medication.status !== "Active"}
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                          </Button>
+                      <TableCell>
+                        <div className="flex space-x-1">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8"
+                                  onClick={() => handleAdministerMedication(admin.id)}
+                                >
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Mark as administered</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          
                           <Button variant="ghost" size="icon" className="h-8 w-8">
                             <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
                     </TableRow>
                   ))}
-                  {paginatedMedications.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center">
-                        No medications found.
-                      </TableCell>
-                    </TableRow>
-                  )}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
-          
-          {filteredMedications.length > 0 && (
-            <div className="flex items-center justify-between px-2">
-              <div className="text-sm text-gray-500">
-                Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredMedications.length)} of {filteredMedications.length} medications
-              </div>
-              
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-                      className={cn(currentPage === 1 && "pointer-events-none opacity-50")}
-                    />
-                  </PaginationItem>
-                  
-                  {Array.from({ length: totalPages }).map((_, i) => (
-                    <PaginationItem key={i}>
-                      <PaginationLink
-                        onClick={() => setCurrentPage(i + 1)}
-                        isActive={currentPage === i + 1}
-                      >
-                        {i + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-                      className={cn(currentPage === totalPages && "pointer-events-none opacity-50")}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
             </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="schedule" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Upcoming Administrations</CardTitle>
-              <CardDescription>Scheduled medications for today and upcoming days</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>Schedule content simplified for brevity.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="history" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Medication History</CardTitle>
-              <CardDescription>Previously administered medications</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>History content simplified for brevity.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          </CardContent>
+        </Card>
+      </div>
       
-      <Dialog open={recordDialogOpen} onOpenChange={setRecordDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={medicationModalOpen} onOpenChange={setMedicationModalOpen}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Record Medication Administration</DialogTitle>
+            <DialogTitle>Add New Medication for {branchName}</DialogTitle>
             <DialogDescription>
-              Record when a medication was administered to a patient.
+              Add a new medication for a patient in this branch.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            {selectedMedication && (
-              <div className="flex items-center gap-3 p-3 rounded-md bg-blue-50 border border-blue-100">
-                <Pill className="h-5 w-5 text-blue-600" />
-                <div>
-                  <div className="font-medium">
-                    {mockMedications.find(m => m.id === selectedMedication)?.name}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {mockMedications.find(m => m.id === selectedMedication)?.dosage} - 
-                    {mockMedications.find(m => m.id === selectedMedication)?.patientName}
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="admin-date" className="text-right text-sm font-medium">
-                Date & Time
-              </label>
-              <div className="col-span-3">
-                <Input
-                  id="admin-date"
-                  type="datetime-local"
-                  value={administrationDate}
-                  onChange={(e) => setAdministrationDate(e.target.value)}
-                />
-              </div>
+          
+          <div className="space-y-4 py-4">
+            <div className="flex items-center space-x-2">
+              <Pill className="h-5 w-5 text-blue-600" />
+              <h4 className="font-medium">Medication Details</h4>
             </div>
             
-            <div className="grid grid-cols-4 items-start gap-4">
-              <label htmlFor="admin-notes" className="text-right text-sm font-medium">
-                Notes
-              </label>
-              <div className="col-span-3">
-                <textarea
-                  id="admin-notes"
-                  rows={3}
-                  className="w-full rounded-md border border-gray-300 p-2 text-sm"
-                  placeholder="Add any relevant notes about the administration"
-                  value={administrationNotes}
-                  onChange={(e) => setAdministrationNotes(e.target.value)}
-                ></textarea>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="medicationName" className="text-sm font-medium">Medication Name</label>
+                <Input id="medicationName" placeholder="Enter medication name" />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="patientName" className="text-sm font-medium">Patient</label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select patient" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="john">John Smith</SelectItem>
+                    <SelectItem value="emma">Emma Johnson</SelectItem>
+                    <SelectItem value="robert">Robert Davis</SelectItem>
+                    <SelectItem value="patricia">Patricia Wilson</SelectItem>
+                    <SelectItem value="michael">Michael Brown</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
+          
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button type="button" onClick={handleSubmitAdministration}>
+            <Button type="submit">
               <CheckCircle className="mr-2 h-4 w-4" />
-              Record Administration
+              Add Medication
             </Button>
           </DialogFooter>
         </DialogContent>

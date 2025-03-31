@@ -765,10 +765,10 @@ const BranchDashboard = () => {
         {activeTab === "notifications" && <NotificationsOverview branchId={id || ""} branchName={decodeURIComponent(branchName || "")} />}
         {activeTab === "bookings" && <BookingsTab />}
         {activeTab === "carers" && <CarersTab />}
-        {activeTab === "communications" && <CommunicationsTab branchId={id} branchName={branchName} />}
-        {activeTab === "medication" && <MedicationTab branchId={id} branchName={branchName} />}
-        {activeTab === "reviews" && <ReviewsTab branchId={id} branchName={branchName} />}
-        {activeTab === "care" && <CareTab branchId={id} branchName={branchName} />}
+        {activeTab === "communications" && <CommunicationsTab branchId={id || ""} branchName={decodeURIComponent(branchName || "")} />}
+        {activeTab === "medication" && <MedicationTab branchId={id || ""} branchName={decodeURIComponent(branchName || "")} />}
+        {activeTab === "reviews" && <ReviewsTab branchId={id || ""} branchName={decodeURIComponent(branchName || "")} />}
+        {activeTab === "care" && <CareTab branchId={id || ""} branchName={decodeURIComponent(branchName || "")} />}
       
       </main>
     </div>
