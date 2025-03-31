@@ -28,7 +28,7 @@ import { CareTab } from "@/components/care/CareTab";
 import NotificationsOverview from "@/components/workflow/NotificationsOverview";
 import TaskMatrix from "./TaskMatrix";
 import TrainingMatrix from "./TrainingMatrix";
-import { keyParametersContent as KeyParametersContent } from "@/components/keyparameters/KeyParametersContent";
+import { KeyParametersContent } from "@/components/keyparameters/KeyParametersContent";
 import { WorkflowContent } from "@/components/workflow/WorkflowContent";
 
 const weeklyData = [{
@@ -758,11 +758,11 @@ const BranchDashboard = () => {
           </motion.div>
         )}
         
-        {activeTab === "key-parameters" && <KeyParametersContent branchId={id || ""} branchName={branchName || ""} />}
-        {activeTab === "workflow" && <WorkflowContent branchId={id || ""} branchName={branchName || ""} />}
-        {activeTab === "task-matrix" && <TaskMatrix branchId={id || ""} branchName={branchName || ""} />}
-        {activeTab === "training-matrix" && <TrainingMatrix branchId={id || ""} branchName={branchName || ""} />}
-        {activeTab === "notifications" && <NotificationsOverview branchId={id || ""} branchName={branchName || ""} />}
+        {activeTab === "key-parameters" && <KeyParametersContent branchId={id || ""} branchName={decodeURIComponent(branchName || "")} />}
+        {activeTab === "workflow" && <WorkflowContent branchId={id || ""} branchName={decodeURIComponent(branchName || "")} />}
+        {activeTab === "task-matrix" && <TaskMatrix branchId={id || ""} branchName={decodeURIComponent(branchName || "")} />}
+        {activeTab === "training-matrix" && <TrainingMatrix branchId={id || ""} branchName={decodeURIComponent(branchName || "")} />}
+        {activeTab === "notifications" && <NotificationsOverview branchId={id || ""} branchName={decodeURIComponent(branchName || "")} />}
         {activeTab === "bookings" && <BookingsTab />}
         {activeTab === "carers" && <CarersTab />}
         {activeTab === "communications" && <CommunicationsTab branchId={id} branchName={branchName} />}
