@@ -19,12 +19,18 @@ import FormFilter from "@/components/forms/FormFilter";
 import FormSort, { SortOption } from "@/components/forms/FormSort";
 import FormExport from "@/components/forms/FormExport";
 import AddFormDialog from "@/components/forms/AddFormDialog";
+import { DashboardHeader } from "@/components/DashboardHeader";
+import { BranchInfoHeader } from "@/components/BranchInfoHeader";
+import { TabNavigation } from "@/components/TabNavigation";
+import { useNavigate } from "react-router-dom";
 
 interface FormMatrixProps {
   branchId?: string;
+  branchName?: string;
 }
 
-const FormMatrix: React.FC<FormMatrixProps> = ({ branchId }) => {
+const FormMatrix: React.FC<FormMatrixProps> = ({ branchId, branchName }) => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<FormCategory | 'all'>('all');
   const [matrixData, setMatrixData] = useState<FormMatrixType>(getFormMatrix());
@@ -33,6 +39,7 @@ const FormMatrix: React.FC<FormMatrixProps> = ({ branchId }) => {
   const [addFormOpen, setAddFormOpen] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>({ field: "name", direction: "asc" });
   const categories = getFormCategories();
+  const [activeTab, setActiveTab] = useState("form-matrix");
   
   const [advancedFilters, setAdvancedFilters] = useState<{
     categories: FormCategory[];
@@ -184,8 +191,30 @@ const FormMatrix: React.FC<FormMatrixProps> = ({ branchId }) => {
     
     return total > 0 ? Math.round((completed / total) * 100) : 0;
   };
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    
+    if (branchId && branchName) {
+      if (tab === "overview") {
+        navigate(`/branch-dashboard/${branchId}/${branchName}`);
+      } else {
+        navigate(`/branch-dashboard/${branchId}/${branchName}/${tab}`);
+      }
+    } else {
+      navigate(`/${tab}`);
+    }
+  };
+
+  const handleNewBooking = () => {
+    if (branchId && branchName) {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/bookings`);
+    } else {
+      navigate('/bookings');
+    }
+  };
   
-  return (
+  const formMatrixContent = (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Form Matrix</h1>
@@ -378,6 +407,33 @@ const FormMatrix: React.FC<FormMatrixProps> = ({ branchId }) => {
           </TableBody>
         </Table>
       </div>
+    </div>
+  );
+  
+  if (!branchId && !branchName) {
+    return formMatrixContent;
+  }
+  
+  return (
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+      <DashboardHeader />
+      
+      <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full">
+        <BranchInfoHeader 
+          branchName={branchName || "Med-Infinite Branch"} 
+          branchId={branchId || ""}
+          onNewBooking={handleNewBooking}
+        />
+        
+        <div className="mb-6">
+          <TabNavigation 
+            activeTab={activeTab} 
+            onChange={handleTabChange}
+          />
+        </div>
+        
+        {formMatrixContent}
+      </main>
     </div>
   );
 };

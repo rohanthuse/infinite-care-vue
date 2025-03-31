@@ -60,8 +60,6 @@ const WorkflowContent = ({
         <p className="text-gray-500 mt-2 font-medium">Manage and monitor all workflow processes</p>
       </div>
       
-      
-      
       <motion.div initial={{
       opacity: 0
     }} animate={{

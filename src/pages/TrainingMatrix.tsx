@@ -19,12 +19,18 @@ import TrainingFilter from "@/components/training/TrainingFilter";
 import TrainingSort, { SortOption } from "@/components/training/TrainingSort";
 import TrainingExport from "@/components/training/TrainingExport";
 import AddTrainingDialog from "@/components/training/AddTrainingDialog";
+import { DashboardHeader } from "@/components/DashboardHeader";
+import { BranchInfoHeader } from "@/components/BranchInfoHeader";
+import { TabNavigation } from "@/components/TabNavigation";
+import { useNavigate } from "react-router-dom";
 
 interface TrainingMatrixProps {
   branchId?: string;
+  branchName?: string;
 }
 
-const TrainingMatrix: React.FC<TrainingMatrixProps> = ({ branchId }) => {
+const TrainingMatrix: React.FC<TrainingMatrixProps> = ({ branchId, branchName }) => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<TrainingCategory | 'all'>('all');
   const [matrixData, setMatrixData] = useState<TrainingMatrixType>(getTrainingMatrix());
@@ -33,6 +39,7 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = ({ branchId }) => {
   const [addTrainingOpen, setAddTrainingOpen] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>({ field: "name", direction: "asc" });
   const categories = getTrainingCategories();
+  const [activeTab, setActiveTab] = useState("training-matrix");
   
   // Advanced filter state
   const [advancedFilters, setAdvancedFilters] = useState<{
@@ -197,8 +204,30 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = ({ branchId }) => {
     
     return total > 0 ? Math.round((completed / total) * 100) : 0;
   };
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    
+    if (branchId && branchName) {
+      if (tab === "overview") {
+        navigate(`/branch-dashboard/${branchId}/${branchName}`);
+      } else {
+        navigate(`/branch-dashboard/${branchId}/${branchName}/${tab}`);
+      }
+    } else {
+      navigate(`/${tab}`);
+    }
+  };
+
+  const handleNewBooking = () => {
+    if (branchId && branchName) {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/bookings`);
+    } else {
+      navigate('/bookings');
+    }
+  };
   
-  return (
+  const trainingMatrixContent = (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Training Matrix</h1>
@@ -383,6 +412,35 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = ({ branchId }) => {
           </TableBody>
         </Table>
       </div>
+    </div>
+  );
+  
+  // If we're not in a branch dashboard, just show the matrix
+  if (!branchId && !branchName) {
+    return trainingMatrixContent;
+  }
+  
+  // Otherwise, render with branch header and navigation
+  return (
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+      <DashboardHeader />
+      
+      <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full">
+        <BranchInfoHeader 
+          branchName={branchName || "Med-Infinite Branch"} 
+          branchId={branchId || ""}
+          onNewBooking={handleNewBooking}
+        />
+        
+        <div className="mb-6">
+          <TabNavigation 
+            activeTab={activeTab} 
+            onChange={handleTabChange}
+          />
+        </div>
+        
+        {trainingMatrixContent}
+      </main>
     </div>
   );
 };
