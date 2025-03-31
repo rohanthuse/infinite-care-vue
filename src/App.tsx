@@ -29,6 +29,7 @@ import Workflow from "./pages/Workflow";
 import KeyParameters from "./pages/KeyParameters";
 import CarePlanView from "./pages/CarePlanView";
 import TaskMatrix from "./pages/TaskMatrix";
+import TrainingMatrix from "./pages/TrainingMatrix";
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -59,6 +60,7 @@ function App() {
             <Route path="/branch-admins" element={<BranchAdmins />} />
             <Route path="/workflow" element={<Workflow />} />
             <Route path="/task-matrix" element={<TaskMatrix />} />
+            <Route path="/training-matrix" element={<TrainingMatrix />} />
             <Route path="/key-parameters" element={<KeyParameters />} />
             
             {/* Branch Dashboard Routes */}
