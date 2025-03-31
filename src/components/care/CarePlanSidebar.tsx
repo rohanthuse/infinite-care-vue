@@ -1,7 +1,7 @@
 
 import React from "react";
 import { format } from "date-fns";
-import { MessageCircle, Clock, Activity } from "lucide-react";
+import { MessageCircle, Clock, Activity, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,13 +23,15 @@ interface CarePlanSidebarProps {
   onAddNote?: () => void;
   onScheduleFollowUp?: () => void;
   onRecordActivity?: () => void;
+  onUploadDocument?: () => void;
 }
 
 export const CarePlanSidebar: React.FC<CarePlanSidebarProps> = ({ 
   carePlan,
   onAddNote,
   onScheduleFollowUp,
-  onRecordActivity 
+  onRecordActivity,
+  onUploadDocument
 }) => {
   return (
     <Card>
@@ -98,6 +100,17 @@ export const CarePlanSidebar: React.FC<CarePlanSidebarProps> = ({
               <Activity className="h-4 w-4 mr-2" />
               <span>Record Activity</span>
             </Button>
+            {onUploadDocument && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full justify-start"
+                onClick={onUploadDocument}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                <span>Upload Document</span>
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>

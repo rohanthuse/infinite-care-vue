@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { X, FileEdit, Download } from "lucide-react";
 import { format } from "date-fns";
@@ -27,9 +28,20 @@ interface CarePlanDetailProps {
     avatar: string;
   } | null;
   onClose: () => void;
+  onAddNote?: () => void;
+  onScheduleFollowUp?: () => void;
+  onRecordActivity?: () => void;
+  onUploadDocument?: () => void;
 }
 
-export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ carePlan, onClose }) => {
+export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ 
+  carePlan, 
+  onClose,
+  onAddNote,
+  onScheduleFollowUp,
+  onRecordActivity,
+  onUploadDocument
+}) => {
   const [activeTab, setActiveTab] = useState("personal");
 
   if (!carePlan) return null;
@@ -80,7 +92,13 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ carePlan, onClos
         <div className="flex-1 overflow-auto p-6">
           <div className="flex flex-col md:flex-row md:items-start gap-6">
             <div className="w-full md:w-1/3">
-              <CarePlanSidebar carePlan={carePlan} />
+              <CarePlanSidebar 
+                carePlan={carePlan}
+                onAddNote={onAddNote}
+                onScheduleFollowUp={onScheduleFollowUp}
+                onRecordActivity={onRecordActivity}
+                onUploadDocument={onUploadDocument}
+              />
             </div>
             
             <div className="w-full md:w-2/3">
