@@ -1,240 +1,164 @@
 
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { getTaskColumns, filterTasksByView } from "@/data/mockTaskData";
-import { Task, TaskColumn as TaskColumnType, TaskStatus, TaskView } from "@/types/task";
-import TaskColumn from "@/components/tasks/TaskColumn";
-import AddTaskDialog from "@/components/tasks/AddTaskDialog";
+import React from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { 
-  Search, Filter, Plus, Users, UserRound, 
-  SlidersHorizontal, Download
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "@/hooks/use-toast";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CheckCircle2, Clock, XCircle, AlertCircle } from "lucide-react";
 
-interface DragItem {
-  taskId: string;
-  sourceColumn: string;
+interface TaskMatrixProps {
+  branchId: string;
+  branchName: string;
 }
 
-const TaskMatrix: React.FC = () => {
-  const navigate = useNavigate();
-  const { id: branchId, branchName } = useParams<{id: string, branchName: string}>();
-  const [taskView, setTaskView] = useState<TaskView>("staff");
-  const [columns, setColumns] = useState<TaskColumnType[]>(getTaskColumns());
-  const [searchTerm, setSearchTerm] = useState("");
-  const [currentDraggedItem, setCurrentDraggedItem] = useState<DragItem | null>(null);
-  const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
-  const [addToColumn, setAddToColumn] = useState<TaskStatus>("todo");
-  
-  // Filter columns based on search and view
-  useEffect(() => {
-    const allColumns = getTaskColumns();
-    
-    if (searchTerm.trim() !== "") {
-      const filteredColumns = allColumns.map(column => ({
-        ...column,
-        tasks: column.tasks.filter(task => 
-          task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          task.assignee?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          task.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          task.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-        )
-      }));
-      setColumns(filteredColumns);
-    } else {
-      // Apply view filter without search
-      const viewFilteredColumns = allColumns.map(column => ({
-        ...column,
-        tasks: filterTasksByView(column.tasks, taskView)
-      }));
-      setColumns(viewFilteredColumns);
-    }
-  }, [searchTerm, taskView]);
-  
-  const handleDragStart = (e: React.DragEvent, taskId: string, sourceColumn: string) => {
-    setCurrentDraggedItem({ taskId, sourceColumn });
-    e.dataTransfer.effectAllowed = "move";
-  };
-  
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
-  
-  const handleDrop = (e: React.DragEvent, targetColumn: string) => {
-    e.preventDefault();
-    
-    if (!currentDraggedItem) return;
-    
-    const { taskId, sourceColumn } = currentDraggedItem;
-    
-    if (sourceColumn === targetColumn) return;
-    
-    // Find the task in the source column
-    const sourceColumnObj = columns.find(col => col.id === sourceColumn);
-    if (!sourceColumnObj) return;
-    
-    const taskToMove = sourceColumnObj.tasks.find(task => task.id === taskId);
-    if (!taskToMove) return;
-    
-    // Update columns state
-    const updatedColumns = columns.map(column => {
-      // Remove from source column
-      if (column.id === sourceColumn) {
-        return {
-          ...column,
-          tasks: column.tasks.filter(task => task.id !== taskId)
-        };
-      }
-      
-      // Add to target column
-      if (column.id === targetColumn) {
-        return {
-          ...column,
-          tasks: [...column.tasks, { ...taskToMove, status: targetColumn as TaskStatus }]
-        };
-      }
-      
-      return column;
-    });
-    
-    setColumns(updatedColumns);
-    
-    toast({
-      title: "Task moved",
-      description: `Task moved to ${targetColumn.replace('-', ' ')}`,
-    });
-    
-    setCurrentDraggedItem(null);
-  };
-  
-  const handleAddTask = (columnId: TaskStatus) => {
-    setAddToColumn(columnId);
-    setIsAddTaskDialogOpen(true);
-  };
-  
-  const addNewTask = (taskData: {
-    title: string;
-    description: string;
-    priority: any;
-    status: TaskStatus;
-    assignee?: string;
-  }) => {
-    const newTask: Task = {
-      id: `task-${Date.now()}`,
-      title: taskData.title,
-      description: taskData.description,
-      status: taskData.status,
-      priority: taskData.priority,
-      assignee: taskData.assignee,
-      assigneeAvatar: "/placeholder.svg",
-      createdAt: new Date().toISOString().split('T')[0],
-      tags: [],
-      ...(taskView === 'client' ? { clientId: 'client-new', clientName: "New Client" } : { staffId: 'staff-new', staffName: "Staff Member" })
-    };
-    
-    // Add the new task to the appropriate column
-    const updatedColumns = columns.map(column => {
-      if (column.id === taskData.status) {
-        return {
-          ...column,
-          tasks: [...column.tasks, newTask]
-        };
-      }
-      return column;
-    });
-    
-    setColumns(updatedColumns);
-    
-    toast({
-      title: "Task added",
-      description: `New task "${taskData.title}" added to ${taskData.status.replace('-', ' ')}`,
-    });
-  };
-  
+const TaskMatrix: React.FC<TaskMatrixProps> = ({ branchId, branchName }) => {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Task Matrix</h1>
-        <p className="text-gray-500 mt-2">Organize, assign, and track tasks efficiently</p>
-      </div>
-      
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mb-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search tasks..."
-              className="pl-10 pr-4"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          
-          <div className="flex gap-3 flex-wrap">
-            <Tabs value={taskView} onValueChange={(value) => setTaskView(value as TaskView)} className="w-auto">
-              <TabsList className="bg-gray-100">
-                <TabsTrigger value="staff" className="flex items-center gap-1 data-[state=active]:bg-white">
-                  <Users className="h-4 w-4" />
-                  <span className="hidden sm:inline">Staff</span>
-                </TabsTrigger>
-                <TabsTrigger value="client" className="flex items-center gap-1 data-[state=active]:bg-white">
-                  <UserRound className="h-4 w-4" />
-                  <span className="hidden sm:inline">Client</span>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-            
-            <Button variant="outline" className="gap-2 whitespace-nowrap">
-              <Filter className="h-4 w-4" />
-              <span className="hidden sm:inline">Filter</span>
-            </Button>
-            
-            <Button variant="outline" className="gap-2 whitespace-nowrap">
-              <SlidersHorizontal className="h-4 w-4" />
-              <span className="hidden sm:inline">Sort</span>
-            </Button>
-            
-            <Button 
-              variant="default" 
-              className="gap-2 whitespace-nowrap bg-blue-600 hover:bg-blue-700"
-              onClick={() => {
-                setAddToColumn("todo");
-                setIsAddTaskDialogOpen(true);
-              }}
-            >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Add Task</span>
-            </Button>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Task Matrix for {branchName}</h2>
+        <div className="flex space-x-2">
+          <Button size="sm">
+            Export Matrix
+          </Button>
         </div>
       </div>
       
-      <div className="overflow-x-auto pb-6">
-        <div className="flex gap-4 min-w-max">
-          {columns.map(column => (
-            <TaskColumn
-              key={column.id}
-              column={column}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              onAddTask={handleAddTask}
-            />
-          ))}
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Task Completion Matrix</CardTitle>
+          <CardDescription>Overview of task completion status for all staff members</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[200px]">Staff Member</TableHead>
+                <TableHead>Daily Reports</TableHead>
+                <TableHead>Client Assessments</TableHead>
+                <TableHead>Training Compliance</TableHead>
+                <TableHead>Equipment Checks</TableHead>
+                <TableHead>Care Plans</TableHead>
+                <TableHead>Medication Reviews</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[1, 2, 3, 4, 5].map((item) => (
+                <TableRow key={item}>
+                  <TableCell className="font-medium">Staff Member {item}</TableCell>
+                  <TableCell>
+                    <div className="flex justify-center">
+                      <CheckCircle2 className="text-green-500" size={16} />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-center">
+                      {item % 3 === 0 ? (
+                        <XCircle className="text-red-500" size={16} />
+                      ) : item % 2 === 0 ? (
+                        <Clock className="text-amber-500" size={16} />
+                      ) : (
+                        <CheckCircle2 className="text-green-500" size={16} />
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-center">
+                      {item % 2 === 0 ? (
+                        <CheckCircle2 className="text-green-500" size={16} />
+                      ) : (
+                        <AlertCircle className="text-amber-500" size={16} />
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-center">
+                      <CheckCircle2 className="text-green-500" size={16} />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-center">
+                      {item % 4 === 0 ? (
+                        <XCircle className="text-red-500" size={16} />
+                      ) : (
+                        <CheckCircle2 className="text-green-500" size={16} />
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-center">
+                      {item % 5 === 0 ? (
+                        <Clock className="text-amber-500" size={16} />
+                      ) : (
+                        <CheckCircle2 className="text-green-500" size={16} />
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
       
-      <AddTaskDialog
-        isOpen={isAddTaskDialogOpen}
-        onClose={() => setIsAddTaskDialogOpen(false)}
-        onAddTask={addNewTask}
-        initialStatus={addToColumn}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Task Completion Rate</CardTitle>
+            <CardDescription>Overall completion rate by task type</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[
+                { name: "Daily Reports", value: 92 },
+                { name: "Client Assessments", value: 78 },
+                { name: "Training Compliance", value: 84 },
+                { name: "Equipment Checks", value: 95 },
+                { name: "Care Plans", value: 86 },
+                { name: "Medication Reviews", value: 81 }
+              ].map((item) => (
+                <div key={item.name} className="flex items-center">
+                  <div className="w-40 font-medium text-sm">{item.name}</div>
+                  <div className="flex-1">
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-blue-600 rounded-full" 
+                        style={{ width: `${item.value}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <div className="ml-3 text-sm font-medium">{item.value}%</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Task Status Breakdown</CardTitle>
+            <CardDescription>Current status of all tasks in system</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="flex flex-col items-center p-4 bg-green-50 rounded-lg">
+                <CheckCircle2 className="h-8 w-8 text-green-500 mb-2" />
+                <div className="text-xl font-bold">75</div>
+                <div className="text-sm text-gray-500">Completed</div>
+              </div>
+              <div className="flex flex-col items-center p-4 bg-amber-50 rounded-lg">
+                <Clock className="h-8 w-8 text-amber-500 mb-2" />
+                <div className="text-xl font-bold">23</div>
+                <div className="text-sm text-gray-500">In Progress</div>
+              </div>
+              <div className="flex flex-col items-center p-4 bg-red-50 rounded-lg">
+                <XCircle className="h-8 w-8 text-red-500 mb-2" />
+                <div className="text-xl font-bold">12</div>
+                <div className="text-sm text-gray-500">Overdue</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

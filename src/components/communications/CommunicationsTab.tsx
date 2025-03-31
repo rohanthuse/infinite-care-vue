@@ -20,11 +20,12 @@ export interface CommunicationsTabProps {
 export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({ branchId, branchName }) => {
   const [activeTab, setActiveTab] = useState("emails");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("all");
+  const [selectedFilter, setSelectedFilter] = useState<"all" | "carers" | "clients" | "groups">("all");
   const [showComposer, setShowComposer] = useState(false);
-  const [selectedContactType, setSelectedContactType] = useState("clients");
+  const [selectedContactType, setSelectedContactType] = useState<"all" | "carers" | "clients" | "groups">("clients");
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+  const [contactSearchTerm, setContactSearchTerm] = useState("");
   
   return (
     <div className="space-y-6">
@@ -76,7 +77,8 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({ branchId, 
               onContactTypeChange={setSelectedContactType}
               onContactSelect={setSelectedContactId}
               selectedContactId={selectedContactId}
-              className="border-0 rounded-none"
+              searchTerm={contactSearchTerm}
+              onSearchChange={setContactSearchTerm}
             />
           </div>
           
@@ -85,7 +87,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({ branchId, 
               <div className="border-b">
                 <MessageFilters 
                   selectedFilter={selectedFilter}
-                  onFilterChange={setSelectedFilter}
+                  onFilterChange={(filter) => setSelectedFilter(filter as "all" | "carers" | "clients" | "groups")}
                 />
               </div>
               
