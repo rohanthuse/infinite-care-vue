@@ -1,6 +1,5 @@
-
-import { useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Filter, Grid3X3, ChevronRight } from "lucide-react";
 import {
@@ -36,18 +35,32 @@ type StaffMember = {
 
 const TaskMatrix = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const params = useParams();
-  const { id, branchName } = params;
+  let { id, branchName } = params;
   const [filterType, setFilterType] = useState<"Staff" | "Client">("Staff");
-  const [activeTab, setActiveTab] = useState("workflow");
+  const [activeTab, setActiveTab] = useState("task-matrix");
   
-  // Determine if we're in a branch context
-  const isInBranchContext = Boolean(id && branchName);
+  // Check URL search params for iframe mode
+  const searchParams = new URLSearchParams(location.search);
+  const iframeBranchId = searchParams.get('branchId');
+  const iframeBranchName = searchParams.get('branchName');
+  
+  // Use params from URL or from iframe search params
+  const finalBranchId = id || iframeBranchId;
+  const finalBranchName = branchName || iframeBranchName;
+  
+  // Determine if we're in a branch context or in an iframe
+  const isInBranchContext = Boolean(finalBranchId && finalBranchName);
+  const isInIframe = window.self !== window.top;
+  
+  // Don't show navigation when in an iframe
+  const showNavigation = !isInIframe;
   
   const handleBackToWorkflow = () => {
     if (isInBranchContext) {
       // Navigate back to dashboard with workflow module selected
-      navigate(`/branch-dashboard/${id}/${branchName}`, { state: { activeModule: "workflow" } });
+      navigate(`/branch-dashboard/${finalBranchId}/${finalBranchName}/workflow`);
     } else {
       // Navigate to main dashboard with workflow module selected
       navigate('/dashboard', { state: { activeModule: "workflow" } });
@@ -158,60 +171,62 @@ const TaskMatrix = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      {isInBranchContext && (
+    <div className={isInIframe ? "p-0" : "container mx-auto p-4"}>
+      {showNavigation && isInBranchContext && (
         <div className="mb-6">
           <TabNavigation 
             activeTab={activeTab} 
             onChange={(tab) => {
               setActiveTab(tab);
-              navigate(`/branch-dashboard/${id}/${branchName}/${tab}`);
+              navigate(`/branch-dashboard/${finalBranchId}/${finalBranchName}/${tab}`);
             }}
           />
         </div>
       )}
       
-      <div className="mb-4">
-        <Breadcrumb>
-          <BreadcrumbList>
-            {isInBranchContext ? (
-              <>
+      {showNavigation && (
+        <div className="mb-4">
+          <Breadcrumb>
+            <BreadcrumbList>
+              {isInBranchContext ? (
+                <>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link to={`/branch-dashboard/${finalBranchId}/${finalBranchName}`}>
+                        Dashboard
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator>
+                    <ChevronRight className="h-4 w-4" />
+                  </BreadcrumbSeparator>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link to={`/branch-dashboard/${finalBranchId}/${finalBranchName}/workflow`}>
+                        Workflow
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </>
+              ) : (
                 <BreadcrumbItem>
                   <BreadcrumbLink asChild>
-                    <Link to={`/branch-dashboard/${id}/${branchName}`}>
-                      Dashboard
-                    </Link>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator>
-                  <ChevronRight className="h-4 w-4" />
-                </BreadcrumbSeparator>
-                <BreadcrumbItem>
-                  <BreadcrumbLink asChild>
-                    <Link to={`/branch-dashboard/${id}/${branchName}`} state={{ activeModule: "workflow" }}>
+                    <Link to="/dashboard" state={{ activeModule: "workflow" }}>
                       Workflow
                     </Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
-              </>
-            ) : (
+              )}
+              <BreadcrumbSeparator>
+                <ChevronRight className="h-4 w-4" />
+              </BreadcrumbSeparator>
               <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link to="/dashboard" state={{ activeModule: "workflow" }}>
-                    Workflow
-                  </Link>
-                </BreadcrumbLink>
+                <BreadcrumbLink>Task Matrix</BreadcrumbLink>
               </BreadcrumbItem>
-            )}
-            <BreadcrumbSeparator>
-              <ChevronRight className="h-4 w-4" />
-            </BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <BreadcrumbLink>Task Matrix</BreadcrumbLink>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      )}
       
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-2">
@@ -243,14 +258,16 @@ const TaskMatrix = () => {
             </button>
           </div>
           
-          <div className="flex space-x-2">
-            <button className="border border-gray-300 rounded p-2">
-              <Filter className="h-5 w-5 text-gray-700" />
-            </button>
-            <Button variant="outline" onClick={handleBackToWorkflow}>
-              Back to Workflow
-            </Button>
-          </div>
+          {showNavigation && (
+            <div className="flex space-x-2">
+              <button className="border border-gray-300 rounded p-2">
+                <Filter className="h-5 w-5 text-gray-700" />
+              </button>
+              <Button variant="outline" onClick={handleBackToWorkflow}>
+                Back to Workflow
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

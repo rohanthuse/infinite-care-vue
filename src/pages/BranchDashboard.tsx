@@ -348,6 +348,9 @@ const BranchDashboard = () => {
     if (restPath) {
       if (restPath.startsWith("key-parameters")) return "key-parameters";
       if (restPath.startsWith("workflow")) return "workflow";
+      if (restPath.startsWith("task-matrix")) return "task-matrix";
+      if (restPath.startsWith("training")) return "training";
+      if (restPath.startsWith("forms")) return "forms";
       if (restPath.startsWith("bookings")) return "bookings";
       if (restPath.startsWith("carers")) return "carers";
       if (restPath.startsWith("clients")) return "clients";
@@ -486,6 +489,10 @@ const BranchDashboard = () => {
       handleWorkflowNavigation("key-parameters");
     } else if (newTab === "task-matrix") {
       handleWorkflowNavigation("task-matrix");
+    } else if (newTab === "training") {
+      handleWorkflowNavigation("training");
+    } else if (newTab === "forms") {
+      handleWorkflowNavigation("forms");
     } else if (newTab === "notifications") {
       handleWorkflowNavigation("notifications");
     }
@@ -522,6 +529,14 @@ const BranchDashboard = () => {
                 navigate(`/branch-dashboard/${id}/${branchName}/key-parameters`);
               } else if (tab === "workflow") {
                 navigate(`/branch-dashboard/${id}/${branchName}/workflow`);
+              } else if (tab === "task-matrix") {
+                navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
+              } else if (tab === "training") {
+                navigate(`/branch-dashboard/${id}/${branchName}/training`);
+              } else if (tab === "forms") {
+                navigate(`/branch-dashboard/${id}/${branchName}/forms`);
+              } else if (tab === "notifications") {
+                navigate(`/branch-dashboard/${id}/${branchName}/notifications`);
               } else {
                 navigate(`/branch-dashboard/${id}/${branchName}/${tab}`);
               }
@@ -735,15 +750,9 @@ const BranchDashboard = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
               <Card>
-                <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base md:text-lg font-semibold">Today's Bookings</CardTitle>
-                    <CardDescription>Appointments for today</CardDescription>
-                  </div>
-                  <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
-                    View All
-                    <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-                  </Button>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base md:text-lg font-semibold">Today's Bookings</CardTitle>
+                  <CardDescription>Appointments for today</CardDescription>
                 </CardHeader>
                 <CardContent className="overflow-x-auto">
                   <div className="space-y-1 min-w-[400px]">
@@ -787,15 +796,9 @@ const BranchDashboard = () => {
               </Card>
               
               <Card>
-                <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base md:text-lg font-semibold">Recent Reviews</CardTitle>
-                    <CardDescription>Latest client feedback</CardDescription>
-                  </div>
-                  <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
-                    View All
-                    <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
-                  </Button>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base md:text-lg font-semibold">Recent Reviews</CardTitle>
+                  <CardDescription>Latest client feedback</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-1">
@@ -1123,6 +1126,70 @@ const BranchDashboard = () => {
         {activeTab === "medication" && <MedicationTab branchId={id} branchName={branchName} />}
         
         {activeTab === "care-plan" && <CareTab branchId={id} branchName={branchName} />}
+        
+        {activeTab === "task-matrix" && (
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-2">
+                <ListChecks className="h-6 w-6 text-gray-700" />
+                <h1 className="text-2xl font-semibold text-gray-700">Task Matrix</h1>
+              </div>
+            </div>
+            <iframe 
+              src={`/task-matrix?branchId=${id}&branchName=${branchName}`} 
+              className="w-full h-[calc(100vh-250px)] border-none" 
+              title="Task Matrix" 
+            />
+          </div>
+        )}
+        
+        {activeTab === "training" && (
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-2">
+                <BookText className="h-6 w-6 text-gray-700" />
+                <h1 className="text-2xl font-semibold text-gray-700">Training Matrix</h1>
+              </div>
+            </div>
+            <div className="p-8 text-center">
+              <h3 className="text-xl font-medium mb-2">Training Matrix Module</h3>
+              <p className="text-gray-500 mb-6">Staff development and training tracking</p>
+              <div className="max-w-md mx-auto bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <p className="text-sm text-gray-600">This feature is coming soon. It will allow you to:</p>
+                <ul className="mt-4 text-left list-disc pl-6 text-sm text-gray-600">
+                  <li>Track staff training requirements</li>
+                  <li>Schedule and manage training sessions</li>
+                  <li>Monitor certification expiration dates</li>
+                  <li>Generate training compliance reports</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {activeTab === "forms" && (
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-2">
+                <FileText className="h-6 w-6 text-gray-700" />
+                <h1 className="text-2xl font-semibold text-gray-700">Form Matrix</h1>
+              </div>
+            </div>
+            <div className="p-8 text-center">
+              <h3 className="text-xl font-medium mb-2">Form Management System</h3>
+              <p className="text-gray-500 mb-6">Organize and access all document templates</p>
+              <div className="max-w-md mx-auto bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <p className="text-sm text-gray-600">This feature is coming soon. It will allow you to:</p>
+                <ul className="mt-4 text-left list-disc pl-6 text-sm text-gray-600">
+                  <li>Access standardized document templates</li>
+                  <li>Create custom forms for different purposes</li>
+                  <li>Generate documents with pre-filled client data</li>
+                  <li>Track document usage and compliance</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
