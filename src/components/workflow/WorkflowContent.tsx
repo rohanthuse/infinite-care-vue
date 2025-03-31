@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 
 interface WorkflowContentProps {
   branchId?: string;
@@ -27,6 +28,14 @@ const WorkflowContent = ({
     } else {
       navigate(`/${path}`);
     }
+  };
+
+  const handleTaskMatrixClick = () => {
+    toast({
+      title: "Feature Coming Soon",
+      description: "The Task Matrix feature is currently under development.",
+      variant: "default",
+    });
   };
   
   return <>
@@ -57,7 +66,7 @@ const WorkflowContent = ({
               </CardContent>
             </Card>
 
-            <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200" onClick={() => handleNavigate('task-matrix')}>
+            <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200" onClick={handleTaskMatrixClick}>
               <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                 <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-3">
                   <ListChecks className="h-8 w-8 text-purple-600" />

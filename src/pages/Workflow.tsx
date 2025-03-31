@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, ListChecks, BookText, FileText, ClipboardCheck, Search, Filter, Download } from "lucide-react";
@@ -14,11 +15,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import NotificationsOverview from "@/components/workflow/NotificationsOverview";
+import { toast } from "@/hooks/use-toast";
 
 const Workflow = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  
+  const handleTaskMatrixClick = () => {
+    toast({
+      title: "Feature Coming Soon",
+      description: "The Task Matrix feature is currently under development.",
+      variant: "default",
+    });
+  };
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
@@ -92,7 +102,7 @@ const Workflow = () => {
 
               <Card 
                 className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
-                onClick={() => navigate('/tasks')}
+                onClick={handleTaskMatrixClick}
               >
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-3">

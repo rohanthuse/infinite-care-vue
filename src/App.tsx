@@ -25,7 +25,6 @@ import ApplicationDetailsPage from "./components/carers/ApplicationDetailsPage";
 import PostJobPage from "./components/carers/PostJobPage";
 import Notifications from "./pages/Notifications";
 import { useState } from "react";
-import TaskMatrix from "./pages/TaskMatrix";
 import Workflow from "./pages/Workflow";
 import KeyParameters from "./pages/KeyParameters";
 import CarePlanView from "./pages/CarePlanView";
@@ -57,7 +56,6 @@ function App() {
             <Route path="/branch" element={<Branch />} />
             <Route path="/branch-details/:id" element={<BranchDetails />} />
             <Route path="/branch-admins" element={<BranchAdmins />} />
-            <Route path="/task-matrix" element={<TaskMatrix />} />
             <Route path="/workflow" element={<Workflow />} />
             <Route path="/key-parameters" element={<KeyParameters />} />
             
