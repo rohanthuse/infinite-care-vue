@@ -1,6 +1,4 @@
-
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import { getFormMatrix, getFormCategories } from "@/data/mockFormData";
 import { Form, FormMatrix as FormMatrixType, FormCategory, FormStatus, StaffMember } from "@/types/form";
 import { 
@@ -16,9 +14,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
-import { DashboardHeader } from "@/components/DashboardHeader";
-import { BranchInfoHeader } from "@/components/BranchInfoHeader";
-import { TabNavigation } from "@/components/TabNavigation";
 import FormStatusCell from "@/components/forms/FormStatusCell";
 import FormFilter from "@/components/forms/FormFilter";
 import FormSort, { SortOption } from "@/components/forms/FormSort";
@@ -27,18 +22,9 @@ import AddFormDialog from "@/components/forms/AddFormDialog";
 
 interface FormMatrixProps {
   branchId?: string;
-  branchName?: string;
 }
 
-const FormMatrix: React.FC<FormMatrixProps> = ({ branchId, branchName }) => {
-  const params = useParams();
-  const navigate = useNavigate();
-  const paramBranchId = params.id;
-  const paramBranchName = params.branchName;
-  
-  const currentBranchId = branchId || paramBranchId || "";
-  const currentBranchName = branchName || (paramBranchName ? decodeURIComponent(paramBranchName) : "");
-  
+const FormMatrix: React.FC<FormMatrixProps> = ({ branchId }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<FormCategory | 'all'>('all');
   const [matrixData, setMatrixData] = useState<FormMatrixType>(getFormMatrix());
@@ -46,7 +32,6 @@ const FormMatrix: React.FC<FormMatrixProps> = ({ branchId, branchName }) => {
   const [filteredForms, setFilteredForms] = useState<Form[]>(matrixData.forms);
   const [addFormOpen, setAddFormOpen] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>({ field: "name", direction: "asc" });
-  const [activeTab, setActiveTab] = useState("form-matrix");
   const categories = getFormCategories();
   
   const [advancedFilters, setAdvancedFilters] = useState<{
@@ -200,246 +185,200 @@ const FormMatrix: React.FC<FormMatrixProps> = ({ branchId, branchName }) => {
     return total > 0 ? Math.round((completed / total) * 100) : 0;
   };
   
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    
-    if (currentBranchId && currentBranchName) {
-      if (tab === "overview") {
-        navigate(`/branch-dashboard/${currentBranchId}/${encodeURIComponent(currentBranchName)}`);
-      } else {
-        navigate(`/branch-dashboard/${currentBranchId}/${encodeURIComponent(currentBranchName)}/${tab}`);
-      }
-    }
-  };
-  
-  const handleNewBooking = () => {
-    toast({
-      title: "New Booking",
-      description: "The booking dialog would open here."
-    });
-  };
-  
-  const showFullHeader = !branchId && paramBranchId;
-  
   return (
-    <>
-      {showFullHeader && (
-        <>
-          <DashboardHeader />
-          <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full">
-            <BranchInfoHeader 
-              branchName={currentBranchName} 
-              branchId={currentBranchId}
-              onNewBooking={handleNewBooking}
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Form Matrix</h1>
+        <p className="text-gray-500 mt-2">Track and manage staff form requirements and completion status</p>
+      </div>
+      
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search staff or forms..."
+              className="pl-10 pr-4"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <div className="flex gap-3 flex-wrap">
+            <Tabs value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as (FormCategory | 'all'))} className="w-auto">
+              <TabsList className="bg-gray-100">
+                <TabsTrigger value="all" className="data-[state=active]:bg-white">
+                  All
+                </TabsTrigger>
+                <TabsTrigger value="onboarding" className="data-[state=active]:bg-white">
+                  Onboarding ({categories.find(c => c.category === 'onboarding')?.count || 0})
+                </TabsTrigger>
+                <TabsTrigger value="assessment" className="data-[state=active]:bg-white">
+                  Assessment ({categories.find(c => c.category === 'assessment')?.count || 0})
+                </TabsTrigger>
+                <TabsTrigger value="compliance" className="data-[state=active]:bg-white">
+                  Compliance ({categories.find(c => c.category === 'compliance')?.count || 0})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            <FormFilter onApplyFilters={handleApplyFilters} />
+            
+            <FormSort 
+              onSort={setSortOption} 
+              currentSort={sortOption}
             />
             
-            <div className="mb-6">
-              <TabNavigation 
-                activeTab={activeTab} 
-                onChange={handleTabChange}
-              />
-            </div>
-        </>
-      )}
-      
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Form Matrix</h1>
-          <p className="text-gray-500 mt-2">Track and manage staff form requirements and completion status</p>
-        </div>
-        
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search staff or forms..."
-                className="pl-10 pr-4"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+            <FormExport matrixData={matrixData} />
             
-            <div className="flex gap-3 flex-wrap">
-              <Tabs value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as (FormCategory | 'all'))} className="w-auto">
-                <TabsList className="bg-gray-100">
-                  <TabsTrigger value="all" className="data-[state=active]:bg-white">
-                    All
-                  </TabsTrigger>
-                  <TabsTrigger value="onboarding" className="data-[state=active]:bg-white">
-                    Onboarding ({categories.find(c => c.category === 'onboarding')?.count || 0})
-                  </TabsTrigger>
-                  <TabsTrigger value="assessment" className="data-[state=active]:bg-white">
-                    Assessment ({categories.find(c => c.category === 'assessment')?.count || 0})
-                  </TabsTrigger>
-                  <TabsTrigger value="compliance" className="data-[state=active]:bg-white">
-                    Compliance ({categories.find(c => c.category === 'compliance')?.count || 0})
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-              
-              <FormFilter onApplyFilters={handleApplyFilters} />
-              
-              <FormSort 
-                onSort={setSortOption} 
-                currentSort={sortOption}
-              />
-              
-              <FormExport matrixData={matrixData} />
-              
-              <Button 
-                variant="default" 
-                className="gap-2 whitespace-nowrap bg-blue-600 hover:bg-blue-700"
-                onClick={() => setAddFormOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Add Form</span>
-              </Button>
-              
-              <AddFormDialog 
-                open={addFormOpen} 
-                onOpenChange={setAddFormOpen}
-                onAddForm={handleAddForm} 
-              />
-            </div>
+            <Button 
+              variant="default" 
+              className="gap-2 whitespace-nowrap bg-blue-600 hover:bg-blue-700"
+              onClick={() => setAddFormOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Add Form</span>
+            </Button>
+            
+            <AddFormDialog 
+              open={addFormOpen} 
+              onOpenChange={setAddFormOpen}
+              onAddForm={handleAddForm} 
+            />
           </div>
-        </div>
-        
-        <div className="mb-6">
-          <div className="flex flex-wrap gap-4 mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 flex items-center justify-center">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-              </div>
-              <span className="text-sm text-gray-700">Completed</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 flex items-center justify-center">
-                <CheckCircle className="h-4 w-4 text-blue-600" />
-              </div>
-              <span className="text-sm text-gray-700">Approved</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 flex items-center justify-center">
-                <Clock className="h-4 w-4 text-amber-600" />
-              </div>
-              <span className="text-sm text-gray-700">In Progress</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 flex items-center justify-center">
-                <XCircle className="h-4 w-4 text-red-600" />
-              </div>
-              <span className="text-sm text-gray-700">Rejected</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 flex items-center justify-center">
-                <CircleDashed className="h-4 w-4 text-gray-600" />
-              </div>
-              <span className="text-sm text-gray-700">Not Started</span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="overflow-x-auto border rounded-lg">
-          <Table>
-            <TableHeader className="bg-gray-50">
-              <TableRow>
-                <TableHead className="min-w-[200px] w-[200px]">Staff Member</TableHead>
-                <TableHead className="text-center w-[120px]">Completion</TableHead>
-                {filteredForms.map((form) => (
-                  <TableHead 
-                    key={form.id} 
-                    className="text-center min-w-[100px] p-1"
-                  >
-                    <div className="flex flex-col items-center p-1">
-                      <span className="text-xs font-medium truncate max-w-[100px]" title={form.title}>
-                        {form.title}
-                      </span>
-                      <Badge 
-                        variant="outline" 
-                        className={`text-[10px] mt-1 ${
-                          form.category === 'onboarding' 
-                            ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                            : form.category === 'assessment' 
-                              ? 'bg-green-50 text-green-700 border-green-200'
-                              : form.category === 'feedback'
-                                ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : form.category === 'medical'
-                                ? 'bg-red-50 text-red-700 border-red-200'
-                                : 'bg-purple-50 text-purple-700 border-purple-200'
-                        }`}
-                      >
-                        {form.category}
-                      </Badge>
-                    </div>
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredStaff.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={filteredForms.length + 2} className="text-center py-8">
-                    <div className="flex flex-col items-center justify-center text-gray-500">
-                      <Users className="h-8 w-8 mb-2" />
-                      <p className="text-sm">No staff members found.</p>
-                      <p className="text-xs mt-1">Try adjusting your search criteria.</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredStaff.map((staff) => (
-                  <TableRow key={staff.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={staff.avatar || "/placeholder.svg"} alt={staff.name} />
-                          <AvatarFallback>{staff.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium text-sm">{staff.name}</div>
-                          <div className="text-xs text-gray-500">{staff.role}</div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col items-center gap-1">
-                        <Progress value={calculateCompletionPercentage(staff.id)} className="h-2 w-full" />
-                        <span className="text-xs text-gray-500">
-                          {calculateCompletionPercentage(staff.id)}%
-                        </span>
-                      </div>
-                    </TableCell>
-                    {filteredForms.map((form) => (
-                      <TableCell key={`${staff.id}-${form.id}`} className="p-1 text-center">
-                        {matrixData.data[staff.id]?.[form.id] ? (
-                          <FormStatusCell 
-                            data={matrixData.data[staff.id][form.id]} 
-                            title={form.title}
-                            onClick={() => handleCellClick(staff.id, form.id)}
-                          />
-                        ) : (
-                          <div className="p-2 border rounded-md bg-gray-100 flex flex-col items-center justify-center min-h-[70px] min-w-[70px]">
-                            <CircleDashed className="h-4 w-4 text-gray-400" />
-                            <div className="text-xs font-medium text-gray-400 mt-1">
-                              N/A
-                            </div>
-                          </div>
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
         </div>
       </div>
       
-      {showFullHeader && (
-          </main>
-      )}
-    </>
+      <div className="mb-6">
+        <div className="flex flex-wrap gap-4 mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 flex items-center justify-center">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+            </div>
+            <span className="text-sm text-gray-700">Completed</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 flex items-center justify-center">
+              <CheckCircle className="h-4 w-4 text-blue-600" />
+            </div>
+            <span className="text-sm text-gray-700">Approved</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 flex items-center justify-center">
+              <Clock className="h-4 w-4 text-amber-600" />
+            </div>
+            <span className="text-sm text-gray-700">In Progress</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 flex items-center justify-center">
+              <XCircle className="h-4 w-4 text-red-600" />
+            </div>
+            <span className="text-sm text-gray-700">Rejected</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 flex items-center justify-center">
+              <CircleDashed className="h-4 w-4 text-gray-600" />
+            </div>
+            <span className="text-sm text-gray-700">Not Started</span>
+          </div>
+        </div>
+      </div>
+      
+      <div className="overflow-x-auto border rounded-lg">
+        <Table>
+          <TableHeader className="bg-gray-50">
+            <TableRow>
+              <TableHead className="min-w-[200px] w-[200px]">Staff Member</TableHead>
+              <TableHead className="text-center w-[120px]">Completion</TableHead>
+              {filteredForms.map((form) => (
+                <TableHead 
+                  key={form.id} 
+                  className="text-center min-w-[100px] p-1"
+                >
+                  <div className="flex flex-col items-center p-1">
+                    <span className="text-xs font-medium truncate max-w-[100px]" title={form.title}>
+                      {form.title}
+                    </span>
+                    <Badge 
+                      variant="outline" 
+                      className={`text-[10px] mt-1 ${
+                        form.category === 'onboarding' 
+                          ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                          : form.category === 'assessment' 
+                            ? 'bg-green-50 text-green-700 border-green-200'
+                            : form.category === 'feedback'
+                              ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : form.category === 'medical'
+                              ? 'bg-red-50 text-red-700 border-red-200'
+                              : 'bg-purple-50 text-purple-700 border-purple-200'
+                      }`}
+                    >
+                      {form.category}
+                    </Badge>
+                  </div>
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredStaff.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={filteredForms.length + 2} className="text-center py-8">
+                  <div className="flex flex-col items-center justify-center text-gray-500">
+                    <Users className="h-8 w-8 mb-2" />
+                    <p className="text-sm">No staff members found.</p>
+                    <p className="text-xs mt-1">Try adjusting your search criteria.</p>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredStaff.map((staff) => (
+                <TableRow key={staff.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={staff.avatar || "/placeholder.svg"} alt={staff.name} />
+                        <AvatarFallback>{staff.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium text-sm">{staff.name}</div>
+                        <div className="text-xs text-gray-500">{staff.role}</div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col items-center gap-1">
+                      <Progress value={calculateCompletionPercentage(staff.id)} className="h-2 w-full" />
+                      <span className="text-xs text-gray-500">
+                        {calculateCompletionPercentage(staff.id)}%
+                      </span>
+                    </div>
+                  </TableCell>
+                  {filteredForms.map((form) => (
+                    <TableCell key={`${staff.id}-${form.id}`} className="p-1 text-center">
+                      {matrixData.data[staff.id]?.[form.id] ? (
+                        <FormStatusCell 
+                          data={matrixData.data[staff.id][form.id]} 
+                          title={form.title}
+                          onClick={() => handleCellClick(staff.id, form.id)}
+                        />
+                      ) : (
+                        <div className="p-2 border rounded-md bg-gray-100 flex flex-col items-center justify-center min-h-[70px] min-w-[70px]">
+                          <CircleDashed className="h-4 w-4 text-gray-400" />
+                          <div className="text-xs font-medium text-gray-400 mt-1">
+                            N/A
+                          </div>
+                        </div>
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
   );
 };
 
