@@ -521,6 +521,8 @@ const BranchDashboard = () => {
     }
   };
 
+  const decodedBranchName = branchName ? decodeURIComponent(branchName) : "Med-Infinite Branch";
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -531,7 +533,7 @@ const BranchDashboard = () => {
       
       <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full">
         <BranchInfoHeader 
-          branchName={decodeURIComponent(branchName || "Med-Infinite Branch")} 
+          branchName={decodedBranchName} 
           branchId={id || ""}
           onNewBooking={handleNewBooking}
         />
@@ -748,25 +750,28 @@ const BranchDashboard = () => {
         {activeTab === "workflow" && (
           <WorkflowContent 
             branchId={id || ""} 
-            branchName={branchName}
+            branchName={decodedBranchName}
           />
         )}
         
         {activeTab === "task-matrix" && (
-          <TaskMatrix />
+          <TaskMatrix 
+            branchId={id || ""} 
+            branchName={decodedBranchName}
+          />
         )}
         
         {activeTab === "training-matrix" && (
           <TrainingMatrix 
             branchId={id || ""} 
-            branchName={branchName} 
+            branchName={decodedBranchName}
           />
         )}
         
         {activeTab === "form-matrix" && (
           <FormMatrix 
             branchId={id || ""} 
-            branchName={branchName}
+            branchName={decodedBranchName}
           />
         )}
         

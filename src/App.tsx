@@ -69,13 +69,11 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
             <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
             
-            {/* Branch specific pages that are not integrated with the branch dashboard */}
+            {/* Branch specific pages that are not integrated with the branch dashboard - these should be removed once integrated */}
             <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
             <Route path="/branch-dashboard/:id/:branchName/care-plan/:carePlanId" element={<CarePlanView />} />
-            <Route path="/branch-dashboard/:id/:branchName/training-matrix" element={<TrainingMatrix />} />
-            <Route path="/branch-dashboard/:id/:branchName/form-matrix" element={<FormMatrix />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

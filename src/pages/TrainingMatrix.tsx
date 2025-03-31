@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { getTrainingMatrix, getTrainingCategories } from "@/data/mockTrainingData";
 import { Training, TrainingMatrix as TrainingMatrixType, TrainingCategory, TrainingStatus, StaffMember } from "@/types/training";
@@ -210,9 +211,9 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = ({ branchId, branchName })
     
     if (branchId && branchName) {
       if (tab === "overview") {
-        navigate(`/branch-dashboard/${branchId}/${branchName}`);
+        navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}`);
       } else {
-        navigate(`/branch-dashboard/${branchId}/${branchName}/${tab}`);
+        navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/${tab}`);
       }
     } else {
       navigate(`/${tab}`);
@@ -221,7 +222,7 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = ({ branchId, branchName })
 
   const handleNewBooking = () => {
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/bookings`);
+      navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/bookings`);
     } else {
       navigate('/bookings');
     }

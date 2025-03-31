@@ -32,7 +32,7 @@ const WorkflowContent = ({
 
   const handleTaskMatrixClick = () => {
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/task-matrix`);
+      navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/task-matrix`);
     } else {
       navigate(`/task-matrix`);
     }
@@ -40,7 +40,7 @@ const WorkflowContent = ({
   
   const handleTrainingMatrixClick = () => {
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/training-matrix`);
+      navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/training-matrix`);
     } else {
       navigate(`/training-matrix`);
     }
@@ -48,7 +48,7 @@ const WorkflowContent = ({
   
   const handleFormMatrixClick = () => {
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/form-matrix`);
+      navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-matrix`);
     } else {
       navigate(`/form-matrix`);
     }

@@ -197,9 +197,9 @@ const FormMatrix: React.FC<FormMatrixProps> = ({ branchId, branchName }) => {
     
     if (branchId && branchName) {
       if (tab === "overview") {
-        navigate(`/branch-dashboard/${branchId}/${branchName}`);
+        navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}`);
       } else {
-        navigate(`/branch-dashboard/${branchId}/${branchName}/${tab}`);
+        navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/${tab}`);
       }
     } else {
       navigate(`/${tab}`);
@@ -208,7 +208,7 @@ const FormMatrix: React.FC<FormMatrixProps> = ({ branchId, branchName }) => {
 
   const handleNewBooking = () => {
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/bookings`);
+      navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/bookings`);
     } else {
       navigate('/bookings');
     }
