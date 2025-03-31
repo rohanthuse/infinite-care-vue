@@ -2,7 +2,7 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
-  Bell, AlertTriangle, Clock, Calendar, CheckCircle, FileWarning 
+  Bell, AlertTriangle, Clock, Calendar, CheckCircle, FileWarning, LucideIcon
 } from "lucide-react";
 import NotificationCard, { NotificationCardProps } from "./NotificationCard";
 
@@ -22,7 +22,8 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
     }
   };
 
-  const notificationData: (Omit<NotificationCardProps, "icon"> & { path: string; iconType: React.ElementType })[] = [
+  // Create an array of notification data with proper typing for icons
+  const notificationData: (Omit<NotificationCardProps, "icon"> & { path: string; icon: LucideIcon })[] = [
     {
       title: "System Alerts",
       count: 5,
@@ -31,7 +32,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
       borderColor: "border-red-200",
       description: "Critical system notifications",
       path: "notifications/system",
-      iconType: AlertTriangle
+      icon: AlertTriangle
     },
     {
       title: "Staff Reviews",
@@ -41,7 +42,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
       borderColor: "border-blue-200",
       description: "Due for completion",
       path: "notifications/staff-reviews",
-      iconType: Bell
+      icon: Bell
     },
     {
       title: "Pending Tasks",
@@ -51,7 +52,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
       borderColor: "border-amber-200",
       description: "Requiring attention",
       path: "notifications/pending",
-      iconType: Clock
+      icon: Clock
     },
     {
       title: "Upcoming Appointments",
@@ -61,7 +62,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
       borderColor: "border-purple-200",
       description: "Next 7 days",
       path: "notifications/appointments",
-      iconType: Calendar
+      icon: Calendar
     },
     {
       title: "Completed Actions",
@@ -71,7 +72,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
       borderColor: "border-green-200",
       description: "Last 30 days",
       path: "notifications/completed",
-      iconType: CheckCircle
+      icon: CheckCircle
     },
     {
       title: "Document Updates",
@@ -81,7 +82,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
       borderColor: "border-indigo-200",
       description: "Recently modified",
       path: "notifications/documents",
-      iconType: FileWarning
+      icon: FileWarning
     },
   ];
 
@@ -94,7 +95,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
             key={index}
             title={notification.title}
             count={notification.count}
-            icon={notification.iconType}
+            icon={notification.icon}
             color={notification.color}
             bgColor={notification.bgColor}
             borderColor={notification.borderColor}
