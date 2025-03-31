@@ -13,12 +13,24 @@ interface NotificationsOverviewProps {
 
 const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewProps) => {
   const navigate = useNavigate();
+  const { id, branchName: paramBranchName } = useParams();
+  
+  // Use props if provided, otherwise fall back to URL params
+  const effectiveBranchId = branchId || id;
+  const effectiveBranchName = branchName || paramBranchName;
   
   const handleNavigate = (path: string) => {
-    if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/${path}`);
+    console.log("Navigating to:", path);
+    console.log("Branch ID:", effectiveBranchId);
+    console.log("Branch Name:", effectiveBranchName);
+    
+    if (effectiveBranchId && effectiveBranchName) {
+      const fullPath = `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/notifications/${path}`;
+      console.log("Full navigation path:", fullPath);
+      navigate(fullPath);
     } else {
-      navigate(`/${path}`);
+      console.log("Navigating without branch context");
+      navigate(`/notifications/${path}`);
     }
   };
 
@@ -31,7 +43,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
       bgColor: "bg-red-50",
       borderColor: "border-red-200",
       description: "Critical system notifications",
-      path: "notifications/system",
+      path: "system",
       icon: AlertTriangle
     },
     {
@@ -41,7 +53,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
       bgColor: "bg-blue-50",
       borderColor: "border-blue-200",
       description: "Due for completion",
-      path: "notifications/staff-reviews",
+      path: "staff-reviews",
       icon: Bell
     },
     {
@@ -51,7 +63,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
       bgColor: "bg-amber-50",
       borderColor: "border-amber-200",
       description: "Requiring attention",
-      path: "notifications/pending",
+      path: "pending",
       icon: Clock
     },
     {
@@ -61,7 +73,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
       bgColor: "bg-purple-50",
       borderColor: "border-purple-200",
       description: "Next 7 days",
-      path: "notifications/appointments",
+      path: "appointments",
       icon: Calendar
     },
     {
@@ -71,7 +83,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
       bgColor: "bg-green-50",
       borderColor: "border-green-200",
       description: "Last 30 days",
-      path: "notifications/completed",
+      path: "completed",
       icon: CheckCircle
     },
     {
@@ -81,7 +93,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
       bgColor: "bg-indigo-50",
       borderColor: "border-indigo-200",
       description: "Recently modified",
-      path: "notifications/documents",
+      path: "documents",
       icon: FileWarning
     },
   ];
@@ -100,7 +112,10 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
             bgColor={notification.bgColor}
             borderColor={notification.borderColor}
             description={notification.description}
-            onClick={() => handleNavigate(notification.path)}
+            onClick={() => {
+              console.log(`Clicked on ${notification.title}`);
+              handleNavigate(notification.path);
+            }}
           />
         ))}
       </div>

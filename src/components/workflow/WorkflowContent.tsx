@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import NotificationsOverview from "./NotificationsOverview";
 
 interface WorkflowContentProps {
   branchId?: string;
@@ -19,28 +20,39 @@ const WorkflowContent = ({
   branchName
 }: WorkflowContentProps) => {
   const navigate = useNavigate();
+  const { id, branchName: paramBranchName } = useParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   
+  // Use props if provided, otherwise fall back to URL params
+  const effectiveBranchId = branchId || id;
+  const effectiveBranchName = branchName || paramBranchName;
+  
   const handleNavigate = (path: string) => {
-    if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/${path}`);
+    console.log("WorkflowContent navigating to:", path);
+    console.log("Effective Branch ID:", effectiveBranchId);
+    console.log("Effective Branch Name:", effectiveBranchName);
+    
+    if (effectiveBranchId && effectiveBranchName) {
+      const fullPath = `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/${path}`;
+      console.log("Full path from WorkflowContent:", fullPath);
+      navigate(fullPath);
     } else {
       navigate(`/${path}`);
     }
   };
 
   const handleTaskMatrixClick = () => {
-    if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/task-matrix`);
+    if (effectiveBranchId && effectiveBranchName) {
+      navigate(`/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/task-matrix`);
     } else {
       navigate(`/task-matrix`);
     }
   };
   
   const handleTrainingMatrixClick = () => {
-    if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/training-matrix`);
+    if (effectiveBranchId && effectiveBranchName) {
+      navigate(`/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/training-matrix`);
     } else {
       navigate(`/training-matrix`);
     }
@@ -52,7 +64,7 @@ const WorkflowContent = ({
         <p className="text-gray-500 mt-2 font-medium">Manage and monitor all workflow processes</p>
       </div>
       
-      
+      <NotificationsOverview branchId={effectiveBranchId} branchName={effectiveBranchName} />
       
       <motion.div initial={{
       opacity: 0
