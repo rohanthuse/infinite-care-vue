@@ -29,6 +29,7 @@ import WorkflowContent from "@/components/workflow/WorkflowContent";
 import { MedicationTab } from "@/components/medication/MedicationTab";
 import { CareTab } from "@/components/care/CareTab";
 import NotificationsOverview from "@/components/workflow/NotificationsOverview";
+import TaskMatrix from "./TaskMatrix";
 
 const weeklyData = [{
   day: "Mon",
@@ -351,6 +352,7 @@ const BranchDashboard = () => {
     if (restPath) {
       if (restPath.startsWith("key-parameters")) return "key-parameters";
       if (restPath.startsWith("workflow")) return "workflow";
+      if (restPath.startsWith("task-matrix")) return "task-matrix";
       if (restPath.startsWith("bookings")) return "bookings";
       if (restPath.startsWith("carers")) return "carers";
       if (restPath.startsWith("clients")) return "clients";
@@ -367,6 +369,7 @@ const BranchDashboard = () => {
     if (restPath) {
       if (restPath.startsWith("key-parameters")) setActiveTab("key-parameters");
       else if (restPath.startsWith("workflow")) setActiveTab("workflow");
+      else if (restPath.startsWith("task-matrix")) setActiveTab("task-matrix");
       else if (restPath.startsWith("bookings")) setActiveTab("bookings");
       else if (restPath.startsWith("carers")) setActiveTab("carers");
       else if (restPath.startsWith("clients")) setActiveTab("clients");
@@ -539,6 +542,8 @@ const BranchDashboard = () => {
                 navigate(`/branch-dashboard/${id}/${branchName}/key-parameters`);
               } else if (tab === "workflow") {
                 navigate(`/branch-dashboard/${id}/${branchName}/workflow`);
+              } else if (tab === "task-matrix") {
+                navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
               } else {
                 navigate(`/branch-dashboard/${id}/${branchName}/${tab}`);
               }
@@ -895,6 +900,8 @@ const BranchDashboard = () => {
         {activeTab === "key-parameters" && <KeyParametersContent branchId={id} branchName={branchName} />}
         
         {activeTab === "workflow" && <WorkflowContent branchId={id} branchName={branchName} />}
+      
+        {activeTab === "task-matrix" && <TaskMatrix />}
       
         {activeTab === "bookings" && <BookingsTab branchId={id} branchName={branchName} />}
       

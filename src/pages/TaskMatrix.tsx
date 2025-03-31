@@ -1,8 +1,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { DashboardHeader } from "@/components/DashboardHeader";
-import { TabNavigation } from "@/components/TabNavigation";
 import { getTaskColumns, filterTasksByView } from "@/data/mockTaskData";
 import { Task, TaskColumn as TaskColumnType, TaskStatus, TaskView } from "@/types/task";
 import TaskColumn from "@/components/tasks/TaskColumn";
@@ -15,7 +13,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 
 interface DragItem {
   taskId: string;
