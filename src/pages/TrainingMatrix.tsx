@@ -1,59 +1,135 @@
-
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { getTrainingMatrix, getTrainingCategories, filterTrainingsByCategory } from "@/data/mockTrainingData";
-import { Training, TrainingMatrix as TrainingMatrixType, TrainingCategory, StaffMember } from "@/types/training";
+import { getTrainingMatrix, getTrainingCategories } from "@/data/mockTrainingData";
+import { Training, TrainingMatrix as TrainingMatrixType, TrainingCategory, TrainingStatus, StaffMember } from "@/types/training";
 import { 
-  Search, Filter, Download, Plus, Users, 
-  GraduationCap, SlidersHorizontal, CheckCircle2, 
-  Clock, XCircle, CircleDashed
+  Search, Plus, Users, CheckCircle2, Clock, XCircle, CircleDashed
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 import TrainingStatusCell from "@/components/training/TrainingStatusCell";
+import TrainingFilter from "@/components/training/TrainingFilter";
+import TrainingSort, { SortOption } from "@/components/training/TrainingSort";
+import TrainingExport from "@/components/training/TrainingExport";
+import AddTrainingDialog from "@/components/training/AddTrainingDialog";
 
 const TrainingMatrix: React.FC = () => {
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<TrainingCategory | 'all'>('all');
   const [matrixData, setMatrixData] = useState<TrainingMatrixType>(getTrainingMatrix());
   const [filteredStaff, setFilteredStaff] = useState<StaffMember[]>(matrixData.staffMembers);
   const [filteredTrainings, setFilteredTrainings] = useState<Training[]>(matrixData.trainings);
+  const [addTrainingOpen, setAddTrainingOpen] = useState(false);
+  const [sortOption, setSortOption] = useState<SortOption>({ field: "name", direction: "asc" });
   const categories = getTrainingCategories();
   
-  // Filter staff and trainings based on search term and category
+  // Advanced filter state
+  const [advancedFilters, setAdvancedFilters] = useState<{
+    categories: TrainingCategory[];
+    statuses: TrainingStatus[];
+    expiryRange: string;
+  }>({
+    categories: [],
+    statuses: [],
+    expiryRange: "all"
+  });
+  
+  // Apply all filters and sorting to the data
   useEffect(() => {
-    const staffMatches = matrixData.staffMembers.filter(staff => 
+    let staffMatches = matrixData.staffMembers.filter(staff => 
       staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       staff.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
       staff.department.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
-    setFilteredStaff(staffMatches);
-    
-    const trainingsMatches = filterTrainingsByCategory(
-      matrixData.trainings.filter(training => 
-        training.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        training.description.toLowerCase().includes(searchTerm.toLowerCase())
-      ),
-      categoryFilter
+    let trainingsMatches = matrixData.trainings.filter(training => 
+      training.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      training.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
+    // Apply advanced category filters if any are selected
+    if (advancedFilters.categories.length > 0) {
+      trainingsMatches = trainingsMatches.filter(training => 
+        advancedFilters.categories.includes(training.category)
+      );
+    } 
+    // Otherwise apply the tab filter
+    else if (categoryFilter !== 'all') {
+      trainingsMatches = trainingsMatches.filter(training => 
+        training.category === categoryFilter
+      );
+    }
+    
+    // Apply status filters if any are selected
+    if (advancedFilters.statuses.length > 0) {
+      // This is more complex as we need to check the status for each staff member
+      // We'll keep staff members who have at least one training with the selected status
+      staffMatches = staffMatches.filter(staff => {
+        return trainingsMatches.some(training => {
+          const cell = matrixData.data[staff.id]?.[training.id];
+          return cell && advancedFilters.statuses.includes(cell.status);
+        });
+      });
+    }
+    
+    // Apply expiry range filter
+    if (advancedFilters.expiryRange !== "all") {
+      const today = new Date();
+      
+      // If filtering for expired trainings
+      if (advancedFilters.expiryRange === "expired") {
+        staffMatches = staffMatches.filter(staff => {
+          return trainingsMatches.some(training => {
+            const cell = matrixData.data[staff.id]?.[training.id];
+            return cell && cell.expiryDate && new Date(cell.expiryDate) < today;
+          });
+        });
+      } 
+      // If filtering for trainings expiring in X days
+      else {
+        const days = parseInt(advancedFilters.expiryRange.replace("days", ""));
+        const futureDate = new Date(today);
+        futureDate.setDate(today.getDate() + days);
+        
+        staffMatches = staffMatches.filter(staff => {
+          return trainingsMatches.some(training => {
+            const cell = matrixData.data[staff.id]?.[training.id];
+            if (cell && cell.expiryDate) {
+              const expiryDate = new Date(cell.expiryDate);
+              return expiryDate >= today && expiryDate <= futureDate;
+            }
+            return false;
+          });
+        });
+      }
+    }
+    
+    // Apply sorting
+    const sortedStaff = [...staffMatches].sort((a, b) => {
+      if (sortOption.field === "name") {
+        return sortOption.direction === "asc" 
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name);
+      } else if (sortOption.field === "completion") {
+        const completionA = calculateCompletionPercentage(a.id);
+        const completionB = calculateCompletionPercentage(b.id);
+        return sortOption.direction === "asc" 
+          ? completionA - completionB
+          : completionB - completionA;
+      }
+      return 0;
+    });
+    
+    setFilteredStaff(sortedStaff);
     setFilteredTrainings(trainingsMatches);
-  }, [searchTerm, categoryFilter, matrixData]);
+  }, [searchTerm, categoryFilter, matrixData, advancedFilters, sortOption]);
   
   const handleCellClick = (staffId: string, trainingId: string) => {
     toast({
@@ -66,11 +142,45 @@ const TrainingMatrix: React.FC = () => {
     });
   };
   
-  const handleAddTraining = () => {
+  const handleAddTraining = (trainingData: any) => {
+    // Add the new training to the mock data
+    const updatedTrainings = [...matrixData.trainings, trainingData];
+    
+    // Update the matrix data with the new training
+    const updatedMatrixData = {
+      ...matrixData,
+      trainings: updatedTrainings,
+      // Initialize the new training with "not-started" status for all staff
+      data: {
+        ...matrixData.data,
+        ...Object.fromEntries(
+          matrixData.staffMembers.map(staff => [
+            staff.id,
+            {
+              ...matrixData.data[staff.id],
+              [trainingData.id]: {
+                status: "not-started" as const
+              }
+            }
+          ])
+        )
+      }
+    };
+    
+    setMatrixData(updatedMatrixData);
+    
     toast({
-      title: "Add Training",
-      description: "This feature will be implemented soon.",
+      title: "Training Added",
+      description: `${trainingData.title} has been added successfully.`,
     });
+  };
+  
+  const handleApplyFilters = (filters: {
+    categories: TrainingCategory[];
+    statuses: TrainingStatus[];
+    expiryRange: string;
+  }) => {
+    setAdvancedFilters(filters);
   };
   
   const calculateCompletionPercentage = (staffId: string): number => {
@@ -121,29 +231,29 @@ const TrainingMatrix: React.FC = () => {
               </TabsList>
             </Tabs>
             
-            <Button variant="outline" className="gap-2 whitespace-nowrap">
-              <Filter className="h-4 w-4" />
-              <span className="hidden sm:inline">Filter</span>
-            </Button>
+            <TrainingFilter onApplyFilters={handleApplyFilters} />
             
-            <Button variant="outline" className="gap-2 whitespace-nowrap">
-              <SlidersHorizontal className="h-4 w-4" />
-              <span className="hidden sm:inline">Sort</span>
-            </Button>
+            <TrainingSort 
+              onSort={setSortOption} 
+              currentSort={sortOption}
+            />
             
-            <Button variant="outline" className="gap-2 whitespace-nowrap">
-              <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Export</span>
-            </Button>
+            <TrainingExport matrixData={matrixData} />
             
             <Button 
               variant="default" 
               className="gap-2 whitespace-nowrap bg-blue-600 hover:bg-blue-700"
-              onClick={handleAddTraining}
+              onClick={() => setAddTrainingOpen(true)}
             >
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Add Training</span>
             </Button>
+            
+            <AddTrainingDialog 
+              open={addTrainingOpen} 
+              onOpenChange={setAddTrainingOpen}
+              onAddTraining={handleAddTraining} 
+            />
           </div>
         </div>
       </div>

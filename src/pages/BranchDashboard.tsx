@@ -352,22 +352,17 @@ const BranchDashboard = () => {
   const getTabFromPath = (path?: string): string => {
     if (!path) return "overview";
     
-    const pathSegments = path.split('/');
-    const restPath = pathSegments.slice(2).join('/');
-    
-    if (restPath) {
-      if (restPath.startsWith("key-parameters")) return "key-parameters";
-      if (restPath.startsWith("workflow")) return "workflow";
-      if (restPath.startsWith("task-matrix")) return "task-matrix";
-      if (restPath.startsWith("training-matrix")) return "training-matrix";
-      if (restPath.startsWith("bookings")) return "bookings";
-      if (restPath.startsWith("carers")) return "carers";
-      if (restPath.startsWith("clients")) return "clients";
-      if (restPath.startsWith("communications")) return "communications";
-      if (restPath.startsWith("medication")) return "medication";
-      if (restPath.startsWith("reviews")) return "reviews";
-      if (restPath.startsWith("care")) return "care";
-    }
+    if (path.startsWith("key-parameters")) return "key-parameters";
+    if (path.startsWith("workflow")) return "workflow";
+    if (path.startsWith("task-matrix")) return "task-matrix";
+    if (path.startsWith("training-matrix")) return "training-matrix";
+    if (path.startsWith("bookings")) return "bookings";
+    if (path.startsWith("carers")) return "carers";
+    if (path.startsWith("clients")) return "clients";
+    if (path.startsWith("communications")) return "communications";
+    if (path.startsWith("medication")) return "medication";
+    if (path.startsWith("reviews")) return "reviews";
+    if (path.startsWith("care")) return "care";
     
     return "overview";
   };
@@ -375,26 +370,15 @@ const BranchDashboard = () => {
   const [activeTab, setActiveTab] = useState(getTabFromPath(restPath));
   
   useEffect(() => {
-    const restPath = location.pathname.split(`/branch-dashboard/${id}/${branchName}/`)[1];
-    
-    if (restPath) {
-      if (restPath.startsWith("key-parameters")) setActiveTab("key-parameters");
-      else if (restPath.startsWith("workflow")) setActiveTab("workflow");
-      else if (restPath.startsWith("task-matrix")) setActiveTab("task-matrix");
-      else if (restPath.startsWith("training-matrix")) setActiveTab("training-matrix");
-      else if (restPath.startsWith("bookings")) setActiveTab("bookings");
-      else if (restPath.startsWith("carers")) setActiveTab("carers");
-      else if (restPath.startsWith("clients")) setActiveTab("clients");
-      else if (restPath.startsWith("communications")) setActiveTab("communications");
-      else if (restPath.startsWith("medication")) setActiveTab("medication");
-      else if (restPath.startsWith("reviews")) setActiveTab("reviews");
-      else if (restPath.startsWith("care")) setActiveTab("care");
-      else setActiveTab("overview");
-    } else {
-      setActiveTab("overview");
+    let path = "";
+    const parts = location.pathname.split('/');
+    if (parts.length > 4) {
+      path = parts.slice(4).join('/');
     }
-  }, [location.pathname, id, branchName]);
-  
+    
+    setActiveTab(getTabFromPath(path));
+  }, [location.pathname]);
+
   const [searchValue, setSearchValue] = useState("");
   const [clientSearchValue, setClientSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -551,23 +535,7 @@ const BranchDashboard = () => {
         <div className="mb-6">
           <TabNavigation 
             activeTab={activeTab} 
-            onChange={(tab) => {
-              setActiveTab(tab);
-              
-              if (tab === "overview") {
-                navigate(`/branch-dashboard/${id}/${branchName}`);
-              } else if (tab === "key-parameters") {
-                navigate(`/branch-dashboard/${id}/${branchName}/key-parameters`);
-              } else if (tab === "workflow") {
-                navigate(`/branch-dashboard/${id}/${branchName}/workflow`);
-              } else if (tab === "task-matrix") {
-                navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
-              } else if (tab === "training-matrix") {
-                navigate(`/branch-dashboard/${id}/${branchName}/training-matrix`);
-              } else {
-                navigate(`/branch-dashboard/${id}/${branchName}/${tab}`);
-              }
-            }}
+            onChange={handleTabChange}
           />
         </div>
         
