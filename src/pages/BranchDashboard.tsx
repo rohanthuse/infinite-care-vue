@@ -759,17 +759,17 @@ const BranchDashboard = () => {
           </motion.div>
         )}
         
-        {activeTab === "key-parameters" && <KeyParametersContent branchId={id} branchName={paramBranchName} />}
-        {activeTab === "workflow" && <WorkflowContent branchId={id} branchName={paramBranchName} />}
-        {activeTab === "task-matrix" && <TaskMatrix branchId={id} branchName={paramBranchName} />}
-        {activeTab === "training-matrix" && <TrainingMatrix branchId={id} branchName={paramBranchName} />}
-        {activeTab === "notifications" && <NotificationsOverview branchId={id} branchName={paramBranchName} />}
+        {activeTab === "key-parameters" && <KeyParametersContent branchId={id} branchName={branchName} />}
+        {activeTab === "workflow" && <WorkflowContent branchId={id} branchName={branchName} />}
+        {activeTab === "task-matrix" && <TaskMatrix branchId={id} branchName={branchName} />}
+        {activeTab === "training-matrix" && <TrainingMatrix branchId={id} branchName={branchName} />}
+        {activeTab === "notifications" && <NotificationsOverview branchId={id} branchName={branchName} />}
         {activeTab === "bookings" && <BookingsTab />}
         {activeTab === "carers" && <CarersTab />}
         {activeTab === "communications" && <CommunicationsTab />}
-        {activeTab === "medication" && <MedicationTab />}
+        {activeTab === "medication" && <MedicationTab branchId={id} branchName={branchName} />}
         {activeTab === "reviews" && <ReviewsTab />}
-        {activeTab === "care" && <CareTab />}
+        {activeTab === "care" && <CareTab branchId={id} branchName={branchName} />}
       </main>
     </div>
   );

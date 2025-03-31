@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -150,12 +149,12 @@ const assignedToOptions = [
   { value: "Nurse Michael Scott", label: "Nurse Michael Scott" }
 ];
 
-interface CareTabProps {
-  branchId: string | undefined;
-  branchName: string | undefined;
+export interface CareTabProps {
+  branchId?: string;
+  branchName?: string;
 }
 
-export const CareTab = ({ branchId, branchName }: CareTabProps) => {
+export const CareTab: React.FC<CareTabProps> = ({ branchId, branchName }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
