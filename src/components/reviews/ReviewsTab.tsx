@@ -1,274 +1,335 @@
-
-import React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Star, Download, Filter, Plus, ThumbsUp, User, Calendar, MessageSquare } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Search, Filter, Star, ThumbsUp, ThumbsDown, ChevronLeft, ChevronRight, Download, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export interface ReviewsTabProps {
-  branchId: string;
-  branchName: string;
+  branchId?: string;
+  branchName?: string;
 }
 
+const mockReviews = [
+  {
+    id: "REV-001",
+    clientName: "Pender, Eva",
+    clientInitials: "EP",
+    carerName: "Warren, Susan",
+    carerInitials: "WS",
+    rating: 5,
+    comment: "Excellent care and attention to detail. Susan was very professional and caring.",
+    date: "26/01/2023",
+    status: "Published"
+  },
+  {
+    id: "REV-002",
+    clientName: "Pender, Eva",
+    clientInitials: "EP",
+    carerName: "Charuma, Charmaine",
+    carerInitials: "CC",
+    rating: 5,
+    comment: "Very professional and friendly service. Would highly recommend.",
+    date: "26/01/2023",
+    status: "Published"
+  },
+  {
+    id: "REV-003",
+    clientName: "Fulcher, Patricia",
+    clientInitials: "FP",
+    carerName: "Ayo-Famure, Opeyemi",
+    carerInitials: "AF",
+    rating: 4,
+    comment: "Good service but arrived a bit late. Otherwise very satisfied with the care provided.",
+    date: "22/01/2023",
+    status: "Published"
+  },
+  {
+    id: "REV-004",
+    clientName: "Baulch, Ursula",
+    clientInitials: "BU",
+    carerName: "Smith, John",
+    carerInitials: "SJ",
+    rating: 3,
+    comment: "Average service. Could improve on timeliness and communication.",
+    date: "18/01/2023",
+    status: "Under Review"
+  },
+  {
+    id: "REV-005",
+    clientName: "Ren, Victoria",
+    clientInitials: "RV",
+    carerName: "Williams, Mary",
+    carerInitials: "WM",
+    rating: 5,
+    comment: "Exceptional service. Mary was attentive and professional throughout.",
+    date: "15/01/2023",
+    status: "Published"
+  },
+  {
+    id: "REV-006",
+    clientName: "Iyaniwura, Ifeoluwa",
+    clientInitials: "II",
+    carerName: "Warren, Susan",
+    carerInitials: "WS",
+    rating: 2,
+    comment: "Disappointed with the service. Carer was late and seemed rushed.",
+    date: "10/01/2023",
+    status: "Under Review"
+  },
+  {
+    id: "REV-007",
+    clientName: "Johnson, Andrew",
+    clientInitials: "JA",
+    carerName: "Charuma, Charmaine",
+    carerInitials: "CC",
+    rating: 5,
+    comment: "Charmaine is an excellent carer. Very attentive and professional.",
+    date: "05/01/2023",
+    status: "Published"
+  },
+  {
+    id: "REV-008",
+    clientName: "Mistry, Sanjay",
+    clientInitials: "MS",
+    carerName: "Ayo-Famure, Opeyemi",
+    carerInitials: "AF",
+    rating: 4,
+    comment: "Good service overall. Would use again.",
+    date: "02/01/2023",
+    status: "Published"
+  }
+];
+
 const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
-  // Sample review data
-  const reviews = [
-    {
-      id: 1,
-      clientName: "John Smith",
-      carerName: "Sarah Johnson",
-      rating: 5,
-      comment: "Excellent care provided. Very attentive and professional.",
-      date: "2023-06-15",
-      status: "Published"
-    },
-    {
-      id: 2,
-      clientName: "Emma Williams",
-      carerName: "Michael Brown",
-      rating: 4,
-      comment: "Good service overall. Would recommend.",
-      date: "2023-06-10",
-      status: "Published"
-    },
-    {
-      id: 3,
-      clientName: "Robert Davis",
-      carerName: "Jessica Wilson",
-      rating: 3,
-      comment: "Satisfactory service but room for improvement in communication.",
-      date: "2023-06-05",
-      status: "Under Review"
-    },
-    {
-      id: 4,
-      clientName: "Patricia Miller",
-      carerName: "David Taylor",
-      rating: 5,
-      comment: "Exceptional care and support. Very happy with the service.",
-      date: "2023-05-28",
-      status: "Published"
-    },
-    {
-      id: 5,
-      clientName: "Thomas Anderson",
-      carerName: "Jennifer Martinez",
-      rating: 2,
-      comment: "Service was below expectations. Carer was often late.",
-      date: "2023-05-20",
-      status: "Under Review"
+  const [activeTab, setActiveTab] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [ratingFilter, setRatingFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  const filteredReviews = mockReviews.filter(review => {
+    const matchesSearch = 
+      review.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      review.carerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      review.comment.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || review.status === statusFilter;
+    const matchesRating = ratingFilter === "all" || review.rating === parseInt(ratingFilter);
+    
+    return matchesSearch && matchesStatus && matchesRating;
+  });
+
+  const totalPages = Math.ceil(filteredReviews.length / itemsPerPage);
+  const paginatedReviews = filteredReviews.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
     }
-  ];
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const renderStars = (rating: number) => {
+    return Array(5).fill(0).map((_, i) => (
+      <Star 
+        key={i} 
+        className={`h-4 w-4 ${i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
+      />
+    ));
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Client Reviews for {branchName}</h2>
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm">
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Request Review
-          </Button>
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+      <div className="p-6 border-b border-gray-100">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">Reviews & Feedback</h2>
+            <p className="text-gray-500 text-sm mt-1">
+              Manage and respond to client reviews and feedback
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="h-9">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button variant="outline" size="sm" className="h-9">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          </div>
         </div>
+        
+        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="all">All Reviews</TabsTrigger>
+            <TabsTrigger value="published">Published</TabsTrigger>
+            <TabsTrigger value="pending">Pending Review</TabsTrigger>
+            <TabsTrigger value="negative">Negative</TabsTrigger>
+          </TabsList>
+          
+          <div className="flex flex-col md:flex-row gap-3 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input 
+                placeholder="Search reviews..." 
+                className="pl-10 pr-4" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-3">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="Published">Published</SelectItem>
+                  <SelectItem value="Under Review">Under Review</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={ratingFilter} onValueChange={setRatingFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by rating" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Ratings</SelectItem>
+                  <SelectItem value="5">5 Stars</SelectItem>
+                  <SelectItem value="4">4 Stars</SelectItem>
+                  <SelectItem value="3">3 Stars</SelectItem>
+                  <SelectItem value="2">2 Stars</SelectItem>
+                  <SelectItem value="1">1 Star</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </Tabs>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">Overall Rating</CardTitle>
-            <CardDescription>Branch: {branchId}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center">
-              <div className="text-4xl font-bold text-yellow-500">4.2</div>
-              <div className="flex ml-2">
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <Star className="h-5 w-5 text-gray-300" />
-              </div>
-            </div>
-            <p className="text-center text-sm text-gray-500 mt-1">Based on 27 reviews</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">5 Star Reviews</CardTitle>
-            <CardDescription>Excellent feedback</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400 mr-2" />
-                <span className="text-sm font-medium">5 stars</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-24 h-2 bg-gray-200 rounded-full mr-2">
-                  <div className="h-full bg-yellow-400 rounded-full" style={{ width: '65%' }}></div>
-                </div>
-                <span className="text-sm font-medium">65%</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">Recent Comments</CardTitle>
-            <CardDescription>Last 7 days</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <div className="flex items-center text-sm text-green-600">
-              <span className="mr-1">↑</span>
-              <span>33% from last week</span>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">Response Rate</CardTitle>
-            <CardDescription>Staff engagement</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">92%</div>
-            <div className="flex items-center text-sm text-green-600">
-              <span className="mr-1">↑</span>
-              <span>5% from last month</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Reviews</CardTitle>
-          <CardDescription>Monitor and manage client feedback</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead>Carer</TableHead>
-                <TableHead>Rating</TableHead>
-                <TableHead>Comment</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {reviews.map((review) => (
-                <TableRow key={review.id}>
-                  <TableCell className="font-medium">{review.clientName}</TableCell>
-                  <TableCell>{review.carerName}</TableCell>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-white hover:bg-gray-50/90">
+              <TableHead className="text-gray-600 font-medium w-[100px]">Review ID</TableHead>
+              <TableHead className="text-gray-600 font-medium">Client</TableHead>
+              <TableHead className="text-gray-600 font-medium">Carer</TableHead>
+              <TableHead className="text-gray-600 font-medium">Rating</TableHead>
+              <TableHead className="text-gray-600 font-medium">Comment</TableHead>
+              <TableHead className="text-gray-600 font-medium">Date</TableHead>
+              <TableHead className="text-gray-600 font-medium">Status</TableHead>
+              <TableHead className="text-gray-600 font-medium text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paginatedReviews.length > 0 ? (
+              paginatedReviews.map((review) => (
+                <TableRow key={review.id} className="hover:bg-gray-50 border-t border-gray-100">
+                  <TableCell className="font-medium">{review.id}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-8 w-8 bg-blue-100 text-blue-600">
+                        <AvatarFallback>{review.clientInitials}</AvatarFallback>
+                      </Avatar>
+                      <span>{review.clientName}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-8 w-8 bg-purple-100 text-purple-600">
+                        <AvatarFallback>{review.carerInitials}</AvatarFallback>
+                      </Avatar>
+                      <span>{review.carerName}</span>
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <div className="flex">
-                      {Array(review.rating).fill(0).map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      ))}
-                      {Array(5 - review.rating).fill(0).map((_, i) => (
-                        <Star key={i} className="h-4 w-4 text-gray-300" />
-                      ))}
+                      {renderStars(review.rating)}
                     </div>
                   </TableCell>
                   <TableCell className="max-w-xs truncate">{review.comment}</TableCell>
                   <TableCell>{review.date}</TableCell>
                   <TableCell>
-                    <Badge className={review.status === "Published" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}>
+                    <Badge 
+                      variant="outline" 
+                      className={`
+                        ${review.status === "Published" ? "bg-green-50 text-green-700 border-0" : ""}
+                        ${review.status === "Under Review" ? "bg-amber-50 text-amber-700 border-0" : ""}
+                        px-3 py-1 rounded-full
+                      `}
+                    >
                       {review.status}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">View Details</Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button variant="ghost" size="sm" className="h-8 px-2">
+                        <ThumbsUp className="h-4 w-4 mr-1" />
+                        Approve
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-8 px-2">
+                        <ThumbsDown className="h-4 w-4 mr-1" />
+                        Reject
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Rated Carers</CardTitle>
-            <CardDescription>Highest client satisfaction</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                      <User className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="font-medium">Sarah Johnson</div>
-                      <div className="text-sm text-gray-500">12 recent reviews</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="mr-2 text-sm font-medium">4.9</div>
-                    <div className="flex">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Review Metrics</CardTitle>
-            <CardDescription>Key performance indicators</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <ThumbsUp className="h-5 w-5 text-green-500 mr-2" />
-                  <span>Positive Reviews</span>
-                </div>
-                <div className="font-medium">78%</div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Calendar className="h-5 w-5 text-blue-500 mr-2" />
-                  <span>Average Response Time</span>
-                </div>
-                <div className="font-medium">1.3 days</div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <MessageSquare className="h-5 w-5 text-purple-500 mr-2" />
-                  <span>Total Comments</span>
-                </div>
-                <div className="font-medium">142</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-6 text-gray-500">
+                  No reviews found matching your search criteria.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
+      
+      {paginatedReviews.length > 0 && (
+        <div className="flex items-center justify-between p-4 border-t border-gray-100">
+          <div className="text-sm text-gray-500">
+            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredReviews.length)} of {filteredReviews.length} reviews
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}
+              className="h-8"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+              className="h-8"
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

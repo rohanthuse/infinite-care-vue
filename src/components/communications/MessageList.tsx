@@ -1,117 +1,264 @@
+import React, { useEffect } from "react";
+import { format } from "date-fns";
+import { 
+  FileText, AlertCircle
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
-import React from "react";
+// Mocked data - would come from an API
+const mockMessages = [
+  {
+    id: "msg-1",
+    sender: { id: "carer-1", name: "Charuma, Charmaine", avatar: "CC", type: "carer" },
+    recipients: [{ id: "admin", name: "Branch Admin", type: "admin" }],
+    subject: "Scheduling question for next week",
+    content: "Hello, I wanted to ask about the schedule for next week...",
+    timestamp: new Date("2023-05-15T10:30:00"),
+    isRead: false,
+    hasAttachments: false,
+    priority: "medium",
+    labels: ["schedule"]
+  },
+  {
+    id: "msg-2",
+    sender: { id: "client-1", name: "Pender, Eva", avatar: "EP", type: "client" },
+    recipients: [{ id: "admin", name: "Branch Admin", type: "admin" }],
+    subject: "Medication updates",
+    content: "Please note that my medication has been updated by my doctor...",
+    timestamp: new Date("2023-05-14T15:45:00"),
+    isRead: true,
+    hasAttachments: true,
+    priority: "high",
+    labels: ["medication", "important"]
+  },
+  {
+    id: "msg-3",
+    sender: { id: "carer-2", name: "Warren, Susan", avatar: "WS", type: "carer" },
+    recipients: [{ id: "admin", name: "Branch Admin", type: "admin" }],
+    subject: "Training completion certificate",
+    content: "Attached is my completed training certificate as requested...",
+    timestamp: new Date("2023-05-13T09:20:00"),
+    isRead: true,
+    hasAttachments: true,
+    priority: "low",
+    labels: ["training"]
+  },
+  {
+    id: "msg-4",
+    sender: { id: "client-2", name: "Fulcher, Patricia", avatar: "FP", type: "client" },
+    recipients: [{ id: "admin", name: "Branch Admin", type: "admin" }],
+    subject: "Feedback on recent visit",
+    content: "I wanted to share some feedback about the carer who visited yesterday...",
+    timestamp: new Date("2023-05-12T17:10:00"),
+    isRead: false,
+    hasAttachments: false,
+    priority: "medium",
+    labels: ["feedback"]
+  },
+  {
+    id: "msg-5",
+    sender: { id: "admin", name: "Branch Admin", avatar: "B", type: "admin" },
+    recipients: [
+      { id: "carer-1", name: "Charuma, Charmaine", type: "carer" },
+      { id: "carer-2", name: "Warren, Susan", type: "carer" },
+      { id: "carer-3", name: "Ayo-Famure, Opeyemi", type: "carer" }
+    ],
+    subject: "New policies announcement",
+    content: "Please review the updated company policies attached...",
+    timestamp: new Date("2023-05-11T11:00:00"),
+    isRead: true,
+    hasAttachments: true,
+    priority: "high",
+    labels: ["policy", "important"]
+  },
+  {
+    id: "msg-6",
+    sender: { id: "admin", name: "Branch Admin", avatar: "B", type: "admin" },
+    recipients: [
+      { id: "client-1", name: "Pender, Eva", type: "client" },
+      { id: "client-2", name: "Fulcher, Patricia", type: "client" },
+      { id: "client-3", name: "Baulch, Ursula", type: "client" }
+    ],
+    subject: "Holiday schedule changes",
+    content: "Due to the upcoming holiday, there will be some changes to the schedule...",
+    timestamp: new Date("2023-05-10T14:20:00"),
+    isRead: true,
+    hasAttachments: false,
+    priority: "medium",
+    labels: ["schedule"]
+  }
+];
 
-export interface MessageListProps {
+interface MessageListProps {
   branchId: string;
   onMessageSelect: (messageId: string) => void;
   selectedMessageId: string | null;
-  selectedFilter: "all" | "carers" | "clients" | "groups";
+  selectedFilter: string;
   searchTerm: string;
+  priorityFilter?: string;
+  readFilter?: string;
+  dateFilter?: string;
 }
 
-export const MessageList: React.FC<MessageListProps> = ({ 
+export const MessageList = ({ 
   branchId, 
-  onMessageSelect, 
+  onMessageSelect,
   selectedMessageId,
   selectedFilter,
-  searchTerm
-}) => {
-  // Mock messages
-  const messages = [
-    { 
-      id: "msg1", 
-      sender: "John Doe",
-      avatar: "JD",
-      subject: "Schedule Change Request",
-      content: "I need to change my schedule for next week...",
-      time: "10:30 AM",
-      date: "2023-06-15",
-      unread: true,
-      type: "clients"
-    },
-    { 
-      id: "msg2", 
-      sender: "Mary Smith",
-      avatar: "MS",
-      subject: "Medication Question",
-      content: "I have a question about the new medication...",
-      time: "Yesterday",
-      date: "2023-06-14",
-      unread: false,
-      type: "clients"
-    },
-    { 
-      id: "msg3", 
-      sender: "James Wilson",
-      avatar: "JW",
-      subject: "Availability Update",
-      content: "I'm available for extra shifts next month...",
-      time: "Monday",
-      date: "2023-06-12",
-      unread: true,
-      type: "carers"
-    }
-  ];
-
-  // Filter messages based on filter and search term
-  const filteredMessages = messages.filter(msg => {
-    const matchesFilter = selectedFilter === "all" || msg.type === selectedFilter;
-    const matchesSearch = 
-      msg.sender.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      msg.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      msg.content.toLowerCase().includes(searchTerm.toLowerCase());
+  searchTerm,
+  priorityFilter,
+  readFilter,
+  dateFilter
+}: MessageListProps) => {
+  // Filter messages based on selected filter and search term
+  const filteredMessages = mockMessages.filter(message => {
+    // Apply type filter
+    const matchesType = 
+      selectedFilter === "all" ? true :
+      selectedFilter === "carers" ? message.sender.type === "carer" || 
+                                   message.recipients.some(r => r.type === "carer") :
+      selectedFilter === "clients" ? message.sender.type === "client" || 
+                                    message.recipients.some(r => r.type === "client") :
+      selectedFilter === "groups" ? message.recipients.length > 1 : true;
     
-    return matchesFilter && matchesSearch;
-  });
+    // Apply search filter
+    const matchesSearch = 
+      message.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      message.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      message.sender.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      message.recipients.some(r => r.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
+    // Apply priority filter if provided
+    const matchesPriority = 
+      !priorityFilter || priorityFilter === "all" ? true : 
+      message.priority === priorityFilter.toLowerCase();
+
+    // Apply read/unread filter if provided
+    const matchesReadStatus = 
+      !readFilter || readFilter === "all" ? true :
+      readFilter === "read" ? message.isRead :
+      readFilter === "unread" ? !message.isRead : true;
+
+    // Apply date filter if provided
+    let matchesDate = true;
+    if (dateFilter && dateFilter !== "all") {
+      const now = new Date();
+      const messageDate = new Date(message.timestamp);
+      
+      if (dateFilter === "today") {
+        matchesDate = messageDate.toDateString() === now.toDateString();
+      } else if (dateFilter === "week") {
+        const weekAgo = new Date();
+        weekAgo.setDate(now.getDate() - 7);
+        matchesDate = messageDate >= weekAgo;
+      } else if (dateFilter === "month") {
+        const monthAgo = new Date();
+        monthAgo.setMonth(now.getMonth() - 1);
+        matchesDate = messageDate >= monthAgo;
+      }
+    }
+    
+    return matchesType && matchesSearch && matchesPriority && matchesReadStatus && matchesDate;
+  });
+  
+  const formatMessageDate = (date: Date) => {
+    const now = new Date();
+    const isToday = date.getDate() === now.getDate() &&
+                   date.getMonth() === now.getMonth() &&
+                   date.getFullYear() === now.getFullYear();
+    
+    if (isToday) {
+      return format(date, "HH:mm");
+    } else {
+      return format(date, "dd MMM");
+    }
+  };
+
+  // Check if selected message is in filtered results
+  const selectedMessageExists = selectedMessageId && mockMessages.some(msg => msg.id === selectedMessageId);
+  
+  // Effect to auto-select first message if current selection doesn't exist
+  useEffect(() => {
+    // If no message is selected and we have messages, select the first one
+    if ((!selectedMessageId || !selectedMessageExists) && mockMessages.length > 0) {
+      onMessageSelect(mockMessages[0].id);
+    }
+  }, [mockMessages, selectedMessageId, selectedMessageExists, onMessageSelect]);
+  
   return (
-    <div className="h-full overflow-y-auto border-r">
-      {filteredMessages.length > 0 ? (
-        <div className="divide-y">
-          {filteredMessages.map(message => (
-            <div 
-              key={message.id}
-              className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                selectedMessageId === message.id ? "bg-blue-50" : ""
-              }`}
-              onClick={() => onMessageSelect(message.id)}
-            >
-              <div className="flex items-start gap-3">
-                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium">
-                  {message.avatar}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className={`text-sm font-medium ${message.unread ? "font-semibold" : ""}`}>
-                      {message.sender}
-                    </h3>
-                    <span className="text-xs text-gray-500">{message.time}</span>
+    <div>
+      {mockMessages.length > 0 ? (
+        mockMessages.map((message) => (
+          <div 
+            key={message.id}
+            className={cn(
+              "p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100",
+              selectedMessageId === message.id ? "bg-blue-50 hover:bg-blue-50" : "",
+              !message.isRead ? "bg-gray-50" : ""
+            )}
+            onClick={() => onMessageSelect(message.id)}
+          >
+            <div className="flex items-start">
+              <div className="h-9 w-9 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium shrink-0">
+                {message.sender.avatar}
+              </div>
+              
+              <div className="ml-3 flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center">
+                    <span className={cn(
+                      "font-medium text-sm truncate max-w-[150px]",
+                      !message.isRead ? "font-semibold" : ""
+                    )}>
+                      {message.sender.name}
+                    </span>
+                    
+                    {message.sender.type === "carer" && (
+                      <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-blue-50 text-blue-700 border-blue-200">
+                        Carer
+                      </Badge>
+                    )}
+                    
+                    {message.sender.type === "client" && (
+                      <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-green-50 text-green-700 border-green-200">
+                        Client
+                      </Badge>
+                    )}
+                    
+                    {message.priority === "high" && (
+                      <AlertCircle className="h-3 w-3 text-red-500 ml-1" />
+                    )}
                   </div>
-                  <h4 className={`text-sm mt-1 ${message.unread ? "font-semibold" : ""}`}>
-                    {message.subject}
-                  </h4>
-                  <p className="text-xs text-gray-500 mt-1 truncate">
+                  
+                  <span className="text-xs text-gray-500">
+                    {formatMessageDate(message.timestamp)}
+                  </span>
+                </div>
+                
+                <div className={cn(
+                  "text-sm truncate",
+                  !message.isRead ? "font-medium" : "text-gray-700"
+                )}>
+                  {message.subject}
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-gray-500 truncate mt-1">
                     {message.content}
                   </p>
+                  
+                  {message.hasAttachments && (
+                    <FileText className="h-3 w-3 text-gray-400 ml-1 shrink-0" />
+                  )}
                 </div>
-                {message.unread && (
-                  <div className="h-2 w-2 rounded-full bg-blue-600 mt-2"></div>
-                )}
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-          <div className="text-gray-400 mb-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
           </div>
-          <p className="text-gray-500">No messages found</p>
-          <p className="text-xs text-gray-400 mt-1">
-            {searchTerm ? "Try a different search term" : "Your inbox is empty"}
-          </p>
+        ))
+      ) : (
+        <div className="p-6 text-center text-gray-500">
+          No messages found
         </div>
       )}
     </div>

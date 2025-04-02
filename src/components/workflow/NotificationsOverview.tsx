@@ -1,6 +1,6 @@
 
 import React from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { 
   Bell, AlertTriangle, Clock, Calendar, CheckCircle, FileWarning, LucideIcon
 } from "lucide-react";
@@ -14,22 +14,17 @@ interface NotificationsOverviewProps {
 const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewProps) => {
   const navigate = useNavigate();
   const { id, branchName: paramBranchName } = useParams();
-  const location = useLocation();
   
   // Use props if provided, otherwise fall back to URL params
   const effectiveBranchId = branchId || id;
   const effectiveBranchName = branchName || paramBranchName;
   
-  // Check if we're in a branch dashboard context
-  const isInBranchContext = location.pathname.includes('/branch-dashboard/');
-  
   const handleNavigate = (path: string) => {
     console.log("Navigating to:", path);
     console.log("Branch ID:", effectiveBranchId);
     console.log("Branch Name:", effectiveBranchName);
-    console.log("Is in branch context:", isInBranchContext);
     
-    if (isInBranchContext && effectiveBranchId && effectiveBranchName) {
+    if (effectiveBranchId && effectiveBranchName) {
       const fullPath = `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/notifications/${path}`;
       console.log("Full navigation path:", fullPath);
       navigate(fullPath);
