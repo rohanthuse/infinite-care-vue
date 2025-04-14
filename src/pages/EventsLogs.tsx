@@ -7,7 +7,6 @@ import { EventLogForm } from "@/components/events-logs/EventLogForm";
 import { EventLogsList } from "@/components/events-logs/EventLogsList";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 const EventsLogs = () => {
   const { id, branchName } = useParams();
@@ -42,15 +41,15 @@ const EventsLogs = () => {
             onValueChange={handleTabChange} 
             className="w-full"
           >
-            <TabsList className="sticky top-0 z-30 w-full grid grid-cols-2 bg-white p-4 border-b border-gray-100 rounded-none">
-              <TabsTrigger value="new" className="text-base">New Event/Log</TabsTrigger>
-              <TabsTrigger value="view" className="text-base">View Events/Logs</TabsTrigger>
+            <TabsList className="w-full grid grid-cols-2 bg-white p-4 border-b border-gray-100 rounded-none">
+              <TabsTrigger value="new" className="text-base font-medium">New Event/Log</TabsTrigger>
+              <TabsTrigger value="view" className="text-base font-medium">View Events/Logs</TabsTrigger>
             </TabsList>
             
             <div className="h-[calc(100vh-280px)]">
               <TabsContent 
                 value="new" 
-                className="p-0 focus:outline-none m-0 h-full overflow-auto"
+                className="p-0 focus:outline-none m-0 h-full"
               >
                 <div className="p-6">
                   <EventLogForm branchId={id || ""} />
@@ -58,7 +57,7 @@ const EventsLogs = () => {
               </TabsContent>
               <TabsContent 
                 value="view" 
-                className="p-0 focus:outline-none m-0 h-full overflow-auto"
+                className="p-0 focus:outline-none m-0 h-full"
               >
                 <div className="p-6">
                   <EventLogsList branchId={id || ""} />
