@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Calendar as CalendarIcon, Upload, Users, Tag } from "lucide-react";
+import { Calendar as CalendarIcon, Upload, Users, Tag, UserCheck, FileCheck, Signature } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 
 // Mock clients list
 const mockClients = [
@@ -35,6 +39,18 @@ const mockClients = [
   { id: "CL006", name: "Daniel Smith" },
   { id: "CL007", name: "Olivia Brown" },
   { id: "CL008", name: "Noah Davis" }
+];
+
+// Mock staff list
+const mockStaff = [
+  { id: "ST001", name: "Alex Chen" },
+  { id: "ST002", name: "Maria Rodriguez" },
+  { id: "ST003", name: "John Williams" },
+  { id: "ST004", name: "Sarah Johnson" },
+  { id: "ST005", name: "David Brown" },
+  { id: "ST006", name: "Lisa Thompson" },
+  { id: "ST007", name: "Robert Wilson" },
+  { id: "ST008", name: "Jennifer Lewis" }
 ];
 
 // Mock templates list
@@ -58,23 +74,33 @@ export function SignAgreementDialog({
   branchId
 }: SignAgreementDialogProps) {
   const [title, setTitle] = useState("");
+  const [signingParty, setSigningParty] = useState("client");
   const [selectedClient, setSelectedClient] = useState("");
+  const [selectedStaff, setSelectedStaff] = useState("");
   const [signedDate, setSignedDate] = useState<Date | undefined>(new Date());
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [documentUploaded, setDocumentUploaded] = useState(false);
-  const [signatureUploaded, setSignatureUploaded] = useState(false);
+  const [agreementStatus, setAgreementStatus] = useState("Active");
+  const [digitalSignature, setDigitalSignature] = useState("");
+  const [agreementType, setAgreementType] = useState("Employment Agreement");
+  const [confirmSign, setConfirmSign] = useState(false);
   const [loading, setLoading] = useState(false);
   
   const handleSignAgreement = async () => {
-    if (!title || !selectedClient || !signedDate) {
-      toast.error("Please fill in all required fields");
+    if (!title || (!selectedClient && !selectedStaff) || !signedDate || !digitalSignature || !confirmSign) {
+      toast.error("Please fill in all required fields and confirm signature");
       return;
     }
     
     setLoading(true);
     
     try {
-      // In a real app, we would make an API call here
+      // In a real app, we would make an API call here with all the data
+      const signeeId = signingParty === "client" ? selectedClient : selectedStaff;
+      const signeeName = signingParty === "client" 
+        ? mockClients.find(c => c.id === selectedClient)?.name 
+        : mockStaff.find(s => s.id === selectedStaff)?.name;
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast.success("Agreement signed successfully");
@@ -90,11 +116,16 @@ export function SignAgreementDialog({
   
   const resetForm = () => {
     setTitle("");
+    setSigningParty("client");
     setSelectedClient("");
+    setSelectedStaff("");
     setSignedDate(new Date());
     setSelectedTemplate("");
     setDocumentUploaded(false);
-    setSignatureUploaded(false);
+    setAgreementStatus("Active");
+    setDigitalSignature("");
+    setAgreementType("Employment Agreement");
+    setConfirmSign(false);
   };
 
   return (
@@ -125,21 +156,62 @@ export function SignAgreementDialog({
 
           <div className="space-y-2">
             <label className="text-sm font-medium">
-              Client <span className="text-red-500">*</span>
+              Signing Party <span className="text-red-500">*</span>
             </label>
-            <Select value={selectedClient} onValueChange={setSelectedClient}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select client" />
-              </SelectTrigger>
-              <SelectContent>
-                {mockClients.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <RadioGroup 
+              defaultValue="client" 
+              className="flex space-x-4"
+              value={signingParty}
+              onValueChange={setSigningParty}
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="client" id="client" />
+                <Label htmlFor="client">Client</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="staff" id="staff" />
+                <Label htmlFor="staff">Staff</Label>
+              </div>
+            </RadioGroup>
           </div>
+
+          {signingParty === "client" ? (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Client <span className="text-red-500">*</span>
+              </label>
+              <Select value={selectedClient} onValueChange={setSelectedClient}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select client" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockClients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Staff Member <span className="text-red-500">*</span>
+              </label>
+              <Select value={selectedStaff} onValueChange={setSelectedStaff}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select staff member" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockStaff.map((staff) => (
+                    <SelectItem key={staff.id} value={staff.id}>
+                      {staff.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-2">
             <label className="text-sm font-medium">
@@ -163,7 +235,7 @@ export function SignAgreementDialog({
             <label className="text-sm font-medium">
               Type <span className="text-red-500">*</span>
             </label>
-            <Select defaultValue="Employment Agreement">
+            <Select value={agreementType} onValueChange={setAgreementType}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select agreement type" />
               </SelectTrigger>
@@ -172,6 +244,23 @@ export function SignAgreementDialog({
                 <SelectItem value="Service Agreement">Service Agreement</SelectItem>
                 <SelectItem value="NDA">Non-Disclosure Agreement</SelectItem>
                 <SelectItem value="Data Agreement">Data Agreement</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Status <span className="text-red-500">*</span>
+            </label>
+            <Select value={agreementStatus} onValueChange={setAgreementStatus}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Active">Active</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Expired">Expired</SelectItem>
+                <SelectItem value="Terminated">Terminated</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -220,17 +309,39 @@ export function SignAgreementDialog({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Upload Signature</label>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setSignatureUploaded(true)}
-                className="w-full"
+            <label className="text-sm font-medium">Digital Signature <span className="text-red-500">*</span></label>
+            <div className="flex flex-col space-y-4">
+              <Input
+                placeholder="Type your full name to sign"
+                value={digitalSignature}
+                onChange={(e) => setDigitalSignature(e.target.value)}
+                className="border-dashed border-2 font-handwriting text-center text-lg"
+              />
+              <div className="flex items-center space-x-2 mt-2">
+                <Signature className="h-4 w-4 text-blue-500" />
+                <span className="text-sm text-gray-500">
+                  This digital signature is legally binding
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-2 pt-2">
+            <Checkbox 
+              id="confirm" 
+              checked={confirmSign}
+              onCheckedChange={(checked) => setConfirmSign(checked as boolean)} 
+            />
+            <div className="grid gap-1.5 leading-none">
+              <label
+                htmlFor="confirm"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                <Upload className="mr-2 h-4 w-4" />
-                {signatureUploaded ? "Signature Uploaded" : "Upload Signature"}
-              </Button>
+                I confirm that I have read and agree to the terms of this agreement <span className="text-red-500">*</span>
+              </label>
+              <p className="text-sm text-muted-foreground">
+                By checking this box, you confirm that you are authorized to sign this agreement.
+              </p>
             </div>
           </div>
         </div>
@@ -243,8 +354,8 @@ export function SignAgreementDialog({
             Cancel
           </Button>
           <Button 
-            onClick={handleSignAgreement} 
-            disabled={loading || !title || !selectedClient || !signedDate}
+            onClick={handleSignAgreement}
+            disabled={loading || !title || (!selectedClient && !selectedStaff) || !signedDate || !digitalSignature || !confirmSign}
           >
             {loading ? "Processing..." : "Sign Agreement"}
           </Button>

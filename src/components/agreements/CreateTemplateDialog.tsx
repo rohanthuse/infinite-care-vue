@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
+import { Upload, Users, UserCheck } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -20,6 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface CreateTemplateDialogProps {
   open: boolean;
@@ -36,6 +38,7 @@ export function CreateTemplateDialog({
   const [templateType, setTemplateType] = useState("");
   const [content, setContent] = useState("");
   const [documentUploaded, setDocumentUploaded] = useState(false);
+  const [targetParty, setTargetParty] = useState("both"); // "client", "staff", or "both"
   const [loading, setLoading] = useState(false);
   
   const handleCreateTemplate = async () => {
@@ -66,6 +69,7 @@ export function CreateTemplateDialog({
     setTemplateType("");
     setContent("");
     setDocumentUploaded(false);
+    setTargetParty("both");
   };
 
   return (
@@ -110,6 +114,35 @@ export function CreateTemplateDialog({
               </SelectContent>
             </Select>
           </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Target Party
+            </label>
+            <RadioGroup 
+              defaultValue="both" 
+              className="flex flex-col space-y-1.5"
+              value={targetParty}
+              onValueChange={setTargetParty}
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="client" id="client-only" />
+                <Label htmlFor="client-only" className="flex items-center">
+                  <Users className="h-4 w-4 mr-1.5" /> Client Only
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="staff" id="staff-only" />
+                <Label htmlFor="staff-only" className="flex items-center">
+                  <UserCheck className="h-4 w-4 mr-1.5" /> Staff Only
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="both" id="both-parties" />
+                <Label htmlFor="both-parties">Both Clients and Staff</Label>
+              </div>
+            </RadioGroup>
+          </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium">Upload Template Document</label>
@@ -136,6 +169,9 @@ export function CreateTemplateDialog({
             />
             <p className="text-xs text-muted-foreground">
               You can use placeholders like {"{client_name}"}, {"{date}"}, etc.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              For digital signatures, use {"{signature_placeholder}"} where you want the signature to appear.
             </p>
           </div>
         </div>

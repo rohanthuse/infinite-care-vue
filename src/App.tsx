@@ -31,6 +31,8 @@ import CarePlanView from "./pages/CarePlanView";
 import TaskMatrix from "./pages/TaskMatrix";
 import TrainingMatrix from "./pages/TrainingMatrix";
 
+import "./styles/signatures.css"; // Import the signatures styles
+
 function App() {
   const [queryClient] = useState(() => new QueryClient());
 
