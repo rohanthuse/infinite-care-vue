@@ -33,6 +33,7 @@ import NotificationsOverview from "@/components/workflow/NotificationsOverview";
 import TaskMatrix from "./TaskMatrix";
 import TrainingMatrix from "./TrainingMatrix";
 import AccountingTab from "@/components/accounting/AccountingTab";
+import AttendanceTab from "@/components/attendance/AttendanceTab";
 
 const weeklyData = [{
   day: "Mon",
@@ -1146,6 +1147,8 @@ const BranchDashboard = () => {
         {activeTab === "medication" && <MedicationTab branchId={id} branchName={branchName} />}
         
         {activeTab === "accounting" && <AccountingTab branchId={id} branchName={decodeURIComponent(branchName || "")} />}
+        
+        {activeTab === "attendance" && <AttendanceTab branchId={id || ""} branchName={decodeURIComponent(branchName || "")} />}
         
         {activeTab === "care-plan" && <CareTab branchId={id} branchName={branchName} />}
         
