@@ -12,9 +12,11 @@ import { PlusCircle } from "lucide-react";
 interface StaffDetailsSectionProps {
   staff: Array<{ id: string; name: string }>;
   form: UseFormReturn<any>;
+  showSidebar?: boolean;  // Optional prop
+  setShowSidebar?: React.Dispatch<React.SetStateAction<boolean>>;  // Optional prop
 }
 
-export function StaffDetailsSection({ staff, form }: StaffDetailsSectionProps) {
+export function StaffDetailsSection({ staff, form, showSidebar, setShowSidebar }: StaffDetailsSectionProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-4">

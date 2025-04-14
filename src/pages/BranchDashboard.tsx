@@ -33,6 +33,7 @@ import NotificationsOverview from "@/components/workflow/NotificationsOverview";
 import TaskMatrix from "./TaskMatrix";
 import TrainingMatrix from "./TrainingMatrix";
 import AccountingTab from "@/components/accounting/AccountingTab";
+import { AttendanceTab } from "@/components/attendance/AttendanceTab";
 
 const weeklyData = [{
   day: "Mon",
@@ -367,6 +368,8 @@ const BranchDashboard = () => {
     if (path.startsWith("reviews")) return "reviews";
     if (path.startsWith("care")) return "care";
     if (path.startsWith("agreements")) return "agreements";
+    if (path.startsWith("attendance")) return "attendance";
+    if (path.startsWith("events-logs")) return "events-logs";
     
     return "overview";
   };
@@ -527,7 +530,13 @@ const BranchDashboard = () => {
       
       <AddClientDialog open={addClientDialogOpen} onOpenChange={setAddClientDialogOpen} />
       
-      <NewBookingDialog open={newBookingDialogOpen} onOpenChange={setNewBookingDialogOpen} clients={mockClients} carers={mockCarers} onCreateBooking={handleCreateBooking} />
+      <NewBookingDialog 
+        open={newBookingDialogOpen} 
+        onOpenChange={setNewBookingDialogOpen} 
+        clients={mockClients} 
+        carers={mockCarers} 
+        onCreateBooking={handleCreateBooking}
+      />
       
       <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full">
         <BranchInfoHeader 
@@ -1065,6 +1074,8 @@ const BranchDashboard = () => {
             </div>
           </div>
         )}
+        
+        {activeTab === "attendance" && <AttendanceTab branchId={id || ""} branchName={decodeURIComponent(branchName || "")} />}
         
         {activeTab === "reviews" && <ReviewsTab branchId={id} branchName={branchName} />}
         
