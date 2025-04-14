@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Search, Filter, Download, Eye, Calendar, Clock, MapPin, User, FileText, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,8 +31,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { AttendanceInfo } from './AttendanceInfo';
 
+// Mock data
 const mockEvents = [
   {
     id: 'EV001',
@@ -43,14 +44,7 @@ const mockEvents = [
     time: '09:30',
     category: 'medication_error',
     status: 'Pending Review',
-    details: 'Client was given the wrong medication dose.',
-    staffPresent: [
-      { id: 'ST001', name: 'Alex Chen', timeIn: '09:15', timeOut: '10:30' },
-      { id: 'ST003', name: 'John Williams', timeIn: '09:20', timeOut: '10:45' }
-    ],
-    otherAttendees: [
-      { id: 'OA001', name: 'Emily Wilson', relationship: 'family' }
-    ]
+    details: 'Client was given the wrong medication dose.'
   },
   {
     id: 'EV002',
@@ -62,11 +56,7 @@ const mockEvents = [
     time: '14:15',
     category: 'accident',
     status: 'In Progress',
-    details: 'Client slipped in the bathroom, no serious injuries.',
-    staffPresent: [
-      { id: 'ST002', name: 'Maria Rodriguez', timeIn: '14:00', timeOut: '15:30' }
-    ],
-    otherAttendees: []
+    details: 'Client slipped in the bathroom, no serious injuries.'
   },
   {
     id: 'EV003',
@@ -78,31 +68,20 @@ const mockEvents = [
     time: '11:00',
     category: 'complaint',
     status: 'Resolved',
-    details: 'Client complained about the quality of care provided.',
-    staffPresent: [
-      { id: 'ST005', name: 'David Brown', timeIn: '10:45', timeOut: '12:15' },
-      { id: 'ST001', name: 'Alex Chen', timeIn: '10:50', timeOut: '12:10' }
-    ],
-    otherAttendees: [
-      { id: 'OA002', name: 'Robert Smith', relationship: 'family' }
-    ]
+    details: 'Client complained about the quality of care provided.'
   },
   {
     id: 'EV004',
     title: 'Staff Injury',
     eventType: 'staff',
+    clientName: '',
     staffName: 'Sarah Johnson',
     location: 'Client\'s Home',
     date: '2025-04-07',
     time: '16:45',
     category: 'accident',
     status: 'Closed',
-    details: 'Staff member injured back while helping client.',
-    staffPresent: [
-      { id: 'ST004', name: 'Sarah Johnson', timeIn: '16:30', timeOut: '17:45' },
-      { id: 'ST002', name: 'Maria Rodriguez', timeIn: '16:15', timeOut: '17:30' }
-    ],
-    otherAttendees: []
+    details: 'Staff member injured back while helping client.'
   },
   {
     id: 'EV005',
@@ -114,13 +93,7 @@ const mockEvents = [
     time: '10:30',
     category: 'safeguarding',
     status: 'Pending Review',
-    details: 'Potential signs of neglect observed.',
-    staffPresent: [
-      { id: 'ST003', name: 'John Williams', timeIn: '10:00', timeOut: '11:45' }
-    ],
-    otherAttendees: [
-      { id: 'OA003', name: 'Dr. Thomas Lee', relationship: 'professional' }
-    ]
+    details: 'Potential signs of neglect observed.'
   }
 ];
 
@@ -141,6 +114,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
   const itemsPerPage = 5;
 
   React.useEffect(() => {
+    // Simulate loading data
     setIsLoading(true);
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -148,6 +122,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
     return () => clearTimeout(timer);
   }, [branchId]);
 
+  // Apply filters
   const filteredEvents = events.filter(event => {
     const matchesSearch = 
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -161,6 +136,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
+  // Pagination
   const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
   const paginatedEvents = filteredEvents.slice(
     (currentPage - 1) * itemsPerPage,
@@ -175,6 +151,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
   const confirmStatusChange = () => {
     if (!selectedEvent || !newStatus) return;
     
+    // Update the status in our local state
     const updatedEvents = events.map(event => {
       if (event.id === selectedEvent.id) {
         return { ...event, status: newStatus };
@@ -184,10 +161,12 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
     
     setEvents(updatedEvents);
     
+    // Show success toast
     toast.success(`Status updated to ${newStatus}`, {
       description: `Event ${selectedEvent.id} status has been updated`
     });
     
+    // Close the dialog
     setStatusDialogOpen(false);
     setSelectedEvent(null);
     setNewStatus('');
@@ -379,7 +358,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                   </div>
                 </div>
                 
-                <div className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="flex items-start">
                     <User className="h-4 w-4 text-gray-400 mt-0.5 mr-2" />
                     <div>
@@ -409,11 +388,6 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                       </div>
                     </div>
                   </div>
-                  
-                  <AttendanceInfo 
-                    staffPresent={event.staffPresent} 
-                    otherAttendees={event.otherAttendees} 
-                  />
                 </div>
                 
                 <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
@@ -481,6 +455,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
         </Pagination>
       )}
 
+      {/* Status change dialog */}
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

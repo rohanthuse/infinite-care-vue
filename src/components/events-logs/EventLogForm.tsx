@@ -3,32 +3,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { format } from "date-fns";
-import { 
-  CalendarIcon, 
-  Clock, 
-  MapPin, 
-  Upload, 
-  User, 
-  Users, 
-  X, 
-  FileText, 
-  PlusCircle, 
-  ChevronDown, 
-  ChevronUp 
-} from "lucide-react";
+import { CalendarIcon, Clock, MapPin, Upload, User, Users, X, FileText, PlusCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,10 +17,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { StaffDetailsSection } from "./StaffDetailsSection";
-import { ActionsList } from "./ActionsList";
-import { AttachmentsList } from "./AttachmentsList";
-import { BodyMapSelector } from "./BodyMapSelector";
 
 const mockClients = [
   { id: "CL001", name: "Aderinsola Thomas" },
@@ -631,8 +607,44 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
           />
           
           {expandedSections.staffDetails && (
-            <div className="mt-4">
-              <StaffDetailsSection staff={mockStaff} form={form} />
+            <div className="mt-4 space-y-6">
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold">Staff Members Present</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {mockStaff.slice(0, 4).map((staff) => (
+                    <div key={staff.id} className="flex items-center space-x-2">
+                      <Checkbox id={`staff-present-${staff.id}`} />
+                      <Label htmlFor={`staff-present-${staff.id}`}>
+                        {staff.name}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold">Other People Present</h4>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center space-x-2">
+                    <Input placeholder="Person's name" className="w-full md:w-1/2" />
+                    <Select>
+                      <SelectTrigger className="w-full md:w-1/3">
+                        <SelectValue placeholder="Relationship" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="family">Family Member</SelectItem>
+                        <SelectItem value="friend">Friend</SelectItem>
+                        <SelectItem value="professional">Healthcare Professional</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button type="button" variant="outline" size="sm">
+                      <PlusCircle className="h-4 w-4" />
+                      <span className="sr-only">Add Person</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
