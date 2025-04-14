@@ -197,3 +197,5 @@ export function AttendanceTab({ branchId, branchName }: AttendanceTabProps) {
     </div>
   );
 }
+
+export default AttendanceTab; // Added default export to maintain compatibility
