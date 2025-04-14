@@ -9,48 +9,114 @@
  * @returns string - Data URL for the SVG
  */
 export function generateBodyMapSvg(type: 'front' | 'back'): string {
-  // Basic body outline SVG
+  // Anatomically accurate body outline SVG
   const frontBodySvg = `
-  <svg width="200" height="400" viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg">
+  <svg width="200" height="500" viewBox="0 0 200 500" xmlns="http://www.w3.org/2000/svg">
     <style>
-      .body-part { fill: #f2f2f2; stroke: #666; stroke-width: 1.5; }
-      .body-part:hover { fill: #e6e6e6; }
+      .body-part { fill: #f9f9f9; stroke: #666; stroke-width: 1; }
+      .body-part:hover { fill: #f0f0f0; cursor: pointer; }
+      .body-outline { fill: none; stroke: #555; stroke-width: 1.2; }
     </style>
     <!-- Head -->
-    <circle cx="100" cy="40" r="30" class="body-part" />
-    <!-- Body -->
-    <rect x="70" y="70" width="60" height="120" rx="10" class="body-part" />
+    <g class="body-part">
+      <ellipse cx="100" cy="40" rx="30" ry="35" />
+      <!-- Face features -->
+      <ellipse cx="90" cy="35" rx="3" ry="4" fill="#555" /> <!-- Left eye -->
+      <ellipse cx="110" cy="35" rx="3" ry="4" fill="#555" /> <!-- Right eye -->
+      <path d="M95 45 Q100 50 105 45" stroke="#555" stroke-width="1.5" fill="none" /> <!-- Mouth -->
+      <path d="M100 35 L100 40" stroke="#555" stroke-width="1" /> <!-- Nose -->
+    </g>
+    
+    <!-- Neck -->
+    <path class="body-part" d="M85 65 C85 55, 115 55, 115 65 L115 75 L85 75 Z" />
+    
+    <!-- Torso -->
+    <path class="body-part" d="M85 75 L85 200 C85 215, 115 215, 115 200 L115 75 Z" />
+    
+    <!-- Shoulders -->
+    <path class="body-part" d="M85 85 L60 95 L60 105 L85 100 Z" /> <!-- Left shoulder -->
+    <path class="body-part" d="M115 85 L140 95 L140 105 L115 100 Z" /> <!-- Right shoulder -->
+    
     <!-- Arms -->
-    <rect x="35" y="80" width="35" height="100" rx="10" class="body-part" />
-    <rect x="130" y="80" width="35" height="100" rx="10" class="body-part" />
+    <path class="body-part" d="M60 105 L50 160 L65 160 L65 105 Z" /> <!-- Left upper arm -->
+    <path class="body-part" d="M140 105 L150 160 L135 160 L135 105 Z" /> <!-- Right upper arm -->
+    
+    <!-- Forearms -->
+    <path class="body-part" d="M50 160 L45 210 L65 210 L65 160 Z" /> <!-- Left forearm -->
+    <path class="body-part" d="M150 160 L155 210 L135 210 L135 160 Z" /> <!-- Right forearm -->
+    
+    <!-- Hands -->
+    <ellipse class="body-part" cx="55" cy="220" rx="12" ry="15" /> <!-- Left hand -->
+    <ellipse class="body-part" cx="145" cy="220" rx="12" ry="15" /> <!-- Right hand -->
+    
+    <!-- Pelvis -->
+    <path class="body-part" d="M85 200 C85 220, 115 220, 115 200 L115 230 L85 230 Z" />
+    
     <!-- Legs -->
-    <rect x="75" y="190" width="25" height="150" rx="10" class="body-part" />
-    <rect x="100" y="190" width="25" height="150" rx="10" class="body-part" />
+    <path class="body-part" d="M85 230 L80 350 L95 350 L95 230 Z" /> <!-- Left leg -->
+    <path class="body-part" d="M115 230 L120 350 L105 350 L105 230 Z" /> <!-- Right leg -->
+    
+    <!-- Lower legs -->
+    <path class="body-part" d="M80 350 L75 450 L95 450 L95 350 Z" /> <!-- Left lower leg -->
+    <path class="body-part" d="M120 350 L125 450 L105 450 L105 350 Z" /> <!-- Right lower leg -->
+    
     <!-- Feet -->
-    <rect x="75" y="340" width="25" height="20" rx="5" class="body-part" />
-    <rect x="100" y="340" width="25" height="20" rx="5" class="body-part" />
+    <path class="body-part" d="M75 450 L60 460 L95 460 L95 450 Z" /> <!-- Left foot -->
+    <path class="body-part" d="M125 450 L140 460 L105 460 L105 450 Z" /> <!-- Right foot -->
   </svg>
   `;
   
   const backBodySvg = `
-  <svg width="200" height="400" viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg">
+  <svg width="200" height="500" viewBox="0 0 200 500" xmlns="http://www.w3.org/2000/svg">
     <style>
-      .body-part { fill: #f2f2f2; stroke: #666; stroke-width: 1.5; }
-      .body-part:hover { fill: #e6e6e6; }
+      .body-part { fill: #f9f9f9; stroke: #666; stroke-width: 1; }
+      .body-part:hover { fill: #f0f0f0; cursor: pointer; }
+      .body-outline { fill: none; stroke: #555; stroke-width: 1.2; }
     </style>
     <!-- Head -->
-    <circle cx="100" cy="40" r="30" class="body-part" />
-    <!-- Body -->
-    <rect x="70" y="70" width="60" height="120" rx="10" class="body-part" />
+    <ellipse class="body-part" cx="100" cy="40" rx="30" ry="35" />
+    
+    <!-- Neck -->
+    <path class="body-part" d="M85 65 C85 55, 115 55, 115 65 L115 75 L85 75 Z" />
+    
+    <!-- Torso -->
+    <path class="body-part" d="M85 75 L85 200 C85 215, 115 215, 115 200 L115 75 Z" />
+    
+    <!-- Shoulders -->
+    <path class="body-part" d="M85 85 L60 95 L60 105 L85 100 Z" /> <!-- Left shoulder -->
+    <path class="body-part" d="M115 85 L140 95 L140 105 L115 100 Z" /> <!-- Right shoulder -->
+    
     <!-- Arms -->
-    <rect x="35" y="80" width="35" height="100" rx="10" class="body-part" />
-    <rect x="130" y="80" width="35" height="100" rx="10" class="body-part" />
+    <path class="body-part" d="M60 105 L50 160 L65 160 L65 105 Z" /> <!-- Left upper arm -->
+    <path class="body-part" d="M140 105 L150 160 L135 160 L135 105 Z" /> <!-- Right upper arm -->
+    
+    <!-- Forearms -->
+    <path class="body-part" d="M50 160 L45 210 L65 210 L65 160 Z" /> <!-- Left forearm -->
+    <path class="body-part" d="M150 160 L155 210 L135 210 L135 160 Z" /> <!-- Right forearm -->
+    
+    <!-- Hands -->
+    <ellipse class="body-part" cx="55" cy="220" rx="12" ry="15" /> <!-- Left hand -->
+    <ellipse class="body-part" cx="145" cy="220" rx="12" ry="15" /> <!-- Right hand -->
+    
+    <!-- Pelvis -->
+    <path class="body-part" d="M85 200 C85 220, 115 220, 115 200 L115 230 L85 230 Z" />
+    
     <!-- Legs -->
-    <rect x="75" y="190" width="25" height="150" rx="10" class="body-part" />
-    <rect x="100" y="190" width="25" height="150" rx="10" class="body-part" />
+    <path class="body-part" d="M85 230 L80 350 L95 350 L95 230 Z" /> <!-- Left leg -->
+    <path class="body-part" d="M115 230 L120 350 L105 350 L105 230 Z" /> <!-- Right leg -->
+    
+    <!-- Lower legs -->
+    <path class="body-part" d="M80 350 L75 450 L95 450 L95 350 Z" /> <!-- Left lower leg -->
+    <path class="body-part" d="M120 350 L125 450 L105 450 L105 350 Z" /> <!-- Right lower leg -->
+    
     <!-- Feet -->
-    <rect x="75" y="340" width="25" height="20" rx="5" class="body-part" />
-    <rect x="100" y="340" width="25" height="20" rx="5" class="body-part" />
+    <path class="body-part" d="M75 450 L60 460 L95 460 L95 450 Z" /> <!-- Left foot -->
+    <path class="body-part" d="M125 450 L140 460 L105 460 L105 450 Z" /> <!-- Right foot -->
+    
+    <!-- Back features -->
+    <path d="M100 75 L100 200" stroke="#888" stroke-width="0.8" fill="none" /> <!-- Spine -->
+    <path d="M90 110 L110 110" stroke="#888" stroke-width="0.8" fill="none" /> <!-- Shoulder blades upper -->
+    <path d="M88 130 L112 130" stroke="#888" stroke-width="0.8" fill="none" /> <!-- Shoulder blades lower -->
   </svg>
   `;
   
