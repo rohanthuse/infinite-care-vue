@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Table, TableBody, TableCell, TableHead, 
@@ -13,8 +12,29 @@ import { toast } from "sonner";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { ViewAgreementDialog } from "./ViewAgreementDialog";
 
-// Updated mock data for signed agreements including new fields
-const mockSignedAgreements = [
+interface Agreement {
+  id: number;
+  title: string;
+  signedBy: string;
+  signedDate: string;
+  type: string;
+  status: string;
+  content: string;
+  signingParty?: "client" | "staff";
+  digitalSignature?: string;
+  statusHistory?: StatusChange[];
+  clientId?: string;
+  staffId?: string;
+}
+
+interface StatusChange {
+  status: string;
+  date: string;
+  reason?: string;
+  changedBy: string;
+}
+
+const mockSignedAgreements: Agreement[] = [
   {
     id: 1,
     title: "Employment Contract",
@@ -196,21 +216,18 @@ export function SignedAgreements({
   dateFilter = "all",
   branchId
 }: SignedAgreementsProps) {
-  const [agreements, setAgreements] = useState(mockSignedAgreements);
-  const [filteredAgreements, setFilteredAgreements] = useState(agreements);
+  const [agreements, setAgreements] = useState<Agreement[]>(mockSignedAgreements);
+  const [filteredAgreements, setFilteredAgreements] = useState<Agreement[]>(agreements);
   const [viewingAgreementId, setViewingAgreementId] = useState<number | null>(null);
   const [partyFilter, setPartyFilter] = useState<"all" | "client" | "staff">("all");
   
-  // In a real implementation, this would fetch data based on the branch ID
   useEffect(() => {
-    // Simulate API call to get agreements by branch
     setAgreements(mockSignedAgreements);
   }, [branchId]);
   
   useEffect(() => {
     let filtered = agreements;
     
-    // Apply search filter
     if (searchQuery) {
       filtered = filtered.filter(
         agreement => 
@@ -220,17 +237,14 @@ export function SignedAgreements({
       );
     }
     
-    // Apply type filter
     if (typeFilter && typeFilter !== "all") {
       filtered = filtered.filter(agreement => agreement.type === typeFilter);
     }
     
-    // Apply signing party filter
     if (partyFilter !== "all") {
       filtered = filtered.filter(agreement => agreement.signingParty === partyFilter);
     }
     
-    // Apply date filter
     if (dateFilter !== "all") {
       const now = new Date();
       const filterDate = new Date();
@@ -264,7 +278,6 @@ export function SignedAgreements({
     const agreement = agreements.find(a => a.id === id);
     if (!agreement) return;
     
-    // Convert the agreement to the format expected by generatePDF
     generatePDF({
       id: agreement.id,
       title: agreement.title,
@@ -277,7 +290,6 @@ export function SignedAgreements({
   };
 
   const handleDeleteAgreement = (id: number) => {
-    // In a real application, this would make an API call
     setAgreements(agreements.filter(a => a.id !== id));
     toast.success("Agreement deleted successfully");
   };

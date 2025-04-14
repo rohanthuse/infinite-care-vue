@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Download, FileCheck, Clock, History, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +31,8 @@ interface Agreement {
   signingParty?: "client" | "staff";
   digitalSignature?: string;
   statusHistory?: StatusChange[];
+  clientId?: string;
+  staffId?: string;
 }
 
 interface StatusChange {
@@ -76,10 +77,8 @@ export function ViewAgreementDialog({
     setIsUpdatingStatus(true);
     
     try {
-      // In a real app, we would make an API call here
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // This would be part of the server response
       const updatedAgreement = {
         ...agreement,
         status: newStatus,
@@ -98,7 +97,6 @@ export function ViewAgreementDialog({
         ]
       };
       
-      // In a real app, we would update the state with the server response
       toast.success(`Agreement status updated to ${newStatus}`);
       setShowStatusForm(false);
       setNewStatus("");
