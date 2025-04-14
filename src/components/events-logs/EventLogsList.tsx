@@ -15,6 +15,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Mock data
 const mockEvents = [
@@ -90,7 +91,17 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const itemsPerPage = 5;
+
+  React.useEffect(() => {
+    // Simulate loading data
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [branchId]);
 
   // Apply filters
   const filteredEvents = mockEvents.filter(event => {
@@ -151,6 +162,26 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row gap-4 items-end">
+          <Skeleton className="h-9 w-full flex-1" />
+          <Skeleton className="h-9 w-full md:w-48" />
+          <Skeleton className="h-9 w-full md:w-48" />
+          <Skeleton className="h-9 w-32" />
+          <Skeleton className="h-9 w-32" />
+        </div>
+        
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="space-y-2">
+            <Skeleton className="h-32 w-full rounded-md" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row gap-4 items-end">
@@ -174,7 +205,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
             <SelectTrigger id="category">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[100]">
               <SelectItem value="all">All Categories</SelectItem>
               <SelectItem value="accident">Accident</SelectItem>
               <SelectItem value="incident">Incident</SelectItem>
@@ -194,7 +225,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
             <SelectTrigger id="status">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[100]">
               <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="Draft">Draft</SelectItem>
               <SelectItem value="Pending Review">Pending Review</SelectItem>

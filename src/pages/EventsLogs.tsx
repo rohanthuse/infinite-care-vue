@@ -7,6 +7,7 @@ import { EventLogForm } from "@/components/events-logs/EventLogForm";
 import { EventLogsList } from "@/components/events-logs/EventLogsList";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const EventsLogs = () => {
   const { id, branchName } = useParams();
@@ -31,20 +32,25 @@ const EventsLogs = () => {
           onNewBooking={handleNewBooking}
         />
         
-        <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-          <h2 className="text-2xl font-bold mb-6">Events & Logs</h2>
+        <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+          <div className="p-6 border-b border-gray-100">
+            <h2 className="text-2xl font-bold">Events & Logs</h2>
+          </div>
           
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsList className="sticky top-0 z-10 w-full grid grid-cols-2 bg-white p-4 border-b border-gray-100">
               <TabsTrigger value="new">New Event/Log</TabsTrigger>
               <TabsTrigger value="view">View Events/Logs</TabsTrigger>
             </TabsList>
-            <TabsContent value="new" className="w-full">
-              <EventLogForm branchId={id || ""} />
-            </TabsContent>
-            <TabsContent value="view">
-              <EventLogsList branchId={id || ""} />
-            </TabsContent>
+            
+            <ScrollArea className="h-[calc(100vh-280px)] overflow-auto">
+              <TabsContent value="new" className="p-6 focus:outline-none">
+                <EventLogForm branchId={id || ""} />
+              </TabsContent>
+              <TabsContent value="view" className="p-6 focus:outline-none">
+                <EventLogsList branchId={id || ""} />
+              </TabsContent>
+            </ScrollArea>
           </Tabs>
         </div>
       </main>

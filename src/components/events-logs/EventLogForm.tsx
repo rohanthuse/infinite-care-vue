@@ -83,6 +83,7 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
   const [actions, setActions] = useState<Array<{ id: string; text: string; date: Date }>>([]);
   const [attachments, setAttachments] = useState<Array<{ id: string; name: string; type: string; size: number }>>([]);
   const [bodyMapPoints, setBodyMapPoints] = useState<Array<{ id: string; x: number; y: number; type: string }>>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Default values for the form
   const defaultValues: Partial<EventLogFormValues> = {
@@ -107,6 +108,10 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
   
   const onSubmit = async (data: EventLogFormValues) => {
     try {
+      setIsSubmitting(true);
+      // Simulate API call with a delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       // We would normally send this data to the server
       console.log("Form data:", data);
       console.log("Actions:", actions);
@@ -124,6 +129,8 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
     } catch (error) {
       console.error("Error submitting form:", error);
       toast.error("Failed to save event log");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -175,7 +182,7 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
                           <SelectValue placeholder="Select client" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="z-[100]">
                         {mockClients.map((client) => (
                           <SelectItem key={client.id} value={client.id}>
                             {client.name}
@@ -200,7 +207,7 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
                           <SelectValue placeholder="Select staff member" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="z-[100]">
                         {mockStaff.map((staff) => (
                           <SelectItem key={staff.id} value={staff.id}>
                             {staff.name}
@@ -253,7 +260,7 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 z-[100]" align="start">
                         <Calendar
                           mode="single"
                           selected={field.value}
@@ -298,7 +305,7 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
                         <SelectValue placeholder="Select event type" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="z-[100]">
                       <SelectItem value="accident">Accident</SelectItem>
                       <SelectItem value="incident">Incident</SelectItem>
                       <SelectItem value="near_miss">Near Miss</SelectItem>
@@ -351,7 +358,14 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
         <div className="p-6 bg-gray-50 rounded-lg border border-gray-200">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium">Attachments</h3>
-            <Button type="button" variant="outline">
+            <Button 
+              type="button" 
+              variant="outline"
+              onClick={() => {
+                const fileInput = document.getElementById('file-upload');
+                if (fileInput) fileInput.click();
+              }}
+            >
               <Upload className="h-4 w-4 mr-2" />
               Add New Attachment
             </Button>
@@ -453,7 +467,7 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="z-[100]">
                       <SelectItem value="Draft">Draft</SelectItem>
                       <SelectItem value="Pending Review">Pending Review</SelectItem>
                       <SelectItem value="In Progress">In Progress</SelectItem>
@@ -492,12 +506,12 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
         </div>
 
         {/* Submit Buttons */}
-        <div className="flex justify-end space-x-4">
+        <div className="flex justify-end space-x-4 sticky bottom-0 bg-white p-4 border-t border-gray-200 z-10">
           <Button type="button" variant="outline">
             Cancel
           </Button>
-          <Button type="submit">
-            Save Event Log
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save Event Log"}
           </Button>
         </div>
       </form>
