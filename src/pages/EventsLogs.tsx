@@ -37,20 +37,34 @@ const EventsLogs = () => {
             <h2 className="text-2xl font-bold">Events & Logs</h2>
           </div>
           
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="sticky top-0 z-10 w-full grid grid-cols-2 bg-white p-4 border-b border-gray-100">
-              <TabsTrigger value="new">New Event/Log</TabsTrigger>
-              <TabsTrigger value="view">View Events/Logs</TabsTrigger>
+          <Tabs 
+            value={activeTab} 
+            onValueChange={handleTabChange} 
+            className="w-full"
+          >
+            <TabsList className="sticky top-0 z-30 w-full grid grid-cols-2 bg-white p-4 border-b border-gray-100 rounded-none">
+              <TabsTrigger value="new" className="text-base">New Event/Log</TabsTrigger>
+              <TabsTrigger value="view" className="text-base">View Events/Logs</TabsTrigger>
             </TabsList>
             
-            <ScrollArea className="h-[calc(100vh-280px)] overflow-auto">
-              <TabsContent value="new" className="p-6 focus:outline-none">
-                <EventLogForm branchId={id || ""} />
+            <div className="h-[calc(100vh-280px)]">
+              <TabsContent 
+                value="new" 
+                className="p-0 focus:outline-none m-0 h-full overflow-auto"
+              >
+                <div className="p-6">
+                  <EventLogForm branchId={id || ""} />
+                </div>
               </TabsContent>
-              <TabsContent value="view" className="p-6 focus:outline-none">
-                <EventLogsList branchId={id || ""} />
+              <TabsContent 
+                value="view" 
+                className="p-0 focus:outline-none m-0 h-full overflow-auto"
+              >
+                <div className="p-6">
+                  <EventLogsList branchId={id || ""} />
+                </div>
               </TabsContent>
-            </ScrollArea>
+            </div>
           </Tabs>
         </div>
       </main>
