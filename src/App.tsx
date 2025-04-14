@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -30,6 +29,7 @@ import KeyParameters from "./pages/KeyParameters";
 import CarePlanView from "./pages/CarePlanView";
 import TaskMatrix from "./pages/TaskMatrix";
 import TrainingMatrix from "./pages/TrainingMatrix";
+import EventsLogs from "./pages/EventsLogs";
 
 import "./styles/signatures.css"; // Import the signatures styles
 
@@ -74,6 +74,8 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
             <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
             <Route path="/branch-dashboard/:id/:branchName/care-plan/:carePlanId" element={<CarePlanView />} />
+            
+            <Route path="/branch-dashboard/:id/:branchName/events-logs" element={<EventsLogs />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
