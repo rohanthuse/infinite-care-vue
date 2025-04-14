@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EventLogForm } from "@/components/events-logs/EventLogForm";
 import { EventLogsList } from "@/components/events-logs/EventLogsList";
 import { useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 const EventsLogs = () => {
   const { id, branchName } = useParams();
@@ -13,6 +14,10 @@ const EventsLogs = () => {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
+  };
+  
+  const handleNewBooking = () => {
+    toast.info("New booking functionality will be implemented soon");
   };
 
   return (
@@ -23,6 +28,7 @@ const EventsLogs = () => {
         <BranchInfoHeader 
           branchName={decodeURIComponent(branchName || "Med-Infinite Branch")} 
           branchId={id || ""}
+          onNewBooking={handleNewBooking}
         />
         
         <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm p-6">
