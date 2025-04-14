@@ -25,6 +25,12 @@ interface EditRateDialogProps {
   rate: ServiceRate | null;
 }
 
+// Form data interface with proper typing for dates
+interface RateFormData extends Omit<Partial<ServiceRate>, 'effectiveFrom' | 'effectiveTo'> {
+  effectiveFromDate?: Date;
+  effectiveToDate?: Date;
+}
+
 const dayOptions = [
   { id: "monday", label: "Monday" },
   { id: "tuesday", label: "Tuesday" },
@@ -41,18 +47,15 @@ const EditRateDialog: React.FC<EditRateDialogProps> = ({
   onUpdateRate,
   rate
 }) => {
-  const [formData, setFormData] = useState<Partial<ServiceRate>>({});
+  const [formData, setFormData] = useState<RateFormData>({});
   const [isAllDaysSelected, setIsAllDaysSelected] = useState(false);
 
   useEffect(() => {
     if (rate) {
-      const effectiveFrom = rate.effectiveFrom ? new Date(rate.effectiveFrom) : undefined;
-      const effectiveTo = rate.effectiveTo ? new Date(rate.effectiveTo) : undefined;
-
       setFormData({
         ...rate,
-        effectiveFrom,
-        effectiveTo,
+        effectiveFromDate: rate.effectiveFrom ? new Date(rate.effectiveFrom) : undefined,
+        effectiveToDate: rate.effectiveTo ? new Date(rate.effectiveTo) : undefined,
         amount: rate.amount,
       });
       setIsAllDaysSelected(rate.applicableDays.length === 7);
@@ -92,31 +95,35 @@ const EditRateDialog: React.FC<EditRateDialogProps> = ({
   };
 
   const handleEffectiveFromChange = (date: Date | undefined) => {
-    if (date) {
-      setFormData(prev => ({ ...prev, effectiveFrom: date.toISOString() }));
-    }
+    setFormData(prev => ({ ...prev, effectiveFromDate: date }));
   };
 
   const handleEffectiveToChange = (date: Date | undefined) => {
-    if (date) {
-      setFormData(prev => ({ ...prev, effectiveTo: date.toISOString() }));
-    }
+    setFormData(prev => ({ ...prev, effectiveToDate: date }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.serviceName || !formData.serviceCode || !formData.amount || !formData.effectiveFrom) {
+    if (!formData.serviceName || !formData.serviceCode || !formData.amount || !formData.effectiveFromDate) {
       alert("Please fill in all required fields");
       return;
     }
 
-    onUpdateRate(rate.id, {
+    // Convert Date objects to ISO strings for submission
+    const submissionData = {
       ...formData,
-      amount: typeof formData.amount === 'string' ? parseFloat(formData.amount) : formData.amount,
+      effectiveFrom: formData.effectiveFromDate?.toISOString(),
+      effectiveTo: formData.effectiveToDate?.toISOString(),
       lastUpdated: new Date().toISOString(),
-    });
+      amount: typeof formData.amount === 'string' ? parseFloat(formData.amount) : formData.amount,
+    };
 
+    // Remove the Date objects from submission
+    delete (submissionData as any).effectiveFromDate;
+    delete (submissionData as any).effectiveToDate;
+
+    onUpdateRate(rate.id, submissionData);
     onClose();
   };
 
@@ -232,17 +239,17 @@ const EditRateDialog: React.FC<EditRateDialogProps> = ({
                     variant={"outline"}
                     className={cn(
                       "w-full justify-start text-left font-normal mt-1",
-                      !formData.effectiveFrom && "text-muted-foreground"
+                      !formData.effectiveFromDate && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.effectiveFrom ? format(formData.effectiveFrom, "PPP") : <span>Select date</span>}
+                    {formData.effectiveFromDate ? format(formData.effectiveFromDate, "PPP") : <span>Select date</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
                   <Calendar
                     mode="single"
-                    selected={formData.effectiveFrom}
+                    selected={formData.effectiveFromDate}
                     onSelect={handleEffectiveFromChange}
                     initialFocus
                   />
@@ -259,20 +266,20 @@ const EditRateDialog: React.FC<EditRateDialogProps> = ({
                     variant={"outline"}
                     className={cn(
                       "w-full justify-start text-left font-normal mt-1",
-                      !formData.effectiveTo && "text-muted-foreground"
+                      !formData.effectiveToDate && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.effectiveTo ? format(new Date(formData.effectiveTo), "PPP") : <span>Ongoing</span>}
+                    {formData.effectiveToDate ? format(formData.effectiveToDate, "PPP") : <span>Ongoing</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
                   <Calendar
                     mode="single"
-                    selected={formData.effectiveTo}
+                    selected={formData.effectiveToDate}
                     onSelect={handleEffectiveToChange}
                     initialFocus
-                    fromDate={formData.effectiveFrom}
+                    fromDate={formData.effectiveFromDate}
                   />
                 </PopoverContent>
               </Popover>

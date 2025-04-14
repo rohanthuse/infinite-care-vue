@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   Percent, Plus, Filter, Download, FileSpreadsheet, FileText, 
-  Check, Info, AlertTriangle, Clock, RefreshCw
+  Check, Info, AlertTriangle, Clock, RefreshCw, PoundSterling
 } from "lucide-react";
-import { PoundIcon } from "lucide-react";
 import RatesTable from "./RatesTable";
 import { ServiceRate, RateFilter } from "@/types/rate";
 import { mockRateData } from "@/data/mockRateData";
@@ -296,7 +295,7 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
         <Card>
           <CardContent className={cn("flex items-center p-4")}>
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 mr-3">
-              <PoundIcon className="h-5 w-5 text-green-600" />
+              <PoundSterling className="h-5 w-5 text-green-600" />
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Avg Hourly Rate</p>
@@ -360,7 +359,8 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
         open={isFilterDialogOpen}
         onClose={() => setIsFilterDialogOpen(false)}
         onApplyFilters={applyFilter}
-        currentFilter={activeFilter || {}}
+        initialFilters={activeFilter || {}}
+        serviceNames={[...new Set(rates.map(rate => rate.serviceName))]}
       />
       
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
