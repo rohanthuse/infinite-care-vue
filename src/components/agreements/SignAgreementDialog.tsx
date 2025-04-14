@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +27,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Mock clients list
 const mockClients = [
@@ -133,220 +133,222 @@ export function SignAgreementDialog({
       if (!value) resetForm();
       onOpenChange(value);
     }}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6">
           <DialogTitle>Sign New Agreement</DialogTitle>
           <DialogDescription>
             Complete the form to record a new signed agreement
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4 py-2">
-          <div className="space-y-2">
-            <label htmlFor="title" className="text-sm font-medium">
-              Agreement Title <span className="text-red-500">*</span>
-            </label>
-            <Input
-              id="title"
-              placeholder="Enter agreement title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Signing Party <span className="text-red-500">*</span>
-            </label>
-            <RadioGroup 
-              defaultValue="client" 
-              className="flex space-x-4"
-              value={signingParty}
-              onValueChange={setSigningParty}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="client" id="client" />
-                <Label htmlFor="client">Client</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="staff" id="staff" />
-                <Label htmlFor="staff">Staff</Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          {signingParty === "client" ? (
+        <ScrollArea className="flex-1 px-6 py-2 max-h-[calc(90vh-140px)]">
+          <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Client <span className="text-red-500">*</span>
+              <label htmlFor="title" className="text-sm font-medium">
+                Agreement Title <span className="text-red-500">*</span>
               </label>
-              <Select value={selectedClient} onValueChange={setSelectedClient}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select client" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockClients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Staff Member <span className="text-red-500">*</span>
-              </label>
-              <Select value={selectedStaff} onValueChange={setSelectedStaff}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select staff member" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockStaff.map((staff) => (
-                    <SelectItem key={staff.id} value={staff.id}>
-                      {staff.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Agreement Template
-            </label>
-            <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select template (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                {mockTemplates.map((template) => (
-                  <SelectItem key={template.id} value={template.id.toString()}>
-                    {template.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Type <span className="text-red-500">*</span>
-            </label>
-            <Select value={agreementType} onValueChange={setAgreementType}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select agreement type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Employment Agreement">Employment Agreement</SelectItem>
-                <SelectItem value="Service Agreement">Service Agreement</SelectItem>
-                <SelectItem value="NDA">Non-Disclosure Agreement</SelectItem>
-                <SelectItem value="Data Agreement">Data Agreement</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Status <span className="text-red-500">*</span>
-            </label>
-            <Select value={agreementStatus} onValueChange={setAgreementStatus}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-                <SelectItem value="Expired">Expired</SelectItem>
-                <SelectItem value="Terminated">Terminated</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Date Signed <span className="text-red-500">*</span>
-            </label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !signedDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {signedDate ? format(signedDate, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={signedDate}
-                  onSelect={setSignedDate}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Upload Agreement Document</label>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setDocumentUploaded(true)}
-                className="w-full"
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                {documentUploaded ? "Document Uploaded" : "Upload Document"}
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Digital Signature <span className="text-red-500">*</span></label>
-            <div className="flex flex-col space-y-4">
               <Input
-                placeholder="Type your full name to sign"
-                value={digitalSignature}
-                onChange={(e) => setDigitalSignature(e.target.value)}
-                className="border-dashed border-2 font-handwriting text-center text-lg"
+                id="title"
+                placeholder="Enter agreement title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
               />
-              <div className="flex items-center space-x-2 mt-2">
-                <Signature className="h-4 w-4 text-blue-500" />
-                <span className="text-sm text-gray-500">
-                  This digital signature is legally binding
-                </span>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Signing Party <span className="text-red-500">*</span>
+              </label>
+              <RadioGroup 
+                defaultValue="client" 
+                className="flex space-x-4"
+                value={signingParty}
+                onValueChange={setSigningParty}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="client" id="client" />
+                  <Label htmlFor="client">Client</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="staff" id="staff" />
+                  <Label htmlFor="staff">Staff</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {signingParty === "client" ? (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Client <span className="text-red-500">*</span>
+                </label>
+                <Select value={selectedClient} onValueChange={setSelectedClient}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockClients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Staff Member <span className="text-red-500">*</span>
+                </label>
+                <Select value={selectedStaff} onValueChange={setSelectedStaff}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select staff member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockStaff.map((staff) => (
+                      <SelectItem key={staff.id} value={staff.id}>
+                        {staff.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Agreement Template
+              </label>
+              <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select template (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockTemplates.map((template) => (
+                    <SelectItem key={template.id} value={template.id.toString()}>
+                      {template.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Type <span className="text-red-500">*</span>
+              </label>
+              <Select value={agreementType} onValueChange={setAgreementType}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select agreement type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Employment Agreement">Employment Agreement</SelectItem>
+                  <SelectItem value="Service Agreement">Service Agreement</SelectItem>
+                  <SelectItem value="NDA">Non-Disclosure Agreement</SelectItem>
+                  <SelectItem value="Data Agreement">Data Agreement</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Status <span className="text-red-500">*</span>
+              </label>
+              <Select value={agreementStatus} onValueChange={setAgreementStatus}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Expired">Expired</SelectItem>
+                  <SelectItem value="Terminated">Terminated</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Date Signed <span className="text-red-500">*</span>
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !signedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {signedDate ? format(signedDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={signedDate}
+                    onSelect={setSignedDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Upload Agreement Document</label>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDocumentUploaded(true)}
+                  className="w-full"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  {documentUploaded ? "Document Uploaded" : "Upload Document"}
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Digital Signature <span className="text-red-500">*</span></label>
+              <div className="flex flex-col space-y-4">
+                <Input
+                  placeholder="Type your full name to sign"
+                  value={digitalSignature}
+                  onChange={(e) => setDigitalSignature(e.target.value)}
+                  className="border-dashed border-2 font-handwriting text-center text-lg"
+                />
+                <div className="flex items-center space-x-2 mt-2">
+                  <Signature className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm text-gray-500">
+                    This digital signature is legally binding
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-2 pt-2">
+              <Checkbox 
+                id="confirm" 
+                checked={confirmSign}
+                onCheckedChange={(checked) => setConfirmSign(checked as boolean)} 
+              />
+              <div className="grid gap-1.5 leading-none">
+                <label
+                  htmlFor="confirm"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  I confirm that I have read and agree to the terms of this agreement <span className="text-red-500">*</span>
+                </label>
+                <p className="text-sm text-muted-foreground">
+                  By checking this box, you confirm that you are authorized to sign this agreement.
+                </p>
               </div>
             </div>
           </div>
-
-          <div className="flex items-start space-x-2 pt-2">
-            <Checkbox 
-              id="confirm" 
-              checked={confirmSign}
-              onCheckedChange={(checked) => setConfirmSign(checked as boolean)} 
-            />
-            <div className="grid gap-1.5 leading-none">
-              <label
-                htmlFor="confirm"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                I confirm that I have read and agree to the terms of this agreement <span className="text-red-500">*</span>
-              </label>
-              <p className="text-sm text-muted-foreground">
-                By checking this box, you confirm that you are authorized to sign this agreement.
-              </p>
-            </div>
-          </div>
-        </div>
+        </ScrollArea>
         
-        <DialogFooter>
+        <DialogFooter className="px-6 py-4 border-t">
           <Button 
             variant="outline" 
             onClick={() => onOpenChange(false)}
