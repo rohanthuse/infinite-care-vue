@@ -1,10 +1,9 @@
 
-import React from 'react';
-import { UseFormReturn } from 'react-hook-form';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import React from "react";
+import { UseFormReturn } from "react-hook-form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface ReferralQuestionsProps {
   form: UseFormReturn<any>;
@@ -12,13 +11,13 @@ interface ReferralQuestionsProps {
 
 export function ReferralQuestions({ form }: ReferralQuestionsProps) {
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <FormField
         control={form.control}
         name="referredToSafeguarding"
         render={({ field }) => (
           <FormItem className="space-y-3">
-            <FormLabel>Has this been referred to safeguarding?</FormLabel>
+            <FormLabel>Referred to Safeguarding?</FormLabel>
             <FormControl>
               <RadioGroup 
                 onValueChange={field.onChange} 
@@ -39,22 +38,13 @@ export function ReferralQuestions({ form }: ReferralQuestionsProps) {
           </FormItem>
         )}
       />
-
-      {form.watch("referredToSafeguarding") === "yes" && (
-        <div className="ml-8 mt-2">
-          <Textarea 
-            placeholder="Provide details about the safeguarding referral"
-            className="min-h-[80px]"
-          />
-        </div>
-      )}
-
+      
       <FormField
         control={form.control}
         name="reportedToPolice"
         render={({ field }) => (
           <FormItem className="space-y-3">
-            <FormLabel>Has this been reported to the police?</FormLabel>
+            <FormLabel>Reported to Police?</FormLabel>
             <FormControl>
               <RadioGroup 
                 onValueChange={field.onChange} 
@@ -75,22 +65,13 @@ export function ReferralQuestions({ form }: ReferralQuestionsProps) {
           </FormItem>
         )}
       />
-
-      {form.watch("reportedToPolice") === "yes" && (
-        <div className="ml-8 mt-2">
-          <Textarea 
-            placeholder="Provide details about the police report"
-            className="min-h-[80px]"
-          />
-        </div>
-      )}
-
+      
       <FormField
         control={form.control}
         name="reportedToRegulator"
         render={({ field }) => (
           <FormItem className="space-y-3">
-            <FormLabel>Has this been reported to the regulator?</FormLabel>
+            <FormLabel>Reported to Regulator?</FormLabel>
             <FormControl>
               <RadioGroup 
                 onValueChange={field.onChange} 
@@ -111,22 +92,13 @@ export function ReferralQuestions({ form }: ReferralQuestionsProps) {
           </FormItem>
         )}
       />
-
-      {form.watch("reportedToRegulator") === "yes" && (
-        <div className="ml-8 mt-2">
-          <Textarea 
-            placeholder="Provide details about the regulator report"
-            className="min-h-[80px]"
-          />
-        </div>
-      )}
-
+      
       <FormField
         control={form.control}
         name="followUpRequired"
         render={({ field }) => (
           <FormItem className="space-y-3">
-            <FormLabel>Is follow-up required?</FormLabel>
+            <FormLabel>Follow-up Required?</FormLabel>
             <FormControl>
               <RadioGroup 
                 onValueChange={field.onChange} 
@@ -147,15 +119,6 @@ export function ReferralQuestions({ form }: ReferralQuestionsProps) {
           </FormItem>
         )}
       />
-
-      {form.watch("followUpRequired") === "yes" && (
-        <div className="ml-8 mt-2">
-          <Textarea 
-            placeholder="Provide details about the required follow-up"
-            className="min-h-[80px]"
-          />
-        </div>
-      )}
     </div>
   );
 }

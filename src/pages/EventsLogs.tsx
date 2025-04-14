@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 const EventsLogs = () => {
   const { id, branchName } = useParams();
-  const [activeTab, setActiveTab] = useState("new");
+  const [activeTab, setActiveTab] = useState("view");
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);

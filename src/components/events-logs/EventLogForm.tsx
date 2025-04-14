@@ -14,14 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { BodyMapSelector } from "./BodyMapSelector";
-import { ActionsList } from "./ActionsList";
-import { AttachmentsList } from "./AttachmentsList";
-import { ReferralQuestions } from "./ReferralQuestions";
-import { StaffDetailsSection } from "./StaffDetailsSection";
 import { toast } from "sonner";
 
 const mockClients = [
@@ -402,8 +396,8 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
               />
               
               {injuryOccurred === "yes" && (
-                <div className="mt-4">
-                  <BodyMapSelector bodyMapPoints={bodyMapPoints} setBodyMapPoints={setBodyMapPoints} />
+                <div className="mt-4 p-4 bg-gray-100 rounded-md">
+                  <p className="text-sm text-gray-500">Body map selection will be implemented here</p>
                 </div>
               )}
             </div>
@@ -430,7 +424,78 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
                 </Button>
               </div>
               
-              <ActionsList actions={actions} setActions={setActions} />
+              <div className="space-y-4">
+                {actions.length > 0 ? (
+                  actions.map((action, index) => (
+                    <Card key={action.id}>
+                      <CardContent className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="md:col-span-2">
+                            <Label htmlFor={`action-${index}`}>Action</Label>
+                            <Textarea 
+                              id={`action-${index}`}
+                              placeholder="Describe the action"
+                              className="mt-1" 
+                              value={action.text}
+                              onChange={(e) => {
+                                const updatedActions = [...actions];
+                                updatedActions[index].text = e.target.value;
+                                setActions(updatedActions);
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`action-date-${index}`}>Date</Label>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  id={`action-date-${index}`}
+                                  variant="outline"
+                                  className="w-full mt-1 pl-3 text-left font-normal"
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {format(action.date, "PPP")}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={action.date}
+                                  onSelect={(date) => {
+                                    if (date) {
+                                      const updatedActions = [...actions];
+                                      updatedActions[index].date = date;
+                                      setActions(updatedActions);
+                                    }
+                                  }}
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2 text-red-500 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => {
+                            const updatedActions = actions.filter((_, i) => i !== index);
+                            setActions(updatedActions);
+                          }}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Remove
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="text-center py-6 border border-dashed border-gray-300 rounded-md">
+                    <p className="text-gray-500">No actions added yet</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -449,8 +514,13 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
                   type="button" 
                   variant="outline"
                   onClick={() => {
-                    const fileInput = document.getElementById('file-upload');
-                    if (fileInput) fileInput.click();
+                    const mockFile = {
+                      id: crypto.randomUUID(),
+                      name: `File-${attachments.length + 1}.pdf`,
+                      type: "application/pdf",
+                      size: Math.floor(Math.random() * 1000000)
+                    };
+                    setAttachments([...attachments, mockFile]);
                   }}
                 >
                   <Upload className="h-4 w-4 mr-2" />
@@ -458,7 +528,43 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
                 </Button>
               </div>
               
-              <AttachmentsList attachments={attachments} setAttachments={setAttachments} />
+              <div className="space-y-2">
+                {attachments.length > 0 ? (
+                  attachments.map((file, index) => (
+                    <div 
+                      key={file.id} 
+                      className="flex items-center justify-between p-3 border rounded-md bg-white"
+                    >
+                      <div className="flex items-center">
+                        <FileText className="h-5 w-5 text-blue-500 mr-2" />
+                        <div>
+                          <p className="text-sm font-medium">{file.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {(file.size / 1024).toFixed(1)} KB
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => {
+                          const updatedAttachments = attachments.filter((_, i) => i !== index);
+                          setAttachments(updatedAttachments);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Remove</span>
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-6 border border-dashed border-gray-300 rounded-md">
+                    <p className="text-gray-500">No attachments added yet</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -501,11 +607,44 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
           />
           
           {expandedSections.staffDetails && (
-            <div className="mt-4">
-              <StaffDetailsSection 
-                staff={mockStaff}
-                form={form}
-              />
+            <div className="mt-4 space-y-6">
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold">Staff Members Present</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {mockStaff.slice(0, 4).map((staff) => (
+                    <div key={staff.id} className="flex items-center space-x-2">
+                      <Checkbox id={`staff-present-${staff.id}`} />
+                      <Label htmlFor={`staff-present-${staff.id}`}>
+                        {staff.name}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold">Other People Present</h4>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center space-x-2">
+                    <Input placeholder="Person's name" className="w-full md:w-1/2" />
+                    <Select>
+                      <SelectTrigger className="w-full md:w-1/3">
+                        <SelectValue placeholder="Relationship" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="family">Family Member</SelectItem>
+                        <SelectItem value="friend">Friend</SelectItem>
+                        <SelectItem value="professional">Healthcare Professional</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button type="button" variant="outline" size="sm">
+                      <PlusCircle className="h-4 w-4" />
+                      <span className="sr-only">Add Person</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -518,8 +657,114 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
           />
           
           {expandedSections.referral && (
-            <div className="mt-4">
-              <ReferralQuestions form={form} />
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="referredToSafeguarding"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Referred to Safeguarding?</FormLabel>
+                    <FormControl>
+                      <RadioGroup 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value} 
+                        className="flex space-x-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="safeguarding-yes" />
+                          <Label htmlFor="safeguarding-yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="safeguarding-no" />
+                          <Label htmlFor="safeguarding-no">No</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="reportedToPolice"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Reported to Police?</FormLabel>
+                    <FormControl>
+                      <RadioGroup 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value} 
+                        className="flex space-x-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="police-yes" />
+                          <Label htmlFor="police-yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="police-no" />
+                          <Label htmlFor="police-no">No</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="reportedToRegulator"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Reported to Regulator?</FormLabel>
+                    <FormControl>
+                      <RadioGroup 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value} 
+                        className="flex space-x-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="regulator-yes" />
+                          <Label htmlFor="regulator-yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="regulator-no" />
+                          <Label htmlFor="regulator-no">No</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="followUpRequired"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Follow-up Required?</FormLabel>
+                    <FormControl>
+                      <RadioGroup 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value} 
+                        className="flex space-x-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="followup-yes" />
+                          <Label htmlFor="followup-yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="followup-no" />
+                          <Label htmlFor="followup-no">No</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           )}
         </div>
