@@ -1,7 +1,25 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Car } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Search, Filter, Plus, FileText, Download, Car, Route } from "lucide-react";
+import { mockTravelRecords } from "@/data/mockTravelData";
+import { TravelRecord, TravelFilter } from "@/types/travel";
+import TravelRecordsTable from "./TravelRecordsTable";
+import AddTravelRecordDialog from "./AddTravelRecordDialog";
+import FilterTravelDialog from "./FilterTravelDialog";
+import ViewTravelRecordDialog from "./ViewTravelRecordDialog";
+import { v4 as uuidv4 } from "uuid";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle 
+} from "@/components/ui/alert-dialog";
 
 interface TravelTabProps {
   branchId?: string;
@@ -9,30 +27,310 @@ interface TravelTabProps {
 }
 
 const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
+  const [travelRecords, setTravelRecords] = useState<TravelRecord[]>(mockTravelRecords);
+  const [filteredRecords, setFilteredRecords] = useState<TravelRecord[]>(mockTravelRecords);
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  // Dialog states
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  
+  // Current record states
+  const [currentRecord, setCurrentRecord] = useState<TravelRecord | undefined>(undefined);
+  const [recordToDelete, setRecordToDelete] = useState<string | undefined>(undefined);
+  
+  // Filter state
+  const [filters, setFilters] = useState<TravelFilter>({
+    vehicleTypes: [],
+    dateRange: { from: undefined, to: undefined },
+    status: [],
+    minDistance: undefined,
+    maxDistance: undefined,
+    minCost: undefined,
+    maxCost: undefined,
+  });
+
+  // Apply search and filters to travel records
+  useEffect(() => {
+    let result = [...travelRecords];
+    
+    // Apply search
+    if (searchTerm.trim() !== "") {
+      const searchLower = searchTerm.toLowerCase();
+      result = result.filter(
+        (record) =>
+          record.purpose.toLowerCase().includes(searchLower) ||
+          record.startLocation.toLowerCase().includes(searchLower) ||
+          record.endLocation.toLowerCase().includes(searchLower) ||
+          (record.clientName && record.clientName.toLowerCase().includes(searchLower)) ||
+          (record.carerName && record.carerName.toLowerCase().includes(searchLower)) ||
+          (record.notes && record.notes.toLowerCase().includes(searchLower)) ||
+          record.distance.toString().includes(searchTerm)
+      );
+    }
+    
+    // Apply vehicle type filters
+    if (filters.vehicleTypes.length > 0) {
+      result = result.filter((record) =>
+        filters.vehicleTypes.includes(record.vehicleType)
+      );
+    }
+    
+    // Apply status filters
+    if (filters.status.length > 0) {
+      result = result.filter((record) =>
+        filters.status.includes(record.status)
+      );
+    }
+    
+    // Apply distance filters
+    if (filters.minDistance !== undefined) {
+      result = result.filter((record) => record.distance >= filters.minDistance!);
+    }
+    if (filters.maxDistance !== undefined) {
+      result = result.filter((record) => record.distance <= filters.maxDistance!);
+    }
+    
+    // Apply cost filters
+    if (filters.minCost !== undefined) {
+      result = result.filter((record) => record.totalCost >= filters.minCost!);
+    }
+    if (filters.maxCost !== undefined) {
+      result = result.filter((record) => record.totalCost <= filters.maxCost!);
+    }
+    
+    // Apply date range filters
+    if (filters.dateRange.from) {
+      const fromDate = new Date(filters.dateRange.from);
+      fromDate.setHours(0, 0, 0, 0);
+      result = result.filter(
+        (record) => new Date(record.date) >= fromDate
+      );
+    }
+    if (filters.dateRange.to) {
+      const toDate = new Date(filters.dateRange.to);
+      toDate.setHours(23, 59, 59, 999);
+      result = result.filter(
+        (record) => new Date(record.date) <= toDate
+      );
+    }
+    
+    setFilteredRecords(result);
+  }, [travelRecords, searchTerm, filters]);
+
+  // Handler functions
+  const handleAddRecord = (recordData: Omit<TravelRecord, "id" | "status" | "createdBy">) => {
+    const newRecord: TravelRecord = {
+      ...recordData,
+      id: uuidv4(),
+      status: "pending", // Default status for new records
+      createdBy: "Current User" // In a real app, this would come from auth context
+    };
+    setTravelRecords([newRecord, ...travelRecords]);
+    setAddDialogOpen(false);
+  };
+
+  const handleEditRecord = (record: TravelRecord) => {
+    setCurrentRecord(record);
+    setAddDialogOpen(true);
+  };
+
+  const handleUpdateRecord = (updatedData: Omit<TravelRecord, "id" | "status" | "createdBy">) => {
+    if (currentRecord) {
+      const updatedRecord: TravelRecord = {
+        ...updatedData,
+        id: currentRecord.id,
+        status: currentRecord.status,
+        createdBy: currentRecord.createdBy
+      };
+      
+      setTravelRecords(
+        travelRecords.map((rec) => (rec.id === currentRecord.id ? updatedRecord : rec))
+      );
+      
+      setAddDialogOpen(false);
+      setCurrentRecord(undefined);
+    }
+  };
+
+  const handleViewRecord = (record: TravelRecord) => {
+    setCurrentRecord(record);
+    setViewDialogOpen(true);
+  };
+
+  const handleDeleteRecord = (recordId: string) => {
+    setRecordToDelete(recordId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteRecord = () => {
+    if (recordToDelete) {
+      setTravelRecords(travelRecords.filter((rec) => rec.id !== recordToDelete));
+      setDeleteDialogOpen(false);
+      setRecordToDelete(undefined);
+    }
+  };
+
+  const handleApplyFilters = (newFilters: TravelFilter) => {
+    setFilters(newFilters);
+  };
+
+  // Handle the "Add Record" or "Add First Record" button click
+  const handleAddRecordClick = () => {
+    setCurrentRecord(undefined); // Ensure we're not in edit mode
+    setAddDialogOpen(true);
+  };
+
+  // Handle the filter button click
+  const handleFilterClick = () => {
+    setFilterDialogOpen(true);
+  };
+
+  // Determine if filters are active
+  const hasActiveFilters = () => {
+    return (
+      filters.vehicleTypes.length > 0 ||
+      filters.status.length > 0 ||
+      filters.minDistance !== undefined ||
+      filters.maxDistance !== undefined ||
+      filters.minCost !== undefined ||
+      filters.maxCost !== undefined ||
+      filters.dateRange.from !== undefined ||
+      filters.dateRange.to !== undefined
+    );
+  };
+
   return (
     <div className="flex flex-col space-y-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-gray-800">Travel & Mileage</h2>
-          <p className="text-gray-500 mt-1">Manage travel expenses and mileage claims</p>
+          <p className="text-gray-500 mt-1">Manage travel expenses and mileage claims for {branchName}</p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {filteredRecords.length > 0 && (
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              <span>Export</span>
+            </Button>
+          )}
+          <Button 
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+            onClick={handleAddRecordClick}
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add Travel Record</span>
+          </Button>
         </div>
       </div>
       
-      {/* Placeholder for travel content */}
-      <div className="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-8 text-center">
-        <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-          <Car className="h-6 w-6 text-gray-400" />
+      <div className="flex flex-col md:flex-row gap-3 items-stretch">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search travel records..."
+            className="pl-10 pr-4"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-1">Travel & Mileage Tracking</h3>
-        <p className="text-gray-500">This module will allow tracking travel time, distance and costs.</p>
-        <Button 
-          variant="default" 
-          className="mt-4 bg-blue-600 hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Travel Record
-        </Button>
+        
+        <div className="flex items-center gap-3 flex-wrap">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className={`h-10 w-10 ${hasActiveFilters() ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}
+            onClick={handleFilterClick}
+          >
+            <Filter className={`h-4 w-4 ${hasActiveFilters() ? 'text-blue-600' : ''}`} />
+          </Button>
+        </div>
       </div>
+      
+      {filteredRecords.length === 0 && searchTerm === "" && !hasActiveFilters() ? (
+        <div className="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-8 text-center">
+          <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+            <Car className="h-6 w-6 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">No Travel Records Yet</h3>
+          <p className="text-gray-500">Start logging travel expenses and mileage for {branchName}.</p>
+          <Button 
+            variant="default" 
+            className="mt-4 bg-blue-600 hover:bg-blue-700"
+            onClick={handleAddRecordClick}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add First Travel Record
+          </Button>
+        </div>
+      ) : (
+        <TravelRecordsTable 
+          travelRecords={filteredRecords} 
+          onViewRecord={handleViewRecord}
+          onEditRecord={handleEditRecord}
+          onDeleteRecord={handleDeleteRecord}
+        />
+      )}
+      
+      {/* Add/Edit Record Dialog */}
+      <AddTravelRecordDialog
+        open={addDialogOpen}
+        onClose={() => {
+          setAddDialogOpen(false);
+          setCurrentRecord(undefined);
+        }}
+        onSave={currentRecord ? handleUpdateRecord : handleAddRecord}
+        initialData={currentRecord}
+        isEditing={!!currentRecord}
+      />
+      
+      {/* View Record Dialog */}
+      {currentRecord && (
+        <ViewTravelRecordDialog
+          open={viewDialogOpen}
+          onClose={() => {
+            setViewDialogOpen(false);
+            setCurrentRecord(undefined);
+          }}
+          onEdit={() => {
+            setViewDialogOpen(false);
+            setAddDialogOpen(true);
+          }}
+          travelRecord={currentRecord}
+        />
+      )}
+      
+      {/* Filter Dialog */}
+      <FilterTravelDialog
+        open={filterDialogOpen}
+        onClose={() => setFilterDialogOpen(false)}
+        onApplyFilters={handleApplyFilters}
+        currentFilters={filters}
+      />
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the selected travel record.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteRecord}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -1,0 +1,216 @@
+
+import React from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { TravelRecord, vehicleTypeLabels, travelStatusLabels } from "@/types/travel";
+import { format } from "date-fns";
+import { Edit, Download, ArrowRight, MapPin, Clock, Car, FileText, User, Users } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
+
+interface ViewTravelRecordDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onEdit: () => void;
+  travelRecord: TravelRecord;
+}
+
+const ViewTravelRecordDialog: React.FC<ViewTravelRecordDialogProps> = ({
+  open,
+  onClose,
+  onEdit,
+  travelRecord,
+}) => {
+  // Function to render status badge
+  const renderStatusBadge = (status: string) => {
+    let colorClass = "";
+    switch (status) {
+      case "approved":
+        colorClass = "bg-green-50 text-green-700 border-green-200";
+        break;
+      case "rejected":
+        colorClass = "bg-red-50 text-red-700 border-red-200";
+        break;
+      case "reimbursed":
+        colorClass = "bg-blue-50 text-blue-700 border-blue-200";
+        break;
+      default:
+        colorClass = "bg-amber-50 text-amber-700 border-amber-200";
+    }
+
+    return (
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${colorClass}`}>
+        {travelStatusLabels[travelRecord.status]}
+      </span>
+    );
+  };
+
+  // Format duration to hours and minutes
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins} minutes`;
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between">
+            <span>Travel Record Details</span>
+            {renderStatusBadge(travelRecord.status)}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="py-4">
+          {/* Top section with key info */}
+          <div className="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-100">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <div className="text-sm text-gray-500">Date</div>
+                <div className="font-medium">
+                  {format(new Date(travelRecord.date), "PPP")}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500">Total Distance</div>
+                <div className="font-medium">{travelRecord.distance.toFixed(1)} miles</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500">Total Cost</div>
+                <div className="font-bold text-lg">{formatCurrency(travelRecord.totalCost)}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Journey details */}
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center">
+                <MapPin className="h-4 w-4 mr-1" />
+                Journey Details
+              </h3>
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-start">
+                    <div className="min-w-[80px] text-gray-500">From:</div>
+                    <div className="font-medium">{travelRecord.startLocation}</div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="min-w-[80px] text-gray-500">To:</div>
+                    <div className="font-medium">{travelRecord.endLocation}</div>
+                  </div>
+                  <div className="flex items-center mt-2">
+                    <ArrowRight className="h-4 w-4 text-gray-400 mx-2" />
+                    <div className="text-sm text-gray-600">
+                      {formatDuration(travelRecord.duration)} journey time
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Vehicle and cost details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center">
+                  <Car className="h-4 w-4 mr-1" />
+                  Vehicle Details
+                </h3>
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="space-y-2">
+                    <div className="flex items-start">
+                      <div className="min-w-[100px] text-gray-500">Vehicle Type:</div>
+                      <div className="font-medium">
+                        {vehicleTypeLabels[travelRecord.vehicleType]}
+                      </div>
+                    </div>
+                    {travelRecord.vehicleType === 'car_personal' || travelRecord.vehicleType === 'car_company' ? (
+                      <div className="flex items-start">
+                        <div className="min-w-[100px] text-gray-500">Rate:</div>
+                        <div className="font-medium">
+                          £{travelRecord.costPerMile.toFixed(2)} per mile
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center">
+                  <Clock className="h-4 w-4 mr-1" />
+                  Purpose & People
+                </h3>
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="space-y-2">
+                    <div className="flex items-start">
+                      <div className="min-w-[80px] text-gray-500">Purpose:</div>
+                      <div className="font-medium">{travelRecord.purpose}</div>
+                    </div>
+                    
+                    {travelRecord.carerName && (
+                      <div className="flex items-start">
+                        <div className="min-w-[80px] text-gray-500">Carer:</div>
+                        <div>{travelRecord.carerName}</div>
+                      </div>
+                    )}
+                    
+                    {travelRecord.clientName && (
+                      <div className="flex items-start">
+                        <div className="min-w-[80px] text-gray-500">Client:</div>
+                        <div>{travelRecord.clientName}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Notes */}
+            {travelRecord.notes && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center">
+                  <FileText className="h-4 w-4 mr-1" />
+                  Additional Notes
+                </h3>
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <p className="text-sm">{travelRecord.notes}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Created by */}
+            <div className="text-sm text-gray-500 mt-4 flex items-center">
+              <User className="h-4 w-4 mr-1" />
+              <span>Created by {travelRecord.createdBy}</span>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <div className="flex gap-2 w-full justify-between">
+            <Button variant="outline" onClick={onClose}>
+              Close
+            </Button>
+            <div className="space-x-2">
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+              <Button onClick={onEdit} className="gap-2">
+                <Edit className="h-4 w-4" />
+                Edit
+              </Button>
+            </div>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default ViewTravelRecordDialog;
