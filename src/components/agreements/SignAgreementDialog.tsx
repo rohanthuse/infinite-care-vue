@@ -349,7 +349,7 @@ export function SignAgreementDialog({
           </div>
         </ScrollArea>
         
-        <DialogFooter className="sticky bottom-0 w-full px-6 py-4 border-t bg-white">
+        <DialogFooter className="flex flex-row justify-end space-x-2 px-6 py-4 border-t bg-white">
           <Button 
             variant="outline" 
             onClick={() => onOpenChange(false)}
