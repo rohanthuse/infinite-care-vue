@@ -31,6 +31,7 @@ import { CareTab } from "@/components/care/CareTab";
 import NotificationsOverview from "@/components/workflow/NotificationsOverview";
 import TaskMatrix from "./TaskMatrix";
 import TrainingMatrix from "./TrainingMatrix";
+import AccountingTab from "@/components/accounting/AccountingTab";
 
 const weeklyData = [{
   day: "Mon",
@@ -361,6 +362,7 @@ const BranchDashboard = () => {
     if (path.startsWith("clients")) return "clients";
     if (path.startsWith("communications")) return "communications";
     if (path.startsWith("medication")) return "medication";
+    if (path.startsWith("accounting")) return "accounting";
     if (path.startsWith("reviews")) return "reviews";
     if (path.startsWith("care")) return "care";
     
@@ -1140,6 +1142,8 @@ const BranchDashboard = () => {
         )}
         
         {activeTab === "medication" && <MedicationTab branchId={id} branchName={branchName} />}
+        
+        {activeTab === "accounting" && <AccountingTab branchId={id} branchName={decodeURIComponent(branchName || "")} />}
         
         {activeTab === "care-plan" && <CareTab branchId={id} branchName={branchName} />}
       </main>
