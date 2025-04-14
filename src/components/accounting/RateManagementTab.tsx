@@ -1,7 +1,23 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Percent, Settings } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { 
+  Percent, Plus, Filter, Download, FileSpreadsheet, FileText, 
+  Check, Info, AlertTriangle, Clock, RefreshCw
+} from "lucide-react";
+import { PoundIcon } from "lucide-react";
+import RatesTable from "./RatesTable";
+import { ServiceRate, RateFilter } from "@/types/rate";
+import { mockRateData } from "@/data/mockRateData";
+import { v4 as uuidv4 } from "uuid";
+import { toast } from "sonner";
+import { cn, formatCurrency } from "@/lib/utils";
+import AddRateDialog from "./AddRateDialog";
+import EditRateDialog from "./EditRateDialog";
+import ViewRateDialog from "./ViewRateDialog";
+import FilterRateDialog from "./FilterRateDialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface RateManagementTabProps {
   branchId?: string;
@@ -9,6 +25,181 @@ interface RateManagementTabProps {
 }
 
 const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchName }) => {
+  const [rates, setRates] = useState<ServiceRate[]>([]);
+  const [filteredRates, setFilteredRates] = useState<ServiceRate[]>([]);
+  const [activeFilter, setActiveFilter] = useState<RateFilter | undefined>(undefined);
+  
+  const [isAddRateDialogOpen, setIsAddRateDialogOpen] = useState(false);
+  const [isEditRateDialogOpen, setIsEditRateDialogOpen] = useState(false);
+  const [isViewRateDialogOpen, setIsViewRateDialogOpen] = useState(false);
+  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  
+  const [selectedRate, setSelectedRate] = useState<ServiceRate | null>(null);
+  const [rateToDelete, setRateToDelete] = useState<string | null>(null);
+
+  // Load mock data
+  useEffect(() => {
+    setRates(mockRateData);
+    setFilteredRates(mockRateData);
+  }, []);
+
+  const handleAddRate = (rateData: any) => {
+    const newRate: ServiceRate = {
+      id: uuidv4(),
+      ...rateData
+    };
+    
+    setRates(prevRates => [newRate, ...prevRates]);
+    setFilteredRates(prevRates => [newRate, ...prevRates]);
+    
+    toast.success("Rate added successfully", {
+      description: `${newRate.serviceName} - ${formatCurrency(newRate.amount)}`,
+    });
+  };
+
+  const handleUpdateRate = (rateId: string, rateData: any) => {
+    const updatedRates = rates.map(rate => 
+      rate.id === rateId ? { ...rate, ...rateData } : rate
+    );
+    
+    setRates(updatedRates);
+    applyFilter(activeFilter, updatedRates);
+    
+    toast.success("Rate updated successfully", {
+      description: `${rateData.serviceName} - ${formatCurrency(rateData.amount)}`,
+    });
+  };
+
+  const handleDeleteRate = (rateId: string) => {
+    setRateToDelete(rateId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteRate = () => {
+    if (rateToDelete) {
+      const rateToRemove = rates.find(rate => rate.id === rateToDelete);
+      const updatedRates = rates.filter(rate => rate.id !== rateToDelete);
+      
+      setRates(updatedRates);
+      applyFilter(activeFilter, updatedRates);
+      
+      toast.success("Rate deleted successfully", {
+        description: rateToRemove ? `${rateToRemove.serviceName} - ${formatCurrency(rateToRemove.amount)}` : "",
+      });
+      
+      setRateToDelete(null);
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
+  const handleViewRate = (rate: ServiceRate) => {
+    setSelectedRate(rate);
+    setIsViewRateDialogOpen(true);
+  };
+
+  const handleEditRate = (rate: ServiceRate) => {
+    setSelectedRate(rate);
+    setIsEditRateDialogOpen(true);
+  };
+
+  const applyFilter = (filter: RateFilter | undefined, ratesList = rates) => {
+    if (!filter || Object.keys(filter).length === 0) {
+      setFilteredRates(ratesList);
+      setActiveFilter(undefined);
+      return;
+    }
+    
+    let result = [...ratesList];
+    
+    // Filter by service name
+    if (filter.serviceNames && filter.serviceNames.length) {
+      const searchTerm = filter.serviceNames[0].toLowerCase();
+      result = result.filter(rate => 
+        rate.serviceName.toLowerCase().includes(searchTerm) || 
+        rate.serviceCode.toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    // Filter by rate type
+    if (filter.rateTypes && filter.rateTypes.length) {
+      result = result.filter(rate => filter.rateTypes?.includes(rate.rateType));
+    }
+    
+    // Filter by client type
+    if (filter.clientTypes && filter.clientTypes.length) {
+      result = result.filter(rate => filter.clientTypes?.includes(rate.clientType));
+    }
+    
+    // Filter by funding source
+    if (filter.fundingSources && filter.fundingSources.length) {
+      result = result.filter(rate => filter.fundingSources?.includes(rate.fundingSource));
+    }
+    
+    // Filter by status
+    if (filter.statuses && filter.statuses.length) {
+      result = result.filter(rate => filter.statuses?.includes(rate.status));
+    }
+    
+    // Filter by date range
+    if (filter.dateRange) {
+      if (filter.dateRange.from) {
+        result = result.filter(rate => {
+          const effectiveFrom = new Date(rate.effectiveFrom);
+          return effectiveFrom >= filter.dateRange!.from!;
+        });
+      }
+      
+      if (filter.dateRange.to) {
+        result = result.filter(rate => {
+          if (!rate.effectiveTo) return true; // Ongoing rates pass this filter
+          const effectiveTo = new Date(rate.effectiveTo);
+          return effectiveTo <= filter.dateRange!.to!;
+        });
+      }
+    }
+    
+    // Filter by amount range
+    if (filter.minAmount !== undefined) {
+      result = result.filter(rate => rate.amount >= filter.minAmount!);
+    }
+    
+    if (filter.maxAmount !== undefined) {
+      result = result.filter(rate => rate.amount <= filter.maxAmount!);
+    }
+    
+    setFilteredRates(result);
+    setActiveFilter(filter);
+    
+    toast.success("Filters applied", {
+      description: `Showing ${result.length} of ${ratesList.length} rates`,
+    });
+  };
+
+  const clearFilters = () => {
+    setActiveFilter(undefined);
+    setFilteredRates(rates);
+  };
+
+  const exportRates = (format: 'csv' | 'pdf') => {
+    toast.success(`Exporting rates as ${format.toUpperCase()}`, {
+      description: `${filteredRates.length} rates will be exported`,
+    });
+    
+    // This would typically trigger an actual export function
+    console.log(`Exporting ${filteredRates.length} rates in ${format} format`);
+  };
+
+  // Calculate summary stats
+  const activeRatesCount = filteredRates.filter(r => r.status === 'active').length;
+  const pendingRatesCount = filteredRates.filter(r => r.status === 'pending').length;
+  const expiredRatesCount = filteredRates.filter(r => r.status === 'expired').length;
+  
+  const averageHourlyRate = filteredRates
+    .filter(r => r.rateType === 'hourly' && r.status === 'active')
+    .reduce((sum, rate) => sum + rate.amount, 0) / 
+    (filteredRates.filter(r => r.rateType === 'hourly' && r.status === 'active').length || 1);
+
   return (
     <div className="flex flex-col space-y-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -16,23 +207,176 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
           <h2 className="text-xl font-semibold text-gray-800">Rate Management</h2>
           <p className="text-gray-500 mt-1">Configure and manage service rates</p>
         </div>
+        
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-gray-600"
+            onClick={() => setIsFilterDialogOpen(true)}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Filter
+            {activeFilter && Object.keys(activeFilter).length > 0 && (
+              <span className="ml-2 px-1.5 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">
+                {Object.keys(activeFilter).length}
+              </span>
+            )}
+          </Button>
+          
+          <div className="flex gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-gray-600 px-2"
+              onClick={() => exportRates('csv')}
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              <span className="sr-only">Export CSV</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-gray-600 px-2"
+              onClick={() => exportRates('pdf')}
+            >
+              <FileText className="h-4 w-4" />
+              <span className="sr-only">Export PDF</span>
+            </Button>
+          </div>
+          
+          <Button
+            onClick={() => setIsAddRateDialogOpen(true)}
+            size="sm"
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Add Rate
+          </Button>
+        </div>
       </div>
       
-      {/* Placeholder for rate management content */}
-      <div className="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-8 text-center">
-        <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-          <Percent className="h-6 w-6 text-gray-400" />
-        </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-1">Rate Configuration</h3>
-        <p className="text-gray-500">This module will allow configuring service rates for {branchName}.</p>
-        <Button 
-          variant="default" 
-          className="mt-4 bg-blue-600 hover:bg-blue-700"
-        >
-          <Settings className="h-4 w-4 mr-2" />
-          Manage Rates
-        </Button>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className={cn("flex items-center p-4")}>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 mr-3">
+              <Check className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Active Rates</p>
+              <h3 className="text-2xl font-bold mt-1">{activeRatesCount}</h3>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className={cn("flex items-center p-4")}>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 mr-3">
+              <Clock className="h-5 w-5 text-yellow-600" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Pending Rates</p>
+              <h3 className="text-2xl font-bold mt-1">{pendingRatesCount}</h3>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className={cn("flex items-center p-4")}>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 mr-3">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Expired Rates</p>
+              <h3 className="text-2xl font-bold mt-1">{expiredRatesCount}</h3>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className={cn("flex items-center p-4")}>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 mr-3">
+              <PoundIcon className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Avg Hourly Rate</p>
+              <h3 className="text-2xl font-bold mt-1">{formatCurrency(averageHourlyRate)}</h3>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+      
+      {activeFilter && Object.keys(activeFilter).length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+          <div className="flex items-center">
+            <Info className="h-5 w-5 text-blue-500 mr-2" />
+            <span className="text-sm text-blue-700">
+              Filtered results: Showing {filteredRates.length} of {rates.length} rates
+            </span>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className="h-8 text-blue-700 hover:bg-blue-100"
+            onClick={clearFilters}
+          >
+            <RefreshCw className="h-3.5 w-3.5 mr-1" />
+            Clear Filters
+          </Button>
+        </div>
+      )}
+      
+      <div className="bg-white border rounded-lg shadow-sm">
+        <RatesTable
+          rates={filteredRates}
+          onViewRate={handleViewRate}
+          onEditRate={handleEditRate}
+          onDeleteRate={handleDeleteRate}
+        />
+      </div>
+      
+      {/* Dialogs */}
+      <AddRateDialog
+        open={isAddRateDialogOpen}
+        onClose={() => setIsAddRateDialogOpen(false)}
+        onAddRate={handleAddRate}
+      />
+      
+      <EditRateDialog
+        open={isEditRateDialogOpen}
+        onClose={() => setIsEditRateDialogOpen(false)}
+        onUpdateRate={handleUpdateRate}
+        rate={selectedRate}
+      />
+      
+      <ViewRateDialog
+        open={isViewRateDialogOpen}
+        onClose={() => setIsViewRateDialogOpen(false)}
+        onEdit={handleEditRate}
+        rate={selectedRate}
+      />
+      
+      <FilterRateDialog
+        open={isFilterDialogOpen}
+        onClose={() => setIsFilterDialogOpen(false)}
+        onApplyFilters={applyFilter}
+        currentFilter={activeFilter || {}}
+      />
+      
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the rate.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setRateToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteRate} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
