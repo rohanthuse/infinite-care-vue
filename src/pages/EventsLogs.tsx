@@ -24,14 +24,14 @@ const EventsLogs = () => {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
       
-      <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full">
+      <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full overflow-hidden">
         <BranchInfoHeader 
           branchName={decodeURIComponent(branchName || "Med-Infinite Branch")} 
           branchId={id || ""}
           onNewBooking={handleNewBooking}
         />
         
-        <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col">
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-2xl font-bold">Events & Logs</h2>
           </div>
@@ -39,17 +39,17 @@ const EventsLogs = () => {
           <Tabs 
             value={activeTab} 
             onValueChange={handleTabChange} 
-            className="w-full"
+            className="w-full flex flex-col flex-1"
           >
-            <TabsList className="w-full grid grid-cols-2 bg-white p-4 border-b border-gray-100 rounded-none">
-              <TabsTrigger value="new" className="text-base font-medium">New Event/Log</TabsTrigger>
-              <TabsTrigger value="view" className="text-base font-medium">View Events/Logs</TabsTrigger>
+            <TabsList className="w-full grid grid-cols-2 bg-gray-50 p-3 border-b border-gray-100 rounded-none">
+              <TabsTrigger value="new" className="text-base font-medium py-2.5">New Event/Log</TabsTrigger>
+              <TabsTrigger value="view" className="text-base font-medium py-2.5">View Events/Logs</TabsTrigger>
             </TabsList>
             
-            <div className="h-[calc(100vh-280px)]">
+            <div className="flex-1 overflow-hidden flex flex-col">
               <TabsContent 
                 value="new" 
-                className="p-0 focus:outline-none m-0 h-full"
+                className="p-0 focus:outline-none m-0 flex-1 overflow-y-auto"
               >
                 <div className="p-6">
                   <EventLogForm branchId={id || ""} />
@@ -57,7 +57,7 @@ const EventsLogs = () => {
               </TabsContent>
               <TabsContent 
                 value="view" 
-                className="p-0 focus:outline-none m-0 h-full"
+                className="p-0 focus:outline-none m-0 flex-1 overflow-y-auto"
               >
                 <div className="p-6">
                   <EventLogsList branchId={id || ""} />
