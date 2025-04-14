@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -134,14 +135,14 @@ export function SignAgreementDialog({
       onOpenChange(value);
     }}>
       <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6">
+        <DialogHeader className="sticky top-0 z-10 bg-white px-6 pt-6 pb-2 border-b">
           <DialogTitle>Sign New Agreement</DialogTitle>
           <DialogDescription>
             Complete the form to record a new signed agreement
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 px-6 py-2 max-h-[calc(90vh-140px)]">
+        <ScrollArea className="flex-1 px-6 py-4 overflow-y-auto">
           <div className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="title" className="text-sm font-medium">
@@ -348,7 +349,7 @@ export function SignAgreementDialog({
           </div>
         </ScrollArea>
         
-        <DialogFooter className="px-6 py-4 border-t">
+        <DialogFooter className="sticky bottom-0 w-full px-6 py-4 border-t bg-white">
           <Button 
             variant="outline" 
             onClick={() => onOpenChange(false)}
