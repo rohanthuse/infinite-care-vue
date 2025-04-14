@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, Filter, Download, Eye, Calendar, Clock, MapPin, User, FileText, MoreVertical } from 'lucide-react';
+import { Search, Filter, Download, Eye, Calendar, Clock, MapPin, User, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,21 +16,6 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
 
 // Mock data
 const mockEvents = [
@@ -107,10 +92,6 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
   const [filterStatus, setFilterStatus] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
-  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-  const [newStatus, setNewStatus] = useState('');
-  const [events, setEvents] = useState(mockEvents);
   const itemsPerPage = 5;
 
   React.useEffect(() => {
@@ -123,7 +104,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
   }, [branchId]);
 
   // Apply filters
-  const filteredEvents = events.filter(event => {
+  const filteredEvents = mockEvents.filter(event => {
     const matchesSearch = 
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (event.clientName && event.clientName.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -142,35 +123,6 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  const handleStatusChange = (status: string) => {
-    setNewStatus(status);
-    setStatusDialogOpen(true);
-  };
-
-  const confirmStatusChange = () => {
-    if (!selectedEvent || !newStatus) return;
-    
-    // Update the status in our local state
-    const updatedEvents = events.map(event => {
-      if (event.id === selectedEvent.id) {
-        return { ...event, status: newStatus };
-      }
-      return event;
-    });
-    
-    setEvents(updatedEvents);
-    
-    // Show success toast
-    toast.success(`Status updated to ${newStatus}`, {
-      description: `Event ${selectedEvent.id} status has been updated`
-    });
-    
-    // Close the dialog
-    setStatusDialogOpen(false);
-    setSelectedEvent(null);
-    setNewStatus('');
-  };
 
   const getCategoryBadge = (category: string) => {
     switch (category) {
@@ -315,43 +267,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                   
                   <div className="flex items-center gap-2 mt-2 md:mt-0">
                     {getStatusBadge(event.status)}
-                    
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-[200px]">
-                        <DropdownMenuItem onSelect={() => {
-                          setSelectedEvent(event);
-                          handleStatusChange('Pending Review');
-                        }}>
-                          Mark as Pending Review
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => {
-                          setSelectedEvent(event);
-                          handleStatusChange('In Progress');
-                        }}>
-                          Mark as In Progress
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => {
-                          setSelectedEvent(event);
-                          handleStatusChange('Resolved');
-                        }}>
-                          Mark as Resolved
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => {
-                          setSelectedEvent(event);
-                          handleStatusChange('Closed');
-                        }}>
-                          Mark as Closed
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" className="ml-2">
                       <Eye className="h-4 w-4 mr-1" />
                       View
                     </Button>
@@ -454,26 +370,6 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
           </PaginationContent>
         </Pagination>
       )}
-
-      {/* Status change dialog */}
-      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Update Event Status</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to change the status of this event to {newStatus}?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={confirmStatusChange}>
-              Update Status
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
