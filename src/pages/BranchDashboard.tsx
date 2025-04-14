@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { 
   Calendar, Users, BarChart4, Clock, FileText, AlertCircle, Search, Bell, ChevronRight, Home, ArrowUpRight, Phone, Mail, MapPin, Plus, Clock7, RefreshCw, Download, Filter, ClipboardCheck, ThumbsUp, ArrowUp, ArrowDown, ChevronDown, Edit, Eye, HelpCircle, CalendarIcon, ChevronLeft
 } from "lucide-react";
+import { BranchAgreementsTab } from "@/components/agreements/BranchAgreementsTab";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -365,6 +366,7 @@ const BranchDashboard = () => {
     if (path.startsWith("accounting")) return "accounting";
     if (path.startsWith("reviews")) return "reviews";
     if (path.startsWith("care")) return "care";
+    if (path.startsWith("agreements")) return "agreements";
     
     return "overview";
   };
@@ -1146,6 +1148,8 @@ const BranchDashboard = () => {
         {activeTab === "accounting" && <AccountingTab branchId={id} branchName={decodeURIComponent(branchName || "")} />}
         
         {activeTab === "care-plan" && <CareTab branchId={id} branchName={branchName} />}
+        
+        {activeTab === "agreements" && <BranchAgreementsTab branchId={id || ""} branchName={decodeURIComponent(branchName || "")} />}
       </main>
     </div>
   );
