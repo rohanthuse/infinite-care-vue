@@ -59,8 +59,8 @@ function App() {
             <Route path="/branch-details/:id" element={<BranchDetails />} />
             <Route path="/branch-admins" element={<BranchAdmins />} />
             <Route path="/workflow" element={<Workflow />} />
-            <Route path="/task-matrix" element={<TaskMatrix />} />
-            <Route path="/training-matrix" element={<TrainingMatrix />} />
+            <Route path="/task-matrix" element={<TaskMatrix branchId="main" branchName="Main Branch" />} />
+            <Route path="/training-matrix" element={<TrainingMatrix branchId="main" branchName="Main Branch" />} />
             <Route path="/key-parameters" element={<KeyParameters />} />
             
             {/* Branch Dashboard Routes */}

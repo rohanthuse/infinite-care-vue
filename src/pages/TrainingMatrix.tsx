@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { getTrainingMatrix, getTrainingCategories } from "@/data/mockTrainingData";
 import { Training, TrainingMatrix as TrainingMatrixType, TrainingCategory, TrainingStatus, StaffMember } from "@/types/training";
 import { 
@@ -20,7 +22,17 @@ import TrainingSort, { SortOption } from "@/components/training/TrainingSort";
 import TrainingExport from "@/components/training/TrainingExport";
 import AddTrainingDialog from "@/components/training/AddTrainingDialog";
 
-const TrainingMatrix: React.FC = () => {
+export interface TrainingMatrixProps {
+  branchId?: string;
+  branchName?: string;
+}
+
+const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
+  const params = useParams<{id: string, branchName: string}>();
+  // Use props if provided, otherwise fall back to URL params
+  const branchId = props.branchId || params.id;
+  const branchName = props.branchName || params.branchName;
+
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<TrainingCategory | 'all'>('all');
   const [matrixData, setMatrixData] = useState<TrainingMatrixType>(getTrainingMatrix());

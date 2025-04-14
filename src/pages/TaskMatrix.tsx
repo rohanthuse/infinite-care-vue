@@ -19,9 +19,18 @@ interface DragItem {
   sourceColumn: string;
 }
 
-const TaskMatrix: React.FC = () => {
+export interface TaskMatrixProps {
+  branchId?: string;
+  branchName?: string;
+}
+
+const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
   const navigate = useNavigate();
-  const { id: branchId, branchName } = useParams<{id: string, branchName: string}>();
+  const params = useParams<{id: string, branchName: string}>();
+  // Use props if provided, otherwise fall back to URL params
+  const branchId = props.branchId || params.id;
+  const branchName = props.branchName || params.branchName;
+  
   const [taskView, setTaskView] = useState<TaskView>("staff");
   const [columns, setColumns] = useState<TaskColumnType[]>(getTaskColumns());
   const [searchTerm, setSearchTerm] = useState("");
