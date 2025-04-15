@@ -24,6 +24,7 @@ export interface FormElementBase {
   label: string;
   required: boolean;
   order: number;
+  errorMessage?: string;
 }
 
 export interface TextElement extends FormElementBase {
@@ -179,6 +180,23 @@ export interface FormAssignee {
   name: string;
 }
 
+export interface FormPermissions {
+  viewAccess: string[];
+  editAccess: string[];
+  submitAccess: string[];
+  manageAccess: string[];
+}
+
+export interface FormSettings {
+  showProgressBar: boolean;
+  allowSaveAsDraft: boolean;
+  autoSaveEnabled: boolean;
+  autoSaveInterval: number;
+  redirectAfterSubmit: boolean;
+  redirectUrl?: string;
+  submitButtonText: string;
+}
+
 export interface Form {
   id: string;
   title: string;
@@ -194,4 +212,6 @@ export interface Form {
   requiresReview: boolean;
   version: number;
   assignees: FormAssignee[];
+  permissions?: FormPermissions;
+  settings?: FormSettings;
 }
