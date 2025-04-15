@@ -32,6 +32,7 @@ export interface TextElement extends FormElementBase {
   defaultValue?: string;
   maxLength?: number;
   minLength?: number;
+  errorMessage?: string;
 }
 
 export interface TextAreaElement extends FormElementBase {
@@ -41,6 +42,7 @@ export interface TextAreaElement extends FormElementBase {
   maxLength?: number;
   minLength?: number;
   rows?: number;
+  errorMessage?: string;
 }
 
 export interface NumberElement extends FormElementBase {
@@ -50,18 +52,21 @@ export interface NumberElement extends FormElementBase {
   min?: number;
   max?: number;
   step?: number;
+  errorMessage?: string;
 }
 
 export interface EmailElement extends FormElementBase {
   type: 'email';
   placeholder?: string;
   defaultValue?: string;
+  errorMessage?: string;
 }
 
 export interface TelElement extends FormElementBase {
   type: 'tel';
   placeholder?: string;
   defaultValue?: string;
+  errorMessage?: string;
 }
 
 export interface DateElement extends FormElementBase {
@@ -69,11 +74,13 @@ export interface DateElement extends FormElementBase {
   defaultValue?: string;
   min?: string;
   max?: string;
+  errorMessage?: string;
 }
 
 export interface TimeElement extends FormElementBase {
   type: 'time';
   defaultValue?: string;
+  errorMessage?: string;
 }
 
 export interface CheckboxElement extends FormElementBase {
@@ -84,6 +91,7 @@ export interface CheckboxElement extends FormElementBase {
     value: string;
   }>;
   defaultValue?: string[];
+  errorMessage?: string;
 }
 
 export interface RadioElement extends FormElementBase {
@@ -94,6 +102,7 @@ export interface RadioElement extends FormElementBase {
     value: string;
   }>;
   defaultValue?: string;
+  errorMessage?: string;
 }
 
 export interface SelectElement extends FormElementBase {
@@ -105,6 +114,7 @@ export interface SelectElement extends FormElementBase {
   }>;
   defaultValue?: string;
   placeholder?: string;
+  errorMessage?: string;
 }
 
 export interface MultiSelectElement extends FormElementBase {
@@ -116,16 +126,19 @@ export interface MultiSelectElement extends FormElementBase {
   }>;
   defaultValue?: string[];
   placeholder?: string;
+  errorMessage?: string;
 }
 
 export interface SignatureElement extends FormElementBase {
   type: 'signature';
+  errorMessage?: string;
 }
 
 export interface FileElement extends FormElementBase {
   type: 'file';
   accept?: string; // e.g., "image/*" or ".pdf,.doc"
   multiple?: boolean;
+  errorMessage?: string;
 }
 
 export interface HeadingElement extends FormElementBase {
@@ -179,6 +192,56 @@ export interface FormAssignee {
   name: string;
 }
 
+export interface FormPermissions {
+  view?: {
+    clients?: boolean;
+    staff?: boolean;
+    carers?: boolean;
+    admins?: boolean;
+  };
+  submit?: {
+    clients?: boolean;
+    staff?: boolean;
+    carers?: boolean;
+    admins?: boolean;
+  };
+  manage?: {
+    clients?: boolean;
+    staff?: boolean;
+    carers?: boolean;
+    admins?: boolean;
+  };
+}
+
+export interface FormSettings {
+  requireAuth?: boolean;
+  recordIP?: boolean;
+  notifications?: {
+    email?: {
+      enabled?: boolean;
+      recipients?: string;
+      subject?: string;
+      template?: string;
+    };
+    sms?: {
+      enabled?: boolean;
+      recipients?: string;
+    };
+  };
+  workflow?: {
+    reviewerType?: 'admin' | 'manager' | 'specific';
+    specificReviewers?: string;
+    afterSubmission?: 'thankyou' | 'redirect' | 'another';
+    redirectUrl?: string;
+    thankYouMessage?: string;
+  };
+  storage?: {
+    database?: boolean;
+    file?: boolean;
+    fileFormat?: 'csv' | 'pdf' | 'json';
+  };
+}
+
 export interface Form {
   id: string;
   title: string;
@@ -194,4 +257,6 @@ export interface Form {
   requiresReview: boolean;
   version: number;
   assignees: FormAssignee[];
+  permissions?: FormPermissions;
+  settings?: FormSettings;
 }
