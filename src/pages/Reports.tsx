@@ -5,6 +5,7 @@ import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { TabNavigation } from "@/components/TabNavigation";
 import { ReportsContent } from "@/components/reports/ReportsContent";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const Reports = () => {
   const { id, branchName } = useParams();
@@ -26,6 +27,17 @@ const Reports = () => {
     }
   };
 
+  // Handler for the "New Booking" button
+  const handleNewBooking = () => {
+    // Navigate to the bookings page with a query parameter to open the new booking dialog
+    navigate(`/branch-dashboard/${id}/${encodeURIComponent(decodedBranchName)}/bookings?new=true`);
+    
+    // Show a success toast notification
+    toast.success("Redirecting to create a new booking", {
+      description: "You'll be able to create a new booking on the bookings page",
+    });
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -34,6 +46,7 @@ const Reports = () => {
         <BranchInfoHeader 
           branchName={decodedBranchName} 
           branchId={id || ""}
+          onNewBooking={handleNewBooking}
         />
         
         <div className="mt-6">
