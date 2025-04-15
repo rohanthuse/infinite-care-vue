@@ -1,0 +1,166 @@
+
+import React, { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { BarChart, XAxis, YAxis, Bar, Legend, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+
+interface ClientReportsProps {
+  branchId: string;
+  branchName: string;
+}
+
+// Mock data for the charts
+const clientActivityData = [
+  { name: "Jan", active: 65, inactive: 25, new: 15 },
+  { name: "Feb", active: 70, inactive: 20, new: 10 },
+  { name: "Mar", active: 75, inactive: 15, new: 18 },
+  { name: "Apr", active: 72, inactive: 18, new: 12 },
+  { name: "May", active: 78, inactive: 14, new: 16 },
+  { name: "Jun", active: 82, inactive: 10, new: 20 },
+];
+
+const clientDemographicsData = [
+  { name: "18-30", value: 15 },
+  { name: "31-50", value: 25 },
+  { name: "51-65", value: 30 },
+  { name: "66-80", value: 20 },
+  { name: "81+", value: 10 },
+];
+
+const clientServiceTypeData = [
+  { name: "Home Care", value: 40 },
+  { name: "Nursing", value: 25 },
+  { name: "Respite Care", value: 15 },
+  { name: "Companionship", value: 20 },
+];
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+export function ClientReports({ branchId, branchName }: ClientReportsProps) {
+  const [activeSubTab, setActiveSubTab] = useState<string>("activity");
+  
+  return (
+    <div className="space-y-4">
+      <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
+        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-sm mb-4">
+          <TabsList className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <TabsTrigger value="activity" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
+              Client Activity
+            </TabsTrigger>
+            <TabsTrigger value="demographics" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
+              Demographics
+            </TabsTrigger>
+            <TabsTrigger value="services" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
+              Service Utilization
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="activity" className="mt-0">
+          <Card className="border border-gray-200 shadow-sm">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Client Activity Overview</h3>
+              <div className="h-80 w-full">
+                <ChartContainer 
+                  config={{
+                    active: { color: "#0088FE" },
+                    inactive: { color: "#FF8042" },
+                    new: { color: "#00C49F" },
+                  }}
+                >
+                  <BarChart data={clientActivityData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="active" name="Active Clients" fill="var(--color-active)" />
+                    <Bar dataKey="inactive" name="Inactive Clients" fill="var(--color-inactive)" />
+                    <Bar dataKey="new" name="New Clients" fill="var(--color-new)" />
+                  </BarChart>
+                </ChartContainer>
+              </div>
+              <div className="mt-4 text-sm text-muted-foreground">
+                <p>This report shows client activity trends over the last 6 months, including active, inactive, and new client counts.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="demographics" className="mt-0">
+          <Card className="border border-gray-200 shadow-sm">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Client Demographics</h3>
+              <div className="h-80 w-full flex justify-center">
+                <ChartContainer
+                  config={{
+                    primary: { color: "#0088FE" },
+                  }}
+                >
+                  <PieChart width={400} height={300}>
+                    <Pie
+                      data={clientDemographicsData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={true}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, value, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {clientDemographicsData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [`${value} clients`, 'Count']} />
+                    <Legend />
+                  </PieChart>
+                </ChartContainer>
+              </div>
+              <div className="mt-4 text-sm text-muted-foreground">
+                <p>This report shows the age distribution of clients currently registered with the branch.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="services" className="mt-0">
+          <Card className="border border-gray-200 shadow-sm">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Client Service Utilization</h3>
+              <div className="h-80 w-full flex justify-center">
+                <ChartContainer
+                  config={{
+                    primary: { color: "#0088FE" },
+                  }}
+                >
+                  <PieChart width={400} height={300}>
+                    <Pie
+                      data={clientServiceTypeData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={true}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, value, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {clientServiceTypeData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [`${value} clients`, 'Count']} />
+                    <Legend />
+                  </PieChart>
+                </ChartContainer>
+              </div>
+              <div className="mt-4 text-sm text-muted-foreground">
+                <p>This report shows the distribution of different service types utilized by clients.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

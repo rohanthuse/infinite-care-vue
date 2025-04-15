@@ -36,6 +36,7 @@ import FormBuilder from "./pages/FormBuilder";
 import Documents from "./pages/Documents";
 import Library from "./pages/Library";
 import ThirdPartyAccess from "./pages/ThirdPartyAccess";
+import Reports from "./pages/Reports";
 
 import "./styles/signatures.css"; // Import the signatures styles
 
@@ -88,6 +89,7 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/documents" element={<Documents />} />
             <Route path="/branch-dashboard/:id/:branchName/library" element={<Library />} />
             <Route path="/branch-dashboard/:id/:branchName/third-party" element={<ThirdPartyAccess />} />
+            <Route path="/branch-dashboard/:id/:branchName/reports" element={<Reports />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
