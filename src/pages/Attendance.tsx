@@ -3,17 +3,17 @@ import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { EventLogForm } from "@/components/events-logs/EventLogForm";
-import { EventLogsList } from "@/components/events-logs/EventLogsList";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { TabNavigation } from "@/components/TabNavigation";
+import { AttendanceList } from "@/components/attendance/AttendanceList";
+import { AttendanceForm } from "@/components/attendance/AttendanceForm";
 
-const EventsLogs = () => {
+const Attendance = () => {
   const { id, branchName } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("view");
-  const [activeNavTab, setActiveNavTab] = useState("events-logs");
+  const [activeNavTab, setActiveNavTab] = useState("attendance");
   const decodedBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
 
   const handleTabChange = (value: string) => {
@@ -24,7 +24,7 @@ const EventsLogs = () => {
     setActiveNavTab(value);
     
     // Navigate to the appropriate route based on the selected tab
-    if (value !== "events-logs") {
+    if (value !== "attendance") {
       navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
     }
   };
@@ -54,7 +54,7 @@ const EventsLogs = () => {
         
         <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col">
           <div className="p-6 border-b border-gray-100">
-            <h2 className="text-2xl font-bold">Events & Logs</h2>
+            <h2 className="text-2xl font-bold">Attendance</h2>
           </div>
           
           <Tabs 
@@ -68,13 +68,13 @@ const EventsLogs = () => {
                   value="new" 
                   className="text-base font-medium py-2.5 rounded-md transition-all duration-200 data-[state=active]:text-blue-700 data-[state=active]:shadow-sm data-[state=active]:bg-white"
                 >
-                  New Event/Log
+                  Record Attendance
                 </TabsTrigger>
                 <TabsTrigger 
                   value="view" 
                   className="text-base font-medium py-2.5 rounded-md transition-all duration-200 data-[state=active]:text-blue-700 data-[state=active]:shadow-sm data-[state=active]:bg-white"
                 >
-                  View Events/Logs
+                  View Attendance
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -85,7 +85,7 @@ const EventsLogs = () => {
                 className="p-0 focus:outline-none m-0 h-full"
               >
                 <div className="p-4 md:p-6 max-w-full">
-                  <EventLogForm branchId={id || ""} />
+                  <AttendanceForm branchId={id || ""} />
                 </div>
               </TabsContent>
               <TabsContent 
@@ -93,7 +93,7 @@ const EventsLogs = () => {
                 className="p-0 focus:outline-none m-0 h-full"
               >
                 <div className="p-4 md:p-6 max-w-full">
-                  <EventLogsList branchId={id || ""} />
+                  <AttendanceList branchId={id || ""} />
                 </div>
               </TabsContent>
             </div>
@@ -104,4 +104,4 @@ const EventsLogs = () => {
   );
 };
 
-export default EventsLogs;
+export default Attendance;
