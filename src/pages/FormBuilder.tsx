@@ -11,7 +11,8 @@ import { FormBuilderPublish } from '@/components/form-builder/FormBuilderPublish
 import { FormBuilderNavBar } from '@/components/form-builder/FormBuilderNavBar';
 import { FormValidationTab } from '@/components/form-builder/FormValidationTab';
 import { FormAdvancedTab } from '@/components/form-builder/FormAdvancedTab';
-import { TabNavigation } from '@/components/form-builder/TabNavigation';
+import { TabNavigation as FormTabNavigation } from '@/components/form-builder/TabNavigation';
+import { TabNavigation } from '@/components/TabNavigation';
 import { Form, FormElement, FormSettings, FormPermissions } from '@/types/form-builder';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/components/ui/use-toast';
@@ -217,6 +218,12 @@ const FormBuilder = () => {
 
   const decodedBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
 
+  const handleNavigate = (tab: string) => {
+    if (tab !== "form-builder" && branchId && branchName) {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/${tab}`);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -228,7 +235,6 @@ const FormBuilder = () => {
           onNewBooking={() => {}}
         />
         
-        {/* Add the DashboardNavbar here */}
         <DashboardNavbar />
         
         <FormBuilderNavBar 
@@ -244,12 +250,19 @@ const FormBuilder = () => {
           }}
           isFormDirty={isFormDirty}
         />
+
+        <div className="mb-6">
+          <TabNavigation 
+            activeTab="form-builder" 
+            onChange={handleNavigate}
+          />
+        </div>
         
-        <TabNavigation 
+        <FormTabNavigation 
           activeTab={activeTab} 
-          onTabChange={handleTabChange} 
+          onTabChange={handleTabChange}
           title="Form Builder" 
-          subtitle="Create and manage your form"
+          subtitle="Create and manage your form" 
         />
         
         <Tabs value={activeTab} onValueChange={handleTabChange}>
