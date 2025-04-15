@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, Filter, Download, Eye, Calendar, Clock, MapPin, User, FileText, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -32,7 +31,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
-// Mock data
 const mockEvents = [
   {
     id: 'EV001',
@@ -225,8 +223,8 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
   }
 
   return (
-    <div className="space-y-6 w-full overflow-hidden">
-      <div className="flex flex-col md:flex-row gap-4 items-end sticky top-0 z-30 bg-white pb-4">
+    <div className="space-y-6 w-full">
+      <div className="flex flex-col md:flex-row gap-4 items-end bg-white pb-4">
         <div className="flex-1">
           <label htmlFor="search" className="text-sm font-medium mb-1 block">Search</label>
           <div className="relative">
@@ -247,7 +245,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
             <SelectTrigger id="category">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
-            <SelectContent className="z-[100]">
+            <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
               <SelectItem value="accident">Accident</SelectItem>
               <SelectItem value="incident">Incident</SelectItem>
@@ -267,7 +265,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
             <SelectTrigger id="status">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
-            <SelectContent className="z-[100]">
+            <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="Draft">Draft</SelectItem>
               <SelectItem value="Pending Review">Pending Review</SelectItem>
@@ -405,7 +403,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
       </div>
       
       {filteredEvents.length > 0 && (
-        <Pagination>
+        <Pagination className="mt-6">
           <PaginationContent>
             <PaginationItem>
               <PaginationPrevious 
@@ -449,7 +447,6 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
         </Pagination>
       )}
 
-      {/* Status change dialog */}
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

@@ -31,7 +31,7 @@ const EventsLogs = () => {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
       
-      <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full overflow-hidden">
+      <main className="flex-1 px-4 md:px-8 pt-4 pb-8 md:py-6 w-full">
         <BranchInfoHeader 
           branchName={decodedBranchName} 
           branchId={id || ""}
@@ -46,7 +46,7 @@ const EventsLogs = () => {
           />
         </div>
         
-        <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-[calc(100vh-250px)] overflow-hidden">
+        <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col">
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-2xl font-bold">Events & Logs</h2>
           </div>
@@ -54,7 +54,7 @@ const EventsLogs = () => {
           <Tabs 
             value={activeTab} 
             onValueChange={handleTabChange} 
-            className="w-full flex flex-col flex-1 overflow-hidden"
+            className="w-full flex flex-col flex-1"
           >
             <div className="bg-gray-50 border-b border-gray-100 p-1.5 sm:p-2.5 sticky top-0 z-20">
               <TabsList className="w-full grid grid-cols-2 rounded-md overflow-hidden bg-gray-100/80 p-0.5 sm:p-1">
@@ -73,10 +73,10 @@ const EventsLogs = () => {
               </TabsList>
             </div>
             
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1">
               <TabsContent 
                 value="new" 
-                className="p-0 focus:outline-none m-0 h-full overflow-y-auto"
+                className="p-0 focus:outline-none m-0 h-full"
               >
                 <div className="p-4 md:p-6 max-w-full">
                   <EventLogForm branchId={id || ""} />
@@ -84,7 +84,7 @@ const EventsLogs = () => {
               </TabsContent>
               <TabsContent 
                 value="view" 
-                className="p-0 focus:outline-none m-0 h-full overflow-y-auto"
+                className="p-0 focus:outline-none m-0 h-full"
               >
                 <div className="p-4 md:p-6 max-w-full">
                   <EventLogsList branchId={id || ""} />

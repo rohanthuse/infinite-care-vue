@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { format } from "date-fns";
-import { CalendarIcon, Clock, MapPin, Upload, User, Users, X, FileText, PlusCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { CalendarIcon, Clock, MapPin, Upload, X, FileText, PlusCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -15,6 +15,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
+import { BodyMapSelector } from "@/components/events-logs/BodyMapSelector"; 
+import { StaffDetailsSection } from "@/components/events-logs/StaffDetailsSection";
+import { ActionsList } from "@/components/events-logs/ActionsList";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -72,7 +75,7 @@ interface EventLogFormProps {
 export function EventLogForm({ branchId }: EventLogFormProps) {
   const [actions, setActions] = useState<Array<{ id: string; text: string; date: Date }>>([]);
   const [attachments, setAttachments] = useState<Array<{ id: string; name: string; type: string; size: number }>>([]);
-  const [bodyMapPoints, setBodyMapPoints] = useState<Array<{ id: string; x: number; y: number; type: string }>>([]);
+  const [bodyMapPoints, setBodyMapPoints] = useState<Array<{ id: string; x: number; y: number; type: string; description: string }>>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     details: true,
@@ -113,7 +116,7 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
     }));
   };
   
-  const onSubmit = async (data: EventLogFormValues) => {
+  const onSubmit = async (data: any) => {
     try {
       setIsSubmitting(true);
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -396,8 +399,11 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
               />
               
               {injuryOccurred === "yes" && (
-                <div className="mt-4 p-4 bg-gray-100 rounded-md">
-                  <p className="text-sm text-gray-500">Body map selection will be implemented here</p>
+                <div className="mt-4">
+                  <BodyMapSelector 
+                    bodyMapPoints={bodyMapPoints} 
+                    setBodyMapPoints={setBodyMapPoints} 
+                  />
                 </div>
               )}
             </div>
@@ -424,78 +430,7 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
                 </Button>
               </div>
               
-              <div className="space-y-4">
-                {actions.length > 0 ? (
-                  actions.map((action, index) => (
-                    <Card key={action.id}>
-                      <CardContent className="p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="md:col-span-2">
-                            <Label htmlFor={`action-${index}`}>Action</Label>
-                            <Textarea 
-                              id={`action-${index}`}
-                              placeholder="Describe the action"
-                              className="mt-1" 
-                              value={action.text}
-                              onChange={(e) => {
-                                const updatedActions = [...actions];
-                                updatedActions[index].text = e.target.value;
-                                setActions(updatedActions);
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor={`action-date-${index}`}>Date</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  id={`action-date-${index}`}
-                                  variant="outline"
-                                  className="w-full mt-1 pl-3 text-left font-normal"
-                                >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {format(action.date, "PPP")}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={action.date}
-                                  onSelect={(date) => {
-                                    if (date) {
-                                      const updatedActions = [...actions];
-                                      updatedActions[index].date = date;
-                                      setActions(updatedActions);
-                                    }
-                                  }}
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="mt-2 text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => {
-                            const updatedActions = actions.filter((_, i) => i !== index);
-                            setActions(updatedActions);
-                          }}
-                        >
-                          <X className="h-4 w-4 mr-1" />
-                          Remove
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <div className="text-center py-6 border border-dashed border-gray-300 rounded-md">
-                    <p className="text-gray-500">No actions added yet</p>
-                  </div>
-                )}
-              </div>
+              <ActionsList actions={actions} setActions={setActions} />
             </div>
           )}
         </div>
