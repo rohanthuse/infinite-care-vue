@@ -1,19 +1,41 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Form } from '@/types/form-builder';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormElementRenderer } from './FormElementRenderer';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Smartphone, Monitor } from 'lucide-react';
+import { FileText, Smartphone, Monitor, AlertCircle } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface FormBuilderPreviewProps {
   form: Form;
 }
 
 export const FormBuilderPreview: React.FC<FormBuilderPreviewProps> = ({ form }) => {
-  const [viewMode, setViewMode] = React.useState<'desktop' | 'mobile'>('desktop');
+  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
+  const [previewValues, setPreviewValues] = useState<Record<string, any>>({});
+  const [showSubmitAlert, setShowSubmitAlert] = useState(false);
+  const { toast } = useToast();
+
+  const handleChange = (elementId: string, value: any) => {
+    setPreviewValues(prev => ({
+      ...prev,
+      [elementId]: value,
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast({
+      title: "Form Submitted",
+      description: "Your form has been submitted successfully in preview mode.",
+    });
+    setShowSubmitAlert(true);
+    console.log('Form submitted with values:', previewValues);
+  };
 
   return (
     <div className="space-y-6">
@@ -42,6 +64,28 @@ export const FormBuilderPreview: React.FC<FormBuilderPreviewProps> = ({ form }) 
         </div>
       </div>
       
+      {showSubmitAlert && (
+        <Alert className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Success!</AlertTitle>
+          <AlertDescription>
+            Form submitted successfully in preview mode. This is just a simulation - 
+            no data was actually saved. You can continue testing the form.
+          </AlertDescription>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-2"
+            onClick={() => {
+              setShowSubmitAlert(false);
+              setPreviewValues({});
+            }}
+          >
+            Reset Form
+          </Button>
+        </Alert>
+      )}
+      
       <div className={`mx-auto ${viewMode === 'mobile' ? 'max-w-sm' : 'max-w-3xl'}`}>
         <Card>
           <CardHeader>
@@ -60,10 +104,15 @@ export const FormBuilderPreview: React.FC<FormBuilderPreviewProps> = ({ form }) 
                   <p className="text-gray-500">No form elements added yet. Add elements in the design tab.</p>
                 </div>
               ) : (
-                <div className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
                   {form.elements.map((element) => (
                     <div key={element.id}>
-                      <FormElementRenderer element={element} />
+                      <FormElementRenderer 
+                        element={element} 
+                        onChange={(value) => handleChange(element.id, value)}
+                        value={previewValues[element.id]}
+                        isPreview={true}
+                      />
                     </div>
                   ))}
                   
@@ -72,7 +121,7 @@ export const FormBuilderPreview: React.FC<FormBuilderPreviewProps> = ({ form }) 
                   <div className="flex justify-end">
                     <Button type="submit">Submit Form</Button>
                   </div>
-                </div>
+                </form>
               )}
             </ScrollArea>
           </CardContent>

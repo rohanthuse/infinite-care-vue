@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   PlusCircle, Type, AlignLeft, Hash, Mail, Phone, Calendar, Clock, CheckSquare, 
-  CircleDot, List, FileInput, FileSignature, Heading, Paragraph, Section, SeparatorHorizontal,
+  CircleDot, List, FileInput, FileSignature, Heading, Text, Section, SeparatorHorizontal,
   GripVertical, Copy, Trash, Settings
 } from 'lucide-react';
 import { Form, FormElement, FormElementType } from '@/types/form-builder';
@@ -50,7 +50,7 @@ export const FormBuilderDesigner: React.FC<FormBuilderDesignerProps> = ({
       case 'file': return <FileInput className="h-4 w-4" />;
       case 'signature': return <FileSignature className="h-4 w-4" />;
       case 'heading': return <Heading className="h-4 w-4" />;
-      case 'paragraph': return <Paragraph className="h-4 w-4" />;
+      case 'paragraph': return <Text className="h-4 w-4" />; // Changed from Paragraph to Text
       case 'section': return <Section className="h-4 w-4" />;
       case 'divider': return <SeparatorHorizontal className="h-4 w-4" />;
       default: return <PlusCircle className="h-4 w-4" />;

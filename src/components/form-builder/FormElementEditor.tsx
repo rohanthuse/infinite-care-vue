@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { FormElement } from '@/types/form-builder';
+import { FormElement, CheckboxElement, RadioElement, SelectElement, MultiSelectElement } from '@/types/form-builder';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -32,9 +31,10 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
   
   const handleAddOption = () => {
     if (['checkbox', 'radio', 'select', 'multiselect'].includes(element.type)) {
+      const elementWithOptions = element as CheckboxElement | RadioElement | SelectElement | MultiSelectElement;
       const updatedOptions = [
-        ...element.options,
-        { id: uuidv4(), label: `Option ${element.options.length + 1}`, value: `option${element.options.length + 1}` }
+        ...elementWithOptions.options,
+        { id: uuidv4(), label: `Option ${elementWithOptions.options.length + 1}`, value: `option${elementWithOptions.options.length + 1}` }
       ];
       onUpdate({ options: updatedOptions });
     }
@@ -42,7 +42,8 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
   
   const handleUpdateOption = (optionId: string, field: string, value: string) => {
     if (['checkbox', 'radio', 'select', 'multiselect'].includes(element.type)) {
-      const updatedOptions = element.options.map(option =>
+      const elementWithOptions = element as CheckboxElement | RadioElement | SelectElement | MultiSelectElement;
+      const updatedOptions = elementWithOptions.options.map(option =>
         option.id === optionId ? { ...option, [field]: value } : option
       );
       onUpdate({ options: updatedOptions });
@@ -51,7 +52,8 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
   
   const handleRemoveOption = (optionId: string) => {
     if (['checkbox', 'radio', 'select', 'multiselect'].includes(element.type)) {
-      const updatedOptions = element.options.filter(option => option.id !== optionId);
+      const elementWithOptions = element as CheckboxElement | RadioElement | SelectElement | MultiSelectElement;
+      const updatedOptions = elementWithOptions.options.filter(option => option.id !== optionId);
       onUpdate({ options: updatedOptions });
     }
   };
@@ -89,7 +91,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
               <Label htmlFor="placeholder">Placeholder Text</Label>
               <Input
                 id="placeholder"
-                value={element.placeholder}
+                value={(element as any).placeholder}
                 onChange={(e) => handleBasicInfoChange('placeholder', e.target.value)}
               />
             </div>
@@ -98,7 +100,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
               <Label htmlFor="defaultValue">Default Value</Label>
               <Input
                 id="defaultValue"
-                value={element.defaultValue}
+                value={(element as any).defaultValue}
                 onChange={(e) => handleBasicInfoChange('defaultValue', e.target.value)}
               />
             </div>
@@ -266,7 +268,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
               
               <ScrollArea className="h-[200px] border rounded-md p-2">
                 <div className="space-y-2">
-                  {element.options.map((option, index) => (
+                  {(element as CheckboxElement | RadioElement | SelectElement | MultiSelectElement).options.map((option, index) => (
                     <div key={option.id} className="flex items-center space-x-2">
                       <Input
                         value={option.label}
@@ -285,7 +287,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
                         size="icon"
                         className="text-red-500"
                         onClick={() => handleRemoveOption(option.id)}
-                        disabled={element.options.length <= 1}
+                        disabled={(element as CheckboxElement | RadioElement | SelectElement | MultiSelectElement).options.length <= 1}
                       >
                         <Trash className="h-4 w-4" />
                       </Button>
@@ -300,7 +302,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
                 <Label htmlFor="placeholder">Placeholder Text</Label>
                 <Input
                   id="placeholder"
-                  value={element.placeholder}
+                  value={(element as SelectElement | MultiSelectElement).placeholder}
                   onChange={(e) => handleBasicInfoChange('placeholder', e.target.value)}
                 />
               </div>

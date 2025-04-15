@@ -11,28 +11,48 @@ import { Separator } from '@/components/ui/separator';
 
 interface FormElementRendererProps {
   element: FormElement;
+  onChange?: (value: any) => void;
+  value?: any;
+  isPreview?: boolean;
 }
 
-export const FormElementRenderer: React.FC<FormElementRendererProps> = ({ element }) => {
+export const FormElementRenderer: React.FC<FormElementRendererProps> = ({ 
+  element, 
+  onChange,
+  value,
+  isPreview = false 
+}) => {
+  const handleChange = (val: any) => {
+    if (onChange) {
+      onChange(val);
+    }
+  };
+
+  const isInteractive = isPreview && onChange;
+
   const renderElement = () => {
     switch (element.type) {
       case 'text':
         return (
           <Input
             type="text"
-            placeholder={element.placeholder}
-            defaultValue={element.defaultValue}
-            readOnly
+            placeholder={(element as any).placeholder}
+            defaultValue={(element as any).defaultValue}
+            value={isInteractive ? value : undefined}
+            onChange={isInteractive ? (e) => handleChange(e.target.value) : undefined}
+            readOnly={!isInteractive}
           />
         );
       
       case 'textarea':
         return (
           <Textarea
-            placeholder={element.placeholder}
-            defaultValue={element.defaultValue}
-            rows={element.rows}
-            readOnly
+            placeholder={(element as any).placeholder}
+            defaultValue={(element as any).defaultValue}
+            value={isInteractive ? value : undefined}
+            onChange={isInteractive ? (e) => handleChange(e.target.value) : undefined}
+            rows={(element as any).rows}
+            readOnly={!isInteractive}
           />
         );
       
@@ -40,12 +60,14 @@ export const FormElementRenderer: React.FC<FormElementRendererProps> = ({ elemen
         return (
           <Input
             type="number"
-            placeholder={element.placeholder}
-            defaultValue={element.defaultValue?.toString()}
-            min={element.min}
-            max={element.max}
-            step={element.step}
-            readOnly
+            placeholder={(element as any).placeholder}
+            defaultValue={(element as any).defaultValue?.toString()}
+            value={isInteractive ? value : undefined}
+            onChange={isInteractive ? (e) => handleChange(parseFloat(e.target.value) || 0) : undefined}
+            min={(element as any).min}
+            max={(element as any).max}
+            step={(element as any).step}
+            readOnly={!isInteractive}
           />
         );
       
@@ -53,9 +75,11 @@ export const FormElementRenderer: React.FC<FormElementRendererProps> = ({ elemen
         return (
           <Input
             type="email"
-            placeholder={element.placeholder}
-            defaultValue={element.defaultValue}
-            readOnly
+            placeholder={(element as any).placeholder}
+            defaultValue={(element as any).defaultValue}
+            value={isInteractive ? value : undefined}
+            onChange={isInteractive ? (e) => handleChange(e.target.value) : undefined}
+            readOnly={!isInteractive}
           />
         );
       
@@ -63,9 +87,11 @@ export const FormElementRenderer: React.FC<FormElementRendererProps> = ({ elemen
         return (
           <Input
             type="tel"
-            placeholder={element.placeholder}
-            defaultValue={element.defaultValue}
-            readOnly
+            placeholder={(element as any).placeholder}
+            defaultValue={(element as any).defaultValue}
+            value={isInteractive ? value : undefined}
+            onChange={isInteractive ? (e) => handleChange(e.target.value) : undefined}
+            readOnly={!isInteractive}
           />
         );
       
@@ -73,10 +99,12 @@ export const FormElementRenderer: React.FC<FormElementRendererProps> = ({ elemen
         return (
           <Input
             type="date"
-            defaultValue={element.defaultValue}
-            min={element.min}
-            max={element.max}
-            readOnly
+            defaultValue={(element as any).defaultValue}
+            value={isInteractive ? value : undefined}
+            onChange={isInteractive ? (e) => handleChange(e.target.value) : undefined}
+            min={(element as any).min}
+            max={(element as any).max}
+            readOnly={!isInteractive}
           />
         );
       
@@ -84,17 +112,31 @@ export const FormElementRenderer: React.FC<FormElementRendererProps> = ({ elemen
         return (
           <Input
             type="time"
-            defaultValue={element.defaultValue}
-            readOnly
+            defaultValue={(element as any).defaultValue}
+            value={isInteractive ? value : undefined}
+            onChange={isInteractive ? (e) => handleChange(e.target.value) : undefined}
+            readOnly={!isInteractive}
           />
         );
       
       case 'checkbox':
         return (
           <div className="space-y-2">
-            {element.options.map(option => (
+            {(element as any).options.map((option: any) => (
               <div key={option.id} className="flex items-center space-x-2">
-                <Checkbox id={option.id} disabled />
+                <Checkbox 
+                  id={option.id} 
+                  disabled={!isInteractive}
+                  checked={isInteractive ? (value && value.includes(option.value)) : undefined}
+                  onCheckedChange={isInteractive ? (checked) => {
+                    const currentValues = Array.isArray(value) ? [...value] : [];
+                    if (checked) {
+                      handleChange([...currentValues, option.value]);
+                    } else {
+                      handleChange(currentValues.filter(v => v !== option.value));
+                    }
+                  } : undefined}
+                />
                 <label htmlFor={option.id} className="text-sm">{option.label}</label>
               </div>
             ))}
@@ -103,8 +145,13 @@ export const FormElementRenderer: React.FC<FormElementRendererProps> = ({ elemen
       
       case 'radio':
         return (
-          <RadioGroup defaultValue={element.defaultValue} disabled>
-            {element.options.map(option => (
+          <RadioGroup 
+            defaultValue={(element as any).defaultValue} 
+            disabled={!isInteractive}
+            value={isInteractive ? value : undefined}
+            onValueChange={isInteractive ? handleChange : undefined}
+          >
+            {(element as any).options.map((option: any) => (
               <div key={option.id} className="flex items-center space-x-2">
                 <RadioGroupItem value={option.value} id={option.id} />
                 <Label htmlFor={option.id}>{option.label}</Label>
@@ -166,18 +213,24 @@ export const FormElementRenderer: React.FC<FormElementRendererProps> = ({ elemen
         return renderHeading();
       
       case 'paragraph':
-        return <p className="text-gray-700">{element.text}</p>;
+        return <p className="text-gray-700">{(element as any).text}</p>;
       
       case 'section':
         return (
           <div className="border rounded-lg p-4">
-            <h3 className="font-medium text-lg">{element.title}</h3>
-            {element.description && (
-              <p className="text-gray-600 text-sm mt-1">{element.description}</p>
+            <h3 className="font-medium text-lg">{(element as any).title}</h3>
+            {(element as any).description && (
+              <p className="text-gray-600 text-sm mt-1">{(element as any).description}</p>
             )}
             <div className="mt-4 space-y-4">
-              {element.elements.map(nestedElement => (
-                <FormElementRenderer key={nestedElement.id} element={nestedElement} />
+              {(element as any).elements.map((nestedElement: FormElement) => (
+                <FormElementRenderer 
+                  key={nestedElement.id} 
+                  element={nestedElement} 
+                  isPreview={isPreview}
+                  onChange={onChange ? (value) => onChange({ [nestedElement.id]: value }) : undefined}
+                  value={value && value[nestedElement.id]}
+                />
               ))}
             </div>
           </div>

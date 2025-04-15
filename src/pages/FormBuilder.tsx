@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '@/components/DashboardHeader';
@@ -35,17 +34,12 @@ const FormBuilder = () => {
     assignees: [],
   });
 
-  // If formId exists, load the form data
   useEffect(() => {
     if (formId) {
-      // Mock loading data - in a real app, this would be a fetch from your backend
-      // For now we'll just use the form state initialized above
       const mockLoadForm = async () => {
         try {
-          // Mock API call
           await new Promise(resolve => setTimeout(resolve, 500));
           
-          // Update form with mock data if formId exists
           setForm(prev => ({
             ...prev,
             title: `Form ${formId}`,
@@ -80,10 +74,8 @@ const FormBuilder = () => {
 
   const handleSaveForm = async () => {
     try {
-      // Mock API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Update the form's updatedAt timestamp
       setForm(prev => ({
         ...prev,
         updatedAt: new Date().toISOString(),
@@ -106,7 +98,6 @@ const FormBuilder = () => {
 
   const handlePublishForm = async (requiresReview: boolean, assignees: any[]) => {
     try {
-      // Mock API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
       setForm(prev => ({
@@ -124,7 +115,6 @@ const FormBuilder = () => {
         description: 'Your form has been published successfully',
       });
       
-      // Navigate back to the forms list
       navigate(`/branch-dashboard/${branchId}/${branchName}`);
     } catch (error) {
       toast({
@@ -147,7 +137,7 @@ const FormBuilder = () => {
     setForm(prev => ({
       ...prev,
       elements: prev.elements.map(el => 
-        el.id === elementId ? { ...el, ...updatedElement } : el
+        el.id === elementId ? { ...el, ...updatedElement } as FormElement : el
       ),
     }));
     setIsFormDirty(true);
@@ -177,6 +167,7 @@ const FormBuilder = () => {
         <BranchInfoHeader 
           branchName={decodeURIComponent(branchName || "Med-Infinite Branch")} 
           branchId={branchId || ""}
+          onNewBooking={() => {}}
         />
         
         <FormBuilderNavBar 
