@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { 
   Select,
   SelectContent,
@@ -30,12 +31,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Checkbox } from '@/components/ui/checkbox';
-import { FileUp, Upload, File, Users } from 'lucide-react';
+import { FileUp, Upload, File, Users, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface DocumentUploadFormProps {
   branchId: string;
 }
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 
 const formSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters long" }),
@@ -43,6 +46,8 @@ const formSchema = z.object({
   description: z.string().optional(),
   file: z.instanceof(FileList).refine(files => files.length > 0, {
     message: "Please select a file to upload",
+  }).refine(files => files[0].size <= MAX_FILE_SIZE, {
+    message: `File size should not exceed ${MAX_FILE_SIZE / (1024 * 1024)}MB`,
   }),
   accessRoles: z.array(z.string()).optional(),
   isPrivate: z.boolean().default(false),
@@ -71,6 +76,9 @@ const roles = [
 export const DocumentUploadForm: React.FC<DocumentUploadFormProps> = ({ branchId }) => {
   const [fileSelected, setFileSelected] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -86,36 +94,129 @@ export const DocumentUploadForm: React.FC<DocumentUploadFormProps> = ({ branchId
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
+      if (files[0].size > MAX_FILE_SIZE) {
+        toast.error(`File size exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit`);
+        return;
+      }
       setFileSelected(files[0]);
       form.setValue('file', files);
     }
+  };
+  
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+  
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const droppedFile = e.dataTransfer.files[0];
+      if (droppedFile.size > MAX_FILE_SIZE) {
+        toast.error(`File size exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit`);
+        return;
+      }
+      setFileSelected(droppedFile);
+      
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(droppedFile);
+      
+      if (fileInputRef.current) {
+        fileInputRef.current.files = dataTransfer.files;
+        form.setValue('file', dataTransfer.files);
+      }
+    }
+  };
+
+  const simulateUploadProgress = () => {
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.floor(Math.random() * 10) + 5;
+      if (progress > 100) progress = 100;
+      setUploadProgress(progress);
+      
+      if (progress === 100) {
+        clearInterval(interval);
+      }
+    }, 300);
+    
+    return () => clearInterval(interval);
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setSubmitting(true);
+      setUploadProgress(0);
       
-      // Here we would typically upload the file to a server or cloud storage
-      // For now, let's simulate a successful upload
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Start the upload progress animation
+      const clearProgressInterval = simulateUploadProgress();
       
-      console.log('Document upload values:', {
-        ...values,
-        fileName: fileSelected?.name,
-        fileSize: fileSelected?.size,
+      // Simulate upload delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Prepare document metadata for storage
+      const documentData = {
+        id: `doc-${Date.now()}`,
+        title: values.title,
+        category: values.category,
+        description: values.description || '',
         branchId,
-      });
+        fileName: fileSelected?.name,
+        fileType: fileSelected?.type || '',
+        fileSize: fileSelected?.size || 0,
+        uploadedBy: 'Current User', // In a real app, this would be the logged-in user
+        uploadDate: new Date().toISOString(),
+        isPrivate: values.isPrivate,
+        accessRoles: values.accessRoles || [],
+        expiryDate: values.expiryDate || null,
+        path: `documents/${branchId}/${Date.now()}_${fileSelected?.name}`
+      };
       
-      toast.success('Document uploaded successfully');
-      form.reset();
-      setFileSelected(null);
+      console.log('Document upload data:', documentData);
+      
+      // In a real implementation, we would upload the file to storage here
+      // and save the document metadata in a database
+      
+      clearProgressInterval();
+      setUploadProgress(100);
+      
+      // Show success message after a short delay to ensure progress bar reaches 100%
+      setTimeout(() => {
+        toast.success('Document uploaded successfully', {
+          description: `${values.title} has been uploaded`,
+        });
+        form.reset();
+        setFileSelected(null);
+        setUploadProgress(0);
+        setSubmitting(false);
+      }, 500);
       
     } catch (error) {
-      toast.error('Failed to upload document');
       console.error('Upload error:', error);
-    } finally {
+      toast.error('Failed to upload document', {
+        description: 'Please try again later',
+      });
       setSubmitting(false);
     }
+  };
+  
+  const getFileIcon = (fileType: string) => {
+    const type = fileType.toLowerCase();
+    if (type.includes('pdf')) return "pdf";
+    if (type.includes('doc') || type.includes('word')) return "doc";
+    if (type.includes('xls') || type.includes('sheet')) return "excel";
+    if (type.includes('ppt') || type.includes('presentation')) return "ppt";
+    if (type.includes('jpg') || type.includes('jpeg') || type.includes('png') || type.includes('image')) return "image";
+    if (type.includes('zip') || type.includes('rar') || type.includes('tar')) return "archive";
+    return "generic";
   };
 
   return (
@@ -203,17 +304,21 @@ export const DocumentUploadForm: React.FC<DocumentUploadFormProps> = ({ branchId
                   <FormControl>
                     <div 
                       className={`
-                        border-2 border-dashed rounded-lg p-6 text-center
-                        ${fileSelected ? 'border-blue-200 bg-blue-50/50' : 'border-gray-200 hover:border-blue-200'}
-                        transition-all duration-300 cursor-pointer
+                        border-2 ${dragActive ? 'border-blue-400 bg-blue-50' : fileSelected ? 'border-blue-200 bg-blue-50/50' : 'border-gray-200 hover:border-blue-200'}
+                        border-dashed rounded-lg p-6 text-center transition-all duration-300 cursor-pointer
                       `}
+                      onDragEnter={handleDrag}
+                      onDragOver={handleDrag}
+                      onDragLeave={handleDrag}
+                      onDrop={handleDrop}
                     >
                       <Input
                         id="file-upload"
+                        ref={fileInputRef}
                         type="file"
                         onChange={handleFileChange}
                         className="hidden"
-                        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.jpg,.jpeg,.png"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.ppt,.pptx,.zip"
                       />
                       <label htmlFor="file-upload" className="cursor-pointer">
                         {fileSelected ? (
@@ -350,8 +455,26 @@ export const DocumentUploadForm: React.FC<DocumentUploadFormProps> = ({ branchId
           </div>
         </div>
 
+        {submitting && (
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>Uploading document...</span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <Progress value={uploadProgress} className="h-2" />
+          </div>
+        )}
+
         <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => form.reset()}>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => {
+              form.reset();
+              setFileSelected(null);
+            }}
+            disabled={submitting}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={submitting}>

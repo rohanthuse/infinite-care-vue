@@ -32,10 +32,29 @@ import {
   Tag,
   FileArchive,
   FileImage,
-  FileCheck
+  FileCheck,
+  Trash2,
+  Share2,
+  Filter
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { DocumentPreviewDialog } from './DocumentPreviewDialog';
+import { FilterDocumentsDialog } from './FilterDocumentsDialog';
 
 interface DocumentsListProps {
   branchId: string;
@@ -53,6 +72,7 @@ interface Document {
   accessRoles: string[];
   description?: string;
   expiryDate?: Date;
+  path?: string;
 }
 
 // Sample document categories
@@ -110,6 +130,15 @@ export const DocumentsList: React.FC<DocumentsListProps> = ({ branchId }) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
+  const [previewDocument, setPreviewDocument] = useState<Document | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [showFilterDialog, setShowFilterDialog] = useState(false);
+  const [filters, setFilters] = useState({
+    dateRange: null,
+    fileTypes: [],
+    onlyPrivate: false,
+    expiryStatus: 'all'
+  });
 
   useEffect(() => {
     // Simulate API call to fetch documents
@@ -153,22 +182,107 @@ export const DocumentsList: React.FC<DocumentsListProps> = ({ branchId }) => {
 
   // Handle document download
   const handleDownload = (documentId: string) => {
-    toast.success(`Downloading document ID: ${documentId}`);
+    const document = documents.find(doc => doc.id === documentId);
+    if (!document) return;
+    
+    // Simulate download delay
+    toast.loading(`Preparing ${document.title} for download...`);
+    
+    setTimeout(() => {
+      toast.dismiss();
+      toast.success(`Downloaded: ${document.title}`);
+    }, 1500);
+  };
+
+  // Handle batch download
+  const handleBatchDownload = () => {
+    if (selectedDocuments.length === 0) return;
+    
+    toast.loading(`Preparing ${selectedDocuments.length} documents for download...`);
+    
+    setTimeout(() => {
+      toast.dismiss();
+      toast.success(`Downloaded ${selectedDocuments.length} documents`);
+      setSelectedDocuments([]);
+    }, 2000);
   };
 
   // Handle document preview
   const handlePreview = (documentId: string) => {
-    toast.info(`Previewing document ID: ${documentId}`);
+    const document = documents.find(doc => doc.id === documentId);
+    if (document) {
+      setPreviewDocument(document);
+      setPreviewOpen(true);
+    }
   };
 
-  // Filter documents based on search term and category
-  const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (doc.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
-    const matchesCategory = selectedCategory === "all" ? true : doc.category === selectedCategory;
+  // Handle document delete
+  const handleDelete = (documentId: string) => {
+    toast.loading(`Deleting document...`);
     
-    return matchesSearch && matchesCategory;
-  });
+    setTimeout(() => {
+      setDocuments(prev => prev.filter(doc => doc.id !== documentId));
+      setSelectedDocuments(prev => prev.filter(id => id !== documentId));
+      toast.dismiss();
+      toast.success('Document deleted successfully');
+    }, 1000);
+  };
+
+  // Handle batch delete
+  const handleBatchDelete = () => {
+    if (selectedDocuments.length === 0) return;
+    
+    toast.loading(`Deleting ${selectedDocuments.length} documents...`);
+    
+    setTimeout(() => {
+      setDocuments(prev => prev.filter(doc => !selectedDocuments.includes(doc.id)));
+      setSelectedDocuments([]);
+      toast.dismiss();
+      toast.success(`${selectedDocuments.length} documents deleted`);
+    }, 1500);
+  };
+
+  // Handle document share
+  const handleShare = (documentId: string) => {
+    const document = documents.find(doc => doc.id === documentId);
+    if (!document) return;
+    
+    toast.success(`Share link for "${document.title}" copied to clipboard`, {
+      description: `Anyone with the link can view this document${document.isPrivate ? ' (access restrictions apply)' : ''}`
+    });
+  };
+
+  // Apply filters to documents
+  const applyFilters = (docs: Document[]) => {
+    return docs.filter(doc => {
+      // Filter by search term
+      const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (doc.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+      
+      // Filter by category
+      const matchesCategory = selectedCategory === "all" ? true : doc.category === selectedCategory;
+      
+      // Filter by file type
+      const matchesFileType = filters.fileTypes.length === 0 || filters.fileTypes.includes(doc.fileType);
+      
+      // Filter by privacy
+      const matchesPrivacy = !filters.onlyPrivate || doc.isPrivate;
+      
+      // Filter by expiry status
+      const now = new Date();
+      let matchesExpiry = true;
+      if (filters.expiryStatus === 'expired') {
+        matchesExpiry = !!doc.expiryDate && doc.expiryDate < now;
+      } else if (filters.expiryStatus === 'active') {
+        matchesExpiry = !doc.expiryDate || doc.expiryDate >= now;
+      }
+      
+      return matchesSearch && matchesCategory && matchesFileType && matchesPrivacy && matchesExpiry;
+    });
+  };
+
+  // Filter documents based on filters
+  const filteredDocuments = applyFilters(documents);
 
   // Sort documents
   const sortedDocuments = [...filteredDocuments].sort((a, b) => {
@@ -239,7 +353,7 @@ export const DocumentsList: React.FC<DocumentsListProps> = ({ branchId }) => {
             className="pl-9"
           />
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap">
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-[180px]">
               <div className="flex items-center gap-2">
@@ -257,9 +371,18 @@ export const DocumentsList: React.FC<DocumentsListProps> = ({ branchId }) => {
             </SelectContent>
           </Select>
           
-          <Button variant="outline" className="flex items-center gap-2">
-            <SlidersHorizontal className="h-4 w-4" />
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => setShowFilterDialog(true)}
+          >
+            <Filter className="h-4 w-4" />
             <span className="hidden sm:inline">Filters</span>
+            {(filters.fileTypes.length > 0 || filters.onlyPrivate || filters.expiryStatus !== 'all') && (
+              <Badge variant="secondary" className="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center">
+                !
+              </Badge>
+            )}
           </Button>
         </div>
       </div>
@@ -350,21 +473,42 @@ export const DocumentsList: React.FC<DocumentsListProps> = ({ branchId }) => {
                         <span>{format(document.uploadDate, 'dd MMM yyyy')}</span>
                       </div>
                       {document.expiryDate && (
-                        <div className="text-xs text-amber-600 mt-1">
-                          Expires: {format(document.expiryDate, 'dd MMM yyyy')}
+                        <div className={`text-xs mt-1 ${
+                          document.expiryDate < new Date() ? 'text-red-600' : 'text-amber-600'
+                        }`}>
+                          {document.expiryDate < new Date() ? 'Expired: ' : 'Expires: '}
+                          {format(document.expiryDate, 'dd MMM yyyy')}
                         </div>
                       )}
                     </TableCell>
                     <TableCell>{formatFileSize(document.fileSize)}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button size="icon" variant="ghost" onClick={() => handlePreview(document.id)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" onClick={() => handleDownload(document.id)}>
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="icon" variant="ghost">
+                            <SlidersHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handlePreview(document.id)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            Preview
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownload(document.id)}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleShare(document.id)}>
+                            <Share2 className="h-4 w-4 mr-2" />
+                            Share
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleDelete(document.id)} className="text-red-600">
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -378,11 +522,29 @@ export const DocumentsList: React.FC<DocumentsListProps> = ({ branchId }) => {
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white border border-gray-200 shadow-lg rounded-lg px-4 py-2 flex items-center gap-3 z-50">
           <span className="font-medium">{selectedDocuments.length} selected</span>
           <div className="h-4 border-r border-gray-200"></div>
-          <Button size="sm" variant="outline">
+          <Button size="sm" variant="outline" onClick={handleBatchDownload}>
             <Download className="h-4 w-4 mr-2" /> Download All
+          </Button>
+          <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={handleBatchDelete}>
+            <Trash2 className="h-4 w-4 mr-2" /> Delete All
           </Button>
         </div>
       )}
+      
+      {/* Document Preview Dialog */}
+      <DocumentPreviewDialog 
+        isOpen={previewOpen} 
+        onClose={() => setPreviewOpen(false)} 
+        document={previewDocument} 
+      />
+      
+      {/* Filter Dialog */}
+      <FilterDocumentsDialog 
+        isOpen={showFilterDialog} 
+        onClose={() => setShowFilterDialog(false)}
+        filters={filters}
+        onApplyFilters={setFilters}
+      />
     </div>
   );
 };
