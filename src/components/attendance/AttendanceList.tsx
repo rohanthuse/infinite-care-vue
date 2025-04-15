@@ -7,8 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Download, FileDown, Filter, RefreshCw, Search } from "lucide-react";
-import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import { CalendarIcon, Download, FileDown, Filter, RefreshCw, Search, Clock, UserCheck } from "lucide-react";
+import { format, startOfMonth, endOfMonth, parseISO, isWithinInterval } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -116,10 +116,31 @@ const mockAttendanceData: AttendanceRecord[] = [
     hours: 0,
     notes: "Pre-approved leave"
   },
+  {
+    id: "9",
+    name: "David Wilson",
+    role: "Driver",
+    date: "2025-04-03",
+    status: "present",
+    checkIn: "08:00",
+    checkOut: "16:00",
+    hours: 8,
+    notes: "Transport duties"
+  },
+  {
+    id: "10",
+    name: "Sarah Lee",
+    role: "Nurse",
+    date: "2025-04-03",
+    status: "present",
+    checkIn: "09:00",
+    checkOut: "17:00",
+    hours: 8,
+    notes: "Patient rounds"
+  }
 ];
 
 export function AttendanceList({ branchId }: AttendanceListProps) {
-  const [date, setDate] = useState<Date | undefined>(new Date());
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: startOfMonth(new Date()),
     to: endOfMonth(new Date()),
@@ -128,12 +149,17 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
   const [filterType, setFilterType] = useState("all");
   const [status, setStatus] = useState("all");
   const [attendanceType, setAttendanceType] = useState("staff");
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 5;
 
   // Filter attendance records based on search query, type, and status
   const filteredRecords = mockAttendanceData.filter(record => {
     // Filter by date range
     const recordDate = parseISO(record.date);
-    const isInDateRange = dateRange.from <= recordDate && recordDate <= dateRange.to;
+    const isInDateRange = isWithinInterval(recordDate, { 
+      start: dateRange.from, 
+      end: dateRange.to 
+    });
     
     // Filter by search query
     const matchesSearch = record.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -144,6 +170,21 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
     
     return isInDateRange && matchesSearch && matchesStatus;
   });
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
+  const indexOfLastRecord = currentPage * recordsPerPage;
+  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+  const currentRecords = filteredRecords.slice(indexOfFirstRecord, indexOfLastRecord);
+
+  // Handle page navigation
+  const handlePrevPage = () => {
+    setCurrentPage(prev => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  };
 
   // Render status badge with appropriate color
   const renderStatusBadge = (status: string) => {
@@ -163,22 +204,54 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
     }
   };
 
+  // Function to export attendance data
+  const handleExport = () => {
+    const csvContent = [
+      ["Name", "Role", "Date", "Status", "Check In", "Check Out", "Hours", "Notes"],
+      ...filteredRecords.map(record => [
+        record.name,
+        record.role,
+        format(parseISO(record.date), "dd/MM/yyyy"),
+        record.status,
+        record.checkIn || "",
+        record.checkOut || "",
+        record.hours.toString(),
+        record.notes || ""
+      ])
+    ].map(e => e.join(",")).join("\n");
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", `attendance_report_${format(new Date(), "yyyyMMdd")}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
-    <Card>
+    <Card className="border-gray-200 shadow-sm">
       <CardContent className="p-6">
         <div className="space-y-6">
           <div className="flex flex-col space-y-4">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-              <h3 className="text-lg font-semibold">Attendance Records</h3>
+              <div className="flex items-center gap-2">
+                <UserCheck className="h-5 w-5 text-blue-600" />
+                <h3 className="text-lg font-semibold">Attendance Records</h3>
+              </div>
               
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" className="h-9">
                   <Filter className="h-4 w-4 mr-1" />
                   Advanced Filter
                 </Button>
-                <Button variant="outline" size="sm" className="h-9">
+                <Button variant="outline" size="sm" className="h-9" onClick={handleExport}>
                   <FileDown className="h-4 w-4 mr-1" />
-                  Export
+                  Export CSV
                 </Button>
                 <Button variant="outline" size="sm" className="h-9">
                   <RefreshCw className="h-4 w-4" />
@@ -203,8 +276,18 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="staff">Staff Attendance</SelectItem>
-                    <SelectItem value="client">Client Attendance</SelectItem>
+                    <SelectItem value="staff">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <span>Staff Attendance</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="client">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <span>Client Attendance</span>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -288,16 +371,26 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
                     <TableHead>Role</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Check In</TableHead>
-                    <TableHead>Check Out</TableHead>
+                    <TableHead>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        <span>Check In</span>
+                      </div>
+                    </TableHead>
+                    <TableHead>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        <span>Check Out</span>
+                      </div>
+                    </TableHead>
                     <TableHead>Hours</TableHead>
                     <TableHead>Notes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRecords.length > 0 ? (
-                    filteredRecords.map((record) => (
-                      <TableRow key={record.id}>
+                  {currentRecords.length > 0 ? (
+                    currentRecords.map((record) => (
+                      <TableRow key={record.id} className="hover:bg-gray-50">
                         <TableCell className="font-medium">{record.name}</TableCell>
                         <TableCell>{record.role}</TableCell>
                         <TableCell>{format(parseISO(record.date), "dd MMM yyyy")}</TableCell>
@@ -321,11 +414,25 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
             
             <div className="flex items-center justify-between p-4 border-t">
               <div className="text-sm text-gray-500">
-                Showing {filteredRecords.length} of {mockAttendanceData.length} records
+                Showing {indexOfFirstRecord + 1}-{Math.min(indexOfLastRecord, filteredRecords.length)} of {filteredRecords.length} records
               </div>
               <div className="flex items-center space-x-2">
-                <Button variant="outline" size="sm" disabled>Previous</Button>
-                <Button variant="outline" size="sm" disabled>Next</Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                >
+                  Next
+                </Button>
               </div>
             </div>
           </div>

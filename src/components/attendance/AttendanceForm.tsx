@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, UserPlus, Users } from "lucide-react";
+import { CalendarIcon, UserPlus, Users, Clock } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
@@ -23,6 +23,9 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
   const [attendanceType, setAttendanceType] = useState("staff");
   const [bulkMode, setBulkMode] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [notes, setNotes] = useState("");
+  const [timeIn, setTimeIn] = useState("");
+  const [timeOut, setTimeOut] = useState("");
 
   // Mock staff list - would come from an API in a real application
   const staffList = [
@@ -30,6 +33,8 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
     { id: "2", name: "John Doe", role: "Caregiver" },
     { id: "3", name: "Emily Johnson", role: "Administrator" },
     { id: "4", name: "Michael Brown", role: "Physiotherapist" },
+    { id: "5", name: "Sarah Lee", role: "Support Worker" },
+    { id: "6", name: "David Wilson", role: "Driver" },
   ];
 
   const clientsList = [
@@ -37,21 +42,37 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
     { id: "2", name: "Robert Davis", service: "Physical Therapy" },
     { id: "3", name: "Susan Miller", service: "Medication Management" },
     { id: "4", name: "Thomas Wilson", service: "Transport" },
+    { id: "5", name: "Margaret Jones", service: "Home Visits" },
+    { id: "6", name: "James Taylor", service: "Social Care" },
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!date) {
+      toast.error("Please select a date");
+      return;
+    }
+    
     setLoading(true);
     
     // Simulate API call
     setTimeout(() => {
       setLoading(false);
       toast.success("Attendance recorded successfully!");
+      // Reset form fields if needed
+      if (!bulkMode) {
+        setTimeIn("");
+        setTimeOut("");
+        setNotes("");
+      }
     }, 1000);
   };
 
+  const currentList = attendanceType === "staff" ? staffList : clientsList;
+
   return (
-    <Card>
+    <Card className="border-gray-200 shadow-sm">
       <CardContent className="p-6">
         <form onSubmit={handleSubmit}>
           <div className="space-y-6">
@@ -64,7 +85,7 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
                     checked={bulkMode}
                     onCheckedChange={(checked) => setBulkMode(checked === true)}
                   />
-                  <Label htmlFor="bulkMode">Bulk Entry Mode</Label>
+                  <Label htmlFor="bulkMode" className="cursor-pointer">Bulk Entry Mode</Label>
                 </div>
               </div>
               
@@ -76,12 +97,22 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
                       value={attendanceType} 
                       onValueChange={setAttendanceType}
                     >
-                      <SelectTrigger id="attendanceType">
+                      <SelectTrigger id="attendanceType" className="mt-1">
                         <SelectValue placeholder="Select attendance type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="staff">Staff Attendance</SelectItem>
-                        <SelectItem value="client">Client Attendance</SelectItem>
+                        <SelectItem value="staff">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            <span>Staff Attendance</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="client">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            <span>Client Attendance</span>
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -93,7 +124,7 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-full justify-start text-left font-normal",
+                            "w-full justify-start text-left font-normal mt-1",
                             !date && "text-muted-foreground"
                           )}
                         >
@@ -119,23 +150,15 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
                       <div>
                         <Label htmlFor="person">{attendanceType === "staff" ? "Staff Member" : "Client"}</Label>
                         <Select>
-                          <SelectTrigger id="person">
+                          <SelectTrigger id="person" className="mt-1">
                             <SelectValue placeholder={`Select ${attendanceType === "staff" ? "staff member" : "client"}`} />
                           </SelectTrigger>
                           <SelectContent>
-                            {attendanceType === "staff" ? (
-                              staffList.map(staff => (
-                                <SelectItem key={staff.id} value={staff.id}>
-                                  {staff.name} - {staff.role}
-                                </SelectItem>
-                              ))
-                            ) : (
-                              clientsList.map(client => (
-                                <SelectItem key={client.id} value={client.id}>
-                                  {client.name} - {client.service}
-                                </SelectItem>
-                              ))
-                            )}
+                            {currentList.map(item => (
+                              <SelectItem key={item.id} value={item.id}>
+                                {item.name} - {attendanceType === "staff" ? item.role : item.service}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -143,7 +166,7 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
                       <div>
                         <Label htmlFor="status">Status</Label>
                         <Select>
-                          <SelectTrigger id="status">
+                          <SelectTrigger id="status" className="mt-1">
                             <SelectValue placeholder="Select status" />
                           </SelectTrigger>
                           <SelectContent>
@@ -158,17 +181,29 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
                       
                       <div>
                         <Label htmlFor="time">Time</Label>
-                        <div className="flex space-x-2">
-                          <Input
-                            id="time-in"
-                            type="time"
-                            placeholder="Check-in"
-                          />
-                          <Input
-                            id="time-out"
-                            type="time"
-                            placeholder="Check-out"
-                          />
+                        <div className="flex space-x-2 mt-1">
+                          <div className="relative flex-1">
+                            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Input
+                              id="time-in"
+                              type="time"
+                              placeholder="Check-in"
+                              className="pl-10"
+                              value={timeIn}
+                              onChange={(e) => setTimeIn(e.target.value)}
+                            />
+                          </div>
+                          <div className="relative flex-1">
+                            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Input
+                              id="time-out"
+                              type="time"
+                              placeholder="Check-out"
+                              className="pl-10"
+                              value={timeOut}
+                              onChange={(e) => setTimeOut(e.target.value)}
+                            />
+                          </div>
                         </div>
                       </div>
                     </>
@@ -192,62 +227,48 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
                       </div>
                       
                       <div className="max-h-64 overflow-y-auto border rounded-md p-2">
-                        {attendanceType === "staff" ? (
-                          staffList.map(staff => (
-                            <div key={staff.id} className="flex items-center space-x-2 py-2 border-b last:border-0">
-                              <Checkbox id={`staff-${staff.id}`} />
-                              <Label htmlFor={`staff-${staff.id}`} className="flex-1 cursor-pointer">
-                                {staff.name} <span className="text-gray-500 text-sm">({staff.role})</span>
-                              </Label>
-                              <Select defaultValue="present">
-                                <SelectTrigger className="h-8 w-28">
-                                  <SelectValue placeholder="Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="present">Present</SelectItem>
-                                  <SelectItem value="absent">Absent</SelectItem>
-                                  <SelectItem value="late">Late</SelectItem>
-                                  <SelectItem value="excused">Excused</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          ))
-                        ) : (
-                          clientsList.map(client => (
-                            <div key={client.id} className="flex items-center space-x-2 py-2 border-b last:border-0">
-                              <Checkbox id={`client-${client.id}`} />
-                              <Label htmlFor={`client-${client.id}`} className="flex-1 cursor-pointer">
-                                {client.name} <span className="text-gray-500 text-sm">({client.service})</span>
-                              </Label>
-                              <Select defaultValue="present">
-                                <SelectTrigger className="h-8 w-28">
-                                  <SelectValue placeholder="Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="present">Present</SelectItem>
-                                  <SelectItem value="absent">Absent</SelectItem>
-                                  <SelectItem value="late">Late</SelectItem>
-                                  <SelectItem value="excused">Excused</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          ))
-                        )}
+                        {currentList.map(item => (
+                          <div key={item.id} className="flex items-center space-x-2 py-2 border-b last:border-0">
+                            <Checkbox id={`${attendanceType}-${item.id}`} />
+                            <Label htmlFor={`${attendanceType}-${item.id}`} className="flex-1 cursor-pointer">
+                              {item.name} <span className="text-gray-500 text-sm">({attendanceType === "staff" ? item.role : item.service})</span>
+                            </Label>
+                            <Select defaultValue="present">
+                              <SelectTrigger className="h-8 w-28">
+                                <SelectValue placeholder="Status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="present">Present</SelectItem>
+                                <SelectItem value="absent">Absent</SelectItem>
+                                <SelectItem value="late">Late</SelectItem>
+                                <SelectItem value="excused">Excused</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        ))}
                       </div>
                       
                       <div>
                         <Label htmlFor="bulk-time">Default Time</Label>
-                        <div className="flex space-x-2">
-                          <Input
-                            id="bulk-time-in"
-                            type="time"
-                            placeholder="Check-in"
-                          />
-                          <Input
-                            id="bulk-time-out"
-                            type="time"
-                            placeholder="Check-out"
-                          />
+                        <div className="flex space-x-2 mt-1">
+                          <div className="relative flex-1">
+                            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Input
+                              id="bulk-time-in"
+                              type="time"
+                              placeholder="Check-in"
+                              className="pl-10"
+                            />
+                          </div>
+                          <div className="relative flex-1">
+                            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Input
+                              id="bulk-time-out"
+                              type="time"
+                              placeholder="Check-out"
+                              className="pl-10"
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -260,12 +281,14 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
                 <Textarea
                   id="notes"
                   placeholder="Additional notes or comments..."
-                  className="h-24"
+                  className="h-24 mt-1"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
                 />
               </div>
             </div>
             
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-3 pt-2">
               <Button variant="outline" type="button">
                 Cancel
               </Button>

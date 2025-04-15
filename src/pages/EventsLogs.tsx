@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +16,11 @@ const EventsLogs = () => {
   const [activeNavTab, setActiveNavTab] = useState("events-logs");
   const decodedBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
 
+  // Set page title
+  useEffect(() => {
+    document.title = `Events & Logs | ${decodedBranchName}`;
+  }, [decodedBranchName]);
+  
   const handleTabChange = (value: string) => {
     setActiveTab(value);
   };
@@ -25,7 +30,7 @@ const EventsLogs = () => {
     
     // Navigate to the appropriate route based on the selected tab
     if (value !== "events-logs") {
-      navigate(`/branch-dashboard/${id}/${branchName}/${value}`);
+      navigate(`/branch-dashboard/${id}/${encodeURIComponent(decodedBranchName)}/${value}`);
     }
   };
   
@@ -37,7 +42,7 @@ const EventsLogs = () => {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
       
-      <main className="flex-1 px-4 md:px-8 pt-4 pb-8 md:py-6 w-full">
+      <main className="flex-1 px-4 md:px-8 pt-4 pb-8 md:py-6 w-full max-w-[1600px] mx-auto">
         <BranchInfoHeader 
           branchName={decodedBranchName} 
           branchId={id || ""}
@@ -55,6 +60,7 @@ const EventsLogs = () => {
         <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col">
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-2xl font-bold">Events & Logs</h2>
+            <p className="text-gray-500 mt-1">Record and track important events and incidents</p>
           </div>
           
           <Tabs 
@@ -79,10 +85,10 @@ const EventsLogs = () => {
               </TabsList>
             </div>
             
-            <div className="flex-1">
+            <div className="flex-1 overflow-hidden">
               <TabsContent 
                 value="new" 
-                className="p-0 focus:outline-none m-0 h-full"
+                className="p-0 focus:outline-none m-0 h-full overflow-y-auto"
               >
                 <div className="p-4 md:p-6 max-w-full">
                   <EventLogForm branchId={id || ""} />
@@ -90,7 +96,7 @@ const EventsLogs = () => {
               </TabsContent>
               <TabsContent 
                 value="view" 
-                className="p-0 focus:outline-none m-0 h-full"
+                className="p-0 focus:outline-none m-0 h-full overflow-y-auto"
               >
                 <div className="p-4 md:p-6 max-w-full">
                   <EventLogsList branchId={id || ""} />
