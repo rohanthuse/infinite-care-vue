@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -6,11 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Download, FileDown, Filter, RefreshCw, Search, Clock, UserCheck, Users } from "lucide-react";
-import { format, startOfMonth, endOfMonth, parseISO, isWithinInterval } from "date-fns";
+import { CalendarIcon, Download, FileDown, Filter, RefreshCw, Search, Clock, UserCheck, Users, X } from "lucide-react";
+import { format, startOfMonth, endOfMonth, parseISO, isWithinInterval, isToday, subDays, subWeeks, subMonths } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 interface AttendanceListProps {
   branchId: string;
@@ -148,7 +151,66 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
   const [status, setStatus] = useState("all");
   const [attendanceType, setAttendanceType] = useState("staff");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [roles, setRoles] = useState<string[]>([]);
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const recordsPerPage = 5;
+
+  // Extract unique roles from data for filtering
+  React.useEffect(() => {
+    const uniqueRoles = Array.from(new Set(mockAttendanceData.map(record => record.role)));
+    setRoles(uniqueRoles);
+  }, []);
+
+  const applyFilter = (filter: string) => {
+    // Set date range based on selected filter
+    const today = new Date();
+    switch (filter) {
+      case "today":
+        setDateRange({ from: today, to: today });
+        break;
+      case "yesterday":
+        const yesterday = subDays(today, 1);
+        setDateRange({ from: yesterday, to: yesterday });
+        break;
+      case "this_week":
+        setDateRange({ from: subDays(today, today.getDay()), to: today });
+        break;
+      case "last_week":
+        const lastWeekStart = subDays(today, today.getDay() + 7);
+        const lastWeekEnd = subDays(today, today.getDay() + 1);
+        setDateRange({ from: lastWeekStart, to: lastWeekEnd });
+        break;
+      case "this_month":
+        setDateRange({ from: startOfMonth(today), to: today });
+        break;
+      case "last_month":
+        const lastMonth = subMonths(today, 1);
+        setDateRange({ from: startOfMonth(lastMonth), to: endOfMonth(lastMonth) });
+        break;
+      default:
+        break;
+    }
+  };
+
+  const resetFilters = () => {
+    setDateRange({
+      from: startOfMonth(new Date()),
+      to: endOfMonth(new Date()),
+    });
+    setSearchQuery("");
+    setStatus("all");
+    setAttendanceType("staff");
+    setSelectedRoles([]);
+    setCurrentPage(1);
+    setFilterType("all");
+    toast.success("Filters reset successfully");
+  };
+
+  const handleRefresh = () => {
+    // In a real application, this would fetch fresh data from the API
+    toast.success("Data refreshed");
+  };
 
   const filteredRecords = mockAttendanceData.filter(record => {
     const recordDate = parseISO(record.date);
@@ -162,7 +224,9 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
     
     const matchesStatus = status === "all" || record.status === status;
     
-    return isInDateRange && matchesSearch && matchesStatus;
+    const matchesRoles = selectedRoles.length === 0 || selectedRoles.includes(record.role);
+    
+    return isInDateRange && matchesSearch && matchesStatus && matchesRoles;
   });
 
   const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
@@ -221,6 +285,8 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    toast.success("Export successful");
   };
 
   return (
@@ -235,15 +301,72 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
               </div>
               
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" className="h-9">
-                  <Filter className="h-4 w-4 mr-1" />
-                  Advanced Filter
-                </Button>
+                <Dialog open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-9">
+                      <Filter className="h-4 w-4 mr-1" />
+                      Advanced Filter
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Advanced Filters</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="quick-filter">Quick Date Filter</Label>
+                        <Select onValueChange={applyFilter} defaultValue="none">
+                          <SelectTrigger id="quick-filter">
+                            <SelectValue placeholder="Select date range" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            <SelectItem value="today">Today</SelectItem>
+                            <SelectItem value="yesterday">Yesterday</SelectItem>
+                            <SelectItem value="this_week">This Week</SelectItem>
+                            <SelectItem value="last_week">Last Week</SelectItem>
+                            <SelectItem value="this_month">This Month</SelectItem>
+                            <SelectItem value="last_month">Last Month</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="grid gap-2">
+                        <Label htmlFor="role-filter">Filter by Role</Label>
+                        <div className="flex flex-wrap gap-2 border p-2 rounded-md max-h-40 overflow-y-auto">
+                          {roles.map(role => (
+                            <div key={role} className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id={`role-${role}`}
+                                checked={selectedRoles.includes(role)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedRoles(prev => [...prev, role]);
+                                  } else {
+                                    setSelectedRoles(prev => prev.filter(r => r !== role));
+                                  }
+                                }}
+                                className="h-4 w-4"
+                              />
+                              <Label htmlFor={`role-${role}`} className="text-sm">{role}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button type="button" variant="outline" onClick={() => setShowAdvancedFilters(false)}>
+                        Close
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
                 <Button variant="outline" size="sm" className="h-9" onClick={handleExport}>
                   <FileDown className="h-4 w-4 mr-1" />
                   Export CSV
                 </Button>
-                <Button variant="outline" size="sm" className="h-9">
+                <Button variant="outline" size="sm" className="h-9" onClick={handleRefresh}>
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
@@ -256,12 +379,28 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
                   placeholder="Search by name or role..."
                   className="pl-10"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1); // Reset to first page when searching
+                  }}
                 />
+                {searchQuery && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
               
               <div>
-                <Select value={attendanceType} onValueChange={setAttendanceType}>
+                <Select value={attendanceType} onValueChange={(value) => {
+                  setAttendanceType(value);
+                  setCurrentPage(1);
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
@@ -283,7 +422,13 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
               </div>
               
               <div>
-                <Select value={status} onValueChange={setStatus}>
+                <Select 
+                  value={status} 
+                  onValueChange={(value) => {
+                    setStatus(value);
+                    setCurrentPage(1);
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
@@ -299,56 +444,80 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
               </div>
             </div>
             
-            <div>
-              <Label className="mb-2 block">Date Range</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "justify-start text-left font-normal",
-                        !dateRange.from && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange.from ? format(dateRange.from, "PPP") : <span>From date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateRange.from}
-                      onSelect={(date) => date && setDateRange({...dateRange, from: date})}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "justify-start text-left font-normal",
-                        !dateRange.to && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange.to ? format(dateRange.to, "PPP") : <span>To date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateRange.to}
-                      onSelect={(date) => date && setDateRange({...dateRange, to: date})}
-                      initialFocus
-                      fromDate={dateRange.from}
-                    />
-                  </PopoverContent>
-                </Popover>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2">
+              <div className="w-full sm:w-auto">
+                <Label className="mb-2 block">Date Range</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "justify-start text-left font-normal",
+                          !dateRange.from && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateRange.from ? format(dateRange.from, "PPP") : <span>From date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.from}
+                        onSelect={(date) => {
+                          if (date) {
+                            setDateRange({...dateRange, from: date});
+                            setCurrentPage(1);
+                          }
+                        }}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "justify-start text-left font-normal",
+                          !dateRange.to && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateRange.to ? format(dateRange.to, "PPP") : <span>To date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.to}
+                        onSelect={(date) => {
+                          if (date) {
+                            setDateRange({...dateRange, to: date});
+                            setCurrentPage(1);
+                          }
+                        }}
+                        initialFocus
+                        fromDate={dateRange.from}
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={resetFilters}
+                className="flex items-center gap-1"
+              >
+                <X className="h-3.5 w-3.5" />
+                <span>Reset Filters</span>
+              </Button>
             </div>
           </div>
           
@@ -404,7 +573,7 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
             
             <div className="flex items-center justify-between p-4 border-t">
               <div className="text-sm text-gray-500">
-                Showing {indexOfFirstRecord + 1}-{Math.min(indexOfLastRecord, filteredRecords.length)} of {filteredRecords.length} records
+                Showing {filteredRecords.length > 0 ? indexOfFirstRecord + 1 : 0}-{Math.min(indexOfLastRecord, filteredRecords.length)} of {filteredRecords.length} records
               </div>
               <div className="flex items-center space-x-2">
                 <Button 
