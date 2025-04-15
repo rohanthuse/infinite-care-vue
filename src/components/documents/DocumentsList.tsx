@@ -104,7 +104,7 @@ const generateMockDocuments = (count: number): Document[] => {
 
 export const DocumentsList: React.FC<DocumentsListProps> = ({ branchId }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>('uploadDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -165,7 +165,7 @@ export const DocumentsList: React.FC<DocumentsListProps> = ({ branchId }) => {
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (doc.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
-    const matchesCategory = selectedCategory ? doc.category === selectedCategory : true;
+    const matchesCategory = selectedCategory === "all" ? true : doc.category === selectedCategory;
     
     return matchesSearch && matchesCategory;
   });
@@ -244,11 +244,11 @@ export const DocumentsList: React.FC<DocumentsListProps> = ({ branchId }) => {
             <SelectTrigger className="w-[180px]">
               <div className="flex items-center gap-2">
                 <Tag className="h-4 w-4" />
-                {selectedCategory ? getCategoryName(selectedCategory) : "All Categories"}
+                {selectedCategory === "all" ? "All Categories" : getCategoryName(selectedCategory)}
               </div>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
               {categories.map((category) => (
                 <SelectItem key={category.id} value={category.id}>
                   {category.name}
