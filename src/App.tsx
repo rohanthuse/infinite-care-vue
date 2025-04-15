@@ -33,6 +33,7 @@ import TrainingMatrix from "./pages/TrainingMatrix";
 import EventsLogs from "./pages/EventsLogs";
 import Attendance from "./pages/Attendance";
 import FormBuilder from "./pages/FormBuilder";
+import Documents from "./pages/Documents";
 
 import "./styles/signatures.css"; // Import the signatures styles
 
@@ -82,6 +83,7 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/attendance" element={<Attendance />} />
             <Route path="/branch-dashboard/:id/:branchName/form-builder" element={<FormBuilder />} />
             <Route path="/branch-dashboard/:id/:branchName/form-builder/:formId" element={<FormBuilder />} />
+            <Route path="/branch-dashboard/:id/:branchName/documents" element={<Documents />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

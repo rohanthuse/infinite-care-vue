@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -8,7 +7,7 @@ import {
   Calendar, Star, MessageSquare, Pill, DollarSign, 
   FileText, ClipboardCheck, Bell, ClipboardList, 
   FileUp, Folder, UserPlus, BarChart4, Settings,
-  ChevronRight, ChevronDown, Menu, X
+  ChevronRight, ChevronDown, Menu, X, FileArchive
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -36,7 +35,7 @@ const menuItems: MenuItem[] = [
   { icon: Bell, label: "Events & Logs", path: "/branch-events-logs" },
   { icon: ClipboardCheck, label: "Attendance", path: "/branch-attendance" },
   { icon: FileUp, label: "Form Builder", path: "/branch-form-builder" },
-  { icon: Folder, label: "Documents", path: "/branch-documents" },
+  { icon: FileArchive, label: "Documents", path: "/branch-documents" },
   { icon: Bell, label: "Notifications", path: "/branch-notifications", expandable: true },
   { icon: Folder, label: "Library", path: "/branch-library" },
   { icon: UserPlus, label: "Third Party Access", path: "/branch-third-party" },
