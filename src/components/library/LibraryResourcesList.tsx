@@ -41,6 +41,7 @@ import { toast } from 'sonner';
 import { LibraryResourcePreviewDialog } from './LibraryResourcePreviewDialog';
 import { LibraryFilterDialog } from './LibraryFilterDialog';
 import { DateRange } from 'react-day-picker';
+import { useNavigate, useParams } from 'react-router-dom';
 
 interface LibraryResourcesListProps {
   branchId: string;
@@ -73,7 +74,7 @@ const mockResources: LibraryResource[] = [
     id: "RES-001",
     title: "Clinical Guidelines for Diabetes Management",
     description: "Comprehensive guidelines for managing diabetes in elderly patients, including medication protocols and lifestyle recommendations.",
-    category: "clinical_guidelines",
+    category: "guidelines",
     resourceType: "pdf",
     uploadedBy: "Dr. Sarah Johnson",
     uploadDate: new Date(2025, 2, 15),
@@ -195,6 +196,8 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({ bran
     categories: [] as string[],
     hasExpiry: false,
   });
+  const navigate = useNavigate();
+  const { id, branchName } = useParams();
   
   // Get category name from ID
   const getCategoryName = (categoryId: string): string => {
@@ -239,25 +242,51 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({ bran
     setPreviewDialogOpen(true);
     
     // In a real app, you'd track this view
-    toast.info(`Viewing: ${resource.title}`);
+    // Update view count in the mock data
+    const updatedResource = mockResources.find(r => r.id === resource.id);
+    if (updatedResource) {
+      updatedResource.views += 1;
+    }
   };
   
   // Handle resource download
   const handleDownloadResource = (resource: LibraryResource) => {
     toast.success(`Downloading: ${resource.title}`);
     // In a real app, this would trigger the actual download
+    
+    // Update download count in the mock data
+    const updatedResource = mockResources.find(r => r.id === resource.id);
+    if (updatedResource) {
+      updatedResource.downloads += 1;
+    }
   };
   
   // Handle resource sharing
   const handleShareResource = (resource: LibraryResource) => {
-    toast.info(`Sharing options for: ${resource.title}`);
-    // In a real app, this would open a sharing dialog
+    // Generate a "share link" - in a real app this would create a shareable URL
+    const shareLink = `https://med-infinite.com/resources/${resource.id}`;
+    
+    // Simulate copying to clipboard
+    navigator.clipboard.writeText(shareLink).then(() => {
+      toast.success(`Share link copied to clipboard for: ${resource.title}`);
+    }).catch(() => {
+      toast.error("Failed to copy share link");
+    });
   };
   
   // Handle resource deletion
   const handleDeleteResource = (resource: LibraryResource) => {
-    toast.info(`Resource deleted: ${resource.title}`);
-    // In a real app, this would delete the resource
+    toast.success(`Resource deleted: ${resource.title}`);
+    // In a real app, this would delete the resource from the database
+  };
+
+  // Handle add new resource
+  const handleAddNew = () => {
+    // Switch to the add resource tab
+    const params = new URLSearchParams(window.location.search);
+    params.set('tab', 'add');
+    navigate(`/branch-dashboard/${id}/${encodeURIComponent(branchName || '')}` + 
+      `/library?${params.toString()}`);
   };
   
   // Filter resources based on search and filters
@@ -344,7 +373,7 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({ bran
             )}
           </Button>
           
-          <Button>
+          <Button onClick={handleAddNew}>
             <Plus className="h-4 w-4 mr-2" />
             Add New
           </Button>
@@ -356,6 +385,10 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({ bran
           <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-3" />
           <h3 className="text-xl font-medium text-gray-600">No resources found</h3>
           <p className="text-gray-500 mt-1">Try adjusting your search or filters</p>
+          <Button className="mt-4" variant="outline" onClick={handleAddNew}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add New Resource
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -532,6 +565,9 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({ bran
         isOpen={previewDialogOpen}
         onClose={() => setPreviewDialogOpen(false)}
         resource={selectedResource}
+        onDownload={handleDownloadResource}
+        onShare={handleShareResource}
+        onDelete={handleDeleteResource}
       />
       
       <LibraryFilterDialog

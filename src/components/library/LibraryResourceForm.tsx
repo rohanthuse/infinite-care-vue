@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 
 interface LibraryResourceFormProps {
   branchId: string;
+  onResourceAdded?: () => void;
 }
 
 const resourceCategories = [
@@ -54,7 +55,10 @@ const resourceTypes = [
   { id: "link", name: "External Link" },
 ];
 
-export const LibraryResourceForm: React.FC<LibraryResourceFormProps> = ({ branchId }) => {
+export const LibraryResourceForm: React.FC<LibraryResourceFormProps> = ({ 
+  branchId,
+  onResourceAdded 
+}) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -114,11 +118,19 @@ export const LibraryResourceForm: React.FC<LibraryResourceFormProps> = ({ branch
         if (prev >= 100) {
           clearInterval(interval);
           setUploading(false);
+          
+          // Call onResourceAdded callback after successful upload
+          if (onResourceAdded) {
+            setTimeout(() => {
+              onResourceAdded();
+            }, 500); // Small delay to ensure progress bar is seen at 100%
+          }
+          
           return 100;
         }
-        return prev + 10;
+        return prev + 5; // Speed up the progress a bit
       });
-    }, 300);
+    }, 200);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -157,24 +169,39 @@ export const LibraryResourceForm: React.FC<LibraryResourceFormProps> = ({ branch
     // Here would be the API call to submit the resource
     simulateUpload();
     
-    // Simulate successful upload after progress reaches 100%
-    setTimeout(() => {
-      toast.success("Resource added successfully");
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setCategory('');
-      setResourceType('');
-      setIsPrivate(false);
-      setExpiryDate(undefined);
-      setTags('');
-      setAuthor('');
-      setVersion('');
-      setSelectedFile(null);
-      setResourceUrl('');
-      setAccessRoles([]);
-      setProgress(0);
-    }, 3500);
+    // Form reset happens after upload completes in simulateUpload
+  };
+
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setCategory('');
+    setResourceType('');
+    setIsPrivate(false);
+    setExpiryDate(undefined);
+    setTags('');
+    setAuthor('');
+    setVersion('');
+    setSelectedFile(null);
+    setResourceUrl('');
+    setAccessRoles([]);
+    setProgress(0);
+  };
+
+  // Drag and drop functionality
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setSelectedFile(e.dataTransfer.files[0]);
+      setIsLink(false);
+    }
   };
 
   return (
@@ -320,6 +347,8 @@ export const LibraryResourceForm: React.FC<LibraryResourceFormProps> = ({ branch
                 <div 
                   className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition cursor-pointer"
                   onClick={() => document.getElementById('file-upload')?.click()}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
                 >
                   <div className="flex flex-col items-center">
                     <Upload className="h-10 w-10 text-gray-400 mb-3" />
@@ -360,9 +389,21 @@ export const LibraryResourceForm: React.FC<LibraryResourceFormProps> = ({ branch
                   selected={expiryDate}
                   onSelect={setExpiryDate}
                   initialFocus
+                  disabled={(date) => date < new Date()} // Can't select dates in the past
                 />
               </PopoverContent>
             </Popover>
+            {expiryDate && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-1 h-auto p-0 text-xs text-muted-foreground"
+                onClick={() => setExpiryDate(undefined)}
+              >
+                <XIcon className="mr-1 h-3 w-3" />
+                Clear expiry date
+              </Button>
+            )}
           </div>
           
           <div className="space-y-2">
@@ -422,21 +463,7 @@ export const LibraryResourceForm: React.FC<LibraryResourceFormProps> = ({ branch
       )}
       
       <div className="flex justify-end space-x-3">
-        <Button type="button" variant="outline" onClick={() => {
-          // Reset form
-          setTitle('');
-          setDescription('');
-          setCategory('');
-          setResourceType('');
-          setIsPrivate(false);
-          setExpiryDate(undefined);
-          setTags('');
-          setAuthor('');
-          setVersion('');
-          setSelectedFile(null);
-          setResourceUrl('');
-          setAccessRoles([]);
-        }}>
+        <Button type="button" variant="outline" onClick={resetForm}>
           Cancel
         </Button>
         <Button type="submit" disabled={uploading}>

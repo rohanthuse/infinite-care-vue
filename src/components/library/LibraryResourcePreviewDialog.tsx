@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -23,7 +23,8 @@ import {
   Files,
   Link as LinkIcon,
   Eye,
-  ArrowDownToLine
+  ArrowDownToLine,
+  ExternalLink
 } from "lucide-react";
 import { format } from 'date-fns';
 
@@ -52,6 +53,9 @@ interface LibraryResourcePreviewDialogProps {
   isOpen: boolean;
   onClose: () => void;
   resource: LibraryResource | null;
+  onDownload?: (resource: LibraryResource) => void;
+  onShare?: (resource: LibraryResource) => void;
+  onDelete?: (resource: LibraryResource) => void;
 }
 
 const categories = [
@@ -68,7 +72,10 @@ const categories = [
 export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialogProps> = ({ 
   isOpen, 
   onClose, 
-  resource 
+  resource,
+  onDownload,
+  onShare,
+  onDelete
 }) => {
   if (!resource) return null;
 
@@ -102,6 +109,29 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
     );
   };
 
+  // Handle download click
+  const handleDownload = () => {
+    if (onDownload) {
+      onDownload(resource);
+    }
+    onClose();
+  };
+
+  // Handle share click
+  const handleShare = () => {
+    if (onShare) {
+      onShare(resource);
+    }
+  };
+
+  // Handle delete click
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(resource);
+    }
+    onClose();
+  };
+
   // Get resource preview component based on resource type
   const getResourcePreview = () => {
     const resourceType = resource.resourceType.toLowerCase();
@@ -128,6 +158,11 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
               <Video className="h-16 w-16 text-blue-500 mx-auto mb-2" />
               <p className="font-medium text-gray-600">Video Preview</p>
               <p className="text-sm text-gray-500 mt-1">Click play to watch or download for full video</p>
+              
+              <Button variant="outline" className="mt-4">
+                <Eye className="h-4 w-4 mr-2" />
+                Play Preview
+              </Button>
             </div>
           </div>
         </div>
@@ -142,6 +177,11 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
               <FileText className="h-16 w-16 text-red-500 mx-auto mb-2" />
               <p className="font-medium text-gray-600">PDF Preview</p>
               <p className="text-sm text-gray-500 mt-1">Click download to view the full document</p>
+              
+              <Button variant="outline" className="mt-4" onClick={handleDownload}>
+                <ArrowDownToLine className="h-4 w-4 mr-2" />
+                Download PDF
+              </Button>
             </div>
           </div>
         </div>
@@ -156,6 +196,17 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
               <AudioLines className="h-16 w-16 text-purple-500 mx-auto mb-2" />
               <p className="font-medium text-gray-600">Audio Preview</p>
               <p className="text-sm text-gray-500 mt-1">Download to listen to the full audio</p>
+              
+              <div className="flex gap-2 mt-4 justify-center">
+                <Button variant="outline">
+                  <Eye className="h-4 w-4 mr-2" />
+                  Play Sample
+                </Button>
+                <Button variant="default" onClick={handleDownload}>
+                  <ArrowDownToLine className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -170,6 +221,11 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
               <FileSpreadsheet className="h-16 w-16 text-green-500 mx-auto mb-2" />
               <p className="font-medium text-gray-600">Spreadsheet Preview</p>
               <p className="text-sm text-gray-500 mt-1">Download to use the spreadsheet</p>
+              
+              <Button variant="outline" className="mt-4" onClick={handleDownload}>
+                <ArrowDownToLine className="h-4 w-4 mr-2" />
+                Download Spreadsheet
+              </Button>
             </div>
           </div>
         </div>
@@ -187,13 +243,12 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
                 href={resource.url} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="mt-3 inline-flex items-center text-blue-600 hover:text-blue-800"
+                className="mt-3 inline-flex items-center text-blue-600 hover:text-blue-800 no-underline"
               >
-                Visit Resource
-                <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"></path>
-                  <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"></path>
-                </svg>
+                <Button>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Visit Resource
+                </Button>
               </a>
             </div>
           </div>
@@ -209,6 +264,11 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
             <BookOpen className="h-16 w-16 text-gray-500 mx-auto mb-2" />
             <p className="font-medium text-gray-600">{resource.resourceType.toUpperCase()} Resource</p>
             <p className="text-sm text-gray-500 mt-1">Preview not available. Download to view.</p>
+            
+            <Button variant="outline" className="mt-4" onClick={handleDownload}>
+              <ArrowDownToLine className="h-4 w-4 mr-2" />
+              Download File
+            </Button>
           </div>
         </div>
       </div>
@@ -348,23 +408,23 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
         
         {getResourcePreview()}
         
-        <div className="flex flex-wrap justify-end gap-3 mt-4">
+        <DialogFooter className="flex flex-wrap justify-end gap-3 mt-4">
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleShare}>
             <Share2 className="h-4 w-4 mr-2" />
             Share
           </Button>
-          <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
+          <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={handleDelete}>
             <Trash2 className="h-4 w-4 mr-2" />
             Delete
           </Button>
-          <Button>
+          <Button onClick={handleDownload}>
             <Download className="h-4 w-4 mr-2" />
             Download
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -38,6 +38,12 @@ const Library = () => {
     toast.info("New booking functionality will be implemented soon");
   };
 
+  const handleResourceAdded = () => {
+    // Switch to the view tab after a resource is added successfully
+    setActiveTab("view");
+    toast.success("Resource added successfully to the library");
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -91,7 +97,10 @@ const Library = () => {
                 className="p-0 focus:outline-none m-0 h-full overflow-y-auto"
               >
                 <div className="p-4 md:p-6 max-w-full">
-                  <LibraryResourceForm branchId={id || ""} />
+                  <LibraryResourceForm 
+                    branchId={id || ""} 
+                    onResourceAdded={handleResourceAdded}
+                  />
                 </div>
               </TabsContent>
               <TabsContent 
