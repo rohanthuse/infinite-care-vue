@@ -4,7 +4,7 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { motion } from "framer-motion";
 import { 
-  Calendar, Users, BarChart4, Clock, FileText, AlertCircle, Search, Bell, ChevronRight, Home, ArrowUpRight, Phone, Mail, MapPin, Plus, Clock7, RefreshCw, Download, Filter, ClipboardCheck, ThumbsUp, ArrowUp, ArrowDown, ChevronDown, Edit, Eye, HelpCircle, CalendarIcon, ChevronLeft
+  Calendar, Users, BarChart4, Clock, FileText, AlertCircle, Search, Bell, ChevronRight, Home, ArrowUpRight, Phone, Mail, MapPin, Plus, Clock7, RefreshCw, Download, Filter, ClipboardCheck, ThumbsUp, ArrowUp, ArrowDown, ChevronDown, Edit, Eye, HelpCircle, CalendarIcon, ChevronLeft, FilePlus
 } from "lucide-react";
 import { BranchAgreementsTab } from "@/components/agreements/BranchAgreementsTab";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,7 @@ import NotificationsOverview from "@/components/workflow/NotificationsOverview";
 import TaskMatrix from "./TaskMatrix";
 import TrainingMatrix from "./TrainingMatrix";
 import AccountingTab from "@/components/accounting/AccountingTab";
+import { FormBuilderTab } from "@/components/form-builder/FormBuilderTab";
 
 const weeklyData = [{
   day: "Mon",
@@ -367,6 +368,7 @@ const BranchDashboard = () => {
     if (path.startsWith("reviews")) return "reviews";
     if (path.startsWith("care")) return "care";
     if (path.startsWith("agreements")) return "agreements";
+    if (path.startsWith("form-builder")) return "forms";
     
     return "overview";
   };
@@ -515,6 +517,8 @@ const BranchDashboard = () => {
         navigate(`/branch-dashboard/${id}/${branchName}/task-matrix`);
       } else if (tab === "training-matrix") {
         navigate(`/branch-dashboard/${id}/${branchName}/training-matrix`);
+      } else if (tab === "forms") {
+        navigate(`/branch-dashboard/${id}/${branchName}/form-builder`);
       } else {
         navigate(`/branch-dashboard/${id}/${branchName}/${tab}`);
       }
@@ -1150,6 +1154,8 @@ const BranchDashboard = () => {
         {activeTab === "care-plan" && <CareTab branchId={id} branchName={branchName} />}
         
         {activeTab === "agreements" && <BranchAgreementsTab branchId={id || ""} branchName={decodeURIComponent(branchName || "")} />}
+        
+        {activeTab === "forms" && <FormBuilderTab branchId={id || ""} branchName={decodeURIComponent(branchName || "")} />}
       </main>
     </div>
   );

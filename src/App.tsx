@@ -32,6 +32,7 @@ import TaskMatrix from "./pages/TaskMatrix";
 import TrainingMatrix from "./pages/TrainingMatrix";
 import EventsLogs from "./pages/EventsLogs";
 import Attendance from "./pages/Attendance";
+import FormBuilder from "./pages/FormBuilder";
 
 import "./styles/signatures.css"; // Import the signatures styles
 
@@ -79,6 +80,8 @@ function App() {
             
             <Route path="/branch-dashboard/:id/:branchName/events-logs" element={<EventsLogs />} />
             <Route path="/branch-dashboard/:id/:branchName/attendance" element={<Attendance />} />
+            <Route path="/branch-dashboard/:id/:branchName/form-builder" element={<FormBuilder />} />
+            <Route path="/branch-dashboard/:id/:branchName/form-builder/:formId" element={<FormBuilder />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
