@@ -12,6 +12,7 @@ import {
   Legend,
   LineChart,
   Line,
+  ResponsiveContainer
 } from "recharts";
 
 interface OperationalReportsProps {
@@ -41,32 +42,34 @@ const responseTimeData = [
 
 export function OperationalReports({ branchId, branchName }: OperationalReportsProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card className="border border-gray-200 shadow-sm">
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold mb-4">Task Completion Rates</h3>
-          <div className="h-80 w-full">
-            <ChartContainer 
-              config={{
-                scheduled: { color: "#0088FE" },
-                completed: { color: "#00C49F" },
-                cancelled: { color: "#FF8042" },
-              }}
-            >
-              <BarChart
-                data={taskCompletionData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          <div className="w-full" style={{ height: "350px" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ChartContainer 
+                config={{
+                  scheduled: { color: "#0088FE" },
+                  completed: { color: "#00C49F" },
+                  cancelled: { color: "#FF8042" },
+                }}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="scheduled" name="Scheduled Tasks" fill="var(--color-scheduled)" />
-                <Bar dataKey="completed" name="Completed Tasks" fill="var(--color-completed)" />
-                <Bar dataKey="cancelled" name="Cancelled Tasks" fill="var(--color-cancelled)" />
-              </BarChart>
-            </ChartContainer>
+                <BarChart
+                  data={taskCompletionData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="day" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="scheduled" name="Scheduled Tasks" fill="var(--color-scheduled)" />
+                  <Bar dataKey="completed" name="Completed Tasks" fill="var(--color-completed)" />
+                  <Bar dataKey="cancelled" name="Cancelled Tasks" fill="var(--color-cancelled)" />
+                </BarChart>
+              </ChartContainer>
+            </ResponsiveContainer>
           </div>
           <div className="mt-4 text-sm text-muted-foreground">
             <p>This report shows task completion rates across different days of the week.</p>
@@ -77,24 +80,26 @@ export function OperationalReports({ branchId, branchName }: OperationalReportsP
       <Card className="border border-gray-200 shadow-sm">
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold mb-4">Average Response Time Trend</h3>
-          <div className="h-80 w-full">
-            <ChartContainer 
-              config={{
-                responseTime: { color: "#0088FE" },
-              }}
-            >
-              <LineChart
-                data={responseTimeData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          <div className="w-full" style={{ height: "350px" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ChartContainer 
+                config={{
+                  responseTime: { color: "#0088FE" },
+                }}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value) => [`${value} minutes`, 'Response Time']} />
-                <Legend />
-                <Line type="monotone" dataKey="responseTime" name="Response Time (min)" stroke="var(--color-responseTime)" activeDot={{ r: 8 }} />
-              </LineChart>
-            </ChartContainer>
+                <LineChart
+                  data={responseTimeData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => [`${value} minutes`, 'Response Time']} />
+                  <Legend />
+                  <Line type="monotone" dataKey="responseTime" name="Response Time (min)" stroke="var(--color-responseTime)" activeDot={{ r: 8 }} />
+                </LineChart>
+              </ChartContainer>
+            </ResponsiveContainer>
           </div>
           <div className="mt-4 text-sm text-muted-foreground">
             <p>This report shows the average time to respond to client requests over the past 6 months.</p>

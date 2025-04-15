@@ -12,6 +12,7 @@ import {
   Legend,
   BarChart,
   Bar,
+  ResponsiveContainer
 } from "recharts";
 
 interface FinancialReportsProps {
@@ -39,32 +40,34 @@ const serviceRevenueData = [
 
 export function FinancialReports({ branchId, branchName }: FinancialReportsProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card className="border border-gray-200 shadow-sm">
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold mb-4">Revenue & Expenses</h3>
-          <div className="h-80 w-full">
-            <ChartContainer 
-              config={{
-                revenue: { color: "#0088FE" },
-                expenses: { color: "#FF8042" },
-                profit: { color: "#00C49F" },
-              }}
-            >
-              <LineChart
-                data={revenueData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          <div className="w-full" style={{ height: "350px" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ChartContainer 
+                config={{
+                  revenue: { color: "#0088FE" },
+                  expenses: { color: "#FF8042" },
+                  profit: { color: "#00C49F" },
+                }}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value) => [`£${value}`, '']} />
-                <Legend />
-                <Line type="monotone" dataKey="revenue" name="Revenue" stroke="var(--color-revenue)" activeDot={{ r: 8 }} />
-                <Line type="monotone" dataKey="expenses" name="Expenses" stroke="var(--color-expenses)" />
-                <Line type="monotone" dataKey="profit" name="Profit" stroke="var(--color-profit)" />
-              </LineChart>
-            </ChartContainer>
+                <LineChart
+                  data={revenueData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => [`£${value}`, '']} />
+                  <Legend />
+                  <Line type="monotone" dataKey="revenue" name="Revenue" stroke="var(--color-revenue)" activeDot={{ r: 8 }} />
+                  <Line type="monotone" dataKey="expenses" name="Expenses" stroke="var(--color-expenses)" />
+                  <Line type="monotone" dataKey="profit" name="Profit" stroke="var(--color-profit)" />
+                </LineChart>
+              </ChartContainer>
+            </ResponsiveContainer>
           </div>
           <div className="mt-4 text-sm text-muted-foreground">
             <p>This report shows revenue, expenses, and profit for the past 6 months.</p>
@@ -75,24 +78,26 @@ export function FinancialReports({ branchId, branchName }: FinancialReportsProps
       <Card className="border border-gray-200 shadow-sm">
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold mb-4">Revenue by Service Type</h3>
-          <div className="h-80 w-full">
-            <ChartContainer 
-              config={{
-                value: { color: "#0088FE" },
-              }}
-            >
-              <BarChart
-                data={serviceRevenueData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          <div className="w-full" style={{ height: "350px" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ChartContainer 
+                config={{
+                  value: { color: "#0088FE" },
+                }}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip formatter={(value) => [`£${value}`, 'Revenue']} />
-                <Legend />
-                <Bar dataKey="value" name="Revenue" fill="var(--color-value)" />
-              </BarChart>
-            </ChartContainer>
+                <BarChart
+                  data={serviceRevenueData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => [`£${value}`, 'Revenue']} />
+                  <Legend />
+                  <Bar dataKey="value" name="Revenue" fill="var(--color-value)" />
+                </BarChart>
+              </ChartContainer>
+            </ResponsiveContainer>
           </div>
           <div className="mt-4 text-sm text-muted-foreground">
             <p>This report shows the distribution of revenue across different service types.</p>
