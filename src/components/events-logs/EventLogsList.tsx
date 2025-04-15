@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, Filter, Download, Eye, Calendar, Clock, MapPin, User, FileText, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -114,7 +113,6 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
   const itemsPerPage = 5;
 
   React.useEffect(() => {
-    // Simulate loading data
     setIsLoading(true);
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -122,7 +120,6 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
     return () => clearTimeout(timer);
   }, [branchId]);
 
-  // Apply filters
   const filteredEvents = events.filter(event => {
     const matchesSearch = 
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -136,7 +133,6 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  // Pagination
   const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
   const paginatedEvents = filteredEvents.slice(
     (currentPage - 1) * itemsPerPage,
@@ -151,7 +147,6 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
   const confirmStatusChange = () => {
     if (!selectedEvent || !newStatus) return;
     
-    // Update the status in our local state
     const updatedEvents = events.map(event => {
       if (event.id === selectedEvent.id) {
         return { ...event, status: newStatus };
@@ -161,12 +156,10 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
     
     setEvents(updatedEvents);
     
-    // Show success toast
     toast.success(`Status updated to ${newStatus}`, {
       description: `Event ${selectedEvent.id} status has been updated`
     });
     
-    // Close the dialog
     setStatusDialogOpen(false);
     setSelectedEvent(null);
     setNewStatus('');
@@ -231,8 +224,8 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-4 items-end">
+    <div className="space-y-6 max-w-full">
+      <div className="flex flex-col md:flex-row gap-4 items-end sticky top-0 z-10 bg-white pb-4">
         <div className="flex-1">
           <label htmlFor="search" className="text-sm font-medium mb-1 block">Search</label>
           <div className="relative">
@@ -299,21 +292,21 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
         </div>
       </div>
       
-      <div className="space-y-4">
+      <div className="space-y-4 max-w-full">
         {paginatedEvents.length > 0 ? (
           paginatedEvents.map((event) => (
             <Card key={event.id} className="overflow-hidden hover:shadow-md transition-shadow">
               <CardContent className="p-0">
-                <div className="p-4 flex flex-col md:flex-row justify-between border-b border-gray-100">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium">{event.title}</h3>
+                <div className="p-4 flex flex-col md:flex-row justify-between border-b border-gray-100 gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h3 className="font-medium truncate">{event.title}</h3>
                       {getCategoryBadge(event.category)}
                     </div>
                     <p className="text-sm text-gray-500">Reference: {event.id}</p>
                   </div>
                   
-                  <div className="flex items-center gap-2 mt-2 md:mt-0">
+                  <div className="flex items-center gap-2 mt-2 md:mt-0 flex-shrink-0">
                     {getStatusBadge(event.status)}
                     
                     <DropdownMenu>
@@ -360,28 +353,28 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                 
                 <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="flex items-start">
-                    <User className="h-4 w-4 text-gray-400 mt-0.5 mr-2" />
-                    <div>
+                    <User className="h-4 w-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
+                    <div className="min-w-0 truncate">
                       <div className="text-xs text-gray-500">
                         {event.eventType === 'client' ? 'Client' : 'Staff Member'}
                       </div>
-                      <div className="text-sm">
+                      <div className="text-sm truncate">
                         {event.eventType === 'client' ? event.clientName : event.staffName}
                       </div>
                     </div>
                   </div>
                   
                   <div className="flex items-start">
-                    <MapPin className="h-4 w-4 text-gray-400 mt-0.5 mr-2" />
-                    <div>
+                    <MapPin className="h-4 w-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
+                    <div className="min-w-0 truncate">
                       <div className="text-xs text-gray-500">Location</div>
-                      <div className="text-sm">{event.location}</div>
+                      <div className="text-sm truncate">{event.location}</div>
                     </div>
                   </div>
                   
                   <div className="flex items-start">
-                    <Calendar className="h-4 w-4 text-gray-400 mt-0.5 mr-2" />
-                    <div>
+                    <Calendar className="h-4 w-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
+                    <div className="min-w-0 truncate">
                       <div className="text-xs text-gray-500">Date & Time</div>
                       <div className="text-sm">
                         {new Date(event.date).toLocaleDateString()} at {event.time}
@@ -392,8 +385,8 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                 
                 <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
                   <div className="flex items-start">
-                    <FileText className="h-4 w-4 text-gray-400 mt-0.5 mr-2" />
-                    <p className="text-sm text-gray-700 line-clamp-2">{event.details}</p>
+                    <FileText className="h-4 w-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
+                    <p className="text-sm text-gray-700 line-clamp-2 break-words">{event.details}</p>
                   </div>
                 </div>
               </CardContent>

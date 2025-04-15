@@ -26,19 +26,19 @@ export function ActionsList({ actions, setActions }: ActionsListProps) {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 max-w-full">
       {actions.map((action) => (
-        <Card key={action.id} className="p-4 hover:shadow-md transition-shadow">
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-800">{action.text || "No description provided"}</p>
+        <Card key={action.id} className="p-4 hover:shadow-md transition-shadow overflow-hidden">
+          <div className="flex justify-between items-start flex-wrap gap-2">
+            <div className="flex-1 min-w-0"> {/* min-w-0 prevents flex item from overflowing */}
+              <p className="text-sm font-medium text-gray-800 break-words">{action.text || "No description provided"}</p>
               <div className="mt-2 flex items-center flex-wrap gap-2 text-xs text-gray-500">
                 <div className="flex items-center">
-                  <CalendarIcon className="h-3.5 w-3.5 mr-1 text-gray-400" />
+                  <CalendarIcon className="h-3.5 w-3.5 mr-1 text-gray-400 flex-shrink-0" />
                   <span>{format(action.date, "PP")}</span>
                 </div>
                 <div className="flex items-center">
-                  <ClockIcon className="h-3.5 w-3.5 mr-1 text-gray-400" />
+                  <ClockIcon className="h-3.5 w-3.5 mr-1 text-gray-400 flex-shrink-0" />
                   <span>{format(action.date, "p")}</span>
                 </div>
                 <Badge variant="outline" className="ml-auto bg-blue-50 text-blue-700 border-blue-200">
@@ -46,7 +46,7 @@ export function ActionsList({ actions, setActions }: ActionsListProps) {
                 </Badge>
               </div>
             </div>
-            <div className="flex items-center gap-1 ml-4">
+            <div className="flex items-center gap-1 ml-2 flex-shrink-0">
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                 <EditIcon className="h-4 w-4 text-gray-500 hover:text-blue-600" />
               </Button>
