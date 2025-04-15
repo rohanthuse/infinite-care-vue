@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Download, FileDown, Filter, RefreshCw, Search, Clock, UserCheck } from "lucide-react";
+import { CalendarIcon, Download, FileDown, Filter, RefreshCw, Search, Clock, UserCheck, Users } from "lucide-react";
 import { format, startOfMonth, endOfMonth, parseISO, isWithinInterval } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +28,6 @@ interface AttendanceRecord {
   notes?: string;
 }
 
-// Mock data for attendance records
 const mockAttendanceData: AttendanceRecord[] = [
   {
     id: "1",
@@ -152,32 +150,26 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 5;
 
-  // Filter attendance records based on search query, type, and status
   const filteredRecords = mockAttendanceData.filter(record => {
-    // Filter by date range
     const recordDate = parseISO(record.date);
     const isInDateRange = isWithinInterval(recordDate, { 
       start: dateRange.from, 
       end: dateRange.to 
     });
     
-    // Filter by search query
     const matchesSearch = record.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           record.role.toLowerCase().includes(searchQuery.toLowerCase());
     
-    // Filter by status
     const matchesStatus = status === "all" || record.status === status;
     
     return isInDateRange && matchesSearch && matchesStatus;
   });
 
-  // Calculate pagination
   const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
   const currentRecords = filteredRecords.slice(indexOfFirstRecord, indexOfLastRecord);
 
-  // Handle page navigation
   const handlePrevPage = () => {
     setCurrentPage(prev => Math.max(prev - 1, 1));
   };
@@ -186,7 +178,6 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
     setCurrentPage(prev => Math.min(prev + 1, totalPages));
   };
 
-  // Render status badge with appropriate color
   const renderStatusBadge = (status: string) => {
     switch(status) {
       case "present":
@@ -204,7 +195,6 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
     }
   };
 
-  // Function to export attendance data
   const handleExport = () => {
     const csvContent = [
       ["Name", "Role", "Date", "Status", "Check In", "Check Out", "Hours", "Notes"],
