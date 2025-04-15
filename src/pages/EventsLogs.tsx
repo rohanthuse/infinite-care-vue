@@ -46,7 +46,7 @@ const EventsLogs = () => {
           />
         </div>
         
-        <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-[calc(100vh-250px)]">
+        <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col h-[calc(100vh-250px)] overflow-hidden">
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-2xl font-bold">Events & Logs</h2>
           </div>
@@ -54,9 +54,9 @@ const EventsLogs = () => {
           <Tabs 
             value={activeTab} 
             onValueChange={handleTabChange} 
-            className="w-full flex flex-col flex-1"
+            className="w-full flex flex-col flex-1 overflow-hidden"
           >
-            <div className="bg-gray-50 border-b border-gray-100 p-1.5 sm:p-2.5 sticky top-0 z-10">
+            <div className="bg-gray-50 border-b border-gray-100 p-1.5 sm:p-2.5 sticky top-0 z-20">
               <TabsList className="w-full grid grid-cols-2 rounded-md overflow-hidden bg-gray-100/80 p-0.5 sm:p-1">
                 <TabsTrigger 
                   value="new" 
@@ -78,7 +78,7 @@ const EventsLogs = () => {
                 value="new" 
                 className="p-0 focus:outline-none m-0 h-full overflow-y-auto"
               >
-                <div className="p-4 md:p-6 max-w-full overflow-x-hidden">
+                <div className="p-4 md:p-6 max-w-full">
                   <EventLogForm branchId={id || ""} />
                 </div>
               </TabsContent>

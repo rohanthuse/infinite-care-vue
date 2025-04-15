@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Search, Filter, Download, Eye, Calendar, Clock, MapPin, User, FileText, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -224,8 +225,8 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
   }
 
   return (
-    <div className="space-y-6 max-w-full">
-      <div className="flex flex-col md:flex-row gap-4 items-end sticky top-0 z-10 bg-white pb-4">
+    <div className="space-y-6 w-full overflow-hidden">
+      <div className="flex flex-col md:flex-row gap-4 items-end sticky top-0 z-30 bg-white pb-4">
         <div className="flex-1">
           <label htmlFor="search" className="text-sm font-medium mb-1 block">Search</label>
           <div className="relative">
@@ -277,33 +278,33 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
           </Select>
         </div>
         
-        <div>
-          <Button variant="outline" className="flex items-center">
+        <div className="flex-shrink-0">
+          <Button variant="outline" className="flex items-center w-full">
             <Filter className="h-4 w-4 mr-2" />
-            More Filters
+            <span className="truncate">More Filters</span>
           </Button>
         </div>
         
-        <div>
-          <Button variant="outline" className="flex items-center">
+        <div className="flex-shrink-0">
+          <Button variant="outline" className="flex items-center w-full">
             <Download className="h-4 w-4 mr-2" />
-            Export
+            <span className="truncate">Export</span>
           </Button>
         </div>
       </div>
       
-      <div className="space-y-4 max-w-full">
+      <div className="space-y-4 w-full">
         {paginatedEvents.length > 0 ? (
           paginatedEvents.map((event) => (
-            <Card key={event.id} className="overflow-hidden hover:shadow-md transition-shadow">
+            <Card key={event.id} className="overflow-hidden hover:shadow-md transition-shadow w-full">
               <CardContent className="p-0">
                 <div className="p-4 flex flex-col md:flex-row justify-between border-b border-gray-100 gap-2">
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-medium truncate">{event.title}</h3>
                       {getCategoryBadge(event.category)}
                     </div>
-                    <p className="text-sm text-gray-500">Reference: {event.id}</p>
+                    <p className="text-sm text-gray-500 truncate">Reference: {event.id}</p>
                   </div>
                   
                   <div className="flex items-center gap-2 mt-2 md:mt-0 flex-shrink-0">
@@ -346,7 +347,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                     
                     <Button variant="ghost" size="sm">
                       <Eye className="h-4 w-4 mr-1" />
-                      View
+                      <span className="hidden sm:inline">View</span>
                     </Button>
                   </div>
                 </div>
@@ -376,7 +377,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                     <Calendar className="h-4 w-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
                     <div className="min-w-0 truncate">
                       <div className="text-xs text-gray-500">Date & Time</div>
-                      <div className="text-sm">
+                      <div className="text-sm truncate">
                         {new Date(event.date).toLocaleDateString()} at {event.time}
                       </div>
                     </div>

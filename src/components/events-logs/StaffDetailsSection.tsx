@@ -16,15 +16,15 @@ interface StaffDetailsSectionProps {
 
 export function StaffDetailsSection({ staff, form }: StaffDetailsSectionProps) {
   return (
-    <div className="space-y-6 bg-white rounded-lg border border-gray-100 p-5 shadow-sm">
+    <div className="space-y-6 bg-white rounded-lg border border-gray-100 p-5 shadow-sm overflow-hidden">
       <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-100 pb-2">Staff Details</h3>
       
       <div className="space-y-5">
         <div className="space-y-3">
           <h4 className="text-sm font-semibold text-gray-700">Staff Members Present</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
             {staff.map((staffMember) => (
-              <div key={`present-${staffMember.id}`} className="flex items-center space-x-2 bg-gray-50 p-2.5 rounded-md hover:bg-gray-100 transition-colors truncate">
+              <div key={`present-${staffMember.id}`} className="flex items-center space-x-2 bg-gray-50 p-2.5 rounded-md hover:bg-gray-100 transition-colors overflow-hidden">
                 <Checkbox id={`staff-present-${staffMember.id}`} className="data-[state=checked]:bg-blue-600 flex-shrink-0" />
                 <Label htmlFor={`staff-present-${staffMember.id}`} className="font-medium cursor-pointer truncate">
                   {staffMember.name}
@@ -36,9 +36,9 @@ export function StaffDetailsSection({ staff, form }: StaffDetailsSectionProps) {
         
         <div className="space-y-3 pt-2">
           <h4 className="text-sm font-semibold text-gray-700">Staff Members Aware</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
             {staff.map((staffMember) => (
-              <div key={`aware-${staffMember.id}`} className="flex items-center space-x-2 bg-gray-50 p-2.5 rounded-md hover:bg-gray-100 transition-colors truncate">
+              <div key={`aware-${staffMember.id}`} className="flex items-center space-x-2 bg-gray-50 p-2.5 rounded-md hover:bg-gray-100 transition-colors overflow-hidden">
                 <Checkbox id={`staff-aware-${staffMember.id}`} className="data-[state=checked]:bg-blue-600 flex-shrink-0" />
                 <Label htmlFor={`staff-aware-${staffMember.id}`} className="font-medium cursor-pointer truncate">
                   {staffMember.name}
