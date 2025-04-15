@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,10 +40,10 @@ import { toast } from 'sonner';
 import { LibraryResourcePreviewDialog } from './LibraryResourcePreviewDialog';
 import { LibraryFilterDialog } from './LibraryFilterDialog';
 import { DateRange } from 'react-day-picker';
-import { useNavigate, useParams } from 'react-router-dom';
 
 interface LibraryResourcesListProps {
   branchId: string;
+  onAddNew?: () => void;
 }
 
 interface LibraryResource {
@@ -68,7 +67,6 @@ interface LibraryResource {
   downloads: number;
 }
 
-// Mock data for resources
 const mockResources: LibraryResource[] = [
   {
     id: "RES-001",
@@ -184,7 +182,10 @@ const categories = [
   { id: "tools", name: "Tools & Calculators" },
 ];
 
-export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({ branchId }) => {
+export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({ 
+  branchId,
+  onAddNew
+}) => {
   const [searchValue, setSearchValue] = useState("");
   const [selectedResource, setSelectedResource] = useState<LibraryResource | null>(null);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
@@ -196,15 +197,11 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({ bran
     categories: [] as string[],
     hasExpiry: false,
   });
-  const navigate = useNavigate();
-  const { id, branchName } = useParams();
   
-  // Get category name from ID
   const getCategoryName = (categoryId: string): string => {
     return categories.find(cat => cat.id === categoryId)?.name || categoryId;
   };
   
-  // Format file size
   const formatFileSize = (bytes?: number): string => {
     if (!bytes) return "N/A";
     if (bytes < 1024) return `${bytes} B`;
@@ -212,7 +209,6 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({ bran
     return `${(bytes / 1048576).toFixed(2)} MB`;
   };
   
-  // Get icon based on resource type
   const getResourceTypeIcon = (resourceType: string) => {
     switch (resourceType.toLowerCase()) {
       case 'pdf':
@@ -236,37 +232,26 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({ bran
     }
   };
   
-  // Handle resource preview
   const handlePreviewResource = (resource: LibraryResource) => {
     setSelectedResource(resource);
     setPreviewDialogOpen(true);
     
-    // In a real app, you'd track this view
-    // Update view count in the mock data
     const updatedResource = mockResources.find(r => r.id === resource.id);
     if (updatedResource) {
       updatedResource.views += 1;
     }
   };
   
-  // Handle resource download
   const handleDownloadResource = (resource: LibraryResource) => {
     toast.success(`Downloading: ${resource.title}`);
-    // In a real app, this would trigger the actual download
-    
-    // Update download count in the mock data
     const updatedResource = mockResources.find(r => r.id === resource.id);
     if (updatedResource) {
       updatedResource.downloads += 1;
     }
   };
   
-  // Handle resource sharing
   const handleShareResource = (resource: LibraryResource) => {
-    // Generate a "share link" - in a real app this would create a shareable URL
     const shareLink = `https://med-infinite.com/resources/${resource.id}`;
-    
-    // Simulate copying to clipboard
     navigator.clipboard.writeText(shareLink).then(() => {
       toast.success(`Share link copied to clipboard for: ${resource.title}`);
     }).catch(() => {
@@ -274,58 +259,45 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({ bran
     });
   };
   
-  // Handle resource deletion
   const handleDeleteResource = (resource: LibraryResource) => {
     toast.success(`Resource deleted: ${resource.title}`);
-    // In a real app, this would delete the resource from the database
   };
 
-  // Handle add new resource
   const handleAddNew = () => {
-    // Switch to the add resource tab
-    const params = new URLSearchParams(window.location.search);
-    params.set('tab', 'add');
-    navigate(`/branch-dashboard/${id}/${encodeURIComponent(branchName || '')}` + 
-      `/library?${params.toString()}`);
+    if (onAddNew) {
+      onAddNew();
+    }
   };
   
-  // Filter resources based on search and filters
   const filteredResources = mockResources.filter(resource => {
-    // Search filter
     const matchesSearch = 
       resource.title.toLowerCase().includes(searchValue.toLowerCase()) ||
       resource.description?.toLowerCase().includes(searchValue.toLowerCase()) ||
       resource.author?.toLowerCase().includes(searchValue.toLowerCase()) ||
       resource.tags?.some(tag => tag.toLowerCase().includes(searchValue.toLowerCase()));
     
-    // Resource type filter
     const matchesResourceType = 
       filters.resourceTypes.length === 0 || 
       filters.resourceTypes.includes(resource.resourceType);
     
-    // Privacy filter
     const matchesPrivacy = !filters.onlyPrivate || resource.isPrivate;
     
-    // Category filter
     const matchesCategory = 
       filters.categories.length === 0 || 
       filters.categories.includes(resource.category);
     
-    // Date range filter
     const matchesDateRange = 
       !filters.dateRange?.from || 
       !filters.dateRange?.to || 
       (resource.uploadDate >= filters.dateRange.from && 
        resource.uploadDate <= filters.dateRange.to);
     
-    // Expiry filter
     const matchesExpiry = !filters.hasExpiry || !!resource.expiryDate;
     
     return matchesSearch && matchesResourceType && matchesPrivacy && 
            matchesCategory && matchesDateRange && matchesExpiry;
   });
   
-  // Render stars based on rating
   const renderRating = (rating?: number) => {
     if (!rating) return null;
     

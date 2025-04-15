@@ -108,7 +108,10 @@ const Library = () => {
                 className="p-0 focus:outline-none m-0 h-full overflow-y-auto"
               >
                 <div className="p-4 md:p-6 max-w-full">
-                  <LibraryResourcesList branchId={id || ""} />
+                  <LibraryResourcesList 
+                    branchId={id || ""} 
+                    onAddNew={() => handleTabChange("add")}
+                  />
                 </div>
               </TabsContent>
             </div>
