@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { BranchInfoHeader } from '@/components/BranchInfoHeader';
-import { DashboardNavbar } from '@/components/DashboardNavbar';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { FormBuilderDesigner } from '@/components/form-builder/FormBuilderDesigner';
 import { FormBuilderPreview } from '@/components/form-builder/FormBuilderPreview';
@@ -235,7 +233,12 @@ const FormBuilder = () => {
           onNewBooking={() => {}}
         />
         
-        <DashboardNavbar />
+        <div className="mb-6">
+          <TabNavigation 
+            activeTab="form-builder" 
+            onChange={handleNavigate}
+          />
+        </div>
         
         <FormBuilderNavBar 
           form={form}
@@ -250,13 +253,6 @@ const FormBuilder = () => {
           }}
           isFormDirty={isFormDirty}
         />
-
-        <div className="mb-6">
-          <TabNavigation 
-            activeTab="form-builder" 
-            onChange={handleNavigate}
-          />
-        </div>
         
         <FormTabNavigation 
           activeTab={activeTab} 
