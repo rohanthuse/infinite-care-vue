@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { BranchInfoHeader } from '@/components/BranchInfoHeader';
+import { BranchSidebar } from '@/components/BranchSidebar';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { FormBuilderDesigner } from '@/components/form-builder/FormBuilderDesigner';
 import { FormBuilderPreview } from '@/components/form-builder/FormBuilderPreview';
@@ -214,77 +215,83 @@ const FormBuilder = () => {
     setIsFormDirty(true);
   };
 
+  const decodedBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
       
-      <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full">
-        <BranchInfoHeader 
-          branchName={decodeURIComponent(branchName || "Med-Infinite Branch")} 
-          branchId={branchId || ""}
-          onNewBooking={() => {}}
-        />
+      <div className="flex-1 flex">
+        <BranchSidebar branchName={decodedBranchName} />
         
-        <FormBuilderNavBar 
-          form={form}
-          onSave={handleSaveForm}
-          onFormChange={(title, description) => {
-            setForm(prev => ({
-              ...prev,
-              title,
-              description,
-            }));
-            setIsFormDirty(true);
-          }}
-          isFormDirty={isFormDirty}
-        />
-        
-        <TabNavigation 
-          activeTab={activeTab} 
-          onTabChange={handleTabChange} 
-          title="Form Builder" 
-          subtitle="Create and manage your form"
-        />
-        
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsContent value="design" className="p-4 bg-white rounded-lg border shadow-sm">
-            <FormBuilderDesigner 
-              form={form}
-              onAddElement={addElement}
-              onUpdateElement={updateElement}
-              onRemoveElement={removeElement}
-              onReorderElements={reorderElements}
-            />
-          </TabsContent>
+        <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full ml-[80px] md:ml-64">
+          <BranchInfoHeader 
+            branchName={decodedBranchName} 
+            branchId={branchId || ""}
+            onNewBooking={() => {}}
+          />
           
-          <TabsContent value="validation" className="p-4 bg-white rounded-lg border shadow-sm">
-            <FormValidationTab 
-              form={form} 
-              onUpdateValidation={handleUpdateValidation} 
-            />
-          </TabsContent>
+          <FormBuilderNavBar 
+            form={form}
+            onSave={handleSaveForm}
+            onFormChange={(title, description) => {
+              setForm(prev => ({
+                ...prev,
+                title,
+                description,
+              }));
+              setIsFormDirty(true);
+            }}
+            isFormDirty={isFormDirty}
+          />
           
-          <TabsContent value="preview" className="p-4 bg-white rounded-lg border shadow-sm">
-            <FormBuilderPreview form={form} />
-          </TabsContent>
+          <TabNavigation 
+            activeTab={activeTab} 
+            onTabChange={handleTabChange} 
+            title="Form Builder" 
+            subtitle="Create and manage your form"
+          />
+          
+          <Tabs value={activeTab} onValueChange={handleTabChange}>
+            <TabsContent value="design" className="p-4 bg-white rounded-lg border shadow-sm">
+              <FormBuilderDesigner 
+                form={form}
+                onAddElement={addElement}
+                onUpdateElement={updateElement}
+                onRemoveElement={removeElement}
+                onReorderElements={reorderElements}
+              />
+            </TabsContent>
+            
+            <TabsContent value="validation" className="p-4 bg-white rounded-lg border shadow-sm">
+              <FormValidationTab 
+                form={form} 
+                onUpdateValidation={handleUpdateValidation} 
+              />
+            </TabsContent>
+            
+            <TabsContent value="preview" className="p-4 bg-white rounded-lg border shadow-sm">
+              <FormBuilderPreview form={form} />
+            </TabsContent>
 
-          <TabsContent value="advanced" className="p-4 bg-white rounded-lg border shadow-sm">
-            <FormAdvancedTab 
-              form={form} 
-              onUpdateSettings={handleUpdateSettings}
-            />
-          </TabsContent>
-          
-          <TabsContent value="publish" className="p-4 bg-white rounded-lg border shadow-sm">
-            <FormBuilderPublish 
-              form={form}
-              onPublish={handlePublishForm}
-              branchId={branchId || ''}
-              onUpdatePermissions={handleUpdatePermissions}
-            />
-          </TabsContent>
-        </Tabs>
-      </main>
+            <TabsContent value="advanced" className="p-4 bg-white rounded-lg border shadow-sm">
+              <FormAdvancedTab 
+                form={form} 
+                onUpdateSettings={handleUpdateSettings}
+              />
+            </TabsContent>
+            
+            <TabsContent value="publish" className="p-4 bg-white rounded-lg border shadow-sm">
+              <FormBuilderPublish 
+                form={form}
+                onPublish={handlePublishForm}
+                branchId={branchId || ''}
+                onUpdatePermissions={handleUpdatePermissions}
+              />
+            </TabsContent>
+          </Tabs>
+        </main>
+      </div>
     </div>
   );
 };

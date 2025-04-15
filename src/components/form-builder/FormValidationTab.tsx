@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Form, FormElement } from '@/types/form-builder';
+import { Form, FormElement, FormElementType } from '@/types/form-builder';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -46,8 +46,8 @@ export const FormValidationTab: React.FC<FormValidationTabProps> = ({
     !['heading', 'paragraph', 'divider'].includes(element.type)
   );
   
-  const getElementTypeLabel = (type: FormElementType): string => {
-    const typeMap: {[key in FormElementType]?: string} = {
+  const getElementTypeLabel = (type: string): string => {
+    const typeMap: {[key: string]: string} = {
       text: 'Text Field',
       textarea: 'Text Area',
       number: 'Number',
