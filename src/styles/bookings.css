@@ -1,3 +1,4 @@
+
 /* Grid columns for the time slots */
 .grid-cols-24 {
   grid-template-columns: repeat(24, minmax(0, 1fr));
@@ -326,6 +327,13 @@
   overflow: hidden;
   font-size: 0.75rem;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.booking-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Dragging styles */
@@ -461,4 +469,38 @@
   transform: scale(1.02);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
   z-index: 100 !important;
+}
+
+/* Highlight draggable items */
+[data-rbd-draggable-id] {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+[data-rbd-draggable-id]:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: move;
+}
+
+/* Drag handle and click indicators */
+[data-rbd-draggable-id]::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  height: 6px;
+  width: 6px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+[data-rbd-draggable-id]:hover::before {
+  opacity: 1;
+}
+
+/* Enhanced drop area indicator */
+[data-rbd-droppable-id].drag-over {
+  background-color: rgba(219, 234, 254, 0.3) !important;
+  box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.5);
 }

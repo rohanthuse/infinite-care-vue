@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Booking } from "./BookingTimeGrid";
 import { Clock, Info } from "lucide-react";
@@ -20,6 +19,7 @@ interface BookingEntryProps {
     height: number;
   };
   index: number;
+  onEditBooking?: (booking: Booking) => void;
 }
 
 export const BookingEntry: React.FC<BookingEntryProps> = ({
@@ -29,7 +29,8 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
   type = "client",
   displayMode = "horizontal",
   position,
-  index
+  index,
+  onEditBooking
 }) => {
   // Determine background color based on status
   const statusColors = {
@@ -54,6 +55,14 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
     });
   };
   
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onEditBooking) {
+      onEditBooking(booking);
+    }
+  };
+  
   // If position is provided, use it (vertical view)
   if (position) {
     return (
@@ -73,6 +82,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
                   right: '2px',
                   ...provided.draggableProps.style
                 }}
+                onClick={handleClick}
               >
                 <div className="p-1 overflow-hidden h-full flex flex-col">
                   <div className="font-medium truncate flex items-center">
@@ -120,6 +130,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
               width: `${width}%`,
               minWidth: "25px"
             }}
+            onClick={handleClick}
           >
             <div className="p-1 overflow-hidden h-full flex flex-col">
               <div className="font-medium truncate flex items-center">

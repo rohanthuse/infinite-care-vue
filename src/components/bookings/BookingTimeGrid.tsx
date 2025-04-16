@@ -6,6 +6,7 @@ import { BookingEntry } from "./BookingEntry";
 import { EntitySelector } from "./EntitySelector";
 import { EntityList } from "./EntityList";
 import { BookingContextMenu } from "./BookingContextMenu";
+import { EditBookingDialog } from "./EditBookingDialog";
 import { Maximize2, Minimize2, Calendar, Clock } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO } from "date-fns";
 import { DragDropContext, Droppable, DropResult } from "react-beautiful-dnd";
@@ -69,6 +70,8 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   const [showHalfHours, setShowHalfHours] = useState(true);
   const [contextMenuTime, setContextMenuTime] = useState("08:00");
   const [localBookings, setLocalBookings] = useState<Booking[]>(bookings);
+  const [editBookingDialogOpen, setEditBookingDialogOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
     setLocalBookings(bookings);
@@ -190,17 +193,29 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   };
 
   const getTimeFromPosition = (yPosition: number): string => {
+    // Calculate total minutes from Y position
     const totalMinutes = Math.floor((yPosition / hourHeight) * 60);
     
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
+    // Extract hours and initial minutes
+    let hours = Math.floor(totalMinutes / 60);
+    let minutes = totalMinutes % 60;
     
+    // Round minutes to nearest interval (typically 30 minutes)
     const roundedMinutes = Math.round(minutes / timeInterval) * timeInterval;
     
-    const adjustedHours = (hours + Math.floor(roundedMinutes / 60)) % 24;
-    const adjustedMinutes = roundedMinutes % 60;
+    // Handle overflow when minutes are rounded up
+    if (roundedMinutes === 60) {
+      hours += 1;
+      minutes = 0;
+    } else {
+      minutes = roundedMinutes;
+    }
     
-    return `${String(adjustedHours).padStart(2, '0')}:${String(adjustedMinutes).padStart(2, '0')}`;
+    // Ensure hours are within 0-23 range
+    hours = hours % 24;
+    
+    // Format the time string
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   };
 
   const handleContextMenuBooking = (date: Date, time: string) => {
@@ -224,6 +239,22 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     setContextMenuTime(time);
   };
 
+  const handleEditBooking = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setEditBookingDialogOpen(true);
+  };
+
+  const handleUpdateBooking = (updatedBooking: Booking) => {
+    const updatedBookings = localBookings.map(b => 
+      b.id === updatedBooking.id ? updatedBooking : b
+    );
+    setLocalBookings(updatedBookings);
+    
+    if (onUpdateBooking) {
+      onUpdateBooking(updatedBooking);
+    }
+  };
+
   const handleDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
     
@@ -245,19 +276,25 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
       }
     }
     
+    // Get the y-coordinate from the destination.index
     const dropPositionY = destination.index * 10;
     const newStartTime = getTimeFromPosition(dropPositionY);
     
+    // Parse the times to calculate duration
     const [startHour, startMin] = booking.startTime.split(':').map(Number);
     const [endHour, endMin] = booking.endTime.split(':').map(Number);
+    
+    // Calculate total minutes for start and end times
     const startInMinutes = startHour * 60 + startMin;
     const endInMinutes = endHour * 60 + endMin;
     const durationMinutes = endInMinutes - startInMinutes;
     
+    // Calculate new start time in minutes
     const [newHour, newMin] = newStartTime.split(':').map(Number);
     const newStartInMinutes = newHour * 60 + newMin;
-    const newEndInMinutes = newStartInMinutes + durationMinutes;
     
+    // Calculate new end time by adding duration
+    const newEndInMinutes = newStartInMinutes + durationMinutes;
     const newEndHour = Math.floor(newEndInMinutes / 60) % 24;
     const newEndMin = newEndInMinutes % 60;
     const newEndTime = `${String(newEndHour).padStart(2, '0')}:${String(newEndMin).padStart(2, '0')}`;
@@ -265,6 +302,12 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     // Check if new booking is within business hours (6:00 to 22:00)
     if (newHour < 6 || newHour >= 22) {
       toast.error("Bookings can only be scheduled between 6:00 and 22:00");
+      return;
+    }
+    
+    // Check if the end time exceeds business hours
+    if (newEndHour >= 22 || (newEndHour === 21 && newEndMin > 30)) {
+      toast.error("Booking would end after business hours (22:00)");
       return;
     }
     
@@ -350,6 +393,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                               position={position}
                               type={entityType}
                               index={index}
+                              onEditBooking={handleEditBooking}
                             />
                           );
                         })}
@@ -409,6 +453,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                                     position={position}
                                     type={entityType}
                                     index={index}
+                                    onEditBooking={handleEditBooking}
                                   />
                                 );
                               })}
@@ -495,6 +540,15 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
           {renderCalendar("carer", displayedCarer)}
         </div>
       </div>
+      
+      <EditBookingDialog
+        open={editBookingDialogOpen}
+        onOpenChange={setEditBookingDialogOpen}
+        booking={selectedBooking}
+        clients={clients}
+        carers={carers}
+        onUpdateBooking={handleUpdateBooking}
+      />
     </div>
   );
 };
