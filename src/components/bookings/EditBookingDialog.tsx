@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Booking, Client, Carer } from "./BookingTimeGrid";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, AlertTriangle, CalendarCheck, Users, RefreshCw, SwapHorizontal, CheckCircle, XCircle } from "lucide-react";
+import { Calendar, Clock, AlertTriangle, CalendarCheck, Users, RefreshCw, ArrowLeftRight, CheckCircle, XCircle } from "lucide-react";
 import { format, parseISO, isSameDay, isAfter, isBefore } from "date-fns";
 import { 
   AlertDialog,
@@ -606,7 +606,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                         </>
                       ) : (
                         <>
-                          <SwapHorizontal className="h-3 w-3 mr-1" />
+                          <ArrowLeftRight className="h-3 w-3 mr-1" />
                           Available Slots
                         </>
                       )}
