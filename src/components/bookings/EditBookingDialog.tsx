@@ -69,14 +69,17 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const [availableTimeSlots, setAvailableTimeSlots] = useState<{start: string, end: string}[]>([]);
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [carerKey, setCarerKey] = useState<number>(0); // Key to force re-render of carer selector
+  const [carerSelectorKey, setCarerSelectorKey] = useState<number>(0); // Key to force re-render of carer selector
+  const [clientSelectorKey, setClientSelectorKey] = useState<number>(0); // Key to force re-render of client selector
 
   // Reset state when dialog opens/closes
   useEffect(() => {
     if (open) {
+      console.log("Dialog opened");
       setIsDataLoaded(false);
       setIsProcessing(false);
     } else {
+      console.log("Dialog closed, resetting state");
       // Clear state when dialog closes
       setSelectedClientId("");
       setSelectedCarerId("");
@@ -87,7 +90,8 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       setBookingDate("");
       setClientSchedule([]);
       setCarerSchedule([]);
-      setCarerKey(prevKey => prevKey + 1); // Update key for next opening
+      setCarerSelectorKey(prev => prev + 1);
+      setClientSelectorKey(prev => prev + 1);
     }
   }, [open]);
   
@@ -105,15 +109,21 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       setEndTime(booking.endTime);
       setBookingDate(booking.date);
       
-      // Load schedules after setting IDs
+      // Use setTimeout to ensure state has been updated
       setTimeout(() => {
+        console.log("Loading schedules for client:", booking.clientId, "and carer:", booking.carerId);
         updateClientSchedule(booking.clientId);
         updateCarerSchedule(booking.carerId);
+        
+        // Force selectors to re-render with correct selection
+        setClientSelectorKey(prev => prev + 1);
+        setCarerSelectorKey(prev => prev + 1);
+        
         setIsDataLoaded(true);
         console.log("Dialog data loaded. Client ID:", booking.clientId, "Carer ID:", booking.carerId);
       }, 100);
     }
-  }, [booking, open, carers, clients]);
+  }, [booking, open]);
   
   const updateClientSchedule = (clientId: string) => {
     console.log("Updating client schedule for ID:", clientId);
@@ -139,42 +149,49 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     }
   };
   
-  const handleClientChange = (clientId: string) => {
-    if (!clientId || selectedClientId === clientId) return;
+  const handleClientChange = (clientId: string | null) => {
+    if (!clientId) return;
     
     console.log("Client selected:", clientId, "Previous:", selectedClientId);
     setIsProcessing(true);
     
     setSelectedClientId(clientId);
     updateClientSchedule(clientId);
-    findAvailableTimeSlots();
     
+    // Find client name for feedback
     const selectedClient = clients.find(c => c.id === clientId);
     if (selectedClient) {
       toast.success(`Selected client: ${selectedClient.name}`);
     }
     
-    setIsProcessing(false);
+    // Update available time slots after client change
+    setTimeout(() => {
+      findAvailableTimeSlots();
+      setIsProcessing(false);
+    }, 100);
   };
   
-  const handleCarerChange = (carerId: string) => {
-    if (!carerId || selectedCarerId === carerId) return;
+  const handleCarerChange = (carerId: string | null) => {
+    if (!carerId) return;
     
     console.log("Carer selected:", carerId, "Previous:", selectedCarerId);
     setIsProcessing(true);
     
     setSelectedCarerId(carerId);
     updateCarerSchedule(carerId);
-    findAvailableTimeSlots();
     
-    // Provide user feedback
+    // Find carer name for feedback
     const selectedCarer = carers.find(c => c.id === carerId);
     if (selectedCarer) {
       toast.success(`Selected carer: ${selectedCarer.name}`);
       console.log("Carer assignment updated to:", selectedCarer.name);
     }
     
-    setIsProcessing(false);
+    // Update available time slots after carer change
+    setTimeout(() => {
+      findAvailableTimeSlots();
+      setIsProcessing(false);
+    }, 100);
   };
   
   const findAvailableTimeSlots = () => {
@@ -364,6 +381,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       clientInitials: selectedClient.initials,
       carerId: selectedCarer.id,
       carerName: selectedCarer.name,
+      carerInitials: selectedCarer.initials,  // Add carerInitials to ensure it's included
       startTime: startTime,
       endTime: endTime,
       date: bookingDate,
@@ -559,8 +577,8 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                     type="client"
                     entities={clients}
                     selectedEntity={selectedClientId}
-                    onSelect={(id) => handleClientChange(id || "")}
-                    key={`client-selector-${selectedClientId}`}
+                    onSelect={handleClientChange}
+                    key={`client-selector-${clientSelectorKey}`}
                   />
                   
                   {selectedClientId && (
@@ -626,8 +644,8 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                       type="carer"
                       entities={carers}
                       selectedEntity={selectedCarerId}
-                      onSelect={(id) => handleCarerChange(id || "")}
-                      key={`carer-selector-${carerKey}`}
+                      onSelect={handleCarerChange}
+                      key={`carer-selector-${carerSelectorKey}`}
                     />
                   )}
                   
@@ -817,8 +835,8 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSave}>
-              Continue Anyway
+            <AlertDialogAction onClick={() => setShowScheduleConflict(false)}>
+              Review Schedule
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

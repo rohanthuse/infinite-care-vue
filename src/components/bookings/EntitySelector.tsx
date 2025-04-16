@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 import { 
   Command,
@@ -36,6 +36,27 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
   // Find the selected entity object
   const selected = entities.find(entity => entity.id === selectedEntity);
   
+  // Log state for debugging
+  useEffect(() => {
+    console.log(`EntitySelector (${type}) rendered with selectedEntity:`, selectedEntity);
+    if (selected) {
+      console.log(`Selected ${type}:`, selected.name);
+    }
+  }, [selectedEntity, type, selected]);
+  
+  const handleSelectEntity = (id: string) => {
+    console.log(`${type} selected:`, id);
+    const newSelection = id === selectedEntity ? null : id;
+    onSelect(newSelection);
+    setOpen(false);
+  };
+  
+  const handleClearSelection = () => {
+    console.log(`Clearing ${type} selection`);
+    onSelect(null);
+    setOpen(false);
+  };
+  
   return (
     <div className="w-full">
       <Popover open={open} onOpenChange={setOpen}>
@@ -45,6 +66,7 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
             role="combobox"
             aria-expanded={open}
             className="w-full justify-between h-10 bg-white border-gray-200"
+            data-testid={`${type}-selector-trigger`}
           >
             {selected ? (
               <div className="flex items-center">
@@ -75,11 +97,9 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
                   <CommandItem
                     key={entity.id}
                     value={entity.id}
-                    onSelect={() => {
-                      onSelect(entity.id === selectedEntity ? null : entity.id);
-                      setOpen(false);
-                    }}
+                    onSelect={() => handleSelectEntity(entity.id)}
                     className="flex items-center py-2"
+                    data-testid={`${type}-option-${entity.id}`}
                   >
                     <div className={`h-6 w-6 rounded-full ${type === "client" ? "bg-blue-100 text-blue-600" : "bg-purple-100 text-purple-600"} flex items-center justify-center text-xs font-medium mr-2`}>
                       {entity.initials}
@@ -98,11 +118,9 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    onSelect(null);
-                    setOpen(false);
-                  }}
+                  onClick={handleClearSelection}
                   className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                  data-testid={`${type}-clear-selection`}
                 >
                   <X className="h-4 w-4 mr-2" />
                   Clear selection
