@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { 
   LayoutDashboard, Workflow, ListChecks, Users, 
@@ -105,6 +106,11 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
       position: "top-center",
     });
     console.log(`Quick Add action selected: ${action}`);
+  };
+
+  // Handle direct Reports menu item click without submenu
+  const handleReportsClick = () => {
+    onChange("reports");
   };
   
   return (
@@ -356,7 +362,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 p-1 bg-white border border-gray-200 shadow-lg rounded-lg">
-                  {secondaryTabGroups.map((group) => (
+                  {secondaryTabGroups.slice(0, 3).map((group) => (
                     <DropdownMenuSub key={group.label}>
                       <DropdownMenuSubTrigger className="py-2 px-3 rounded-md my-1 text-sm hover:bg-gray-50">
                         <span>{group.label}</span>
@@ -384,6 +390,25 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                       </DropdownMenuPortal>
                     </DropdownMenuSub>
                   ))}
+                  
+                  {/* Direct Reports menu item without submenu */}
+                  {secondaryTabGroups[3]?.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = item.value === activeTab;
+                    return (
+                      <DropdownMenuItem
+                        key={item.value}
+                        className={cn(
+                          "py-2 px-3 rounded-md my-1 text-sm cursor-pointer",
+                          isActive ? "bg-blue-50 text-blue-600" : "hover:bg-gray-50"
+                        )}
+                        onClick={() => onChange(item.value)}
+                      >
+                        <Icon className="h-4 w-4 mr-2" />
+                        <span>{item.label}</span>
+                      </DropdownMenuItem>
+                    );
+                  })}
                 </DropdownMenuContent>
               </DropdownMenu>
               
