@@ -52,6 +52,7 @@ interface BookingTimeGridProps {
   viewMode: "client" | "group";
   onCreateBooking?: (date: Date, time: string, clientId?: string, carerId?: string) => void;
   onUpdateBooking?: (booking: Booking) => void;
+  onEditBooking?: (booking: Booking) => void;
 }
 
 export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
@@ -63,6 +64,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   viewMode,
   onCreateBooking,
   onUpdateBooking,
+  onEditBooking,
 }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
