@@ -9,7 +9,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, ChevronRight } from "lucide-react";
+import { Eye, ChevronRight, RefreshCw } from "lucide-react";
 import { News2Patient } from "./news2Types";
 import { format } from "date-fns";
 import { PatientDetailsDialog } from "./PatientDetailsDialog";
