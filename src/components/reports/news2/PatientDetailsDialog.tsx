@@ -23,6 +23,7 @@ import { ObservationHistory } from "./ObservationHistory";
 import { ObservationChart } from "./ObservationChart";
 import { NewObservationDialog } from "./NewObservationDialog";
 import { format } from "date-fns";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface PatientDetailsDialogProps {
   open: boolean;
@@ -53,94 +54,96 @@ export function PatientDetailsDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-xl">Patient Details</DialogTitle>
           </DialogHeader>
           
-          <div className="mt-2 space-y-6">
-            <div className="flex flex-col md:flex-row justify-between pb-4 border-b gap-4">
-              <div className="flex items-center">
-                <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg font-medium mr-4">
-                  {patient.name.split(' ').map(n => n[0]).join('')}
+          <ScrollArea className="flex-1 overflow-y-auto">
+            <div className="space-y-6 px-1">
+              <div className="flex flex-col md:flex-row justify-between pb-4 border-b gap-4">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg font-medium mr-4">
+                    {patient.name.split(' ').map(n => n[0]).join('')}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold">{patient.name}</h3>
+                    <div className="flex items-center text-sm text-gray-600 gap-3 mt-1">
+                      <div className="flex items-center">
+                        <User className="h-3.5 w-3.5 mr-1" />
+                        {patient.age} years
+                      </div>
+                      <div className="flex items-center">
+                        <FileText className="h-3.5 w-3.5 mr-1" />
+                        ID: {patient.id}
+                      </div>
+                      <div className="flex items-center">
+                        <Clock className="h-3.5 w-3.5 mr-1" />
+                        Last updated: {format(new Date(patient.lastUpdated), "dd MMM yyyy, HH:mm")}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold">{patient.name}</h3>
-                  <div className="flex items-center text-sm text-gray-600 gap-3 mt-1">
-                    <div className="flex items-center">
-                      <User className="h-3.5 w-3.5 mr-1" />
-                      {patient.age} years
-                    </div>
-                    <div className="flex items-center">
-                      <FileText className="h-3.5 w-3.5 mr-1" />
-                      ID: {patient.id}
-                    </div>
-                    <div className="flex items-center">
-                      <Clock className="h-3.5 w-3.5 mr-1" />
-                      Last updated: {format(new Date(patient.lastUpdated), "dd MMM yyyy, HH:mm")}
+
+                <div className="flex items-center">
+                  <div className={`py-2 px-4 rounded-lg border font-medium ${getStatusColor(patient.latestScore)}`}>
+                    <div className="text-sm">NEWS2 Score</div>
+                    <div className="flex items-end">
+                      <span className="text-2xl font-bold mr-2">{patient.latestScore}</span>
+                      <span className="text-sm">({getStatusText(patient.latestScore)})</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center">
-                <div className={`py-2 px-4 rounded-lg border font-medium ${getStatusColor(patient.latestScore)}`}>
-                  <div className="text-sm">NEWS2 Score</div>
-                  <div className="flex items-end">
-                    <span className="text-2xl font-bold mr-2">{patient.latestScore}</span>
-                    <span className="text-sm">({getStatusText(patient.latestScore)})</span>
-                  </div>
-                </div>
+              <div className="flex flex-col md:flex-row justify-between gap-4">
+                <Tabs 
+                  defaultValue="history" 
+                  value={activeTab} 
+                  onValueChange={setActiveTab}
+                  className="w-full"
+                >
+                  <TabsList className="sticky top-0 z-10 bg-background">
+                    <TabsTrigger value="history">
+                      <HistoryIcon className="h-4 w-4 mr-2" />
+                      Observation History
+                    </TabsTrigger>
+                    <TabsTrigger value="chart">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Score Chart
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="history" className="mt-4">
+                    <ObservationHistory patient={patient} />
+                  </TabsContent>
+                  
+                  <TabsContent value="chart" className="mt-4">
+                    <ObservationChart patient={patient} />
+                  </TabsContent>
+                </Tabs>
               </div>
             </div>
-
-            <div className="flex flex-col md:flex-row justify-between gap-4">
-              <Tabs 
-                defaultValue="history" 
-                value={activeTab} 
-                onValueChange={setActiveTab}
-                className="w-full"
-              >
-                <TabsList>
-                  <TabsTrigger value="history">
-                    <HistoryIcon className="h-4 w-4 mr-2" />
-                    Observation History
-                  </TabsTrigger>
-                  <TabsTrigger value="chart">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Score Chart
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="history" className="mt-4">
-                  <ObservationHistory patient={patient} />
-                </TabsContent>
-                
-                <TabsContent value="chart" className="mt-4">
-                  <ObservationChart patient={patient} />
-                </TabsContent>
-              </Tabs>
-            </div>
+          </ScrollArea>
             
-            <div className="flex justify-end gap-2 mt-4 border-t pt-4">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
-              <Button variant="outline">
-                <Phone className="h-4 w-4 mr-2" />
-                Contact
-              </Button>
-              <Button variant="outline">
-                <Share2 className="h-4 w-4 mr-2" />
-                Share
-              </Button>
-              <Button variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-              <Button onClick={() => setIsNewObservationOpen(true)}>
-                <PlusCircle className="h-4 w-4 mr-2" />
-                New Observation
-              </Button>
-            </div>
+          <div className="flex justify-end gap-2 mt-4 border-t pt-4">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+            <Button variant="outline">
+              <Phone className="h-4 w-4 mr-2" />
+              Contact
+            </Button>
+            <Button variant="outline">
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+            <Button variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button onClick={() => setIsNewObservationOpen(true)}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              New Observation
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

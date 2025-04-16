@@ -18,9 +18,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface News2PatientListProps {
   patients: News2Patient[];
   isLoading?: boolean;
+  onRefresh?: () => void;
 }
 
-export function News2PatientList({ patients, isLoading = false }: News2PatientListProps) {
+export function News2PatientList({ patients, isLoading = false, onRefresh }: News2PatientListProps) {
   const [selectedPatient, setSelectedPatient] = useState<News2Patient | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
@@ -169,7 +170,7 @@ export function News2PatientList({ patients, isLoading = false }: News2PatientLi
                 <TableCell colSpan={6} className="text-center py-8">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <p className="text-gray-500">No patients match your criteria</p>
-                    <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+                    <Button variant="outline" size="sm" onClick={onRefresh || (() => window.location.reload())}>
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Reset filters
                     </Button>

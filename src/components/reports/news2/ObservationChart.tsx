@@ -108,29 +108,31 @@ export function ObservationChart({ patient }: ObservationChartProps) {
         </div>
         
         <div className="p-4">
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="formattedDate"
-                tick={{ fontSize: 12 }}
-              />
-              <YAxis yAxisId="left" domain={[0, 12]} />
-              <YAxis yAxisId="right" orientation="right" />
-              <Tooltip />
-              <Legend />
-              <Line 
-                yAxisId="left"
-                type="monotone" 
-                dataKey="score" 
-                stroke="#2563eb" 
-                name="NEWS2 Score"
-                strokeWidth={2}
-                dot={{ r: 4 }}
-                isAnimationActive={true}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="h-[250px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="formattedDate"
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis yAxisId="left" domain={[0, 12]} />
+                <YAxis yAxisId="right" orientation="right" />
+                <Tooltip />
+                <Legend />
+                <Line 
+                  yAxisId="left"
+                  type="monotone" 
+                  dataKey="score" 
+                  stroke="#2563eb" 
+                  name="NEWS2 Score"
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  isAnimationActive={true}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
         
         <div className="p-4 border-t pt-6">
@@ -138,77 +140,83 @@ export function ObservationChart({ patient }: ObservationChartProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <h4 className="text-sm font-medium mb-2">Respiratory Rate & SpO₂</h4>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="formattedDate" tick={{ fontSize: 12 }} />
-                  <YAxis yAxisId="left" />
-                  <YAxis yAxisId="right" orientation="right" domain={[80, 100]} />
-                  <Tooltip />
-                  <Legend />
-                  <Line 
-                    yAxisId="left" 
-                    type="monotone" 
-                    dataKey="respRate" 
-                    stroke="#10b981" 
-                    name="Resp Rate" 
-                  />
-                  <Line 
-                    yAxisId="right" 
-                    type="monotone" 
-                    dataKey="spo2" 
-                    stroke="#6366f1" 
-                    name="SpO₂ (%)" 
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <div className="h-[180px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="formattedDate" tick={{ fontSize: 12 }} />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" domain={[80, 100]} />
+                    <Tooltip />
+                    <Legend />
+                    <Line 
+                      yAxisId="left" 
+                      type="monotone" 
+                      dataKey="respRate" 
+                      stroke="#10b981" 
+                      name="Resp Rate" 
+                    />
+                    <Line 
+                      yAxisId="right" 
+                      type="monotone" 
+                      dataKey="spo2" 
+                      stroke="#6366f1" 
+                      name="SpO₂ (%)" 
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
             
             <div>
               <h4 className="text-sm font-medium mb-2">BP & Pulse</h4>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="formattedDate" tick={{ fontSize: 12 }} />
-                  <YAxis yAxisId="left" domain={[60, 220]} />
-                  <YAxis yAxisId="right" orientation="right" />
-                  <Tooltip />
-                  <Legend />
-                  <Line 
-                    yAxisId="left" 
-                    type="monotone" 
-                    dataKey="systolic" 
-                    stroke="#ef4444" 
-                    name="Systolic BP" 
-                  />
-                  <Line 
-                    yAxisId="right" 
-                    type="monotone" 
-                    dataKey="pulse" 
-                    stroke="#f59e0b" 
-                    name="Pulse" 
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <div className="h-[180px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="formattedDate" tick={{ fontSize: 12 }} />
+                    <YAxis yAxisId="left" domain={[60, 220]} />
+                    <YAxis yAxisId="right" orientation="right" />
+                    <Tooltip />
+                    <Legend />
+                    <Line 
+                      yAxisId="left" 
+                      type="monotone" 
+                      dataKey="systolic" 
+                      stroke="#ef4444" 
+                      name="Systolic BP" 
+                    />
+                    <Line 
+                      yAxisId="right" 
+                      type="monotone" 
+                      dataKey="pulse" 
+                      stroke="#f59e0b" 
+                      name="Pulse" 
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
             
             <div>
               <h4 className="text-sm font-medium mb-2">Temperature (°C)</h4>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="formattedDate" tick={{ fontSize: 12 }} />
-                  <YAxis domain={[35, 40]} />
-                  <Tooltip />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="temp" 
-                    stroke="#d946ef" 
-                    name="Temperature" 
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <div className="h-[180px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="formattedDate" tick={{ fontSize: 12 }} />
+                    <YAxis domain={[35, 40]} />
+                    <Tooltip />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="temp" 
+                      stroke="#d946ef" 
+                      name="Temperature" 
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </div>
