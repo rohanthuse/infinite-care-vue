@@ -1,20 +1,8 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Clock, 
-  Download, 
-  FileDown, 
-  FileSpreadsheet, 
-  FileText, 
-  HistoryIcon, 
-  PlusCircle, 
-  Printer, 
-  Share2, 
-  User 
-} from "lucide-react";
+import { Clock, Download, FileDown, FileSpreadsheet, FileText, HistoryIcon, PlusCircle, Printer, Share2, User } from "lucide-react";
 import { News2Patient } from "./news2Types";
 import { ObservationHistory } from "./ObservationHistory";
 import { ObservationChart } from "./ObservationChart";
@@ -23,19 +11,12 @@ import { format } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { generateNews2PDF } from "@/utils/pdfGenerator";
 import { toast } from "sonner";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 interface PatientDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   patient: News2Patient;
 }
-
 export function PatientDetailsDialog({
   open,
   onOpenChange,
@@ -43,29 +24,23 @@ export function PatientDetailsDialog({
 }: PatientDetailsDialogProps) {
   const [isNewObservationOpen, setIsNewObservationOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("history");
-  
   const getStatusText = (score: number) => {
     if (score >= 7) return "High Risk";
     if (score >= 5) return "Medium Risk";
     return "Low Risk";
   };
-  
   const getStatusColor = (score: number) => {
     if (score >= 7) return "text-red-600";
     if (score >= 5) return "text-amber-600";
     return "text-green-600";
   };
-
   const handleExport = (format: string) => {
     try {
       if (format === "PDF") {
         // Get the branch name from the URL or use a default
         const url = window.location.pathname;
         const branchNameMatch = url.match(/\/branch-dashboard\/\d+\/([^/]+)/);
-        const branchName = branchNameMatch 
-          ? decodeURIComponent(branchNameMatch[1]) 
-          : "Med-Infinite Branch";
-        
+        const branchName = branchNameMatch ? decodeURIComponent(branchNameMatch[1]) : "Med-Infinite Branch";
         generateNews2PDF(patient, branchName);
         toast.success("PDF exported successfully", {
           description: `NEWS2 report for ${patient.name} has been downloaded`
@@ -80,38 +55,24 @@ export function PatientDetailsDialog({
       }
     } catch (error) {
       console.error("Export error:", error);
-      toast.error("Export failed", { 
-        description: "There was a problem exporting the report" 
+      toast.error("Export failed", {
+        description: "There was a problem exporting the report"
       });
     }
   };
-
   const exportToCSV = (patient: News2Patient) => {
     // Build CSV headers and format data
     const headers = ["Date,Time,Patient ID,Patient Name,Resp Rate,SpO2,BP,Pulse,Temperature,Consciousness,O2 Therapy,Score"];
-    
     const rows = patient.observations?.map(obs => {
       const date = new Date(obs.dateTime);
-      return [
-        format(date, "yyyy-MM-dd"),
-        format(date, "HH:mm"),
-        patient.id,
-        patient.name,
-        obs.respRate,
-        obs.spo2,
-        obs.systolicBP,
-        obs.pulse,
-        obs.temperature,
-        obs.consciousness,
-        obs.o2Therapy ? "Yes" : "No",
-        obs.score
-      ].join(',');
+      return [format(date, "yyyy-MM-dd"), format(date, "HH:mm"), patient.id, patient.name, obs.respRate, obs.spo2, obs.systolicBP, obs.pulse, obs.temperature, obs.consciousness, obs.o2Therapy ? "Yes" : "No", obs.score].join(',');
     }) || [];
-    
     const csvContent = headers.concat(rows).join('\n');
-    
+
     // Create and download the file
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvContent], {
+      type: 'text/csv;charset=utf-8;'
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
@@ -121,18 +82,15 @@ export function PatientDetailsDialog({
     link.click();
     document.body.removeChild(link);
   };
-
   const handlePrint = () => {
     window.print();
     toast.success("Print dialog opened");
   };
-
   const handleShare = () => {
     toast.info("Sharing options", {
       description: "Report sharing options would appear here"
     });
   };
-  
   return <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -228,10 +186,7 @@ export function PatientDetailsDialog({
               </DropdownMenuContent>
             </DropdownMenu>
             
-            <Button variant="outline" onClick={handleShare}>
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
+            
             
             <Button onClick={() => setIsNewObservationOpen(true)}>
               <PlusCircle className="h-4 w-4 mr-2" />
