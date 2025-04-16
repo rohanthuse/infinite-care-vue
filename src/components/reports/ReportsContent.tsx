@@ -7,15 +7,16 @@ import { ServiceReports } from "./ServiceReports";
 import { FinancialReports } from "./FinancialReports";
 import { OperationalReports } from "./OperationalReports";
 import { ComplianceReports } from "./ComplianceReports";
+import { News2Section } from "./news2/News2Section";
 import { ReportsHeader } from "./ReportsHeader";
-import { Users, Briefcase, ClipboardCheck, DollarSign, BarChart3, ShieldCheck } from "lucide-react";
+import { Users, Briefcase, ClipboardCheck, DollarSign, BarChart3, ShieldCheck, ActivitySquare } from "lucide-react";
 
 interface ReportsContentProps {
   branchId: string;
   branchName: string;
 }
 
-type ReportType = "client" | "staff" | "service" | "financial" | "operational" | "compliance";
+type ReportType = "client" | "staff" | "service" | "financial" | "operational" | "compliance" | "news2";
 
 interface ReportOption {
   id: ReportType;
@@ -59,6 +60,12 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
       icon: <BarChart3 className="h-6 w-6" />
     },
     {
+      id: "news2",
+      title: "NEWS2",
+      description: "Patient early warning score monitoring",
+      icon: <ActivitySquare className="h-6 w-6" />
+    },
+    {
       id: "compliance",
       title: "Compliance Reports",
       description: "Track training compliance and incidents",
@@ -80,6 +87,8 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
         return <OperationalReports branchId={branchId} branchName={branchName} />;
       case "compliance":
         return <ComplianceReports branchId={branchId} branchName={branchName} />;
+      case "news2":
+        return <News2Section />;
       default:
         return <ClientReports branchId={branchId} branchName={branchName} />;
     }
@@ -100,7 +109,7 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
       
       {activeReport ? (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-3">
             {reportOptions.map((option) => (
               <Card 
                 key={option.id}
