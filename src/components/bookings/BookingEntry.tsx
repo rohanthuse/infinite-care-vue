@@ -19,7 +19,7 @@ interface BookingEntryProps {
     top: number;
     height: number;
   };
-  index: number; // Add index for react-beautiful-dnd
+  index: number;
 }
 
 export const BookingEntry: React.FC<BookingEntryProps> = ({
@@ -65,7 +65,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
                 ref={provided.innerRef}
                 {...provided.draggableProps}
                 {...provided.dragHandleProps}
-                className={`absolute rounded shadow-sm border ${backgroundColor} hover:shadow-md transition-shadow cursor-move text-xs z-10 ${snapshot.isDragging ? 'opacity-70' : ''}`}
+                className={`absolute rounded shadow-sm border ${backgroundColor} hover:shadow-md transition-shadow cursor-move text-xs z-10 ${snapshot.isDragging ? 'opacity-70 shadow-lg' : ''}`}
                 style={{ 
                   top: `${position.top}px`,
                   height: `${position.height}px`,

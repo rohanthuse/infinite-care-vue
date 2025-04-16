@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -70,7 +69,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   const [contextMenuTime, setContextMenuTime] = useState("08:00");
   const [localBookings, setLocalBookings] = useState<Booking[]>(bookings);
 
-  // Update local bookings when bookings prop changes
   useEffect(() => {
     setLocalBookings(bookings);
   }, [bookings]);
@@ -78,6 +76,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   const gridRef = useRef<HTMLDivElement>(null);
   
   const hourHeight = 60; // height in px for one hour
+  const timeInterval = 30; // time interval in minutes (30 = half hour intervals)
   
   const timeSlots = Array.from({ length: 24 }, (_, i) => 
     i.toString().padStart(2, '0') + ":00"
@@ -191,11 +190,14 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
 
   const getTimeFromPosition = (yPosition: number): string => {
     const totalMinutes = Math.floor((yPosition / hourHeight) * 60);
+    
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-    const roundedMinutes = Math.round(minutes / 30) * 30;
-    const adjustedHours = hours + (roundedMinutes === 60 ? 1 : 0);
-    const adjustedMinutes = roundedMinutes === 60 ? 0 : roundedMinutes;
+    
+    const roundedMinutes = Math.round(minutes / timeInterval) * timeInterval;
+    
+    const adjustedHours = (hours + Math.floor(roundedMinutes / 60)) % 24;
+    const adjustedMinutes = roundedMinutes % 60;
     
     return `${String(adjustedHours).padStart(2, '0')}:${String(adjustedMinutes).padStart(2, '0')}`;
   };
@@ -224,61 +226,56 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   const handleDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
     
-    // If there's no destination or the item was dropped in the same place
     if (!destination || (source.droppableId === destination.droppableId && source.index === destination.index)) {
       return;
     }
 
-    // Find the booking that was moved
     const booking = localBookings.find(b => b.id === draggableId);
     if (!booking) return;
 
-    // Get date from droppableId (format is either "client-{date}" or "carer-{date}")
     const parts = destination.droppableId.split('-');
-    const type = parts[0]; // "client" or "carer"
-    const dateStr = parts.slice(1).join('-'); // Rejoin in case the date contains hyphens
+    const type = parts[0];
+    let dateStr = parts.slice(1).join('-');
     
-    let newDate = dateStr;
     if (viewType === "weekly") {
       const dayIndex = parseInt(dateStr);
       if (!isNaN(dayIndex) && dayIndex >= 0 && dayIndex < weekDates.length) {
-        newDate = format(weekDates[dayIndex], 'yyyy-MM-dd');
+        dateStr = format(weekDates[dayIndex], 'yyyy-MM-dd');
       }
     }
     
-    // Calculate new time based on the drop position
-    const dropPosition = destination.index * 10; // Convert index to position
-    const newStartTime = getTimeFromPosition(dropPosition);
+    const dropPositionY = destination.index * 10;
+    const newStartTime = getTimeFromPosition(dropPositionY);
     
-    // Calculate duration of booking in minutes
     const [startHour, startMin] = booking.startTime.split(':').map(Number);
     const [endHour, endMin] = booking.endTime.split(':').map(Number);
     const startInMinutes = startHour * 60 + startMin;
     const endInMinutes = endHour * 60 + endMin;
     const durationMinutes = endInMinutes - startInMinutes;
     
-    // Calculate new end time
     const [newHour, newMin] = newStartTime.split(':').map(Number);
     const newStartInMinutes = newHour * 60 + newMin;
     const newEndInMinutes = newStartInMinutes + durationMinutes;
     
-    const newEndHour = Math.floor(newEndInMinutes / 60);
+    const newEndHour = Math.floor(newEndInMinutes / 60) % 24;
     const newEndMin = newEndInMinutes % 60;
     const newEndTime = `${String(newEndHour).padStart(2, '0')}:${String(newEndMin).padStart(2, '0')}`;
     
-    // Create updated booking
+    if (startHourNum >= 22 || startHourNum < 6) {
+      toast.error("Bookings can only be scheduled between 6:00 and 22:00");
+      return;
+    }
+    
     const updatedBooking = {
       ...booking,
-      date: newDate,
+      date: dateStr,
       startTime: newStartTime,
       endTime: newEndTime
     };
     
-    // Update local state
     const updatedBookings = localBookings.map(b => b.id === booking.id ? updatedBooking : b);
     setLocalBookings(updatedBookings);
     
-    // Notify parent component if callback provided
     if (onUpdateBooking) {
       onUpdateBooking(updatedBooking);
       toast.success(`Booking updated: ${updatedBooking.startTime} - ${updatedBooking.endTime}`);
@@ -330,9 +327,9 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                     type="booking"
                     direction="vertical"
                   >
-                    {(provided) => (
+                    {(provided, snapshot) => (
                       <div 
-                        className="day-content" 
+                        className={`day-content ${snapshot.isDraggingOver ? 'bg-gray-50' : ''}`}
                         onContextMenu={(e) => handleContextMenuOpen(e, e.currentTarget)}
                         ref={provided.innerRef}
                         {...provided.droppableProps}
@@ -389,9 +386,9 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                           type="booking"
                           direction="vertical"
                         >
-                          {(provided) => (
+                          {(provided, snapshot) => (
                             <div 
-                              className="day-content"
+                              className={`day-content ${snapshot.isDraggingOver ? 'bg-gray-50' : ''}`}
                               onContextMenu={(e) => handleContextMenuOpen(e, e.currentTarget)}
                               ref={provided.innerRef}
                               {...provided.droppableProps}
