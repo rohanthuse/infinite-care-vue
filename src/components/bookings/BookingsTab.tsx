@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -8,112 +9,136 @@ import { BookingTimeGrid, Client, Carer, Booking } from "./BookingTimeGrid";
 import { BookingsList } from "./BookingsList";
 import { BookingReport } from "./BookingReport";
 import { NewBookingDialog } from "./NewBookingDialog";
+import { EditBookingDialog } from "./EditBookingDialog";
 import { toast } from "sonner";
 
+// Mock data for clients
 const mockClients: Client[] = [{
   id: "CL-001",
   name: "Pender, Eva",
   initials: "EP",
-  bookingCount: 3
+  bookingCount: 3,
+  bookings: []  // Will be populated
 }, {
   id: "CL-002",
   name: "Fulcher, Patricia",
   initials: "FP",
-  bookingCount: 2
+  bookingCount: 2,
+  bookings: []
 }, {
   id: "CL-003",
   name: "Baulch, Ursula",
   initials: "BU",
-  bookingCount: 1
+  bookingCount: 1,
+  bookings: []
 }, {
   id: "CL-004",
   name: "Ren, Victoria",
   initials: "RV",
-  bookingCount: 2
+  bookingCount: 2,
+  bookings: []
 }, {
   id: "CL-005",
   name: "Iyaniwura, Ifeoluwa",
   initials: "II",
-  bookingCount: 1
+  bookingCount: 1,
+  bookings: []
 }, {
   id: "CL-006",
   name: "Careville Ltd",
   initials: "CL",
-  bookingCount: 4
+  bookingCount: 4,
+  bookings: []
 }, {
   id: "CL-007",
   name: "Johnson, Andrew",
   initials: "JA",
-  bookingCount: 2
+  bookingCount: 2,
+  bookings: []
 }, {
   id: "CL-008",
   name: "Mistry, Sanjay",
   initials: "MS",
-  bookingCount: 3
+  bookingCount: 3,
+  bookings: []
 }, {
   id: "CL-009",
   name: "Williams, Olivia",
   initials: "WO",
-  bookingCount: 1
+  bookingCount: 1,
+  bookings: []
 }, {
   id: "CL-010",
   name: "Thompson, Emma",
   initials: "TE",
-  bookingCount: 2
+  bookingCount: 2,
+  bookings: []
 }];
 
+// Mock data for carers
 const mockCarers: Carer[] = [{
   id: "CA-001",
   name: "Charuma, Charmaine",
   initials: "CC",
-  bookingCount: 4
+  bookingCount: 4,
+  bookings: []  // Will be populated
 }, {
   id: "CA-002",
   name: "Warren, Susan",
   initials: "WS",
-  bookingCount: 3
+  bookingCount: 3,
+  bookings: []
 }, {
   id: "CA-003",
   name: "Ayo-Famure, Opeyemi",
   initials: "AF",
-  bookingCount: 3
+  bookingCount: 3,
+  bookings: []
 }, {
   id: "CA-004",
   name: "Smith, John",
   initials: "SJ",
-  bookingCount: 2
+  bookingCount: 2,
+  bookings: []
 }, {
   id: "CA-005",
   name: "Williams, Mary",
   initials: "WM",
-  bookingCount: 1
+  bookingCount: 1,
+  bookings: []
 }, {
   id: "CA-006",
   name: "Davis, Michael",
   initials: "DM",
-  bookingCount: 2
+  bookingCount: 2,
+  bookings: []
 }, {
   id: "CA-007",
   name: "Brown, David",
   initials: "BD",
-  bookingCount: 3
+  bookingCount: 3,
+  bookings: []
 }, {
   id: "CA-008",
   name: "Miller, Sarah",
   initials: "MS",
-  bookingCount: 2
+  bookingCount: 2,
+  bookings: []
 }, {
   id: "CA-009",
   name: "Wilson, Thomas",
   initials: "WT",
-  bookingCount: 1
+  bookingCount: 1,
+  bookings: []
 }, {
   id: "CA-010",
   name: "Moore, Jennifer",
   initials: "MJ",
-  bookingCount: 2
+  bookingCount: 2,
+  bookings: []
 }];
 
+// Mock bookings data
 const mockBookings: Booking[] = [{
   id: "BK-001",
   clientId: "CL-001",
@@ -241,15 +266,23 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["assigned", "in-progress"]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState<boolean>(false);
+  const [editBookingDialogOpen, setEditBookingDialogOpen] = useState<boolean>(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [newBookingData, setNewBookingData] = useState<{
     date: Date;
     startTime: string;
     clientId?: string;
     carerId?: string;
   } | null>(null);
-  const [bookings, setBookings] = useState<Booking[]>(mockBookings);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [carers, setCarers] = useState<Carer[]>([]);
 
+  // Initialize data
   useEffect(() => {
+    // Initialize with mock data
+    const initialBookings = [...mockBookings];
+    
     const today = new Date().toISOString().split('T')[0];
     const additionalBookings: Booking[] = [{
       id: "BK-010",
@@ -313,9 +346,42 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       status: "cancelled",
       notes: "Client requested cancellation due to hospital appointment"
     }];
-    setBookings([...bookings, ...additionalBookings]);
+    
+    const allBookings = [...initialBookings, ...additionalBookings];
+    setBookings(allBookings);
+    
+    // Clone clients and carers to avoid reference issues
+    const processedClients = JSON.parse(JSON.stringify(mockClients));
+    const processedCarers = JSON.parse(JSON.stringify(mockCarers));
+    
+    // Add bookings references to clients and carers
+    allBookings.forEach(booking => {
+      // Find client and add booking reference
+      const clientIndex = processedClients.findIndex(c => c.id === booking.clientId);
+      if (clientIndex >= 0) {
+        if (!processedClients[clientIndex].bookings) {
+          processedClients[clientIndex].bookings = [];
+        }
+        processedClients[clientIndex].bookings.push(booking);
+      }
+      
+      // Find carer and add booking reference
+      const carerIndex = processedCarers.findIndex(c => c.id === booking.carerId);
+      if (carerIndex >= 0) {
+        if (!processedCarers[carerIndex].bookings) {
+          processedCarers[carerIndex].bookings = [];
+        }
+        processedCarers[carerIndex].bookings.push(booking);
+      }
+    });
+    
+    // Set the processed data
+    setClients(processedClients);
+    setCarers(processedCarers);
+    
   }, []);
 
+  // Handle refresh button
   const handleRefresh = () => {
     setIsLoading(true);
     setTimeout(() => {
@@ -324,11 +390,19 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     }, 800);
   };
 
+  // Open new booking dialog
   const handleNewBooking = () => {
     setNewBookingData(null);
     setNewBookingDialogOpen(true);
   };
 
+  // Open edit booking dialog from context menu
+  const handleEditBooking = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setEditBookingDialogOpen(true);
+  };
+
+  // Handle right-click or context menu event in grid
   const handleContextMenuBooking = (date: Date, time: string, clientId?: string, carerId?: string) => {
     setNewBookingData({
       date,
@@ -339,13 +413,14 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     setNewBookingDialogOpen(true);
   };
 
+  // Create a new booking
   const handleCreateBooking = (bookingData: any) => {
     console.log("Creating new booking:", bookingData);
     
     const newId = `BK-${Math.floor(Math.random() * 9000) + 1000}`;
     
-    const selectedClient = mockClients.find(c => c.id === bookingData.clientId);
-    const selectedCarer = mockCarers.find(c => c.id === bookingData.carerId);
+    const selectedClient = clients.find(c => c.id === bookingData.clientId);
+    const selectedCarer = carers.find(c => c.id === bookingData.carerId);
     
     if (selectedClient && selectedCarer) {
       const newBooking: Booking = {
@@ -363,20 +438,96 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         notes: bookingData.notes || undefined
       };
       
-      console.log("Selected services:", bookingData.services);
-      console.log("Selected days:", bookingData.days);
+      // Add the new booking to the bookings array
+      setBookings(prev => [...prev, newBooking]);
       
-      setBookings([...bookings, newBooking]);
+      // Update client and carer references
+      updateEntityWithBooking("client", selectedClient.id, newBooking);
+      updateEntityWithBooking("carer", selectedCarer.id, newBooking);
+      
       toast.success("Booking created successfully");
     }
   };
 
+  // Update an existing booking
   const handleUpdateBooking = (updatedBooking: Booking) => {
+    // Find the old booking
+    const oldBooking = bookings.find(b => b.id === updatedBooking.id);
+    
+    // Update bookings array
     setBookings(prevBookings => 
       prevBookings.map(booking => 
         booking.id === updatedBooking.id ? updatedBooking : booking
       )
     );
+    
+    // If client changed, update client references
+    if (oldBooking && oldBooking.clientId !== updatedBooking.clientId) {
+      // Remove from old client
+      removeBookingFromEntity("client", oldBooking.clientId, updatedBooking.id);
+      // Add to new client
+      updateEntityWithBooking("client", updatedBooking.clientId, updatedBooking);
+    }
+    
+    // If carer changed, update carer references
+    if (oldBooking && oldBooking.carerId !== updatedBooking.carerId) {
+      // Remove from old carer
+      removeBookingFromEntity("carer", oldBooking.carerId, updatedBooking.id);
+      // Add to new carer
+      updateEntityWithBooking("carer", updatedBooking.carerId, updatedBooking);
+    }
+    
+    toast.success("Booking updated successfully");
+  };
+
+  // Add a booking to a client or carer
+  const updateEntityWithBooking = (type: "client" | "carer", id: string, newBooking: Booking) => {
+    if (type === "client") {
+      setClients(prevClients => prevClients.map(client => {
+        if (client.id === id) {
+          return {
+            ...client,
+            bookings: [...(client.bookings || []).filter(b => b.id !== newBooking.id), newBooking]
+          };
+        }
+        return client;
+      }));
+    } else {
+      setCarers(prevCarers => prevCarers.map(carer => {
+        if (carer.id === id) {
+          return {
+            ...carer,
+            bookings: [...(carer.bookings || []).filter(b => b.id !== newBooking.id), newBooking]
+          };
+        }
+        return carer;
+      }));
+    }
+  };
+
+  // Remove a booking from a client or carer
+  const removeBookingFromEntity = (type: "client" | "carer", id: string, bookingId: string) => {
+    if (type === "client") {
+      setClients(prevClients => prevClients.map(client => {
+        if (client.id === id && client.bookings) {
+          return {
+            ...client,
+            bookings: client.bookings.filter(b => b.id !== bookingId)
+          };
+        }
+        return client;
+      }));
+    } else {
+      setCarers(prevCarers => prevCarers.map(carer => {
+        if (carer.id === id && carer.bookings) {
+          return {
+            ...carer,
+            bookings: carer.bookings.filter(b => b.id !== bookingId)
+          };
+        }
+        return carer;
+      }));
+    }
   };
 
   return <div className="space-y-4">
@@ -428,12 +579,13 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
           <BookingTimeGrid 
             date={currentDate} 
             bookings={bookings} 
-            clients={mockClients} 
-            carers={mockCarers} 
+            clients={clients} 
+            carers={carers} 
             viewType={viewType} 
             viewMode={viewMode}
             onCreateBooking={handleContextMenuBooking}
             onUpdateBooking={handleUpdateBooking}
+            onEditBooking={handleEditBooking}
           />
         </>}
 
@@ -444,10 +596,19 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       <NewBookingDialog 
         open={newBookingDialogOpen}
         onOpenChange={setNewBookingDialogOpen}
-        clients={mockClients}
-        carers={mockCarers}
+        clients={clients}
+        carers={carers}
         onCreateBooking={handleCreateBooking}
         initialData={newBookingData}
+      />
+      
+      <EditBookingDialog
+        open={editBookingDialogOpen}
+        onOpenChange={setEditBookingDialogOpen}
+        booking={selectedBooking}
+        clients={clients}
+        carers={carers}
+        onUpdateBooking={handleUpdateBooking}
       />
     </div>;
 };

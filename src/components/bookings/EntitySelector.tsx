@@ -32,9 +32,23 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
   onSelect
 }) => {
   const [open, setOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   
   // Find the selected entity object
   const selected = entities.find(entity => entity.id === selectedEntity);
+  
+  // Filter entities based on search
+  const filteredEntities = entities.filter(entity => 
+    entity.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+    entity.id.toLowerCase().includes(searchValue.toLowerCase())
+  );
+  
+  // Reset search when popover closes
+  useEffect(() => {
+    if (!open) {
+      setSearchValue("");
+    }
+  }, [open]);
   
   // Log state for debugging
   useEffect(() => {
@@ -55,6 +69,11 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
     console.log(`Clearing ${type} selection`);
     onSelect(null);
     setOpen(false);
+  };
+  
+  const handleInputChange = (value: string) => {
+    setSearchValue(value);
+    console.log(`Searching ${type}s for:`, value);
   };
   
   return (
@@ -88,12 +107,17 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
           <Command>
             <div className="flex items-center border-b px-3">
               <Search className="h-4 w-4 shrink-0 opacity-50 mr-2" />
-              <CommandInput placeholder={`Search ${type}s...`} className="flex-1 h-9 border-none focus:ring-0 py-2 px-0" />
+              <CommandInput 
+                placeholder={`Search ${type}s...`} 
+                className="flex-1 h-9 border-none focus:ring-0 py-2 px-0"
+                value={searchValue}
+                onValueChange={handleInputChange}
+              />
             </div>
             <CommandList>
               <CommandEmpty>No {type} found.</CommandEmpty>
               <CommandGroup>
-                {entities.map((entity) => (
+                {filteredEntities.map((entity) => (
                   <CommandItem
                     key={entity.id}
                     value={entity.id}
