@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -8,112 +9,13 @@ import { BookingTimeGrid, Client, Carer, Booking } from "./BookingTimeGrid";
 import { BookingsList } from "./BookingsList";
 import { BookingReport } from "./BookingReport";
 import { NewBookingDialog } from "./NewBookingDialog";
+import { EditBookingDialog } from "./EditBookingDialog";
 import { toast } from "sonner";
 
-const mockClients: Client[] = [{
-  id: "CL-001",
-  name: "Pender, Eva",
-  initials: "EP",
-  bookingCount: 3
-}, {
-  id: "CL-002",
-  name: "Fulcher, Patricia",
-  initials: "FP",
-  bookingCount: 2
-}, {
-  id: "CL-003",
-  name: "Baulch, Ursula",
-  initials: "BU",
-  bookingCount: 1
-}, {
-  id: "CL-004",
-  name: "Ren, Victoria",
-  initials: "RV",
-  bookingCount: 2
-}, {
-  id: "CL-005",
-  name: "Iyaniwura, Ifeoluwa",
-  initials: "II",
-  bookingCount: 1
-}, {
-  id: "CL-006",
-  name: "Careville Ltd",
-  initials: "CL",
-  bookingCount: 4
-}, {
-  id: "CL-007",
-  name: "Johnson, Andrew",
-  initials: "JA",
-  bookingCount: 2
-}, {
-  id: "CL-008",
-  name: "Mistry, Sanjay",
-  initials: "MS",
-  bookingCount: 3
-}, {
-  id: "CL-009",
-  name: "Williams, Olivia",
-  initials: "WO",
-  bookingCount: 1
-}, {
-  id: "CL-010",
-  name: "Thompson, Emma",
-  initials: "TE",
-  bookingCount: 2
-}];
+// Utility to get today's date in ISO format
+const getTodayISODate = () => new Date().toISOString().split('T')[0];
 
-const mockCarers: Carer[] = [{
-  id: "CA-001",
-  name: "Charuma, Charmaine",
-  initials: "CC",
-  bookingCount: 4
-}, {
-  id: "CA-002",
-  name: "Warren, Susan",
-  initials: "WS",
-  bookingCount: 3
-}, {
-  id: "CA-003",
-  name: "Ayo-Famure, Opeyemi",
-  initials: "AF",
-  bookingCount: 3
-}, {
-  id: "CA-004",
-  name: "Smith, John",
-  initials: "SJ",
-  bookingCount: 2
-}, {
-  id: "CA-005",
-  name: "Williams, Mary",
-  initials: "WM",
-  bookingCount: 1
-}, {
-  id: "CA-006",
-  name: "Davis, Michael",
-  initials: "DM",
-  bookingCount: 2
-}, {
-  id: "CA-007",
-  name: "Brown, David",
-  initials: "BD",
-  bookingCount: 3
-}, {
-  id: "CA-008",
-  name: "Miller, Sarah",
-  initials: "MS",
-  bookingCount: 2
-}, {
-  id: "CA-009",
-  name: "Wilson, Thomas",
-  initials: "WT",
-  bookingCount: 1
-}, {
-  id: "CA-010",
-  name: "Moore, Jennifer",
-  initials: "MJ",
-  bookingCount: 2
-}];
-
+// Generate mock bookings data
 const mockBookings: Booking[] = [{
   id: "BK-001",
   clientId: "CL-001",
@@ -124,7 +26,7 @@ const mockBookings: Booking[] = [{
   carerInitials: "CC",
   startTime: "07:30",
   endTime: "08:30",
-  date: new Date().toISOString().split('T')[0],
+  date: getTodayISODate(),
   status: "done",
   notes: "Medication administered as prescribed"
 }, {
@@ -137,7 +39,7 @@ const mockBookings: Booking[] = [{
   carerInitials: "WS",
   startTime: "12:15",
   endTime: "13:45",
-  date: new Date().toISOString().split('T')[0],
+  date: getTodayISODate(),
   status: "assigned"
 }, {
   id: "BK-003",
@@ -149,7 +51,7 @@ const mockBookings: Booking[] = [{
   carerInitials: "CC",
   startTime: "09:00",
   endTime: "10:00",
-  date: new Date().toISOString().split('T')[0],
+  date: getTodayISODate(),
   status: "done"
 }, {
   id: "BK-004",
@@ -161,7 +63,7 @@ const mockBookings: Booking[] = [{
   carerInitials: "WS",
   startTime: "10:30",
   endTime: "11:30",
-  date: new Date().toISOString().split('T')[0],
+  date: getTodayISODate(),
   status: "in-progress"
 }, {
   id: "BK-005",
@@ -173,7 +75,7 @@ const mockBookings: Booking[] = [{
   carerInitials: "WS",
   startTime: "14:00",
   endTime: "15:30",
-  date: new Date().toISOString().split('T')[0],
+  date: getTodayISODate(),
   status: "assigned"
 }, {
   id: "BK-006",
@@ -185,7 +87,7 @@ const mockBookings: Booking[] = [{
   carerInitials: "AF",
   startTime: "18:00",
   endTime: "19:00",
-  date: new Date().toISOString().split('T')[0],
+  date: getTodayISODate(),
   status: "cancelled"
 }, {
   id: "BK-007",
@@ -197,7 +99,7 @@ const mockBookings: Booking[] = [{
   carerInitials: "CC",
   startTime: "16:00",
   endTime: "17:00",
-  date: new Date().toISOString().split('T')[0],
+  date: getTodayISODate(),
   status: "assigned"
 }, {
   id: "BK-008",
@@ -209,7 +111,7 @@ const mockBookings: Booking[] = [{
   carerInitials: "AF",
   startTime: "08:30",
   endTime: "09:30",
-  date: new Date().toISOString().split('T')[0],
+  date: getTodayISODate(),
   status: "departed"
 }, {
   id: "BK-009",
@@ -221,8 +123,134 @@ const mockBookings: Booking[] = [{
   carerInitials: "SJ",
   startTime: "20:00",
   endTime: "21:00",
-  date: new Date().toISOString().split('T')[0],
+  date: getTodayISODate(),
   status: "assigned"
+}];
+
+// Create mock clients with booking references
+const mockClients: Client[] = [{
+  id: "CL-001",
+  name: "Pender, Eva",
+  initials: "EP",
+  bookingCount: 3,
+  bookings: mockBookings.filter(b => b.clientId === "CL-001")
+}, {
+  id: "CL-002",
+  name: "Fulcher, Patricia",
+  initials: "FP",
+  bookingCount: 2,
+  bookings: mockBookings.filter(b => b.clientId === "CL-002")
+}, {
+  id: "CL-003",
+  name: "Baulch, Ursula",
+  initials: "BU",
+  bookingCount: 1,
+  bookings: mockBookings.filter(b => b.clientId === "CL-003")
+}, {
+  id: "CL-004",
+  name: "Ren, Victoria",
+  initials: "RV",
+  bookingCount: 2,
+  bookings: mockBookings.filter(b => b.clientId === "CL-004")
+}, {
+  id: "CL-005",
+  name: "Iyaniwura, Ifeoluwa",
+  initials: "II",
+  bookingCount: 1,
+  bookings: mockBookings.filter(b => b.clientId === "CL-005")
+}, {
+  id: "CL-006",
+  name: "Careville Ltd",
+  initials: "CL",
+  bookingCount: 4,
+  bookings: mockBookings.filter(b => b.clientId === "CL-006")
+}, {
+  id: "CL-007",
+  name: "Johnson, Andrew",
+  initials: "JA",
+  bookingCount: 2,
+  bookings: []
+}, {
+  id: "CL-008",
+  name: "Mistry, Sanjay",
+  initials: "MS",
+  bookingCount: 3,
+  bookings: []
+}, {
+  id: "CL-009",
+  name: "Williams, Olivia",
+  initials: "WO",
+  bookingCount: 1,
+  bookings: []
+}, {
+  id: "CL-010",
+  name: "Thompson, Emma",
+  initials: "TE",
+  bookingCount: 2,
+  bookings: []
+}];
+
+// Create mock carers with booking references
+const mockCarers: Carer[] = [{
+  id: "CA-001",
+  name: "Charuma, Charmaine",
+  initials: "CC",
+  bookingCount: 4,
+  bookings: mockBookings.filter(b => b.carerId === "CA-001")
+}, {
+  id: "CA-002",
+  name: "Warren, Susan",
+  initials: "WS",
+  bookingCount: 3,
+  bookings: mockBookings.filter(b => b.carerId === "CA-002")
+}, {
+  id: "CA-003",
+  name: "Ayo-Famure, Opeyemi",
+  initials: "AF",
+  bookingCount: 3,
+  bookings: mockBookings.filter(b => b.carerId === "CA-003")
+}, {
+  id: "CA-004",
+  name: "Smith, John",
+  initials: "SJ",
+  bookingCount: 2,
+  bookings: mockBookings.filter(b => b.carerId === "CA-004")
+}, {
+  id: "CA-005",
+  name: "Williams, Mary",
+  initials: "WM",
+  bookingCount: 1,
+  bookings: []
+}, {
+  id: "CA-006",
+  name: "Davis, Michael",
+  initials: "DM",
+  bookingCount: 2,
+  bookings: []
+}, {
+  id: "CA-007",
+  name: "Brown, David",
+  initials: "BD",
+  bookingCount: 3,
+  bookings: []
+}, {
+  id: "CA-008",
+  name: "Miller, Sarah",
+  initials: "MS",
+  bookingCount: 2,
+  bookings: []
+}, {
+  id: "CA-009",
+  name: "Wilson, Thomas",
+  initials: "WT",
+  bookingCount: 1,
+  bookings: []
+}, {
+  id: "CA-010",
+  name: "Moore, Jennifer",
+  initials: "MJ",
+  bookingCount: 2,
+  bookings: []
 }];
 
 export interface BookingsTabProps {
@@ -241,6 +269,8 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["assigned", "in-progress"]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState<boolean>(false);
+  const [editBookingDialogOpen, setEditBookingDialogOpen] = useState<boolean>(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [newBookingData, setNewBookingData] = useState<{
     date: Date;
     startTime: string;
@@ -250,7 +280,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   const [bookings, setBookings] = useState<Booking[]>(mockBookings);
 
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayISODate();
     const additionalBookings: Booking[] = [{
       id: "BK-010",
       clientId: "CL-007",
@@ -313,7 +343,25 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       status: "cancelled",
       notes: "Client requested cancellation due to hospital appointment"
     }];
-    setBookings([...bookings, ...additionalBookings]);
+    
+    // Add additional bookings and update client and carer booking references
+    const newBookings = [...bookings, ...additionalBookings];
+    setBookings(newBookings);
+    
+    // Update client and carer bookings
+    additionalBookings.forEach(booking => {
+      const clientIndex = mockClients.findIndex(c => c.id === booking.clientId);
+      if (clientIndex >= 0) {
+        mockClients[clientIndex].bookings = mockClients[clientIndex].bookings || [];
+        mockClients[clientIndex].bookings.push(booking);
+      }
+      
+      const carerIndex = mockCarers.findIndex(c => c.id === booking.carerId);
+      if (carerIndex >= 0) {
+        mockCarers[carerIndex].bookings = mockCarers[carerIndex].bookings || [];
+        mockCarers[carerIndex].bookings.push(booking);
+      }
+    });
   }, []);
 
   const handleRefresh = () => {
@@ -327,6 +375,11 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   const handleNewBooking = () => {
     setNewBookingData(null);
     setNewBookingDialogOpen(true);
+  };
+  
+  const handleEditBooking = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setEditBookingDialogOpen(true);
   };
 
   const handleContextMenuBooking = (date: Date, time: string, clientId?: string, carerId?: string) => {
@@ -366,17 +419,100 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       console.log("Selected services:", bookingData.services);
       console.log("Selected days:", bookingData.days);
       
+      // Update client and carer booking references
+      if (selectedClient.bookings) {
+        selectedClient.bookings.push(newBooking);
+      } else {
+        selectedClient.bookings = [newBooking];
+      }
+      
+      if (selectedCarer.bookings) {
+        selectedCarer.bookings.push(newBooking);
+      } else {
+        selectedCarer.bookings = [newBooking];
+      }
+      
       setBookings([...bookings, newBooking]);
       toast.success("Booking created successfully");
     }
   };
 
   const handleUpdateBooking = (updatedBooking: Booking) => {
+    console.log("Updating booking:", updatedBooking);
+    
+    // Update the bookings state
     setBookings(prevBookings => 
       prevBookings.map(booking => 
         booking.id === updatedBooking.id ? updatedBooking : booking
       )
     );
+    
+    // Update client booking references
+    const oldClientId = selectedBooking?.clientId;
+    const newClientId = updatedBooking.clientId;
+    
+    if (oldClientId !== newClientId) {
+      // Remove from old client
+      if (oldClientId) {
+        const oldClientIndex = mockClients.findIndex(c => c.id === oldClientId);
+        if (oldClientIndex >= 0 && mockClients[oldClientIndex].bookings) {
+          mockClients[oldClientIndex].bookings = mockClients[oldClientIndex].bookings!.filter(b => b.id !== updatedBooking.id);
+        }
+      }
+      
+      // Add to new client
+      const newClientIndex = mockClients.findIndex(c => c.id === newClientId);
+      if (newClientIndex >= 0) {
+        if (!mockClients[newClientIndex].bookings) {
+          mockClients[newClientIndex].bookings = [];
+        }
+        mockClients[newClientIndex].bookings!.push(updatedBooking);
+      }
+    } else if (oldClientId) {
+      // Update existing client booking
+      const clientIndex = mockClients.findIndex(c => c.id === oldClientId);
+      if (clientIndex >= 0 && mockClients[clientIndex].bookings) {
+        mockClients[clientIndex].bookings = mockClients[clientIndex].bookings!.map(b => 
+          b.id === updatedBooking.id ? updatedBooking : b
+        );
+      }
+    }
+    
+    // Update carer booking references
+    const oldCarerId = selectedBooking?.carerId;
+    const newCarerId = updatedBooking.carerId;
+    
+    if (oldCarerId !== newCarerId) {
+      // Remove from old carer
+      if (oldCarerId) {
+        const oldCarerIndex = mockCarers.findIndex(c => c.id === oldCarerId);
+        if (oldCarerIndex >= 0 && mockCarers[oldCarerIndex].bookings) {
+          mockCarers[oldCarerIndex].bookings = mockCarers[oldCarerIndex].bookings!.filter(b => b.id !== updatedBooking.id);
+        }
+      }
+      
+      // Add to new carer
+      const newCarerIndex = mockCarers.findIndex(c => c.id === newCarerId);
+      if (newCarerIndex >= 0) {
+        if (!mockCarers[newCarerIndex].bookings) {
+          mockCarers[newCarerIndex].bookings = [];
+        }
+        mockCarers[newCarerIndex].bookings!.push(updatedBooking);
+      }
+    } else if (oldCarerId) {
+      // Update existing carer booking
+      const carerIndex = mockCarers.findIndex(c => c.id === oldCarerId);
+      if (carerIndex >= 0 && mockCarers[carerIndex].bookings) {
+        mockCarers[carerIndex].bookings = mockCarers[carerIndex].bookings!.map(b => 
+          b.id === updatedBooking.id ? updatedBooking : b
+        );
+      }
+    }
+  };
+
+  const handleBookingClick = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setEditBookingDialogOpen(true);
   };
 
   return <div className="space-y-4">
@@ -434,10 +570,11 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
             viewMode={viewMode}
             onCreateBooking={handleContextMenuBooking}
             onUpdateBooking={handleUpdateBooking}
+            onBookingClick={handleBookingClick}
           />
         </>}
 
-      {activeTab === "list" && <BookingsList bookings={bookings} />}
+      {activeTab === "list" && <BookingsList bookings={bookings} onBookingClick={handleBookingClick} />}
 
       {activeTab === "report" && <BookingReport bookings={bookings} />}
       
@@ -448,6 +585,15 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         carers={mockCarers}
         onCreateBooking={handleCreateBooking}
         initialData={newBookingData}
+      />
+      
+      <EditBookingDialog
+        open={editBookingDialogOpen}
+        onOpenChange={setEditBookingDialogOpen}
+        booking={selectedBooking}
+        clients={mockClients}
+        carers={mockCarers}
+        onUpdateBooking={handleUpdateBooking}
       />
     </div>;
 };

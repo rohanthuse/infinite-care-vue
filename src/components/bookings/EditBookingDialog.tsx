@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -20,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Booking, Client, Carer } from "./BookingTimeGrid";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, AlertTriangle, CalendarCheck, Users, RefreshCw, ArrowLeftRight, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Calendar, Clock, AlertTriangle, CalendarCheck, RefreshCw, ArrowLeftRight, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { format, parseISO, isSameDay, isAfter, isBefore } from "date-fns";
 import { 
   AlertDialog,
@@ -68,30 +69,24 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const [availableTimeSlots, setAvailableTimeSlots] = useState<{start: string, end: string}[]>([]);
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [carerSelectorKey, setCarerSelectorKey] = useState<number>(0); // Key to force re-render of carer selector
-  const [clientSelectorKey, setClientSelectorKey] = useState<number>(0); // Key to force re-render of client selector
+  const [carerSelectorKey, setCarerSelectorKey] = useState<number>(0);
+  const [clientSelectorKey, setClientSelectorKey] = useState<number>(0);
 
+  // Reset state when dialog opens/closes
   useEffect(() => {
     if (open) {
       console.log("Dialog opened");
       setIsDataLoaded(false);
       setIsProcessing(false);
+      setShowScheduleConflict(false);
+      setShowSwapView(false);
     } else {
       console.log("Dialog closed, resetting state");
-      setSelectedClientId("");
-      setSelectedCarerId("");
-      setNotes("");
-      setStatus("");
-      setStartTime("");
-      setEndTime("");
-      setBookingDate("");
-      setClientSchedule([]);
-      setCarerSchedule([]);
-      setCarerSelectorKey(prev => prev + 1);
-      setClientSelectorKey(prev => prev + 1);
+      resetDialogState();
     }
   }, [open]);
   
+  // Initialize dialog with booking data
   useEffect(() => {
     if (booking && open) {
       console.log("Initializing dialog with booking:", booking);
@@ -104,376 +99,478 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       setEndTime(booking.endTime);
       setBookingDate(booking.date);
       
+      // Use a timeout to ensure the UI has time to render before loading schedules
       setTimeout(() => {
         console.log("Loading schedules for client:", booking.clientId, "and carer:", booking.carerId);
-        updateClientSchedule(booking.clientId);
-        updateCarerSchedule(booking.carerId);
-        
-        setClientSelectorKey(prev => prev + 1);
-        setCarerSelectorKey(prev => prev + 1);
-        
+        loadClientSchedule(booking.clientId);
+        loadCarerSchedule(booking.carerId);
         setIsDataLoaded(true);
-        console.log("Dialog data loaded. Client ID:", booking.clientId, "Carer ID:", booking.carerId);
       }, 100);
     }
   }, [booking, open]);
+
+  // Reset all state values to default
+  const resetDialogState = () => {
+    setSelectedClientId("");
+    setSelectedCarerId("");
+    setNotes("");
+    setStatus("");
+    setStartTime("");
+    setEndTime("");
+    setBookingDate("");
+    setClientSchedule([]);
+    setCarerSchedule([]);
+    setAvailableTimeSlots([]);
+    setCarerSelectorKey(prev => prev + 1);
+    setClientSelectorKey(prev => prev + 1);
+    setConflictType(null);
+    setConflictEntity("");
+  };
   
-  const updateClientSchedule = (clientId: string) => {
-    console.log("Updating client schedule for ID:", clientId);
-    const selectedClient = clients.find(c => c.id === clientId);
-    if (selectedClient && selectedClient.bookings) {
-      console.log("Found client bookings:", selectedClient.bookings.length);
-      setClientSchedule(selectedClient.bookings);
-    } else {
-      console.log("No bookings found for client");
+  // Load client's schedule
+  const loadClientSchedule = (clientId: string) => {
+    console.log("Loading client schedule for ID:", clientId);
+    try {
+      const clientBookings = findClientBookings(clientId);
+      setClientSchedule(clientBookings);
+      console.log("Client bookings loaded:", clientBookings.length);
+    } catch (error) {
+      console.error("Error loading client schedule:", error);
       setClientSchedule([]);
     }
   };
   
-  const updateCarerSchedule = (carerId: string) => {
-    console.log("Updating carer schedule for ID:", carerId);
-    const selectedCarer = carers.find(c => c.id === carerId);
-    if (selectedCarer && selectedCarer.bookings) {
-      console.log("Found carer bookings:", selectedCarer.bookings.length);
-      setCarerSchedule(selectedCarer.bookings);
-    } else {
-      console.log("No bookings found for carer");
+  // Load carer's schedule
+  const loadCarerSchedule = (carerId: string) => {
+    console.log("Loading carer schedule for ID:", carerId);
+    try {
+      const carerBookings = findCarerBookings(carerId);
+      setCarerSchedule(carerBookings);
+      console.log("Carer bookings loaded:", carerBookings.length);
+    } catch (error) {
+      console.error("Error loading carer schedule:", error);
       setCarerSchedule([]);
     }
   };
   
+  // Find bookings for a client
+  const findClientBookings = (clientId: string): Booking[] => {
+    // In a real app, this would come from the API
+    // For now, we'll filter the mock bookings
+    return clients.find(c => c.id === clientId)?.bookings || [];
+  };
+  
+  // Find bookings for a carer
+  const findCarerBookings = (carerId: string): Booking[] => {
+    // In a real app, this would come from the API
+    // For now, we'll filter the mock bookings
+    return carers.find(c => c.id === carerId)?.bookings || [];
+  };
+  
+  // Handle client selection
   const handleClientChange = (clientId: string | null) => {
-    if (!clientId) return;
+    if (clientId === null) {
+      setSelectedClientId("");
+      setClientSchedule([]);
+      return;
+    }
     
-    console.log("Client selected:", clientId, "Previous:", selectedClientId);
+    console.log("Client selected:", clientId);
     setIsProcessing(true);
-    
     setSelectedClientId(clientId);
-    updateClientSchedule(clientId);
     
-    const selectedClient = clients.find(c => c.id === clientId);
-    if (selectedClient) {
-      toast.success(`Selected client: ${selectedClient.name}`);
+    try {
+      loadClientSchedule(clientId);
+      
+      const selectedClient = clients.find(c => c.id === clientId);
+      if (selectedClient) {
+        toast.success(`Selected client: ${selectedClient.name}`);
+      }
+    } catch (error) {
+      console.error("Error handling client change:", error);
+      toast.error("Failed to update client selection");
+    } finally {
+      setTimeout(() => {
+        findAvailableTimeSlots();
+        setIsProcessing(false);
+      }, 100);
     }
-    
-    setTimeout(() => {
-      findAvailableTimeSlots();
-      setIsProcessing(false);
-    }, 100);
   };
   
+  // Handle carer selection
   const handleCarerChange = (carerId: string | null) => {
-    if (!carerId) return;
+    if (carerId === null) {
+      setSelectedCarerId("");
+      setCarerSchedule([]);
+      return;
+    }
     
-    console.log("Carer selected:", carerId, "Previous:", selectedCarerId);
+    console.log("Carer selected:", carerId);
     setIsProcessing(true);
-    
     setSelectedCarerId(carerId);
-    updateCarerSchedule(carerId);
     
-    const selectedCarer = carers.find(c => c.id === carerId);
-    if (selectedCarer) {
-      toast.success(`Selected carer: ${selectedCarer.name}`);
-      console.log("Carer assignment updated to:", selectedCarer.name);
+    try {
+      loadCarerSchedule(carerId);
+      
+      const selectedCarer = carers.find(c => c.id === carerId);
+      if (selectedCarer) {
+        toast.success(`Selected carer: ${selectedCarer.name}`);
+      }
+    } catch (error) {
+      console.error("Error handling carer change:", error);
+      toast.error("Failed to update carer selection");
+    } finally {
+      setTimeout(() => {
+        findAvailableTimeSlots();
+        setIsProcessing(false);
+      }, 100);
     }
-    
-    setTimeout(() => {
-      findAvailableTimeSlots();
-      setIsProcessing(false);
-    }, 100);
   };
   
+  // Find available time slots
   const findAvailableTimeSlots = () => {
-    if (!selectedClientId || !selectedCarerId || !bookingDate) return;
-    
-    const businessHours = [];
-    for (let hour = 6; hour < 22; hour++) {
-      businessHours.push(`${hour.toString().padStart(2, '0')}:00`);
-      businessHours.push(`${hour.toString().padStart(2, '0')}:30`);
+    if (!selectedClientId || !selectedCarerId || !bookingDate) {
+      setAvailableTimeSlots([]);
+      return;
     }
     
-    const availableTimes = businessHours.filter(time => {
-      const startSlot = time;
-      const [startHour, startMin] = startSlot.split(':').map(Number);
-      let endHour = startHour + 1;
-      let endMin = startMin;
-      
-      if (endHour >= 24) {
-        endHour -= 24;
+    try {
+      // Generate time slots at half-hour intervals from 6am to 10pm
+      const businessHours = [];
+      for (let hour = 6; hour < 22; hour++) {
+        businessHours.push(`${hour.toString().padStart(2, '0')}:00`);
+        businessHours.push(`${hour.toString().padStart(2, '0')}:30`);
       }
       
-      const endSlot = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
-      
-      const clientConflict = clientSchedule.some(b => {
-        if (!isSameDay(parseISO(b.date), parseISO(bookingDate))) return false;
-        if (booking && b.id === booking.id) return false;
+      // Filter slots that don't conflict with existing bookings
+      const availableTimes = businessHours.filter(time => {
+        const startSlot = time;
+        const [startHour, startMin] = startSlot.split(':').map(Number);
+        let endHour = startHour + 1;
+        let endMin = startMin;
         
-        const [bStartHour, bStartMin] = b.startTime.split(':').map(Number);
-        const [bEndHour, bEndMin] = b.endTime.split(':').map(Number);
+        if (endHour >= 24) {
+          endHour -= 24;
+        }
         
-        const bookingStart = new Date(2023, 0, 1, startHour, startMin);
-        const bookingEnd = new Date(2023, 0, 1, endHour, endMin);
-        const bStart = new Date(2023, 0, 1, bStartHour, bStartMin);
-        const bEnd = new Date(2023, 0, 1, bEndHour, bEndMin);
+        const endSlot = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
         
-        return !(isAfter(bookingStart, bEnd) || isAfter(bStart, bookingEnd));
+        // Check for conflicts with client schedule
+        const clientConflict = clientSchedule.some(b => {
+          if (!isSameDay(parseISO(b.date), parseISO(bookingDate))) return false;
+          if (booking && b.id === booking.id) return false;
+          
+          return isTimeConflict(startSlot, endSlot, b.startTime, b.endTime);
+        });
+        
+        // Check for conflicts with carer schedule
+        const carerConflict = carerSchedule.some(b => {
+          if (!isSameDay(parseISO(b.date), parseISO(bookingDate))) return false;
+          if (booking && b.id === booking.id) return false;
+          
+          return isTimeConflict(startSlot, endSlot, b.startTime, b.endTime);
+        });
+        
+        return !clientConflict && !carerConflict;
       });
       
-      const carerConflict = carerSchedule.some(b => {
-        if (!isSameDay(parseISO(b.date), parseISO(bookingDate))) return false;
-        if (booking && b.id === booking.id) return false;
+      // Format as start/end time pairs
+      const slots = availableTimes.map(time => {
+        const [startHour, startMin] = time.split(':').map(Number);
+        let endHour = startHour + 1;
+        let endMin = startMin;
         
-        const [bStartHour, bStartMin] = b.startTime.split(':').map(Number);
-        const [bEndHour, bEndMin] = b.endTime.split(':').map(Number);
+        if (endHour >= 24) {
+          endHour -= 24;
+        }
         
-        const bookingStart = new Date(2023, 0, 1, startHour, startMin);
-        const bookingEnd = new Date(2023, 0, 1, endHour, endMin);
-        const bStart = new Date(2023, 0, 1, bStartHour, bStartMin);
-        const bEnd = new Date(2023, 0, 1, bEndHour, bEndMin);
-        
-        return !(isAfter(bookingStart, bEnd) || isAfter(bStart, bookingEnd));
+        const endTime = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
+        return { start: time, end: endTime };
       });
       
-      return !clientConflict && !carerConflict;
-    });
-    
-    const slots = availableTimes.map(time => {
-      const [startHour, startMin] = time.split(':').map(Number);
-      let endHour = startHour + 1;
-      let endMin = startMin;
-      
-      if (endHour >= 24) {
-        endHour -= 24;
-      }
-      
-      const endTime = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
-      return { start: time, end: endTime };
-    });
-    
-    setAvailableTimeSlots(slots);
+      setAvailableTimeSlots(slots);
+      console.log("Available time slots:", slots.length);
+    } catch (error) {
+      console.error("Error finding available time slots:", error);
+      setAvailableTimeSlots([]);
+    }
   };
   
+  // Helper function to check for time conflicts
+  const isTimeConflict = (start1: string, end1: string, start2: string, end2: string): boolean => {
+    const [start1Hour, start1Min] = start1.split(':').map(Number);
+    const [end1Hour, end1Min] = end1.split(':').map(Number);
+    const [start2Hour, start2Min] = start2.split(':').map(Number);
+    const [end2Hour, end2Min] = end2.split(':').map(Number);
+    
+    const bookingStart = new Date(2023, 0, 1, start1Hour, start1Min);
+    const bookingEnd = new Date(2023, 0, 1, end1Hour, end1Min);
+    const existingStart = new Date(2023, 0, 1, start2Hour, start2Min);
+    const existingEnd = new Date(2023, 0, 1, end2Hour, end2Min);
+    
+    return !(isAfter(bookingStart, existingEnd) || isAfter(existingStart, bookingEnd));
+  };
+  
+  // Format date for display
   const formatDate = (dateString: string): string => {
     try {
       return format(parseISO(dateString), 'EEEE, MMMM d, yyyy');
     } catch (error) {
+      console.error("Error formatting date:", error, dateString);
       return dateString;
     }
   };
   
+  // Calculate booking duration
   const calculateDuration = (): string => {
     if (!startTime || !endTime) return "";
     
-    const [startHour, startMin] = startTime.split(':').map(Number);
-    const [endHour, endMin] = endTime.split(':').map(Number);
-    
-    let durationHours = endHour - startHour;
-    let durationMinutes = endMin - startMin;
-    
-    if (durationMinutes < 0) {
-      durationHours -= 1;
-      durationMinutes += 60;
+    try {
+      const [startHour, startMin] = startTime.split(':').map(Number);
+      const [endHour, endMin] = endTime.split(':').map(Number);
+      
+      let durationHours = endHour - startHour;
+      let durationMinutes = endMin - startMin;
+      
+      if (durationMinutes < 0) {
+        durationHours -= 1;
+        durationMinutes += 60;
+      }
+      
+      if (durationHours < 0) {
+        durationHours += 24;
+      }
+      
+      const hours = durationHours > 0 ? `${durationHours} hour${durationHours !== 1 ? 's' : ''}` : '';
+      const minutes = durationMinutes > 0 ? `${durationMinutes} minute${durationMinutes !== 1 ? 's' : ''}` : '';
+      
+      if (hours && minutes) {
+        return `${hours} and ${minutes}`;
+      }
+      
+      return hours || minutes || "0 minutes";
+    } catch (error) {
+      console.error("Error calculating duration:", error);
+      return "Error calculating duration";
     }
-    
-    if (durationHours < 0) {
-      durationHours += 24;
-    }
-    
-    const hours = durationHours > 0 ? `${durationHours} hour${durationHours !== 1 ? 's' : ''}` : '';
-    const minutes = durationMinutes > 0 ? `${durationMinutes} minute${durationMinutes !== 1 ? 's' : ''}` : '';
-    
-    if (hours && minutes) {
-      return `${hours} and ${minutes}`;
-    }
-    
-    return hours || minutes || "0 minutes";
   };
   
+  // Check for schedule conflicts
   const checkSchedulingConflicts = (): boolean => {
-    if (!booking) return false;
+    if (!booking || !startTime || !endTime || !bookingDate) return false;
     
-    const [startHour, startMin] = startTime.split(':').map(Number);
-    const [endHour, endMin] = endTime.split(':').map(Number);
-    
-    const startInMinutes = startHour * 60 + startMin;
-    const endInMinutes = endHour * 60 + endMin;
-    
-    const clientConflicts = clientSchedule.filter(b => {
-      if (b.id === booking.id) return false;
+    try {
+      // Check client schedule conflicts
+      const clientConflicts = clientSchedule.filter(b => {
+        if (b.id === booking.id) return false;
+        if (!isSameDay(parseISO(b.date), parseISO(bookingDate))) return false;
+        
+        return isTimeConflict(startTime, endTime, b.startTime, b.endTime);
+      });
       
-      if (!isSameDay(parseISO(b.date), parseISO(bookingDate))) return false;
+      // Check carer schedule conflicts
+      const carerConflicts = carerSchedule.filter(b => {
+        if (b.id === booking.id) return false;
+        if (!isSameDay(parseISO(b.date), parseISO(bookingDate))) return false;
+        
+        return isTimeConflict(startTime, endTime, b.startTime, b.endTime);
+      });
       
-      const bStartParts = b.startTime.split(':').map(Number);
-      const bEndParts = b.endTime.split(':').map(Number);
+      // Handle client conflicts
+      if (clientConflicts.length > 0) {
+        const client = clients.find(c => c.id === selectedClientId);
+        setConflictType("client");
+        setConflictEntity(client ? client.name : "Client");
+        setShowScheduleConflict(true);
+        return true;
+      }
       
-      const bStartInMinutes = bStartParts[0] * 60 + bStartParts[1];
-      const bEndInMinutes = bEndParts[0] * 60 + bEndParts[1];
-      
-      return (startInMinutes < bEndInMinutes && endInMinutes > bStartInMinutes);
-    });
-    
-    const carerConflicts = carerSchedule.filter(b => {
-      if (b.id === booking.id) return false;
-      
-      if (!isSameDay(parseISO(b.date), parseISO(bookingDate))) return false;
-      
-      const bStartParts = b.startTime.split(':').map(Number);
-      const bEndParts = b.endTime.split(':').map(Number);
-      
-      const bStartInMinutes = bStartParts[0] * 60 + bStartParts[1];
-      const bEndInMinutes = bEndParts[0] * 60 + bEndParts[1];
-      
-      return (startInMinutes < bEndInMinutes && endInMinutes > bStartInMinutes);
-    });
-    
-    if (clientConflicts.length > 0) {
-      const client = clients.find(c => c.id === selectedClientId);
-      setConflictType("client");
-      setConflictEntity(client ? client.name : "Client");
-      setShowScheduleConflict(true);
-      return true;
-    }
-    
-    if (carerConflicts.length > 0) {
-      const carer = carers.find(c => c.id === selectedCarerId);
-      setConflictType("carer");
-      setConflictEntity(carer ? carer.name : "Carer");
-      setShowScheduleConflict(true);
-      return true;
+      // Handle carer conflicts
+      if (carerConflicts.length > 0) {
+        const carer = carers.find(c => c.id === selectedCarerId);
+        setConflictType("carer");
+        setConflictEntity(carer ? carer.name : "Carer");
+        setShowScheduleConflict(true);
+        return true;
+      }
+    } catch (error) {
+      console.error("Error checking scheduling conflicts:", error);
+      toast.error("Error checking for schedule conflicts");
+      return true; // Assume conflict on error to prevent saving
     }
     
     return false;
   };
   
+  // Handle save button click
   const handleSave = () => {
-    if (!booking) return;
+    if (!booking) {
+      toast.error("No booking data available");
+      return;
+    }
     
     console.log("Saving booking with client:", selectedClientId, "and carer:", selectedCarerId);
     
-    const selectedClient = clients.find(c => c.id === selectedClientId);
-    const selectedCarer = carers.find(c => c.id === selectedCarerId);
-    
-    if (!selectedClient || !selectedCarer) {
+    // Validate required fields
+    if (!selectedClientId || !selectedCarerId) {
       toast.error("Please select both client and carer");
       return;
     }
     
+    if (!startTime || !endTime) {
+      toast.error("Please set start and end times");
+      return;
+    }
+    
+    if (!status) {
+      toast.error("Please select a booking status");
+      return;
+    }
+    
+    // Check for conflicts
     if (checkSchedulingConflicts()) {
       return;
     }
     
-    const updatedBooking: Booking = {
-      ...booking,
-      clientId: selectedClient.id,
-      clientName: selectedClient.name,
-      clientInitials: selectedClient.initials,
-      carerId: selectedCarer.id,
-      carerName: selectedCarer.name,
-      carerInitials: selectedCarer.initials,
-      startTime: startTime,
-      endTime: endTime,
-      date: bookingDate,
-      notes: notes,
-      status: status as Booking["status"],
-    };
-    
-    console.log("Updated booking:", updatedBooking);
-    onUpdateBooking(updatedBooking);
-    toast.success("Booking updated successfully");
-    onOpenChange(false);
+    try {
+      const selectedClient = clients.find(c => c.id === selectedClientId);
+      const selectedCarer = carers.find(c => c.id === selectedCarerId);
+      
+      if (!selectedClient || !selectedCarer) {
+        toast.error("Selected client or carer not found");
+        return;
+      }
+      
+      // Create updated booking object
+      const updatedBooking: Booking = {
+        ...booking,
+        clientId: selectedClient.id,
+        clientName: selectedClient.name,
+        clientInitials: selectedClient.initials,
+        carerId: selectedCarer.id,
+        carerName: selectedCarer.name,
+        carerInitials: selectedCarer.initials, // Make sure this is set
+        startTime: startTime,
+        endTime: endTime,
+        date: bookingDate,
+        notes: notes,
+        status: status as Booking["status"],
+      };
+      
+      console.log("Updated booking:", updatedBooking);
+      onUpdateBooking(updatedBooking);
+      toast.success("Booking updated successfully");
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error saving booking:", error);
+      toast.error("Failed to save booking changes");
+    }
   };
 
+  // Validate time changes
   const validateTimeChange = (newStartTime: string, newEndTime: string): boolean => {
-    const [startHour, startMin] = newStartTime.split(':').map(Number);
-    const [endHour, endMin] = newEndTime.split(':').map(Number);
-    
-    const startInMinutes = startHour * 60 + startMin;
-    const endInMinutes = endHour * 60 + endMin;
-    
-    if (endInMinutes <= startInMinutes) {
-      toast.error("End time must be after start time");
+    try {
+      const [startHour, startMin] = newStartTime.split(':').map(Number);
+      const [endHour, endMin] = newEndTime.split(':').map(Number);
+      
+      const startInMinutes = startHour * 60 + startMin;
+      const endInMinutes = endHour * 60 + endMin;
+      
+      if (endInMinutes <= startInMinutes) {
+        toast.error("End time must be after start time");
+        return false;
+      }
+      
+      const businessStartMinutes = 6 * 60; // 6:00 AM
+      const businessEndMinutes = 22 * 60;  // 10:00 PM
+      
+      if (startInMinutes < businessStartMinutes) {
+        toast.error("Bookings can only start at or after 06:00");
+        return false;
+      }
+      
+      if (endInMinutes > businessEndMinutes) {
+        toast.error("Bookings must end at or before 22:00");
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error validating time change:", error);
+      toast.error("Invalid time format");
       return false;
     }
-    
-    const businessStartMinutes = 6 * 60;
-    const businessEndMinutes = 22 * 60;
-    
-    if (startInMinutes < businessStartMinutes) {
-      toast.error("Bookings can only start at or after 06:00");
-      return false;
-    }
-    
-    if (endInMinutes > businessEndMinutes) {
-      toast.error("Bookings must end at or before 22:00");
-      return false;
-    }
-    
-    return true;
   };
   
+  // Handle start time change
   const handleStartTimeChange = (newStartTime: string) => {
     if (validateTimeChange(newStartTime, endTime)) {
       setStartTime(newStartTime);
     }
   };
   
+  // Handle end time change
   const handleEndTimeChange = (newEndTime: string) => {
     if (validateTimeChange(startTime, newEndTime)) {
       setEndTime(newEndTime);
     }
   };
   
+  // Apply a selected time slot
   const handleApplyTimeSlot = (slot: {start: string, end: string}) => {
     setStartTime(slot.start);
     setEndTime(slot.end);
     toast.success(`Applied time slot: ${slot.start} - ${slot.end}`);
   };
   
+  // Toggle between schedule and available slots view
   const toggleSwapView = () => {
     setShowSwapView(!showSwapView);
-    findAvailableTimeSlots();
+    if (!showSwapView) {
+      findAvailableTimeSlots();
+    }
   };
   
+  // Format time range for display
   const formatScheduleTimes = (startTime: string, endTime: string): string => {
     return `${startTime} - ${endTime}`;
   };
   
+  // Get bookings for today
   const getTodayBookings = (schedule: Booking[]): Booking[] => {
     if (!bookingDate || !schedule.length) return [];
     
-    return schedule.filter(b => 
-      isSameDay(parseISO(b.date), parseISO(bookingDate))
-    ).sort((a, b) => {
-      const [aHour, aMin] = a.startTime.split(':').map(Number);
-      const [bHour, bMin] = b.startTime.split(':').map(Number);
-      
-      const aMinutes = aHour * 60 + aMin;
-      const bMinutes = bHour * 60 + bMin;
-      
-      return aMinutes - bMinutes;
-    });
+    try {
+      return schedule
+        .filter(b => isSameDay(parseISO(b.date), parseISO(bookingDate)))
+        .sort((a, b) => {
+          const [aHour, aMin] = a.startTime.split(':').map(Number);
+          const [bHour, bMin] = b.startTime.split(':').map(Number);
+          
+          const aMinutes = aHour * 60 + aMin;
+          const bMinutes = bHour * 60 + bMin;
+          
+          return aMinutes - bMinutes;
+        });
+    } catch (error) {
+      console.error("Error getting today's bookings:", error);
+      return [];
+    }
   };
   
-  const clientTodayBookings = getTodayBookings(clientSchedule);
-  const carerTodayBookings = getTodayBookings(carerSchedule);
-
+  // Check if a booking conflicts with the current time selection
   const isConflictingBooking = (booking: Booking): boolean => {
     if (!startTime || !endTime) return false;
     
-    const [bookingStartHour, bookingStartMin] = booking.startTime.split(':').map(Number);
-    const [bookingEndHour, bookingEndMin] = booking.endTime.split(':').map(Number);
-    
-    const [currentStartHour, currentStartMin] = startTime.split(':').map(Number);
-    const [currentEndHour, currentEndMin] = endTime.split(':').map(Number);
-    
-    const bookingStart = bookingStartHour * 60 + bookingStartMin;
-    const bookingEnd = bookingEndHour * 60 + bookingEndMin;
-    const currentStart = currentStartHour * 60 + currentStartMin;
-    const currentEnd = currentEndHour * 60 + currentEndMin;
-    
-    return (currentStart < bookingEnd && currentEnd > bookingStart);
+    try {
+      return isTimeConflict(startTime, endTime, booking.startTime, booking.endTime);
+    } catch (error) {
+      console.error("Error checking conflicting booking:", error);
+      return false;
+    }
   };
   
+  // Get color class based on booking status
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'assigned': return 'bg-green-100 text-green-800 border-green-300';
@@ -487,6 +584,11 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     }
   };
   
+  // Get filtered bookings for the selected date
+  const clientTodayBookings = getTodayBookings(clientSchedule);
+  const carerTodayBookings = getTodayBookings(carerSchedule);
+  
+  // If no booking is provided, don't render the dialog
   if (!booking) return null;
 
   const selectedClient = clients.find(c => c.id === selectedClientId);
@@ -752,7 +854,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                     value={status}
                     onValueChange={setStatus}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -790,9 +892,9 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
             </Button>
             <Button 
               onClick={handleSave}
-              disabled={!isDataLoaded}
+              disabled={!isDataLoaded || isProcessing}
             >
-              {isDataLoaded ? "Save Changes" : "Loading..."}
+              {isDataLoaded && !isProcessing ? "Save Changes" : "Loading..."}
             </Button>
           </DialogFooter>
         </DialogContent>
