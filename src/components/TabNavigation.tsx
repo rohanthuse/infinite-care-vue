@@ -52,7 +52,6 @@ const secondaryTabGroups = [
       { icon: Workflow, label: "Workflow", value: "workflow", description: "Process management" },
       { icon: ListChecks, label: "Key Parameters", value: "key-parameters", description: "Track metrics" },
       { icon: Pill, label: "Medication", value: "medication", description: "Medicine tracking" },
-      { icon: BarChart4, label: "Reports", value: "reports", description: "Data analysis" }, // Moved Reports here
     ]
   },
   {
