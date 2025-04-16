@@ -238,6 +238,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     clientId?: string;
     carerId?: string;
   } | null>(null);
+  const [bookings, setBookings] = useState<Booking[]>(mockBookings);
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -298,7 +299,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       status: "cancelled",
       notes: "Client requested cancellation due to hospital appointment"
     }];
-    mockBookings.push(...additionalBookings);
+    setBookings([...bookings, ...additionalBookings]);
   }, []);
 
   const handleRefresh = () => {
@@ -350,9 +351,17 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       console.log("Selected services:", bookingData.services);
       console.log("Selected days:", bookingData.days);
       
-      mockBookings.push(newBooking);
+      setBookings([...bookings, newBooking]);
       toast.success("Booking created successfully");
     }
+  };
+
+  const handleUpdateBooking = (updatedBooking: Booking) => {
+    setBookings(prevBookings => 
+      prevBookings.map(booking => 
+        booking.id === updatedBooking.id ? updatedBooking : booking
+      )
+    );
   };
 
   return <div className="space-y-4">
@@ -403,18 +412,19 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
           
           <BookingTimeGrid 
             date={currentDate} 
-            bookings={mockBookings} 
+            bookings={bookings} 
             clients={mockClients} 
             carers={mockCarers} 
             viewType={viewType} 
             viewMode={viewMode}
             onCreateBooking={handleContextMenuBooking}
+            onUpdateBooking={handleUpdateBooking}
           />
         </>}
 
-      {activeTab === "list" && <BookingsList bookings={mockBookings} />}
+      {activeTab === "list" && <BookingsList bookings={bookings} />}
 
-      {activeTab === "report" && <BookingReport bookings={mockBookings} />}
+      {activeTab === "report" && <BookingReport bookings={bookings} />}
       
       <NewBookingDialog 
         open={newBookingDialogOpen}

@@ -1,3 +1,4 @@
+
 /* Grid columns for the time slots */
 .grid-cols-24 {
   grid-template-columns: repeat(24, minmax(0, 1fr));
@@ -306,6 +307,13 @@
   overflow: hidden;
   font-size: 0.75rem;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Dragging styles */
+.booking-dragging {
+  opacity: 0.7;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+  z-index: 100;
 }
 
 /* Status Colors */

@@ -7,6 +7,7 @@ import {
   TooltipContent, 
   TooltipTrigger 
 } from "@/components/ui/tooltip";
+import { Draggable } from "react-beautiful-dnd";
 
 interface BookingEntryProps {
   booking: Booking;
@@ -18,6 +19,7 @@ interface BookingEntryProps {
     top: number;
     height: number;
   };
+  index: number; // Add index for react-beautiful-dnd
 }
 
 export const BookingEntry: React.FC<BookingEntryProps> = ({
@@ -26,7 +28,8 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
   width = 100,
   type = "client",
   displayMode = "horizontal",
-  position
+  position,
+  index
 }) => {
   // Determine background color based on status
   const statusColors = {
@@ -54,46 +57,54 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
   // If position is provided, use it (vertical view)
   if (position) {
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div 
-            className={`absolute rounded shadow-sm border ${backgroundColor} hover:shadow-md transition-shadow cursor-pointer text-xs z-10`}
-            style={{ 
-              top: `${position.top}px`,
-              height: `${position.height}px`,
-              left: '2px',
-              right: '2px'
-            }}
-          >
-            <div className="p-1 overflow-hidden h-full flex flex-col">
-              <div className="font-medium truncate flex items-center">
-                <span>{booking.startTime}-{booking.endTime}</span>
-                <Info className="h-3 w-3 ml-1 opacity-60" />
+      <Draggable draggableId={booking.id} index={index}>
+        {(provided, snapshot) => (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div 
+                ref={provided.innerRef}
+                {...provided.draggableProps}
+                {...provided.dragHandleProps}
+                className={`absolute rounded shadow-sm border ${backgroundColor} hover:shadow-md transition-shadow cursor-move text-xs z-10 ${snapshot.isDragging ? 'opacity-70' : ''}`}
+                style={{ 
+                  top: `${position.top}px`,
+                  height: `${position.height}px`,
+                  left: '2px',
+                  right: '2px',
+                  ...provided.draggableProps.style
+                }}
+              >
+                <div className="p-1 overflow-hidden h-full flex flex-col">
+                  <div className="font-medium truncate flex items-center">
+                    <span>{booking.startTime}-{booking.endTime}</span>
+                    <Info className="h-3 w-3 ml-1 opacity-60" />
+                  </div>
+                  <div className="truncate mt-auto">
+                    {type === "client" ? booking.carerName.split(",")[0] : booking.clientInitials}
+                  </div>
+                </div>
               </div>
-              <div className="truncate mt-auto">
-                {type === "client" ? booking.carerName.split(",")[0] : booking.clientInitials}
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs bg-white p-3 shadow-lg rounded-md border">
+              <div className="space-y-1.5">
+                <div className="font-semibold text-sm">{type === "client" ? booking.carerName : booking.clientName}</div>
+                <div className="flex items-center text-xs text-gray-600">
+                  <Clock className="h-3.5 w-3.5 mr-1" />
+                  <span>{booking.startTime} - {booking.endTime}</span>
+                  <span className="mx-1.5">·</span>
+                  <span>{formatDate(booking.date)}</span>
+                </div>
+                <div className={`text-xs py-0.5 px-1.5 rounded-full inline-flex ${statusColors[booking.status]}`}>
+                  {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                </div>
+                {booking.notes && (
+                  <div className="text-xs mt-1 text-gray-600">{booking.notes}</div>
+                )}
               </div>
-            </div>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs bg-white p-3 shadow-lg rounded-md border">
-          <div className="space-y-1.5">
-            <div className="font-semibold text-sm">{type === "client" ? booking.carerName : booking.clientName}</div>
-            <div className="flex items-center text-xs text-gray-600">
-              <Clock className="h-3.5 w-3.5 mr-1" />
-              <span>{booking.startTime} - {booking.endTime}</span>
-              <span className="mx-1.5">·</span>
-              <span>{formatDate(booking.date)}</span>
-            </div>
-            <div className={`text-xs py-0.5 px-1.5 rounded-full inline-flex ${statusColors[booking.status]}`}>
-              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-            </div>
-            {booking.notes && (
-              <div className="text-xs mt-1 text-gray-600">{booking.notes}</div>
-            )}
-          </div>
-        </TooltipContent>
-      </Tooltip>
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </Draggable>
     );
   }
   

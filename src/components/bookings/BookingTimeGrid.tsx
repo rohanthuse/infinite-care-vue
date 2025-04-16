@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,8 @@ import { EntityList } from "./EntityList";
 import { BookingContextMenu } from "./BookingContextMenu";
 import { Maximize2, Minimize2, Calendar, Clock } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO } from "date-fns";
+import { DragDropContext, Droppable, DropResult } from "react-beautiful-dnd";
+import { toast } from "sonner";
 import "@/styles/bookings.css";
 
 export interface Booking {
@@ -47,6 +50,7 @@ interface BookingTimeGridProps {
   viewType: "daily" | "weekly";
   viewMode: "client" | "group";
   onCreateBooking?: (date: Date, time: string, clientId?: string, carerId?: string) => void;
+  onUpdateBooking?: (booking: Booking) => void;
 }
 
 export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
@@ -57,12 +61,19 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   viewType,
   viewMode,
   onCreateBooking,
+  onUpdateBooking,
 }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedCarerId, setSelectedCarerId] = useState<string | null>(null);
   const [showHalfHours, setShowHalfHours] = useState(true);
   const [contextMenuTime, setContextMenuTime] = useState("08:00");
+  const [localBookings, setLocalBookings] = useState<Booking[]>(bookings);
+
+  // Update local bookings when bookings prop changes
+  useEffect(() => {
+    setLocalBookings(bookings);
+  }, [bookings]);
 
   const gridRef = useRef<HTMLDivElement>(null);
   
@@ -107,14 +118,14 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   const clientBookings = clients.map(client => {
     return {
       ...client,
-      bookings: bookings.filter(booking => booking.clientId === client.id)
+      bookings: localBookings.filter(booking => booking.clientId === client.id)
     };
   });
   
   const carerBookings = carers.map(carer => {
     return {
       ...carer,
-      bookings: bookings.filter(booking => booking.carerId === carer.id)
+      bookings: localBookings.filter(booking => booking.carerId === carer.id)
     };
   });
   
@@ -210,6 +221,70 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     setContextMenuTime(time);
   };
 
+  const handleDragEnd = (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+    
+    // If there's no destination or the item was dropped in the same place
+    if (!destination || (source.droppableId === destination.droppableId && source.index === destination.index)) {
+      return;
+    }
+
+    // Find the booking that was moved
+    const booking = localBookings.find(b => b.id === draggableId);
+    if (!booking) return;
+
+    // Get date from droppableId (format is either "client-{date}" or "carer-{date}")
+    const parts = destination.droppableId.split('-');
+    const type = parts[0]; // "client" or "carer"
+    const dateStr = parts.slice(1).join('-'); // Rejoin in case the date contains hyphens
+    
+    let newDate = dateStr;
+    if (viewType === "weekly") {
+      const dayIndex = parseInt(dateStr);
+      if (!isNaN(dayIndex) && dayIndex >= 0 && dayIndex < weekDates.length) {
+        newDate = format(weekDates[dayIndex], 'yyyy-MM-dd');
+      }
+    }
+    
+    // Calculate new time based on the drop position
+    const dropPosition = destination.index * 10; // Convert index to position
+    const newStartTime = getTimeFromPosition(dropPosition);
+    
+    // Calculate duration of booking in minutes
+    const [startHour, startMin] = booking.startTime.split(':').map(Number);
+    const [endHour, endMin] = booking.endTime.split(':').map(Number);
+    const startInMinutes = startHour * 60 + startMin;
+    const endInMinutes = endHour * 60 + endMin;
+    const durationMinutes = endInMinutes - startInMinutes;
+    
+    // Calculate new end time
+    const [newHour, newMin] = newStartTime.split(':').map(Number);
+    const newStartInMinutes = newHour * 60 + newMin;
+    const newEndInMinutes = newStartInMinutes + durationMinutes;
+    
+    const newEndHour = Math.floor(newEndInMinutes / 60);
+    const newEndMin = newEndInMinutes % 60;
+    const newEndTime = `${String(newEndHour).padStart(2, '0')}:${String(newEndMin).padStart(2, '0')}`;
+    
+    // Create updated booking
+    const updatedBooking = {
+      ...booking,
+      date: newDate,
+      startTime: newStartTime,
+      endTime: newEndTime
+    };
+    
+    // Update local state
+    const updatedBookings = localBookings.map(b => b.id === booking.id ? updatedBooking : b);
+    setLocalBookings(updatedBookings);
+    
+    // Notify parent component if callback provided
+    if (onUpdateBooking) {
+      onUpdateBooking(updatedBooking);
+      toast.success(`Booking updated: ${updatedBooking.startTime} - ${updatedBooking.endTime}`);
+    }
+  };
+
   const renderCalendar = (entityType: "client" | "carer", entity: Client | Carer | null) => {
     if (!entity) {
       return (
@@ -220,100 +295,67 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     }
 
     return (
-      <div className={`booking-view ${viewType === "weekly" ? "weekly-view" : "daily-view"} h-full`}>
-        <div className={`entity-header p-2 rounded-md ${entityType === "client" ? 'bg-blue-50' : 'bg-purple-50'}`}>
-          <div className="flex items-center">
-            <div className={`h-8 w-8 rounded-full ${entityType === "client" ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'} flex items-center justify-center text-sm font-medium mr-2`}>
-              {entity.initials}
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className={`booking-view ${viewType === "weekly" ? "weekly-view" : "daily-view"} h-full`}>
+          <div className={`entity-header p-2 rounded-md ${entityType === "client" ? 'bg-blue-50' : 'bg-purple-50'}`}>
+            <div className="flex items-center">
+              <div className={`h-8 w-8 rounded-full ${entityType === "client" ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'} flex items-center justify-center text-sm font-medium mr-2`}>
+                {entity.initials}
+              </div>
+              <div className="text-sm font-medium">{entity.name}</div>
+              <Badge className={`ml-2 ${entityType === "client" ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'} text-xs`}>
+                {entity.bookings?.length || 0} bookings
+              </Badge>
             </div>
-            <div className="text-sm font-medium">{entity.name}</div>
-            <Badge className={`ml-2 ${entityType === "client" ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'} text-xs`}>
-              {entity.bookings?.length || 0} bookings
-            </Badge>
           </div>
-        </div>
-                  
-        <div className="booking-grid-container" ref={gridRef}>
-          <div className="booking-scroll-container">
-            <div className="time-column">
-              {timeSlots.map((time, index) => (
-                <div key={index} className="time-slot">
-                  <span>{time}</span>
-                </div>
-              ))}
-            </div>
-                      
-            {viewType === "daily" ? (
-              <BookingContextMenu 
-                date={date} 
-                time={contextMenuTime} 
-                onCreateBooking={(date, time) => handleContextMenuBooking(date, time)}
-              >
-                <div className="day-content" 
-                  onContextMenu={(e) => handleContextMenuOpen(e, e.currentTarget)}
-                >
-                  {timeSlots.map((_, timeIndex) => (
-                    <div key={timeIndex} className="hour-cell"></div>
-                  ))}
-                        
-                  {entity.bookings?.filter(booking => isBookingOnDate(booking, date)).map(booking => {
-                    const position = getBookingPosition(booking.startTime, booking.endTime);
-                          
-                    return (
-                      <BookingEntry
-                        key={booking.id}
-                        booking={booking}
-                        position={position}
-                      />
-                    );
-                  })}
-                        
-                  {isToday(date) && (
-                    <div 
-                      className="current-time-line" 
-                      style={{ top: `${getCurrentTimePosition()}px` }}
-                    >
-                      <span className="current-time-label">
-                        {format(currentTime, 'HH:mm')}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </BookingContextMenu>
-            ) : (
-              <div className="day-columns">
-                {weekDates.map((day, dayIndex) => (
-                  <div key={dayIndex} className={`day-column ${isToday(day) ? 'today' : ''}`}>
-                    <div className="day-header">
-                      <div className="day-name">{format(day, 'EEE')}</div>
-                      <div className="day-date">{format(day, 'd')}</div>
-                    </div>
                     
-                    <BookingContextMenu 
-                      date={day} 
-                      time={contextMenuTime}
-                      onCreateBooking={(date, time) => handleContextMenuBooking(date, time)}
-                    >        
-                      <div className="day-content"
+          <div className="booking-grid-container" ref={gridRef}>
+            <div className="booking-scroll-container">
+              <div className="time-column">
+                {timeSlots.map((time, index) => (
+                  <div key={index} className="time-slot">
+                    <span>{time}</span>
+                  </div>
+                ))}
+              </div>
+                        
+              {viewType === "daily" ? (
+                <BookingContextMenu 
+                  date={date} 
+                  time={contextMenuTime} 
+                  onCreateBooking={(date, time) => handleContextMenuBooking(date, time)}
+                >
+                  <Droppable 
+                    droppableId={`${entityType}-${format(date, 'yyyy-MM-dd')}`} 
+                    type="booking"
+                    direction="vertical"
+                  >
+                    {(provided) => (
+                      <div 
+                        className="day-content" 
                         onContextMenu={(e) => handleContextMenuOpen(e, e.currentTarget)}
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
                       >
                         {timeSlots.map((_, timeIndex) => (
                           <div key={timeIndex} className="hour-cell"></div>
                         ))}
-                                
-                        {entity.bookings?.filter(booking => isBookingOnDate(booking, day)).map(booking => {
+                              
+                        {entity.bookings?.filter(booking => isBookingOnDate(booking, date)).map((booking, index) => {
                           const position = getBookingPosition(booking.startTime, booking.endTime);
-                                  
+                                
                           return (
                             <BookingEntry
                               key={booking.id}
                               booking={booking}
                               position={position}
+                              type={entityType}
+                              index={index}
                             />
                           );
                         })}
-                                
-                        {isToday(day) && (
+                              
+                        {isToday(date) && (
                           <div 
                             className="current-time-line" 
                             style={{ top: `${getCurrentTimePosition()}px` }}
@@ -323,15 +365,78 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                             </span>
                           </div>
                         )}
+                        {provided.placeholder}
                       </div>
-                    </BookingContextMenu>
-                  </div>
-                ))}
-              </div>
-            )}
+                    )}
+                  </Droppable>
+                </BookingContextMenu>
+              ) : (
+                <div className="day-columns">
+                  {weekDates.map((day, dayIndex) => (
+                    <div key={dayIndex} className={`day-column ${isToday(day) ? 'today' : ''}`}>
+                      <div className="day-header">
+                        <div className="day-name">{format(day, 'EEE')}</div>
+                        <div className="day-date">{format(day, 'd')}</div>
+                      </div>
+                      
+                      <BookingContextMenu 
+                        date={day} 
+                        time={contextMenuTime}
+                        onCreateBooking={(date, time) => handleContextMenuBooking(date, time)}
+                      >        
+                        <Droppable 
+                          droppableId={`${entityType}-${dayIndex}`} 
+                          type="booking"
+                          direction="vertical"
+                        >
+                          {(provided) => (
+                            <div 
+                              className="day-content"
+                              onContextMenu={(e) => handleContextMenuOpen(e, e.currentTarget)}
+                              ref={provided.innerRef}
+                              {...provided.droppableProps}
+                            >
+                              {timeSlots.map((_, timeIndex) => (
+                                <div key={timeIndex} className="hour-cell"></div>
+                              ))}
+                                      
+                              {entity.bookings?.filter(booking => isBookingOnDate(booking, day)).map((booking, index) => {
+                                const position = getBookingPosition(booking.startTime, booking.endTime);
+                                        
+                                return (
+                                  <BookingEntry
+                                    key={booking.id}
+                                    booking={booking}
+                                    position={position}
+                                    type={entityType}
+                                    index={index}
+                                  />
+                                );
+                              })}
+                                      
+                              {isToday(day) && (
+                                <div 
+                                  className="current-time-line" 
+                                  style={{ top: `${getCurrentTimePosition()}px` }}
+                                >
+                                  <span className="current-time-label">
+                                    {format(currentTime, 'HH:mm')}
+                                  </span>
+                                </div>
+                              )}
+                              {provided.placeholder}
+                            </div>
+                          )}
+                        </Droppable>
+                      </BookingContextMenu>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </DragDropContext>
     );
   };
 
