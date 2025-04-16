@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Routes, Route, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -266,7 +267,10 @@ const BookingItem = ({
   status: string;
 }) => {
   let statusColor = "bg-gray-100 text-gray-600";
-  if (status === "Done") statusColor = "bg-green-100 text-green-700";else if (status === "Booked") statusColor = "bg-blue-100 text-blue-700";else if (status === "Waiting") statusColor = "bg-amber-100 text-amber-700";
+  if (status === "Done") statusColor = "bg-green-100 text-green-700";
+  else if (status === "Booked") statusColor = "bg-blue-100 text-blue-700";
+  else if (status === "Waiting") statusColor = "bg-amber-100 text-amber-700";
+  
   return <div className="py-2 border-b last:border-0 flex items-center justify-between">
       <div className="flex items-center">
         <div className="w-5 text-xs text-gray-500 mr-2">{number}.</div>
@@ -329,7 +333,10 @@ const ActionItem = ({
   priority: string;
 }) => {
   let priorityColor = "bg-gray-100 text-gray-600";
-  if (priority === "High") priorityColor = "bg-red-100 text-red-700";else if (priority === "Medium") priorityColor = "bg-amber-100 text-amber-700";else if (priority === "Low") priorityColor = "bg-green-100 text-green-700";
+  if (priority === "High") priorityColor = "bg-red-100 text-red-700";
+  else if (priority === "Medium") priorityColor = "bg-amber-100 text-amber-700";
+  else if (priority === "Low") priorityColor = "bg-green-100 text-green-700";
+  
   return <div className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-2">
         <h4 className="font-medium text-sm">{title}</h4>
@@ -739,4 +746,42 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3 md:space-y-4">
-                    {serviceData.map
+                    {serviceData.map((service, index) => (
+                      <div key={service.name} className="flex items-center">
+                        <div className="w-32 mr-4">
+                          <div className="text-sm font-medium">{service.name}</div>
+                          <div className="mt-1 h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-blue-600 rounded-full" 
+                              style={{ width: `${service.usage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                        <div className="text-sm font-medium">{service.usage}%</div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </motion.div>
+        )}
+        
+        {/* Render other tabs based on activeTab */}
+        {activeTab === "bookings" && <BookingsTab branchId={id || ""} />}
+        {activeTab === "carers" && <CarersTab branchId={id || ""} />}
+        {activeTab === "reviews" && <ReviewsTab branchId={id || ""} />}
+        {activeTab === "agreements" && <BranchAgreementsTab branchId={id || ""} />}
+        {activeTab === "key-parameters" && <KeyParametersContent branchId={id || ""} />}
+        {activeTab === "workflow" && <WorkflowContent branchId={id || ""} />}
+        {activeTab === "medication" && <MedicationTab branchId={id || ""} />}
+        {activeTab === "care" && <CareTab branchId={id || ""} />}
+        {activeTab === "accounting" && <AccountingTab branchId={id || ""} />}
+        {activeTab === "forms" && <FormBuilderTab branchId={id || ""} />}
+        {activeTab === "communications" && <CommunicationsTab branchId={id || ""} />}
+      </main>
+    </div>
+  );
+};
+
+export default BranchDashboard;
