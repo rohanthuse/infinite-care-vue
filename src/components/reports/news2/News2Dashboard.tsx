@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,10 +60,8 @@ export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
     to: new Date(),
   });
   
-  // Get mock data
   const [patients, setPatients] = useState<News2Patient[]>([]);
   
-  // Load data initially and provide a refresh function
   useEffect(() => {
     loadPatientData();
   }, []);
@@ -72,7 +69,6 @@ export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
   const loadPatientData = () => {
     setIsLoading(true);
     
-    // Simulate API call with timeout
     setTimeout(() => {
       const data = getNews2Patients();
       setPatients(data);
@@ -92,7 +88,9 @@ export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
           filteredPatients, 
           branchName, 
           activeView, 
-          dateRange?.from && dateRange?.to ? dateRange : undefined
+          dateRange?.from && dateRange?.to 
+            ? { from: dateRange.from, to: dateRange.to } 
+            : undefined
         );
         toast.success("PDF export started", {
           description: "NEWS2 summary report has been downloaded"
@@ -117,7 +115,6 @@ export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
   };
 
   const exportToCSV = (patients: News2Patient[]) => {
-    // Build CSV headers and format data
     const headers = ["Patient ID,Patient Name,Age,Latest Score,Risk Level,Trend,Last Updated"];
     
     const rows = patients.map(patient => {
@@ -142,7 +139,6 @@ export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
     
     const csvContent = headers.concat(rows).join('\n');
     
-    // Create and download the file
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -161,7 +157,6 @@ export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
   };
 
   const handleSort = (field: SortField) => {
-    // If clicking the same field, toggle direction
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
@@ -173,19 +168,16 @@ export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
   };
 
   const getSortedAndFilteredPatients = () => {
-    // Filter by active view
     let result = patients.filter((patient) => {
       if (activeView === "high" && patient.latestScore < 7) return false;
       if (activeView === "medium" && (patient.latestScore < 5 || patient.latestScore >= 7)) return false;
       if (activeView === "low" && patient.latestScore >= 5) return false;
       
-      // Filter by search query
       if (searchQuery && !patient.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
           !patient.id.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
       
-      // Apply date filter if available
       if (dateRange?.from && dateRange?.to) {
         const patientDate = new Date(patient.lastUpdated);
         if (patientDate < dateRange.from || patientDate > addDays(dateRange.to, 1)) {
@@ -196,7 +188,6 @@ export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
       return true;
     });
     
-    // Sort patients
     result = [...result].sort((a, b) => {
       let comparison = 0;
       
