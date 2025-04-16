@@ -1,10 +1,12 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
+  ArrowDown,
+  ArrowUp,
   ArrowUpDown, 
   Bell, 
   Download, 
@@ -19,44 +21,128 @@ import { News2PatientList } from "./News2PatientList";
 import { NewObservationDialog } from "./NewObservationDialog";
 import { AlertManagementDialog } from "./AlertManagementDialog";
 import { getNews2Patients } from "./news2Data";
+import { News2Patient } from "./news2Types";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 interface News2DashboardProps {
   branchId: string;
   branchName: string;
 }
 
+type SortField = "name" | "score" | "lastUpdated";
+type SortDirection = "asc" | "desc";
+
 export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
   const [isNewObservationDialogOpen, setIsNewObservationDialogOpen] = useState(false);
   const [isAlertManagementOpen, setIsAlertManagementOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeView, setActiveView] = useState<"all" | "high" | "medium" | "low">("all");
+  const [isLoading, setIsLoading] = useState(false);
+  const [sortField, setSortField] = useState<SortField>("score");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   
   // Get mock data
-  const patients = getNews2Patients();
+  const [patients, setPatients] = useState<News2Patient[]>([]);
   
-  const filteredPatients = patients.filter((patient) => {
-    // Filter by active view
-    if (activeView === "high" && patient.latestScore < 7) return false;
-    if (activeView === "medium" && (patient.latestScore < 5 || patient.latestScore >= 7)) return false;
-    if (activeView === "low" && patient.latestScore >= 5) return false;
+  // Load data initially and provide a refresh function
+  useEffect(() => {
+    loadPatientData();
+  }, []);
+
+  const loadPatientData = () => {
+    setIsLoading(true);
     
-    // Filter by search query
-    if (searchQuery && !patient.name.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
+    // Simulate API call with timeout
+    setTimeout(() => {
+      const data = getNews2Patients();
+      setPatients(data);
+      setIsLoading(false);
+    }, 600);
+  };
+
+  const handleRefresh = () => {
+    toast.info("Refreshing data...");
+    loadPatientData();
+  };
+
+  const handleExport = () => {
+    toast.success("Export started", {
+      description: "Patient data export started. The file will download shortly."
+    });
+    
+    // In a real app, this would generate a CSV/Excel file for download
+    setTimeout(() => {
+      toast.success("Data exported successfully", {
+        description: "NEWS2 patient data has been exported to CSV"
+      });
+    }, 1500);
+  };
+
+  const handleShare = () => {
+    toast.success("Sharing options", {
+      description: "Report sharing options dialog would open here"
+    });
+  };
+
+  const handleSort = (field: SortField) => {
+    // If clicking the same field, toggle direction
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
     }
-    return true;
-  });
+    
+    toast.info(`Sorted by ${field} (${sortDirection === "asc" ? "ascending" : "descending"})`);
+  };
+
+  const getSortedAndFilteredPatients = () => {
+    // Filter by active view
+    let result = patients.filter((patient) => {
+      if (activeView === "high" && patient.latestScore < 7) return false;
+      if (activeView === "medium" && (patient.latestScore < 5 || patient.latestScore >= 7)) return false;
+      if (activeView === "low" && patient.latestScore >= 5) return false;
+      
+      // Filter by search query
+      if (searchQuery && !patient.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          !patient.id.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
+      }
+      return true;
+    });
+    
+    // Sort patients
+    result = [...result].sort((a, b) => {
+      let comparison = 0;
+      
+      if (sortField === "name") {
+        comparison = a.name.localeCompare(b.name);
+      } else if (sortField === "score") {
+        comparison = a.latestScore - b.latestScore;
+      } else if (sortField === "lastUpdated") {
+        comparison = new Date(a.lastUpdated).getTime() - new Date(b.lastUpdated).getTime();
+      }
+      
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+    
+    return result;
+  };
+
+  const filteredPatients = getSortedAndFilteredPatients();
 
   const patientsByRisk = {
     high: patients.filter(p => p.latestScore >= 7).length,
     medium: patients.filter(p => p.latestScore >= 5 && p.latestScore < 7).length,
     low: patients.filter(p => p.latestScore < 5).length
-  };
-
-  const getStatusColor = (value: number) => {
-    return value >= 7 ? "bg-red-100 text-red-700" : 
-          value >= 5 ? "bg-amber-100 text-amber-700" : 
-          "bg-green-100 text-green-700";
   };
 
   return (
@@ -66,16 +152,26 @@ export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
           <div className="relative w-full md:w-80">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
             <Input 
-              placeholder="Search patients..." 
+              placeholder="Search patients by name or ID..." 
               className="pl-9" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button variant="outline" size="icon" className="h-10 w-10">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-10 w-10"
+            onClick={() => toast.info("Filter options would appear here")}
+          >
             <Filter className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon" className="h-10 w-10">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-10 w-10"
+            onClick={() => toast.info("Advanced filter options would appear here")}
+          >
             <SlidersHorizontal className="h-4 w-4" />
           </Button>
         </div>
@@ -138,19 +234,73 @@ export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
           </TabsList>
           
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="h-9">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-9"
+              onClick={handleRefresh}
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              {isLoading ? 'Loading...' : 'Refresh'}
             </Button>
-            <Button variant="outline" size="sm" className="h-9">
-              <ArrowUpDown className="h-4 w-4 mr-2" />
-              Sort
-            </Button>
-            <Button variant="outline" size="sm" className="h-9">
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9">
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  Sort
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleSort("name")}>
+                  <div className="flex items-center w-full justify-between">
+                    <span>Patient Name</span>
+                    {sortField === "name" && (sortDirection === "asc" ? 
+                      <ArrowUp className="h-4 w-4" /> : 
+                      <ArrowDown className="h-4 w-4" />
+                    )}
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleSort("score")}>
+                  <div className="flex items-center w-full justify-between">
+                    <span>NEWS2 Score</span>
+                    {sortField === "score" && (sortDirection === "asc" ? 
+                      <ArrowUp className="h-4 w-4" /> : 
+                      <ArrowDown className="h-4 w-4" />
+                    )}
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleSort("lastUpdated")}>
+                  <div className="flex items-center w-full justify-between">
+                    <span>Last Updated</span>
+                    {sortField === "lastUpdated" && (sortDirection === "asc" ? 
+                      <ArrowUp className="h-4 w-4" /> : 
+                      <ArrowDown className="h-4 w-4" />
+                    )}
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-9"
+              onClick={handleExport}
+            >
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
-            <Button variant="outline" size="sm" className="h-9">
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-9"
+              onClick={handleShare}
+            >
               <Share2 className="h-4 w-4 mr-2" />
               Share
             </Button>
@@ -158,16 +308,16 @@ export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
         </div>
 
         <TabsContent value="all" className="m-0">
-          <News2PatientList patients={filteredPatients} />
+          <News2PatientList patients={filteredPatients} isLoading={isLoading} />
         </TabsContent>
         <TabsContent value="high" className="m-0">
-          <News2PatientList patients={filteredPatients} />
+          <News2PatientList patients={filteredPatients} isLoading={isLoading} />
         </TabsContent>
         <TabsContent value="medium" className="m-0">
-          <News2PatientList patients={filteredPatients} />
+          <News2PatientList patients={filteredPatients} isLoading={isLoading} />
         </TabsContent>
         <TabsContent value="low" className="m-0">
-          <News2PatientList patients={filteredPatients} />
+          <News2PatientList patients={filteredPatients} isLoading={isLoading} />
         </TabsContent>
       </Tabs>
 

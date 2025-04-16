@@ -13,12 +13,14 @@ import { Eye, ChevronRight, RefreshCw } from "lucide-react";
 import { News2Patient } from "./news2Types";
 import { format } from "date-fns";
 import { PatientDetailsDialog } from "./PatientDetailsDialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface News2PatientListProps {
   patients: News2Patient[];
+  isLoading?: boolean;
 }
 
-export function News2PatientList({ patients }: News2PatientListProps) {
+export function News2PatientList({ patients, isLoading = false }: News2PatientListProps) {
   const [selectedPatient, setSelectedPatient] = useState<News2Patient | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
@@ -32,6 +34,55 @@ export function News2PatientList({ patients }: News2PatientListProps) {
     setSelectedPatient(patient);
     setDetailsDialogOpen(true);
   };
+
+  // Loading state skeletons
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[250px]">Patient</TableHead>
+              <TableHead className="w-[100px]">ID</TableHead>
+              <TableHead className="text-center">Latest Score</TableHead>
+              <TableHead>Trend</TableHead>
+              <TableHead>Last Updated</TableHead>
+              <TableHead className="text-center">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[...Array(5)].map((_, index) => (
+              <TableRow key={index}>
+                <TableCell>
+                  <div className="flex items-center">
+                    <Skeleton className="h-8 w-8 rounded-full mr-2" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                <TableCell className="text-center">
+                  <div className="flex justify-center">
+                    <Skeleton className="h-6 w-8 rounded-full" />
+                  </div>
+                </TableCell>
+                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                <TableCell className="text-center">
+                  <div className="flex justify-center gap-1">
+                    <Skeleton className="h-8 w-8 rounded" />
+                    <Skeleton className="h-8 w-8 rounded" />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
 
   return (
     <>
