@@ -32,28 +32,11 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
   onSelect
 }) => {
   const [open, setOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filteredEntities, setFilteredEntities] = useState<Client[] | Carer[]>(entities);
   
   // Find the selected entity object
   const selected = entities.find(entity => entity.id === selectedEntity);
   
-  // Handle search filtering
-  useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredEntities(entities);
-    } else {
-      const query = searchQuery.toLowerCase();
-      const filtered = entities.filter(entity => 
-        entity.name.toLowerCase().includes(query) || 
-        entity.id.toLowerCase().includes(query) ||
-        entity.initials.toLowerCase().includes(query)
-      );
-      setFilteredEntities(filtered);
-    }
-  }, [searchQuery, entities]);
-  
-  // Log for debugging
+  // Log state for debugging
   useEffect(() => {
     console.log(`EntitySelector (${type}) rendered with selectedEntity:`, selectedEntity);
     if (selected) {
@@ -63,7 +46,8 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
   
   const handleSelectEntity = (id: string) => {
     console.log(`${type} selected:`, id);
-    onSelect(id);
+    const newSelection = id === selectedEntity ? null : id;
+    onSelect(newSelection);
     setOpen(false);
   };
   
@@ -71,10 +55,6 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
     console.log(`Clearing ${type} selection`);
     onSelect(null);
     setOpen(false);
-  };
-
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
   };
   
   return (
@@ -104,21 +84,16 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
             <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0" align="start" sideOffset={4}>
+        <PopoverContent className="w-full p-0" align="start">
           <Command>
             <div className="flex items-center border-b px-3">
               <Search className="h-4 w-4 shrink-0 opacity-50 mr-2" />
-              <CommandInput 
-                placeholder={`Search ${type}s...`} 
-                className="flex-1 h-9 border-none focus:ring-0 py-2 px-0" 
-                value={searchQuery}
-                onValueChange={handleSearchChange}
-              />
+              <CommandInput placeholder={`Search ${type}s...`} className="flex-1 h-9 border-none focus:ring-0 py-2 px-0" />
             </div>
-            <CommandList className="max-h-[200px] overflow-auto">
+            <CommandList>
               <CommandEmpty>No {type} found.</CommandEmpty>
               <CommandGroup>
-                {filteredEntities.map((entity) => (
+                {entities.map((entity) => (
                   <CommandItem
                     key={entity.id}
                     value={entity.id}
