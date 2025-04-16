@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -66,9 +67,20 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const [carerSchedule, setCarerSchedule] = useState<Booking[]>([]);
   const [showSwapView, setShowSwapView] = useState<boolean>(false);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<{start: string, end: string}[]>([]);
+  const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
   
+  // Reset state when dialog opens/closes
   useEffect(() => {
-    if (booking) {
+    if (!open) {
+      setIsDataLoaded(false);
+    }
+  }, [open]);
+  
+  // Initialize the form with booking data
+  useEffect(() => {
+    if (booking && open) {
+      console.log("Initializing dialog with booking:", booking);
+      
       setSelectedClientId(booking.clientId);
       setSelectedCarerId(booking.carerId);
       setNotes(booking.notes || "");
@@ -77,39 +89,57 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       setEndTime(booking.endTime);
       setBookingDate(booking.date);
       
-      updateClientSchedule(booking.clientId);
-      updateCarerSchedule(booking.carerId);
+      // Load schedules after setting IDs
+      setTimeout(() => {
+        updateClientSchedule(booking.clientId);
+        updateCarerSchedule(booking.carerId);
+        setIsDataLoaded(true);
+      }, 0);
     }
-  }, [booking]);
+  }, [booking, open]);
   
   const updateClientSchedule = (clientId: string) => {
+    console.log("Updating client schedule for ID:", clientId);
     const selectedClient = clients.find(c => c.id === clientId);
     if (selectedClient && selectedClient.bookings) {
+      console.log("Found client bookings:", selectedClient.bookings.length);
       setClientSchedule(selectedClient.bookings);
     } else {
+      console.log("No bookings found for client");
       setClientSchedule([]);
     }
   };
   
   const updateCarerSchedule = (carerId: string) => {
+    console.log("Updating carer schedule for ID:", carerId);
     const selectedCarer = carers.find(c => c.id === carerId);
     if (selectedCarer && selectedCarer.bookings) {
+      console.log("Found carer bookings:", selectedCarer.bookings.length);
       setCarerSchedule(selectedCarer.bookings);
     } else {
+      console.log("No bookings found for carer");
       setCarerSchedule([]);
     }
   };
   
   const handleClientChange = (clientId: string) => {
+    console.log("Client selected:", clientId);
     setSelectedClientId(clientId);
     updateClientSchedule(clientId);
     findAvailableTimeSlots();
   };
   
   const handleCarerChange = (carerId: string) => {
+    console.log("Carer selected:", carerId);
     setSelectedCarerId(carerId);
     updateCarerSchedule(carerId);
     findAvailableTimeSlots();
+    
+    // Provide user feedback
+    const selectedCarer = carers.find(c => c.id === carerId);
+    if (selectedCarer) {
+      toast.success(`Selected carer: ${selectedCarer.name}`);
+    }
   };
   
   const findAvailableTimeSlots = () => {
@@ -182,6 +212,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     setAvailableTimeSlots(slots);
   };
   
+  // Format utilities
   const formatDate = (dateString: string): string => {
     try {
       return format(parseISO(dateString), 'EEEE, MMMM d, yyyy');
@@ -277,6 +308,8 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const handleSave = () => {
     if (!booking) return;
     
+    console.log("Saving booking with client:", selectedClientId, "and carer:", selectedCarerId);
+    
     const selectedClient = clients.find(c => c.id === selectedClientId);
     const selectedCarer = carers.find(c => c.id === selectedCarerId);
     
@@ -303,6 +336,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       status: status as Booking["status"],
     };
     
+    console.log("Updated booking:", updatedBooking);
     onUpdateBooking(updatedBooking);
     toast.success("Booking updated successfully");
     onOpenChange(false);
@@ -480,12 +514,14 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
               
               <div className="grid gap-2">
                 <Label htmlFor="client" className="font-medium">Client</Label>
-                <EntitySelector
-                  type="client"
-                  entities={clients}
-                  selectedEntity={selectedClientId}
-                  onSelect={(id) => handleClientChange(id || "")}
-                />
+                {isDataLoaded && (
+                  <EntitySelector
+                    type="client"
+                    entities={clients}
+                    selectedEntity={selectedClientId}
+                    onSelect={(id) => handleClientChange(id || "")}
+                  />
+                )}
                 
                 {selectedClientId && (
                   <div className="bg-blue-50 rounded-md p-3 border border-blue-100 mt-1">
@@ -540,12 +576,15 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
               
               <div className="grid gap-2">
                 <Label htmlFor="carer" className="font-medium">Carer</Label>
-                <EntitySelector
-                  type="carer"
-                  entities={carers}
-                  selectedEntity={selectedCarerId}
-                  onSelect={(id) => handleCarerChange(id || "")}
-                />
+                {isDataLoaded && (
+                  <EntitySelector
+                    type="carer"
+                    entities={carers}
+                    selectedEntity={selectedCarerId}
+                    onSelect={(id) => handleCarerChange(id || "")}
+                    key={`carer-selector-${selectedCarerId}`} // Force re-render when value changes
+                  />
+                )}
                 
                 {selectedCarerId && (
                   <div className="bg-purple-50 rounded-md p-3 border border-purple-100 mt-1">
@@ -738,3 +777,4 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     </>
   );
 };
+
