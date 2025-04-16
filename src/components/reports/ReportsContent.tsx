@@ -7,15 +7,31 @@ import { ServiceReports } from "./ServiceReports";
 import { FinancialReports } from "./FinancialReports";
 import { OperationalReports } from "./OperationalReports";
 import { ComplianceReports } from "./ComplianceReports";
+import { ClinicalReports } from "./ClinicalReports";
 import { ReportsHeader } from "./ReportsHeader";
-import { Users, Briefcase, ClipboardCheck, DollarSign, BarChart3, ShieldCheck } from "lucide-react";
+import { 
+  Users, 
+  Briefcase, 
+  ClipboardCheck, 
+  DollarSign, 
+  BarChart3, 
+  ShieldCheck, 
+  Stethoscope 
+} from "lucide-react";
 
 interface ReportsContentProps {
   branchId: string;
   branchName: string;
 }
 
-type ReportType = "client" | "staff" | "service" | "financial" | "operational" | "compliance";
+type ReportType = 
+  | "client" 
+  | "staff" 
+  | "service" 
+  | "financial" 
+  | "operational" 
+  | "compliance" 
+  | "clinical";
 
 interface ReportOption {
   id: ReportType;
@@ -63,6 +79,12 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
       title: "Compliance Reports",
       description: "Track training compliance and incidents",
       icon: <ShieldCheck className="h-6 w-6" />
+    },
+    {
+      id: "clinical",
+      title: "Clinical Reports",
+      description: "Monitor patient observations and NEWS2 scores",
+      icon: <Stethoscope className="h-6 w-6" />
     }
   ];
   
@@ -80,6 +102,8 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
         return <OperationalReports branchId={branchId} branchName={branchName} />;
       case "compliance":
         return <ComplianceReports branchId={branchId} branchName={branchName} />;
+      case "clinical":
+        return <ClinicalReports branchId={branchId} branchName={branchName} />;
       default:
         return <ClientReports branchId={branchId} branchName={branchName} />;
     }
@@ -100,7 +124,7 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
       
       {activeReport ? (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-3">
             {reportOptions.map((option) => (
               <Card 
                 key={option.id}
