@@ -368,7 +368,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
         <div className="entity-lists">
           <EntityList 
             type="client"
-            entities={clients}
+            entities={clientBookings}
             selectedEntityId={selectedClientId}
             onSelect={handleClientSelect}
           />
@@ -381,7 +381,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
         <div className="carer-lists">
           <EntityList 
             type="carer"
-            entities={carers}
+            entities={carerBookings}
             selectedEntityId={selectedCarerId}
             onSelect={handleCarerSelect}
           />
@@ -394,4 +394,3 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     </div>
   );
 };
-
