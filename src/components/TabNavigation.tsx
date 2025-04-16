@@ -74,7 +74,7 @@ const secondaryTabGroups = [
     ]
   },
   {
-    label: "Analytics",
+    label: "Reports",
     items: [
       { icon: BarChart4, label: "Reports", value: "reports", description: "Data analysis" },
     ]
