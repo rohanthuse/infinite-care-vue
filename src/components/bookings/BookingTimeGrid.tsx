@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +19,7 @@ export interface Booking {
   clientInitials: string;
   carerId: string;
   carerName: string;
+  carerInitials: string;
   startTime: string; // Format: "07:30"
   endTime: string; // Format: "08:00"
   date: string; // Format: "2023-05-15"

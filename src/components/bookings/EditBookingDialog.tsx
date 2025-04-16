@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -72,7 +71,6 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const [carerSelectorKey, setCarerSelectorKey] = useState<number>(0); // Key to force re-render of carer selector
   const [clientSelectorKey, setClientSelectorKey] = useState<number>(0); // Key to force re-render of client selector
 
-  // Reset state when dialog opens/closes
   useEffect(() => {
     if (open) {
       console.log("Dialog opened");
@@ -80,7 +78,6 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       setIsProcessing(false);
     } else {
       console.log("Dialog closed, resetting state");
-      // Clear state when dialog closes
       setSelectedClientId("");
       setSelectedCarerId("");
       setNotes("");
@@ -95,12 +92,10 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     }
   }, [open]);
   
-  // Initialize the form with booking data
   useEffect(() => {
     if (booking && open) {
       console.log("Initializing dialog with booking:", booking);
       
-      // Set basic booking details
       setSelectedClientId(booking.clientId);
       setSelectedCarerId(booking.carerId);
       setNotes(booking.notes || "");
@@ -109,13 +104,11 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       setEndTime(booking.endTime);
       setBookingDate(booking.date);
       
-      // Use setTimeout to ensure state has been updated
       setTimeout(() => {
         console.log("Loading schedules for client:", booking.clientId, "and carer:", booking.carerId);
         updateClientSchedule(booking.clientId);
         updateCarerSchedule(booking.carerId);
         
-        // Force selectors to re-render with correct selection
         setClientSelectorKey(prev => prev + 1);
         setCarerSelectorKey(prev => prev + 1);
         
@@ -158,13 +151,11 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     setSelectedClientId(clientId);
     updateClientSchedule(clientId);
     
-    // Find client name for feedback
     const selectedClient = clients.find(c => c.id === clientId);
     if (selectedClient) {
       toast.success(`Selected client: ${selectedClient.name}`);
     }
     
-    // Update available time slots after client change
     setTimeout(() => {
       findAvailableTimeSlots();
       setIsProcessing(false);
@@ -180,14 +171,12 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     setSelectedCarerId(carerId);
     updateCarerSchedule(carerId);
     
-    // Find carer name for feedback
     const selectedCarer = carers.find(c => c.id === carerId);
     if (selectedCarer) {
       toast.success(`Selected carer: ${selectedCarer.name}`);
       console.log("Carer assignment updated to:", selectedCarer.name);
     }
     
-    // Update available time slots after carer change
     setTimeout(() => {
       findAvailableTimeSlots();
       setIsProcessing(false);
@@ -264,7 +253,6 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     setAvailableTimeSlots(slots);
   };
   
-  // Format utilities
   const formatDate = (dateString: string): string => {
     try {
       return format(parseISO(dateString), 'EEEE, MMMM d, yyyy');
@@ -381,7 +369,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       clientInitials: selectedClient.initials,
       carerId: selectedCarer.id,
       carerName: selectedCarer.name,
-      carerInitials: selectedCarer.initials,  // Add carerInitials to ensure it's included
+      carerInitials: selectedCarer.initials,
       startTime: startTime,
       endTime: endTime,
       date: bookingDate,
