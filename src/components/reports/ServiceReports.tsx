@@ -1,7 +1,6 @@
 
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChartContainer } from "@/components/ui/chart";
 import {
   BarChart,
@@ -18,11 +17,19 @@ import {
   Cell,
   Area,
   AreaChart,
+  ResponsiveContainer
 } from "recharts";
 
 interface ServiceReportsProps {
   branchId: string;
   branchName: string;
+}
+
+type ServiceReportTab = "utilization" | "satisfaction" | "distribution";
+
+interface TabOption {
+  id: ServiceReportTab;
+  label: string;
 }
 
 // Mock data for the charts
@@ -52,30 +59,38 @@ const serviceTimeDistributionData = [
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export function ServiceReports({ branchId, branchName }: ServiceReportsProps) {
-  const [activeSubTab, setActiveSubTab] = useState<string>("utilization");
+  const [activeTab, setActiveTab] = useState<ServiceReportTab>("utilization");
+  
+  const tabOptions: TabOption[] = [
+    { id: "utilization", label: "Service Utilization" },
+    { id: "satisfaction", label: "Satisfaction Scores" },
+    { id: "distribution", label: "Time Distribution" },
+  ];
   
   return (
     <div className="space-y-4">
-      <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-sm mb-4">
-          <TabsList className="grid grid-cols-1 md:grid-cols-3 gap-2">
-            <TabsTrigger value="utilization" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
-              Service Utilization
-            </TabsTrigger>
-            <TabsTrigger value="satisfaction" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
-              Satisfaction Scores
-            </TabsTrigger>
-            <TabsTrigger value="distribution" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
-              Time Distribution
-            </TabsTrigger>
-          </TabsList>
-        </div>
+      <div className="flex flex-wrap gap-2 mb-4">
+        {tabOptions.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === tab.id
+                ? "bg-blue-100 text-blue-700"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        <TabsContent value="utilization" className="mt-0">
-          <Card className="border border-gray-200 shadow-sm">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Service Utilization Trends</h3>
-              <div className="h-80 w-full">
+      {activeTab === "utilization" && (
+        <Card className="border border-gray-200 shadow-sm">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Service Utilization Trends</h3>
+            <div className="w-full" style={{ height: "350px" }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <ChartContainer 
                   config={{
                     homecare: { color: "#0088FE" },
@@ -99,19 +114,21 @@ export function ServiceReports({ branchId, branchName }: ServiceReportsProps) {
                     <Area type="monotone" dataKey="companion" name="Companionship" stackId="1" stroke="var(--color-companion)" fill="var(--color-companion)" />
                   </AreaChart>
                 </ChartContainer>
-              </div>
-              <div className="mt-4 text-sm text-muted-foreground">
-                <p>This report shows service utilization trends over the past 6 months by service type.</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="satisfaction" className="mt-0">
-          <Card className="border border-gray-200 shadow-sm">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Service Satisfaction Scores</h3>
-              <div className="h-80 w-full">
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 text-sm text-muted-foreground">
+              <p>This report shows service utilization trends over the past 6 months by service type.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {activeTab === "satisfaction" && (
+        <Card className="border border-gray-200 shadow-sm">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Service Satisfaction Scores</h3>
+            <div className="w-full" style={{ height: "350px" }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <ChartContainer
                   config={{
                     excellent: { color: "#00C49F" },
@@ -135,25 +152,27 @@ export function ServiceReports({ branchId, branchName }: ServiceReportsProps) {
                     <Bar dataKey="poor" name="Poor" fill="var(--color-poor)" stackId="a" />
                   </BarChart>
                 </ChartContainer>
-              </div>
-              <div className="mt-4 text-sm text-muted-foreground">
-                <p>This report shows client satisfaction scores across different service types.</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="distribution" className="mt-0">
-          <Card className="border border-gray-200 shadow-sm">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Service Time Distribution</h3>
-              <div className="h-80 w-full flex justify-center">
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 text-sm text-muted-foreground">
+              <p>This report shows client satisfaction scores across different service types.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {activeTab === "distribution" && (
+        <Card className="border border-gray-200 shadow-sm">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Service Time Distribution</h3>
+            <div className="w-full" style={{ height: "350px" }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <ChartContainer
                   config={{
                     primary: { color: "#0088FE" },
                   }}
                 >
-                  <PieChart width={400} height={300}>
+                  <PieChart>
                     <Pie
                       data={serviceTimeDistributionData}
                       cx="50%"
@@ -172,14 +191,14 @@ export function ServiceReports({ branchId, branchName }: ServiceReportsProps) {
                     <Legend />
                   </PieChart>
                 </ChartContainer>
-              </div>
-              <div className="mt-4 text-sm text-muted-foreground">
-                <p>This report shows the distribution of service hours across different times of the day.</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 text-sm text-muted-foreground">
+              <p>This report shows the distribution of service hours across different times of the day.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -1,7 +1,6 @@
 
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChartContainer } from "@/components/ui/chart";
 import {
   BarChart,
@@ -16,11 +15,19 @@ import {
   PieChart,
   Pie,
   Cell,
+  ResponsiveContainer
 } from "recharts";
 
 interface StaffReportsProps {
   branchId: string;
   branchName: string;
+}
+
+type StaffReportTab = "performance" | "availability" | "qualifications";
+
+interface TabOption {
+  id: StaffReportTab;
+  label: string;
 }
 
 // Mock data for the charts
@@ -54,30 +61,38 @@ const staffQualificationsData = [
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export function StaffReports({ branchId, branchName }: StaffReportsProps) {
-  const [activeSubTab, setActiveSubTab] = useState<string>("performance");
+  const [activeTab, setActiveTab] = useState<StaffReportTab>("performance");
+  
+  const tabOptions: TabOption[] = [
+    { id: "performance", label: "Staff Performance" },
+    { id: "availability", label: "Availability" },
+    { id: "qualifications", label: "Qualifications" },
+  ];
   
   return (
     <div className="space-y-4">
-      <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-sm mb-4">
-          <TabsList className="grid grid-cols-1 md:grid-cols-3 gap-2">
-            <TabsTrigger value="performance" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
-              Staff Performance
-            </TabsTrigger>
-            <TabsTrigger value="availability" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
-              Availability
-            </TabsTrigger>
-            <TabsTrigger value="qualifications" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
-              Qualifications
-            </TabsTrigger>
-          </TabsList>
-        </div>
+      <div className="flex flex-wrap gap-2 mb-4">
+        {tabOptions.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === tab.id
+                ? "bg-blue-100 text-blue-700"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        <TabsContent value="performance" className="mt-0">
-          <Card className="border border-gray-200 shadow-sm">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Staff Performance Metrics</h3>
-              <div className="h-80 w-full">
+      {activeTab === "performance" && (
+        <Card className="border border-gray-200 shadow-sm">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Staff Performance Metrics</h3>
+            <div className="w-full" style={{ height: "350px" }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <ChartContainer 
                   config={{
                     completedTasks: { color: "#0088FE" },
@@ -97,19 +112,21 @@ export function StaffReports({ branchId, branchName }: StaffReportsProps) {
                     <Bar dataKey="onTimePercentage" name="On-time %" fill="var(--color-onTimePercentage)" />
                   </BarChart>
                 </ChartContainer>
-              </div>
-              <div className="mt-4 text-sm text-muted-foreground">
-                <p>This report shows performance metrics for staff members including completed tasks and punctuality.</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="availability" className="mt-0">
-          <Card className="border border-gray-200 shadow-sm">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Staff Availability by Day</h3>
-              <div className="h-80 w-full">
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 text-sm text-muted-foreground">
+              <p>This report shows performance metrics for staff members including completed tasks and punctuality.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {activeTab === "availability" && (
+        <Card className="border border-gray-200 shadow-sm">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Staff Availability by Day</h3>
+            <div className="w-full" style={{ height: "350px" }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <ChartContainer
                   config={{
                     available: { color: "#0088FE" },
@@ -129,25 +146,27 @@ export function StaffReports({ branchId, branchName }: StaffReportsProps) {
                     <Line type="monotone" dataKey="unavailable" name="Unavailable Staff" stroke="var(--color-unavailable)" />
                   </LineChart>
                 </ChartContainer>
-              </div>
-              <div className="mt-4 text-sm text-muted-foreground">
-                <p>This report shows staff availability patterns throughout the week.</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="qualifications" className="mt-0">
-          <Card className="border border-gray-200 shadow-sm">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Staff Qualifications Distribution</h3>
-              <div className="h-80 w-full flex justify-center">
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 text-sm text-muted-foreground">
+              <p>This report shows staff availability patterns throughout the week.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {activeTab === "qualifications" && (
+        <Card className="border border-gray-200 shadow-sm">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Staff Qualifications Distribution</h3>
+            <div className="w-full" style={{ height: "350px" }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <ChartContainer
                   config={{
                     primary: { color: "#0088FE" },
                   }}
                 >
-                  <PieChart width={400} height={300}>
+                  <PieChart>
                     <Pie
                       data={staffQualificationsData}
                       cx="50%"
@@ -156,7 +175,7 @@ export function StaffReports({ branchId, branchName }: StaffReportsProps) {
                       outerRadius={100}
                       fill="#8884d8"
                       dataKey="value"
-                      label={({ name, value, percent }) => `${name}: ${value}`}
+                      label={({ name, value }) => `${name}: ${value}`}
                     >
                       {staffQualificationsData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -166,14 +185,14 @@ export function StaffReports({ branchId, branchName }: StaffReportsProps) {
                     <Legend />
                   </PieChart>
                 </ChartContainer>
-              </div>
-              <div className="mt-4 text-sm text-muted-foreground">
-                <p>This report shows the distribution of qualifications among staff members.</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 text-sm text-muted-foreground">
+              <p>This report shows the distribution of qualifications among staff members.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

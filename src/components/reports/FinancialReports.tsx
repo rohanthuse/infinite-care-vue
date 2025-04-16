@@ -12,7 +12,10 @@ import {
   Legend,
   BarChart,
   Bar,
-  ResponsiveContainer
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
 } from "recharts";
 
 interface FinancialReportsProps {
@@ -37,6 +40,8 @@ const serviceRevenueData = [
   { name: "Companionship", value: 18000 },
   { name: "Other", value: 7000 },
 ];
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export function FinancialReports({ branchId, branchName }: FinancialReportsProps) {
   return (
@@ -85,17 +90,24 @@ export function FinancialReports({ branchId, branchName }: FinancialReportsProps
                   value: { color: "#0088FE" },
                 }}
               >
-                <BarChart
-                  data={serviceRevenueData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
+                <PieChart>
+                  <Pie
+                    data={serviceRevenueData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={true}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, value, percent }) => `${name}: £${value}`}
+                  >
+                    {serviceRevenueData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
                   <Tooltip formatter={(value) => [`£${value}`, 'Revenue']} />
                   <Legend />
-                  <Bar dataKey="value" name="Revenue" fill="var(--color-value)" />
-                </BarChart>
+                </PieChart>
               </ChartContainer>
             </ResponsiveContainer>
           </div>
