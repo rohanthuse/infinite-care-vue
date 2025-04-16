@@ -10,7 +10,10 @@ import {
   ArrowUpDown, 
   Bell, 
   Download, 
+  FileSpreadsheet, 
+  FileText, 
   Filter, 
+  Printer, 
   PlusCircle, 
   RefreshCw, 
   Search, 
@@ -31,6 +34,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { generateNews2SummaryPDF } from "@/utils/pdfGenerator";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DateRange } from "react-day-picker";
+import { Calendar } from "@/components/ui/calendar";
+import { addDays, format } from "date-fns";
 
 interface News2DashboardProps {
   branchId: string;
@@ -48,6 +56,10 @@ export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [sortField, setSortField] = useState<SortField>("score");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: addDays(new Date(), -30),
+    to: new Date(),
+  });
   
   // Get mock data
   const [patients, setPatients] = useState<News2Patient[]>([]);
@@ -73,17 +85,73 @@ export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
     loadPatientData();
   };
 
-  const handleExport = () => {
-    toast.success("Export started", {
-      description: "Patient data export started. The file will download shortly."
+  const handleExport = (format: string) => {
+    try {
+      if (format === "PDF") {
+        generateNews2SummaryPDF(
+          filteredPatients, 
+          branchName, 
+          activeView, 
+          dateRange?.from && dateRange?.to ? dateRange : undefined
+        );
+        toast.success("PDF export started", {
+          description: "NEWS2 summary report has been downloaded"
+        });
+      } else if (format === "CSV") {
+        exportToCSV(filteredPatients);
+        toast.success("CSV export started", {
+          description: "NEWS2 data has been exported to CSV"
+        });
+      } else if (format === "Print") {
+        window.print();
+        toast.success("Print dialog opened");
+      } else {
+        toast.info(`${format} export not implemented yet`);
+      }
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Export failed", { 
+        description: "There was a problem exporting the report" 
+      });
+    }
+  };
+
+  const exportToCSV = (patients: News2Patient[]) => {
+    // Build CSV headers and format data
+    const headers = ["Patient ID,Patient Name,Age,Latest Score,Risk Level,Trend,Last Updated"];
+    
+    const rows = patients.map(patient => {
+      let riskLevel = "Low Risk";
+      if (patient.latestScore >= 7) riskLevel = "High Risk";
+      else if (patient.latestScore >= 5) riskLevel = "Medium Risk";
+      
+      let trend = "Stable";
+      if (patient.trend === "up") trend = "Increasing";
+      else if (patient.trend === "down") trend = "Decreasing";
+      
+      return [
+        patient.id,
+        patient.name,
+        patient.age,
+        patient.latestScore,
+        riskLevel,
+        trend,
+        format(new Date(patient.lastUpdated), "yyyy-MM-dd HH:mm")
+      ].join(',');
     });
     
-    // In a real app, this would generate a CSV/Excel file for download
-    setTimeout(() => {
-      toast.success("Data exported successfully", {
-        description: "NEWS2 patient data has been exported to CSV"
-      });
-    }, 1500);
+    const csvContent = headers.concat(rows).join('\n');
+    
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `NEWS2_Summary_${format(new Date(), "yyyy-MM-dd")}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleShare = () => {
@@ -116,6 +184,15 @@ export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
           !patient.id.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
+      
+      // Apply date filter if available
+      if (dateRange?.from && dateRange?.to) {
+        const patientDate = new Date(patient.lastUpdated);
+        if (patientDate < dateRange.from || patientDate > addDays(dateRange.to, 1)) {
+          return false;
+        }
+      }
+      
       return true;
     });
     
@@ -158,14 +235,31 @@ export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="h-10 w-10"
-            onClick={() => toast.info("Filter options would appear here")}
-          >
-            <Filter className="h-4 w-4" />
-          </Button>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-10 w-10"
+              >
+                <Filter className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto" align="start">
+              <div className="space-y-2">
+                <h4 className="font-medium">Date Range</h4>
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateRange?.from}
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
+          
           <Button 
             variant="outline" 
             size="icon" 
@@ -285,15 +379,32 @@ export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
               </DropdownMenuContent>
             </DropdownMenu>
             
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="h-9"
-              onClick={handleExport}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-9"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport("PDF")}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  <span>Export as PDF</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("CSV")}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  <span>Export as CSV</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("Print")}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  <span>Print Report</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             <Button 
               variant="outline" 
