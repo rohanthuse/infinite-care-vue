@@ -122,7 +122,7 @@ export function News2Dashboard({ branchId, branchName }: News2DashboardProps) {
           <CardContent>
             <div className="flex justify-between items-center">
               <div className="text-3xl font-bold">{patientsByRisk.low}</div>
-              <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">NEWS2 < 5</div>
+              <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">NEWS2 &lt; 5</div>
             </div>
           </CardContent>
         </Card>
