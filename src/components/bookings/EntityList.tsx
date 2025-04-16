@@ -119,12 +119,16 @@ export const EntityList: React.FC<EntityListProps> = ({
                         {entity.bookingCount} booking{entity.bookingCount !== 1 ? "s" : ""}
                       </Badge>
                       
-                      {type === "client" && totalHours > 0 && (
+                      {totalHours > 0 && (
                         <HoverCard>
                           <HoverCardTrigger asChild>
                             <Badge 
                               variant="outline" 
-                              className="text-xs bg-green-50 text-green-700 border-green-200 cursor-pointer flex items-center gap-1"
+                              className={`text-xs ${
+                                type === "client" 
+                                  ? "bg-green-50 text-green-700 border-green-200" 
+                                  : "bg-violet-50 text-violet-700 border-violet-200"
+                              } cursor-pointer flex items-center gap-1`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onSelect(entity.id);
