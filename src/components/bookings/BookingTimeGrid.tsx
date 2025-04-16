@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -261,7 +262,8 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     const newEndMin = newEndInMinutes % 60;
     const newEndTime = `${String(newEndHour).padStart(2, '0')}:${String(newEndMin).padStart(2, '0')}`;
     
-    if (startHourNum >= 22 || startHourNum < 6) {
+    // Check if new booking is within business hours (6:00 to 22:00)
+    if (newHour < 6 || newHour >= 22) {
       toast.error("Bookings can only be scheduled between 6:00 and 22:00");
       return;
     }
