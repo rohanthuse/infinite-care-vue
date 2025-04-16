@@ -35,6 +35,10 @@ import TrainingMatrix from "./TrainingMatrix";
 import AccountingTab from "@/components/accounting/AccountingTab";
 import { FormBuilderTab } from "@/components/form-builder/FormBuilderTab";
 
+interface BranchDashboardProps {
+  tab?: string;
+}
+
 const weeklyData = [{
   day: "Mon",
   visits: 12,
@@ -343,7 +347,7 @@ const ActionItem = ({
     </div>;
 };
 
-const BranchDashboard = () => {
+const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) => {
   const {
     id,
     branchName,
@@ -897,9 +901,9 @@ const BranchDashboard = () => {
         
         {activeTab === "workflow" && <WorkflowContent branchId={id} branchName={branchName} />}
       
-        {activeTab === "task-matrix" && <TaskMatrix />}
+        {activeTab === "task-matrix" && <TaskMatrix branchId={id || "main"} branchName={decodeURIComponent(branchName || "Main Branch")} />}
         
-        {activeTab === "training-matrix" && <TrainingMatrix />}
+        {activeTab === "training-matrix" && <TrainingMatrix branchId={id || "main"} branchName={decodeURIComponent(branchName || "Main Branch")} />}
       
         {activeTab === "bookings" && <BookingsTab branchId={id} branchName={branchName} />}
       
