@@ -1,58 +1,37 @@
-
 import React, { useState } from "react";
-import { 
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Clock, 
-  Download, 
-  FileText, 
-  HistoryIcon, 
-  Phone, 
-  PlusCircle, 
-  Share2, 
-  User
-} from "lucide-react";
+import { Clock, Download, FileText, HistoryIcon, Phone, PlusCircle, Share2, User } from "lucide-react";
 import { News2Patient } from "./news2Types";
 import { ObservationHistory } from "./ObservationHistory";
 import { ObservationChart } from "./ObservationChart";
 import { NewObservationDialog } from "./NewObservationDialog";
 import { format } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
 interface PatientDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   patient: News2Patient;
 }
-
-export function PatientDetailsDialog({ 
-  open, 
-  onOpenChange, 
-  patient 
+export function PatientDetailsDialog({
+  open,
+  onOpenChange,
+  patient
 }: PatientDetailsDialogProps) {
   const [isNewObservationOpen, setIsNewObservationOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("history");
-
   const getStatusText = (score: number) => {
     if (score >= 7) return "High Risk";
     if (score >= 5) return "Medium Risk";
     return "Low Risk";
   };
-
   const getStatusColor = (score: number) => {
     if (score >= 7) return "text-red-600";
     if (score >= 5) return "text-amber-600";
     return "text-green-600";
   };
-
-  return (
-    <>
+  return <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
@@ -97,12 +76,7 @@ export function PatientDetailsDialog({
               </div>
 
               <div className="flex flex-col md:flex-row justify-between gap-4">
-                <Tabs 
-                  defaultValue="history" 
-                  value={activeTab} 
-                  onValueChange={setActiveTab}
-                  className="w-full"
-                >
+                <Tabs defaultValue="history" value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="sticky top-0 z-10 bg-background">
                     <TabsTrigger value="history">
                       <HistoryIcon className="h-4 w-4 mr-2" />
@@ -128,14 +102,8 @@ export function PatientDetailsDialog({
             
           <div className="flex justify-end gap-2 mt-4 border-t pt-4">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
-            <Button variant="outline">
-              <Phone className="h-4 w-4 mr-2" />
-              Contact
-            </Button>
-            <Button variant="outline">
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
+            
+            
             <Button variant="outline">
               <Download className="h-4 w-4 mr-2" />
               Export
@@ -148,12 +116,6 @@ export function PatientDetailsDialog({
         </DialogContent>
       </Dialog>
       
-      <NewObservationDialog 
-        open={isNewObservationOpen} 
-        onOpenChange={setIsNewObservationOpen} 
-        patients={[patient]}
-        defaultPatientId={patient.id}
-      />
-    </>
-  );
+      <NewObservationDialog open={isNewObservationOpen} onOpenChange={setIsNewObservationOpen} patients={[patient]} defaultPatientId={patient.id} />
+    </>;
 }
