@@ -1,12 +1,14 @@
 
 import React, { useState } from "react";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MapPin, Search, Calendar } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, addDays, subDays } from "date-fns";
+import { toast } from "sonner";
 
 // Mock data for appointments
 const mockAppointments = [
@@ -58,6 +60,7 @@ const mockAppointments = [
 ];
 
 const CarerSchedule: React.FC = () => {
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -75,6 +78,14 @@ const CarerSchedule: React.FC = () => {
   
   const handleToday = () => {
     setCurrentDate(new Date());
+  };
+  
+  const handleStartVisit = (appointmentId: string) => {
+    navigate(`/carer-dashboard/visit/${appointmentId}`);
+  };
+  
+  const handleViewDetails = (appointmentId: string) => {
+    toast.info(`Viewing details for appointment ${appointmentId}`);
   };
   
   const filteredAppointments = mockAppointments.filter(appointment => {
@@ -192,8 +203,22 @@ const CarerSchedule: React.FC = () => {
                         </div>
                         
                         <div className="flex gap-2">
-                          <Button size="sm" className="w-full">Start Visit</Button>
-                          <Button size="sm" variant="outline" className="w-full">Details</Button>
+                          <Button 
+                            size="sm" 
+                            className="w-full"
+                            onClick={() => handleStartVisit(appointment.id)}
+                            disabled={appointment.status !== "Confirmed"}
+                          >
+                            Start Visit
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="w-full"
+                            onClick={() => handleViewDetails(appointment.id)}
+                          >
+                            Details
+                          </Button>
                         </div>
                       </div>
                     </div>

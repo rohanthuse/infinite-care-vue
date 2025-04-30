@@ -1,13 +1,17 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&display=swap');
-
-.font-handwriting {
-  font-family: 'Dancing Script', cursive;
-  font-weight: 400;
+/* Signatures.css */
+.signature-canvas {
+  -webkit-touch-callout: none;  /* iOS Safari */
+  -webkit-user-select: none;    /* Safari */
+  -khtml-user-select: none;     /* Konqueror HTML */
+  -moz-user-select: none;       /* Firefox */
+  -ms-user-select: none;        /* Internet Explorer/Edge */
+  user-select: none;            /* Non-prefixed version */
+  touch-action: none;
 }
 
-.signature-line {
-  border-bottom: 1px solid #000;
-  padding-bottom: 2px;
-  display: inline-block;
+.signature-canvas canvas {
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
 }

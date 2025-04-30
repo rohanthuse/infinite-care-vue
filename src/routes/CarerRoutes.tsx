@@ -14,6 +14,7 @@ import CarerTraining from "@/pages/carer/CarerTraining";
 import CarerClients from "@/pages/carer/CarerClients";
 import CarerAttendance from "@/pages/carer/CarerAttendance";
 import CarerDocuments from "@/pages/carer/CarerDocuments";
+import CarerVisitWorkflow from "@/pages/carer/CarerVisitWorkflow";
 
 /**
  * CarerRoutes component containing all routes related to the carer dashboard
@@ -35,6 +36,7 @@ const CarerRoutes = () => {
       <Route path="clients" element={<CarerClients />} />
       <Route path="attendance" element={<CarerAttendance />} />
       <Route path="documents" element={<CarerDocuments />} />
+      <Route path="visit/:appointmentId" element={<CarerVisitWorkflow />} />
     </Route>
   );
 };

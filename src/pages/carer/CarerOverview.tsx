@@ -87,6 +87,15 @@ const CarerOverview: React.FC = () => {
   const completedTasks = recentTasks.filter(task => task.completed).length;
   const pendingTasks = recentTasks.length - completedTasks;
   
+  const handleStartVisit = (appointmentId: string) => {
+    navigate(`/carer-dashboard/visit/${appointmentId}`);
+  };
+  
+  const handleViewDetails = (appointmentId: string) => {
+    // In a real app, this would navigate to appointment details
+    navigate(`/carer-dashboard/appointments?id=${appointmentId}`);
+  };
+  
   return (
     <div>
       <div className="mb-6">
@@ -191,8 +200,21 @@ const CarerOverview: React.FC = () => {
                         </div>
                       </div>
                       <div className="mt-3 flex">
-                        <Button size="sm" className="mr-2">Start Visit</Button>
-                        <Button size="sm" variant="outline">View Details</Button>
+                        <Button 
+                          size="sm" 
+                          className="mr-2"
+                          onClick={() => handleStartVisit(appointment.id)}
+                          disabled={appointment.status !== "Confirmed"}
+                        >
+                          Start Visit
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewDetails(appointment.id)}
+                        >
+                          View Details
+                        </Button>
                       </div>
                     </div>
                   ))}
