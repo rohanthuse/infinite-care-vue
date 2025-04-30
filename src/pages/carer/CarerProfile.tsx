@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { 
   User, Mail, Phone, MapPin, Briefcase, Calendar, CheckCircle, 
-  Shield, Save, X, Edit, Bank, Lock, Key
+  Shield, Save, X, Edit, Lock, Key, CreditCard
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -197,7 +197,7 @@ const CarerProfile: React.FC = () => {
                 Professional Details
               </TabsTrigger>
               <TabsTrigger value="bank">
-                <Bank className="h-4 w-4 mr-2" />
+                <CreditCard className="h-4 w-4 mr-2" />
                 Bank Details
               </TabsTrigger>
               <TabsTrigger value="security">
