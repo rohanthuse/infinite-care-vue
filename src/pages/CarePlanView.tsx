@@ -32,6 +32,7 @@ import { PersonalCareTab } from "@/components/care/tabs/PersonalCareTab";
 import { RiskTab } from "@/components/care/tabs/RiskTab";
 import { ServicePlanTab } from "@/components/care/tabs/ServicePlanTab";
 import { ServiceActionsTab } from "@/components/care/tabs/ServiceActionsTab";
+import { EventsLogsTab } from "@/components/care/tabs/EventsLogsTab";
 import { getStatusBadgeClass, getRiskLevelClass, calculateProgressPercentage } from "@/utils/statusHelpers";
 import { mockPatientData } from "@/data/mockPatientData";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,7 @@ import { AddNoteDialog } from "@/components/care/dialogs/AddNoteDialog";
 import { ScheduleFollowUpDialog } from "@/components/care/dialogs/ScheduleFollowUpDialog";
 import { RecordActivityDialog } from "@/components/care/dialogs/RecordActivityDialog";
 import { UploadDocumentDialog } from "@/components/care/dialogs/UploadDocumentDialog";
+import { AddEventDialog } from "@/components/care/dialogs/AddEventDialog";
 
 const mockCarePlans = [
   {
@@ -76,6 +78,7 @@ const CarePlanView = () => {
   const [followUpDialogOpen, setFollowUpDialogOpen] = useState(false);
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [documentDialogOpen, setDocumentDialogOpen] = useState(false);
+  const [eventDialogOpen, setEventDialogOpen] = useState(false);
 
   useEffect(() => {
     const plan = mockCarePlans.find(p => p.id === carePlanId);
@@ -162,6 +165,15 @@ const CarePlanView = () => {
     toast({
       title: "Document uploaded",
       description: `The document "${document.name}" has been uploaded.`
+    });
+  };
+
+  const handleSaveEvent = (event: any) => {
+    console.log("Creating new event:", event);
+    
+    toast({
+      title: "Event recorded",
+      description: `The event "${event.title}" has been recorded.`
     });
   };
 
@@ -405,6 +417,14 @@ const CarePlanView = () => {
                     <TabsContent value="serviceactions" className="space-y-4">
                       <ServiceActionsTab serviceActions={mockPatientData.serviceActions} />
                     </TabsContent>
+                    
+                    <TabsContent value="eventslogs" className="space-y-4">
+                      <EventsLogsTab 
+                        carePlanId={carePlan.id}
+                        patientName={carePlan.patientName}
+                        onAddEvent={() => setEventDialogOpen(true)}
+                      />
+                    </TabsContent>
                   </Tabs>
                 </div>
               </div>
@@ -435,6 +455,15 @@ const CarePlanView = () => {
         open={documentDialogOpen}
         onOpenChange={setDocumentDialogOpen}
         onSave={handleSaveDocument}
+      />
+
+      <AddEventDialog
+        open={eventDialogOpen}
+        onOpenChange={setEventDialogOpen}
+        onSave={handleSaveEvent}
+        carePlanId={carePlan?.id || ""}
+        patientName={carePlan?.patientName || ""}
+        patientId={carePlan?.patientId || ""}
       />
     </div>
   );
