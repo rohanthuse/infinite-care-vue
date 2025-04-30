@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
 import { CarerHeader } from "@/components/carer/CarerHeader";
@@ -17,7 +16,8 @@ import {
   Users,
   Search,
   Filter,
-  Bell
+  Bell,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
