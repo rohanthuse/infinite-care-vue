@@ -20,24 +20,16 @@ const CarerDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <CarerHeader />
+      <CarerHeader onMobileMenuToggle={() => setSidebarOpen(true)} />
       
       <div className="flex flex-1">
-        <CarerSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        {/* Mobile sidebar - only visible on mobile when open */}
+        <div className={`fixed inset-0 z-40 md:hidden ${sidebarOpen ? "block" : "hidden"}`}>
+          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)}></div>
+          <CarerSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        </div>
         
         <main className="flex-1 p-4 md:p-6 overflow-auto">
-          <div className="md:hidden mb-4">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center gap-2"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu className="h-4 w-4" />
-              <span>Menu</span>
-            </Button>
-          </div>
-          
           {/* This renders the nested routes */}
           <Outlet />
         </main>
