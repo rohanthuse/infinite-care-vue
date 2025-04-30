@@ -13,6 +13,7 @@ import { DocumentsTab } from "./tabs/DocumentsTab";
 import { AppointmentsTab } from "./tabs/AppointmentsTab";
 import { BillingTab } from "./tabs/BillingTab";
 import { CarePlansTab } from "./tabs/CarePlansTab";
+import { mockPatientData } from "@/data/mockPatientData";
 
 interface ClientDetailProps {
   client: {
@@ -42,6 +43,71 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
   const [activeTab, setActiveTab] = useState("personal");
 
   if (!client) return null;
+
+  // Create mock billing data
+  const mockBillingData = [
+    {
+      id: "INV-2023-001",
+      date: new Date("2023-11-15"),
+      description: "Weekly Care Services",
+      amount: 450.00,
+      status: "Paid"
+    },
+    {
+      id: "INV-2023-002",
+      date: new Date("2023-12-01"),
+      description: "Monthly Assessment",
+      amount: 150.00,
+      status: "Paid"
+    },
+    {
+      id: "INV-2024-001",
+      date: new Date("2024-01-05"),
+      description: "Equipment Rental",
+      amount: 75.00,
+      status: "Pending"
+    },
+    {
+      id: "INV-2024-002",
+      date: new Date("2024-02-01"),
+      description: "Special Care Services",
+      amount: 250.00,
+      status: "Overdue"
+    }
+  ];
+
+  // Create mock care plans
+  const mockCarePlans = [
+    {
+      id: "CP-2023-001",
+      title: "Rehabilitation Care Plan",
+      startDate: new Date("2023-10-01"),
+      endDate: new Date("2024-01-01"),
+      progress: 75,
+      goals: mockPatientData.goals
+    },
+    {
+      id: "CP-2024-001",
+      title: "Diabetes Management Plan",
+      startDate: new Date("2024-01-15"),
+      endDate: new Date("2024-07-15"),
+      progress: 30,
+      goals: [
+        { 
+          title: "Blood glucose management", 
+          status: "Active", 
+          target: "Maintain levels between 80-130 mg/dL", 
+          notes: "Morning readings occasionally high" 
+        },
+        {
+          title: "Diet compliance",
+          status: "In Progress",
+          target: "Follow diabetic diet plan 100%",
+          notes: "Occasional treats on weekends noted"
+        }
+      ]
+    }
+  ];
 
   const handlePrintClientProfile = () => {
     generatePDF({
@@ -144,23 +210,23 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="notes">
-                  <NotesTab clientId={client.id} />
+                  <NotesTab clientId={client.id} notes={mockPatientData.notes} />
                 </TabsContent>
                 
                 <TabsContent value="documents">
-                  <DocumentsTab clientId={client.id} />
+                  <DocumentsTab clientId={client.id} documents={mockPatientData.documents} />
                 </TabsContent>
                 
                 <TabsContent value="appointments">
-                  <AppointmentsTab clientId={client.id} />
+                  <AppointmentsTab clientId={client.id} appointments={mockPatientData.activities} />
                 </TabsContent>
                 
                 <TabsContent value="billing">
-                  <BillingTab clientId={client.id} />
+                  <BillingTab clientId={client.id} billingItems={mockBillingData} />
                 </TabsContent>
                 
                 <TabsContent value="careplans">
-                  <CarePlansTab clientId={client.id} />
+                  <CarePlansTab clientId={client.id} carePlans={mockCarePlans} />
                 </TabsContent>
               </Tabs>
             </div>
