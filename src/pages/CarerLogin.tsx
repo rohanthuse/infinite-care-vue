@@ -45,6 +45,7 @@ const CarerLogin = () => {
         localStorage.setItem("userType", "carer");
         localStorage.setItem("carerName", "Shashank");
         
+        // Navigate to the carer dashboard after successful login
         navigate("/carer-dashboard"); 
       } else {
         setError("Invalid credentials. Please try again.");
