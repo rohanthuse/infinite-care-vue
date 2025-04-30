@@ -78,11 +78,12 @@ function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/agreement" element={<Agreement />} />
         
-        {/* Branch Routes */}
-        <Route path="/branch-dashboard" element={<BranchDashboard />} />
+        {/* Branch Routes - Updated with proper parameters */}
+        <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
+        <Route path="/branch-dashboard/:id/:branchName/:tab" element={<BranchDashboard />} />
         <Route path="/branch-details/:branchId" element={<BranchDetails />} />
         
-        {/* Feature Routes */}
+        {/* Feature Routes - Can now be accessed directly or via branch dashboard */}
         <Route path="/accounting" element={<Accounting />} />
         <Route path="/attendance" element={<Attendance />} />
         <Route path="/documents" element={<Documents />} />
@@ -90,11 +91,22 @@ function App() {
         <Route path="/form-builder" element={<FormBuilder />} />
         <Route path="/library" element={<Library />} />
         <Route path="/notifications" element={<Notifications />} />
+        <Route path="/notifications/:categoryId" element={<Notifications />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/task-matrix" element={<TaskMatrix />} />
         <Route path="/third-party-access" element={<ThirdPartyAccess />} />
         <Route path="/training-matrix" element={<TrainingMatrix />} />
         <Route path="/careplan/:clientId" element={<CarePlanView />} />
+        
+        {/* Branch-specific feature routes */}
+        <Route path="/branch-dashboard/:id/:branchName/reports" element={<Reports />} />
+        <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
+        <Route path="/branch-dashboard/:id/:branchName/training-matrix" element={<TrainingMatrix />} />
+        <Route path="/branch-dashboard/:id/:branchName/third-party" element={<ThirdPartyAccess />} />
+        <Route path="/branch-dashboard/:id/:branchName/notifications" element={<Notifications />} />
+        <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
+        <Route path="/branch-dashboard/:id/:branchName/accounting" element={<Accounting />} />
+        <Route path="/branch-dashboard/:id/:branchName/form-builder" element={<FormBuilder />} />
         
         {/* Carer Routes */}
         <Route path="/carer-login" element={<CarerLogin />} />
