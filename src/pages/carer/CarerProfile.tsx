@@ -1,8 +1,7 @@
-
 import React, { useState } from "react";
 import { 
   User, Mail, Phone, MapPin, Briefcase, Calendar, CheckCircle, 
-  Shield, Save, X, Edit, Lock, Key, CreditCard
+  Shield, Save, X, Edit, Lock, Key, CreditCard, FileText
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
+import { CarerDocuments } from "@/components/carer/CarerDocuments";
 
 const CarerProfile: React.FC = () => {
   const { toast } = useToast();
@@ -187,7 +187,7 @@ const CarerProfile: React.FC = () => {
         
         <div className="col-span-1 md:col-span-3 space-y-6">
           <Tabs defaultValue="personal" className="w-full">
-            <TabsList className="grid grid-cols-4 mb-6">
+            <TabsList className="grid grid-cols-5 mb-6">
               <TabsTrigger value="personal">
                 <User className="h-4 w-4 mr-2" />
                 Personal Details
@@ -199,6 +199,10 @@ const CarerProfile: React.FC = () => {
               <TabsTrigger value="bank">
                 <CreditCard className="h-4 w-4 mr-2" />
                 Bank Details
+              </TabsTrigger>
+              <TabsTrigger value="documents">
+                <FileText className="h-4 w-4 mr-2" />
+                Documents
               </TabsTrigger>
               <TabsTrigger value="security">
                 <Lock className="h-4 w-4 mr-2" />
@@ -573,6 +577,11 @@ const CarerProfile: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+            
+            {/* Documents Tab */}
+            <TabsContent value="documents">
+              <CarerDocuments />
             </TabsContent>
             
             {/* Security Tab */}
