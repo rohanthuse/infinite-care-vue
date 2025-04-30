@@ -1,5 +1,5 @@
 
-import { Route, Routes } from "react-router-dom";
+import { Route } from "react-router-dom";
 import CarerDashboard from "@/pages/CarerDashboard";
 import CarerOverview from "@/pages/carer/CarerOverview";
 import CarerProfile from "@/pages/carer/CarerProfile";
@@ -19,28 +19,29 @@ import CarerVisitWorkflow from "@/pages/carer/CarerVisitWorkflow";
 /**
  * CarerRoutes component containing all routes related to the carer dashboard
  * This allows us to keep carer routes separate from other parts of the application
+ * 
+ * Note: This component returns an array of Route elements to be used directly within
+ * a parent Routes component, not a Routes component itself.
  */
 const CarerRoutes = () => {
-  return (
-    <Routes>
-      <Route path="/carer-dashboard" element={<CarerDashboard />}>
-        <Route index element={<CarerOverview />} />
-        <Route path="profile" element={<CarerProfile />} />
-        <Route path="schedule" element={<CarerSchedule />} />
-        <Route path="appointments" element={<CarerAppointments />} />
-        <Route path="careplans" element={<CarerCarePlans />} />
-        <Route path="tasks" element={<CarerTasks />} />
-        <Route path="news2" element={<CarerNews2 />} />
-        <Route path="reports" element={<CarerReports />} />
-        <Route path="payments" element={<CarerPayments />} />
-        <Route path="training" element={<CarerTraining />} />
-        <Route path="clients" element={<CarerClients />} />
-        <Route path="attendance" element={<CarerAttendance />} />
-        <Route path="documents" element={<CarerDocuments />} />
-        <Route path="visit/:appointmentId" element={<CarerVisitWorkflow />} />
-      </Route>
-    </Routes>
-  );
+  return [
+    <Route key="carer-dashboard" path="/carer-dashboard" element={<CarerDashboard />}>
+      <Route index element={<CarerOverview />} />
+      <Route path="profile" element={<CarerProfile />} />
+      <Route path="schedule" element={<CarerSchedule />} />
+      <Route path="appointments" element={<CarerAppointments />} />
+      <Route path="careplans" element={<CarerCarePlans />} />
+      <Route path="tasks" element={<CarerTasks />} />
+      <Route path="news2" element={<CarerNews2 />} />
+      <Route path="reports" element={<CarerReports />} />
+      <Route path="payments" element={<CarerPayments />} />
+      <Route path="training" element={<CarerTraining />} />
+      <Route path="clients" element={<CarerClients />} />
+      <Route path="attendance" element={<CarerAttendance />} />
+      <Route path="documents" element={<CarerDocuments />} />
+      <Route path="visit/:appointmentId" element={<CarerVisitWorkflow />} />
+    </Route>
+  ];
 };
 
 export default CarerRoutes;

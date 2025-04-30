@@ -96,7 +96,7 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/third-party" element={<ThirdPartyAccess />} />
             <Route path="/branch-dashboard/:id/:branchName/reports" element={<Reports />} />
             
-            {/* Use the CarerRoutes component for all carer dashboard routes */}
+            {/* Use the CarerRoutes correctly by spreading the array of routes */}
             {CarerRoutes()}
             
             <Route path="*" element={<NotFound />} />
