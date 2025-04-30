@@ -9,9 +9,7 @@ import CarerCarePlans from "@/pages/carer/CarerCarePlans";
 import CarerLogin from "@/pages/CarerLogin";
 import CarerSchedule from "@/pages/carer/CarerSchedule";
 import CarerAppointments from "@/pages/carer/CarerAppointments";
-import CarerCareplans from "@/pages/carer/CarerCareplans";
 import CarerTasks from "@/pages/carer/CarerTasks";
-import CarerNews from "@/pages/carer/CarerNews";
 import CarerReports from "@/pages/carer/CarerReports";
 import CarerPayments from "@/pages/carer/CarerPayments";
 import CarerTraining from "@/pages/carer/CarerTraining";
@@ -34,9 +32,7 @@ function App() {
           <Route path="careplans" element={<CarerCarePlans />} />
           <Route path="schedule" element={<CarerSchedule />} />
           <Route path="appointments" element={<CarerAppointments />} />
-          <Route path="careplans" element={<CarerCareplans />} />
           <Route path="tasks" element={<CarerTasks />} />
-          <Route path="news2" element={<CarerNews />} />
           <Route path="reports" element={<CarerReports />} />
           <Route path="payments" element={<CarerPayments />} />
           <Route path="training" element={<CarerTraining />} />
