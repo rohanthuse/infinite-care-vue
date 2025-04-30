@@ -10,8 +10,8 @@ import {
   CalendarDays,
   FileText,
   ClipboardList,
-  News,
-  Reports, 
+  Newspaper,
+  FileBarChart, 
   Wallet, 
   GraduationCap,
   Users,
@@ -59,12 +59,12 @@ const CarerDashboard: React.FC = () => {
     { 
       name: "News2", 
       path: "/carer-dashboard/news2", 
-      icon: News 
+      icon: Newspaper 
     },
     { 
       name: "Reports", 
       path: "/carer-dashboard/reports", 
-      icon: Reports 
+      icon: FileBarChart 
     },
     { 
       name: "Payments", 
