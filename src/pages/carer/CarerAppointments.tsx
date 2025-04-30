@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { format, addDays, subDays } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import CancelAppointmentDialog from "@/components/carer/CancelAppointmentDialog";
 
-// Mock data for appointments
+// Mock data for appointments with additional status types
 const mockAppointments = [
   {
     id: "1",
@@ -37,6 +39,17 @@ const mockAppointments = [
     type: "Medication Review",
     location: "8 Cedar Lane, Milton Keynes",
     status: "Pending"
+  },
+  {
+    id: "4",
+    clientName: "John Miller",
+    time: "9:00 AM - 10:00 AM",
+    date: addDays(new Date(), 2),
+    type: "Home Care Visit",
+    location: "56 Elm Street, Milton Keynes",
+    status: "pending_cancellation",
+    cancellationReason: "illness",
+    cancellationNotes: "I'm feeling unwell and don't want to risk spreading infection"
   }
 ];
 
@@ -45,6 +58,7 @@ const CarerAppointments: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   
   const formattedDate = format(currentDate, "EEEE, MMMM d, yyyy");
   
@@ -58,6 +72,61 @@ const CarerAppointments: React.FC = () => {
   
   const handleToday = () => {
     setCurrentDate(new Date());
+  };
+
+  const handleCancelRequest = (appointmentId: string, reason: string, notes: string) => {
+    // In a real app, this would send data to the backend
+    const updatedAppointments = mockAppointments.map(appointment => {
+      if (appointment.id === appointmentId) {
+        return {
+          ...appointment,
+          status: "pending_cancellation",
+          cancellationReason: reason,
+          cancellationNotes: notes
+        };
+      }
+      return appointment;
+    });
+    
+    // In a real implementation, we would update the state with the new appointments
+    // For now, just show a success toast
+    toast.success("Cancellation request submitted successfully", {
+      description: "An administrator will review your request shortly."
+    });
+  };
+  
+  const getStatusBadgeStyles = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "confirmed":
+        return "bg-green-100 text-green-800";
+      case "pending":
+        return "bg-amber-100 text-amber-800";
+      case "completed":
+        return "bg-blue-100 text-blue-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
+      case "pending_cancellation":
+        return "bg-purple-100 text-purple-800";
+      case "admin_rejected":
+        return "bg-rose-100 text-rose-800";
+      case "needs_reallocation":
+        return "bg-indigo-100 text-indigo-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusDisplay = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "pending_cancellation":
+        return "Cancellation Pending";
+      case "admin_rejected":
+        return "Cancellation Rejected";
+      case "needs_reallocation":
+        return "Pending Reallocation";
+      default:
+        return status;
+    }
   };
   
   const filteredAppointments = mockAppointments.filter(appointment => {
@@ -76,6 +145,11 @@ const CarerAppointments: React.FC = () => {
     
     return dateMatches && searchMatches && statusMatches;
   });
+
+  const canCancelAppointment = (appointment: any) => {
+    // Can only cancel appointments that are Confirmed or Pending
+    return ["confirmed", "pending"].includes(appointment.status.toLowerCase());
+  };
 
   return (
     <div>
@@ -110,6 +184,7 @@ const CarerAppointments: React.FC = () => {
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="pending_cancellation">Cancellation Pending</SelectItem>
               </SelectContent>
             </Select>
             
@@ -155,8 +230,8 @@ const CarerAppointments: React.FC = () => {
                   </div>
                   
                   <div className="flex flex-col items-end">
-                    <Badge variant={appointment.status === "Confirmed" ? "default" : "secondary"}>
-                      {appointment.status}
+                    <Badge variant="outline" className={getStatusBadgeStyles(appointment.status)}>
+                      {getStatusDisplay(appointment.status)}
                     </Badge>
                   </div>
                 </div>
@@ -187,8 +262,8 @@ const CarerAppointments: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg">{selectedAppointment.clientName}</h3>
-                  <Badge variant={selectedAppointment.status === "Confirmed" ? "default" : "secondary"}>
-                    {selectedAppointment.status}
+                  <Badge variant="outline" className={getStatusBadgeStyles(selectedAppointment.status)}>
+                    {getStatusDisplay(selectedAppointment.status)}
                   </Badge>
                 </div>
               </div>
@@ -212,14 +287,59 @@ const CarerAppointments: React.FC = () => {
                 </div>
               </div>
               
+              {selectedAppointment.status === "pending_cancellation" && (
+                <div className="p-3 bg-purple-50 border border-purple-200 rounded-md">
+                  <p className="text-sm text-purple-800 font-medium">Cancellation Request Pending</p>
+                  <p className="text-xs text-purple-700 mt-1">
+                    Your cancellation request is being reviewed by an administrator.
+                  </p>
+                </div>
+              )}
+              
+              {selectedAppointment.status === "admin_rejected" && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-md">
+                  <p className="text-sm text-rose-800 font-medium">Cancellation Request Rejected</p>
+                  <p className="text-xs text-rose-700 mt-1">
+                    Your cancellation request has been rejected. Please contact your supervisor for more information.
+                  </p>
+                </div>
+              )}
+              
               <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setSelectedAppointment(null)}>Close</Button>
-                <Button>Start Appointment</Button>
+                <Button variant="outline" onClick={() => setSelectedAppointment(null)}>
+                  Close
+                </Button>
+                
+                {selectedAppointment.status === "Confirmed" && (
+                  <Button>Start Appointment</Button>
+                )}
+                
+                {canCancelAppointment(selectedAppointment) && (
+                  <Button 
+                    variant="outline" 
+                    className="border-red-200 text-red-600 hover:bg-red-50"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowCancelDialog(true);
+                    }}
+                  >
+                    Request Cancellation
+                  </Button>
+                )}
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {selectedAppointment && (
+        <CancelAppointmentDialog 
+          open={showCancelDialog}
+          onOpenChange={setShowCancelDialog}
+          appointment={selectedAppointment}
+          onCancelRequest={handleCancelRequest}
+        />
+      )}
     </div>
   );
 };

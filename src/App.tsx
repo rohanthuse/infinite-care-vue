@@ -38,6 +38,7 @@ import Documents from "./pages/Documents";
 import Library from "./pages/Library";
 import ThirdPartyAccess from "./pages/ThirdPartyAccess";
 import Reports from "./pages/Reports";
+import BookingApprovals from "./pages/BookingApprovals";
 
 // Import the CarerRoutes component
 import CarerRoutes from "./routes/CarerRoutes";
@@ -80,6 +81,7 @@ function App() {
               <Route path="/task-matrix" element={<TaskMatrix branchId="main" branchName="Main Branch" />} />
               <Route path="/training-matrix" element={<TrainingMatrix branchId="main" branchName="Main Branch" />} />
               <Route path="/key-parameters" element={<KeyParameters />} />
+              <Route path="/booking-approvals" element={<BookingApprovals />} />
               
               {/* Branch Dashboard Routes */}
               <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
@@ -99,6 +101,7 @@ function App() {
               <Route path="/branch-dashboard/:id/:branchName/library" element={<Library />} />
               <Route path="/branch-dashboard/:id/:branchName/third-party" element={<ThirdPartyAccess />} />
               <Route path="/branch-dashboard/:id/:branchName/reports" element={<Reports />} />
+              <Route path="/branch-dashboard/:id/:branchName/booking-approvals" element={<BookingApprovals />} />
               
               {/* Use the CarerRoutes correctly by spreading the array of routes */}
               {CarerRoutes()}

@@ -11,8 +11,9 @@ import { format, addDays, subDays, addMonths, subMonths, addWeeks, subWeeks, sta
 import { toast } from "sonner";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
+import CancelAppointmentDialog from "@/components/carer/CancelAppointmentDialog";
 
-// Mock data for appointments
+// Mock data for appointments with additional status types
 const mockAppointments = [
   {
     id: "1",
@@ -55,9 +56,11 @@ const mockAppointments = [
     clientName: "Elizabeth Davis",
     time: "2:00 PM - 3:00 PM",
     address: "17 Birch Road, Milton Keynes",
-    status: "Confirmed",
+    status: "pending_cancellation",
     date: addDays(new Date(), 1),
-    type: "Home Care Visit"
+    type: "Home Care Visit",
+    cancellationReason: "scheduling_conflict",
+    cancellationNotes: "I have a doctor's appointment at this time"
   }
 ];
 
@@ -67,6 +70,8 @@ const CarerSchedule: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [view, setView] = useState("day");
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   
   const formattedDate = format(currentDate, "EEEE, MMMM d, yyyy");
   
@@ -99,7 +104,54 @@ const CarerSchedule: React.FC = () => {
   };
   
   const handleViewDetails = (appointmentId: string) => {
-    toast.info(`Viewing details for appointment ${appointmentId}`);
+    const appointment = mockAppointments.find(app => app.id === appointmentId);
+    if (appointment) {
+      setSelectedAppointment(appointment);
+    }
+  };
+
+  const handleCancelRequest = (appointmentId: string, reason: string, notes: string) => {
+    // In a real app, this would send data to the backend
+    toast.success("Cancellation request submitted successfully", {
+      description: "An administrator will review your request shortly."
+    });
+    
+    setShowCancelDialog(false);
+    setSelectedAppointment(null);
+  };
+
+  const getStatusBadgeStyles = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "confirmed":
+        return "bg-green-100 text-green-700";
+      case "pending":
+        return "bg-amber-100 text-amber-700";
+      case "completed":
+        return "bg-blue-100 text-blue-700";
+      case "cancelled":
+        return "bg-red-100 text-red-700";
+      case "pending_cancellation":
+        return "bg-purple-100 text-purple-700";
+      case "admin_rejected":
+        return "bg-rose-100 text-rose-700";
+      case "needs_reallocation":
+        return "bg-indigo-100 text-indigo-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
+  const getStatusDisplay = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "pending_cancellation":
+        return "Cancellation Pending";
+      case "admin_rejected":
+        return "Cancellation Rejected";
+      case "needs_reallocation":
+        return "Pending Reallocation";
+      default:
+        return status;
+    }
   };
 
   // Get week dates for the week view
@@ -165,6 +217,12 @@ const CarerSchedule: React.FC = () => {
     });
   };
 
+  // Check if an appointment can be cancelled
+  const canCancelAppointment = (appointment: any) => {
+    // Can only cancel appointments that are Confirmed or Pending
+    return ["confirmed", "pending"].includes(appointment.status.toLowerCase());
+  };
+
   // Get the first day of the current month
   const renderMonthView = () => {
     return (
@@ -197,8 +255,10 @@ const CarerSchedule: React.FC = () => {
                   {appointments.length > 0 && (
                     <div className="mt-1 flex flex-col items-center">
                       <div className={`h-1.5 w-1.5 rounded-full ${
-                        appointments.some(a => a.status === "Confirmed") 
+                        appointments.some(a => a.status.toLowerCase() === "confirmed") 
                           ? "bg-green-500" 
+                          : appointments.some(a => a.status.toLowerCase() === "pending_cancellation")
+                          ? "bg-purple-500"
                           : "bg-amber-500"
                       }`} />
                       
@@ -252,30 +312,43 @@ const CarerSchedule: React.FC = () => {
                       
                       <div className="flex flex-col gap-2">
                         <div className={`px-3 py-1 rounded-full text-xs font-medium text-center ${
-                          appointment.status === "Confirmed" 
-                            ? "bg-green-100 text-green-700" 
-                            : "bg-amber-100 text-amber-700"
+                          getStatusBadgeStyles(appointment.status)
                         }`}>
-                          {appointment.status}
+                          {getStatusDisplay(appointment.status)}
                         </div>
                         
                         <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            className="w-full"
-                            onClick={() => handleStartVisit(appointment.id)}
-                            disabled={appointment.status !== "Confirmed"}
-                          >
-                            Start Visit
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="w-full"
-                            onClick={() => handleViewDetails(appointment.id)}
-                          >
-                            Details
-                          </Button>
+                          {canCancelAppointment(appointment) && (
+                            <>
+                              <Button 
+                                size="sm" 
+                                className="w-full"
+                                onClick={() => handleStartVisit(appointment.id)}
+                                disabled={appointment.status.toLowerCase() !== "confirmed"}
+                              >
+                                Start Visit
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="w-full"
+                                onClick={() => handleViewDetails(appointment.id)}
+                              >
+                                Details
+                              </Button>
+                            </>
+                          )}
+                          
+                          {appointment.status.toLowerCase() === "pending_cancellation" && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="w-full"
+                              onClick={() => handleViewDetails(appointment.id)}
+                            >
+                              View Status
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -329,8 +402,10 @@ const CarerSchedule: React.FC = () => {
                       <div 
                         key={appointment.id}
                         className={`p-2 rounded text-xs ${
-                          appointment.status === "Confirmed" 
+                          appointment.status.toLowerCase() === "confirmed" 
                             ? "bg-green-100 text-green-700 border-l-2 border-green-600" 
+                            : appointment.status.toLowerCase() === "pending_cancellation"
+                            ? "bg-purple-100 text-purple-700 border-l-2 border-purple-600"
                             : "bg-amber-100 text-amber-700 border-l-2 border-amber-600"
                         } cursor-pointer hover:shadow-sm transition-shadow`}
                         onClick={() => handleViewDetails(appointment.id)}
@@ -348,18 +423,20 @@ const CarerSchedule: React.FC = () => {
                             {appointment.type}
                           </Badge>
                           
-                          <Button 
-                            size="sm"
-                            variant="ghost"
-                            className="h-5 px-1.5 text-[10px]"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleStartVisit(appointment.id);
-                            }}
-                            disabled={appointment.status !== "Confirmed"}
-                          >
-                            Start
-                          </Button>
+                          {canCancelAppointment(appointment) && (
+                            <Button 
+                              size="sm"
+                              variant="ghost"
+                              className="h-5 px-1.5 text-[10px]"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStartVisit(appointment.id);
+                              }}
+                              disabled={appointment.status.toLowerCase() !== "confirmed"}
+                            >
+                              Start
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -416,6 +493,7 @@ const CarerSchedule: React.FC = () => {
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="confirmed">Confirmed</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="pending_cancellation">Cancellation Pending</SelectItem>
               </SelectContent>
             </Select>
             
@@ -464,30 +542,43 @@ const CarerSchedule: React.FC = () => {
                       
                       <div className="flex flex-col gap-2">
                         <div className={`px-3 py-1 rounded-full text-xs font-medium text-center ${
-                          appointment.status === "Confirmed" 
-                            ? "bg-green-100 text-green-700" 
-                            : "bg-amber-100 text-amber-700"
+                          getStatusBadgeStyles(appointment.status)
                         }`}>
-                          {appointment.status}
+                          {getStatusDisplay(appointment.status)}
                         </div>
                         
                         <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            className="w-full"
-                            onClick={() => handleStartVisit(appointment.id)}
-                            disabled={appointment.status !== "Confirmed"}
-                          >
-                            Start Visit
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="w-full"
-                            onClick={() => handleViewDetails(appointment.id)}
-                          >
-                            Details
-                          </Button>
+                          {canCancelAppointment(appointment) && (
+                            <>
+                              <Button 
+                                size="sm" 
+                                className="w-full"
+                                onClick={() => handleStartVisit(appointment.id)}
+                                disabled={appointment.status.toLowerCase() !== "confirmed"}
+                              >
+                                Start Visit
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="w-full"
+                                onClick={() => handleViewDetails(appointment.id)}
+                              >
+                                Details
+                              </Button>
+                            </>
+                          )}
+                          
+                          {appointment.status.toLowerCase() === "pending_cancellation" && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="w-full"
+                              onClick={() => handleViewDetails(appointment.id)}
+                            >
+                              View Status
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -512,6 +603,101 @@ const CarerSchedule: React.FC = () => {
           {renderMonthView()}
         </TabsContent>
       </Tabs>
+      
+      {/* Appointment Detail Dialog */}
+      {selectedAppointment && (
+        <Dialog open={!!selectedAppointment} onOpenChange={(open) => {
+          if (!open) setSelectedAppointment(null);
+        }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Appointment Details</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg font-medium">
+                  {selectedAppointment.clientName.split(" ").map(name => name[0]).join("")}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">{selectedAppointment.clientName}</h3>
+                  <Badge variant="outline" className={getStatusBadgeStyles(selectedAppointment.status)}>
+                    {getStatusDisplay(selectedAppointment.status)}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <CalendarIcon className="h-4 w-4 text-gray-500" />
+                  <span>{format(selectedAppointment.date, "EEEE, MMMM d, yyyy")}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  <span>{selectedAppointment.time}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-gray-500" />
+                  <span>{selectedAppointment.address}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4 text-gray-500" />
+                  <span>Appointment Type: {selectedAppointment.type}</span>
+                </div>
+              </div>
+              
+              {selectedAppointment.status.toLowerCase() === "pending_cancellation" && (
+                <div className="p-3 bg-purple-50 border border-purple-200 rounded-md">
+                  <p className="text-sm text-purple-800 font-medium">Cancellation Request Pending</p>
+                  <p className="text-xs text-purple-700 mt-1">
+                    Your cancellation request is being reviewed by an administrator.
+                  </p>
+                </div>
+              )}
+              
+              {selectedAppointment.status.toLowerCase() === "admin_rejected" && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-md">
+                  <p className="text-sm text-rose-800 font-medium">Cancellation Request Rejected</p>
+                  <p className="text-xs text-rose-700 mt-1">
+                    Your cancellation request has been rejected. Please contact your supervisor for more information.
+                  </p>
+                </div>
+              )}
+              
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setSelectedAppointment(null)}>
+                  Close
+                </Button>
+                
+                {canCancelAppointment(selectedAppointment) && (
+                  <Button 
+                    variant="outline" 
+                    className="border-red-200 text-red-600 hover:bg-red-50"
+                    onClick={() => setShowCancelDialog(true)}
+                  >
+                    Request Cancellation
+                  </Button>
+                )}
+                
+                {selectedAppointment.status.toLowerCase() === "confirmed" && (
+                  <Button onClick={() => handleStartVisit(selectedAppointment.id)}>
+                    Start Visit
+                  </Button>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+      
+      {/* Cancel Appointment Dialog */}
+      {selectedAppointment && (
+        <CancelAppointmentDialog 
+          open={showCancelDialog}
+          onOpenChange={setShowCancelDialog}
+          appointment={selectedAppointment}
+          onCancelRequest={handleCancelRequest}
+        />
+      )}
     </div>
   );
 };
