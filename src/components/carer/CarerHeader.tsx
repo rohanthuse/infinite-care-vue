@@ -1,7 +1,26 @@
 
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Bell, ChevronDown, HelpCircle, LogOut, Menu, Settings, User, Calendar, ClipboardList, Clock, FileText, Home, Users } from "lucide-react";
+import { 
+  Bell, 
+  ChevronDown, 
+  HelpCircle, 
+  LogOut, 
+  Menu, 
+  Settings, 
+  User, 
+  Calendar, 
+  ClipboardList, 
+  Clock, 
+  FileText, 
+  Home, 
+  Users, 
+  Wallet, 
+  GraduationCap,
+  CalendarDays,
+  News,
+  Reports
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -26,29 +45,49 @@ export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMo
       icon: Home 
     },
     { 
-      name: "My Schedule", 
+      name: "Profile", 
+      path: "/carer-dashboard/profile", 
+      icon: User 
+    },
+    { 
+      name: "Booking Calendar", 
       path: "/carer-dashboard/schedule", 
       icon: Calendar 
     },
     { 
-      name: "My Clients", 
-      path: "/carer-dashboard/clients", 
-      icon: Users 
+      name: "Appointments", 
+      path: "/carer-dashboard/appointments", 
+      icon: CalendarDays 
     },
     { 
-      name: "My Tasks", 
+      name: "Careplans", 
+      path: "/carer-dashboard/careplans", 
+      icon: FileText 
+    },
+    { 
+      name: "Tasks", 
       path: "/carer-dashboard/tasks", 
       icon: ClipboardList 
     },
     { 
-      name: "Attendance", 
-      path: "/carer-dashboard/attendance", 
-      icon: Clock 
+      name: "News2", 
+      path: "/carer-dashboard/news2", 
+      icon: News 
     },
     { 
-      name: "Documents", 
-      path: "/carer-dashboard/documents", 
-      icon: FileText 
+      name: "Reports", 
+      path: "/carer-dashboard/reports", 
+      icon: Reports 
+    },
+    { 
+      name: "Payments", 
+      path: "/carer-dashboard/payments", 
+      icon: Wallet 
+    },
+    { 
+      name: "Training", 
+      path: "/carer-dashboard/training", 
+      icon: GraduationCap 
     },
   ];
 
@@ -127,14 +166,14 @@ export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMo
       
       {/* Top Navigation Menu */}
       <div className="bg-white border-b border-gray-200 px-4 hidden md:block">
-        <nav className="flex">
+        <nav className="flex flex-wrap">
           {menuItems.map((item) => (
             <Link
               key={item.name}
               to={item.path}
               className={cn(
                 "flex items-center px-4 py-3 text-sm font-medium border-b-2 transition-colors",
-                location.pathname === item.path
+                location.pathname === item.path || (item.path === "/carer-dashboard" && location.pathname === "/carer-dashboard")
                   ? "border-blue-600 text-blue-700"
                   : "border-transparent text-gray-700 hover:text-blue-600 hover:border-blue-200"
               )}
