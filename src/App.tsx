@@ -1,142 +1,101 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import CarerDashboard from "@/pages/CarerDashboard";
-import CarerProfile from "@/pages/carer/CarerProfile";
-import CarerClients from "@/pages/carer/CarerClients";
-import CarerClientView from "@/pages/carer/CarerClientView";
-import CarerCarePlans from "@/pages/carer/CarerCarePlans";
-import CarerLogin from "@/pages/CarerLogin";
-import CarerSchedule from "@/pages/carer/CarerSchedule";
-import CarerAppointments from "@/pages/carer/CarerAppointments";
-import CarerTasks from "@/pages/carer/CarerTasks";
-import CarerReports from "@/pages/carer/CarerReports";
-import CarerPayments from "@/pages/carer/CarerPayments";
-import CarerTraining from "@/pages/carer/CarerTraining";
-import CarerOverview from "@/pages/carer/CarerOverview";
-import CarerActiveVisit from "@/pages/carer/CarerActiveVisit";
+
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
 import Dashboard from "./pages/Dashboard";
-import BranchAdmins from "./pages/BranchAdmins";
-import Branch from "./pages/Branch";
-import NotFound from "./pages/NotFound";
-
-// Parameter Pages
-import KeyParameters from "./pages/KeyParameters";
 import Services from "./pages/Services";
+import Settings from "./pages/Settings";
 import Hobbies from "./pages/Hobbies";
 import Skills from "./pages/Skills";
 import MedicalMental from "./pages/MedicalMental";
 import TypeOfWork from "./pages/TypeOfWork";
 import BodyMapPoints from "./pages/BodyMapPoints";
-
-// Admin & Branch Pages
-import BranchDashboard from "./pages/BranchDashboard";
+import Branch from "./pages/Branch";
 import BranchDetails from "./pages/BranchDetails";
-import Workflow from "./pages/Workflow";
-import Settings from "./pages/Settings";
+import BranchDashboard from "./pages/BranchDashboard";
+import BranchAdmins from "./pages/BranchAdmins";
 import Agreement from "./pages/Agreement";
-
-// Feature Pages
-import Accounting from "./pages/Accounting";
-import Attendance from "./pages/Attendance";
-import Documents from "./pages/Documents";
-import FormBuilder from "./pages/FormBuilder";
-import Library from "./pages/Library";
+import CarerProfilePage from "./pages/CarerProfilePage";
+import ApplicationDetailsPage from "./components/carers/ApplicationDetailsPage";
+import PostJobPage from "./components/carers/PostJobPage";
 import Notifications from "./pages/Notifications";
-import Reports from "./pages/Reports";
+import { useState } from "react";
+import Workflow from "./pages/Workflow";
+import KeyParameters from "./pages/KeyParameters";
+import CarePlanView from "./pages/CarePlanView";
 import TaskMatrix from "./pages/TaskMatrix";
-import ThirdPartyAccess from "./pages/ThirdPartyAccess";
 import TrainingMatrix from "./pages/TrainingMatrix";
 import EventsLogs from "./pages/EventsLogs";
-import CarePlanView from "./pages/CarePlanView";
+import Attendance from "./pages/Attendance";
+import FormBuilder from "./pages/FormBuilder";
+import Documents from "./pages/Documents";
+import Library from "./pages/Library";
+import ThirdPartyAccess from "./pages/ThirdPartyAccess";
+import Reports from "./pages/Reports";
 
-// Component imports for tabs
-import { CarersTab } from "./components/carers/CarersTab";
+import "./styles/signatures.css"; // Import the signatures styles
 
 function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        
-        {/* Super Admin Routes */}
-        <Route path="/super-admin" element={<SuperAdminLogin />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/branch-admins" element={<BranchAdmins />} />
-        <Route path="/branch" element={<Branch />} />
-        
-        {/* Key Parameter Routes */}
-        <Route path="/key-parameters" element={<KeyParameters />} />
-        <Route path="/services" element={<Services />} />
-        <Route path="/hobbies" element={<Hobbies />} />
-        <Route path="/skills" element={<Skills />} />
-        <Route path="/medical-mental" element={<MedicalMental />} />
-        <Route path="/type-of-work" element={<TypeOfWork />} />
-        <Route path="/body-map-points" element={<BodyMapPoints />} />
-        
-        {/* Admin Setting Routes */}
-        <Route path="/workflow" element={<Workflow />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/agreement" element={<Agreement />} />
-        
-        {/* Branch Routes - Updated with proper parameters */}
-        <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
-        <Route path="/branch-dashboard/:id/:branchName/:tab" element={<BranchDashboard />} />
-        <Route path="/branch-details/:branchId" element={<BranchDetails />} />
-        
-        {/* Feature Routes - Can now be accessed directly or via branch dashboard */}
-        <Route path="/accounting" element={<Accounting />} />
-        <Route path="/attendance" element={<Attendance />} />
-        <Route path="/documents" element={<Documents />} />
-        <Route path="/events-logs" element={<EventsLogs />} />
-        <Route path="/form-builder" element={<FormBuilder />} />
-        <Route path="/library" element={<Library />} />
-        <Route path="/notifications" element={<Notifications />} />
-        <Route path="/notifications/:categoryId" element={<Notifications />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/task-matrix" element={<TaskMatrix />} />
-        <Route path="/third-party-access" element={<ThirdPartyAccess />} />
-        <Route path="/training-matrix" element={<TrainingMatrix />} />
-        <Route path="/careplan/:clientId" element={<CarePlanView />} />
-        
-        {/* Branch-specific feature routes */}
-        <Route path="/branch-dashboard/:id/:branchName/reports" element={<Reports />} />
-        <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
-        <Route path="/branch-dashboard/:id/:branchName/training-matrix" element={<TrainingMatrix />} />
-        <Route path="/branch-dashboard/:id/:branchName/third-party" element={<ThirdPartyAccess />} />
-        <Route path="/branch-dashboard/:id/:branchName/notifications" element={<Notifications />} />
-        <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
-        <Route path="/branch-dashboard/:id/:branchName/accounting" element={<Accounting />} />
-        <Route path="/branch-dashboard/:id/:branchName/form-builder" element={<FormBuilder />} />
-        
-        {/* Added missing routes for carers and care plan viewing in branch dashboard */}
-        <Route path="/branch-dashboard/:id/:branchName/carers" element={<CarersTab branchId=":id" branchName=":branchName" />} />
-        <Route path="/branch-dashboard/:id/:branchName/carer/:carerId" element={<CarerProfile />} />
-        <Route path="/branch-dashboard/:id/:branchName/careplan/:clientId" element={<CarePlanView />} />
-        
-        {/* Carer Routes */}
-        <Route path="/carer-login" element={<CarerLogin />} />
-        
-        <Route path="/carer-dashboard" element={<CarerDashboard />}>
-          <Route index element={<CarerOverview />} />
-          <Route path="profile" element={<CarerProfile />} />
-          <Route path="clients" element={<CarerClients />} />
-          <Route path="client/:clientId" element={<CarerClientView />} />
-          <Route path="careplans" element={<CarerCarePlans />} />
-          <Route path="schedule" element={<CarerSchedule />} />
-          <Route path="appointments" element={<CarerAppointments />} />
-          <Route path="tasks" element={<CarerTasks />} />
-          <Route path="reports" element={<CarerReports />} />
-          <Route path="payments" element={<CarerPayments />} />
-          <Route path="training" element={<CarerTraining />} />
-          <Route path="active-visit/:clientId/:appointmentId" element={<CarerActiveVisit />} />
-        </Route>
+  const [queryClient] = useState(() => new QueryClient());
 
-        {/* 404 Route - must be last */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Router>
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/super-admin" element={<SuperAdminLogin />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/notifications/:categoryId" element={<Notifications />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/agreement" element={<Agreement />} />
+            
+            <Route path="/hobbies" element={<Hobbies />} />
+            <Route path="/skills" element={<Skills />} />
+            <Route path="/medical-mental" element={<MedicalMental />} />
+            <Route path="/type-of-work" element={<TypeOfWork />} />
+            <Route path="/body-map-points" element={<BodyMapPoints />} />
+            <Route path="/branch" element={<Branch />} />
+            <Route path="/branch-details/:id" element={<BranchDetails />} />
+            <Route path="/branch-admins" element={<BranchAdmins />} />
+            <Route path="/workflow" element={<Workflow />} />
+            <Route path="/task-matrix" element={<TaskMatrix branchId="main" branchName="Main Branch" />} />
+            <Route path="/training-matrix" element={<TrainingMatrix branchId="main" branchName="Main Branch" />} />
+            <Route path="/key-parameters" element={<KeyParameters />} />
+            
+            {/* Branch Dashboard Routes */}
+            <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
+            <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
+            
+            {/* Branch specific pages that are not integrated with the branch dashboard */}
+            <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
+            <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
+            <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
+            <Route path="/branch-dashboard/:id/:branchName/care-plan/:carePlanId" element={<CarePlanView />} />
+            
+            <Route path="/branch-dashboard/:id/:branchName/events-logs" element={<EventsLogs />} />
+            <Route path="/branch-dashboard/:id/:branchName/attendance" element={<Attendance />} />
+            <Route path="/branch-dashboard/:id/:branchName/form-builder" element={<FormBuilder />} />
+            <Route path="/branch-dashboard/:id/:branchName/form-builder/:formId" element={<FormBuilder />} />
+            <Route path="/branch-dashboard/:id/:branchName/documents" element={<Documents />} />
+            <Route path="/branch-dashboard/:id/:branchName/library" element={<Library />} />
+            <Route path="/branch-dashboard/:id/:branchName/third-party" element={<ThirdPartyAccess />} />
+            <Route path="/branch-dashboard/:id/:branchName/reports" element={<Reports />} />
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 }
 

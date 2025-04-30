@@ -13,7 +13,6 @@ import { PersonalInfoTab } from "./tabs/PersonalInfoTab";
 import { AboutMeTab } from "./tabs/AboutMeTab";
 import { GoalsTab } from "./tabs/GoalsTab";
 import { DietaryTab } from "./tabs/DietaryTab";
-import { EventsLogsTab } from "./tabs/EventsLogsTab"; // Import the new tab
 
 import { mockPatientData } from "@/data/mockPatientData";
 
@@ -33,7 +32,6 @@ interface CarePlanDetailProps {
   onScheduleFollowUp?: () => void;
   onRecordActivity?: () => void;
   onUploadDocument?: () => void;
-  onAddEvent?: () => void; // Add new prop for adding events
 }
 
 export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ 
@@ -42,8 +40,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   onAddNote,
   onScheduleFollowUp,
   onRecordActivity,
-  onUploadDocument,
-  onAddEvent // Capture new prop
+  onUploadDocument
 }) => {
   const [activeTab, setActiveTab] = useState("personal");
 
@@ -142,30 +139,6 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 
                 <TabsContent value="dietary">
                   <DietaryTab dietaryRequirements={mockPatientData.dietaryRequirements} />
-                </TabsContent>
-
-                <TabsContent value="personalcare">
-                  {/* Personal Care tab content will be implemented */}
-                </TabsContent>
-                
-                <TabsContent value="risk">
-                  {/* Risk tab content will be implemented */}
-                </TabsContent>
-                
-                <TabsContent value="serviceplan">
-                  {/* Service Plan tab content will be implemented */}
-                </TabsContent>
-                
-                <TabsContent value="serviceactions">
-                  {/* Service Actions tab content will be implemented */}
-                </TabsContent>
-
-                <TabsContent value="eventslogs">
-                  <EventsLogsTab 
-                    carePlanId={carePlan.id}
-                    patientName={carePlan.patientName}
-                    onAddEvent={onAddEvent}
-                  />
                 </TabsContent>
               </Tabs>
             </div>

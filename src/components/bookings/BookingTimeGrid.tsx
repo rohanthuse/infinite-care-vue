@@ -6,21 +6,11 @@ import { EntitySelector } from "./EntitySelector";
 import { EntityList } from "./EntityList";
 import { BookingContextMenu } from "./BookingContextMenu";
 import { EditBookingDialog } from "./EditBookingDialog";
-import { Maximize2, Minimize2, Calendar, Clock, AlertCircle } from "lucide-react";
+import { Maximize2, Minimize2, Calendar, Clock } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO } from "date-fns";
 import { DragDropContext, Droppable, DropResult } from "react-beautiful-dnd";
 import { toast } from "sonner";
 import "@/styles/bookings.css";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 export interface Booking {
   id: string;
@@ -65,16 +55,6 @@ interface BookingTimeGridProps {
   onEditBooking?: (booking: Booking) => void;
 }
 
-interface PendingBookingMove {
-  booking: Booking;
-  newDate: string;
-  newStartTime: string;
-  newEndTime: string;
-  originalDate: string;
-  originalStartTime: string;
-  originalEndTime: string;
-}
-
 export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   date,
   bookings,
@@ -94,10 +74,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   const [localBookings, setLocalBookings] = useState<Booking[]>(bookings);
   const [editBookingDialogOpen, setEditBookingDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  
-  // New state for confirmation dialog
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [pendingBookingMove, setPendingBookingMove] = useState<PendingBookingMove | null>(null);
 
   useEffect(() => {
     setLocalBookings(bookings);
@@ -281,7 +257,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     }
   };
 
-  // Modified handleDragEnd to show confirmation dialog
   const handleDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
     
@@ -338,30 +313,9 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
       return;
     }
     
-    // Set pending booking move instead of updating immediately
-    setPendingBookingMove({
-      booking,
-      newDate: dateStr,
-      newStartTime,
-      newEndTime,
-      originalDate: booking.date,
-      originalStartTime: booking.startTime,
-      originalEndTime: booking.endTime
-    });
-    
-    // Open confirmation dialog
-    setConfirmDialogOpen(true);
-  };
-
-  // New function to handle confirmed booking move
-  const handleConfirmBookingMove = () => {
-    if (!pendingBookingMove) return;
-    
-    const { booking, newDate, newStartTime, newEndTime } = pendingBookingMove;
-    
     const updatedBooking = {
       ...booking,
-      date: newDate,
+      date: dateStr,
       startTime: newStartTime,
       endTime: newEndTime
     };
@@ -373,22 +327,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
       onUpdateBooking(updatedBooking);
       toast.success(`Booking updated: ${updatedBooking.startTime} - ${updatedBooking.endTime}`);
     }
-    
-    // Close dialog and clear pending move
-    setConfirmDialogOpen(false);
-    setPendingBookingMove(null);
-  };
-
-  // Function to cancel booking move
-  const handleCancelBookingMove = () => {
-    setConfirmDialogOpen(false);
-    setPendingBookingMove(null);
-  };
-
-  // Format date for display
-  const formatBookingDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return format(date, 'EEE, MMM d, yyyy');
   };
 
   const renderCalendar = (entityType: "client" | "carer", entity: Client | Carer | null) => {
@@ -613,75 +551,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
         carers={carers}
         onUpdateBooking={handleUpdateBooking}
       />
-
-      {/* Confirmation Dialog */}
-      <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Booking Change</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-4">
-              <div className="flex items-center mb-2 text-amber-600">
-                <AlertCircle className="h-5 w-5 mr-2" />
-                <span className="font-medium">Are you sure you want to move this booking?</span>
-              </div>
-              
-              {pendingBookingMove && (
-                <>
-                  <div className="border rounded-md p-3 bg-gray-50">
-                    <h4 className="font-medium mb-2">Booking Details:</h4>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <p className="text-gray-500">Client:</p>
-                        <p className="font-medium">{pendingBookingMove.booking.clientName}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">Carer:</p>
-                        <p className="font-medium">{pendingBookingMove.booking.carerName}</p>
-                      </div>
-                    </div>
-                  </div>
-                
-                  <div className="flex gap-4">
-                    <div className="border rounded-md p-3 flex-1 bg-red-50">
-                      <h4 className="font-medium mb-2 text-red-700">From:</h4>
-                      <div className="text-sm">
-                        <div className="flex items-center mb-1">
-                          <Calendar className="h-4 w-4 mr-1 text-red-600" />
-                          <span>{formatBookingDate(pendingBookingMove.originalDate)}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Clock className="h-4 w-4 mr-1 text-red-600" />
-                          <span>{pendingBookingMove.originalStartTime} - {pendingBookingMove.originalEndTime}</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="border rounded-md p-3 flex-1 bg-green-50">
-                      <h4 className="font-medium mb-2 text-green-700">To:</h4>
-                      <div className="text-sm">
-                        <div className="flex items-center mb-1">
-                          <Calendar className="h-4 w-4 mr-1 text-green-600" />
-                          <span>{formatBookingDate(pendingBookingMove.newDate)}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Clock className="h-4 w-4 mr-1 text-green-600" />
-                          <span>{pendingBookingMove.newStartTime} - {pendingBookingMove.newEndTime}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelBookingMove}>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-blue-600 hover:bg-blue-700" onClick={handleConfirmBookingMove}>
-              Confirm Change
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
