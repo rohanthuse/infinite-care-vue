@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { X, FileEdit, Download } from "lucide-react";
 import { format } from "date-fns";
@@ -13,6 +12,7 @@ import { DocumentsTab } from "./tabs/DocumentsTab";
 import { AppointmentsTab } from "./tabs/AppointmentsTab";
 import { BillingTab } from "./tabs/BillingTab";
 import { CarePlansTab } from "./tabs/CarePlansTab";
+import { EventsLogsTab } from "./tabs/EventsLogsTab";
 import { mockPatientData } from "@/data/mockPatientData";
 
 interface ClientDetailProps {
@@ -31,6 +31,7 @@ interface ClientDetailProps {
   onAddNote?: () => void;
   onScheduleAppointment?: () => void;
   onUploadDocument?: () => void;
+  onAddEvent?: () => void;
 }
 
 export const ClientDetail: React.FC<ClientDetailProps> = ({ 
@@ -38,7 +39,8 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
   onClose,
   onAddNote,
   onScheduleAppointment,
-  onUploadDocument
+  onUploadDocument,
+  onAddEvent
 }) => {
   const [activeTab, setActiveTab] = useState("personal");
 
@@ -227,6 +229,13 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 
                 <TabsContent value="careplans">
                   <CarePlansTab clientId={client.id} carePlans={mockCarePlans} />
+                </TabsContent>
+                
+                <TabsContent value="eventslogs">
+                  <EventsLogsTab 
+                    clientId={client.id}
+                    onAddEvent={onAddEvent}
+                  />
                 </TabsContent>
               </Tabs>
             </div>
