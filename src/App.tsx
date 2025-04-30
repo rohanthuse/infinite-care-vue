@@ -19,6 +19,38 @@ import Index from "./pages/Index";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
 import Dashboard from "./pages/Dashboard";
 import BranchAdmins from "./pages/BranchAdmins";
+import Branch from "./pages/Branch";
+import NotFound from "./pages/NotFound";
+
+// Parameter Pages
+import KeyParameters from "./pages/KeyParameters";
+import Services from "./pages/Services";
+import Hobbies from "./pages/Hobbies";
+import Skills from "./pages/Skills";
+import MedicalMental from "./pages/MedicalMental";
+import TypeOfWork from "./pages/TypeOfWork";
+import BodyMapPoints from "./pages/BodyMapPoints";
+
+// Admin & Branch Pages
+import BranchDashboard from "./pages/BranchDashboard";
+import BranchDetails from "./pages/BranchDetails";
+import Workflow from "./pages/Workflow";
+import Settings from "./pages/Settings";
+import Agreement from "./pages/Agreement";
+
+// Feature Pages
+import Accounting from "./pages/Accounting";
+import Attendance from "./pages/Attendance";
+import Documents from "./pages/Documents";
+import FormBuilder from "./pages/FormBuilder";
+import Library from "./pages/Library";
+import Notifications from "./pages/Notifications";
+import Reports from "./pages/Reports";
+import TaskMatrix from "./pages/TaskMatrix";
+import ThirdPartyAccess from "./pages/ThirdPartyAccess";
+import TrainingMatrix from "./pages/TrainingMatrix";
+import EventsLogs from "./pages/EventsLogs";
+import CarePlanView from "./pages/CarePlanView";
 
 function App() {
   return (
@@ -30,6 +62,39 @@ function App() {
         <Route path="/super-admin" element={<SuperAdminLogin />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/branch-admins" element={<BranchAdmins />} />
+        <Route path="/branch" element={<Branch />} />
+        
+        {/* Key Parameter Routes */}
+        <Route path="/key-parameters" element={<KeyParameters />} />
+        <Route path="/services" element={<Services />} />
+        <Route path="/hobbies" element={<Hobbies />} />
+        <Route path="/skills" element={<Skills />} />
+        <Route path="/medical-mental" element={<MedicalMental />} />
+        <Route path="/type-of-work" element={<TypeOfWork />} />
+        <Route path="/body-map-points" element={<BodyMapPoints />} />
+        
+        {/* Admin Setting Routes */}
+        <Route path="/workflow" element={<Workflow />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/agreement" element={<Agreement />} />
+        
+        {/* Branch Routes */}
+        <Route path="/branch-dashboard" element={<BranchDashboard />} />
+        <Route path="/branch-details/:branchId" element={<BranchDetails />} />
+        
+        {/* Feature Routes */}
+        <Route path="/accounting" element={<Accounting />} />
+        <Route path="/attendance" element={<Attendance />} />
+        <Route path="/documents" element={<Documents />} />
+        <Route path="/events-logs" element={<EventsLogs />} />
+        <Route path="/form-builder" element={<FormBuilder />} />
+        <Route path="/library" element={<Library />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/task-matrix" element={<TaskMatrix />} />
+        <Route path="/third-party-access" element={<ThirdPartyAccess />} />
+        <Route path="/training-matrix" element={<TrainingMatrix />} />
+        <Route path="/careplan/:clientId" element={<CarePlanView />} />
         
         {/* Carer Routes */}
         <Route path="/carer-login" element={<CarerLogin />} />
@@ -48,6 +113,9 @@ function App() {
           <Route path="training" element={<CarerTraining />} />
           <Route path="active-visit/:clientId/:appointmentId" element={<CarerActiveVisit />} />
         </Route>
+
+        {/* 404 Route - must be last */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );
