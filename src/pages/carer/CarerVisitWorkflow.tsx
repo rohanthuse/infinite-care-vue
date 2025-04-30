@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -36,6 +35,8 @@ import { toast } from "sonner";
 import { SignatureCanvas } from "@/components/ui/signature-canvas";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { News2PatientTrend } from "@/components/reports/news2/news2Types";
 
 interface Task {
@@ -82,6 +83,7 @@ interface Event {
 const CarerVisitWorkflow = () => {
   const { appointmentId } = useParams();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("check-in");
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -502,15 +504,27 @@ const CarerVisitWorkflow = () => {
   const totalSteps = 8;
   const progress = (currentStep / totalSteps) * 100;
   
+  // Define tab items for better responsive display
+  const tabItems = [
+    { id: "check-in", label: "Check In", icon: <MapPin className="h-4 w-4" /> },
+    { id: "tasks", label: "Tasks", icon: <Clipboard className="h-4 w-4" /> },
+    { id: "medication", label: "Medication", icon: <Pill className="h-4 w-4" /> },
+    { id: "news2", label: "NEWS2", icon: <Activity className="h-4 w-4" /> },
+    { id: "events", label: "Events", icon: <FileBarChart2 className="h-4 w-4" /> },
+    { id: "notes", label: "Notes", icon: <MessageCircle className="h-4 w-4" /> },
+    { id: "sign-off", label: "Sign-off", icon: <Pencil className="h-4 w-4" /> },
+    { id: "complete", label: "Complete", icon: <CheckCircle2 className="h-4 w-4" /> },
+  ];
+  
   return (
     <div>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-2">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-2">
         <div>
           <h1 className="text-2xl font-bold">Visit Workflow</h1>
           <p className="text-gray-500">Client: {appointment?.clientName}</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 mt-2 sm:mt-0">
           {visitStarted ? (
             <Button 
               variant="outline" 
@@ -541,7 +555,7 @@ const CarerVisitWorkflow = () => {
         </div>
       </div>
       
-      <Card>
+      <Card className="mb-6">
         <CardHeader className="pb-3">
           <div className="flex justify-between items-center">
             <CardTitle>Visit Progress</CardTitle>
@@ -549,36 +563,26 @@ const CarerVisitWorkflow = () => {
           </div>
           <Progress value={progress} className="h-2" />
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 pb-1">
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 mb-4">
-              <TabsTrigger value="check-in" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700">
-                Check In
-              </TabsTrigger>
-              <TabsTrigger value="tasks" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700">
-                Tasks
-              </TabsTrigger>
-              <TabsTrigger value="medication" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700">
-                Medication
-              </TabsTrigger>
-              <TabsTrigger value="news2" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700">
-                NEWS2
-              </TabsTrigger>
-              <TabsTrigger value="events" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700">
-                Events/Logs
-              </TabsTrigger>
-              <TabsTrigger value="notes" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700">
-                Notes
-              </TabsTrigger>
-              <TabsTrigger value="sign-off" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700">
-                Sign-off
-              </TabsTrigger>
-              <TabsTrigger value="complete" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700">
-                Complete
-              </TabsTrigger>
-            </TabsList>
+            <div className="px-4 pt-4 pb-1">
+              <ScrollArea className="pb-4 w-full" orientation="horizontal">
+                <TabsList className="inline-flex h-auto w-max p-1 items-center gap-1">
+                  {tabItems.map((tab) => (
+                    <TabsTrigger 
+                      key={tab.id} 
+                      value={tab.id} 
+                      className="flex items-center gap-1.5 h-10 px-3 md:px-4 py-2 whitespace-nowrap text-sm"
+                    >
+                      {tab.icon}
+                      <span>{tab.label}</span>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </ScrollArea>
+            </div>
             
-            <div className="mt-6">
+            <div className="px-4 py-6">
               <TabsContent value="check-in">
                 <div className="space-y-6">
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
@@ -694,7 +698,7 @@ const CarerVisitWorkflow = () => {
                                 <Label htmlFor={med.id} className="font-medium">
                                   {med.name} - {med.dosage}
                                 </Label>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 text-sm">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 text-sm">
                                   <div>
                                     <span className="text-gray-500">Instructions:</span> {med.instructions}
                                   </div>
@@ -738,7 +742,7 @@ const CarerVisitWorkflow = () => {
                     </div>
                     <p className="text-sm text-gray-500">Record vital signs to calculate NEWS2 score</p>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="respRate">Respiration Rate (breaths/min)</Label>
                         <div className="flex items-center gap-2">
@@ -853,455 +857,4 @@ const CarerVisitWorkflow = () => {
                     {news2Readings.length > 0 && (
                       <div className="mt-6">
                         <h4 className="font-medium mb-3">Recorded Readings</h4>
-                        <div className="border rounded-lg divide-y">
-                          {news2Readings.map((reading, index) => (
-                            <div key={reading.id} className="p-4">
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <div className="font-medium">Reading #{index + 1}</div>
-                                  <div className="text-sm text-gray-500">{reading.dateTime}</div>
-                                </div>
-                                <div className={`w-8 h-8 rounded-full ${getScoreColor(reading.score)} text-white flex items-center justify-center font-bold`}>
-                                  {reading.score}
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mt-3 text-sm">
-                                <div>
-                                  <span className="text-gray-500">Resp Rate:</span> {reading.respRate}/min
-                                </div>
-                                <div>
-                                  <span className="text-gray-500">SpO₂:</span> {reading.spo2}%
-                                </div>
-                                <div>
-                                  <span className="text-gray-500">BP:</span> {reading.systolicBP} mmHg
-                                </div>
-                                <div>
-                                  <span className="text-gray-500">Pulse:</span> {reading.pulse} bpm
-                                </div>
-                                <div>
-                                  <span className="text-gray-500">Consciousness:</span> {reading.consciousness}
-                                </div>
-                                <div>
-                                  <span className="text-gray-500">Temp:</span> {reading.temperature}°C
-                                </div>
-                                <div>
-                                  <span className="text-gray-500">O₂ Therapy:</span> {reading.o2Therapy ? "Yes" : "No"}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="border-t pt-4 flex justify-between">
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePreviousStep}
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={handleNextStep}
-                      disabled={!visitStarted}
-                      className="flex items-center gap-2"
-                    >
-                      Continue to Events/Logs
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="events">
-                <div className="space-y-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">Events & Logs</h3>
-                      <FileBarChart2 className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <p className="text-sm text-gray-500">Record significant events or incidents during this visit</p>
-                    
-                    <div className="border rounded-lg p-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="eventTitle">Event Title*</Label>
-                          <Input 
-                            id="eventTitle" 
-                            value={eventTitle} 
-                            onChange={(e) => setEventTitle(e.target.value)}
-                            placeholder="Brief description of the event"
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="eventCategory">Event Category*</Label>
-                          <Select value={eventCategory} onValueChange={setEventCategory}>
-                            <SelectTrigger id="eventCategory">
-                              <SelectValue placeholder="Select category" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="accident">Accident</SelectItem>
-                              <SelectItem value="incident">Incident</SelectItem>
-                              <SelectItem value="near_miss">Near Miss</SelectItem>
-                              <SelectItem value="medication_error">Medication Error</SelectItem>
-                              <SelectItem value="safeguarding">Safeguarding</SelectItem>
-                              <SelectItem value="complaint">Complaint</SelectItem>
-                              <SelectItem value="compliment">Compliment</SelectItem>
-                              <SelectItem value="review">Review</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="eventLocation">Location (optional)</Label>
-                          <Input 
-                            id="eventLocation" 
-                            value={eventLocation} 
-                            onChange={(e) => setEventLocation(e.target.value)}
-                            placeholder="Where did this occur?"
-                          />
-                        </div>
-                        
-                        <div className="col-span-1 md:col-span-2">
-                          <Label htmlFor="eventDetails">Event Details*</Label>
-                          <Textarea 
-                            id="eventDetails" 
-                            value={eventDetails} 
-                            onChange={(e) => setEventDetails(e.target.value)}
-                            placeholder="Provide detailed information about what occurred..."
-                            className="h-24"
-                          />
-                        </div>
-                      </div>
-                      <div className="mt-4 flex justify-end">
-                        <Button 
-                          onClick={handleAddEvent} 
-                          disabled={!visitStarted}
-                        >
-                          Record Event
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {events.length > 0 && (
-                      <div className="mt-6">
-                        <h4 className="font-medium mb-3">Recorded Events</h4>
-                        <div className="space-y-4">
-                          {events.map((event) => (
-                            <div 
-                              key={event.id} 
-                              className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow"
-                            >
-                              <div className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2 border-b border-gray-100">
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-medium">{event.title}</h3>
-                                  {getCategoryBadge(event.category)}
-                                </div>
-                                
-                                <div className="text-sm text-gray-500">
-                                  {event.date} at {event.time}
-                                </div>
-                              </div>
-                              
-                              <div className="p-4">
-                                <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
-                                  {event.details}
-                                </div>
-                                {event.location && (
-                                  <div className="mt-3 text-sm flex items-center text-gray-500">
-                                    <MapPin className="h-3.5 w-3.5 mr-1" />
-                                    <span>{event.location}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="border-t pt-4 flex justify-between">
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePreviousStep}
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={handleNextStep}
-                      disabled={!visitStarted}
-                      className="flex items-center gap-2"
-                    >
-                      Continue to Notes
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="notes">
-                <div className="space-y-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">Visit Notes</h3>
-                      <MessageCircle className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="visitNotes">Record detailed notes about the visit</Label>
-                        <Textarea 
-                          id="visitNotes" 
-                          placeholder="Enter detailed notes about care provided, observations, and any concerns..."
-                          className="h-32"
-                          value={notes}
-                          onChange={(e) => setNotes(e.target.value)}
-                        />
-                      </div>
-                      
-                      <div className="border-t pt-4">
-                        <Label className="mb-2 block">Add Photo Evidence (Optional)</Label>
-                        <div className="flex items-center gap-3">
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            className="flex items-center gap-2"
-                            onClick={handleCapturePhoto}
-                          >
-                            <Camera className="h-4 w-4" />
-                            <span>Capture Photo</span>
-                          </Button>
-                          {photoAdded && (
-                            <span className="text-sm text-green-600 flex items-center gap-1">
-                              <CheckCircle className="h-4 w-4" />
-                              Photo added
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="border-t pt-4 flex justify-between">
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePreviousStep}
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={handleNextStep}
-                      disabled={!visitStarted}
-                      className="flex items-center gap-2"
-                    >
-                      Continue to Sign-off
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="sign-off">
-                <div className="space-y-6">
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">Client Sign-off</h3>
-                    <p className="text-sm text-gray-500">Please ask the client to sign below to confirm the visit was completed satisfactorily.</p>
-                    
-                    <div className="space-y-2">
-                      <Label>Client Signature</Label>
-                      <div className="border rounded-lg p-4 bg-gray-50">
-                        <SignatureCanvas
-                          onSave={(signature) => setClientSignature(signature)}
-                          width={500}
-                          height={200}
-                        />
-                      </div>
-                      <div className="flex justify-end">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => setClientSignature(null)}
-                          className="text-sm"
-                        >
-                          Clear
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2 pt-4 border-t">
-                      <Label>Carer Signature</Label>
-                      <div className="border rounded-lg p-4 bg-gray-50">
-                        <SignatureCanvas
-                          onSave={(signature) => setCarerSignature(signature)}
-                          width={500}
-                          height={200}
-                        />
-                      </div>
-                      <div className="flex justify-end">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => setCarerSignature(null)}
-                          className="text-sm"
-                        >
-                          Clear
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="border-t pt-4 flex justify-between">
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePreviousStep}
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={handleNextStep}
-                      disabled={!visitStarted || !clientSignature}
-                      className="flex items-center gap-2"
-                    >
-                      Continue to Complete
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="complete">
-                <div className="space-y-6">
-                  <div className="bg-green-50 p-4 rounded-lg border border-green-100 flex items-center gap-3">
-                    <div className="p-2 bg-green-100 rounded-full text-green-700">
-                      <CheckCircle2 className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-green-800">Visit Ready to Complete</h3>
-                      <p className="text-sm text-green-600">All required information has been collected</p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">Visit Summary</h3>
-                    
-                    <div className="divide-y border rounded-lg">
-                      <div className="p-3 bg-gray-50">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <span className="text-sm text-gray-500">Client:</span>
-                            <div className="font-medium">{appointment?.clientName}</div>
-                          </div>
-                          <div>
-                            <span className="text-sm text-gray-500">Date:</span>
-                            <div className="font-medium">{format(appointment?.date, "dd/MM/yyyy")}</div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="p-3">
-                        <span className="text-sm text-gray-500">Duration:</span>
-                        <div className="font-medium">{formatTime(visitTimer)}</div>
-                      </div>
-                      
-                      <div className="p-3">
-                        <span className="text-sm text-gray-500">Tasks Completed:</span>
-                        <div className="mt-1 space-y-1">
-                          {tasks.filter(t => t.completed).map(task => (
-                            <div key={task.id} className="flex items-center gap-2">
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                              <span>{task.name}</span>
-                            </div>
-                          ))}
-                          {tasks.filter(t => t.completed).length === 0 && (
-                            <div className="text-sm italic text-gray-500">No tasks completed</div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {medications.length > 0 && (
-                        <div className="p-3">
-                          <span className="text-sm text-gray-500">Medications Administered:</span>
-                          <div className="mt-1 space-y-1">
-                            {medications.filter(m => m.completed).map(med => (
-                              <div key={med.id} className="flex items-center gap-2">
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                                <span>{med.name} ({med.dosage})</span>
-                              </div>
-                            ))}
-                            {medications.filter(m => m.completed).length === 0 && (
-                              <div className="text-sm italic text-gray-500">No medications administered</div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {news2Readings.length > 0 && (
-                        <div className="p-3">
-                          <span className="text-sm text-gray-500">NEWS2 Readings:</span>
-                          <div className="mt-1 space-y-1">
-                            {news2Readings.map(reading => (
-                              <div key={reading.id} className="flex items-center gap-2">
-                                <div className={`w-5 h-5 rounded-full ${getScoreColor(reading.score)} text-white flex items-center justify-center text-xs font-bold`}>
-                                  {reading.score}
-                                </div>
-                                <span>Recorded at {reading.dateTime}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {events.length > 0 && (
-                        <div className="p-3">
-                          <span className="text-sm text-gray-500">Events Recorded:</span>
-                          <div className="mt-1 space-y-1">
-                            {events.map(event => (
-                              <div key={event.id} className="flex items-start gap-2">
-                                <FileBarChart2 className="h-4 w-4 text-blue-600 mt-0.5" />
-                                <div>
-                                  <span>{event.title} </span>
-                                  {getCategoryBadge(event.category)}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {notes && (
-                        <div className="p-3">
-                          <span className="text-sm text-gray-500">Notes:</span>
-                          <div className="mt-1 text-sm whitespace-pre-wrap">{notes}</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="border-t pt-4 flex justify-between">
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePreviousStep}
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={handleCompleteVisit}
-                      className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
-                    >
-                      Complete Visit
-                      <CheckCircle2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-            </div>
-          </Tabs>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-
-export default CarerVisitWorkflow;
+                        <div className

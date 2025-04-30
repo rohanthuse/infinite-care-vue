@@ -14,4 +14,16 @@
   background-color: white;
   border: 1px solid #e2e8f0;
   border-radius: 0.375rem;
+  width: 100% !important; /* Make canvas responsive */
+  height: auto !important;
+  max-width: 100%;
+  touch-action: none;
+}
+
+/* Improve touch targets for signature canvas buttons */
+@media (max-width: 768px) {
+  .signature-canvas button {
+    min-height: 40px;
+    min-width: 80px;
+  }
 }

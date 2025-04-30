@@ -2,6 +2,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PenLine, Save, X } from "lucide-react";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface SignatureCanvasProps {
   onSave: (signature: string) => void;
@@ -19,6 +20,8 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasContent, setHasContent] = useState(false);
+  const isTablet = useMediaQuery("(max-width: 1023px)");
+  const isMobile = useMediaQuery("(max-width: 640px)");
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -27,20 +30,25 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Set canvas display size
+    // Set canvas display size - adapt to container width
     canvas.style.width = "100%";
     canvas.style.height = `${height}px`;
     
+    // Calculate actual dimensions based on container
+    const rect = canvas.getBoundingClientRect();
+    const actualWidth = rect.width || width;
+    const actualHeight = height;
+    
     // Set actual size in memory (scaled to account for extra pixel density)
     const scale = window.devicePixelRatio;
-    canvas.width = width * scale;
-    canvas.height = height * scale;
+    canvas.width = actualWidth * scale;
+    canvas.height = actualHeight * scale;
     
     // Normalize coordinate system to use CSS pixels
     ctx.scale(scale, scale);
     
-    // Set drawing styles
-    ctx.lineWidth = 2;
+    // Set drawing styles - larger lines for touch devices
+    ctx.lineWidth = isMobile || isTablet ? 3 : 2;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = "#000";
@@ -54,7 +62,7 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
       };
       img.src = initialSignature;
     }
-  }, [width, height, initialSignature]);
+  }, [width, height, initialSignature, isMobile, isTablet]);
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -72,6 +80,9 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
       const rect = canvas.getBoundingClientRect();
       x = e.touches[0].clientX - rect.left;
       y = e.touches[0].clientY - rect.top;
+      
+      // Prevent scrolling on touch devices
+      e.preventDefault();
     } else {
       // Mouse event
       x = e.nativeEvent.offsetX;
@@ -141,8 +152,6 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
       <div className="border rounded-md bg-white relative overflow-hidden">
         <canvas
           ref={canvasRef}
-          width={width}
-          height={height}
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={endDrawing}
@@ -165,7 +174,7 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
         <Button 
           type="button" 
           variant="outline" 
-          size="sm" 
+          size={isMobile ? "default" : "sm"}
           onClick={clearCanvas}
           className="flex items-center gap-1"
         >
@@ -174,7 +183,7 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
         </Button>
         <Button 
           type="button" 
-          size="sm" 
+          size={isMobile ? "default" : "sm"}
           onClick={saveSignature}
           className="flex items-center gap-1"
           disabled={!hasContent}
