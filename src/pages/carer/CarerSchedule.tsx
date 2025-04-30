@@ -1,5 +1,5 @@
+
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MapPin, Search, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,7 +13,6 @@ const mockAppointments = [
   {
     id: "1",
     clientName: "Emma Thompson",
-    clientId: "client1",
     time: "10:30 AM - 11:30 AM",
     address: "15 Oak Street, Milton Keynes",
     status: "Confirmed",
@@ -23,7 +22,6 @@ const mockAppointments = [
   {
     id: "2",
     clientName: "James Wilson",
-    clientId: "client2",
     time: "1:00 PM - 2:30 PM",
     address: "42 Pine Avenue, Milton Keynes",
     status: "Confirmed",
@@ -33,7 +31,6 @@ const mockAppointments = [
   {
     id: "3",
     clientName: "Margaret Brown",
-    clientId: "client3",
     time: "4:00 PM - 5:00 PM",
     address: "8 Cedar Lane, Milton Keynes",
     status: "Pending",
@@ -43,7 +40,6 @@ const mockAppointments = [
   {
     id: "4",
     clientName: "Robert Johnson",
-    clientId: "client4",
     time: "9:30 AM - 10:30 AM",
     address: "23 Maple Drive, Milton Keynes",
     status: "Confirmed",
@@ -53,7 +49,6 @@ const mockAppointments = [
   {
     id: "5",
     clientName: "Elizabeth Davis",
-    clientId: "client5",
     time: "2:00 PM - 3:00 PM",
     address: "17 Birch Road, Milton Keynes",
     status: "Confirmed",
@@ -63,7 +58,6 @@ const mockAppointments = [
 ];
 
 const CarerSchedule: React.FC = () => {
-  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -81,10 +75,6 @@ const CarerSchedule: React.FC = () => {
   
   const handleToday = () => {
     setCurrentDate(new Date());
-  };
-
-  const handleStartVisit = (appointmentId: string, clientId: string) => {
-    navigate(`/carer-dashboard/active-visit/${clientId}/${appointmentId}`);
   };
   
   const filteredAppointments = mockAppointments.filter(appointment => {
@@ -202,13 +192,7 @@ const CarerSchedule: React.FC = () => {
                         </div>
                         
                         <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            className="w-full"
-                            onClick={() => handleStartVisit(appointment.id, appointment.clientId)}
-                          >
-                            Start Visit
-                          </Button>
+                          <Button size="sm" className="w-full">Start Visit</Button>
                           <Button size="sm" variant="outline" className="w-full">Details</Button>
                         </div>
                       </div>

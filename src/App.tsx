@@ -14,7 +14,6 @@ import CarerReports from "@/pages/carer/CarerReports";
 import CarerPayments from "@/pages/carer/CarerPayments";
 import CarerTraining from "@/pages/carer/CarerTraining";
 import CarerOverview from "@/pages/carer/CarerOverview";
-import CarerActiveVisit from "@/pages/carer/CarerActiveVisit";
 import Index from "./pages/Index";
 
 function App() {
@@ -38,7 +37,6 @@ function App() {
           <Route path="reports" element={<CarerReports />} />
           <Route path="payments" element={<CarerPayments />} />
           <Route path="training" element={<CarerTraining />} />
-          <Route path="active-visit/:clientId/:appointmentId" element={<CarerActiveVisit />} />
         </Route>
       </Routes>
     </Router>
