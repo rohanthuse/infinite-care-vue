@@ -102,7 +102,7 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/third-party" element={<ThirdPartyAccess />} />
             <Route path="/branch-dashboard/:id/:branchName/reports" element={<Reports />} />
             
-            {/* Carer Dashboard Routes */}
+            {/* Carer Dashboard Routes - configured as nested routes */}
             <Route path="/carer-dashboard" element={<CarerDashboard />}>
               <Route index element={<CarerOverview />} />
               <Route path="schedule" element={<CarerSchedule />} />

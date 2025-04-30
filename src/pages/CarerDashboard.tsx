@@ -1,16 +1,10 @@
 
 import React, { useState, useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { CarerHeader } from "@/components/carer/CarerHeader";
 import { CarerSidebar } from "@/components/carer/CarerSidebar";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import CarerOverview from "./carer/CarerOverview";
-import CarerSchedule from "./carer/CarerSchedule";
-import CarerClients from "./carer/CarerClients";
-import CarerTasks from "./carer/CarerTasks";
-import CarerAttendance from "./carer/CarerAttendance";
-import CarerDocuments from "./carer/CarerDocuments";
 
 const CarerDashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -44,14 +38,8 @@ const CarerDashboard: React.FC = () => {
             </Button>
           </div>
           
-          <Routes>
-            <Route path="/" element={<CarerOverview />} />
-            <Route path="/schedule" element={<CarerSchedule />} />
-            <Route path="/clients" element={<CarerClients />} />
-            <Route path="/tasks" element={<CarerTasks />} />
-            <Route path="/attendance" element={<CarerAttendance />} />
-            <Route path="/documents" element={<CarerDocuments />} />
-          </Routes>
+          {/* This renders the nested routes */}
+          <Outlet />
         </main>
       </div>
     </div>

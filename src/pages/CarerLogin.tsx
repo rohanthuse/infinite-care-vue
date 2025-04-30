@@ -34,19 +34,21 @@ const CarerLogin = () => {
       // For now, we'll simulate a login with a timeout
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Check against hardcoded carer credentials
+      // Check against hardcoded carer credentials - this is for testing purposes only
+      console.log("Attempting login with:", username, password);
+      
       if (username === "carerShashank" && password === "Shariwaa$3690") {
+        // Set user type in local storage for role-based access
+        localStorage.setItem("userType", "carer");
+        localStorage.setItem("carerName", "Shashank");
+        
         toast({
           title: "Login successful",
           description: "Welcome back, Shashank!",
         });
         
-        // Set user type in local storage for role-based access
-        localStorage.setItem("userType", "carer");
-        localStorage.setItem("carerName", "Shashank");
-        
         // Navigate to the carer dashboard after successful login
-        navigate("/carer-dashboard"); 
+        navigate("/carer-dashboard");
       } else {
         setError("Invalid credentials. Please try again.");
       }
