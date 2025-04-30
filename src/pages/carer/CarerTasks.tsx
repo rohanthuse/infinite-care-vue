@@ -7,7 +7,8 @@ import {
   Plus, 
   Search, 
   AlertCircle,
-  ArrowDownUp
+  ArrowDownUp,
+  User
 } from "lucide-react";
 import { 
   Card, 

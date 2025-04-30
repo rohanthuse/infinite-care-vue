@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MapPin, Search } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MapPin, Search, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
