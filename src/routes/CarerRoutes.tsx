@@ -22,22 +22,24 @@ import CarerVisitWorkflow from "@/pages/carer/CarerVisitWorkflow";
  */
 const CarerRoutes = () => {
   return (
-    <Route path="/carer-dashboard" element={<CarerDashboard />}>
-      <Route index element={<CarerOverview />} />
-      <Route path="profile" element={<CarerProfile />} />
-      <Route path="schedule" element={<CarerSchedule />} />
-      <Route path="appointments" element={<CarerAppointments />} />
-      <Route path="careplans" element={<CarerCarePlans />} />
-      <Route path="tasks" element={<CarerTasks />} />
-      <Route path="news2" element={<CarerNews2 />} />
-      <Route path="reports" element={<CarerReports />} />
-      <Route path="payments" element={<CarerPayments />} />
-      <Route path="training" element={<CarerTraining />} />
-      <Route path="clients" element={<CarerClients />} />
-      <Route path="attendance" element={<CarerAttendance />} />
-      <Route path="documents" element={<CarerDocuments />} />
-      <Route path="visit/:appointmentId" element={<CarerVisitWorkflow />} />
-    </Route>
+    <Routes>
+      <Route path="/carer-dashboard" element={<CarerDashboard />}>
+        <Route index element={<CarerOverview />} />
+        <Route path="profile" element={<CarerProfile />} />
+        <Route path="schedule" element={<CarerSchedule />} />
+        <Route path="appointments" element={<CarerAppointments />} />
+        <Route path="careplans" element={<CarerCarePlans />} />
+        <Route path="tasks" element={<CarerTasks />} />
+        <Route path="news2" element={<CarerNews2 />} />
+        <Route path="reports" element={<CarerReports />} />
+        <Route path="payments" element={<CarerPayments />} />
+        <Route path="training" element={<CarerTraining />} />
+        <Route path="clients" element={<CarerClients />} />
+        <Route path="attendance" element={<CarerAttendance />} />
+        <Route path="documents" element={<CarerDocuments />} />
+        <Route path="visit/:appointmentId" element={<CarerVisitWorkflow />} />
+      </Route>
+    </Routes>
   );
 };
 

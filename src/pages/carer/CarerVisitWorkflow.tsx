@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -464,7 +465,7 @@ const CarerVisitWorkflow = () => {
         if (vital <= 110) return "medium";
         return "normal";
       case "pulse":
-        if (vital <= 40 || vital >= 131) return "high";
+        if (vital <= 40 || pulse >= 131) return "high";
         if (vital >= 111) return "medium";
         if (vital <= 50 || vital >= 91) return "medium";
         return "normal";
@@ -857,4 +858,351 @@ const CarerVisitWorkflow = () => {
                     {news2Readings.length > 0 && (
                       <div className="mt-6">
                         <h4 className="font-medium mb-3">Recorded Readings</h4>
-                        <div className
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resp</th>
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SpO2</th>
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">BP</th>
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pulse</th>
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Consciousness</th>
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Temp</th>
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {news2Readings.map((reading) => (
+                                <tr key={reading.id}>
+                                  <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.dateTime}</td>
+                                  <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.respRate}/min</td>
+                                  <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.spo2}%</td>
+                                  <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.systolicBP} mmHg</td>
+                                  <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.pulse} bpm</td>
+                                  <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.consciousness}</td>
+                                  <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.temperature}°C</td>
+                                  <td className="px-3 py-4 whitespace-nowrap text-sm">
+                                    <span className={`${getScoreColor(reading.score)} text-white px-2 py-1 rounded-full`}>
+                                      {reading.score}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="border-t pt-4 flex justify-between">
+                    <Button 
+                      variant="outline" 
+                      onClick={handlePreviousStep}
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handleNextStep}
+                      disabled={!visitStarted}
+                      className="flex items-center gap-2"
+                    >
+                      Continue to Events
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="events">
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <h3 className="font-semibold">Record Events</h3>
+                    <p className="text-sm text-gray-500">Record any incidents, accidents, or other events that occurred during the visit</p>
+                    
+                    <div className="grid grid-cols-1 gap-4 border rounded-lg p-4">
+                      <div>
+                        <Label htmlFor="eventTitle">Event Title</Label>
+                        <Input 
+                          id="eventTitle" 
+                          value={eventTitle}
+                          onChange={(e) => setEventTitle(e.target.value)}
+                          placeholder="Enter event title"
+                          className="mt-1"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="eventCategory">Event Category</Label>
+                        <Select value={eventCategory} onValueChange={setEventCategory}>
+                          <SelectTrigger id="eventCategory" className="mt-1">
+                            <SelectValue placeholder="Select event category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="accident">Accident</SelectItem>
+                            <SelectItem value="incident">Incident</SelectItem>
+                            <SelectItem value="near_miss">Near Miss</SelectItem>
+                            <SelectItem value="medication_error">Medication Error</SelectItem>
+                            <SelectItem value="safeguarding">Safeguarding</SelectItem>
+                            <SelectItem value="complaint">Complaint</SelectItem>
+                            <SelectItem value="compliment">Compliment</SelectItem>
+                            <SelectItem value="review">Review</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="eventLocation">Location</Label>
+                        <Input 
+                          id="eventLocation" 
+                          value={eventLocation}
+                          onChange={(e) => setEventLocation(e.target.value)}
+                          placeholder={appointment?.address}
+                          className="mt-1"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="eventDetails">Details</Label>
+                        <Textarea 
+                          id="eventDetails" 
+                          value={eventDetails}
+                          onChange={(e) => setEventDetails(e.target.value)}
+                          placeholder="Describe what happened..."
+                          className="h-24 mt-1"
+                        />
+                      </div>
+                      
+                      <div className="flex justify-end">
+                        <Button 
+                          onClick={handleAddEvent}
+                          disabled={!visitStarted}
+                          className="flex items-center gap-2"
+                        >
+                          Record Event
+                          <PanelLeftClose className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {events.length > 0 && (
+                      <div className="mt-6">
+                        <h4 className="font-medium mb-3">Recorded Events</h4>
+                        <div className="divide-y border rounded-lg">
+                          {events.map((event) => (
+                            <div key={event.id} className="p-4">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <h5 className="font-medium">{event.title}</h5>
+                                  {getCategoryBadge(event.category)}
+                                </div>
+                                <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">
+                                  {event.date} {event.time}
+                                </Badge>
+                              </div>
+                              <p className="mt-2 text-sm text-gray-600">{event.details}</p>
+                              <div className="mt-2 text-xs text-gray-500">Location: {event.location}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="border-t pt-4 flex justify-between">
+                    <Button 
+                      variant="outline" 
+                      onClick={handlePreviousStep}
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handleNextStep}
+                      disabled={!visitStarted}
+                      className="flex items-center gap-2"
+                    >
+                      Continue to Notes
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="notes">
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <h3 className="font-semibold">Visit Notes</h3>
+                    <p className="text-sm text-gray-500">Enter any additional notes or observations about this visit</p>
+                    
+                    <div className="border rounded-lg p-4">
+                      <Textarea 
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="Enter visit notes here..."
+                        className="h-36 mt-1"
+                      />
+                      
+                      <div className="mt-4 flex items-center">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleCapturePhoto}
+                          disabled={photoAdded || !visitStarted}
+                          className="flex items-center gap-2"
+                        >
+                          <Camera className="h-4 w-4" />
+                          <span>{photoAdded ? "Photo Added" : "Add Photo"}</span>
+                        </Button>
+                        
+                        {photoAdded && (
+                          <div className="ml-3 text-sm text-green-600 flex items-center">
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Photo attached
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="border-t pt-4 flex justify-between">
+                    <Button 
+                      variant="outline" 
+                      onClick={handlePreviousStep}
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handleNextStep}
+                      disabled={!visitStarted}
+                      className="flex items-center gap-2"
+                    >
+                      Continue to Sign-off
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="sign-off">
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <h3 className="font-semibold">Sign-off</h3>
+                    <p className="text-sm text-gray-500">Please obtain signatures to confirm the visit</p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                      <div className="space-y-3">
+                        <h4 className="font-medium">Client Signature</h4>
+                        <div className="border rounded-lg p-4">
+                          <SignatureCanvas 
+                            onSave={setClientSignature}
+                            height={150}
+                            initialSignature={clientSignature || undefined}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <h4 className="font-medium">Carer Signature</h4>
+                        <div className="border rounded-lg p-4">
+                          <SignatureCanvas 
+                            onSave={setCarerSignature}
+                            height={150}
+                            initialSignature={carerSignature || undefined}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="my-6">
+                      <div className="flex items-center h-5">
+                        <Checkbox id="confirmVisit" />
+                        <Label htmlFor="confirmVisit" className="ml-2 text-sm">
+                          I confirm all information provided is accurate and all required tasks have been completed
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="border-t pt-4 flex justify-between">
+                    <Button 
+                      variant="outline" 
+                      onClick={handlePreviousStep}
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handleNextStep}
+                      disabled={!visitStarted || !clientSignature}
+                      className="flex items-center gap-2"
+                    >
+                      Review and Complete
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="complete">
+                <div className="space-y-6">
+                  <div className="flex flex-col items-center justify-center py-6 text-center">
+                    <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-4">
+                      <CheckCircle2 className="h-8 w-8" />
+                    </div>
+                    <h3 className="text-xl font-bold">Visit Complete</h3>
+                    <p className="text-gray-500 max-w-md mt-2">
+                      You have completed all steps for this visit. Please review all information before finalizing.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-medium text-gray-700">Visit Summary</h4>
+                        <ul className="mt-2 space-y-1 text-sm">
+                          <li><span className="text-gray-500">Client:</span> {appointment?.clientName}</li>
+                          <li><span className="text-gray-500">Address:</span> {appointment?.address}</li>
+                          <li><span className="text-gray-500">Date:</span> {format(appointment?.date, "EEEE, MMMM d, yyyy")}</li>
+                          <li><span className="text-gray-500">Visit Duration:</span> {formatTime(visitTimer)}</li>
+                        </ul>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-medium text-gray-700">Tasks Summary</h4>
+                        <div className="mt-2 text-sm">
+                          <p><span className="text-gray-500">Completed Tasks:</span> {tasks.filter(t => t.completed).length} of {tasks.length}</p>
+                          <p><span className="text-gray-500">Medications Administered:</span> {medications.filter(m => m.completed).length} of {medications.length}</p>
+                          <p><span className="text-gray-500">NEWS2 Readings:</span> {news2Readings.length}</p>
+                          <p><span className="text-gray-500">Events Recorded:</span> {events.length}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="border-t pt-4 flex justify-between">
+                    <Button 
+                      variant="outline" 
+                      onClick={handlePreviousStep}
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handleCompleteVisit}
+                      disabled={!visitStarted}
+                      className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      Finalize Visit
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+            </div>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default CarerVisitWorkflow;
