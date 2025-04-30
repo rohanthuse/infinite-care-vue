@@ -16,12 +16,20 @@ import CarerTraining from "@/pages/carer/CarerTraining";
 import CarerOverview from "@/pages/carer/CarerOverview";
 import CarerActiveVisit from "@/pages/carer/CarerActiveVisit";
 import Index from "./pages/Index";
+import SuperAdminLogin from "./pages/SuperAdminLogin";
+import Dashboard from "./pages/Dashboard";
+import BranchAdmins from "./pages/BranchAdmins";
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Index />} />
+        
+        {/* Super Admin Routes */}
+        <Route path="/super-admin" element={<SuperAdminLogin />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/branch-admins" element={<BranchAdmins />} />
         
         {/* Carer Routes */}
         <Route path="/carer-login" element={<CarerLogin />} />
