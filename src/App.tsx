@@ -13,6 +13,7 @@ import CarerTasks from "@/pages/carer/CarerTasks";
 import CarerReports from "@/pages/carer/CarerReports";
 import CarerPayments from "@/pages/carer/CarerPayments";
 import CarerTraining from "@/pages/carer/CarerTraining";
+import CarerOverview from "@/pages/carer/CarerOverview";
 import Index from "./pages/Index";
 
 function App() {
@@ -25,7 +26,7 @@ function App() {
         <Route path="/carer-login" element={<CarerLogin />} />
         
         <Route path="/carer-dashboard" element={<CarerDashboard />}>
-          <Route index element={<div>Carer Dashboard Home</div>} />
+          <Route index element={<CarerOverview />} />
           <Route path="profile" element={<CarerProfile />} />
           <Route path="clients" element={<CarerClients />} />
           <Route path="client/:clientId" element={<CarerClientView />} />
