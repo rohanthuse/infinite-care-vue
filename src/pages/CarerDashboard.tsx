@@ -1,94 +1,66 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
 import { CarerHeader } from "@/components/carer/CarerHeader";
-import { 
-  Menu, 
-  Home, 
-  User, 
-  Calendar,
-  CalendarDays,
-  FileText,
-  ClipboardList,
-  Newspaper,
-  FileBarChart, 
-  Wallet, 
-  GraduationCap,
-  Users,
-  Search,
-  Filter,
-  Bell,
-  LogOut
-} from "lucide-react";
+import { Menu, Home, User, Calendar, CalendarDays, FileText, ClipboardList, Newspaper, FileBarChart, Wallet, GraduationCap, Users, Search, Filter, Bell, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-
 const CarerDashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
 
   // Menu items for mobile view
-  const menuItems = [
-    { 
-      name: "Dashboard", 
-      path: "/carer-dashboard", 
-      icon: Home 
-    },
-    { 
-      name: "Profile", 
-      path: "/carer-dashboard/profile", 
-      icon: User 
-    },
-    { 
-      name: "Booking Calendar", 
-      path: "/carer-dashboard/schedule", 
-      icon: Calendar 
-    },
-    { 
-      name: "Appointments", 
-      path: "/carer-dashboard/appointments", 
-      icon: CalendarDays 
-    },
-    { 
-      name: "Careplans", 
-      path: "/carer-dashboard/careplans", 
-      icon: FileText 
-    },
-    { 
-      name: "Tasks", 
-      path: "/carer-dashboard/tasks", 
-      icon: ClipboardList 
-    },
-    { 
-      name: "News2", 
-      path: "/carer-dashboard/news2", 
-      icon: Newspaper 
-    },
-    { 
-      name: "Reports", 
-      path: "/carer-dashboard/reports", 
-      icon: FileBarChart 
-    },
-    { 
-      name: "Payments", 
-      path: "/carer-dashboard/payments", 
-      icon: Wallet 
-    },
-    { 
-      name: "Training", 
-      path: "/carer-dashboard/training", 
-      icon: GraduationCap 
-    },
-    { 
-      name: "Clients", 
-      path: "/carer-dashboard/clients", 
-      icon: Users 
-    }
-  ];
+  const menuItems = [{
+    name: "Dashboard",
+    path: "/carer-dashboard",
+    icon: Home
+  }, {
+    name: "Profile",
+    path: "/carer-dashboard/profile",
+    icon: User
+  }, {
+    name: "Booking Calendar",
+    path: "/carer-dashboard/schedule",
+    icon: Calendar
+  }, {
+    name: "Appointments",
+    path: "/carer-dashboard/appointments",
+    icon: CalendarDays
+  }, {
+    name: "Careplans",
+    path: "/carer-dashboard/careplans",
+    icon: FileText
+  }, {
+    name: "Tasks",
+    path: "/carer-dashboard/tasks",
+    icon: ClipboardList
+  }, {
+    name: "News2",
+    path: "/carer-dashboard/news2",
+    icon: Newspaper
+  }, {
+    name: "Reports",
+    path: "/carer-dashboard/reports",
+    icon: FileBarChart
+  }, {
+    name: "Payments",
+    path: "/carer-dashboard/payments",
+    icon: Wallet
+  }, {
+    name: "Training",
+    path: "/carer-dashboard/training",
+    icon: GraduationCap
+  }, {
+    name: "Clients",
+    path: "/carer-dashboard/clients",
+    icon: Users
+  }];
 
   // Check if user is authorized as a carer
   useEffect(() => {
@@ -97,15 +69,12 @@ const CarerDashboard: React.FC = () => {
       navigate("/carer-login");
     }
   }, [navigate]);
-
-  return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+  return <div className="min-h-screen flex flex-col bg-gray-50">
       <CarerHeader onMobileMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
       
       <div className="flex flex-1">
         {/* Mobile menu - will be shown when sidebarOpen is true */}
-        {sidebarOpen && (
-          <div className="fixed inset-0 z-40 md:hidden">
+        {sidebarOpen && <div className="fixed inset-0 z-40 md:hidden">
             <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)}></div>
             <div className="fixed inset-y-0 left-0 w-64 bg-white p-4 overflow-auto">
               <div className="flex justify-between items-center mb-6 border-b pb-4">
@@ -127,95 +96,43 @@ const CarerDashboard: React.FC = () => {
               <div className="mb-6">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input 
-                    placeholder="Search..." 
-                    className="pl-9 pr-4"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
+                  <Input placeholder="Search..." className="pl-9 pr-4" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                 </div>
               </div>
               
               {/* Mobile navigation links */}
               <div className="space-y-1">
-                {menuItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.path}
-                    className={cn(
-                      "flex items-center px-3 py-2 text-sm font-medium rounded-md",
-                      location.pathname === item.path || (item.path === "/carer-dashboard" && location.pathname === "/carer-dashboard")
-                        ? "bg-blue-100 text-blue-700"
-                        : "text-gray-700 hover:bg-gray-100"
-                    )}
-                    onClick={() => setSidebarOpen(false)}
-                  >
+                {menuItems.map(item => <Link key={item.name} to={item.path} className={cn("flex items-center px-3 py-2 text-sm font-medium rounded-md", location.pathname === item.path || item.path === "/carer-dashboard" && location.pathname === "/carer-dashboard" ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100")} onClick={() => setSidebarOpen(false)}>
                     <item.icon className="h-4 w-4 mr-3" />
                     {item.name}
-                  </Link>
-                ))}
+                  </Link>)}
               </div>
 
               {/* Mobile bottom actions */}
               <div className="absolute bottom-0 left-0 right-0 border-t border-gray-100 p-4 bg-white">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start text-gray-700" 
-                  onClick={() => {
-                    localStorage.removeItem("userType");
-                    localStorage.removeItem("carerName");
-                    toast({
-                      title: "Logged out successfully",
-                    });
-                    navigate("/carer-login");
-                  }}
-                >
+                <Button variant="outline" className="w-full justify-start text-gray-700" onClick={() => {
+              localStorage.removeItem("userType");
+              localStorage.removeItem("carerName");
+              toast({
+                title: "Logged out successfully"
+              });
+              navigate("/carer-login");
+            }}>
                   <LogOut className="h-4 w-4 mr-2" />
                   Log out
                 </Button>
               </div>
             </div>
-          </div>
-        )}
+          </div>}
         
         <main className="flex-1 p-4 md:p-6 lg:container lg:mx-auto overflow-auto">
           {/* Page Content */}
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mb-4">
-            <div className="flex items-center justify-between mb-4 md:hidden">
-              <h1 className="text-xl font-semibold">
-                {menuItems.find(item => item.path === location.pathname)?.name || "Dashboard"}
-              </h1>
-              <div className="flex gap-2">
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
-                  <div className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500"></div>
-                </Button>
-                <Button variant="ghost" size="icon">
-                  <Filter className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-            
-            {/* Mobile search */}
-            <div className="mb-6 md:hidden">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input 
-                  placeholder="Search..." 
-                  className="pl-9 pr-4"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
+          
           
           {/* This renders the nested routes */}
           <Outlet />
         </main>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default CarerDashboard;
