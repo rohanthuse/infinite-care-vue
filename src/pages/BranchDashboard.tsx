@@ -34,6 +34,7 @@ import TaskMatrix from "./TaskMatrix";
 import TrainingMatrix from "./TrainingMatrix";
 import AccountingTab from "@/components/accounting/AccountingTab";
 import { FormBuilderTab } from "@/components/form-builder/FormBuilderTab";
+import { ClientDetail } from "@/components/clients/ClientDetail";
 
 interface BranchDashboardProps {
   tab?: string;
@@ -398,6 +399,8 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const [currentPage, setCurrentPage] = useState(1);
   const [addClientDialogOpen, setAddClientDialogOpen] = useState(false);
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<any | null>(null);
+  const [clientDetailOpen, setClientDetailOpen] = useState<boolean>(false);
   const itemsPerPage = 5;
   const displayBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
   const filteredClients = clients.filter(client => {
@@ -529,6 +532,31 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     }
   };
 
+  const handleViewClient = (client: any) => {
+    setSelectedClient(client);
+    setClientDetailOpen(true);
+  };
+
+  const handleCloseClientDetail = () => {
+    setClientDetailOpen(false);
+    setSelectedClient(null);
+  };
+
+  const handleAddNote = () => {
+    console.log("Add note for client:", selectedClient?.id);
+    // Implement note adding functionality
+  };
+
+  const handleScheduleAppointment = () => {
+    console.log("Schedule appointment for client:", selectedClient?.id);
+    setNewBookingDialogOpen(true);
+  };
+
+  const handleUploadDocument = () => {
+    console.log("Upload document for client:", selectedClient?.id);
+    // Implement document upload functionality
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -536,6 +564,16 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
       <AddClientDialog open={addClientDialogOpen} onOpenChange={setAddClientDialogOpen} />
       
       <NewBookingDialog open={newBookingDialogOpen} onOpenChange={setNewBookingDialogOpen} clients={mockClients} carers={mockCarers} onCreateBooking={handleCreateBooking} />
+      
+      {clientDetailOpen && selectedClient && (
+        <ClientDetail 
+          client={selectedClient}
+          onClose={handleCloseClientDetail}
+          onAddNote={handleAddNote}
+          onScheduleAppointment={handleScheduleAppointment}
+          onUploadDocument={handleUploadDocument}
+        />
+      )}
       
       <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full">
         <BranchInfoHeader 
@@ -1022,7 +1060,12 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            onClick={() => handleViewClient(client)}
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8">
