@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -567,19 +566,21 @@ const CarerVisitWorkflow = () => {
         <CardContent className="p-0 pb-1">
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <div className="px-4 pt-4 pb-1">
-              <ScrollArea className="pb-4 w-full" orientation="horizontal">
-                <TabsList className="inline-flex h-auto w-max p-1 items-center gap-1">
-                  {tabItems.map((tab) => (
-                    <TabsTrigger 
-                      key={tab.id} 
-                      value={tab.id} 
-                      className="flex items-center gap-1.5 h-10 px-3 md:px-4 py-2 whitespace-nowrap text-sm"
-                    >
-                      {tab.icon}
-                      <span>{tab.label}</span>
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
+              <ScrollArea className="pb-4 w-full">
+                <div className="inline-flex min-w-full">
+                  <TabsList className="inline-flex h-auto w-max p-1 items-center gap-1">
+                    {tabItems.map((tab) => (
+                      <TabsTrigger 
+                        key={tab.id} 
+                        value={tab.id} 
+                        className="flex items-center gap-1.5 h-10 px-3 md:px-4 py-2 whitespace-nowrap text-sm"
+                      >
+                        {tab.icon}
+                        <span>{tab.label}</span>
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </div>
               </ScrollArea>
             </div>
             
