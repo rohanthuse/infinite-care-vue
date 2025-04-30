@@ -1,4 +1,3 @@
-
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import CarerDashboard from "@/pages/CarerDashboard";
@@ -51,6 +50,9 @@ import ThirdPartyAccess from "./pages/ThirdPartyAccess";
 import TrainingMatrix from "./pages/TrainingMatrix";
 import EventsLogs from "./pages/EventsLogs";
 import CarePlanView from "./pages/CarePlanView";
+
+// Component imports for tabs
+import { CarersTab } from "./components/carers/CarersTab";
 
 function App() {
   return (
@@ -107,6 +109,11 @@ function App() {
         <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
         <Route path="/branch-dashboard/:id/:branchName/accounting" element={<Accounting />} />
         <Route path="/branch-dashboard/:id/:branchName/form-builder" element={<FormBuilder />} />
+        
+        {/* Added missing routes for carers and care plan viewing in branch dashboard */}
+        <Route path="/branch-dashboard/:id/:branchName/carers" element={<CarersTab branchId=":id" branchName=":branchName" />} />
+        <Route path="/branch-dashboard/:id/:branchName/carer/:carerId" element={<CarerProfile />} />
+        <Route path="/branch-dashboard/:id/:branchName/careplan/:clientId" element={<CarePlanView />} />
         
         {/* Carer Routes */}
         <Route path="/carer-login" element={<CarerLogin />} />
