@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
@@ -11,15 +10,14 @@ import {
   User, 
   Calendar, 
   ClipboardList, 
-  Clock, 
   FileText, 
   Home, 
   Users, 
   Wallet, 
   GraduationCap,
   CalendarDays,
-  News,
-  Reports
+  FileBarChart,
+  Newspaper
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -72,12 +70,12 @@ export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMo
     { 
       name: "News2", 
       path: "/carer-dashboard/news2", 
-      icon: News 
+      icon: Newspaper 
     },
     { 
       name: "Reports", 
       path: "/carer-dashboard/reports", 
-      icon: Reports 
+      icon: FileBarChart 
     },
     { 
       name: "Payments", 
