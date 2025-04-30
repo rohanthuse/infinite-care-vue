@@ -19,6 +19,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
+import TaskDetailDialog from "@/components/carer/TaskDetailDialog";
 
 // Mock task data
 const mockTasks = [
@@ -107,20 +109,59 @@ const mockTasks = [
 const CarerTasks: React.FC = () => {
   const [activeTab, setActiveTab] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
+  const [tasks, setTasks] = useState(mockTasks);
+  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const { toast } = useToast();
   
-  const pendingTasks = mockTasks.filter(task => !task.completed && 
+  const pendingTasks = tasks.filter(task => !task.completed && 
     (task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
      (task.client && task.client.toLowerCase().includes(searchQuery.toLowerCase())) ||
      task.category.toLowerCase().includes(searchQuery.toLowerCase())
     )
   );
   
-  const completedTasks = mockTasks.filter(task => task.completed && 
+  const completedTasks = tasks.filter(task => task.completed && 
     (task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
      (task.client && task.client.toLowerCase().includes(searchQuery.toLowerCase())) ||
      task.category.toLowerCase().includes(searchQuery.toLowerCase())
     )
   );
+
+  const handleTaskClick = (task: any) => {
+    setSelectedTask(task);
+    setDetailDialogOpen(true);
+  };
+
+  const handleCompleteTask = (taskId: string) => {
+    setTasks(prev => 
+      prev.map(task => 
+        task.id === taskId 
+          ? { ...task, completed: true } 
+          : task
+      )
+    );
+    setDetailDialogOpen(false);
+    toast({
+      title: "Task completed",
+      description: "The task has been marked as complete.",
+    });
+  };
+
+  const handleSaveTask = (updatedTask: any) => {
+    setTasks(prev => 
+      prev.map(task => 
+        task.id === updatedTask.id 
+          ? updatedTask 
+          : task
+      )
+    );
+    setDetailDialogOpen(false);
+    toast({
+      title: "Task updated",
+      description: "Your changes have been saved.",
+    });
+  };
 
   return (
     <div>
@@ -166,7 +207,7 @@ const CarerTasks: React.FC = () => {
         <TabsContent value="pending" className="mt-0 space-y-4">
           {pendingTasks.length > 0 ? (
             pendingTasks.map((task) => (
-              <Card key={task.id} className="hover:shadow-sm transition-shadow">
+              <Card key={task.id} className="hover:shadow-sm transition-shadow cursor-pointer" onClick={() => handleTaskClick(task)}>
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <div className={`w-5 h-5 rounded-full flex-shrink-0 border mt-1 ${
@@ -216,8 +257,25 @@ const CarerTasks: React.FC = () => {
                       </div>
                       
                       <div className="flex gap-2 mt-3">
-                        <Button size="sm">Complete</Button>
-                        <Button size="sm" variant="outline">Edit</Button>
+                        <Button 
+                          size="sm" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCompleteTask(task.id);
+                          }}
+                        >
+                          Complete
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTaskClick(task);
+                          }}
+                        >
+                          Edit
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -234,7 +292,7 @@ const CarerTasks: React.FC = () => {
         <TabsContent value="completed" className="mt-0 space-y-4">
           {completedTasks.length > 0 ? (
             completedTasks.map((task) => (
-              <Card key={task.id} className="hover:shadow-sm transition-shadow bg-gray-50 opacity-80">
+              <Card key={task.id} className="hover:shadow-sm transition-shadow bg-gray-50 opacity-80 cursor-pointer" onClick={() => handleTaskClick(task)}>
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-5 h-5 rounded-full flex-shrink-0 border mt-1 border-green-300 bg-green-50">
@@ -280,6 +338,16 @@ const CarerTasks: React.FC = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {selectedTask && (
+        <TaskDetailDialog
+          open={detailDialogOpen}
+          onOpenChange={setDetailDialogOpen}
+          task={selectedTask}
+          onComplete={handleCompleteTask}
+          onSave={handleSaveTask}
+        />
+      )}
     </div>
   );
 };

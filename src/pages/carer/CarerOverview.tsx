@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Calendar, 
@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/components/ui/use-toast";
+import TaskDetailDialog from "@/components/carer/TaskDetailDialog";
 
 // Mock data for upcoming appointments
 const upcomingAppointments = [
@@ -39,40 +41,56 @@ const upcomingAppointments = [
 ];
 
 // Mock data for recent tasks
-const recentTasks = [
+const initialTasks = [
   {
     id: "1",
     title: "Medication reminder for Emma Thompson",
+    description: "Remind to take morning medication and record in log",
     dueDate: "Today",
     priority: "High",
-    completed: false
+    completed: false,
+    client: "Emma Thompson",
+    category: "Medication"
   },
   {
     id: "2",
     title: "Update care notes for James Wilson",
+    description: "Complete daily care notes including mobility assessment",
     dueDate: "Today",
     priority: "Medium",
-    completed: true
+    completed: true,
+    client: "James Wilson",
+    category: "Documentation"
   },
   {
     id: "3",
     title: "Submit weekly report",
+    description: "Complete and submit your weekly activity report",
     dueDate: "Tomorrow",
     priority: "Medium",
-    completed: false
+    completed: false,
+    client: null,
+    category: "Admin"
   },
   {
     id: "4",
     title: "Complete training module",
+    description: "Finish the medication administration refresher course",
     dueDate: "Friday",
     priority: "Low",
-    completed: false
+    completed: false,
+    client: null,
+    category: "Training"
   }
 ];
 
 const CarerOverview: React.FC = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const carerName = localStorage.getItem("carerName") || "Carer";
+  const [tasks, setTasks] = useState(initialTasks);
+  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   
   // Get current date and format it
   const today = new Date();
@@ -84,8 +102,8 @@ const CarerOverview: React.FC = () => {
   });
   
   // Calculate task stats
-  const completedTasks = recentTasks.filter(task => task.completed).length;
-  const pendingTasks = recentTasks.length - completedTasks;
+  const completedTasks = tasks.filter(task => task.completed).length;
+  const pendingTasks = tasks.length - completedTasks;
   
   const handleStartVisit = (appointmentId: string) => {
     navigate(`/carer-dashboard/visit/${appointmentId}`);
@@ -94,6 +112,45 @@ const CarerOverview: React.FC = () => {
   const handleViewDetails = (appointmentId: string) => {
     // In a real app, this would navigate to appointment details
     navigate(`/carer-dashboard/appointments?id=${appointmentId}`);
+  };
+
+  const handleTaskClick = (task: any) => {
+    setSelectedTask(task);
+    setDetailDialogOpen(true);
+  };
+
+  const handleTaskNavigate = (taskId: string) => {
+    navigate(`/carer-dashboard/tasks`);
+  };
+
+  const handleCompleteTask = (taskId: string) => {
+    setTasks(prev => 
+      prev.map(task => 
+        task.id === taskId 
+          ? { ...task, completed: true } 
+          : task
+      )
+    );
+    setDetailDialogOpen(false);
+    toast({
+      title: "Task completed",
+      description: "The task has been marked as complete.",
+    });
+  };
+
+  const handleSaveTask = (updatedTask: any) => {
+    setTasks(prev => 
+      prev.map(task => 
+        task.id === updatedTask.id 
+          ? updatedTask 
+          : task
+      )
+    );
+    setDetailDialogOpen(false);
+    toast({
+      title: "Task updated",
+      description: "Your changes have been saved.",
+    });
   };
   
   return (
@@ -248,8 +305,12 @@ const CarerOverview: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {recentTasks.map((task) => (
-                <div key={task.id} className="flex items-center p-2 hover:bg-gray-50 rounded-md transition">
+              {tasks.map((task) => (
+                <div 
+                  key={task.id} 
+                  className="flex items-center p-2 hover:bg-gray-50 rounded-md transition cursor-pointer"
+                  onClick={() => handleTaskClick(task)}
+                >
                   <div className={`w-5 h-5 rounded-full flex items-center justify-center border mr-3 ${
                     task.completed 
                       ? "bg-green-100 border-green-300" 
@@ -274,19 +335,42 @@ const CarerOverview: React.FC = () => {
                       <span className="text-xs text-gray-500 ml-2">Due: {task.dueDate}</span>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm" className="ml-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="ml-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleTaskNavigate(task.id);
+                    }}
+                  >
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
             </div>
             
-            <Button variant="outline" size="sm" className="w-full mt-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full mt-4"
+              onClick={() => navigate("/carer-dashboard/tasks")}
+            >
               Add New Task
             </Button>
           </CardContent>
         </Card>
       </div>
+
+      {selectedTask && (
+        <TaskDetailDialog
+          open={detailDialogOpen}
+          onOpenChange={setDetailDialogOpen}
+          task={selectedTask}
+          onComplete={handleCompleteTask}
+          onSave={handleSaveTask}
+        />
+      )}
     </div>
   );
 };

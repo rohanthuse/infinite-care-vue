@@ -42,6 +42,9 @@ import Reports from "./pages/Reports";
 // Import the CarerRoutes component
 import CarerRoutes from "./routes/CarerRoutes";
 
+// Import the TaskProvider context
+import { TaskProvider } from "./contexts/TaskContext";
+
 import "./styles/signatures.css"; // Import the signatures styles
 
 function App() {
@@ -53,54 +56,56 @@ function App() {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/super-admin" element={<SuperAdminLogin />} />
-            <Route path="/carer-login" element={<CarerLogin />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/notifications/:categoryId" element={<Notifications />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/agreement" element={<Agreement />} />
-            
-            <Route path="/hobbies" element={<Hobbies />} />
-            <Route path="/skills" element={<Skills />} />
-            <Route path="/medical-mental" element={<MedicalMental />} />
-            <Route path="/type-of-work" element={<TypeOfWork />} />
-            <Route path="/body-map-points" element={<BodyMapPoints />} />
-            <Route path="/branch" element={<Branch />} />
-            <Route path="/branch-details/:id" element={<BranchDetails />} />
-            <Route path="/branch-admins" element={<BranchAdmins />} />
-            <Route path="/workflow" element={<Workflow />} />
-            <Route path="/task-matrix" element={<TaskMatrix branchId="main" branchName="Main Branch" />} />
-            <Route path="/training-matrix" element={<TrainingMatrix branchId="main" branchName="Main Branch" />} />
-            <Route path="/key-parameters" element={<KeyParameters />} />
-            
-            {/* Branch Dashboard Routes */}
-            <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
-            <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
-            
-            {/* Branch specific pages that are not integrated with the branch dashboard */}
-            <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
-            <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
-            <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
-            <Route path="/branch-dashboard/:id/:branchName/care-plan/:carePlanId" element={<CarePlanView />} />
-            
-            <Route path="/branch-dashboard/:id/:branchName/events-logs" element={<EventsLogs />} />
-            <Route path="/branch-dashboard/:id/:branchName/attendance" element={<Attendance />} />
-            <Route path="/branch-dashboard/:id/:branchName/form-builder" element={<FormBuilder />} />
-            <Route path="/branch-dashboard/:id/:branchName/form-builder/:formId" element={<FormBuilder />} />
-            <Route path="/branch-dashboard/:id/:branchName/documents" element={<Documents />} />
-            <Route path="/branch-dashboard/:id/:branchName/library" element={<Library />} />
-            <Route path="/branch-dashboard/:id/:branchName/third-party" element={<ThirdPartyAccess />} />
-            <Route path="/branch-dashboard/:id/:branchName/reports" element={<Reports />} />
-            
-            {/* Use the CarerRoutes correctly by spreading the array of routes */}
-            {CarerRoutes()}
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <TaskProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/super-admin" element={<SuperAdminLogin />} />
+              <Route path="/carer-login" element={<CarerLogin />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/notifications/:categoryId" element={<Notifications />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/agreement" element={<Agreement />} />
+              
+              <Route path="/hobbies" element={<Hobbies />} />
+              <Route path="/skills" element={<Skills />} />
+              <Route path="/medical-mental" element={<MedicalMental />} />
+              <Route path="/type-of-work" element={<TypeOfWork />} />
+              <Route path="/body-map-points" element={<BodyMapPoints />} />
+              <Route path="/branch" element={<Branch />} />
+              <Route path="/branch-details/:id" element={<BranchDetails />} />
+              <Route path="/branch-admins" element={<BranchAdmins />} />
+              <Route path="/workflow" element={<Workflow />} />
+              <Route path="/task-matrix" element={<TaskMatrix branchId="main" branchName="Main Branch" />} />
+              <Route path="/training-matrix" element={<TrainingMatrix branchId="main" branchName="Main Branch" />} />
+              <Route path="/key-parameters" element={<KeyParameters />} />
+              
+              {/* Branch Dashboard Routes */}
+              <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
+              <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
+              
+              {/* Branch specific pages that are not integrated with the branch dashboard */}
+              <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
+              <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
+              <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
+              <Route path="/branch-dashboard/:id/:branchName/care-plan/:carePlanId" element={<CarePlanView />} />
+              
+              <Route path="/branch-dashboard/:id/:branchName/events-logs" element={<EventsLogs />} />
+              <Route path="/branch-dashboard/:id/:branchName/attendance" element={<Attendance />} />
+              <Route path="/branch-dashboard/:id/:branchName/form-builder" element={<FormBuilder />} />
+              <Route path="/branch-dashboard/:id/:branchName/form-builder/:formId" element={<FormBuilder />} />
+              <Route path="/branch-dashboard/:id/:branchName/documents" element={<Documents />} />
+              <Route path="/branch-dashboard/:id/:branchName/library" element={<Library />} />
+              <Route path="/branch-dashboard/:id/:branchName/third-party" element={<ThirdPartyAccess />} />
+              <Route path="/branch-dashboard/:id/:branchName/reports" element={<Reports />} />
+              
+              {/* Use the CarerRoutes correctly by spreading the array of routes */}
+              {CarerRoutes()}
+              
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </TaskProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
