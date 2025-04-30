@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
 import { CarerHeader } from "@/components/carer/CarerHeader";
@@ -6,14 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+
 const CarerDashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
 
   // Menu items for mobile view
   const menuItems = [{
@@ -69,6 +69,7 @@ const CarerDashboard: React.FC = () => {
       navigate("/carer-login");
     }
   }, [navigate]);
+  
   return <div className="min-h-screen flex flex-col bg-gray-50">
       <CarerHeader onMobileMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
       
