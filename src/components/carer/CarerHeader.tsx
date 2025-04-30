@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Bell, ChevronDown, HelpCircle, LogOut, Menu, Settings, User, Calendar, ClipboardList, Clock, FileText, Home, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMobileMenuToggle }) => {
-  const navigate = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const carerName = localStorage.getItem("carerName") || "Carer";
   const location = useLocation();
