@@ -15,14 +15,21 @@ import {
   Wallet, 
   GraduationCap,
   Users,
+  Search,
+  Filter,
+  Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 const CarerDashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
 
   // Menu items for mobile view
   const menuItems = [
@@ -101,11 +108,32 @@ const CarerDashboard: React.FC = () => {
           <div className="fixed inset-0 z-40 md:hidden">
             <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)}></div>
             <div className="fixed inset-y-0 left-0 w-64 bg-white p-4 overflow-auto">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Menu</h3>
+              <div className="flex justify-between items-center mb-6 border-b pb-4">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center mr-2">
+                    <User className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium">Med-Infinite</h3>
+                    <p className="text-xs text-gray-500">Carer Portal</p>
+                  </div>
+                </div>
                 <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
                   <Menu className="h-5 w-5" />
                 </Button>
+              </div>
+              
+              {/* Mobile search */}
+              <div className="mb-6">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input 
+                    placeholder="Search..." 
+                    className="pl-9 pr-4"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
               </div>
               
               {/* Mobile navigation links */}
@@ -127,11 +155,61 @@ const CarerDashboard: React.FC = () => {
                   </Link>
                 ))}
               </div>
+
+              {/* Mobile bottom actions */}
+              <div className="absolute bottom-0 left-0 right-0 border-t border-gray-100 p-4 bg-white">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start text-gray-700" 
+                  onClick={() => {
+                    localStorage.removeItem("userType");
+                    localStorage.removeItem("carerName");
+                    toast({
+                      title: "Logged out successfully",
+                    });
+                    navigate("/carer-login");
+                  }}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Log out
+                </Button>
+              </div>
             </div>
           </div>
         )}
         
-        <main className="flex-1 p-4 md:p-6 overflow-auto">
+        <main className="flex-1 p-4 md:p-6 lg:container lg:mx-auto overflow-auto">
+          {/* Page Content */}
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mb-4">
+            <div className="flex items-center justify-between mb-4 md:hidden">
+              <h1 className="text-xl font-semibold">
+                {menuItems.find(item => item.path === location.pathname)?.name || "Dashboard"}
+              </h1>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-5 w-5" />
+                  <div className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500"></div>
+                </Button>
+                <Button variant="ghost" size="icon">
+                  <Filter className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+            
+            {/* Mobile search */}
+            <div className="mb-6 md:hidden">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input 
+                  placeholder="Search..." 
+                  className="pl-9 pr-4"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+          
           {/* This renders the nested routes */}
           <Outlet />
         </main>
