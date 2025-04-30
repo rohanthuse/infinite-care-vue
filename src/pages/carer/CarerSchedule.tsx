@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MapPin, Search, CalendarDays } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +6,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from "@/components/ui/dialog";
 import { format, addDays, subDays, addMonths, subMonths, addWeeks, subWeeks, startOfWeek, endOfWeek, isSameMonth, isSameDay } from "date-fns";
 import { toast } from "sonner";
 import { Calendar } from "@/components/ui/calendar";
