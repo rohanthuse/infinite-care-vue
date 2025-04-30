@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
+import CarerLogin from "./pages/CarerLogin";
 import Dashboard from "./pages/Dashboard";
 import Services from "./pages/Services";
 import Settings from "./pages/Settings";
@@ -40,6 +41,23 @@ import Reports from "./pages/Reports";
 
 import "./styles/signatures.css"; // Import the signatures styles
 
+// Carer Dashboard imports
+import CarerDashboard from "./pages/CarerDashboard";
+import CarerOverview from "./pages/carer/CarerOverview";
+import CarerSchedule from "./pages/carer/CarerSchedule";
+import CarerClients from "./pages/carer/CarerClients";
+import CarerTasks from "./pages/carer/CarerTasks";
+import CarerAttendance from "./pages/carer/CarerAttendance";
+import CarerDocuments from "./pages/carer/CarerDocuments";
+// New carer pages imports
+import CarerProfile from "./pages/carer/CarerProfile";
+import CarerAppointments from "./pages/carer/CarerAppointments";
+import CarerCarePlans from "./pages/carer/CarerCarePlans";
+import CarerNews2 from "./pages/carer/CarerNews2";
+import CarerReports from "./pages/carer/CarerReports";
+import CarerPayments from "./pages/carer/CarerPayments";
+import CarerTraining from "./pages/carer/CarerTraining";
+
 function App() {
   const [queryClient] = useState(() => new QueryClient());
 
@@ -52,6 +70,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/super-admin" element={<SuperAdminLogin />} />
+            <Route path="/carer-login" element={<CarerLogin />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/notifications/:categoryId" element={<Notifications />} />
@@ -90,6 +109,23 @@ function App() {
             <Route path="/branch-dashboard/:id/:branchName/library" element={<Library />} />
             <Route path="/branch-dashboard/:id/:branchName/third-party" element={<ThirdPartyAccess />} />
             <Route path="/branch-dashboard/:id/:branchName/reports" element={<Reports />} />
+            
+            {/* Carer Dashboard Routes - configured as nested routes */}
+            <Route path="/carer-dashboard" element={<CarerDashboard />}>
+              <Route index element={<CarerOverview />} />
+              <Route path="profile" element={<CarerProfile />} />
+              <Route path="schedule" element={<CarerSchedule />} />
+              <Route path="appointments" element={<CarerAppointments />} />
+              <Route path="careplans" element={<CarerCarePlans />} />
+              <Route path="tasks" element={<CarerTasks />} />
+              <Route path="news2" element={<CarerNews2 />} />
+              <Route path="reports" element={<CarerReports />} />
+              <Route path="payments" element={<CarerPayments />} />
+              <Route path="training" element={<CarerTraining />} />
+              <Route path="clients" element={<CarerClients />} />
+              <Route path="attendance" element={<CarerAttendance />} />
+              <Route path="documents" element={<CarerDocuments />} />
+            </Route>
             
             <Route path="*" element={<NotFound />} />
           </Routes>
