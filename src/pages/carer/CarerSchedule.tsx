@@ -1,13 +1,13 @@
 
-import React, { useState, useEffect } from "react";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MapPin, Search, Calendar } from "lucide-react";
+import React, { useState } from "react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MapPin, Search, CalendarDays } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, addDays, subDays, addMonths, subMonths, addWeeks, subWeeks, startOfWeek, endOfWeek, isSameMonth, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from "date-fns";
+import { format, addDays, subDays, addMonths, subMonths, addWeeks, subWeeks, startOfWeek, endOfWeek, isSameMonth, isSameDay } from "date-fns";
 import { toast } from "sonner";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
@@ -219,7 +219,7 @@ const CarerSchedule: React.FC = () => {
           <h3 className="text-base font-medium mb-2">Appointments on {format(currentDate, "MMMM d, yyyy")}</h3>
           {getAppointmentsForDay(currentDate).length === 0 ? (
             <div className="text-center py-6 text-gray-500">
-              <Calendar className="h-8 w-8 mx-auto opacity-50 mb-2" />
+              <CalendarDays className="h-8 w-8 mx-auto opacity-50 mb-2" />
               <p>No appointments scheduled for this day</p>
             </div>
           ) : (
@@ -497,7 +497,7 @@ const CarerSchedule: React.FC = () => {
             ) : (
               <div className="py-12 text-center bg-white border border-gray-200 rounded-lg">
                 <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                  <Calendar className="h-6 w-6 text-gray-500" />
+                  <CalendarDays className="h-6 w-6 text-gray-500" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900">No appointments found</h3>
                 <p className="text-gray-500 mt-2">There are no appointments scheduled for this day.</p>
