@@ -65,7 +65,7 @@ export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMo
       icon: CalendarDays 
     },
     { 
-      name: "Careplans", 
+      name: "Care Plans", 
       path: "/carer-dashboard/careplans", 
       icon: FileText 
     },

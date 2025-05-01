@@ -46,7 +46,7 @@ const CarerDashboard: React.FC = () => {
       icon: CalendarDays 
     },
     { 
-      name: "Careplans", 
+      name: "Care Plans", 
       path: "/carer-dashboard/careplans", 
       icon: FileText 
     },
