@@ -14,6 +14,7 @@ export interface Training {
   score?: number;
   maxScore?: number;
   assignedTo?: string[];
+  expiryDate?: string; // Added expiryDate property
 }
 
 export interface StaffMember {
