@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
 import CarerLogin from "./pages/CarerLogin";
+import ClientLogin from "./pages/ClientLogin";
 import Dashboard from "./pages/Dashboard";
 import Services from "./pages/Services";
 import Settings from "./pages/Settings";
@@ -43,6 +44,9 @@ import BookingApprovals from "./pages/BookingApprovals";
 // Import the CarerRoutes component
 import CarerRoutes from "./routes/CarerRoutes";
 
+// Import the ClientRoutes component
+import ClientRoutes from "./routes/ClientRoutes";
+
 // Import the TaskProvider context
 import { TaskProvider } from "./contexts/TaskContext";
 
@@ -62,6 +66,7 @@ function App() {
               <Route path="/" element={<Index />} />
               <Route path="/super-admin" element={<SuperAdminLogin />} />
               <Route path="/carer-login" element={<CarerLogin />} />
+              <Route path="/client-login" element={<ClientLogin />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/notifications/:categoryId" element={<Notifications />} />
@@ -103,8 +108,11 @@ function App() {
               <Route path="/branch-dashboard/:id/:branchName/reports" element={<Reports />} />
               <Route path="/branch-dashboard/:id/:branchName/booking-approvals" element={<BookingApprovals />} />
               
-              {/* Use the CarerRoutes correctly by spreading the array of routes */}
+              {/* Use the CarerRoutes */}
               {CarerRoutes()}
+              
+              {/* Use the ClientRoutes */}
+              {ClientRoutes()}
               
               <Route path="*" element={<NotFound />} />
             </Routes>

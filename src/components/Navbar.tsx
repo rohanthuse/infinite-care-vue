@@ -32,6 +32,14 @@ const Navbar = () => {
   const handleGetStarted = () => {
     navigate("/super-admin");
   };
+
+  const handleCarerLogin = () => {
+    navigate("/carer-login");
+  };
+
+  const handleClientLogin = () => {
+    navigate("/client-login");
+  };
   
   const navItems = [
     { text: "Home", href: "#hero" },
@@ -67,15 +75,31 @@ const Navbar = () => {
           ))}
         </nav>
 
-        {/* Call to Action Button */}
-        <div className="hidden md:block">
+        {/* Call to Action Buttons */}
+        <div className="hidden md:flex items-center space-x-3">
+          <CustomButton 
+            variant="outline" 
+            size="sm" 
+            className="border-blue-600 text-blue-600 hover:bg-blue-50"
+            onClick={handleClientLogin}
+          >
+            Client Login
+          </CustomButton>
+          <CustomButton 
+            variant="outline" 
+            size="sm" 
+            className="border-blue-600 text-blue-600 hover:bg-blue-50"
+            onClick={handleCarerLogin}
+          >
+            Carer Login
+          </CustomButton>
           <CustomButton 
             variant="pill" 
             size="sm" 
             className="bg-blue-600 hover:bg-blue-700"
             onClick={handleGetStarted}
           >
-            Get Started
+            Admin Login
           </CustomButton>
         </div>
 
@@ -107,12 +131,35 @@ const Navbar = () => {
               {item.text}
             </a>
           ))}
-          <div className="pt-4">
+          <div className="pt-4 space-y-3">
+            <CustomButton 
+              className="w-full"
+              variant="outline"
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                handleClientLogin();
+              }}
+            >
+              Client Login
+            </CustomButton>
+            <CustomButton 
+              className="w-full"
+              variant="outline"
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                handleCarerLogin();
+              }}
+            >
+              Carer Login
+            </CustomButton>
             <CustomButton 
               className="w-full bg-blue-600 hover:bg-blue-700"
-              onClick={handleGetStarted}
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                handleGetStarted();
+              }}
             >
-              Get Started
+              Admin Login
             </CustomButton>
           </div>
         </nav>

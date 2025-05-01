@@ -1,0 +1,45 @@
+
+import { Routes, Route, Navigate } from "react-router-dom";
+import ClientDashboard from "@/pages/ClientDashboard";
+import ClientOverview from "@/pages/client/ClientOverview";
+import ClientAppointments from "@/pages/client/ClientAppointments";
+import ClientCarePlans from "@/pages/client/ClientCarePlans";
+import ClientPayments from "@/pages/client/ClientPayments";
+import ClientDocuments from "@/pages/client/ClientDocuments";
+import ClientProfile from "@/pages/client/ClientProfile";
+
+// Higher-order component to check client authentication
+const RequireClientAuth = ({ children }: { children: React.ReactNode }) => {
+  const isClient = localStorage.getItem("userType") === "client";
+  
+  if (!isClient) {
+    // Redirect to login if not authenticated as client
+    return <Navigate to="/client-login" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+// Client routes definition for use in App.tsx
+const ClientRoutes = () => {
+  return [
+    <Route key="client-dashboard" 
+      path="/client-dashboard" 
+      element={
+        <RequireClientAuth>
+          <ClientDashboard />
+        </RequireClientAuth>
+      }
+    >
+      <Route index element={<ClientOverview />} />
+      <Route path="appointments" element={<ClientAppointments />} />
+      <Route path="care-plans" element={<ClientCarePlans />} />
+      <Route path="payments" element={<ClientPayments />} />
+      <Route path="documents" element={<ClientDocuments />} />
+      <Route path="profile" element={<ClientProfile />} />
+    </Route>,
+    <Route key="client-login" path="/client-login" element={<Navigate to="/client-login" replace />} />
+  ];
+};
+
+export default ClientRoutes;
