@@ -46,12 +46,14 @@ const ClientDashboard = () => {
     }
   }, [location]);
   
-  // Redirect to overview page if no specific page is selected
+  // Fix: Only redirect if directly at /client-dashboard WITHOUT a trailing slash
   useEffect(() => {
-    if (location.pathname === "/client-dashboard") {
+    // Check if we're exactly at /client-dashboard with no children routes
+    if (location.pathname === "/client-dashboard" && location.pathname.split("/").filter(Boolean).length === 1) {
+      // Navigate to the overview page
       navigate("/client-dashboard", { replace: true });
     }
-  }, [location, navigate]);
+  }, []); // Run only once on component mount
   
   // Verify client authentication
   useEffect(() => {
@@ -59,7 +61,7 @@ const ClientDashboard = () => {
     if (userType !== "client") {
       navigate("/client-login", { replace: true });
     }
-  }, [navigate]);
+  }, []); // Run only once on component mount
   
   return (
     <div className="flex flex-col h-screen bg-gray-50">

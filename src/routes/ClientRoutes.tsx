@@ -8,6 +8,7 @@ import ClientPayments from "@/pages/client/ClientPayments";
 import ClientDocuments from "@/pages/client/ClientDocuments";
 import ClientProfile from "@/pages/client/ClientProfile";
 import ClientMessages from "@/pages/client/ClientMessages";
+import { lazy, Suspense } from "react";
 
 // Higher-order component to check client authentication
 const RequireClientAuth = ({ children }: { children: React.ReactNode }) => {
@@ -20,6 +21,9 @@ const RequireClientAuth = ({ children }: { children: React.ReactNode }) => {
   
   return <>{children}</>;
 };
+
+// Use suspense to lazy load non-essential components
+const LoadingFallback = () => <div className="p-4">Loading...</div>;
 
 // Client routes definition for use in App.tsx
 const ClientRoutes = () => {
@@ -37,7 +41,11 @@ const ClientRoutes = () => {
       <Route path="care-plans" element={<ClientCarePlans />} />
       <Route path="payments" element={<ClientPayments />} />
       <Route path="documents" element={<ClientDocuments />} />
-      <Route path="messages" element={<ClientMessages />} />
+      <Route path="messages" element={
+        <Suspense fallback={<LoadingFallback />}>
+          <ClientMessages />
+        </Suspense>
+      } />
       <Route path="profile" element={<ClientProfile />} />
     </Route>,
     <Route key="client-login" path="/client-login" element={<Navigate to="/client-login" replace />} />

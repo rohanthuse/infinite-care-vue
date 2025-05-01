@@ -1,9 +1,15 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect, memo } from "react";
 import { ClientContactSidebar } from "@/components/client/ClientContactSidebar";
 import { ClientMessageList } from "@/components/client/ClientMessageList";
 import { ClientMessageView } from "@/components/client/ClientMessageView";
 import { ClientMessageComposer } from "@/components/client/ClientMessageComposer";
+
+// Memoize components to prevent unnecessary re-renders
+const MemoizedContactSidebar = memo(ClientContactSidebar);
+const MemoizedMessageList = memo(ClientMessageList);
+const MemoizedMessageView = memo(ClientMessageView);
+const MemoizedMessageComposer = memo(ClientMessageComposer);
 
 const ClientMessages = () => {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
@@ -11,6 +17,16 @@ const ClientMessages = () => {
   const [contactType, setContactType] = useState<"all" | "carers" | "admins">("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [showComposer, setShowComposer] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  // Delay initial loading to prevent UI blocking
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoaded(true);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
   
   const handleContactSelect = (contactId: string) => {
     setSelectedContactId(contactId);
@@ -33,12 +49,24 @@ const ClientMessages = () => {
     setShowComposer(false);
   };
   
+  if (!isLoaded) {
+    return <div className="flex items-center justify-center h-full">
+      <div className="animate-pulse flex space-x-4">
+        <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
+        <div className="space-y-2">
+          <div className="h-4 bg-gray-200 rounded w-36"></div>
+          <div className="h-4 bg-gray-200 rounded w-24"></div>
+        </div>
+      </div>
+    </div>;
+  }
+  
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
         {/* Sidebar - Contact list */}
         <div className="w-full md:w-64 border-r border-gray-200 flex flex-col bg-white rounded-l-md shadow-sm">
-          <ClientContactSidebar 
+          <MemoizedContactSidebar 
             onContactSelect={handleContactSelect}
             contactType={contactType}
             onContactTypeChange={setContactType}
@@ -49,7 +77,7 @@ const ClientMessages = () => {
         
         {/* Messages list column */}
         <div className="w-full md:w-80 lg:w-96 border-r border-gray-200 flex flex-col bg-white md:flex">
-          <ClientMessageList 
+          <MemoizedMessageList 
             selectedContactId={selectedContactId}
             selectedMessageId={selectedMessageId}
             onMessageSelect={handleMessageSelect}
@@ -61,13 +89,13 @@ const ClientMessages = () => {
         {/* Message view or composer */}
         <div className="flex-1 bg-white rounded-r-md shadow-sm flex flex-col">
           {showComposer ? (
-            <ClientMessageComposer
+            <MemoizedMessageComposer
               selectedContactId={selectedContactId}
               onClose={() => setShowComposer(false)}
               onSend={handleSendMessage}
             />
           ) : selectedMessageId ? (
-            <ClientMessageView 
+            <MemoizedMessageView 
               messageId={selectedMessageId}
               onReply={handleComposeClick}
             />
