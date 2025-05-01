@@ -523,3 +523,224 @@ export const generateNews2SummaryPDF = (
   const formattedDate = format(new Date(), "yyyy-MM-dd");
   doc.save(`NEWS2_Summary_${formattedDate}.pdf`);
 };
+
+// New function to export a detailed care plan
+export const exportCarePlanPDF = (
+  carePlanData: {
+    id: string;
+    clientName: string;
+    dateCreated: Date;
+    lastUpdated: Date;
+    status: string;
+    type: string;
+  },
+  patientData: any,
+  branchName: string = "Med-Infinite Branch"
+) => {
+  const doc = new jsPDF();
+  
+  // Header section
+  doc.setFontSize(20);
+  doc.setTextColor(0, 83, 156);
+  doc.text("Med-Infinite", 20, 20);
+  
+  doc.setFontSize(16);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Care Plan: ${carePlanData.clientName}`, 20, 30);
+  
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Generated on: ${format(new Date(), "dd MMM yyyy, HH:mm")}`, 20, 40);
+  doc.text(`Branch: ${branchName}`, 20, 45);
+  
+  // Care Plan summary
+  doc.setFontSize(12);
+  doc.setTextColor(0, 0, 0);
+  doc.text("Care Plan Summary", 20, 55);
+  
+  const summaryData = [
+    ["Care Plan ID", carePlanData.id],
+    ["Client Name", carePlanData.clientName],
+    ["Plan Type", carePlanData.type],
+    ["Status", carePlanData.status],
+    ["Date Created", format(new Date(carePlanData.dateCreated), "dd MMM yyyy")],
+    ["Last Updated", format(new Date(carePlanData.lastUpdated), "dd MMM yyyy")],
+  ];
+  
+  autoTable(doc, {
+    startY: 60,
+    theme: "grid",
+    head: [["", ""]],
+    body: summaryData,
+    headStyles: { fillColor: [0, 83, 156], textColor: [255, 255, 255] },
+    styles: { fontSize: 10 },
+    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 40 } }
+  });
+  
+  // Add Personal Information section if available
+  if (patientData.personalInfo) {
+    const finalY1 = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(12);
+    doc.text("Personal Information", 20, finalY1);
+    
+    const personalInfoData = [
+      ["Gender", patientData.personalInfo.gender || "Not specified"],
+      ["Date of Birth", patientData.personalInfo.dob ? format(new Date(patientData.personalInfo.dob), "dd MMM yyyy") : "Not specified"],
+      ["NHS Number", patientData.personalInfo.nhsNumber || "Not specified"],
+      ["Primary Contact", patientData.personalInfo.primaryContact || "Not specified"],
+      ["Address", patientData.personalInfo.address || "Not specified"],
+    ];
+    
+    autoTable(doc, {
+      startY: finalY1 + 5,
+      theme: "grid",
+      head: [["", ""]],
+      body: personalInfoData,
+      headStyles: { fillColor: [0, 83, 156], textColor: [255, 255, 255] },
+      styles: { fontSize: 10 },
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 40 } }
+    });
+  }
+  
+  // Add Goals section
+  if (patientData.goals && patientData.goals.length > 0) {
+    const finalY2 = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(12);
+    doc.text("Care Goals", 20, finalY2);
+    
+    const goalsData = patientData.goals.map(goal => [
+      goal.title,
+      goal.status,
+      goal.target,
+      goal.notes
+    ]);
+    
+    autoTable(doc, {
+      startY: finalY2 + 5,
+      theme: "grid",
+      head: [["Goal", "Status", "Target", "Notes"]],
+      body: goalsData,
+      headStyles: { fillColor: [0, 83, 156], textColor: [255, 255, 255] },
+      styles: { fontSize: 9 },
+      columnStyles: { 
+        0: { cellWidth: 40 },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 40 },
+        3: { cellWidth: 80 }
+      }
+    });
+  }
+  
+  // Add Activities section
+  if (patientData.activities && patientData.activities.length > 0) {
+    // Check if we need a new page
+    if ((doc as any).lastAutoTable.finalY > 200) {
+      doc.addPage();
+    }
+    
+    const finalY3 = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(12);
+    doc.text("Activities", 20, finalY3);
+    
+    const activitiesData = patientData.activities.map(activity => [
+      activity.name,
+      activity.date ? format(new Date(activity.date), "dd MMM yyyy") : "Not scheduled",
+      activity.status,
+      activity.notes || "No notes"
+    ]);
+    
+    autoTable(doc, {
+      startY: finalY3 + 5,
+      theme: "grid",
+      head: [["Activity", "Date", "Status", "Notes"]],
+      body: activitiesData,
+      headStyles: { fillColor: [0, 83, 156], textColor: [255, 255, 255] },
+      styles: { fontSize: 9 },
+      columnStyles: {
+        0: { cellWidth: 40 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 30 },
+        3: { cellWidth: 85 }
+      }
+    });
+  }
+  
+  // Add Notes section
+  if (patientData.notes && patientData.notes.length > 0) {
+    // Check if we need a new page
+    if ((doc as any).lastAutoTable.finalY > 200) {
+      doc.addPage();
+    }
+    
+    const finalY4 = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(12);
+    doc.text("Care Notes", 20, finalY4);
+    
+    const notesData = patientData.notes.map(note => [
+      format(new Date(note.date), "dd MMM yyyy"),
+      note.author,
+      note.content
+    ]);
+    
+    autoTable(doc, {
+      startY: finalY4 + 5,
+      theme: "grid",
+      head: [["Date", "Author", "Note"]],
+      body: notesData,
+      headStyles: { fillColor: [0, 83, 156], textColor: [255, 255, 255] },
+      styles: { fontSize: 9 },
+      columnStyles: {
+        0: { cellWidth: 30 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 115 }
+      }
+    });
+  }
+  
+  // Add Dietary Requirements section if available
+  if (patientData.dietaryRequirements) {
+    // Check if we need a new page
+    if ((doc as any).lastAutoTable.finalY > 200) {
+      doc.addPage();
+    }
+    
+    const finalY5 = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(12);
+    doc.text("Dietary Requirements", 20, finalY5);
+    
+    const dietaryData = [
+      ["Allergies", patientData.dietaryRequirements.allergies || "None specified"],
+      ["Food Preferences", patientData.dietaryRequirements.preferences || "None specified"],
+      ["Restrictions", patientData.dietaryRequirements.restrictions || "None specified"],
+      ["Special Needs", patientData.dietaryRequirements.specialNeeds || "None specified"]
+    ];
+    
+    autoTable(doc, {
+      startY: finalY5 + 5,
+      theme: "grid",
+      head: [["Category", "Details"]],
+      body: dietaryData,
+      headStyles: { fillColor: [0, 83, 156], textColor: [255, 255, 255] },
+      styles: { fontSize: 10 },
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 40 } }
+    });
+  }
+  
+  // Add footer with pagination
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text(
+      `Page ${i} of ${pageCount} - Med-Infinite Confidential - Care Plan for ${carePlanData.clientName}`,
+      doc.internal.pageSize.getWidth() / 2,
+      doc.internal.pageSize.getHeight() - 10,
+      { align: "center" }
+    );
+  }
+  
+  // Save the PDF with client name and date
+  const formattedDate = format(new Date(), "yyyy-MM-dd");
+  doc.save(`Care_Plan_${carePlanData.clientName.replace(/\s+/g, "_")}_${formattedDate}.pdf`);
+};

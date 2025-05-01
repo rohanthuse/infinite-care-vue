@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { X, FileEdit, Download, PenLine, MessageCircle, Clock, Activity, FileBarChart2 } from "lucide-react";
 import { format } from "date-fns";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { generatePDF } from "@/utils/pdfGenerator";
+import { generatePDF, exportCarePlanPDF } from "@/utils/pdfGenerator";
 
 import { CarerCarePlanSidebar } from "./CarerCarePlanSidebar";
 import { CarerCarePlanTabBar } from "./CarerCarePlanTabBar";
@@ -28,6 +29,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { AddEventDialog } from "@/components/care/dialogs/AddEventDialog";
+import { UpdateCarePlanDialog, CarePlanUpdateData } from "./UpdateCarePlanDialog";
 
 interface CarerCarePlanDetailProps {
   carePlan: {
@@ -62,6 +64,8 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
   const [showAddNoteDialog, setShowAddNoteDialog] = useState(false);
   const [showAddActivityDialog, setShowAddActivityDialog] = useState(false);
   const [showAddEventDialog, setShowAddEventDialog] = useState(false);
+  const [showUpdateCarePlanDialog, setShowUpdateCarePlanDialog] = useState(false);
+  const [patientDataState, setPatientDataState] = useState(mockPatientData);
 
   // Form for adding notes
   const noteForm = useForm<z.infer<typeof noteFormSchema>>({
@@ -71,19 +75,74 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
     },
   });
 
-  const handlePrintCarePlan = () => {
-    generatePDF({
-      id: parseInt(carePlan.id),
-      title: `Care Plan for ${carePlan.clientName}`,
-      date: format(carePlan.lastUpdated, 'yyyy-MM-dd'),
-      status: carePlan.status,
-      signedBy: "Carer"
-    });
+  const handleExportCarePlan = () => {
+    // Use the enhanced export function instead of the simple generatePDF
+    try {
+      exportCarePlanPDF(
+        carePlan, 
+        patientDataState,
+        "Med-Infinite"
+      );
+      toast.success("Care plan exported successfully");
+    } catch (error) {
+      console.error("Error exporting care plan:", error);
+      toast.error("Failed to export care plan");
+    }
+  };
+
+  const handleUpdateCarePlan = (values: CarePlanUpdateData) => {
+    console.log("Updating care plan with data:", values);
+    
+    // Create a deep copy of the current patient data to modify
+    const updatedPatientData = JSON.parse(JSON.stringify(patientDataState));
+    
+    // Update goals if provided
+    if (values.goals) {
+      values.goals.forEach((goal, index) => {
+        if (updatedPatientData.goals[index]) {
+          if (goal.status) updatedPatientData.goals[index].status = goal.status;
+          if (goal.notes) updatedPatientData.goals[index].notes = goal.notes;
+        }
+      });
+    }
+    
+    // Update activities if provided
+    if (values.activities) {
+      values.activities.forEach((activity, index) => {
+        if (updatedPatientData.activities[index]) {
+          if (activity.status) updatedPatientData.activities[index].status = activity.status;
+          if (activity.notes) updatedPatientData.activities[index].notes = activity.notes;
+        }
+      });
+    }
+    
+    // Add new note if provided
+    if (values.generalNotes && values.generalNotes.trim() !== "") {
+      updatedPatientData.notes.unshift({
+        date: new Date(),
+        author: "Carer",
+        content: values.generalNotes,
+      });
+    }
+    
+    // Update the state with the modified data
+    setPatientDataState(updatedPatientData);
+    toast.success("Care plan updated successfully");
   };
 
   const handleAddNote = (values: z.infer<typeof noteFormSchema>) => {
     // In a real app, this would send the note to an API
     console.log("Adding note:", values.note);
+    
+    // Update the local state by adding the new note
+    const updatedPatientData = { ...patientDataState };
+    updatedPatientData.notes.unshift({
+      date: new Date(),
+      author: "Carer",
+      content: values.note,
+    });
+    
+    setPatientDataState(updatedPatientData);
     toast.success("Note added successfully");
     setShowAddNoteDialog(false);
     noteForm.reset();
@@ -118,9 +177,9 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
   };
 
   // Create mock data for the carer view based on the existing mockPatientData
-  const mockNotes = mockPatientData.notes;
-  const mockActivities = mockPatientData.activities;
-  const mockServiceActions = mockPatientData.serviceActions;
+  const mockNotes = patientDataState.notes;
+  const mockActivities = patientDataState.activities;
+  const mockServiceActions = patientDataState.serviceActions;
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
@@ -143,11 +202,11 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
           </div>
           
           <div className="flex items-center space-x-2">
-            <Button variant="outline" onClick={handlePrintCarePlan} className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleExportCarePlan} className="flex items-center gap-2">
               <Download className="h-4 w-4" />
               <span>Export</span>
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button variant="outline" className="flex items-center gap-2" onClick={() => setShowUpdateCarePlanDialog(true)}>
               <PenLine className="h-4 w-4" />
               <span>Update</span>
             </Button>
@@ -177,15 +236,15 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                   <PersonalInfoTab carePlan={{
                     patientName: carePlan.clientName,
                     patientId: carePlan.id,
-                  }} mockPatientData={mockPatientData} />
+                  }} mockPatientData={patientDataState} />
                 </TabsContent>
                 
                 <TabsContent value="aboutme">
-                  <AboutMeTab aboutMe={mockPatientData.aboutMe} />
+                  <AboutMeTab aboutMe={patientDataState.aboutMe} />
                 </TabsContent>
                 
                 <TabsContent value="goals">
-                  <GoalsTab goals={mockPatientData.goals} />
+                  <GoalsTab goals={patientDataState.goals} />
                 </TabsContent>
                 
                 <TabsContent value="activities">
@@ -203,11 +262,11 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="dietary">
-                  <DietaryTab dietaryRequirements={mockPatientData.dietaryRequirements} />
+                  <DietaryTab dietaryRequirements={patientDataState.dietaryRequirements} />
                 </TabsContent>
                 
                 <TabsContent value="personalcare">
-                  <PersonalCareTab personalCare={mockPatientData.personalCare} />
+                  <PersonalCareTab personalCare={patientDataState.personalCare} />
                 </TabsContent>
 
                 <TabsContent value="serviceplan">
@@ -291,6 +350,15 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
         carePlanId={carePlan.id}
         patientName={carePlan.clientName}
         patientId={carePlan.id}
+      />
+
+      {/* Update Care Plan Dialog */}
+      <UpdateCarePlanDialog
+        open={showUpdateCarePlanDialog}
+        onOpenChange={setShowUpdateCarePlanDialog}
+        onUpdate={handleUpdateCarePlan}
+        carePlan={carePlan}
+        patientData={patientDataState}
       />
     </div>
   );
