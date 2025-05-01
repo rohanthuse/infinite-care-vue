@@ -1,6 +1,5 @@
-
 import React, { useState } from "react";
-import { X, FileEdit, Download, FileBarChart2, PenLine, MessageCircle, Clock, Activity, FileText } from "lucide-react";
+import { X, FileEdit, Download, PenLine, MessageCircle, Clock, Activity, FileBarChart2 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -161,11 +160,6 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                   <PersonalInfoTab carePlan={{
                     patientName: carePlan.clientName,
                     patientId: carePlan.id,
-                    dateCreated: carePlan.dateCreated,
-                    lastUpdated: carePlan.lastUpdated,
-                    status: carePlan.status,
-                    assignedTo: "Carer",
-                    avatar: carePlan.clientName.split(" ").map(name => name[0]).join("")
                   }} mockPatientData={mockPatientData} />
                 </TabsContent>
                 
@@ -290,4 +284,3 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
     </div>
   );
 };
-
