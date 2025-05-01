@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { X, FileEdit, Download, PenLine, MessageCircle, Clock, Activity, FileBarChart2 } from "lucide-react";
 import { format } from "date-fns";
@@ -97,11 +96,24 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
   };
 
   const handleAddEvent = (eventData: any) => {
-    console.log("Event data:", eventData);
+    // Enhanced event handling with better logging and processing of body map data
+    console.log("Event data received:", eventData);
     
-    // Simplified event handling that trusts the AddEventDialog component
-    // to handle body map points correctly
-    toast.success("Event recorded successfully");
+    if (eventData.injuryOccurred === "yes" && eventData.bodyMapPoints && eventData.bodyMapPoints.length > 0) {
+      console.log("Body map points detected:", eventData.bodyMapPoints);
+      
+      // In a real app, this would send the event data to an API
+      // with proper handling of the body map points
+      toast.success("Event with injury details recorded successfully");
+    } else if (eventData.injuryOccurred === "yes" && (!eventData.bodyMapPoints || eventData.bodyMapPoints.length === 0)) {
+      console.warn("Injury was marked as occurred but no body map points were provided");
+      toast.warning("Event saved, but injury details are incomplete");
+    } else {
+      // Regular event without injury
+      console.log("Regular event without injury recorded");
+      toast.success("Event recorded successfully");
+    }
+    
     setShowAddEventDialog(false);
   };
 
