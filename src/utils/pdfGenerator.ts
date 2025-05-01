@@ -603,7 +603,7 @@ export const exportCarePlanPDF = (
     doc.text("Comprehensive Care Plan", pageWidth/2, 45, { align: "center" });
     
     // Client name in a highlight box
-    roundedRect(pageWidth/2 - 80, 80, 160, 40, 5, [240, 240, 240] as Color);
+    roundedRect(pageWidth/2 - 80, 80, 160, 40, 5, [240, 240, 250] as Color);
     doc.setFontSize(22);
     doc.setTextColor(brandColors.dark[0], brandColors.dark[1], brandColors.dark[2]);
     doc.text(carePlanData.clientName, pageWidth/2, 100, { align: "center" });
@@ -744,4 +744,46 @@ export const exportCarePlanPDF = (
         
         doc.setFontSize(12);
         doc.setTextColor(brandColors.dark[0], brandColors.dark[1], brandColors.dark[2]);
-        doc.text("Likes & Preferences
+        doc.text("Likes & Preferences", 25, yPosition + 12);
+        
+        // Add preferences list if available
+        if (patientData.aboutMe.preferences && Array.isArray(patientData.aboutMe.preferences)) {
+          yPosition += 18;
+          doc.setFontSize(10);
+          
+          patientData.aboutMe.preferences.forEach((pref: string, index: number) => {
+            if (pref) {
+              doc.text(`• ${safeText(pref)}`, 30, yPosition + (index * 6));
+            }
+          });
+          
+          yPosition += patientData.aboutMe.preferences.length * 6;
+        }
+        
+        // Add dislikes section if available
+        if (patientData.aboutMe.dislikes && patientData.aboutMe.dislikes.length > 0) {
+          yPosition += 10;
+          roundedRect(20, yPosition, pageWidth - 40, 15, 3, [252, 232, 232] as Color);
+          
+          doc.setFontSize(12);
+          doc.setTextColor(brandColors.dark[0], brandColors.dark[1], brandColors.dark[2]);
+          doc.text("Dislikes & Aversions", 25, yPosition + 12);
+          
+          // Add dislikes list
+          if (Array.isArray(patientData.aboutMe.dislikes)) {
+            yPosition += 18;
+            doc.setFontSize(10);
+            
+            patientData.aboutMe.dislikes.forEach((dislike: string, index: number) => {
+              if (dislike) {
+                doc.text(`• ${safeText(dislike)}`, 30, yPosition + (index * 6));
+              }
+            });
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error generating care plan PDF:", error);
+  }
+};
