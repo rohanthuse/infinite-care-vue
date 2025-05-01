@@ -1,13 +1,28 @@
 
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import ClientSidebar from "@/components/ClientSidebar";
 import ClientHeader from "@/components/ClientHeader";
+import { 
+  Home, Calendar, FileText, 
+  CreditCard, User, File
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 
 const ClientDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [pageTitle, setPageTitle] = useState("Overview");
+  
+  // Menu items for top navigation
+  const menuItems = [
+    { label: "Overview", icon: Home, path: "/client-dashboard" },
+    { label: "Appointments", icon: Calendar, path: "/client-dashboard/appointments" },
+    { label: "Care Plans", icon: FileText, path: "/client-dashboard/care-plans" },
+    { label: "Payments", icon: CreditCard, path: "/client-dashboard/payments" },
+    { label: "Documents", icon: File, path: "/client-dashboard/documents" },
+    { label: "Profile", icon: User, path: "/client-dashboard/profile" }
+  ];
   
   // Determine the page title based on the current route
   useEffect(() => {
@@ -44,14 +59,55 @@ const ClientDashboard = () => {
   }, [navigate]);
   
   return (
-    <div className="flex h-screen bg-gray-50">
-      <ClientSidebar />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <ClientHeader title={pageTitle} />
-        <main className="flex-1 overflow-auto p-6">
-          <Outlet />
-        </main>
+    <div className="flex flex-col h-screen bg-gray-50">
+      <ClientHeader title={pageTitle} />
+      
+      {/* Top Navigation Bar */}
+      <div className="bg-white border-b border-gray-200 px-4 hidden md:block">
+        <nav className="flex flex-wrap">
+          {menuItems.map((item) => (
+            <Link
+              key={item.label}
+              to={item.path}
+              className={cn(
+                "flex items-center px-4 py-3 text-sm font-medium border-b-2 transition-colors",
+                location.pathname === item.path || (item.path === "/client-dashboard" && location.pathname === "/client-dashboard")
+                  ? "border-blue-600 text-blue-700"
+                  : "border-transparent text-gray-700 hover:text-blue-600 hover:border-blue-200"
+              )}
+            >
+              <item.icon className="h-4 w-4 mr-2" />
+              {item.label}
+            </Link>
+          ))}
+        </nav>
       </div>
+      
+      {/* Mobile Navigation Menu */}
+      <div className="md:hidden bg-white border-b border-gray-200 overflow-x-auto">
+        <div className="flex">
+          {menuItems.map((item) => (
+            <Link
+              key={item.label}
+              to={item.path}
+              className={cn(
+                "flex flex-col items-center py-3 px-3 min-w-[80px] text-xs font-medium border-b-2 transition-colors",
+                location.pathname === item.path || (item.path === "/client-dashboard" && location.pathname === "/client-dashboard")
+                  ? "border-blue-600 text-blue-700"
+                  : "border-transparent text-gray-700 hover:text-blue-600 hover:border-blue-200"
+              )}
+            >
+              <item.icon className="h-5 w-5 mb-1" />
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+      
+      {/* Main Content */}
+      <main className="flex-1 overflow-auto p-6">
+        <Outlet />
+      </main>
     </div>
   );
 };
