@@ -7,6 +7,7 @@ import ClientCarePlans from "@/pages/client/ClientCarePlans";
 import ClientPayments from "@/pages/client/ClientPayments";
 import ClientDocuments from "@/pages/client/ClientDocuments";
 import ClientProfile from "@/pages/client/ClientProfile";
+import ClientMessages from "@/pages/client/ClientMessages";
 
 // Higher-order component to check client authentication
 const RequireClientAuth = ({ children }: { children: React.ReactNode }) => {
@@ -36,6 +37,7 @@ const ClientRoutes = () => {
       <Route path="care-plans" element={<ClientCarePlans />} />
       <Route path="payments" element={<ClientPayments />} />
       <Route path="documents" element={<ClientDocuments />} />
+      <Route path="messages" element={<ClientMessages />} />
       <Route path="profile" element={<ClientProfile />} />
     </Route>,
     <Route key="client-login" path="/client-login" element={<Navigate to="/client-login" replace />} />
