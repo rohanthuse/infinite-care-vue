@@ -6,13 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
+import { CarerCarePlanDetail } from "@/components/carer/CarerCarePlanDetail";
 
 // Mock care plans data
 const mockCarePlans = [
   {
-    id: "1",
+    id: "CP-1",
     clientName: "Emma Thompson",
     dateCreated: new Date("2024-03-15"),
     lastUpdated: new Date("2024-04-20"),
@@ -27,7 +27,7 @@ const mockCarePlans = [
     ]
   },
   {
-    id: "2",
+    id: "CP-2",
     clientName: "James Wilson",
     dateCreated: new Date("2024-02-10"),
     lastUpdated: new Date("2024-04-18"),
@@ -42,7 +42,7 @@ const mockCarePlans = [
     ]
   },
   {
-    id: "3",
+    id: "CP-3",
     clientName: "Margaret Brown",
     dateCreated: new Date("2024-04-05"),
     lastUpdated: new Date("2024-04-21"),
@@ -177,75 +177,13 @@ const CarerCarePlans: React.FC = () => {
         )}
       </div>
       
-      <Dialog open={!!selectedCarePlan} onOpenChange={() => setSelectedCarePlan(null)}>
-        <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Care Plan Details</DialogTitle>
-          </DialogHeader>
-          {selectedCarePlan && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg font-medium">
-                  {selectedCarePlan.clientName.split(" ").map(name => name[0]).join("")}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">{selectedCarePlan.clientName}</h3>
-                  <Badge>{selectedCarePlan.type}</Badge>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                <div>
-                  <div className="text-gray-500">Status</div>
-                  <Badge variant="outline" className="mt-1">{selectedCarePlan.status}</Badge>
-                </div>
-                <div>
-                  <div className="text-gray-500">Created</div>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Calendar className="h-3 w-3" />
-                    <span>{format(selectedCarePlan.dateCreated, "MMM d, yyyy")}</span>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Last Updated</div>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Calendar className="h-3 w-3" />
-                    <span>{format(selectedCarePlan.lastUpdated, "MMM d, yyyy")}</span>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Alerts</div>
-                  <div className="flex items-center gap-1 mt-1">
-                    <AlertCircle className="h-3 w-3 text-red-500" />
-                    <span>{selectedCarePlan.alerts}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="font-medium mb-2">Tasks</h4>
-                <div className="space-y-2 border rounded-md p-3 bg-gray-50">
-                  {selectedCarePlan.tasks.map(task => (
-                    <div key={task.id} className="flex items-center gap-2">
-                      {task.completed ? (
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <div className="h-4 w-4 rounded-full border border-gray-300" />
-                      )}
-                      <span>{task.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setSelectedCarePlan(null)}>Close</Button>
-                <Button>View Full Care Plan</Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Detailed Care Plan View */}
+      {selectedCarePlan && (
+        <CarerCarePlanDetail 
+          carePlan={selectedCarePlan}
+          onClose={() => setSelectedCarePlan(null)}
+        />
+      )}
     </div>
   );
 };
