@@ -11,6 +11,9 @@ declare module "jspdf" {
   }
 }
 
+// Define a Color type for consistency
+type Color = [number, number, number];
+
 export const generatePDF = (agreement: { 
   id: number; 
   title: string; 
@@ -525,7 +528,7 @@ export const generateNews2SummaryPDF = (
   doc.save(`NEWS2_Summary_${formattedDate}.pdf`);
 };
 
-// New function to export a detailed care plan
+// Export function for a detailed care plan
 export const exportCarePlanPDF = (
   carePlanData: {
     id: string;
@@ -544,18 +547,18 @@ export const exportCarePlanPDF = (
   
   // Define brand colors for consistent styling
   const brandColors = {
-    primary: [0, 83, 156], // Blue
-    secondary: [100, 100, 100], // Gray
-    accent: [46, 150, 208], // Light Blue
-    success: [39, 174, 96], // Green
-    warning: [241, 196, 15], // Yellow
-    danger: [231, 76, 60], // Red
-    light: [240, 240, 240], // Light Gray
-    dark: [50, 50, 50] // Dark Gray
+    primary: [0, 83, 156] as Color, // Blue
+    secondary: [100, 100, 100] as Color, // Gray
+    accent: [46, 150, 208] as Color, // Light Blue
+    success: [39, 174, 96] as Color, // Green
+    warning: [241, 196, 15] as Color, // Yellow
+    danger: [231, 76, 60] as Color, // Red
+    light: [240, 240, 240] as Color, // Light Gray
+    dark: [50, 50, 50] as Color // Dark Gray
   };
   
   // Helper function to draw a rounded rectangle
-  const roundedRect = (x: number, y: number, w: number, h: number, r: number, color: number[]) => {
+  const roundedRect = (x: number, y: number, w: number, h: number, r: number, color: Color) => {
     doc.setDrawColor(color[0], color[1], color[2]);
     doc.setFillColor(color[0], color[1], color[2]);
     doc.roundedRect(x, y, w, h, r, r, 'F');
@@ -584,7 +587,7 @@ export const exportCarePlanPDF = (
   doc.text("Comprehensive Care Plan", pageWidth/2, 45, { align: "center" });
   
   // Client name in a highlight box
-  roundedRect(pageWidth/2 - 80, 80, 160, 40, 5, [240, 240, 240]);
+  roundedRect(pageWidth/2 - 80, 80, 160, 40, 5, [240, 240, 240] as Color);
   doc.setFontSize(22);
   doc.setTextColor(brandColors.dark[0], brandColors.dark[1], brandColors.dark[2]);
   doc.text(carePlanData.clientName, pageWidth/2, 100, { align: "center" });
@@ -1015,7 +1018,7 @@ export const exportCarePlanPDF = (
       head: [["Date", "Author", "Note"]],
       body: notesData,
       headStyles: { 
-        fillColor: [142, 68, 173], 
+        fillColor: [142, 68, 173] as Color, 
         textColor: [255, 255, 255],
         fontStyle: 'bold'
       },
@@ -1175,7 +1178,7 @@ export const exportCarePlanPDF = (
       head: [["Risk Type", "Risk Level", "Last Assessed", "Mitigation Plan"]],
       body: risksData,
       headStyles: { 
-        fillColor: [192, 57, 43], 
+        fillColor: [192, 57, 43] as Color, 
         textColor: [255, 255, 255],
         fontStyle: 'bold'
       },
@@ -1193,7 +1196,7 @@ export const exportCarePlanPDF = (
         if (data.column.index === 1 && data.cell.section === 'body') {
           // Add colored indicator for risk level
           const level = data.cell.raw?.toString() || "";
-          let color = [100, 100, 100]; // Default gray
+          let color: Color = [100, 100, 100]; // Default gray
           
           if (level === "High") color = [231, 76, 60]; // Red
           else if (level === "Moderate") color = [243, 156, 18]; // Orange
@@ -1227,7 +1230,7 @@ export const exportCarePlanPDF = (
       head: [["Service", "Provider", "Frequency", "Schedule", "Status"]],
       body: servicesData,
       headStyles: { 
-        fillColor: [22, 160, 133], 
+        fillColor: [22, 160, 133] as Color, 
         textColor: [255, 255, 255],
         fontStyle: 'bold'
       },
