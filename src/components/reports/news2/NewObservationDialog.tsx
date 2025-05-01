@@ -1,26 +1,13 @@
 
 import React, { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { News2Patient, News2Observation } from "./news2Types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { News2Patient } from "./news2Types";
 import { toast } from "sonner";
-import { v4 as uuidv4 } from "uuid";
 
 interface NewObservationDialogProps {
   open: boolean;
@@ -29,73 +16,75 @@ interface NewObservationDialogProps {
   defaultPatientId?: string;
 }
 
-export function NewObservationDialog({
+export const NewObservationDialog: React.FC<NewObservationDialogProps> = ({
   open,
   onOpenChange,
   patients,
   defaultPatientId,
-}: NewObservationDialogProps) {
-  const [patientId, setPatientId] = useState(defaultPatientId || "");
+}) => {
+  const [selectedPatientId, setSelectedPatientId] = useState(defaultPatientId || "");
   const [respRate, setRespRate] = useState("16");
-  const [spo2, setSpo2] = useState("96");
+  const [spo2, setSpo2] = useState("98");
+  const [o2Therapy, setO2Therapy] = useState(false);
   const [systolicBP, setSystolicBP] = useState("120");
   const [pulse, setPulse] = useState("75");
   const [consciousness, setConsciousness] = useState("A");
-  const [temperature, setTemperature] = useState("37.0");
-  const [o2Therapy, setO2Therapy] = useState(false);
+  const [temperature, setTemperature] = useState("36.7");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const consciousnessLevels = [
-    { value: "A", label: "Alert" },
-    { value: "V", label: "Responds to Voice" },
-    { value: "P", label: "Responds to Pain" },
-    { value: "U", label: "Unresponsive" },
-  ];
-
-  const calculateScore = () => {
+  
+  // Reset form when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      if (defaultPatientId) {
+        setSelectedPatientId(defaultPatientId);
+      }
+    }
+  }, [open, defaultPatientId]);
+  
+  const calculateNews2Score = (): number => {
     let score = 0;
-    const rr = parseFloat(respRate);
-    const o2 = parseFloat(spo2);
-    const bp = parseFloat(systolicBP);
-    const p = parseFloat(pulse);
-    const temp = parseFloat(temperature);
-
-    // Respiratory rate scoring
+    
+    // Respiratory rate
+    const rr = parseInt(respRate);
     if (rr <= 8) score += 3;
     else if (rr <= 11) score += 1;
     else if (rr >= 21 && rr <= 24) score += 2;
     else if (rr >= 25) score += 3;
-
-    // SpO2 scoring
-    if (o2 <= 91) score += 3;
-    else if (o2 <= 93) score += 2;
-    else if (o2 <= 95) score += 1;
-
-    // Supplemental oxygen
+    
+    // SpO2
+    const s = parseInt(spo2);
+    if (s <= 91) score += 3;
+    else if (s <= 93) score += 2;
+    else if (s <= 95) score += 1;
+    
+    // O2 therapy
     if (o2Therapy) score += 2;
-
-    // Systolic BP scoring
-    if (bp <= 90) score += 3;
-    else if (bp <= 100) score += 2;
-    else if (bp <= 110) score += 1;
-    else if (bp >= 220) score += 3;
-
-    // Pulse scoring
+    
+    // Systolic BP
+    const sbp = parseInt(systolicBP);
+    if (sbp <= 90) score += 3;
+    else if (sbp <= 100) score += 2;
+    else if (sbp <= 110) score += 1;
+    else if (sbp >= 220) score += 3;
+    
+    // Pulse
+    const p = parseInt(pulse);
     if (p <= 40) score += 3;
     else if (p <= 50) score += 1;
     else if (p >= 91 && p <= 110) score += 1;
     else if (p >= 111 && p <= 130) score += 2;
     else if (p >= 131) score += 3;
-
-    // Consciousness scoring
+    
+    // Consciousness
     if (consciousness !== "A") score += 3;
-
-    // Temperature scoring
-    if (temp <= 35.0) score += 3;
-    else if (temp <= 36.0) score += 1;
-    else if (temp >= 38.1 && temp <= 39.0) score += 1;
-    else if (temp >= 39.1) score += 2;
-
+    
+    // Temperature
+    const t = parseFloat(temperature);
+    if (t <= 35.0) score += 3;
+    else if (t <= 36.0) score += 1;
+    else if (t >= 39.1) score += 1;
+    else if (t >= 39.2) score += 2;
+    
     return score;
   };
 
@@ -103,51 +92,50 @@ export function NewObservationDialog({
     e.preventDefault();
     setIsSubmitting(true);
     
-    const score = calculateScore();
+    // Validate form
+    if (!selectedPatientId || !respRate || !spo2 || !systolicBP || !pulse || !consciousness || !temperature) {
+      toast.error("Please complete all required fields", {
+        description: "All observation values are required to calculate a NEWS2 score"
+      });
+      setIsSubmitting(false);
+      return;
+    }
     
-    // Create the new observation
-    const newObservation: News2Observation = {
-      id: uuidv4(),
-      patientId,
-      dateTime: new Date().toISOString(),
-      respRate: parseFloat(respRate),
-      spo2: parseFloat(spo2),
-      systolicBP: parseFloat(systolicBP),
-      pulse: parseFloat(pulse),
-      consciousness,
-      temperature: parseFloat(temperature),
-      o2Therapy,
-      score
-    };
+    // Calculate score
+    const score = calculateNews2Score();
     
-    // In a real app, this would be sent to an API
+    // Show success message based on score severity
+    let toastType: "success" | "warning" | "error" = "success";
+    let toastTitle = "Observation recorded";
+    let toastDescription = `NEWS2 score calculated: ${score}`;
+    
+    if (score >= 7) {
+      toastType = "error";
+      toastTitle = "High Risk NEWS2 Score";
+      toastDescription = `Score: ${score}. Urgent clinical response required.`;
+    } else if (score >= 5) {
+      toastType = "warning";
+      toastTitle = "Medium Risk NEWS2 Score";
+      toastDescription = `Score: ${score}. Urgent ward-based response required.`;
+    }
+    
     setTimeout(() => {
       setIsSubmitting(false);
-      
-      // Display success message with the score
-      toast.success(`Observation recorded successfully`, {
-        description: `NEWS2 Score: ${score} (${score >= 7 ? "High Risk" : score >= 5 ? "Medium Risk" : "Low Risk"})`,
-      });
-      
-      // High risk alert
-      if (score >= 7) {
-        setTimeout(() => {
-          toast.warning("High-Risk Patient Alert", {
-            description: `${patients.find(p => p.id === patientId)?.name} has a high-risk NEWS2 score (${score}) requiring urgent clinical response`,
-          });
-        }, 500);
-      }
-      
       onOpenChange(false);
       
-      // Reset form
-      setRespRate("16");
-      setSpo2("96");
-      setSystolicBP("120");
-      setPulse("75");
-      setConsciousness("A");
-      setTemperature("37.0");
-      setO2Therapy(false);
+      if (toastType === "success") {
+        toast.success(toastTitle, {
+          description: toastDescription
+        });
+      } else if (toastType === "warning") {
+        toast.warning(toastTitle, {
+          description: toastDescription
+        });
+      } else {
+        toast.error(toastTitle, {
+          description: toastDescription
+        });
+      }
     }, 1000);
   };
 
@@ -155,151 +143,159 @@ export function NewObservationDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Record New Observation</DialogTitle>
+          <DialogTitle>Record NEWS2 Observation</DialogTitle>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          {/* Patient Selection */}
+          <div className="space-y-2">
             <Label htmlFor="patient">Patient</Label>
             <Select
-              value={patientId}
-              onValueChange={(value) => setPatientId(value)}
-              disabled={!!defaultPatientId}
+              value={selectedPatientId}
+              onValueChange={setSelectedPatientId}
+              required
             >
-              <SelectTrigger id="patient">
+              <SelectTrigger>
                 <SelectValue placeholder="Select a patient" />
               </SelectTrigger>
               <SelectContent>
-                {patients.map((patient) => (
+                {patients.map(patient => (
                   <SelectItem key={patient.id} value={patient.id}>
-                    {patient.name} ({patient.id})
+                    {patient.name} (ID: {patient.id})
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-
+          
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            {/* Respiratory Rate */}
+            <div className="space-y-2">
               <Label htmlFor="respRate">Respiratory Rate</Label>
-              <Input
-                id="respRate"
-                type="number"
-                min="0"
-                max="60"
-                value={respRate}
-                onChange={(e) => setRespRate(e.target.value)}
-              />
+              <div className="flex items-center">
+                <Input
+                  id="respRate"
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={respRate}
+                  onChange={(e) => setRespRate(e.target.value)}
+                  required
+                />
+                <span className="ml-2 text-sm text-gray-500">breaths/min</span>
+              </div>
             </div>
-            <div>
-              <Label htmlFor="spo2">SpO₂ %</Label>
-              <Input
-                id="spo2"
-                type="number"
-                min="0"
-                max="100"
-                value={spo2}
-                onChange={(e) => setSpo2(e.target.value)}
-              />
+            
+            {/* SpO2 */}
+            <div className="space-y-2">
+              <Label htmlFor="spo2">SpO₂</Label>
+              <div className="flex items-center">
+                <Input
+                  id="spo2"
+                  type="number"
+                  min="70"
+                  max="100"
+                  value={spo2}
+                  onChange={(e) => setSpo2(e.target.value)}
+                  required
+                />
+                <span className="ml-2 text-sm text-gray-500">%</span>
+              </div>
             </div>
-            <div>
+            
+            {/* O2 Therapy */}
+            <div className="space-y-2 col-span-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="o2Therapy" className="cursor-pointer">
+                  On Supplemental Oxygen
+                </Label>
+                <Switch
+                  id="o2Therapy"
+                  checked={o2Therapy}
+                  onCheckedChange={setO2Therapy}
+                />
+              </div>
+            </div>
+            
+            {/* Systolic BP */}
+            <div className="space-y-2">
               <Label htmlFor="systolicBP">Systolic BP</Label>
-              <Input
-                id="systolicBP"
-                type="number"
-                min="0"
-                max="300"
-                value={systolicBP}
-                onChange={(e) => setSystolicBP(e.target.value)}
-              />
+              <div className="flex items-center">
+                <Input
+                  id="systolicBP"
+                  type="number"
+                  min="50"
+                  max="250"
+                  value={systolicBP}
+                  onChange={(e) => setSystolicBP(e.target.value)}
+                  required
+                />
+                <span className="ml-2 text-sm text-gray-500">mmHg</span>
+              </div>
             </div>
-            <div>
+            
+            {/* Pulse */}
+            <div className="space-y-2">
               <Label htmlFor="pulse">Pulse</Label>
-              <Input
-                id="pulse"
-                type="number"
-                min="0"
-                max="300"
-                value={pulse}
-                onChange={(e) => setPulse(e.target.value)}
-              />
+              <div className="flex items-center">
+                <Input
+                  id="pulse"
+                  type="number"
+                  min="30"
+                  max="200"
+                  value={pulse}
+                  onChange={(e) => setPulse(e.target.value)}
+                  required
+                />
+                <span className="ml-2 text-sm text-gray-500">bpm</span>
+              </div>
             </div>
-            <div>
-              <Label htmlFor="consciousness">Consciousness</Label>
+            
+            {/* Consciousness */}
+            <div className="space-y-2">
+              <Label htmlFor="consciousness">ACVPU</Label>
               <Select
                 value={consciousness}
-                onValueChange={(value) => setConsciousness(value)}
+                onValueChange={setConsciousness}
+                required
               >
-                <SelectTrigger id="consciousness">
-                  <SelectValue />
+                <SelectTrigger>
+                  <SelectValue placeholder="Select ACVPU" />
                 </SelectTrigger>
                 <SelectContent>
-                  {consciousnessLevels.map((level) => (
-                    <SelectItem key={level.value} value={level.value}>
-                      {level.value} - {level.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="A">Alert (A)</SelectItem>
+                  <SelectItem value="C">Confused (C)</SelectItem>
+                  <SelectItem value="V">Voice (V)</SelectItem>
+                  <SelectItem value="P">Pain (P)</SelectItem>
+                  <SelectItem value="U">Unresponsive (U)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="temperature">Temperature (°C)</Label>
-              <Input
-                id="temperature"
-                type="number"
-                step="0.1"
-                min="30"
-                max="45"
-                value={temperature}
-                onChange={(e) => setTemperature(e.target.value)}
-              />
+            
+            {/* Temperature */}
+            <div className="space-y-2">
+              <Label htmlFor="temperature">Temperature</Label>
+              <div className="flex items-center">
+                <Input
+                  id="temperature"
+                  type="number"
+                  step="0.1"
+                  min="30"
+                  max="44"
+                  value={temperature}
+                  onChange={(e) => setTemperature(e.target.value)}
+                  required
+                />
+                <span className="ml-2 text-sm text-gray-500">°C</span>
+              </div>
             </div>
           </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="o2Therapy"
-              checked={o2Therapy}
-              onCheckedChange={(checked) => setO2Therapy(checked as boolean)}
-            />
-            <Label htmlFor="o2Therapy">Patient on supplemental oxygen</Label>
-          </div>
-
-          <div className="mt-4 pt-4 border-t">
-            <div className="text-sm font-medium">
-              Calculated NEWS2 Score:{" "}
-              <span
-                className={`px-2 py-0.5 rounded-full ${
-                  calculateScore() >= 7
-                    ? "bg-red-100 text-red-700"
-                    : calculateScore() >= 5
-                    ? "bg-amber-100 text-amber-700"
-                    : "bg-green-100 text-green-700"
-                }`}
-              >
-                {calculateScore()}
-              </span>
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              {calculateScore() >= 7
-                ? "High Risk - Urgent clinical response required"
-                : calculateScore() >= 5
-                ? "Medium Risk - Urgent clinical response required"
-                : "Low Risk - Continue routine monitoring"}
-            </div>
-          </div>
-
-          <DialogFooter className="pt-2">
+          
+          <DialogFooter className="pt-4">
             <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={!patientId || isSubmitting}
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full"
             >
               {isSubmitting ? "Saving..." : "Save Observation"}
             </Button>
@@ -308,4 +304,4 @@ export function NewObservationDialog({
       </DialogContent>
     </Dialog>
   );
-}
+};

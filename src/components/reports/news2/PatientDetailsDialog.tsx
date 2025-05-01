@@ -1,201 +1,161 @@
-import React, { useState } from "react";
+
+import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, Download, FileDown, FileSpreadsheet, FileText, HistoryIcon, PlusCircle, Printer, Share2, User } from "lucide-react";
 import { News2Patient } from "./news2Types";
-import { ObservationHistory } from "./ObservationHistory";
-import { ObservationChart } from "./ObservationChart";
-import { NewObservationDialog } from "./NewObservationDialog";
 import { format } from "date-fns";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FileText, Printer } from "lucide-react";
 import { generateNews2PDF } from "@/utils/pdfGenerator";
 import { toast } from "sonner";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
 interface PatientDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   patient: News2Patient;
 }
-export function PatientDetailsDialog({
+
+export const PatientDetailsDialog: React.FC<PatientDetailsDialogProps> = ({
   open,
   onOpenChange,
-  patient
-}: PatientDetailsDialogProps) {
-  const [isNewObservationOpen, setIsNewObservationOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("history");
-  const getStatusText = (score: number) => {
-    if (score >= 7) return "High Risk";
-    if (score >= 5) return "Medium Risk";
-    return "Low Risk";
-  };
-  const getStatusColor = (score: number) => {
-    if (score >= 7) return "text-red-600";
-    if (score >= 5) return "text-amber-600";
-    return "text-green-600";
-  };
-  const handleExport = (format: string) => {
+  patient,
+}) => {
+  const handleExport = () => {
     try {
-      if (format === "PDF") {
-        // Get the branch name from the URL or use a default
-        const url = window.location.pathname;
-        const branchNameMatch = url.match(/\/branch-dashboard\/\d+\/([^/]+)/);
-        const branchName = branchNameMatch ? decodeURIComponent(branchNameMatch[1]) : "Med-Infinite Branch";
-        generateNews2PDF(patient, branchName);
-        toast.success("PDF exported successfully", {
-          description: `NEWS2 report for ${patient.name} has been downloaded`
-        });
-      } else if (format === "CSV") {
-        exportToCSV(patient);
-        toast.success("CSV exported successfully", {
-          description: `NEWS2 data for ${patient.name} has been downloaded`
-        });
-      } else {
-        toast.info(`${format} export not implemented yet`);
-      }
+      generateNews2PDF(patient, "Med-Infinite Branch");
+      toast.success("PDF exported successfully", {
+        description: `NEWS2 report for ${patient.name} has been downloaded`
+      });
     } catch (error) {
-      console.error("Export error:", error);
       toast.error("Export failed", {
         description: "There was a problem exporting the report"
       });
     }
   };
-  const exportToCSV = (patient: News2Patient) => {
-    // Build CSV headers and format data
-    const headers = ["Date,Time,Patient ID,Patient Name,Resp Rate,SpO2,BP,Pulse,Temperature,Consciousness,O2 Therapy,Score"];
-    const rows = patient.observations?.map(obs => {
-      const date = new Date(obs.dateTime);
-      return [format(date, "yyyy-MM-dd"), format(date, "HH:mm"), patient.id, patient.name, obs.respRate, obs.spo2, obs.systolicBP, obs.pulse, obs.temperature, obs.consciousness, obs.o2Therapy ? "Yes" : "No", obs.score].join(',');
-    }) || [];
-    const csvContent = headers.concat(rows).join('\n');
-
-    // Create and download the file
-    const blob = new Blob([csvContent], {
-      type: 'text/csv;charset=utf-8;'
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `NEWS2_${patient.name.replace(/\s+/g, "_")}_${format(new Date(), "yyyy-MM-dd")}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  
+  // Function to get color based on score
+  const getScoreColor = (score: number) => {
+    if (score >= 7) return "bg-red-500 text-white";
+    if (score >= 5) return "bg-orange-500 text-white";
+    if (score >= 3) return "bg-yellow-500 text-white";
+    return "bg-green-500 text-white";
   };
-  const handlePrint = () => {
-    window.print();
-    toast.success("Print dialog opened");
-  };
-  const handleShare = () => {
-    toast.info("Sharing options", {
-      description: "Report sharing options would appear here"
-    });
-  };
-  return <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="text-xl">Patient Details</DialogTitle>
-          </DialogHeader>
-          
-          <ScrollArea className="flex-1 overflow-y-auto">
-            <div className="space-y-6 px-1">
-              <div className="flex flex-col md:flex-row justify-between pb-4 border-b gap-4">
-                <div className="flex items-center">
-                  <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg font-medium mr-4">
-                    {patient.name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold">{patient.name}</h3>
-                    <div className="flex items-center text-sm text-gray-600 gap-3 mt-1">
-                      <div className="flex items-center">
-                        <User className="h-3.5 w-3.5 mr-1" />
-                        {patient.age} years
-                      </div>
-                      <div className="flex items-center">
-                        <FileText className="h-3.5 w-3.5 mr-1" />
-                        ID: {patient.id}
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="h-3.5 w-3.5 mr-1" />
-                        Last updated: {format(new Date(patient.lastUpdated), "dd MMM yyyy, HH:mm")}
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="flex items-center">
-                  <div className={`py-2 px-4 rounded-lg border font-medium ${getStatusColor(patient.latestScore)}`}>
-                    <div className="text-sm">NEWS2 Score</div>
-                    <div className="flex items-end">
-                      <span className="text-2xl font-bold mr-2">{patient.latestScore}</span>
-                      <span className="text-sm">({getStatusText(patient.latestScore)})</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col md:flex-row justify-between gap-4">
-                <Tabs defaultValue="history" value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="sticky top-0 z-10 bg-background">
-                    <TabsTrigger value="history">
-                      <HistoryIcon className="h-4 w-4 mr-2" />
-                      Observation History
-                    </TabsTrigger>
-                    <TabsTrigger value="chart">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Score Chart
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="history" className="mt-4">
-                    <ObservationHistory patient={patient} />
-                  </TabsContent>
-                  
-                  <TabsContent value="chart" className="mt-4">
-                    <ObservationChart patient={patient} />
-                  </TabsContent>
-                </Tabs>
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">Patient NEWS2 Details</DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6 mt-4">
+          {/* Patient Info */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b">
+            <div>
+              <h2 className="text-xl font-semibold">{patient.name}</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 mt-1 text-gray-500">
+                <div>ID: {patient.id}</div>
+                <div>Age: {patient.age} years</div>
+                <div>Last updated: {format(new Date(patient.lastUpdated), "dd MMM yyyy, HH:mm")}</div>
               </div>
             </div>
-          </ScrollArea>
             
-          <div className="flex justify-end gap-2 mt-4 border-t pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col items-center">
+                <div className="text-sm text-gray-500 mb-1">Latest Score</div>
+                <div className={`w-10 h-10 rounded-full ${getScoreColor(patient.latestScore)} flex items-center justify-center font-bold text-lg`}>
+                  {patient.latestScore}
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleExport}>
+                  <FileText className="h-4 w-4 mr-1" />
+                  Export PDF
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleExport("PDF")}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  <span>Export as PDF</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport("CSV")}>
-                  <FileSpreadsheet className="h-4 w-4 mr-2" />
-                  <span>Export as CSV</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handlePrint}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  <span>Print Report</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            
-            
-            <Button onClick={() => setIsNewObservationOpen(true)}>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              New Observation
-            </Button>
+                <Button variant="outline" size="sm" onClick={() => window.print()}>
+                  <Printer className="h-4 w-4 mr-1" />
+                  Print
+                </Button>
+              </div>
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
-      
-      <NewObservationDialog open={isNewObservationOpen} onOpenChange={setIsNewObservationOpen} patients={[patient]} defaultPatientId={patient.id} />
-    </>;
-}
+          
+          {/* Clinical Action Based on Score */}
+          <Card className={`border-l-4 ${
+            patient.latestScore >= 7 
+              ? "border-l-red-500 bg-red-50" 
+              : patient.latestScore >= 5 
+                ? "border-l-amber-500 bg-amber-50" 
+                : "border-l-green-500 bg-green-50"
+          }`}>
+            <CardContent className="p-4">
+              <h3 className="font-medium mb-2">
+                {patient.latestScore >= 7 
+                  ? "Urgent Clinical Response Required" 
+                  : patient.latestScore >= 5 
+                    ? "Urgent Ward-Based Response Required" 
+                    : "Routine Monitoring"}
+              </h3>
+              <p className="text-sm">
+                {patient.latestScore >= 7 
+                  ? "Continuous monitoring, urgent assessment by a clinician with critical care competencies." 
+                  : patient.latestScore >= 5 
+                    ? "Urgent assessment by a clinician, increased frequency of monitoring." 
+                    : "Continue routine monitoring as per care plan."}
+              </p>
+            </CardContent>
+          </Card>
+          
+          {/* Observation History Table */}
+          {patient.observations && patient.observations.length > 0 ? (
+            <div>
+              <h3 className="text-lg font-medium mb-3">Observation History</h3>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead>Resp Rate</TableHead>
+                      <TableHead>SpO₂</TableHead>
+                      <TableHead>O₂ Therapy</TableHead>
+                      <TableHead>BP</TableHead>
+                      <TableHead>Pulse</TableHead>
+                      <TableHead>Consciousness</TableHead>
+                      <TableHead>Temp</TableHead>
+                      <TableHead>Score</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {patient.observations.map((obs) => (
+                      <TableRow key={obs.id}>
+                        <TableCell>{format(new Date(obs.dateTime), "dd MMM, HH:mm")}</TableCell>
+                        <TableCell>{obs.respRate}</TableCell>
+                        <TableCell>{obs.spo2}%</TableCell>
+                        <TableCell>{obs.o2Therapy ? "Yes" : "No"}</TableCell>
+                        <TableCell>{obs.systolicBP} mmHg</TableCell>
+                        <TableCell>{obs.pulse}</TableCell>
+                        <TableCell>{obs.consciousness}</TableCell>
+                        <TableCell>{obs.temperature}°C</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(obs.score)}`}>
+                            {obs.score}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-6 bg-gray-50 rounded-md">
+              <p className="text-gray-500">No observation history available</p>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
