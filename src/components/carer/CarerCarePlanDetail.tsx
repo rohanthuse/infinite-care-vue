@@ -159,7 +159,6 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                 
                 <TabsContent value="personal">
                   <PersonalInfoTab carePlan={{
-                    id: carePlan.id,
                     patientName: carePlan.clientName,
                     patientId: carePlan.id,
                     dateCreated: carePlan.dateCreated,
@@ -291,3 +290,4 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
     </div>
   );
 };
+
