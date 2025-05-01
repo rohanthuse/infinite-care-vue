@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, MapPin, User } from "lucide-react";
 import { RescheduleAppointmentDialog } from "@/components/client/RescheduleAppointmentDialog";
+import { RequestAppointmentDialog } from "@/components/client/RequestAppointmentDialog";
 
 const ClientAppointments = () => {
   const [activeTab, setActiveTab] = useState("upcoming");
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [isRequesting, setIsRequesting] = useState(false);
 
   // Mock appointment data
   const upcomingAppointments = [
@@ -76,6 +78,11 @@ const ClientAppointments = () => {
   const handleReschedule = (appointment: any) => {
     setSelectedAppointment(appointment);
     setIsRescheduling(true);
+  };
+
+  // Open request appointment dialog
+  const handleRequestAppointment = () => {
+    setIsRequesting(true);
   };
 
   // Get status badge style
@@ -149,7 +156,7 @@ const ClientAppointments = () => {
               <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
               <TabsTrigger value="past">Past</TabsTrigger>
             </TabsList>
-            <Button>Request Appointment</Button>
+            <Button onClick={handleRequestAppointment}>Request Appointment</Button>
           </div>
           
           <TabsContent value="upcoming" className="space-y-4">
@@ -158,7 +165,7 @@ const ClientAppointments = () => {
             ) : (
               <div className="text-center p-8">
                 <p className="text-gray-500">No upcoming appointments.</p>
-                <Button className="mt-4">Schedule New Appointment</Button>
+                <Button className="mt-4" onClick={handleRequestAppointment}>Schedule New Appointment</Button>
               </div>
             )}
           </TabsContent>
@@ -183,6 +190,12 @@ const ClientAppointments = () => {
           appointment={selectedAppointment}
         />
       )}
+
+      {/* Request Appointment Dialog */}
+      <RequestAppointmentDialog
+        open={isRequesting}
+        onOpenChange={setIsRequesting}
+      />
     </div>
   );
 };
