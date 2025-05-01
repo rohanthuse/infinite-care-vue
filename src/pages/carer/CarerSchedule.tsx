@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MapPin, Search, CalendarDays } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -79,6 +80,7 @@ const CarerSchedule: React.FC = () => {
   const [view, setView] = useState("day");
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showReallocateDialog, setShowReallocateDialog] = useState(false);
   
   const formattedDate = format(currentDate, "EEEE, MMMM d, yyyy");
   
@@ -124,6 +126,16 @@ const CarerSchedule: React.FC = () => {
     });
     
     setShowCancelDialog(false);
+    setSelectedAppointment(null);
+  };
+  
+  const handleReallocate = (appointmentId: string, newCarerId: string) => {
+    // In a real app, this would send data to the backend
+    toast.success("Appointment reallocated successfully", {
+      description: "The new carer has been assigned to this appointment."
+    });
+    
+    setShowReallocateDialog(false);
     setSelectedAppointment(null);
   };
 
@@ -448,75 +460,6 @@ const CarerSchedule: React.FC = () => {
     );
   };
 
-  // Get week dates for the week view
-  const getWeekDates = () => {
-    const start = startOfWeek(currentDate, { weekStartsOn: 1 }); // Week starts on Monday
-    return Array.from({ length: 7 }, (_, i) => addDays(start, i));
-  };
-  
-  // Filter appointments based on date range and other filters
-  const getFilteredAppointments = (start: Date, end: Date) => {
-    return mockAppointments.filter(appointment => {
-      // Check if date is within range
-      const appointmentDate = new Date(appointment.date);
-      const isInRange = appointmentDate >= start && appointmentDate <= end;
-      
-      // Check if search matches
-      const searchMatches = 
-        appointment.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        appointment.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        appointment.type.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      // Check if status matches
-      const statusMatches = 
-        statusFilter === "all" || 
-        appointment.status.toLowerCase() === statusFilter.toLowerCase();
-      
-      return isInRange && searchMatches && statusMatches;
-    });
-  };
-
-  const filteredDayAppointments = mockAppointments.filter(appointment => {
-    // Check if date matches current day
-    const appointmentDate = format(appointment.date, "yyyy-MM-dd");
-    const selectedDate = format(currentDate, "yyyy-MM-dd");
-    const dateMatches = appointmentDate === selectedDate;
-    
-    // Check if search matches
-    const searchMatches = 
-      appointment.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      appointment.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      appointment.type.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // Check if status matches
-    const statusMatches = 
-      statusFilter === "all" || 
-      appointment.status.toLowerCase() === statusFilter.toLowerCase();
-    
-    return dateMatches && searchMatches && statusMatches;
-  });
-
-  // Helper function to get appointments for a specific day
-  const getAppointmentsForDay = (day: Date) => {
-    return mockAppointments.filter(appointment => {
-      const appointmentDate = format(appointment.date, "yyyy-MM-dd");
-      const targetDate = format(day, "yyyy-MM-dd");
-      return appointmentDate === targetDate && 
-        (statusFilter === "all" || appointment.status.toLowerCase() === statusFilter.toLowerCase()) &&
-        (
-          appointment.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          appointment.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          appointment.type.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-    });
-  };
-
-  // Check if an appointment can be cancelled
-  const canCancelAppointment = (appointment: any) => {
-    // Can only cancel appointments that are Confirmed or Pending
-    return ["confirmed", "pending"].includes(appointment.status.toLowerCase());
-  };
-
   // Render the enhanced week view
   const renderWeekView = () => {
     const weekDays = getWeekDates();
@@ -769,76 +712,80 @@ const CarerSchedule: React.FC = () => {
             <DialogTitle>Appointment Details</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg font-medium">
-                {selectedAppointment.clientName.split(" ").map(name => name[0]).join("")}
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">{selectedAppointment.clientName}</h3>
-                <Badge variant="outline" className={getStatusBadgeStyles(selectedAppointment.status)}>
-                  {getStatusDisplay(selectedAppointment.status)}
-                </Badge>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-3 text-sm">
-              <div className="flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4 text-gray-500" />
-                <span>{format(selectedAppointment.date, "EEEE, MMMM d, yyyy")}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-gray-500" />
-                <span>{selectedAppointment.time}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-gray-500" />
-                <span>{selectedAppointment.address}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-gray-500" />
-                <span>Appointment Type: {selectedAppointment.type}</span>
-              </div>
-            </div>
-            
-            {selectedAppointment.status.toLowerCase() === "pending_cancellation" && (
-              <div className="p-3 bg-purple-50 border border-purple-200 rounded-md">
-                <p className="text-sm text-purple-800 font-medium">Cancellation Request Pending</p>
-                <p className="text-xs text-purple-700 mt-1">
-                  Your cancellation request is being reviewed by an administrator.
-                </p>
-              </div>
+            {selectedAppointment && (
+              <>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg font-medium">
+                    {selectedAppointment.clientName.split(" ").map(name => name[0]).join("")}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">{selectedAppointment.clientName}</h3>
+                    <Badge variant="outline" className={getStatusBadgeStyles(selectedAppointment.status)}>
+                      {getStatusDisplay(selectedAppointment.status)}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-3 text-sm">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4 text-gray-500" />
+                    <span>{format(selectedAppointment.date, "EEEE, MMMM d, yyyy")}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-gray-500" />
+                    <span>{selectedAppointment.time}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-gray-500" />
+                    <span>{selectedAppointment.address}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CalendarDays className="h-4 w-4 text-gray-500" />
+                    <span>Appointment Type: {selectedAppointment.type}</span>
+                  </div>
+                </div>
+                
+                {selectedAppointment.status.toLowerCase() === "pending_cancellation" && (
+                  <div className="p-3 bg-purple-50 border border-purple-200 rounded-md">
+                    <p className="text-sm text-purple-800 font-medium">Cancellation Request Pending</p>
+                    <p className="text-xs text-purple-700 mt-1">
+                      Your cancellation request is being reviewed by an administrator.
+                    </p>
+                  </div>
+                )}
+                
+                {selectedAppointment.status.toLowerCase() === "admin_rejected" && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-md">
+                    <p className="text-sm text-rose-800 font-medium">Cancellation Request Rejected</p>
+                    <p className="text-xs text-rose-700 mt-1">
+                      Your cancellation request has been rejected. Please contact your supervisor for more information.
+                    </p>
+                  </div>
+                )}
+                
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" onClick={() => setSelectedAppointment(null)}>
+                    Close
+                  </Button>
+                  
+                  {canCancelAppointment(selectedAppointment) && (
+                    <Button 
+                      variant="outline" 
+                      className="border-red-200 text-red-600 hover:bg-red-50"
+                      onClick={() => setShowCancelDialog(true)}
+                    >
+                      Request Cancellation
+                    </Button>
+                  )}
+                  
+                  {selectedAppointment.status.toLowerCase() === "confirmed" && (
+                    <Button onClick={() => handleStartVisit(selectedAppointment.id)}>
+                      Start Visit
+                    </Button>
+                  )}
+                </div>
+              </>
             )}
-            
-            {selectedAppointment.status.toLowerCase() === "admin_rejected" && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-md">
-                <p className="text-sm text-rose-800 font-medium">Cancellation Request Rejected</p>
-                <p className="text-xs text-rose-700 mt-1">
-                  Your cancellation request has been rejected. Please contact your supervisor for more information.
-                </p>
-              </div>
-            )}
-            
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setSelectedAppointment(null)}>
-                Close
-              </Button>
-              
-              {canCancelAppointment(selectedAppointment) && (
-                <Button 
-                  variant="outline" 
-                  className="border-red-200 text-red-600 hover:bg-red-50"
-                  onClick={() => setShowCancelDialog(true)}
-                >
-                  Request Cancellation
-                </Button>
-              )}
-              
-              {selectedAppointment.status.toLowerCase() === "confirmed" && (
-                <Button onClick={() => handleStartVisit(selectedAppointment.id)}>
-                  Start Visit
-                </Button>
-              )}
-            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -856,10 +803,10 @@ const CarerSchedule: React.FC = () => {
       {/* Reallocate Appointment Dialog */}
       {selectedAppointment && (
         <ReallocateAppointmentDialog 
-          open={showCancelDialog}
-          onOpenChange={setShowCancelDialog}
+          open={showReallocateDialog}
+          onOpenChange={setShowReallocateDialog}
           appointment={selectedAppointment}
-          onCancelRequest={handleCancelRequest}
+          onReallocate={handleReallocate}
         />
       )}
     </div>
