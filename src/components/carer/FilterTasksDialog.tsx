@@ -24,6 +24,7 @@ import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
 
 interface FilterTasksDialogProps {
   open: boolean;
@@ -49,10 +50,10 @@ const FilterTasksDialog: React.FC<FilterTasksDialogProps> = ({
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
-  const [dateRange, setDateRange] = useState<{
-    from: Date | undefined;
-    to: Date | undefined;
-  }>({ from: undefined, to: undefined });
+  const [dateRange, setDateRange] = useState<DateRange>({ 
+    from: undefined,
+    to: undefined 
+  });
   const [showCompleted, setShowCompleted] = useState(false);
 
   const togglePriority = (priority: string) => {
@@ -84,7 +85,10 @@ const FilterTasksDialog: React.FC<FilterTasksDialogProps> = ({
       priority: selectedPriorities,
       category: selectedCategories,
       client: selectedClients,
-      dateRange,
+      dateRange: {
+        from: dateRange.from,
+        to: dateRange.to
+      },
       showCompleted
     });
     onOpenChange(false);

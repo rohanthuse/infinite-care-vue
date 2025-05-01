@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from 'uuid';
@@ -13,7 +12,8 @@ const defaultTasks = [
     priority: "High",
     completed: false,
     client: "Emma Thompson",
-    category: "Medication"
+    category: "Medication",
+    createdAt: "2025-04-28T10:00:00Z"
   },
   {
     id: "2",
@@ -23,7 +23,8 @@ const defaultTasks = [
     priority: "Medium",
     completed: false,
     client: "James Wilson",
-    category: "Documentation"
+    category: "Documentation",
+    createdAt: "2025-04-28T11:00:00Z"
   },
   {
     id: "3",
@@ -33,7 +34,8 @@ const defaultTasks = [
     priority: "Medium",
     completed: false,
     client: null,
-    category: "Admin"
+    category: "Admin",
+    createdAt: "2025-04-28T12:30:00Z"
   },
   {
     id: "4",
@@ -43,7 +45,8 @@ const defaultTasks = [
     priority: "Low",
     completed: false,
     client: null,
-    category: "Training"
+    category: "Training",
+    createdAt: "2025-04-27T09:15:00Z"
   },
   {
     id: "5",
@@ -53,7 +56,8 @@ const defaultTasks = [
     priority: "High",
     completed: false,
     client: "Margaret Brown",
-    category: "Health Check"
+    category: "Health Check",
+    createdAt: "2025-04-28T13:45:00Z"
   },
   {
     id: "6",
@@ -63,7 +67,8 @@ const defaultTasks = [
     priority: "Medium",
     completed: false,
     client: "Robert Johnson",
-    category: "Errands"
+    category: "Errands",
+    createdAt: "2025-04-28T14:30:00Z"
   },
   {
     id: "7",
@@ -73,7 +78,8 @@ const defaultTasks = [
     priority: "High",
     completed: true,
     client: "Emma Thompson",
-    category: "Medication"
+    category: "Medication",
+    createdAt: "2025-04-27T15:00:00Z"
   },
   {
     id: "8",
@@ -83,7 +89,8 @@ const defaultTasks = [
     priority: "Low",
     completed: true,
     client: null,
-    category: "Admin"
+    category: "Admin",
+    createdAt: "2025-04-27T16:20:00Z"
   }
 ];
 
