@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   CheckCircle, 
@@ -62,7 +61,7 @@ const CarerTasks: React.FC = () => {
   );
   const clients = Array.from(
     new Set(tasks.map(task => task.client).filter(Boolean))
-  );
+  ) as string[];
 
   // Apply filters and search to tasks
   const filteredTasks = tasks.filter(task => {
@@ -194,6 +193,10 @@ const CarerTasks: React.FC = () => {
   };
 
   const handleAddTask = (taskData: any) => {
+    // Convert "none" values to null to match the expected data format
+    const client = taskData.client === "none" ? null : taskData.client;
+    const category = taskData.category === "none" ? "General" : taskData.category;
+    
     const newTask = {
       id: uuidv4(),
       title: taskData.title,
@@ -201,8 +204,8 @@ const CarerTasks: React.FC = () => {
       priority: taskData.priority,
       completed: taskData.status === 'done',
       dueDate: taskData.dueDate || null,
-      client: taskData.client || null,
-      category: taskData.category || 'General',
+      client: client,
+      category: category,
       createdAt: new Date().toISOString(),
       assignee: taskData.assignee || null
     };
