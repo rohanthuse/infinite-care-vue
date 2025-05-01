@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   CheckCircle, 
   Clock, 
@@ -8,125 +8,175 @@ import {
   Search, 
   AlertCircle,
   ArrowDownUp,
-  User
+  User,
+  Calendar
 } from "lucide-react";
 import { 
   Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
+  CardContent
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import TaskDetailDialog from "@/components/carer/TaskDetailDialog";
-
-// Mock task data
-const mockTasks = [
-  {
-    id: "1",
-    title: "Medication reminder for Emma Thompson",
-    description: "Remind to take morning medication and record in log",
-    dueDate: "Today, 10:30 AM",
-    priority: "High",
-    completed: false,
-    client: "Emma Thompson",
-    category: "Medication"
-  },
-  {
-    id: "2",
-    title: "Update care notes for James Wilson",
-    description: "Complete daily care notes including mobility assessment",
-    dueDate: "Today, 2:30 PM",
-    priority: "Medium",
-    completed: false,
-    client: "James Wilson",
-    category: "Documentation"
-  },
-  {
-    id: "3",
-    title: "Submit weekly report",
-    description: "Complete and submit your weekly activity report",
-    dueDate: "Tomorrow, 5:00 PM",
-    priority: "Medium",
-    completed: false,
-    client: null,
-    category: "Admin"
-  },
-  {
-    id: "4",
-    title: "Complete training module",
-    description: "Finish the medication administration refresher course",
-    dueDate: "Friday, 12:00 PM",
-    priority: "Low",
-    completed: false,
-    client: null,
-    category: "Training"
-  },
-  {
-    id: "5",
-    title: "Check vital signs for Margaret Brown",
-    description: "Record blood pressure, temperature and heart rate",
-    dueDate: "Today, 4:30 PM",
-    priority: "High",
-    completed: false,
-    client: "Margaret Brown",
-    category: "Health Check"
-  },
-  {
-    id: "6",
-    title: "Grocery shopping for Robert Johnson",
-    description: "Purchase items from the shopping list provided",
-    dueDate: "Tomorrow, 11:00 AM",
-    priority: "Medium",
-    completed: false,
-    client: "Robert Johnson",
-    category: "Errands"
-  },
-  {
-    id: "7",
-    title: "Review medication chart",
-    description: "Check and update medication administration records",
-    dueDate: "Yesterday, 3:00 PM",
-    priority: "High",
-    completed: true,
-    client: "Emma Thompson",
-    category: "Medication"
-  },
-  {
-    id: "8",
-    title: "Submit expense report",
-    description: "Submit travel and expense claims for last week",
-    dueDate: "Yesterday, 5:00 PM",
-    priority: "Low",
-    completed: true,
-    client: null,
-    category: "Admin"
-  }
-];
+import AddTaskDialog from "@/components/tasks/AddTaskDialog";
+import FilterTasksDialog from "@/components/carer/FilterTasksDialog";
+import SortTasksDialog from "@/components/carer/SortTasksDialog";
+import { useTasks } from "@/contexts/TaskContext";
+import { v4 as uuidv4 } from "uuid";
+import { format, isWithinInterval, parse, parseISO, isBefore, isAfter } from "date-fns";
+import { SortOption } from "@/components/carer/SortTasksDialog";
 
 const CarerTasks: React.FC = () => {
   const [activeTab, setActiveTab] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
-  const [tasks, setTasks] = useState(mockTasks);
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [addTaskDialogOpen, setAddTaskDialogOpen] = useState(false);
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [sortDialogOpen, setSortDialogOpen] = useState(false);
   const { toast } = useToast();
   
-  const pendingTasks = tasks.filter(task => !task.completed && 
-    (task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     (task.client && task.client.toLowerCase().includes(searchQuery.toLowerCase())) ||
-     task.category.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
+  // Get tasks from context
+  const { tasks, completeTask, updateTask, addTask } = useTasks();
   
-  const completedTasks = tasks.filter(task => task.completed && 
-    (task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     (task.client && task.client.toLowerCase().includes(searchQuery.toLowerCase())) ||
-     task.category.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+  // Filter and sort states
+  const [filters, setFilters] = useState({
+    priority: [] as string[],
+    category: [] as string[],
+    client: [] as string[],
+    dateRange: { from: undefined as Date | undefined, to: undefined as Date | undefined },
+    showCompleted: false
+  });
+  
+  const [sortOption, setSortOption] = useState<SortOption>({ 
+    field: "dueDate", 
+    direction: "asc", 
+    label: "Due Date (Earliest First)" 
+  });
+
+  // Extract unique categories and clients for filters
+  const categories = Array.from(
+    new Set(tasks.map(task => task.category).filter(Boolean))
   );
+  const clients = Array.from(
+    new Set(tasks.map(task => task.client).filter(Boolean))
+  );
+
+  // Apply filters and search to tasks
+  const filteredTasks = tasks.filter(task => {
+    // Text search
+    const searchMatch = 
+      searchQuery === "" || 
+      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (task.client && task.client.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (task.category && task.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      task.description.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Completed/pending filter
+    const completedMatch = 
+      (activeTab === "pending" && !task.completed) || 
+      (activeTab === "completed" && task.completed) ||
+      (filters.showCompleted);
+    
+    // Priority filter
+    const priorityMatch = 
+      filters.priority.length === 0 || 
+      filters.priority.includes(task.priority);
+    
+    // Category filter
+    const categoryMatch = 
+      filters.category.length === 0 || 
+      (task.category && filters.category.includes(task.category));
+    
+    // Client filter
+    const clientMatch = 
+      filters.client.length === 0 || 
+      (task.client && filters.client.includes(task.client));
+    
+    // Date range filter
+    let dateMatch = true;
+    if (filters.dateRange.from || filters.dateRange.to) {
+      if (task.dueDate) {
+        const taskDate = typeof task.dueDate === 'string' 
+          ? (task.dueDate.includes('-') ? parseISO(task.dueDate) : parse(task.dueDate, 'MMMM d, yyyy', new Date()))
+          : new Date();
+        
+        if (filters.dateRange.from && filters.dateRange.to) {
+          dateMatch = isWithinInterval(taskDate, { 
+            start: filters.dateRange.from, 
+            end: filters.dateRange.to 
+          });
+        } else if (filters.dateRange.from) {
+          dateMatch = isAfter(taskDate, filters.dateRange.from) || 
+                      taskDate.toDateString() === filters.dateRange.from.toDateString();
+        } else if (filters.dateRange.to) {
+          dateMatch = isBefore(taskDate, filters.dateRange.to) || 
+                      taskDate.toDateString() === filters.dateRange.to.toDateString();
+        }
+      } else {
+        dateMatch = false;
+      }
+    }
+    
+    return searchMatch && completedMatch && priorityMatch && categoryMatch && clientMatch && dateMatch;
+  });
+
+  // Apply sorting
+  const sortedTasks = [...filteredTasks].sort((a, b) => {
+    const { field, direction } = sortOption;
+    
+    // Handle undefined values
+    if (a[field as keyof typeof a] === undefined && b[field as keyof typeof b] === undefined) return 0;
+    if (a[field as keyof typeof a] === undefined) return direction === 'asc' ? 1 : -1;
+    if (b[field as keyof typeof b] === undefined) return direction === 'asc' ? -1 : 1;
+    
+    // Sort by priority numerically
+    if (field === 'priority') {
+      const priorityValues: Record<string, number> = { 
+        'urgent': 3, 
+        'high': 2, 
+        'medium': 1, 
+        'low': 0 
+      };
+      
+      const valueA = priorityValues[a[field]?.toLowerCase() || 'low'];
+      const valueB = priorityValues[b[field]?.toLowerCase() || 'low'];
+      
+      return direction === 'asc' 
+        ? valueA - valueB 
+        : valueB - valueA;
+    }
+    
+    // Sort by date
+    if (field === 'dueDate') {
+      if (!a.dueDate) return direction === 'asc' ? 1 : -1;
+      if (!b.dueDate) return direction === 'asc' ? -1 : 1;
+      
+      const dateA = typeof a.dueDate === 'string' 
+        ? (a.dueDate.includes('-') ? parseISO(a.dueDate) : parse(a.dueDate, 'MMMM d, yyyy', new Date()))
+        : new Date();
+      const dateB = typeof b.dueDate === 'string' 
+        ? (b.dueDate.includes('-') ? parseISO(b.dueDate) : parse(b.dueDate, 'MMMM d, yyyy', new Date()))
+        : new Date();
+      
+      return direction === 'asc'
+        ? dateA.getTime() - dateB.getTime()
+        : dateB.getTime() - dateA.getTime();
+    }
+    
+    // Sort by text fields
+    const valueA = String(a[field as keyof typeof a] || '').toLowerCase();
+    const valueB = String(b[field as keyof typeof b] || '').toLowerCase();
+    
+    return direction === 'asc'
+      ? valueA.localeCompare(valueB)
+      : valueB.localeCompare(valueA);
+  });
+
+  const pendingTasks = sortedTasks.filter(task => !task.completed);
+  const completedTasks = sortedTasks.filter(task => task.completed);
 
   const handleTaskClick = (task: any) => {
     setSelectedTask(task);
@@ -134,33 +184,65 @@ const CarerTasks: React.FC = () => {
   };
 
   const handleCompleteTask = (taskId: string) => {
-    setTasks(prev => 
-      prev.map(task => 
-        task.id === taskId 
-          ? { ...task, completed: true } 
-          : task
-      )
-    );
+    completeTask(taskId);
     setDetailDialogOpen(false);
-    toast({
-      title: "Task completed",
-      description: "The task has been marked as complete.",
-    });
   };
 
   const handleSaveTask = (updatedTask: any) => {
-    setTasks(prev => 
-      prev.map(task => 
-        task.id === updatedTask.id 
-          ? updatedTask 
-          : task
-      )
-    );
+    updateTask(updatedTask);
     setDetailDialogOpen(false);
-    toast({
-      title: "Task updated",
-      description: "Your changes have been saved.",
-    });
+  };
+
+  const handleAddTask = (taskData: any) => {
+    const newTask = {
+      id: uuidv4(),
+      title: taskData.title,
+      description: taskData.description,
+      priority: taskData.priority,
+      completed: taskData.status === 'done',
+      dueDate: taskData.dueDate || null,
+      client: taskData.client || null,
+      category: taskData.category || 'General',
+      createdAt: new Date().toISOString(),
+      assignee: taskData.assignee || null
+    };
+    
+    addTask(newTask);
+    setAddTaskDialogOpen(false);
+  };
+
+  const handleApplyFilters = (newFilters: any) => {
+    setFilters(newFilters);
+  };
+
+  const handleSelectSort = (sort: SortOption) => {
+    setSortOption(sort);
+  };
+
+  // Format date for display
+  const formatDueDate = (dueDateString: string) => {
+    try {
+      if (dueDateString.includes('-')) {
+        // Handle ISO date format
+        const date = parseISO(dueDateString);
+        const today = new Date();
+        const tomorrow = new Date();
+        tomorrow.setDate(today.getDate() + 1);
+        
+        if (date.toDateString() === today.toDateString()) {
+          return "Today";
+        } else if (date.toDateString() === tomorrow.toDateString()) {
+          return "Tomorrow";
+        } else {
+          return format(date, "EEE, MMM d");
+        }
+      } else {
+        // Already formatted date
+        return dueDateString;
+      }
+    } catch (e) {
+      return dueDateString;
+    }
   };
 
   return (
@@ -179,15 +261,26 @@ const CarerTasks: React.FC = () => {
         </div>
         
         <div className="flex gap-2 w-full md:w-auto">
-          <Button variant="outline" className="flex-1 md:flex-none gap-2">
+          <Button 
+            variant="outline" 
+            className="flex-1 md:flex-none gap-2"
+            onClick={() => setFilterDialogOpen(true)}
+          >
             <Filter className="h-4 w-4" />
             <span>Filter</span>
           </Button>
-          <Button variant="outline" className="flex-1 md:flex-none gap-2">
+          <Button 
+            variant="outline" 
+            className="flex-1 md:flex-none gap-2"
+            onClick={() => setSortDialogOpen(true)}
+          >
             <ArrowDownUp className="h-4 w-4" />
             <span>Sort</span>
           </Button>
-          <Button className="flex-1 md:flex-none gap-2">
+          <Button 
+            className="flex-1 md:flex-none gap-2"
+            onClick={() => setAddTaskDialogOpen(true)}
+          >
             <Plus className="h-4 w-4" />
             <span>Add Task</span>
           </Button>
@@ -211,13 +304,13 @@ const CarerTasks: React.FC = () => {
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <div className={`w-5 h-5 rounded-full flex-shrink-0 border mt-1 ${
-                      task.priority === "High" 
+                      task.priority === "High" || task.priority === "high" || task.priority === "urgent"
                         ? "border-red-300 bg-red-50" 
-                        : task.priority === "Medium" 
+                        : task.priority === "Medium" || task.priority === "medium"
                         ? "border-amber-300 bg-amber-50" 
                         : "border-green-300 bg-green-50"
                     }`}>
-                      {task.priority === "High" && (
+                      {(task.priority === "High" || task.priority === "high" || task.priority === "urgent") && (
                         <AlertCircle className="h-5 w-5 text-red-500" />
                       )}
                     </div>
@@ -226,9 +319,9 @@ const CarerTasks: React.FC = () => {
                       <div className="flex justify-between">
                         <h3 className="font-medium">{task.title}</h3>
                         <div className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          task.priority === "High" 
+                          task.priority === "High" || task.priority === "high" || task.priority === "urgent"
                             ? "bg-red-100 text-red-700" 
-                            : task.priority === "Medium" 
+                            : task.priority === "Medium" || task.priority === "medium"
                             ? "bg-amber-100 text-amber-700" 
                             : "bg-green-100 text-green-700"
                         }`}>
@@ -239,10 +332,12 @@ const CarerTasks: React.FC = () => {
                       <p className="text-sm text-gray-600 mt-1">{task.description}</p>
                       
                       <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3">
-                        <div className="flex items-center text-xs text-gray-500">
-                          <Clock className="h-3.5 w-3.5 mr-1" />
-                          {task.dueDate}
-                        </div>
+                        {task.dueDate && (
+                          <div className="flex items-center text-xs text-gray-500">
+                            <Clock className="h-3.5 w-3.5 mr-1" />
+                            {formatDueDate(task.dueDate)}
+                          </div>
+                        )}
                         
                         {task.client && (
                           <div className="flex items-center text-xs text-gray-500">
@@ -251,9 +346,11 @@ const CarerTasks: React.FC = () => {
                           </div>
                         )}
                         
-                        <div className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs">
-                          {task.category}
-                        </div>
+                        {task.category && (
+                          <div className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs">
+                            {task.category}
+                          </div>
+                        )}
                       </div>
                       
                       <div className="flex gap-2 mt-3">
@@ -310,10 +407,12 @@ const CarerTasks: React.FC = () => {
                       <p className="text-sm text-gray-500 mt-1">{task.description}</p>
                       
                       <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3">
-                        <div className="flex items-center text-xs text-gray-500">
-                          <Clock className="h-3.5 w-3.5 mr-1" />
-                          {task.dueDate}
-                        </div>
+                        {task.dueDate && (
+                          <div className="flex items-center text-xs text-gray-500">
+                            <Clock className="h-3.5 w-3.5 mr-1" />
+                            {formatDueDate(task.dueDate)}
+                          </div>
+                        )}
                         
                         {task.client && (
                           <div className="flex items-center text-xs text-gray-500">
@@ -322,9 +421,11 @@ const CarerTasks: React.FC = () => {
                           </div>
                         )}
                         
-                        <div className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs">
-                          {task.category}
-                        </div>
+                        {task.category && (
+                          <div className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs">
+                            {task.category}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -339,6 +440,7 @@ const CarerTasks: React.FC = () => {
         </TabsContent>
       </Tabs>
 
+      {/* Task Detail Dialog */}
       {selectedTask && (
         <TaskDetailDialog
           open={detailDialogOpen}
@@ -348,6 +450,32 @@ const CarerTasks: React.FC = () => {
           onSave={handleSaveTask}
         />
       )}
+      
+      {/* Add Task Dialog */}
+      <AddTaskDialog
+        isOpen={addTaskDialogOpen}
+        onClose={() => setAddTaskDialogOpen(false)}
+        onAddTask={handleAddTask}
+        clients={clients as string[]}
+        categories={categories as string[]}
+      />
+      
+      {/* Filter Tasks Dialog */}
+      <FilterTasksDialog
+        open={filterDialogOpen}
+        onOpenChange={setFilterDialogOpen}
+        onApplyFilters={handleApplyFilters}
+        categories={categories as string[]}
+        clients={clients as string[]}
+      />
+      
+      {/* Sort Tasks Dialog */}
+      <SortTasksDialog
+        open={sortDialogOpen}
+        onOpenChange={setSortDialogOpen}
+        selectedSort={sortOption}
+        onSelectSort={handleSelectSort}
+      />
     </div>
   );
 };

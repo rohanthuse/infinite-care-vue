@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { v4 as uuidv4 } from 'uuid';
 
 // Initial task data
 const defaultTasks = [
@@ -86,15 +87,19 @@ const defaultTasks = [
   }
 ];
 
-type Task = {
+export type Task = {
   id: string;
   title: string;
   description: string;
-  dueDate: string;
+  dueDate: string | null;
   priority: string;
   completed: boolean;
   client: string | null;
   category: string;
+  assignee?: string | null;
+  assigneeAvatar?: string | null;
+  createdAt: string;
+  tags?: string[];
 };
 
 interface TaskContextType {
@@ -103,6 +108,7 @@ interface TaskContextType {
   updateTask: (task: Task) => void;
   addTask: (task: Task) => void;
   getTaskById: (taskId: string) => Task | undefined;
+  deleteTask: (taskId: string) => void;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -161,11 +167,25 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addTask = (newTask: Task) => {
-    setTasks(prev => [...prev, newTask]);
+    const taskWithId = {
+      ...newTask,
+      id: newTask.id || uuidv4()
+    };
+    
+    setTasks(prev => [...prev, taskWithId]);
     
     toast({
       title: "Task added",
       description: "A new task has been added to your list.",
+    });
+  };
+
+  const deleteTask = (taskId: string) => {
+    setTasks(prev => prev.filter(task => task.id !== taskId));
+    
+    toast({
+      title: "Task deleted",
+      description: "The task has been removed.",
     });
   };
 
@@ -174,7 +194,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <TaskContext.Provider value={{ tasks, completeTask, updateTask, addTask, getTaskById }}>
+    <TaskContext.Provider value={{ tasks, completeTask, updateTask, addTask, getTaskById, deleteTask }}>
       {children}
     </TaskContext.Provider>
   );
