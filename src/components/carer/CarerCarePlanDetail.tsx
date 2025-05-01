@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { X, FileEdit, Download, PenLine, MessageCircle, Clock, Activity, FileBarChart2 } from "lucide-react";
 import { format } from "date-fns";
@@ -27,6 +28,8 @@ import { mockPatientData } from "@/data/mockPatientData";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { BodyMapSelector } from "@/components/events-logs/BodyMapSelector";
+import { AddEventDialog } from "@/components/care/dialogs/AddEventDialog";
 
 interface CarerCarePlanDetailProps {
   carePlan: {
@@ -61,6 +64,7 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
   const [showAddNoteDialog, setShowAddNoteDialog] = useState(false);
   const [showAddActivityDialog, setShowAddActivityDialog] = useState(false);
   const [showAddEventDialog, setShowAddEventDialog] = useState(false);
+  const [bodyMapPoints, setBodyMapPoints] = useState<Array<{ id: string; x: number; y: number; type: string; description: string }>>([]);
 
   // Form for adding notes
   const noteForm = useForm<z.infer<typeof noteFormSchema>>({
@@ -94,10 +98,19 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
     setShowAddActivityDialog(false);
   };
 
-  const handleAddEvent = () => {
-    // In a real app, this would open a form to add an event
+  const handleAddEvent = (eventData: any) => {
+    console.log("Event data:", eventData);
+    
+    // If we have body map points, add them to the event data
+    if (bodyMapPoints.length > 0) {
+      console.log("Body map points:", bodyMapPoints);
+      eventData.bodyMapPoints = bodyMapPoints;
+      eventData.hasInjury = true;
+    }
+    
     toast.success("Event recorded successfully");
     setShowAddEventDialog(false);
+    setBodyMapPoints([]);
   };
 
   // Create mock data for the carer view based on the existing mockPatientData
@@ -266,21 +279,38 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* This would be expanded in a real app */}
-      <Dialog open={showAddEventDialog} onOpenChange={setShowAddEventDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Record Event or Incident</DialogTitle>
-          </DialogHeader>
-          <p className="py-4">Event recording form would go here.</p>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setShowAddEventDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddEvent}>Save Event</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Enhanced Event Dialog with Body Map Support */}
+      <AddEventDialog 
+        open={showAddEventDialog} 
+        onOpenChange={setShowAddEventDialog}
+        onSave={handleAddEvent}
+        carePlanId={carePlan.id}
+        patientName={carePlan.clientName}
+        patientId={carePlan.id}
+      />
+
+      {/* If body map selection is needed separately */}
+      {showAddEventDialog && (
+        <Dialog open={false}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Document Injury</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <BodyMapSelector 
+                bodyMapPoints={bodyMapPoints} 
+                setBodyMapPoints={setBodyMapPoints} 
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
+              <Button>Save Injury Details</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
