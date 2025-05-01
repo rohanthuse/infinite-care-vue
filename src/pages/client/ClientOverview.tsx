@@ -1,10 +1,95 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, FileText, CreditCard, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ClientCarePlanDetailDialog } from "@/components/client/ClientCarePlanDetailDialog";
 
 const ClientOverview = () => {
+  const [carePlanDialogOpen, setCarePlanDialogOpen] = useState(false);
+  
+  // Mock care plan data (this would be fetched from an API in a real application)
+  const carePlan = {
+    id: 1,
+    title: "Rehabilitation Care Plan",
+    createdAt: "March 15, 2025",
+    updatedAt: "April 25, 2025",
+    reviewDate: "May 25, 2025",
+    provider: "Dr. Emily Smith",
+    goalsProgress: 65,
+    goals: [
+      {
+        id: 1,
+        description: "Improve mobility in left leg",
+        status: "in-progress",
+        progress: 70,
+        notes: "Making good progress with physical therapy exercises"
+      },
+      {
+        id: 2,
+        description: "Complete daily exercises",
+        status: "in-progress",
+        progress: 85,
+        notes: "Consistent with morning exercises, sometimes missing evening routine"
+      },
+      {
+        id: 3,
+        description: "Maintain healthy diet",
+        status: "in-progress",
+        progress: 60,
+        notes: "Following meal plan with occasional deviations"
+      },
+      {
+        id: 4,
+        description: "Reduce pain medication",
+        status: "not-started",
+        progress: 0,
+        notes: "Will begin after consultation with pain specialist"
+      }
+    ],
+    medications: [
+      {
+        id: 1,
+        name: "Ibuprofen",
+        dosage: "400mg",
+        frequency: "Twice daily",
+        startDate: "March 20, 2025",
+        endDate: "Ongoing"
+      },
+      {
+        id: 2,
+        name: "Vitamin D",
+        dosage: "2000 IU",
+        frequency: "Once daily",
+        startDate: "March 15, 2025",
+        endDate: "Ongoing"
+      }
+    ],
+    activities: [
+      {
+        id: 1,
+        name: "Morning Stretches",
+        description: "15 minutes of stretching focusing on lower body",
+        frequency: "Daily",
+        status: "active"
+      },
+      {
+        id: 2,
+        name: "Walking",
+        description: "30 minutes of walking with support",
+        frequency: "3 times per week",
+        status: "active"
+      },
+      {
+        id: 3,
+        name: "Resistance Training",
+        description: "Light resistance exercises for upper body strength",
+        frequency: "2 times per week",
+        status: "active"
+      }
+    ]
+  };
+
   return (
     <div className="space-y-8">
       {/* Welcome Banner */}
@@ -104,7 +189,13 @@ const ClientOverview = () => {
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="p-6 border-b border-gray-200 flex justify-between items-center">
           <h3 className="text-lg font-bold">Care Plan Summary</h3>
-          <Button variant="outline" size="sm">View Full Plan</Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setCarePlanDialogOpen(true)}
+          >
+            View Full Plan
+          </Button>
         </div>
         <div className="p-6">
           <div className="space-y-4">
@@ -141,6 +232,13 @@ const ClientOverview = () => {
           </div>
         </div>
       </div>
+
+      {/* Care Plan Detail Dialog */}
+      <ClientCarePlanDetailDialog
+        open={carePlanDialogOpen}
+        onOpenChange={setCarePlanDialogOpen}
+        carePlan={carePlan}
+      />
     </div>
   );
 };

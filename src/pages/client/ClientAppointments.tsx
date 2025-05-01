@@ -4,9 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, MapPin, User } from "lucide-react";
+import { RescheduleAppointmentDialog } from "@/components/client/RescheduleAppointmentDialog";
 
 const ClientAppointments = () => {
   const [activeTab, setActiveTab] = useState("upcoming");
+  const [isRescheduling, setIsRescheduling] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
 
   // Mock appointment data
   const upcomingAppointments = [
@@ -69,6 +72,12 @@ const ClientAppointments = () => {
     }
   ];
 
+  // Open reschedule dialog
+  const handleReschedule = (appointment: any) => {
+    setSelectedAppointment(appointment);
+    setIsRescheduling(true);
+  };
+
   // Get status badge style
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -117,7 +126,7 @@ const ClientAppointments = () => {
           <div className="flex gap-2 mt-4 md:mt-0">
             {appointment.status === "confirmed" || appointment.status === "pending" ? (
               <>
-                <Button variant="outline" size="sm">Reschedule</Button>
+                <Button variant="outline" size="sm" onClick={() => handleReschedule(appointment)}>Reschedule</Button>
                 <Button variant="outline" size="sm" className="text-red-600 hover:bg-red-50">Cancel</Button>
               </>
             ) : appointment.status === "completed" ? (
@@ -165,6 +174,15 @@ const ClientAppointments = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Reschedule Appointment Dialog */}
+      {selectedAppointment && (
+        <RescheduleAppointmentDialog
+          open={isRescheduling}
+          onOpenChange={setIsRescheduling}
+          appointment={selectedAppointment}
+        />
+      )}
     </div>
   );
 };
