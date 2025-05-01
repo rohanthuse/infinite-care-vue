@@ -4,9 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, FileText, CreditCard, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClientCarePlanDetailDialog } from "@/components/client/ClientCarePlanDetailDialog";
+import { RescheduleAppointmentDialog } from "@/components/client/RescheduleAppointmentDialog";
 
 const ClientOverview = () => {
   const [carePlanDialogOpen, setCarePlanDialogOpen] = useState(false);
+  const [isRescheduling, setIsRescheduling] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   
   // Mock care plan data (this would be fetched from an API in a real application)
   const carePlan = {
@@ -90,6 +93,12 @@ const ClientOverview = () => {
     ]
   };
 
+  // Handle reschedule button click
+  const handleReschedule = (appointment: any) => {
+    setSelectedAppointment(appointment);
+    setIsRescheduling(true);
+  };
+
   return (
     <div className="space-y-8">
       {/* Welcome Banner */}
@@ -168,7 +177,20 @@ const ClientOverview = () => {
                 <span>May 3, 2025 • 10:00 AM</span>
               </div>
             </div>
-            <Button size="sm">Reschedule</Button>
+            <Button 
+              size="sm" 
+              onClick={() => handleReschedule({
+                id: 1,
+                type: "Therapy Session",
+                provider: "Dr. Smith, Physical Therapist",
+                date: "May 3, 2025",
+                time: "10:00 AM",
+                location: "Main Clinic, Room 204",
+                status: "confirmed"
+              })}
+            >
+              Reschedule
+            </Button>
           </div>
           
           <div className="p-6 flex justify-between items-center">
@@ -180,7 +202,20 @@ const ClientOverview = () => {
                 <span>May 10, 2025 • 2:00 PM</span>
               </div>
             </div>
-            <Button size="sm">Reschedule</Button>
+            <Button 
+              size="sm"
+              onClick={() => handleReschedule({
+                id: 2,
+                type: "Weekly Check-in",
+                provider: "Nurse Johnson",
+                date: "May 10, 2025",
+                time: "2:00 PM",
+                location: "Video Call",
+                status: "confirmed"
+              })}
+            >
+              Reschedule
+            </Button>
           </div>
         </div>
       </div>
@@ -239,6 +274,15 @@ const ClientOverview = () => {
         onOpenChange={setCarePlanDialogOpen}
         carePlan={carePlan}
       />
+
+      {/* Reschedule Appointment Dialog */}
+      {selectedAppointment && (
+        <RescheduleAppointmentDialog
+          open={isRescheduling}
+          onOpenChange={setIsRescheduling}
+          appointment={selectedAppointment}
+        />
+      )}
     </div>
   );
 };
