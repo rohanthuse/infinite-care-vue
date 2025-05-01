@@ -1,107 +1,29 @@
 
-import React, { useState } from "react";
-import { Search, Filter, GraduationCap, CheckCircle, Clock, Calendar, ChevronRight } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Search, Filter, GraduationCap, CheckCircle, Clock, Calendar, ChevronRight, Download, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { format, addDays } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { format, addDays, isAfter, isBefore, parseISO } from "date-fns";
+import { toast } from "sonner";
+import { 
+  getTrainingMatrix, 
+  mockTrainings, 
+  filterTrainingsByCategory,
+} from "@/data/mockTrainingData";
+import { Training, TrainingStatus, TrainingCategory, TrainingCell } from "@/types/training";
+import TrainingStatusCell from "@/components/training/TrainingStatusCell";
+import TrainingCertificateView from "@/components/training/TrainingCertificateView";
+import TrainingExportUser from "@/components/training/TrainingExportUser";
+import { CustomButton } from "@/components/ui/CustomButton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-// Mock training data
-const mockTrainingCourses = [
-  {
-    id: "1",
-    title: "Infection Control and Prevention",
-    description: "Learn essential infection control measures for healthcare settings",
-    status: "completed",
-    completionDate: new Date("2024-03-15"),
-    expiryDate: addDays(new Date("2024-03-15"), 365),
-    progress: 100,
-    duration: "2 hours",
-    category: "Required",
-    modules: [
-      { name: "Introduction to Infection Control", completed: true },
-      { name: "Hand Hygiene Procedures", completed: true },
-      { name: "Personal Protective Equipment", completed: true },
-      { name: "Preventing Cross-Contamination", completed: true }
-    ]
-  },
-  {
-    id: "2",
-    title: "Moving and Handling",
-    description: "Safe techniques for moving and handling patients",
-    status: "completed",
-    completionDate: new Date("2024-02-20"),
-    expiryDate: addDays(new Date("2024-02-20"), 365),
-    progress: 100,
-    duration: "3 hours",
-    category: "Required",
-    modules: [
-      { name: "Principles of Safe Moving", completed: true },
-      { name: "Risk Assessment", completed: true },
-      { name: "Manual Handling Techniques", completed: true },
-      { name: "Using Mobility Aids", completed: true }
-    ]
-  },
-  {
-    id: "3",
-    title: "Medication Management",
-    description: "Proper handling and administration of medications",
-    status: "in progress",
-    completionDate: null,
-    expiryDate: null,
-    progress: 60,
-    duration: "4 hours",
-    category: "Required",
-    modules: [
-      { name: "Medication Basics", completed: true },
-      { name: "Medication Administration", completed: true },
-      { name: "Documentation and Reporting", completed: false },
-      { name: "Common Medications and Side Effects", completed: false },
-      { name: "Medication Errors Prevention", completed: false }
-    ]
-  },
-  {
-    id: "4",
-    title: "Dementia Care",
-    description: "Specialized care approaches for individuals with dementia",
-    status: "not started",
-    completionDate: null,
-    expiryDate: null,
-    progress: 0,
-    duration: "5 hours",
-    category: "Recommended",
-    modules: [
-      { name: "Understanding Dementia", completed: false },
-      { name: "Communication Techniques", completed: false },
-      { name: "Managing Challenging Behaviors", completed: false },
-      { name: "Person-Centered Care", completed: false },
-      { name: "Supporting Families", completed: false }
-    ]
-  },
-  {
-    id: "5",
-    title: "Basic Life Support",
-    description: "Emergency life-saving procedures and techniques",
-    status: "expiring soon",
-    completionDate: new Date("2023-05-10"),
-    expiryDate: new Date("2024-05-10"),
-    progress: 100,
-    duration: "3 hours",
-    category: "Required",
-    modules: [
-      { name: "CPR Techniques", completed: true },
-      { name: "Using AED", completed: true },
-      { name: "Choking Management", completed: true },
-      { name: "Emergency Response", completed: true }
-    ]
-  }
-];
-
-// Upcoming scheduled training events
+// Upcoming scheduled training events - this would come from the API in a real implementation
 const mockScheduledTraining = [
   {
     id: "s1",
@@ -123,33 +45,103 @@ const mockScheduledTraining = [
 
 const CarerTraining: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("all");
-  const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<TrainingCategory | 'all'>('all');
+  const [selectedTraining, setSelectedTraining] = useState<Training | null>(null);
+  const [showCertificateDialog, setShowCertificateDialog] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<TrainingStatus | 'all'>('all');
+  const [carerId, setCarerId] = useState("staff-1"); // In real app, this would be dynamic based on logged in user
+
+  // Get training matrix data
+  const matrixData = getTrainingMatrix();
+  const currentStaffMember = matrixData.staffMembers.find(staff => staff.id === carerId) || matrixData.staffMembers[0];
   
-  const getStatusColor = (status: string) => {
+  // Filter trainings for current carer
+  const carerTrainings = matrixData.trainings.map(training => {
+    const trainingCell = matrixData.data[carerId]?.[training.id] || {
+      status: 'not-started' as TrainingStatus
+    };
+    
+    return {
+      ...training,
+      status: trainingCell.status,
+      completionDate: trainingCell.completionDate,
+      expiryDate: trainingCell.expiryDate,
+      score: trainingCell.score,
+      maxScore: trainingCell.maxScore || 100
+    };
+  });
+
+  // Calculate completion statistics
+  const completedCount = carerTrainings.filter(t => t.status === 'completed').length;
+  const inProgressCount = carerTrainings.filter(t => t.status === 'in-progress').length;
+  const expiredCount = carerTrainings.filter(t => t.status === 'expired').length;
+  const totalCount = carerTrainings.length;
+  const completionPercentage = Math.round((completedCount / totalCount) * 100);
+  
+  // Filter trainings based on search, status, and category
+  const filteredTrainings = carerTrainings.filter(training => {
+    const searchMatches = 
+      training.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      training.description.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const categoryMatches = activeTab === 'all' || training.category === activeTab;
+    const statusMatches = selectedStatus === 'all' || training.status === selectedStatus;
+    
+    return searchMatches && categoryMatches && statusMatches;
+  });
+  
+  // Handle enrollment in a training course
+  const handleEnrollInTraining = (training: Training) => {
+    toast.success(`Enrolled in ${training.title}`, {
+      description: "You have been successfully enrolled in this training course"
+    });
+    setSelectedTraining(null);
+  };
+
+  // Handle viewing certificate
+  const handleViewCertificate = (training: Training) => {
+    setSelectedTraining(training);
+    setShowCertificateDialog(true);
+  };
+
+  // Get the appropriate status badge class
+  const getStatusColor = (status: TrainingStatus): string => {
     switch (status) {
       case "completed": return "bg-green-100 text-green-700";
-      case "in progress": return "bg-blue-100 text-blue-700";
-      case "not started": return "bg-gray-100 text-gray-700";
-      case "expiring soon": return "bg-amber-100 text-amber-700";
+      case "in-progress": return "bg-blue-100 text-blue-700";
+      case "expired": return "bg-red-100 text-red-700";
+      case "not-started": return "bg-gray-100 text-gray-700";
       default: return "bg-gray-100 text-gray-700";
     }
   };
   
-  const filteredCourses = mockTrainingCourses.filter(course => {
-    const searchMatches = 
-      course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const tabMatches = 
-      activeTab === "all" || 
-      (activeTab === "required" && course.category === "Required") ||
-      (activeTab === "completed" && course.status === "completed") ||
-      (activeTab === "inprogress" && course.status === "in progress") ||
-      (activeTab === "expiring" && course.status === "expiring soon");
-    
-    return searchMatches && tabMatches;
-  });
+  // Calculate training progress percentage
+  const calculateTrainingProgress = (training: Training): number => {
+    switch (training.status) {
+      case "completed": return 100;
+      case "in-progress": 
+        // For in-progress trainings, we can simulate progress from score or set a default
+        return training.score ? (training.score / (training.maxScore || 100)) * 100 : 60;
+      case "expired": return 100; // It was completed but expired
+      case "not-started": return 0;
+      default: return 0;
+    }
+  };
+
+  // Determine if a course is expiring soon (within 30 days)
+  const isExpiringSoon = (expiryDate?: string): boolean => {
+    if (!expiryDate) return false;
+    const today = new Date();
+    const expiry = parseISO(expiryDate);
+    const thirtyDaysFromNow = addDays(today, 30);
+    return isAfter(expiry, today) && isBefore(expiry, thirtyDaysFromNow);
+  };
+
+  // Format a date string
+  const formatDate = (dateString?: string): string => {
+    if (!dateString) return 'N/A';
+    return format(parseISO(dateString), 'MMM d, yyyy');
+  };
 
   return (
     <div>
@@ -161,29 +153,28 @@ const CarerTraining: React.FC = () => {
             <CardTitle className="text-md font-medium">Training Progress</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Required Training</span>
-                <span>4/5 Completed</span>
-              </div>
-              <Progress value={80} className="h-2" />
+            <div className="flex justify-between items-center">
+              <span className="text-xl font-bold">{completionPercentage}%</span>
+              <span className="text-sm text-gray-500">Overall Completion</span>
             </div>
+            <Progress value={completionPercentage} className="h-2" />
             
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Recommended Training</span>
-                <span>0/1 Completed</span>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="bg-green-50 p-3 rounded-md">
+                <div className="text-green-600 font-bold text-xl">{completedCount}</div>
+                <div className="text-xs text-gray-600">Completed</div>
               </div>
-              <Progress value={0} className="h-2" />
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Overall Completion</span>
-                <span>4/6 (67%)</span>
+              <div className="bg-blue-50 p-3 rounded-md">
+                <div className="text-blue-600 font-bold text-xl">{inProgressCount}</div>
+                <div className="text-xs text-gray-600">In Progress</div>
               </div>
-              <Progress value={67} className="h-2" />
+              <div className="bg-amber-50 p-3 rounded-md">
+                <div className="text-amber-600 font-bold text-xl">{expiredCount}</div>
+                <div className="text-xs text-gray-600">Expired</div>
+              </div>
             </div>
+
+            <TrainingExportUser trainings={carerTrainings} staffMember={currentStaffMember} />
           </CardContent>
         </Card>
         
@@ -226,17 +217,17 @@ const CarerTraining: React.FC = () => {
       </div>
       
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
-          <TabsList>
-            <TabsTrigger value="all">All Courses</TabsTrigger>
-            <TabsTrigger value="required">Required</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-            <TabsTrigger value="inprogress">In Progress</TabsTrigger>
-            <TabsTrigger value="expiring">Expiring Soon</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as (TrainingCategory | 'all'))}>
+          <TabsList className="mb-2 sm:mb-0">
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="core">Core</TabsTrigger>
+            <TabsTrigger value="mandatory">Mandatory</TabsTrigger>
+            <TabsTrigger value="specialized">Specialized</TabsTrigger>
+            <TabsTrigger value="optional">Optional</TabsTrigger>
           </TabsList>
         </Tabs>
         
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 sm:w-[250px]">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
             <Input 
@@ -247,50 +238,82 @@ const CarerTraining: React.FC = () => {
             />
           </div>
           
-          <Button variant="outline" className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            <span>Filter</span>
-          </Button>
+          <Select value={selectedStatus} onValueChange={(value) => setSelectedStatus(value as (TrainingStatus | 'all'))}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="in-progress">In Progress</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
+              <SelectItem value="not-started">Not Started</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredCourses.length > 0 ? (
-          filteredCourses.map((course) => (
-            <Card key={course.id} className="flex flex-col cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedCourse(course)}>
+        {filteredTrainings.length > 0 ? (
+          filteredTrainings.map((training) => (
+            <Card 
+              key={training.id} 
+              className="flex flex-col cursor-pointer hover:shadow-md transition-shadow" 
+              onClick={() => setSelectedTraining(training)}
+            >
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{course.title}</CardTitle>
-                  <Badge className={getStatusColor(course.status)}>
-                    {course.status === "expiring soon" ? "Renewal Due" : course.status.charAt(0).toUpperCase() + course.status.slice(1)}
-                  </Badge>
+                  <CardTitle className="text-lg">{training.title}</CardTitle>
+                  <div className="flex-shrink-0">
+                    <TrainingStatusCell 
+                      data={{
+                        status: training.status,
+                        completionDate: training.completionDate,
+                        expiryDate: training.expiryDate,
+                        score: training.score,
+                        maxScore: training.maxScore
+                      }}
+                      title={training.title}
+                    />
+                  </div>
                 </div>
+                <Badge variant="outline" className="w-fit mt-1">
+                  {training.category.charAt(0).toUpperCase() + training.category.slice(1)}
+                </Badge>
               </CardHeader>
               <CardContent className="flex-grow">
-                <p className="text-sm text-gray-500 mb-3">{course.description}</p>
+                <p className="text-sm text-gray-500 mb-3">{training.description}</p>
                 
                 <div className="space-y-3">
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Progress</div>
                     <div className="flex items-center gap-2">
-                      <Progress value={course.progress} className="h-2 flex-grow" />
-                      <span className="text-sm font-medium">{course.progress}%</span>
+                      <Progress value={calculateTrainingProgress(training)} className="h-2 flex-grow" />
+                      <span className="text-sm font-medium">{calculateTrainingProgress(training)}%</span>
                     </div>
                   </div>
                   
-                  {course.completionDate && (
+                  {training.completionDate && (
                     <div className="flex items-center gap-2 text-sm">
                       <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span>Completed on {format(course.completionDate, "MMM d, yyyy")}</span>
+                      <span>Completed on {formatDate(training.completionDate)}</span>
                     </div>
                   )}
                   
-                  {course.expiryDate && (
+                  {training.expiryDate && (
                     <div className="flex items-center gap-2 text-sm">
                       <Clock className="h-4 w-4 text-gray-500" />
-                      <span>
-                        {course.status === "expiring soon" ? "Expires" : "Valid until"} {format(course.expiryDate, "MMM d, yyyy")}
+                      <span className={isExpiringSoon(training.expiryDate) ? "text-amber-600 font-medium" : ""}>
+                        {isExpiringSoon(training.expiryDate) ? "Expires soon: " : "Valid until: "}
+                        {formatDate(training.expiryDate)}
                       </span>
+                    </div>
+                  )}
+
+                  {training.validFor && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="h-4 w-4 text-gray-500" />
+                      <span>Valid for {training.validFor} months</span>
                     </div>
                   )}
                 </div>
@@ -299,7 +322,7 @@ const CarerTraining: React.FC = () => {
                 <div className="flex justify-between items-center w-full">
                   <div className="flex items-center text-sm text-gray-500">
                     <Clock className="h-4 w-4 mr-1" />
-                    <span>{course.duration}</span>
+                    <span>{training.validFor ? `${training.validFor} months` : "No expiry"}</span>
                   </div>
                   <ChevronRight className="h-4 w-4 text-gray-500" />
                 </div>
@@ -319,40 +342,58 @@ const CarerTraining: React.FC = () => {
         )}
       </div>
       
-      <Dialog open={!!selectedCourse} onOpenChange={() => setSelectedCourse(null)}>
+      {/* Training Details Dialog */}
+      <Dialog open={!!selectedTraining && !showCertificateDialog} onOpenChange={(open) => !open && setSelectedTraining(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Training Course Details</DialogTitle>
           </DialogHeader>
-          {selectedCourse && (
+          {selectedTraining && (
             <div className="space-y-4">
               <div className="flex flex-col gap-2">
-                <h2 className="text-xl font-semibold">{selectedCourse.title}</h2>
-                <Badge className={`w-fit ${getStatusColor(selectedCourse.status)}`}>
-                  {selectedCourse.status === "expiring soon" ? "Renewal Due" : selectedCourse.status.charAt(0).toUpperCase() + selectedCourse.status.slice(1)}
-                </Badge>
-                <p className="text-gray-600">{selectedCourse.description}</p>
+                <div className="flex justify-between items-start">
+                  <h2 className="text-xl font-semibold">{selectedTraining.title}</h2>
+                  <TrainingStatusCell 
+                    data={{
+                      status: selectedTraining.status,
+                      completionDate: selectedTraining.completionDate,
+                      expiryDate: selectedTraining.expiryDate,
+                      score: selectedTraining.score,
+                      maxScore: selectedTraining.maxScore
+                    }}
+                    title={selectedTraining.title}
+                  />
+                </div>
+                <p className="text-gray-600">{selectedTraining.description}</p>
               </div>
               
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <div className="text-gray-500">Category</div>
-                  <div className="font-medium">{selectedCourse.category}</div>
+                  <div className="font-medium capitalize">{selectedTraining.category}</div>
                 </div>
                 <div>
-                  <div className="text-gray-500">Duration</div>
-                  <div className="font-medium">{selectedCourse.duration}</div>
+                  <div className="text-gray-500">Valid For</div>
+                  <div className="font-medium">{selectedTraining.validFor || "N/A"} {selectedTraining.validFor ? "months" : ""}</div>
                 </div>
-                {selectedCourse.completionDate && (
+                {selectedTraining.completionDate && (
                   <div>
                     <div className="text-gray-500">Completed On</div>
-                    <div className="font-medium">{format(selectedCourse.completionDate, "MMMM d, yyyy")}</div>
+                    <div className="font-medium">{formatDate(selectedTraining.completionDate)}</div>
                   </div>
                 )}
-                {selectedCourse.expiryDate && (
+                {selectedTraining.expiryDate && (
                   <div>
                     <div className="text-gray-500">Valid Until</div>
-                    <div className="font-medium">{format(selectedCourse.expiryDate, "MMMM d, yyyy")}</div>
+                    <div className={`font-medium ${isExpiringSoon(selectedTraining.expiryDate) ? "text-amber-600" : ""}`}>
+                      {formatDate(selectedTraining.expiryDate)}
+                    </div>
+                  </div>
+                )}
+                {selectedTraining.score !== undefined && (
+                  <div>
+                    <div className="text-gray-500">Score</div>
+                    <div className="font-medium">{selectedTraining.score} / {selectedTraining.maxScore}</div>
                   </div>
                 )}
               </div>
@@ -360,39 +401,96 @@ const CarerTraining: React.FC = () => {
               <div>
                 <div className="text-sm text-gray-500 mb-1">Completion Progress</div>
                 <div className="flex items-center gap-2 mb-3">
-                  <Progress value={selectedCourse.progress} className="h-2 flex-grow" />
-                  <span className="text-sm font-medium">{selectedCourse.progress}%</span>
+                  <Progress value={calculateTrainingProgress(selectedTraining)} className="h-2 flex-grow" />
+                  <span className="text-sm font-medium">{calculateTrainingProgress(selectedTraining)}%</span>
                 </div>
               </div>
               
-              <div>
-                <h3 className="font-medium mb-2">Modules</h3>
-                <div className="space-y-2">
-                  {selectedCourse.modules.map((module, index) => (
-                    <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-md">
-                      {module.completed ? (
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <div className="h-4 w-4 rounded-full border border-gray-300" />
-                      )}
-                      <span>{module.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="pt-4 flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setSelectedCourse(null)}>Close</Button>
-                {selectedCourse.status !== "completed" ? (
-                  <Button>
-                    {selectedCourse.status === "not started" ? "Start" : "Continue"} Training
+              <DialogFooter className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setSelectedTraining(null)}>Close</Button>
+                
+                {selectedTraining.status === 'completed' && (
+                  <Button 
+                    className="gap-2"
+                    onClick={() => handleViewCertificate(selectedTraining)}
+                  >
+                    <Award className="h-4 w-4" />
+                    View Certificate
                   </Button>
-                ) : selectedCourse.status === "expiring soon" ? (
-                  <Button>Renew Course</Button>
-                ) : (
-                  <Button>View Certificate</Button>
                 )}
-              </div>
+                
+                {selectedTraining.status === 'expired' && (
+                  <Button className="gap-2">
+                    <Clock className="h-4 w-4" />
+                    Renew Training
+                  </Button>
+                )}
+                
+                {(selectedTraining.status === 'not-started' || selectedTraining.status === 'in-progress') && (
+                  <Button 
+                    className="gap-2"
+                    onClick={() => handleEnrollInTraining(selectedTraining)}
+                  >
+                    {selectedTraining.status === 'in-progress' ? (
+                      <>
+                        <Clock className="h-4 w-4" />
+                        Continue Training
+                      </>
+                    ) : (
+                      <>
+                        <GraduationCap className="h-4 w-4" />
+                        Start Training
+                      </>
+                    )}
+                  </Button>
+                )}
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Certificate Dialog */}
+      <Dialog open={showCertificateDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowCertificateDialog(false);
+        }
+      }}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Training Certificate</DialogTitle>
+          </DialogHeader>
+          {selectedTraining && (
+            <div className="space-y-4">
+              <TrainingCertificateView
+                training={selectedTraining}
+                staffName={currentStaffMember.name}
+                staffId={currentStaffMember.id}
+              />
+              
+              <DialogFooter className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowCertificateDialog(false)}>Close</Button>
+                <Button 
+                  className="gap-2"
+                  onClick={() => {
+                    if (selectedTraining) {
+                      try {
+                        // Import dynamically to avoid loading jsPDF on initial page load
+                        import('@/utils/trainingCertificateGenerator').then(module => {
+                          module.generateTrainingCertificate(selectedTraining, currentStaffMember);
+                          toast.success("Certificate downloaded successfully");
+                        });
+                      } catch (error) {
+                        console.error("Failed to download certificate:", error);
+                        toast.error("Failed to download certificate");
+                      }
+                    }
+                  }}
+                >
+                  <Download className="h-4 w-4" />
+                  Download Certificate
+                </Button>
+              </DialogFooter>
             </div>
           )}
         </DialogContent>
