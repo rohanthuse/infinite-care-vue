@@ -21,3 +21,24 @@ export interface News2Patient {
   lastUpdated: string;
   observations?: News2Observation[];
 }
+
+// Adding the News2AlertSettings interface that was missing
+export interface News2AlertSettings {
+  highThreshold: number;
+  mediumThreshold: number;
+  rapidIncreaseThreshold: number;
+  notifyClinicianOnDuty: boolean;
+  notifyAssignedNurse: boolean;
+  notifyMedicalDirector: boolean;
+  notifyRapidResponseTeam: boolean;
+  useSystemNotifications: boolean;
+  useEmail: boolean;
+  useSMS: boolean;
+  useMobileApp: boolean;
+  reminderInterval: number;
+  escalationTime: number;
+  overrideEmail: string;
+}
+
+// Adding the News2PatientTrend type that was missing
+export type News2PatientTrend = "up" | "down" | "stable";

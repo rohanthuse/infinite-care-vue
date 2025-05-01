@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { FileBarChart, Calendar, Download, ChevronRight, Filter, FileText, BarChart, PieChart, LineChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -145,11 +144,16 @@ const CarerReports: React.FC = () => {
             }
           } else {
             // Export summary of all patients
+            // Fix for DateRange type issue - ensure both from and to are defined
+            const safeRange = dateRange && dateRange.from && dateRange.to 
+              ? { from: dateRange.from, to: dateRange.to } 
+              : undefined;
+              
             generateNews2SummaryPDF(
               patients, 
               "Med-Infinite Branch",
               undefined,
-              dateRange
+              safeRange
             );
             toast.success("Summary PDF exported successfully", {
               description: "NEWS2 summary report has been downloaded"
