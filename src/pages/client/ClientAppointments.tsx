@@ -1,17 +1,24 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, MapPin, User } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Star } from "lucide-react";
 import { RescheduleAppointmentDialog } from "@/components/client/RescheduleAppointmentDialog";
 import { RequestAppointmentDialog } from "@/components/client/RequestAppointmentDialog";
+import { SubmitReviewDialog } from "@/components/client/SubmitReviewDialog";
+import { ViewReviewDialog } from "@/components/client/ViewReviewDialog";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/use-toast";
 
 const ClientAppointments = () => {
   const [activeTab, setActiveTab] = useState("upcoming");
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [isRequesting, setIsRequesting] = useState(false);
+  const [isReviewing, setIsReviewing] = useState(false);
+  const [isViewingReview, setIsViewingReview] = useState(false);
+  const [selectedReview, setSelectedReview] = useState<any>(null);
+  const { toast } = useToast();
 
   // Mock appointment data
   const upcomingAppointments = [
@@ -44,6 +51,7 @@ const ClientAppointments = () => {
     }
   ];
 
+  // Enhanced past appointments with review status
   const pastAppointments = [
     {
       id: 101,
@@ -52,7 +60,9 @@ const ClientAppointments = () => {
       date: "April 19, 2025",
       time: "10:00 AM",
       location: "Main Clinic, Room 204",
-      status: "completed"
+      status: "completed",
+      reviewStatus: "reviewed", // reviewed, pending, none
+      reviewId: "review-101"
     },
     {
       id: 102,
@@ -61,7 +71,9 @@ const ClientAppointments = () => {
       date: "April 12, 2025",
       time: "2:00 PM",
       location: "Video Call",
-      status: "completed"
+      status: "completed",
+      reviewStatus: "pending",
+      reviewId: "review-102"
     },
     {
       id: 103,
@@ -70,9 +82,40 @@ const ClientAppointments = () => {
       date: "April 5, 2025",
       time: "11:30 AM",
       location: "Neurology Department, Floor 3",
-      status: "cancelled"
+      status: "cancelled",
+      reviewStatus: "none"
     }
   ];
+
+  // Mock review data
+  const mockReviews = [
+    {
+      id: "review-101",
+      appointmentId: 101,
+      carerName: "Dr. Smith, Physical Therapist",
+      date: "April 19, 2025",
+      rating: 4,
+      comment: "Very professional and thorough. Explained everything clearly and gave me helpful exercises to do at home.",
+      status: "Published",
+      submittedAt: "April 20, 2025",
+      publishedAt: "April 21, 2025"
+    },
+    {
+      id: "review-102",
+      appointmentId: 102,
+      carerName: "Nurse Johnson",
+      date: "April 12, 2025",
+      rating: 5,
+      comment: "Excellent service! Very caring and attentive to all my concerns.",
+      status: "Under Review",
+      submittedAt: "April 13, 2025"
+    }
+  ];
+
+  // Function to find review by ID
+  const getReviewById = (reviewId: string) => {
+    return mockReviews.find(review => review.id === reviewId);
+  };
 
   // Open reschedule dialog
   const handleReschedule = (appointment: any) => {
@@ -83,6 +126,27 @@ const ClientAppointments = () => {
   // Open request appointment dialog
   const handleRequestAppointment = () => {
     setIsRequesting(true);
+  };
+
+  // Open submit review dialog
+  const handleReview = (appointment: any) => {
+    setSelectedAppointment(appointment);
+    setIsReviewing(true);
+  };
+
+  // Open view review dialog
+  const handleViewReview = (appointment: any) => {
+    const review = getReviewById(appointment.reviewId);
+    if (review) {
+      setSelectedReview(review);
+      setIsViewingReview(true);
+    } else {
+      toast({
+        title: "Review not found",
+        description: "Unable to load review details. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Get status badge style
@@ -101,17 +165,35 @@ const ClientAppointments = () => {
     }
   };
 
+  // Get review status badge
+  const getReviewStatusBadge = (status: string) => {
+    switch (status) {
+      case "reviewed":
+        return { text: "Reviewed", className: "bg-green-50 text-green-700 border-0" };
+      case "pending":
+        return { text: "Review Pending", className: "bg-yellow-50 text-yellow-700 border-0" };
+      default:
+        return { text: "", className: "" };
+    }
+  };
+
   // Render appointment card
   const renderAppointmentCard = (appointment: any) => (
     <Card key={appointment.id} className="mb-4">
       <CardContent className="p-6">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start">
           <div className="space-y-3">
             <div className="flex items-center justify-between md:justify-start">
               <h3 className="text-lg font-bold">{appointment.type}</h3>
               <span className={`text-xs font-medium px-2 py-1 rounded-full md:ml-3 ${getStatusBadge(appointment.status)}`}>
                 {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
               </span>
+              
+              {appointment.reviewStatus && appointment.reviewStatus !== "none" && (
+                <span className={`text-xs font-medium px-2 py-1 rounded-full ml-2 ${getReviewStatusBadge(appointment.reviewStatus).className}`}>
+                  {getReviewStatusBadge(appointment.reviewStatus).text}
+                </span>
+              )}
             </div>
             
             <div className="text-sm text-gray-600 flex items-center">
@@ -131,13 +213,25 @@ const ClientAppointments = () => {
           </div>
           
           <div className="flex gap-2 mt-4 md:mt-0">
-            {appointment.status === "confirmed" || appointment.status === "pending" ? (
+            {activeTab === "upcoming" && (appointment.status === "confirmed" || appointment.status === "pending") ? (
               <>
                 <Button variant="outline" size="sm" onClick={() => handleReschedule(appointment)}>Reschedule</Button>
                 <Button variant="outline" size="sm" className="text-red-600 hover:bg-red-50">Cancel</Button>
               </>
-            ) : appointment.status === "completed" ? (
-              <Button size="sm">View Summary</Button>
+            ) : activeTab === "past" && appointment.status === "completed" ? (
+              <>
+                {appointment.reviewStatus === "none" ? (
+                  <Button size="sm" onClick={() => handleReview(appointment)} className="gap-1">
+                    <Star className="h-4 w-4 mr-1" />
+                    Leave Review
+                  </Button>
+                ) : appointment.reviewStatus === "reviewed" || appointment.reviewStatus === "pending" ? (
+                  <Button variant="outline" size="sm" onClick={() => handleViewReview(appointment)}>
+                    View Review
+                  </Button>
+                ) : null}
+                <Button size="sm" variant="outline">View Summary</Button>
+              </>
             ) : null}
           </div>
         </div>
@@ -182,7 +276,7 @@ const ClientAppointments = () => {
         </Tabs>
       </div>
 
-      {/* Reschedule Appointment Dialog */}
+      {/* Dialogs */}
       {selectedAppointment && (
         <RescheduleAppointmentDialog
           open={isRescheduling}
@@ -191,11 +285,26 @@ const ClientAppointments = () => {
         />
       )}
 
-      {/* Request Appointment Dialog */}
       <RequestAppointmentDialog
         open={isRequesting}
         onOpenChange={setIsRequesting}
       />
+      
+      {selectedAppointment && (
+        <SubmitReviewDialog
+          open={isReviewing}
+          onOpenChange={setIsReviewing}
+          appointment={selectedAppointment}
+        />
+      )}
+      
+      {selectedReview && (
+        <ViewReviewDialog
+          open={isViewingReview}
+          onOpenChange={setIsViewingReview}
+          review={selectedReview}
+        />
+      )}
     </div>
   );
 };

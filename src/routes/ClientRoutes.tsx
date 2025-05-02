@@ -8,6 +8,7 @@ import ClientPayments from "@/pages/client/ClientPayments";
 import ClientDocuments from "@/pages/client/ClientDocuments";
 import ClientProfile from "@/pages/client/ClientProfile";
 import ClientMessages from "@/pages/client/ClientMessages";
+import ClientReviews from "@/pages/client/ClientReviews";
 import { lazy, Suspense } from "react";
 
 // Higher-order component to check client authentication
@@ -39,6 +40,7 @@ const ClientRoutes = () => {
       <Route index element={<ClientOverview />} />
       <Route path="appointments" element={<ClientAppointments />} />
       <Route path="care-plans" element={<ClientCarePlans />} />
+      <Route path="reviews" element={<ClientReviews />} />
       <Route path="payments" element={<ClientPayments />} />
       <Route path="documents" element={<ClientDocuments />} />
       <Route path="messages" element={

@@ -8,12 +8,33 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Filter, Star, ThumbsUp, ThumbsDown, ChevronLeft, ChevronRight, Download, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
 
 export interface ReviewsTabProps {
   branchId?: string;
   branchName?: string;
 }
 
+// Existing mock reviews
 const mockReviews = [
   {
     id: "REV-001",
@@ -105,15 +126,59 @@ const mockReviews = [
   }
 ];
 
+// Adding client-submitted reviews with pending status
+const allReviews = [
+  ...mockReviews,
+  {
+    id: "REV-009",
+    clientName: "Johnson, Andrew",
+    clientInitials: "JA",
+    carerName: "Warren, Susan",
+    carerInitials: "WS",
+    rating: 3,
+    comment: "The service was okay, but the carer was 15 minutes late. Otherwise professional care was provided.",
+    date: "01/05/2025",
+    status: "Under Review"
+  },
+  {
+    id: "REV-010",
+    clientName: "Pender, Eva",
+    clientInitials: "EP",
+    carerName: "Smith, John",
+    carerInitials: "SJ",
+    rating: 2,
+    comment: "I was not satisfied with the care provided. The carer seemed distracted and didn't follow my care plan properly.",
+    date: "30/04/2025",
+    status: "Under Review"
+  }
+];
+
 const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [ratingFilter, setRatingFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [selectedReview, setSelectedReview] = useState<any>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [isViewingReview, setIsViewingReview] = useState(false);
+  const { toast } = useToast();
+  
   const itemsPerPage = 5;
 
-  const filteredReviews = mockReviews.filter(review => {
+  // Filter reviews based on active tab
+  const tabFilteredReviews = allReviews.filter(review => {
+    if (activeTab === "all") return true;
+    if (activeTab === "published") return review.status === "Published";
+    if (activeTab === "pending") return review.status === "Under Review";
+    if (activeTab === "negative") return review.rating <= 3;
+    return true;
+  });
+
+  // Apply search and filters
+  const filteredReviews = tabFilteredReviews.filter(review => {
     const matchesSearch = 
       review.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       review.carerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -150,6 +215,49 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
         className={`h-4 w-4 ${i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
       />
     ));
+  };
+
+  const handleViewReview = (review: any) => {
+    setSelectedReview(review);
+    setIsViewingReview(true);
+  };
+
+  const handleApproveReview = (review: any) => {
+    setSelectedReview(review);
+    setIsApproving(true);
+  };
+
+  const handleRejectReview = (review: any) => {
+    setSelectedReview(review);
+    setIsRejecting(true);
+  };
+
+  const confirmApproval = () => {
+    // In a real app, this would update the database
+    toast({
+      title: "Review approved",
+      description: `The review from ${selectedReview.clientName} has been published.`
+    });
+    setIsApproving(false);
+  };
+
+  const confirmRejection = () => {
+    if (!rejectionReason.trim()) {
+      toast({
+        title: "Reason required",
+        description: "Please provide a reason for rejecting this review.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // In a real app, this would update the database
+    toast({
+      title: "Review rejected",
+      description: `The review from ${selectedReview.clientName} has been rejected.`
+    });
+    setIsRejecting(false);
+    setRejectionReason("");
   };
 
   return (
@@ -240,7 +348,11 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
             {paginatedReviews.length > 0 ? (
               paginatedReviews.map((review) => (
                 <TableRow key={review.id} className="hover:bg-gray-50 border-t border-gray-100">
-                  <TableCell className="font-medium">{review.id}</TableCell>
+                  <TableCell className="font-medium">
+                    <Button variant="ghost" className="p-0 h-auto font-medium underline-offset-4 hover:underline" onClick={() => handleViewReview(review)}>
+                      {review.id}
+                    </Button>
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Avatar className="h-8 w-8 bg-blue-100 text-blue-600">
@@ -278,14 +390,38 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm" className="h-8 px-2">
-                        <ThumbsUp className="h-4 w-4 mr-1" />
-                        Approve
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-8 px-2">
-                        <ThumbsDown className="h-4 w-4 mr-1" />
-                        Reject
-                      </Button>
+                      {review.status === "Under Review" && (
+                        <>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 px-2"
+                            onClick={() => handleApproveReview(review)}
+                          >
+                            <ThumbsUp className="h-4 w-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 px-2"
+                            onClick={() => handleRejectReview(review)}
+                          >
+                            <ThumbsDown className="h-4 w-4 mr-1" />
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      {review.status === "Published" && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 px-2"
+                          onClick={() => handleViewReview(review)}
+                        >
+                          View
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -330,6 +466,139 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
           </div>
         </div>
       )}
+
+      {/* View Review Dialog */}
+      {selectedReview && (
+        <Dialog open={isViewingReview} onOpenChange={setIsViewingReview}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Review Details</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Client</p>
+                <div className="flex items-center mt-1 gap-2">
+                  <Avatar className="h-8 w-8 bg-blue-100 text-blue-600">
+                    <AvatarFallback>{selectedReview.clientInitials}</AvatarFallback>
+                  </Avatar>
+                  <span>{selectedReview.clientName}</span>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-gray-500">Carer</p>
+                <div className="flex items-center mt-1 gap-2">
+                  <Avatar className="h-8 w-8 bg-purple-100 text-purple-600">
+                    <AvatarFallback>{selectedReview.carerInitials}</AvatarFallback>
+                  </Avatar>
+                  <span>{selectedReview.carerName}</span>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-gray-500">Rating</p>
+                <div className="flex mt-1">{renderStars(selectedReview.rating)}</div>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-gray-500">Comment</p>
+                <div className="text-sm mt-1 p-3 bg-gray-50 rounded border border-gray-100">
+                  {selectedReview.comment}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Date</p>
+                  <p className="text-sm">{selectedReview.date}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Status</p>
+                  <Badge 
+                    variant="outline" 
+                    className={`
+                      ${selectedReview.status === "Published" ? "bg-green-50 text-green-700 border-0" : ""}
+                      ${selectedReview.status === "Under Review" ? "bg-amber-50 text-amber-700 border-0" : ""}
+                      px-2 py-0.5 rounded-full mt-1
+                    `}
+                  >
+                    {selectedReview.status}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsViewingReview(false)}>Close</Button>
+              {selectedReview.status === "Under Review" && (
+                <>
+                  <Button variant="outline" onClick={() => {
+                    setIsViewingReview(false);
+                    handleApproveReview(selectedReview);
+                  }}>
+                    <ThumbsUp className="h-4 w-4 mr-1" />
+                    Approve
+                  </Button>
+                  <Button variant="outline" onClick={() => {
+                    setIsViewingReview(false);
+                    handleRejectReview(selectedReview);
+                  }}>
+                    <ThumbsDown className="h-4 w-4 mr-1" />
+                    Reject
+                  </Button>
+                </>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Approval Confirmation Dialog */}
+      <AlertDialog open={isApproving} onOpenChange={setIsApproving}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Approve Review</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to approve and publish this review from {selectedReview?.clientName}? 
+              The review will be visible to other clients but not to the rated carer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmApproval}>Approve</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Rejection Dialog */}
+      <Dialog open={isRejecting} onOpenChange={setIsRejecting}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Review</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejecting this review. This information will be shared with the client.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea
+              placeholder="Reason for rejection..."
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              className="min-h-32"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsRejecting(false);
+              setRejectionReason("");
+            }}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmRejection}>
+              Reject Review
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
