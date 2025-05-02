@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,49 +10,44 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/components/ui/use-toast";
 import { Mail, Phone, HelpCircle } from "lucide-react";
-
 const formSchema = z.object({
   subject: z.string({
-    required_error: "Please select a subject",
+    required_error: "Please select a subject"
   }),
   message: z.string().min(10, {
-    message: "Message must be at least 10 characters.",
+    message: "Message must be at least 10 characters."
   }),
-  priority: z.string().optional(),
+  priority: z.string().optional()
 });
-
 type FormValues = z.infer<typeof formSchema>;
-
 const ClientSupport = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-  
+  const {
+    toast
+  } = useToast();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       subject: "",
       message: "",
       priority: "normal"
-    },
+    }
   });
-
   const onSubmit = (data: FormValues) => {
     setIsSubmitting(true);
-    
+
     // In a real application, this would send data to your backend
     setTimeout(() => {
       console.log("Form data submitted:", data);
       toast({
         title: "Message sent successfully",
-        description: "Thank you for your inquiry. Our team will respond within 24 hours.",
+        description: "Thank you for your inquiry. Our team will respond within 24 hours."
       });
       form.reset();
       setIsSubmitting(false);
     }, 1000);
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Contact Information Card */}
       <Card className="border border-gray-200">
         <CardHeader>
@@ -85,9 +79,7 @@ const ClientSupport = () => {
                   <Phone className="h-5 w-5 mr-3 text-blue-600" />
                   <div>
                     <p className="font-medium">Phone Support</p>
-                    <a href="tel:+18005551234" className="text-blue-600 hover:underline">
-                      +1 (800) 555-1234
-                    </a>
+                    <a href="tel:+18005551234" className="text-blue-600 hover:underline">+44 (800) 555-1234</a>
                     <p className="text-sm text-gray-500">Mon-Fri: 9am - 5pm</p>
                   </div>
                 </div>
@@ -126,11 +118,9 @@ const ClientSupport = () => {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="subject"
-                render={({ field }) => (
-                  <FormItem>
+              <FormField control={form.control} name="subject" render={({
+              field
+            }) => <FormItem>
                     <FormLabel>Subject</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
@@ -147,15 +137,11 @@ const ClientSupport = () => {
                       </SelectContent>
                     </Select>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </FormItem>} />
               
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem>
+              <FormField control={form.control} name="priority" render={({
+              field
+            }) => <FormItem>
                     <FormLabel>Priority</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
@@ -173,27 +159,17 @@ const ClientSupport = () => {
                       Please select the appropriate priority for your inquiry.
                     </FormDescription>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </FormItem>} />
               
-              <FormField
-                control={form.control}
-                name="message"
-                render={({ field }) => (
-                  <FormItem>
+              <FormField control={form.control} name="message" render={({
+              field
+            }) => <FormItem>
                     <FormLabel>Your Message</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Please describe your question or issue in detail..." 
-                        className="min-h-32"
-                        {...field}
-                      />
+                      <Textarea placeholder="Please describe your question or issue in detail..." className="min-h-32" {...field} />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </FormItem>} />
               
               <div className="flex justify-end">
                 <Button type="submit" disabled={isSubmitting}>
@@ -247,8 +223,6 @@ const ClientSupport = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default ClientSupport;
