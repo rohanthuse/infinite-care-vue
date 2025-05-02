@@ -1,18 +1,18 @@
-
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { User, Lock, Shield, Bell, Eye, EyeOff } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User, Lock, Shield, Bell, Eye, EyeOff, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 
 const ClientProfile = () => {
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Mock client data
   const [profile, setProfile] = useState({
@@ -28,6 +28,24 @@ const ClientProfile = () => {
     emergencyContact: "Sarah K",
     emergencyPhone: "+1 (555) 987-6543"
   });
+
+  // Photo state
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  // Load saved profile from localStorage on component mount
+  useEffect(() => {
+    const savedProfile = localStorage.getItem("clientProfile");
+    if (savedProfile) {
+      setProfile(JSON.parse(savedProfile));
+    }
+    
+    const savedPhoto = localStorage.getItem("clientProfilePhoto");
+    if (savedPhoto) {
+      setProfilePhoto(savedPhoto);
+      setPhotoPreview(savedPhoto);
+    }
+  }, []);
 
   // Form state for password change
   const [passwordForm, setPasswordForm] = useState({
@@ -52,9 +70,39 @@ const ClientProfile = () => {
     confirm: false
   });
 
+  // Handle photo upload
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      setProfilePhoto(file.name);
+      setPhotoPreview(result);
+      
+      // Save photo to localStorage 
+      localStorage.setItem("clientProfilePhoto", result);
+      
+      toast({
+        title: "Photo uploaded",
+        description: "Your profile photo has been updated.",
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Trigger file input click
+  const handleClickChangePhoto = () => {
+    fileInputRef.current?.click();
+  };
+
   // Handle profile form submission
   const handleProfileUpdate = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Save profile data to localStorage for persistence between sessions
+    localStorage.setItem("clientProfile", JSON.stringify(profile));
     
     toast({
       title: "Profile updated",
@@ -119,14 +167,31 @@ const ClientProfile = () => {
           {/* Avatar and basic info */}
           <div className="w-full md:w-64 flex flex-col items-center text-center">
             <Avatar className="h-24 w-24">
-              <AvatarFallback className="bg-blue-100 text-blue-800 text-3xl">
-                {profile.name.charAt(0)}
-              </AvatarFallback>
+              {photoPreview ? (
+                <AvatarImage src={photoPreview} alt={profile.name} />
+              ) : (
+                <AvatarFallback className="bg-blue-100 text-blue-800 text-3xl">
+                  {profile.name.charAt(0)}
+                </AvatarFallback>
+              )}
             </Avatar>
             <h3 className="font-bold mt-4">{profile.name}</h3>
             <p className="text-gray-500 text-sm">Client</p>
             <div className="mt-4 w-full">
-              <Button variant="outline" className="w-full">Change Photo</Button>
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                onChange={handlePhotoChange}
+                accept="image/*"
+                className="hidden"
+              />
+              <Button 
+                variant="outline" 
+                className="w-full flex items-center justify-center gap-2"
+                onClick={handleClickChangePhoto}
+              >
+                <Upload className="w-4 h-4" /> Change Photo
+              </Button>
             </div>
           </div>
           
