@@ -4,7 +4,8 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import ClientHeader from "@/components/ClientHeader";
 import { 
   Home, Calendar, FileText, 
-  CreditCard, User, File, MessageCircle, Star
+  CreditCard, User, File, MessageCircle, Star,
+  HelpCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
@@ -23,7 +24,8 @@ const ClientDashboard = () => {
     { label: "Payments", icon: CreditCard, path: "/client-dashboard/payments" },
     { label: "Documents", icon: File, path: "/client-dashboard/documents" },
     { label: "Messages", icon: MessageCircle, path: "/client-dashboard/messages" },
-    { label: "Profile", icon: User, path: "/client-dashboard/profile" }
+    { label: "Profile", icon: User, path: "/client-dashboard/profile" },
+    { label: "Support", icon: HelpCircle, path: "/client-dashboard/support" }
   ];
   
   // Determine the page title based on the current route
@@ -46,6 +48,8 @@ const ClientDashboard = () => {
       setPageTitle("Messages");
     } else if (path.includes("/profile")) {
       setPageTitle("Profile");
+    } else if (path.includes("/support")) {
+      setPageTitle("Help & Support");
     }
   }, [location]);
   
