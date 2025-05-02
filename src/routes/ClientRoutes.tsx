@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import ClientDashboard from "@/pages/ClientDashboard";
 import ClientOverview from "@/pages/client/ClientOverview";
@@ -52,8 +53,7 @@ const ClientRoutes = () => {
       } />
       <Route path="profile" element={<ClientProfile />} />
       <Route path="support" element={<ClientSupport />} />
-    </Route>,
-    <Route key="client-login" path="/client-login" element={<Navigate to="/client-login" replace />} />
+    </Route>
   ];
 };
 
