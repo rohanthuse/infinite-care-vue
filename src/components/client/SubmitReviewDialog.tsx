@@ -23,7 +23,7 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
     if (rating === 0) {
       toast({
         title: "Rating required",
-        description: "Please select a star rating before submitting your review.",
+        description: "Please select a star rating before submitting your feedback.",
         variant: "destructive",
       });
       return;
@@ -35,8 +35,8 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
     setTimeout(() => {
       // Mock successful submission
       toast({
-        title: "Review submitted",
-        description: "Thank you! Your review has been submitted for approval.",
+        title: "Feedback submitted",
+        description: "Thank you! Your feedback has been submitted successfully.",
       });
       setIsSubmitting(false);
       setRating(0);
@@ -49,7 +49,7 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Review Your Care Service</DialogTitle>
+          <DialogTitle>Share Your Feedback</DialogTitle>
         </DialogHeader>
         
         <div className="py-4 space-y-4">
@@ -92,6 +92,7 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
               placeholder="Share your experience with this carer..."
               className="min-h-32"
             />
+            <p className="text-xs text-gray-500">Your feedback helps us improve our services. It will be shared with management but not directly with the carer.</p>
           </div>
         </div>
         
@@ -113,7 +114,7 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Submitting..." : "Submit Review"}
+            {isSubmitting ? "Submitting..." : "Submit Feedback"}
           </Button>
         </DialogFooter>
       </DialogContent>

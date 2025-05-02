@@ -1,41 +1,28 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Filter, Star, ThumbsUp, ThumbsDown, ChevronLeft, ChevronRight, Download, RefreshCw } from "lucide-react";
+import { Search, Star, ChevronLeft, ChevronRight, Download, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { 
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogDescription
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
 
 export interface ReviewsTabProps {
   branchId?: string;
   branchName?: string;
 }
 
-// Existing mock reviews
-const mockReviews = [
+// All the mock reviews combined into one array
+const allReviews = [
   {
     id: "REV-001",
     clientName: "Pender, Eva",
@@ -45,7 +32,6 @@ const mockReviews = [
     rating: 5,
     comment: "Excellent care and attention to detail. Susan was very professional and caring.",
     date: "26/01/2023",
-    status: "Published"
   },
   {
     id: "REV-002",
@@ -56,7 +42,6 @@ const mockReviews = [
     rating: 5,
     comment: "Very professional and friendly service. Would highly recommend.",
     date: "26/01/2023",
-    status: "Published"
   },
   {
     id: "REV-003",
@@ -67,7 +52,6 @@ const mockReviews = [
     rating: 4,
     comment: "Good service but arrived a bit late. Otherwise very satisfied with the care provided.",
     date: "22/01/2023",
-    status: "Published"
   },
   {
     id: "REV-004",
@@ -78,7 +62,6 @@ const mockReviews = [
     rating: 3,
     comment: "Average service. Could improve on timeliness and communication.",
     date: "18/01/2023",
-    status: "Under Review"
   },
   {
     id: "REV-005",
@@ -89,7 +72,6 @@ const mockReviews = [
     rating: 5,
     comment: "Exceptional service. Mary was attentive and professional throughout.",
     date: "15/01/2023",
-    status: "Published"
   },
   {
     id: "REV-006",
@@ -100,7 +82,6 @@ const mockReviews = [
     rating: 2,
     comment: "Disappointed with the service. Carer was late and seemed rushed.",
     date: "10/01/2023",
-    status: "Under Review"
   },
   {
     id: "REV-007",
@@ -111,7 +92,6 @@ const mockReviews = [
     rating: 5,
     comment: "Charmaine is an excellent carer. Very attentive and professional.",
     date: "05/01/2023",
-    status: "Published"
   },
   {
     id: "REV-008",
@@ -122,13 +102,7 @@ const mockReviews = [
     rating: 4,
     comment: "Good service overall. Would use again.",
     date: "02/01/2023",
-    status: "Published"
-  }
-];
-
-// Adding client-submitted reviews with pending status
-const allReviews = [
-  ...mockReviews,
+  },
   {
     id: "REV-009",
     clientName: "Johnson, Andrew",
@@ -138,7 +112,6 @@ const allReviews = [
     rating: 3,
     comment: "The service was okay, but the carer was 15 minutes late. Otherwise professional care was provided.",
     date: "01/05/2025",
-    status: "Under Review"
   },
   {
     id: "REV-010",
@@ -149,31 +122,24 @@ const allReviews = [
     rating: 2,
     comment: "I was not satisfied with the care provided. The carer seemed distracted and didn't follow my care plan properly.",
     date: "30/04/2025",
-    status: "Under Review"
   }
 ];
 
 const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [ratingFilter, setRatingFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isApproving, setIsApproving] = useState(false);
-  const [isRejecting, setIsRejecting] = useState(false);
   const [selectedReview, setSelectedReview] = useState<any>(null);
-  const [rejectionReason, setRejectionReason] = useState("");
   const [isViewingReview, setIsViewingReview] = useState(false);
-  const { toast } = useToast();
   
   const itemsPerPage = 5;
 
   // Filter reviews based on active tab
   const tabFilteredReviews = allReviews.filter(review => {
     if (activeTab === "all") return true;
-    if (activeTab === "published") return review.status === "Published";
-    if (activeTab === "pending") return review.status === "Under Review";
     if (activeTab === "negative") return review.rating <= 3;
+    if (activeTab === "positive") return review.rating >= 4;
     return true;
   });
 
@@ -184,10 +150,9 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
       review.carerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       review.comment.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesStatus = statusFilter === "all" || review.status === statusFilter;
     const matchesRating = ratingFilter === "all" || review.rating === parseInt(ratingFilter);
     
-    return matchesSearch && matchesStatus && matchesRating;
+    return matchesSearch && matchesRating;
   });
 
   const totalPages = Math.ceil(filteredReviews.length / itemsPerPage);
@@ -222,52 +187,14 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
     setIsViewingReview(true);
   };
 
-  const handleApproveReview = (review: any) => {
-    setSelectedReview(review);
-    setIsApproving(true);
-  };
-
-  const handleRejectReview = (review: any) => {
-    setSelectedReview(review);
-    setIsRejecting(true);
-  };
-
-  const confirmApproval = () => {
-    // In a real app, this would update the database
-    toast({
-      title: "Review approved",
-      description: `The review from ${selectedReview.clientName} has been published.`
-    });
-    setIsApproving(false);
-  };
-
-  const confirmRejection = () => {
-    if (!rejectionReason.trim()) {
-      toast({
-        title: "Reason required",
-        description: "Please provide a reason for rejecting this review.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // In a real app, this would update the database
-    toast({
-      title: "Review rejected",
-      description: `The review from ${selectedReview.clientName} has been rejected.`
-    });
-    setIsRejecting(false);
-    setRejectionReason("");
-  };
-
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
       <div className="p-6 border-b border-gray-100">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">Reviews & Feedback</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Client Feedback</h2>
             <p className="text-gray-500 text-sm mt-1">
-              Manage and respond to client reviews and feedback
+              View and analyze client feedback to improve services
             </p>
           </div>
           <div className="flex gap-2">
@@ -284,9 +211,8 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
         
         <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
-            <TabsTrigger value="all">All Reviews</TabsTrigger>
-            <TabsTrigger value="published">Published</TabsTrigger>
-            <TabsTrigger value="pending">Pending Review</TabsTrigger>
+            <TabsTrigger value="all">All Feedback</TabsTrigger>
+            <TabsTrigger value="positive">Positive</TabsTrigger>
             <TabsTrigger value="negative">Negative</TabsTrigger>
           </TabsList>
           
@@ -294,24 +220,13 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input 
-                placeholder="Search reviews..." 
+                placeholder="Search feedback..." 
                 className="pl-10 pr-4" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <div className="flex gap-3">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="Published">Published</SelectItem>
-                  <SelectItem value="Under Review">Under Review</SelectItem>
-                </SelectContent>
-              </Select>
-              
               <Select value={ratingFilter} onValueChange={setRatingFilter}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filter by rating" />
@@ -334,13 +249,12 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
         <Table>
           <TableHeader>
             <TableRow className="bg-white hover:bg-gray-50/90">
-              <TableHead className="text-gray-600 font-medium w-[100px]">Review ID</TableHead>
+              <TableHead className="text-gray-600 font-medium w-[100px]">Feedback ID</TableHead>
               <TableHead className="text-gray-600 font-medium">Client</TableHead>
               <TableHead className="text-gray-600 font-medium">Carer</TableHead>
               <TableHead className="text-gray-600 font-medium">Rating</TableHead>
               <TableHead className="text-gray-600 font-medium">Comment</TableHead>
               <TableHead className="text-gray-600 font-medium">Date</TableHead>
-              <TableHead className="text-gray-600 font-medium">Status</TableHead>
               <TableHead className="text-gray-600 font-medium text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -376,60 +290,22 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
                   </TableCell>
                   <TableCell className="max-w-xs truncate">{review.comment}</TableCell>
                   <TableCell>{review.date}</TableCell>
-                  <TableCell>
-                    <Badge 
-                      variant="outline" 
-                      className={`
-                        ${review.status === "Published" ? "bg-green-50 text-green-700 border-0" : ""}
-                        ${review.status === "Under Review" ? "bg-amber-50 text-amber-700 border-0" : ""}
-                        px-3 py-1 rounded-full
-                      `}
-                    >
-                      {review.status}
-                    </Badge>
-                  </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {review.status === "Under Review" && (
-                        <>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 px-2"
-                            onClick={() => handleApproveReview(review)}
-                          >
-                            <ThumbsUp className="h-4 w-4 mr-1" />
-                            Approve
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 px-2"
-                            onClick={() => handleRejectReview(review)}
-                          >
-                            <ThumbsDown className="h-4 w-4 mr-1" />
-                            Reject
-                          </Button>
-                        </>
-                      )}
-                      {review.status === "Published" && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 px-2"
-                          onClick={() => handleViewReview(review)}
-                        >
-                          View
-                        </Button>
-                      )}
-                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 px-2"
+                      onClick={() => handleViewReview(review)}
+                    >
+                      View
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-6 text-gray-500">
-                  No reviews found matching your search criteria.
+                <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                  No feedback found matching your search criteria.
                 </TableCell>
               </TableRow>
             )}
@@ -440,7 +316,7 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
       {paginatedReviews.length > 0 && (
         <div className="flex items-center justify-between p-4 border-t border-gray-100">
           <div className="text-sm text-gray-500">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredReviews.length)} of {filteredReviews.length} reviews
+            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredReviews.length)} of {filteredReviews.length} feedback entries
           </div>
           <div className="flex items-center gap-2">
             <Button 
@@ -472,7 +348,7 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
         <Dialog open={isViewingReview} onOpenChange={setIsViewingReview}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Review Details</DialogTitle>
+              <DialogTitle>Feedback Details</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div>
@@ -507,98 +383,21 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Date</p>
-                  <p className="text-sm">{selectedReview.date}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Status</p>
-                  <Badge 
-                    variant="outline" 
-                    className={`
-                      ${selectedReview.status === "Published" ? "bg-green-50 text-green-700 border-0" : ""}
-                      ${selectedReview.status === "Under Review" ? "bg-amber-50 text-amber-700 border-0" : ""}
-                      px-2 py-0.5 rounded-full mt-1
-                    `}
-                  >
-                    {selectedReview.status}
-                  </Badge>
-                </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Date</p>
+                <p className="text-sm">{selectedReview.date}</p>
+              </div>
+
+              <div className="text-sm text-gray-500 mt-2 pt-2 border-t">
+                <p>Note: This feedback is for administrative purposes only and is not shared with the carer.</p>
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsViewingReview(false)}>Close</Button>
-              {selectedReview.status === "Under Review" && (
-                <>
-                  <Button variant="outline" onClick={() => {
-                    setIsViewingReview(false);
-                    handleApproveReview(selectedReview);
-                  }}>
-                    <ThumbsUp className="h-4 w-4 mr-1" />
-                    Approve
-                  </Button>
-                  <Button variant="outline" onClick={() => {
-                    setIsViewingReview(false);
-                    handleRejectReview(selectedReview);
-                  }}>
-                    <ThumbsDown className="h-4 w-4 mr-1" />
-                    Reject
-                  </Button>
-                </>
-              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
-
-      {/* Approval Confirmation Dialog */}
-      <AlertDialog open={isApproving} onOpenChange={setIsApproving}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Approve Review</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to approve and publish this review from {selectedReview?.clientName}? 
-              The review will be visible to other clients but not to the rated carer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmApproval}>Approve</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Rejection Dialog */}
-      <Dialog open={isRejecting} onOpenChange={setIsRejecting}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reject Review</DialogTitle>
-            <DialogDescription>
-              Please provide a reason for rejecting this review. This information will be shared with the client.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Textarea
-              placeholder="Reason for rejection..."
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              className="min-h-32"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsRejecting(false);
-              setRejectionReason("");
-            }}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={confirmRejection}>
-              Reject Review
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

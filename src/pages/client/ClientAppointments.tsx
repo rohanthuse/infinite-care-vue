@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, MapPin, User, Star } from "lucide-react";
@@ -61,7 +61,7 @@ const ClientAppointments = () => {
       time: "10:00 AM",
       location: "Main Clinic, Room 204",
       status: "completed",
-      reviewStatus: "reviewed", // reviewed, pending, none
+      reviewStatus: "reviewed", // reviewed, none
       reviewId: "review-101"
     },
     {
@@ -72,7 +72,7 @@ const ClientAppointments = () => {
       time: "2:00 PM",
       location: "Video Call",
       status: "completed",
-      reviewStatus: "pending",
+      reviewStatus: "reviewed",
       reviewId: "review-102"
     },
     {
@@ -96,9 +96,7 @@ const ClientAppointments = () => {
       date: "April 19, 2025",
       rating: 4,
       comment: "Very professional and thorough. Explained everything clearly and gave me helpful exercises to do at home.",
-      status: "Published",
-      submittedAt: "April 20, 2025",
-      publishedAt: "April 21, 2025"
+      submittedAt: "April 20, 2025"
     },
     {
       id: "review-102",
@@ -107,7 +105,6 @@ const ClientAppointments = () => {
       date: "April 12, 2025",
       rating: 5,
       comment: "Excellent service! Very caring and attentive to all my concerns.",
-      status: "Under Review",
       submittedAt: "April 13, 2025"
     }
   ];
@@ -167,14 +164,10 @@ const ClientAppointments = () => {
 
   // Get review status badge
   const getReviewStatusBadge = (status: string) => {
-    switch (status) {
-      case "reviewed":
-        return { text: "Reviewed", className: "bg-green-50 text-green-700 border-0" };
-      case "pending":
-        return { text: "Review Pending", className: "bg-yellow-50 text-yellow-700 border-0" };
-      default:
-        return { text: "", className: "" };
+    if (status === "reviewed") {
+      return { text: "Feedback Submitted", className: "bg-blue-50 text-blue-700 border-0" };
     }
+    return { text: "", className: "" };
   };
 
   // Render appointment card
@@ -189,7 +182,7 @@ const ClientAppointments = () => {
                 {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
               </span>
               
-              {appointment.reviewStatus && appointment.reviewStatus !== "none" && (
+              {appointment.reviewStatus && appointment.reviewStatus === "reviewed" && (
                 <span className={`text-xs font-medium px-2 py-1 rounded-full ml-2 ${getReviewStatusBadge(appointment.reviewStatus).className}`}>
                   {getReviewStatusBadge(appointment.reviewStatus).text}
                 </span>
@@ -223,11 +216,11 @@ const ClientAppointments = () => {
                 {appointment.reviewStatus === "none" ? (
                   <Button size="sm" onClick={() => handleReview(appointment)} className="gap-1">
                     <Star className="h-4 w-4 mr-1" />
-                    Leave Review
+                    Leave Feedback
                   </Button>
-                ) : appointment.reviewStatus === "reviewed" || appointment.reviewStatus === "pending" ? (
+                ) : appointment.reviewStatus === "reviewed" ? (
                   <Button variant="outline" size="sm" onClick={() => handleViewReview(appointment)}>
-                    View Review
+                    View Feedback
                   </Button>
                 ) : null}
                 <Button size="sm" variant="outline">View Summary</Button>

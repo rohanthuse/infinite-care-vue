@@ -1,7 +1,6 @@
 
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
 
 interface ViewReviewDialogProps {
@@ -11,15 +10,6 @@ interface ViewReviewDialogProps {
 }
 
 export function ViewReviewDialog({ open, onOpenChange, review }: ViewReviewDialogProps) {
-  const getStatusColor = (status: string) => {
-    switch(status.toLowerCase()) {
-      case 'published': return "bg-green-100 text-green-800";
-      case 'under review': return "bg-yellow-100 text-yellow-800";
-      case 'rejected': return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
   const renderStars = (rating: number) => {
     return Array(5).fill(0).map((_, i) => (
       <Star 
@@ -33,12 +23,7 @@ export function ViewReviewDialog({ open, onOpenChange, review }: ViewReviewDialo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Your Review</span>
-            <Badge className={getStatusColor(review.status)}>
-              {review.status}
-            </Badge>
-          </DialogTitle>
+          <DialogTitle>Your Feedback</DialogTitle>
         </DialogHeader>
         
         <div className="py-4 space-y-4">
@@ -68,18 +53,16 @@ export function ViewReviewDialog({ open, onOpenChange, review }: ViewReviewDialo
           
           {review.adminComments && (
             <div className="space-y-2">
-              <div className="text-sm font-medium text-gray-500">Admin Response</div>
+              <div className="text-sm font-medium text-gray-500">Admin Note</div>
               <div className="text-sm p-3 bg-blue-50 rounded border border-blue-100">
                 {review.adminComments}
               </div>
             </div>
           )}
           
-          {review.status === "Rejected" && !review.adminComments && (
-            <div className="text-sm text-red-600">
-              Your review was not approved for publication. You may submit a new review if you wish.
-            </div>
-          )}
+          <div className="text-sm text-gray-500 italic">
+            Thank you for your feedback. It helps us improve our services.
+          </div>
         </div>
       </DialogContent>
     </Dialog>
