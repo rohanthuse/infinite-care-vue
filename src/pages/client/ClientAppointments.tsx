@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, MapPin, User, Star } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Star, BarChart } from "lucide-react";
 import { RescheduleAppointmentDialog } from "@/components/client/RescheduleAppointmentDialog";
 import { RequestAppointmentDialog } from "@/components/client/RequestAppointmentDialog";
 import { SubmitReviewDialog } from "@/components/client/SubmitReviewDialog";
 import { ViewReviewDialog } from "@/components/client/ViewReviewDialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const ClientAppointments = () => {
   const [activeTab, setActiveTab] = useState("upcoming");
@@ -19,6 +20,7 @@ const ClientAppointments = () => {
   const [isViewingReview, setIsViewingReview] = useState(false);
   const [selectedReview, setSelectedReview] = useState<any>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Mock appointment data
   const upcomingAppointments = [
@@ -146,6 +148,19 @@ const ClientAppointments = () => {
     }
   };
 
+  // Handle view service report
+  const handleViewServiceReport = (appointment: any) => {
+    navigate("/client-dashboard/service-reports");
+    
+    // In a real app, you might pass the appointment ID as a query parameter
+    // navigate(`/client-dashboard/service-reports?appointmentId=${appointment.id}`);
+    
+    toast({
+      title: "Service Report Loaded",
+      description: `Viewing service report for ${appointment.type} on ${appointment.date}`,
+    });
+  };
+
   // Get status badge style
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -223,7 +238,10 @@ const ClientAppointments = () => {
                     View Feedback
                   </Button>
                 ) : null}
-                <Button size="sm" variant="outline">View Summary</Button>
+                <Button size="sm" variant="outline" onClick={() => handleViewServiceReport(appointment)} className="gap-1">
+                  <BarChart className="h-4 w-4 mr-1" />
+                  View Service Report
+                </Button>
               </>
             ) : null}
           </div>

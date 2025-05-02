@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import ClientDashboard from "@/pages/ClientDashboard";
 import ClientOverview from "@/pages/client/ClientOverview";
@@ -10,6 +9,7 @@ import ClientProfile from "@/pages/client/ClientProfile";
 import ClientMessages from "@/pages/client/ClientMessages";
 import ClientReviews from "@/pages/client/ClientReviews";
 import ClientSupport from "@/pages/client/ClientSupport";
+import ClientServiceReports from "@/pages/client/ClientServiceReports";
 import { lazy, Suspense } from "react";
 
 // Higher-order component to check client authentication
@@ -44,6 +44,7 @@ const ClientRoutes = () => {
       <Route path="reviews" element={<ClientReviews />} />
       <Route path="payments" element={<ClientPayments />} />
       <Route path="documents" element={<ClientDocuments />} />
+      <Route path="service-reports" element={<ClientServiceReports />} />
       <Route path="messages" element={
         <Suspense fallback={<LoadingFallback />}>
           <ClientMessages />
