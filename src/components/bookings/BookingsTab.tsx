@@ -18,6 +18,7 @@ import { useBranchClients } from "@/data/hooks/useBranchClients";
 import { useBranchCarers } from "@/data/hooks/useBranchCarers";
 import { useAuth } from "@/hooks/useAuth";
 import { useCreateMultipleBookings } from "@/data/hooks/useCreateMultipleBookings";
+import { useServices } from "@/data/hooks/useServices";
 
 // Helper for consistent name and initials with fallback
 function safeName(first: any, last: any, fallback = "Unknown") {
@@ -444,6 +445,9 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     return acc;
   }, {});
 
+  // Add service fetching
+  const { data: services = [], isLoading: isLoadingServices, error: servicesError } = useServices();
+
   return (
     <div className="space-y-4">
       <AuthDebugInfo branchId={branchId} />
@@ -521,6 +525,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         onOpenChange={setNewBookingDialogOpen}
         clients={clientsWithBookings}
         carers={carersWithBookings}
+        services={services}
         onCreateBooking={handleCreateBooking}
         initialData={newBookingData}
         isLoading={createMultipleBookingsMutation.isPending}
