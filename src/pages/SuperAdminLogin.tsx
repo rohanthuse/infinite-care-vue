@@ -1,15 +1,16 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, Lock, User, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Heart, Lock, AlertCircle, Eye, EyeOff, Mail } from "lucide-react"; // Added Mail icon, removed User
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client"; // Import supabase client
 
 const SuperAdminLogin = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState(""); // Changed from username
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -22,31 +23,30 @@ const SuperAdminLogin = () => {
     e.preventDefault();
     setError("");
     
-    if (!username || !password) {
-      setError("Please enter both username and password.");
+    if (!email || !password) {
+      setError("Please enter both email and password.");
       return;
     }
 
     setIsLoading(true);
     
     try {
-      // This is where you would normally integrate with your authentication system
-      // For now, we'll simulate a login with a timeout
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Normally we'd check credentials against a secure backend
-      // This is just a placeholder - REPLACE with actual authentication logic
-      if (username === "superadmin" && password === "password123") {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setError(error.message);
+      } else {
         toast({
           title: "Login successful",
           description: "Welcome back, Super Admin!",
         });
-        navigate("/dashboard"); // Navigate to dashboard or admin panel
-      } else {
-        setError("Invalid credentials. Please try again.");
+        navigate("/dashboard"); // Navigate to dashboard
       }
-    } catch (err) {
-      setError("An error occurred during login. Please try again.");
+    } catch (err: any) {
+      setError("An unexpected error occurred during login. Please try again.");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -108,18 +108,19 @@ const SuperAdminLogin = () => {
           
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="email">Email</Label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
+                  <Mail className="h-5 w-5 text-gray-400" />
                 </div>
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder="Enter your username"
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
                   className="pl-10"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
                 />
               </div>
             </div>
