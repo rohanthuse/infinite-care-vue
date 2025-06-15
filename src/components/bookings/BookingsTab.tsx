@@ -458,28 +458,30 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
           </div>
         </div>
       </div>
-      {activeTab === "planning" && <>
-        <BookingFilters
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          selectedStatuses={selectedStatuses}
-          onStatusChange={setSelectedStatuses}
-          statusCounts={statusCounts}
-        />
-        <BookingTimeGrid
-          date={currentDate}
-          bookings={filteredBookings}
-          clients={clientsWithBookings} {/* << USE UPDATED CLIENTS */}
-          carers={carersWithBookings}   {/* << USE UPDATED CARERS */}
-          viewType={viewType}
-          viewMode={viewMode}
-          onCreateBooking={handleContextMenuBooking}
-          onUpdateBooking={handleEditBooking}
-          onEditBooking={handleEditBooking}
-        />
-      </>}
+      {activeTab === "planning" && (
+        <>
+          <BookingFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            selectedStatuses={selectedStatuses}
+            onStatusChange={setSelectedStatuses}
+            statusCounts={statusCounts}
+          />
+          <BookingTimeGrid
+            date={currentDate}
+            bookings={filteredBookings}
+            clients={clientsWithBookings}
+            carers={carersWithBookings}
+            viewType={viewType}
+            viewMode={viewMode}
+            onCreateBooking={handleContextMenuBooking}
+            onUpdateBooking={handleEditBooking}
+            onEditBooking={handleEditBooking}
+          />
+        </>
+      )}
       {activeTab === "list" && <BookingsList bookings={filteredBookings} />}
       {activeTab === "report" && <BookingReport bookings={filteredBookings} />}
       <NewBookingDialog
