@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,9 +19,18 @@ import { X, Loader2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-interface AddServiceDialogProps {
+interface Service {
+  id: string;
+  title: string;
+  category: string;
+  description: string | null;
+  double_handed: boolean;
+}
+
+interface EditServiceDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  service: Service | null;
 }
 
 const categories = [
@@ -37,7 +46,7 @@ const categories = [
   "Long-term Support"
 ];
 
-export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
+export function EditServiceDialog({ isOpen, onClose, service }: EditServiceDialogProps) {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
@@ -45,27 +54,36 @@ export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { mutate: addService, isPending } = useMutation({
-    mutationFn: async (newService: { title: string; category: string; description: string; double_handed: boolean; }) => {
-      const { error } = await supabase.from('services').insert([newService]);
+  useEffect(() => {
+    if (service) {
+      setTitle(service.title);
+      setCategory(service.category);
+      setDescription(service.description || "");
+      setDoubleHanded(service.double_handed);
+    }
+  }, [service]);
+
+  const { mutate: updateService, isPending } = useMutation({
+    mutationFn: async (updatedService: Omit<Service, 'id'>) => {
+      if (!service) return;
+      const { error } = await supabase
+        .from('services')
+        .update(updatedService)
+        .eq('id', service.id);
+
       if (error) throw error;
     },
     onSuccess: () => {
       toast({
-        title: "Service added",
-        description: `${title} has been added successfully`,
+        title: "Service updated",
+        description: `${title} has been updated successfully`,
       });
       queryClient.invalidateQueries({ queryKey: ['services'] });
-      // Reset form and close dialog
-      setTitle("");
-      setCategory("");
-      setDescription("");
-      setDoubleHanded(false);
       onClose();
     },
     onError: (error) => {
       toast({
-        title: "Failed to add service",
+        title: "Update failed",
         description: error.message,
         variant: "destructive",
       });
@@ -84,16 +102,18 @@ export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
       return;
     }
     
-    addService({ title, category, description, double_handed: doubleHanded });
+    updateService({ title, category, description, double_handed: doubleHanded });
   };
+
+  if (!service) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md rounded-xl p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-2 border-b">
-          <DialogTitle className="text-xl font-semibold text-gray-800">Add New Service</DialogTitle>
+          <DialogTitle className="text-xl font-semibold text-gray-800">Edit Service</DialogTitle>
           <DialogDescription className="text-gray-500">
-            Enter the details for the new service
+            Update the details for the service
           </DialogDescription>
           <Button 
             className="absolute right-4 top-4 rounded-full p-2 h-auto" 
@@ -115,7 +135,7 @@ export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="col-span-3 h-10 rounded-md border-gray-300"
-                placeholder="E.g., Medication Assistance, Meal Preparation..."
+                placeholder="E.g., Medication Assistance..."
               />
             </div>
             
@@ -173,7 +193,7 @@ export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
                 Cancel
               </Button>
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white rounded-md" disabled={isPending}>
-                 {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding...</> : 'Add Service'}
+                {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Save Changes'}
               </Button>
             </div>
           </DialogFooter>

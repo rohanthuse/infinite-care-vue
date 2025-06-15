@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { ChevronRight, FileText, Calendar, Car, MessageSquare, DollarSign, Folder, ListChecks, Plus, Search } from "lucide-react";
+import { ChevronRight, FileText, Calendar, Car, MessageSquare, DollarSign, Folder, ListChecks, Plus, Search, Briefcase } from "lucide-react";
 import { 
   Tabs, TabsList, TabsTrigger, TabsContent 
 } from "@/components/ui/tabs";
@@ -15,6 +15,8 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { ServicesTable } from "@/components/ServicesTable";
+import { AddServiceDialog } from "@/components/AddServiceDialog";
 
 interface BaseParameter {
   id: string | number;
@@ -62,6 +64,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogTitle, setDialogTitle] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAddServiceDialogOpen, setIsAddServiceDialogOpen] = useState(false);
 
   // Mock data for different parameter types
   const reportTypes: ReportType[] = [
@@ -235,6 +238,10 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
   });
 
   const handleAddNew = (parameterType: string) => {
+    if (parameterType === 'services') {
+      setIsAddServiceDialogOpen(true);
+      return;
+    }
     setDialogTitle(`Add New ${getParameterTypeTitle(parameterType)}`);
     form.reset();
     setIsDialogOpen(true);
@@ -260,6 +267,8 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
         return "Communication Type";
       case "expense-types":
         return "Expense Type";
+      case "services":
+        return "Service";
       default:
         return "Parameter";
     }
@@ -279,6 +288,8 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
         return <MessageSquare className="h-5 w-5 text-gray-600" />;
       case "expense-types":
         return <DollarSign className="h-5 w-5 text-gray-600" />;
+      case "services":
+        return <Briefcase className="h-5 w-5 text-gray-600" />;
       default:
         return <ListChecks className="h-5 w-5 text-gray-600" />;
     }
@@ -358,7 +369,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
 
       <Card className="mb-8 border-none shadow-md">
         <Tabs value={activeSectionTab} onValueChange={setActiveSectionTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-3 md:grid-cols-6 p-0 rounded-t-lg rounded-b-none border-b bg-gray-50">
+          <TabsList className="w-full grid grid-cols-3 md:grid-cols-7 p-0 rounded-t-lg rounded-b-none border-b bg-gray-50">
             <TabsTrigger 
               value="report-types" 
               className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
@@ -407,79 +418,115 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
               <span className="hidden md:inline">Expense Types</span>
               <span className="md:hidden">Expenses</span>
             </TabsTrigger>
+            <TabsTrigger 
+              value="services" 
+              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+            >
+              <Briefcase className="h-4 w-4" />
+              <span className="hidden md:inline">Services</span>
+              <span className="md:hidden">Services</span>
+            </TabsTrigger>
           </TabsList>
 
-          {["report-types", "file-categories", "bank-holidays", "travel-management", "communication-types", "expense-types"].map((paramType) => (
+          {["report-types", "file-categories", "bank-holidays", "travel-management", "communication-types", "expense-types", "services"].map((paramType) => (
             <TabsContent key={paramType} value={paramType} className="p-0 border-0">
-              <div className="p-4 border-t-0 rounded-b-lg bg-white">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    {getParameterTypeIcon(paramType)}
-                    <h2 className="text-xl font-semibold text-gray-800">
-                      {getParameterTypeTitle(paramType)}s
-                    </h2>
+              {paramType === 'services' ? (
+                <div className="p-4 border-t-0 rounded-b-lg bg-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      {getParameterTypeIcon(paramType)}
+                      <h2 className="text-xl font-semibold text-gray-800">
+                        {getParameterTypeTitle(paramType)}s
+                      </h2>
+                    </div>
+                    <Button 
+                      onClick={() => handleAddNew(paramType)}
+                      className="whitespace-nowrap"
+                    >
+                      <Plus className="h-4 w-4 mr-1" /> 
+                      New {getParameterTypeTitle(paramType)}
+                    </Button>
                   </div>
-                  <Button 
-                    onClick={() => handleAddNew(paramType)}
-                    className="whitespace-nowrap"
-                  >
-                    <Plus className="h-4 w-4 mr-1" /> 
-                    New {getParameterTypeTitle(paramType)}
-                  </Button>
+                  <div className="relative overflow-hidden border rounded-lg">
+                    <ServicesTable searchQuery={searchQuery} />
+                  </div>
                 </div>
-                
-                <div className="relative overflow-hidden border rounded-lg">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {getParameterColumns(paramType).map((column, index) => (
-                          <TableHead key={index} className="text-left font-semibold">
-                            {column.header}
-                          </TableHead>
-                        ))}
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {getParameterData(paramType)
-                        .filter(item => searchQuery 
-                          ? item.title.toLowerCase().includes(searchQuery.toLowerCase())
-                          : true)
-                        .map((item) => (
-                          <TableRow key={item.id}>
-                            {getParameterColumns(paramType).map((column, colIndex) => (
-                              <TableCell key={`${item.id}-${colIndex}`} className="text-left">
-                                {column.cell && column.accessorKey in item
-                                  ? column.cell(item[column.accessorKey as keyof typeof item])
-                                  : item[column.accessorKey as keyof typeof item]?.toString()}
+              ) : (
+                <div className="p-4 border-t-0 rounded-b-lg bg-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      {getParameterTypeIcon(paramType)}
+                      <h2 className="text-xl font-semibold text-gray-800">
+                        {getParameterTypeTitle(paramType)}s
+                      </h2>
+                    </div>
+                    <Button 
+                      onClick={() => handleAddNew(paramType)}
+                      className="whitespace-nowrap"
+                    >
+                      <Plus className="h-4 w-4 mr-1" /> 
+                      New {getParameterTypeTitle(paramType)}
+                    </Button>
+                  </div>
+                  
+                  <div className="relative overflow-hidden border rounded-lg">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          {getParameterColumns(paramType).map((column, index) => (
+                            <TableHead key={index} className="text-left font-semibold">
+                              {column.header}
+                            </TableHead>
+                          ))}
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {getParameterData(paramType)
+                          .filter(item => searchQuery 
+                            ? item.title.toLowerCase().includes(searchQuery.toLowerCase())
+                            : true)
+                          .map((item) => (
+                            <TableRow key={item.id}>
+                              {getParameterColumns(paramType).map((column, colIndex) => (
+                                <TableCell key={`${item.id}-${colIndex}`} className="text-left">
+                                  {column.cell && column.accessorKey in item
+                                    ? column.cell(item[column.accessorKey as keyof typeof item])
+                                    : item[column.accessorKey as keyof typeof item]?.toString()}
+                                </TableCell>
+                              ))}
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                                    <ChevronRight className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </TableCell>
-                            ))}
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                                  <ChevronRight className="h-4 w-4" />
-                                </Button>
-                              </div>
+                            </TableRow>
+                          ))}
+                        {getParameterData(paramType).filter(item => searchQuery 
+                          ? item.title.toLowerCase().includes(searchQuery.toLowerCase())
+                          : true).length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={getParameterColumns(paramType).length + 1} className="text-center py-6 text-gray-500">
+                              No data found
                             </TableCell>
                           </TableRow>
-                        ))}
-                      {getParameterData(paramType).filter(item => searchQuery 
-                        ? item.title.toLowerCase().includes(searchQuery.toLowerCase())
-                        : true).length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={getParameterColumns(paramType).length + 1} className="text-center py-6 text-gray-500">
-                            No data found
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
-              </div>
+              )}
             </TabsContent>
           ))}
         </Tabs>
       </Card>
+
+      <AddServiceDialog 
+        isOpen={isAddServiceDialogOpen} 
+        onClose={() => setIsAddServiceDialogOpen(false)} 
+      />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">

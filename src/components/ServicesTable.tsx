@@ -1,5 +1,6 @@
+
 import React, { useState, useMemo, useEffect } from "react";
-import { Check, ArrowUpDown, MoreHorizontal, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, ArrowUpDown, MoreHorizontal, Edit, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { 
   Table, 
   TableBody, 
@@ -22,35 +23,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { EditServiceDialog } from "./EditServiceDialog";
 
 interface Service {
-  id: number;
+  id: string;
   title: string;
-  doubleHanded: boolean;
-  category?: string;
+  double_handed: boolean;
+  category: string;
+  description: string | null;
 }
-
-const initialServices: Service[] = [
-  { id: 1, title: "Personal Care", doubleHanded: false, category: "Daily Support" },
-  { id: 2, title: "Medication Assistance", doubleHanded: false, category: "Medical" },
-  { id: 3, title: "Client Transport", doubleHanded: false, category: "Mobility" },
-  { id: 4, title: "Home and Meal Support", doubleHanded: false, category: "Daily Support" },
-  { id: 5, title: "Respite for Carers", doubleHanded: false, category: "Family Support" },
-  { id: 6, title: "Companionship", doubleHanded: false, category: "Mental Wellbeing" },
-  { id: 7, title: "24/7 On-call Support", doubleHanded: false, category: "Emergency" },
-  { id: 8, title: "Sleep-in Care", doubleHanded: false, category: "Overnight" },
-  { id: 9, title: "Waking Night Care", doubleHanded: false, category: "Overnight" },
-  { id: 10, title: "Dementia Support", doubleHanded: false, category: "Specialized Care" },
-  { id: 11, title: "Learning Disability Support", doubleHanded: false, category: "Specialized Care" },
-  { id: 12, title: "Double Handed Care", doubleHanded: true, category: "Specialized Care" },
-  { id: 13, title: "Manual Handling", doubleHanded: false, category: "Physical Support" },
-  { id: 14, title: "Live-in Care", doubleHanded: false, category: "Long-term Support" },
-  { id: 15, title: "Shopping", doubleHanded: false, category: "Daily Support" },
-  { id: 16, title: "Personal Assistance", doubleHanded: false, category: "Daily Support" },
-  { id: 17, title: "Night Only Sleep-In", doubleHanded: false, category: "Overnight" },
-  { id: 18, title: "Home Support", doubleHanded: false, category: "Daily Support" },
-  { id: 19, title: "Meal Support", doubleHanded: false, category: "Daily Support" },
-];
 
 interface ServicesTableProps {
   searchQuery?: string;
@@ -63,13 +47,51 @@ export function ServicesTable({
   filterCategory = null, 
   filterDoubleHanded = null 
 }: ServicesTableProps) {
-  const [services] = useState<Service[]>(initialServices);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [sortColumn, setSortColumn] = useState<'title' | 'doubleHanded' | 'category'>('title');
+  const [sortColumn, setSortColumn] = useState<'title' | 'double_handed' | 'category'>('title');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: services, isLoading, error } = useQuery<Service[]>({
+    queryKey: ['services'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('services').select('*').order('title', { ascending: true });
+      if (error) throw new Error(error.message);
+      return data;
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (serviceId: string) => {
+      const { error } = await supabase.from('services').delete().eq('id', serviceId);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Service deleted successfully." });
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+    },
+    onError: (error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleDelete = (serviceId: string) => {
+    deleteMutation.mutate(serviceId);
+  };
+
+  const handleEdit = (service: Service) => {
+    setSelectedService(service);
+    setIsEditDialogOpen(true);
+  };
   
   const filteredAndSortedServices = useMemo(() => {
+    if (!services) return [];
+    
     let filtered = services.filter(service => {
       const matchesSearch = !searchQuery 
         ? true 
@@ -81,7 +103,7 @@ export function ServicesTable({
         : true;
       
       const matchesDoubleHanded = filterDoubleHanded !== null 
-        ? service.doubleHanded === filterDoubleHanded 
+        ? service.double_handed === filterDoubleHanded 
         : true;
       
       return matchesSearch && matchesCategory && matchesDoubleHanded;
@@ -100,21 +122,21 @@ export function ServicesTable({
           : catB.localeCompare(catA);
       } else {
         return sortOrder === 'asc' 
-          ? Number(a.doubleHanded) - Number(b.doubleHanded)
-          : Number(b.doubleHanded) - Number(a.doubleHanded);
+          ? Number(a.double_handed) - Number(b.double_handed)
+          : Number(b.double_handed) - Number(a.double_handed);
       }
     });
   }, [services, searchQuery, filterCategory, filterDoubleHanded, sortColumn, sortOrder]);
   
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterCategory, filterDoubleHanded]);
+  }, [searchQuery, filterCategory, filterDoubleHanded, itemsPerPage]);
   
   const totalPages = Math.ceil(filteredAndSortedServices.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedServices = filteredAndSortedServices.slice(startIndex, startIndex + itemsPerPage);
   
-  const handleSort = (column: 'title' | 'doubleHanded' | 'category') => {
+  const handleSort = (column: 'title' | 'double_handed' | 'category') => {
     if (sortColumn === column) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -154,7 +176,7 @@ export function ServicesTable({
                 <Button
                   variant="ghost"
                   className="flex items-center gap-1 font-semibold p-0 hover:bg-transparent"
-                  onClick={() => handleSort('doubleHanded')}
+                  onClick={() => handleSort('double_handed')}
                 >
                   Double Handed
                   <ArrowUpDown className="h-4 w-4 ml-1" />
@@ -164,10 +186,25 @@ export function ServicesTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedServices.length > 0 ? (
-              paginatedServices.map((service) => (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8">
+                  <div className="flex items-center justify-center gap-2 text-gray-500">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Loading services...</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8 text-red-500">
+                  Error loading services: {error.message}
+                </TableCell>
+              </TableRow>
+            ) : paginatedServices.length > 0 ? (
+              paginatedServices.map((service, index) => (
                 <TableRow key={service.id} className="hover:bg-gray-50/70 group">
-                  <TableCell className="text-gray-500 text-sm">#{service.id}</TableCell>
+                  <TableCell className="text-gray-500 text-sm">#{startIndex + index + 1}</TableCell>
                   <TableCell className="font-medium text-gray-800">{service.title}</TableCell>
                   <TableCell>
                     <span className="inline-block px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
@@ -175,7 +212,7 @@ export function ServicesTable({
                     </span>
                   </TableCell>
                   <TableCell>
-                    {service.doubleHanded ? (
+                    {service.double_handed ? (
                       <div className="flex items-center">
                         <span className="bg-green-100 text-green-700 rounded-full p-1">
                           <Check className="w-4 h-4" />
@@ -193,10 +230,10 @@ export function ServicesTable({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="bg-white">
-                        <DropdownMenuItem className="cursor-pointer flex items-center gap-2">
+                        <DropdownMenuItem className="cursor-pointer flex items-center gap-2" onClick={() => handleEdit(service)}>
                           <Edit className="h-4 w-4" /> Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="cursor-pointer text-red-600 flex items-center gap-2">
+                        <DropdownMenuItem className="cursor-pointer text-red-600 flex items-center gap-2" onClick={() => handleDelete(service.id)}>
                           <Trash2 className="h-4 w-4" /> Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -292,6 +329,14 @@ export function ServicesTable({
             </div>
           </div>
         </div>
+      )}
+
+      {isEditDialogOpen && (
+        <EditServiceDialog
+          isOpen={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
+          service={selectedService}
+        />
       )}
     </div>
   );
