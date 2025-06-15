@@ -439,25 +439,46 @@ export type Database = {
       }
       clients: {
         Row: {
+          address: string | null
+          avatar_initials: string | null
           branch_id: string | null
           created_at: string | null
+          email: string | null
           first_name: string
           id: string
           last_name: string
+          phone: string | null
+          region: string | null
+          registered_on: string | null
+          status: string | null
         }
         Insert: {
+          address?: string | null
+          avatar_initials?: string | null
           branch_id?: string | null
           created_at?: string | null
+          email?: string | null
           first_name: string
           id?: string
           last_name: string
+          phone?: string | null
+          region?: string | null
+          registered_on?: string | null
+          status?: string | null
         }
         Update: {
+          address?: string | null
+          avatar_initials?: string | null
           branch_id?: string | null
           created_at?: string | null
+          email?: string | null
           first_name?: string
           id?: string
           last_name?: string
+          phone?: string | null
+          region?: string | null
+          registered_on?: string | null
+          status?: string | null
         }
         Relationships: [
           {

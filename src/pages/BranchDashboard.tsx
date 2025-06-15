@@ -37,6 +37,7 @@ import { FormBuilderTab } from "@/components/form-builder/FormBuilderTab";
 import { ClientDetail } from "@/components/clients/ClientDetail";
 import { useBranchDashboardStats } from "@/data/hooks/useBranchDashboardStats";
 import { useBranchStatistics } from "@/data/hooks/useBranchStatistics";
+import { useBranchClients } from "@/data/hooks/useBranchClients";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface BranchDashboardProps {
@@ -140,88 +141,6 @@ const serviceData = [{
 }, {
   name: "Therapy",
   usage: 9
-}];
-
-const clients = [{
-  id: "CL-3421",
-  name: "Wendy Smith",
-  email: "wendysmith@gmail.com",
-  phone: "+44 20 7946 0587",
-  location: "Milton Keynes, MK9 3NZ",
-  status: "Active",
-  avatar: "WS",
-  region: "North",
-  registeredOn: "15/02/2023"
-}, {
-  id: "CL-2356",
-  name: "John Michael",
-  email: "john.michael@hotmail.com",
-  phone: "+44 20 7946 1122",
-  location: "London, SW1A 1AA",
-  status: "New Enquiries",
-  avatar: "JM",
-  region: "South",
-  registeredOn: "22/05/2023"
-}, {
-  id: "CL-9876",
-  name: "Lisa Rodrigues",
-  email: "lisa.rod@outlook.com",
-  phone: "+44 20 7946 3344",
-  location: "Cambridge, CB2 1TN",
-  status: "Actively Assessing",
-  avatar: "LR",
-  region: "East",
-  registeredOn: "10/08/2023"
-}, {
-  id: "CL-5432",
-  name: "Kate Williams",
-  email: "kate.w@company.co.uk",
-  phone: "+44 20 7946 5566",
-  location: "Bristol, BS1 5TR",
-  status: "Closed Enquiries",
-  avatar: "KW",
-  region: "West",
-  registeredOn: "05/11/2022"
-}, {
-  id: "CL-7890",
-  name: "Robert Johnson",
-  email: "r.johnson@gmail.com",
-  phone: "+44 20 7946 7788",
-  location: "Manchester, M1 1AE",
-  status: "Former",
-  avatar: "RJ",
-  region: "North",
-  registeredOn: "18/09/2022"
-}, {
-  id: "CL-1122",
-  name: "Emma Thompson",
-  email: "emma.t@gmail.com",
-  phone: "+44 20 7946 9900",
-  location: "Southampton, SO14 2AR",
-  status: "New Enquiries",
-  avatar: "ET",
-  region: "South",
-  registeredOn: "29/03/2023"
-}, {
-  id: "CL-3344",
-  name: "David Wilson",
-  email: "d.wilson@company.org",
-  phone: "+44 20 7946 1234",
-  location: "Norwich, NR1 3QU",
-  status: "Active",
-  avatar: "DW",
-  region: "East",
-  registeredOn: "13/07/2023"
-}, {
-  id: "CL-5566",
-  name: "Olivia Parker",
-  email: "olivia.p@outlook.com",
-  phone: "+44 20 7946 5678",
-  location: "Exeter, EX1 1LB",
-  status: "Actively Assessing",
-  avatar: "OP",
-  region: "West",
-  registeredOn: "02/01/2023"
 }];
 
 const DashboardStat = ({
@@ -428,6 +347,18 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
 
   const [searchValue, setSearchValue] = useState("");
   const [clientSearchValue, setClientSearchValue] = useState("");
+  const [debouncedClientSearch, setDebouncedClientSearch] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedClientSearch(clientSearchValue);
+    }, 300);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [clientSearchValue]);
+
   const [statusFilter, setStatusFilter] = useState("all");
   const [regionFilter, setRegionFilter] = useState("all");
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
@@ -438,15 +369,34 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
   const [clientDetailOpen, setClientDetailOpen] = useState<boolean>(false);
   const itemsPerPage = 5;
-  const displayBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
-  const filteredClients = clients.filter(client => {
-    const matchesSearch = client.name.toLowerCase().includes(clientSearchValue.toLowerCase()) || client.email.toLowerCase().includes(clientSearchValue.toLowerCase()) || client.id.toLowerCase().includes(clientSearchValue.toLowerCase());
-    const matchesStatus = statusFilter === "all" || client.status === statusFilter;
-    const matchesRegion = regionFilter === "all" || client.region === regionFilter;
-    return matchesSearch && matchesStatus && matchesRegion;
+
+  const { data: clientsData, isLoading: isLoadingClients, error: clientsError } = useBranchClients({
+    branchId: id,
+    searchTerm: debouncedClientSearch,
+    statusFilter,
+    regionFilter,
+    page: currentPage,
+    itemsPerPage,
   });
-  const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
-  const paginatedClients = filteredClients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const clients = clientsData?.clients || [];
+  const totalClients = clientsData?.count || 0;
+  const totalPages = Math.ceil(totalClients / itemsPerPage);
+
+  const displayBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
+  
+  useEffect(() => {
+    if(currentPage > 1 && currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    } else if (currentPage === 0 && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedClientSearch, statusFilter, regionFilter]);
+
 
   const handlePreviousPage = () => {
     if (currentPage > 1) {
@@ -569,7 +519,14 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   };
 
   const handleViewClient = (client: any) => {
-    setSelectedClient(client);
+    const clientForDetails = {
+      ...client,
+      name: `${client.first_name} ${client.last_name}`,
+      location: client.address,
+      avatar: client.avatar_initials,
+      registeredOn: client.registered_on ? format(new Date(client.registered_on), 'dd/MM/yyyy') : 'N/A'
+    };
+    setSelectedClient(clientForDetails);
     setClientDetailOpen(true);
   };
 
@@ -1087,70 +1044,116 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedClients.map((client) => (
-                    <TableRow key={client.id}>
-                      <TableCell className="font-medium">{client.id}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-medium">
-                            {client.avatar}
+                  {isLoadingClients ? (
+                    Array.from({ length: itemsPerPage }).map((_, index) => (
+                      <TableRow key={`skeleton-client-${index}`}>
+                          <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Skeleton className="h-8 w-8 rounded-full" />
+                              <div className="space-y-1">
+                                <Skeleton className="h-4 w-[120px]" />
+                                <Skeleton className="h-3 w-[50px]" />
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-full" /></TableCell>
+                          <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-[100px]" /></TableCell>
+                          <TableCell className="hidden lg:table-cell"><Skeleton className="h-4 w-full" /></TableCell>
+                          <TableCell><Skeleton className="h-6 w-[90px] rounded-full" /></TableCell>
+                          <TableCell className="hidden lg:table-cell"><Skeleton className="h-4 w-[70px]" /></TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Skeleton className="h-8 w-8" />
+                              <Skeleton className="h-8 w-8" />
+                            </div>
+                          </TableCell>
+                      </TableRow>
+                    ))
+                  ) : clientsError ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center text-red-500 py-8">
+                        Error loading clients.
+                      </TableCell>
+                    </TableRow>
+                  ) : clients.length > 0 ? (
+                    clients.map((client) => (
+                      <TableRow key={client.id}>
+                        <TableCell className="font-medium">{client.id.substring(0,8)}...</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-medium">
+                              {client.avatar_initials}
+                            </div>
+                            <div>
+                              <div className="font-medium">{client.first_name} {client.last_name}</div>
+                              <div className="text-xs text-gray-500">{client.region}</div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="font-medium">{client.name}</div>
-                            <div className="text-xs text-gray-500">{client.region}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {client.email}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {client.phone}
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        {client.location}
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="outline" 
-                          className={
-                            client.status === "Active" ? "text-green-600 bg-green-50 border-green-200" :
-                            client.status === "New Enquiries" ? "text-blue-600 bg-blue-50 border-blue-200" :
-                            client.status === "Actively Assessing" ? "text-amber-600 bg-amber-50 border-amber-200" :
-                            client.status === "Closed Enquiries" ? "text-gray-600 bg-gray-50 border-gray-200" :
-                            "text-red-600 bg-red-50 border-red-200"
-                          }
-                        >
-                          {client.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        {client.registeredOn}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8"
-                            onClick={() => handleViewClient(client)}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {client.email}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {client.phone}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {client.address}
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant="outline" 
+                            className={
+                              client.status === "Active" ? "text-green-600 bg-green-50 border-green-200" :
+                              client.status === "New Enquiries" ? "text-blue-600 bg-blue-50 border-blue-200" :
+                              client.status === "Actively Assessing" ? "text-amber-600 bg-amber-50 border-amber-200" :
+                              client.status === "Closed Enquiries" ? "text-gray-600 bg-gray-50 border-gray-200" :
+                              "text-red-600 bg-red-50 border-red-200"
+                            }
                           >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                            {client.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {client.registered_on ? format(new Date(client.registered_on), 'dd/MM/yyyy') : 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => handleViewClient(client)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={8}>
+                        <div className="py-8 text-center">
+                          <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                            <Search className="h-6 w-6 text-gray-400" />
+                          </div>
+                          <h3 className="text-lg font-medium text-gray-900 mb-1">No clients found</h3>
+                          <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
               
-              {filteredClients.length > 0 ? (
+              {totalClients > 0 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
                   <div className="text-sm text-gray-500">
-                    Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredClients.length)} of {filteredClients.length} clients
+                    Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, totalClients)} of {totalClients} clients
                   </div>
                   <div className="flex items-center gap-2">
                     <Button 
@@ -1172,14 +1175,6 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                       <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
                   </div>
-                </div>
-              ) : (
-                <div className="py-8 text-center">
-                  <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-                    <Search className="h-6 w-6 text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-1">No clients found</h3>
-                  <p className="text-gray-500">Try adjusting your search or filter criteria.</p>
                 </div>
               )}
             </div>
