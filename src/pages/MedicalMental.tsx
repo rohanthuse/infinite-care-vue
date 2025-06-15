@@ -1,8 +1,7 @@
-
 import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
-import { ParameterTable } from "@/components/ParameterTable";
+import { ParameterTable, ParameterItem } from "@/components/ParameterTable";
 import { Stethoscope, Plus, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
@@ -138,9 +137,9 @@ const MedicalMental = () => {
       accessorKey: "status",
       enableSorting: true,
       className: "w-[15%]",
-      cell: (value: string) => (
-        <Badge className={`${value === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} hover:bg-green-100 hover:text-green-800 font-medium border-0 rounded-full px-3`}>
-          {value}
+      cell: ({ row }: { row: { original: ParameterItem } }) => (
+        <Badge className={`${row.original.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} hover:bg-green-100 hover:text-green-800 font-medium border-0 rounded-full px-3`}>
+          {row.original.status}
         </Badge>
       ),
     },
@@ -158,9 +157,9 @@ const MedicalMental = () => {
       accessorKey: "status",
       enableSorting: true,
       className: "w-[15%]",
-      cell: (value: string) => (
-        <Badge className={`${value === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} hover:bg-green-100 hover:text-green-800 font-medium border-0 rounded-full px-3`}>
-          {value}
+      cell: ({ row }: { row: { original: ParameterItem } }) => (
+        <Badge className={`${row.original.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} hover:bg-green-100 hover:text-green-800 font-medium border-0 rounded-full px-3`}>
+          {row.original.status}
         </Badge>
       ),
     },

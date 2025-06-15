@@ -1,8 +1,7 @@
-
 import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
-import { ParameterTable } from "@/components/ParameterTable";
+import { ParameterTable, ParameterItem } from "@/components/ParameterTable";
 import { Heart, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
@@ -68,7 +67,7 @@ const Hobbies = () => {
       accessorKey: "status",
       enableSorting: true,
       className: "w-[40%]",
-      cell: ({ row }: { row: { original: { status: string } } }) => (
+      cell: ({ row }: { row: { original: ParameterItem } }) => (
         <Badge className={`${row.original.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} font-medium border-0 rounded-full px-3`}>
           {row.original.status}
         </Badge>
