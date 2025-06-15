@@ -141,6 +141,36 @@ export type Database = {
           },
         ]
       }
+      body_map_points: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          letter: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          color: string
+          created_at?: string
+          id?: string
+          letter: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          letter?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       branches: {
         Row: {
           created_at: string

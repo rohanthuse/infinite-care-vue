@@ -1,36 +1,91 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
-import { ParameterTable } from "@/components/ParameterTable";
-import { ActivitySquare } from "lucide-react";
+import { ParameterTable, ParameterItem } from "@/components/ParameterTable";
+import { ActivitySquare, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { AddBodyMapPointDialog } from "@/components/AddBodyMapPointDialog";
+import { EditBodyMapPointDialog } from "@/components/EditBodyMapPointDialog";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
-// Mock data for body map points
-const bodyMapPointsData = [
-  { id: 1, letter: "A", title: "Scalds, burns", color: "#ff00ff" },
-  { id: 2, letter: "B", title: "Bruising", color: "#00ff80" },
-  { id: 3, letter: "C", title: "Excoriation, red areas (not broken down)", color: "#ff0000" },
-  { id: 4, letter: "D", title: "Cuts, wounds", color: "#ff8000" },
-];
+const fetchBodyMapPoints = async () => {
+    const { data, error } = await supabase.from('body_map_points').select('*').order('letter');
+    if (error) throw error;
+    return data;
+};
 
 const BodyMapPoints = () => {
-  const [points, setPoints] = useState(bodyMapPointsData);
-  const [filteredData, setFilteredData] = useState(points);
-  const [searchQuery, setSearchQuery] = useState("");
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { data: bodyMapPoints, isLoading, error } = useQuery({
+      queryKey: ['body_map_points'],
+      queryFn: fetchBodyMapPoints,
+  });
+
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedPoint, setSelectedPoint] = useState<ParameterItem | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<ParameterItem | null>(null);
+
+  const { mutate: deletePoint, isPending: isDeleting } = useMutation({
+    mutationFn: async (id: string | number) => {
+      const { error } = await supabase.from('body_map_points').delete().eq('id', String(id));
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Body Map Point deleted successfully" });
+      queryClient.invalidateQueries({ queryKey: ['body_map_points'] });
+      setIsDeleteDialogOpen(false);
+      setItemToDelete(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to delete point", description: error.message, variant: "destructive" });
+    },
+  });
   
+  const handleEdit = (item: ParameterItem) => {
+    setSelectedPoint(item);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteRequest = (item: ParameterItem) => {
+    setItemToDelete(item);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (itemToDelete) {
+      deletePoint(itemToDelete.id);
+    }
+  };
+
   const columns = [
     {
       header: "Letter",
       accessorKey: "letter",
       enableSorting: true,
-      className: "font-medium text-gray-800 w-[15%]",
+      className: "font-medium text-gray-800 w-[10%]",
     },
     {
       header: "Title",
       accessorKey: "title",
       enableSorting: true,
-      className: "font-medium text-gray-800 w-[65%]",
+      className: "font-medium text-gray-800 w-[50%]",
     },
     {
       header: "Colour",
@@ -44,35 +99,49 @@ const BodyMapPoints = () => {
         ></div>
       ),
     },
+    {
+      header: "Status",
+      accessorKey: "status",
+      enableSorting: true,
+      className: "w-[20%]",
+      cell: (value: string) => (
+        <Badge
+          className={cn(
+            "font-medium border-0 rounded-full px-3",
+            value === "Active"
+              ? "bg-green-100 text-green-800 hover:bg-green-200/80"
+              : "bg-red-100 text-red-800 hover:bg-red-200/80"
+          )}
+        >
+          {value}
+        </Badge>
+      ),
+    },
   ];
   
-  useEffect(() => {
-    handleSearch(searchQuery);
-  }, [searchQuery, points]);
-  
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (!query) {
-      setFilteredData(points);
-    } else {
-      const filtered = points.filter(item => 
-        item.title.toLowerCase().includes(query.toLowerCase()) ||
-        item.letter.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredData(filtered);
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        <DashboardNavbar />
+        <main className="flex-1 flex items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+        </main>
+      </div>
+    );
+  }
 
-  const handleAddBodyMapPoint = (newPoint: { letter: string; title: string; color: string }) => {
-    const newPointWithId = {
-      id: points.length + 1,
-      ...newPoint
-    };
-    
-    const updatedPoints = [...points, newPointWithId];
-    setPoints(updatedPoints);
-    setFilteredData(!searchQuery ? updatedPoints : filteredData);
-  };
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        <DashboardNavbar />
+        <main className="flex-1 flex items-center justify-center bg-red-50 text-red-700">
+          Error loading data: {error.message}
+        </main>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
@@ -89,13 +158,37 @@ const BodyMapPoints = () => {
           title="Body Map Points"
           icon={<ActivitySquare className="h-7 w-7 text-blue-600" />}
           columns={columns}
-          data={filteredData}
-          onSearch={handleSearch}
+          data={bodyMapPoints || []}
           searchPlaceholder="Search body map points..."
           hasColorColumn={true}
-          addButton={<AddBodyMapPointDialog onAdd={handleAddBodyMapPoint} />}
+          addButton={<AddBodyMapPointDialog />}
+          onEdit={handleEdit}
+          onDelete={handleDeleteRequest}
         />
       </motion.main>
+      
+      <EditBodyMapPointDialog
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        point={selectedPoint}
+      />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the body map point "{itemToDelete?.title}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} disabled={isDeleting} className="bg-red-600 hover:bg-red-700">
+              {isDeleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</> : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

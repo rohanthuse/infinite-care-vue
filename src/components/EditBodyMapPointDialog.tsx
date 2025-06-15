@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,28 +7,26 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronDown, Plus, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Loader2, Check, ChevronDown } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { ParameterItem } from "./ParameterTable";
 
-export function AddBodyMapPointDialog() {
-  const [open, setOpen] = useState(false);
-  const [letter, setLetter] = useState("");
-  const [title, setTitle] = useState("");
-  const [color, setColor] = useState("#ff0000");
-  const [popoverOpen, setPopoverOpen] = useState(false);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+interface EditBodyMapPointDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  point: ParameterItem | null;
+}
 
-  const colors = [
+const colors = [
     { value: "#ff0000", label: "Red" },
     { value: "#ff00ff", label: "Pink" },
     { value: "#00ff00", label: "Green" },
@@ -37,83 +35,71 @@ export function AddBodyMapPointDialog() {
     { value: "#ff8000", label: "Orange" },
     { value: "#8000ff", label: "Purple" },
     { value: "#ffff00", label: "Yellow" },
-  ];
+];
 
-  const { mutate: addBodyMapPoint, isPending } = useMutation({
-    mutationFn: async (newPoint: { letter: string; title: string; color: string }) => {
-      const { data, error } = await supabase
+export function EditBodyMapPointDialog({ isOpen, onClose, point }: EditBodyMapPointDialogProps) {
+  const [letter, setLetter] = useState("");
+  const [title, setTitle] = useState("");
+  const [color, setColor] = useState("#ff0000");
+  const [status, setStatus] = useState("Active");
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (point) {
+      setLetter(point.letter);
+      setTitle(point.title);
+      setColor(point.color);
+      setStatus(point.status);
+    }
+  }, [point]);
+
+  const { mutate: updatePoint, isPending } = useMutation({
+    mutationFn: async (updatedPoint: { letter: string; title: string; color: string; status: string }) => {
+      if (!point) return;
+      const { error } = await supabase
         .from('body_map_points')
-        .insert([newPoint])
-        .select();
-
-      if (error) {
-        throw error;
-      }
-      return data;
+        .update(updatedPoint)
+        .eq('id', String(point.id));
+      if (error) throw error;
     },
-    onSuccess: (data) => {
-        const newPoint = data?.[0];
-        toast({
-            title: "Body Map Point added",
-            description: `${newPoint?.letter} - ${newPoint?.title} has been added successfully`,
-        });
-        queryClient.invalidateQueries({ queryKey: ['body_map_points'] });
-        setOpen(false);
-        setLetter("");
-        setTitle("");
-        setColor("#ff0000");
+    onSuccess: () => {
+      toast({ title: "Body Map Point updated successfully" });
+      queryClient.invalidateQueries({ queryKey: ['body_map_points'] });
+      onClose();
     },
     onError: (error: any) => {
-        toast({
-            title: "Error adding point",
-            description: error.message,
-            variant: "destructive",
-        });
+      toast({ title: "Failed to update point", description: error.message, variant: "destructive" });
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!letter.trim()) {
-      toast({
-        title: "Letter is required",
-        description: "Please enter a letter for the body map point",
-        variant: "destructive",
-      });
+      toast({ title: "Letter is required", variant: "destructive" });
       return;
     }
     if (!title.trim()) {
-      toast({
-        title: "Title is required",
-        description: "Please enter a title for the body map point",
-        variant: "destructive",
-      });
+      toast({ title: "Title is required", variant: "destructive" });
       return;
     }
-
-    addBodyMapPoint({ letter, title, color });
+    updatePoint({ letter, title, color, status });
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 rounded-full">
-          <Plus className="mr-1.5 h-4 w-4" /> New Body Map Point
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl">Add New Body Map Point</DialogTitle>
+          <DialogTitle className="text-xl">Edit Body Map Point</DialogTitle>
           <DialogDescription>
-            Enter the details for the new body map point
+            Update the details for this body map point.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="letter" className="text-right">
-                Letter
-              </Label>
+              <Label htmlFor="letter" className="text-right">Letter</Label>
               <Input
                 id="letter"
                 value={letter}
@@ -124,9 +110,7 @@ export function AddBodyMapPointDialog() {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="title" className="text-right">
-                Title
-              </Label>
+              <Label htmlFor="title" className="text-right">Title</Label>
               <Input
                 id="title"
                 value={title}
@@ -136,9 +120,7 @@ export function AddBodyMapPointDialog() {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="color" className="text-right">
-                Color
-              </Label>
+              <Label htmlFor="color" className="text-right">Color</Label>
               <div className="col-span-3 flex gap-2 items-center">
                 <div
                   className="h-8 w-12 rounded border border-gray-200"
@@ -184,13 +166,25 @@ export function AddBodyMapPointDialog() {
                 </Popover>
               </div>
             </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="status" className="text-right">Status</Label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
               Cancel
             </Button>
             <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isPending}>
-              {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding...</> : 'Add Point'}
+              {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Save Changes'}
             </Button>
           </DialogFooter>
         </form>
