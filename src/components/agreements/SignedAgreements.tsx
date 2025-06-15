@@ -6,7 +6,7 @@ import {
 import { 
   Eye, Download, FileText, Calendar, User, Trash2, UserCheck, Loader2
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { generatePDF } from "@/utils/pdfGenerator";
@@ -14,12 +14,38 @@ import { ViewAgreementDialog } from "./ViewAgreementDialog";
 import { useSignedAgreements, useDeleteAgreement } from "@/data/hooks/agreements";
 import { Agreement } from "@/types/agreements";
 import { format } from "date-fns";
+import type { VariantProps } from "class-variance-authority";
 
 type SignedAgreementsProps = {
   searchQuery?: string;
   typeFilter?: string;
   dateFilter?: string;
   branchId?: string; // Optional for global view
+};
+
+const getStatusBadgeVariant = (status: Agreement["status"]): VariantProps<typeof badgeVariants>["variant"] => {
+  switch (status) {
+    case "Active":
+      return "success";
+    case "Pending":
+      return "info";
+    case "Expired":
+      return "warning";
+    case "Terminated":
+      return "destructive";
+    default:
+      return "default";
+  }
+};
+
+const statusToNumber = (status: Agreement['status']): number => {
+  switch (status) {
+    case 'Active': return 1;
+    case 'Pending': return 2;
+    case 'Expired': return 3;
+    case 'Terminated': return 4;
+    default: return 0;
+  }
 };
 
 export function SignedAgreements({ 
@@ -55,25 +81,10 @@ export function SignedAgreements({
       id: agreement.id,
       title: agreement.title,
       date: agreement.signed_at ? format(new Date(agreement.signed_at), 'dd MMM yyyy') : 'N/A',
-      status: 0, // HACK: generatePDF expects a number, but status is a string. Using 0 as placeholder.
+      status: statusToNumber(agreement.status),
       signedBy: agreement.signed_by_name || 'N/A',
     });
     toast.success(`Downloaded ${agreement.title}`);
-  };
-
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case "Active":
-        return "bg-green-100 text-green-800 hover:bg-green-100";
-      case "Pending":
-        return "bg-blue-100 text-blue-800 hover:bg-blue-100";
-      case "Expired":
-        return "bg-amber-100 text-amber-800 hover:bg-amber-100";
-      case "Terminated":
-        return "bg-red-100 text-red-800 hover:bg-red-100";
-      default:
-        return "bg-gray-100 text-gray-800 hover:bg-gray-100";
-    }
   };
 
   if (isLoading) {
@@ -151,7 +162,7 @@ export function SignedAgreements({
                   </TableCell>
                   <TableCell>
                     <Badge 
-                      className={getStatusBadgeClass(agreement.status)}
+                      variant={getStatusBadgeVariant(agreement.status)}
                     >
                       {agreement.status}
                     </Badge>

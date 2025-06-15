@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Download, FileCheck, Clock, History, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge, badgeVariants } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Agreement } from "@/types/agreements";
 import { format } from "date-fns";
+import type { VariantProps } from "class-variance-authority";
 
 interface ViewAgreementDialogProps {
   open: boolean;
@@ -29,6 +30,21 @@ interface ViewAgreementDialogProps {
   agreement: Agreement | null | undefined;
   onDownload: (agreement: Agreement) => void;
 }
+
+const getStatusBadgeVariant = (status: string): VariantProps<typeof badgeVariants>["variant"] => {
+  switch (status) {
+    case "Active":
+      return "success";
+    case "Pending":
+      return "info";
+    case "Expired":
+      return "warning";
+    case "Terminated":
+      return "destructive";
+    default:
+      return "default";
+  }
+};
 
 export function ViewAgreementDialog({
   open,
@@ -87,21 +103,6 @@ export function ViewAgreementDialog({
     }
   };
 
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case "Active":
-        return "bg-green-100 text-green-800";
-      case "Pending":
-        return "bg-blue-100 text-blue-800";
-      case "Expired":
-        return "bg-amber-100 text-amber-800";
-      case "Terminated":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0">
@@ -116,7 +117,7 @@ export function ViewAgreementDialog({
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <Badge 
-                className={getStatusBadgeClass(agreement.status)}
+                variant={getStatusBadgeVariant(agreement.status)}
               >
                 {agreement.status}
               </Badge>
@@ -223,7 +224,7 @@ export function ViewAgreementDialog({
                     <div key={index} className="border-b pb-2 last:border-0">
                       <div className="flex justify-between">
                         <Badge 
-                          className={getStatusBadgeClass(change.status)}
+                          variant={getStatusBadgeVariant(change.status)}
                         >
                           {change.status}
                         </Badge>
