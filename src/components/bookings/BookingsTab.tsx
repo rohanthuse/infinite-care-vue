@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, RefreshCw } from "lucide-react";
 import { DateNavigation } from "./DateNavigation";
 import { BookingFilters } from "./BookingFilters";
@@ -15,243 +16,39 @@ import { useCreateBooking } from "@/data/hooks/useCreateBooking";
 import { useBranchClients } from "@/data/hooks/useBranchClients";
 import { useBranchCarers } from "@/data/hooks/useBranchCarers";
 
-// Mock data for clients
-const mockClients: Client[] = [{
-  id: "CL-001",
-  name: "Pender, Eva",
-  initials: "EP",
-  bookingCount: 3,
-  bookings: []  // Will be populated
-}, {
-  id: "CL-002",
-  name: "Fulcher, Patricia",
-  initials: "FP",
-  bookingCount: 2,
-  bookings: []
-}, {
-  id: "CL-003",
-  name: "Baulch, Ursula",
-  initials: "BU",
-  bookingCount: 1,
-  bookings: []
-}, {
-  id: "CL-004",
-  name: "Ren, Victoria",
-  initials: "RV",
-  bookingCount: 2,
-  bookings: []
-}, {
-  id: "CL-005",
-  name: "Iyaniwura, Ifeoluwa",
-  initials: "II",
-  bookingCount: 1,
-  bookings: []
-}, {
-  id: "CL-006",
-  name: "Careville Ltd",
-  initials: "CL",
-  bookingCount: 4,
-  bookings: []
-}, {
-  id: "CL-007",
-  name: "Johnson, Andrew",
-  initials: "JA",
-  bookingCount: 2,
-  bookings: []
-}, {
-  id: "CL-008",
-  name: "Mistry, Sanjay",
-  initials: "MS",
-  bookingCount: 3,
-  bookings: []
-}, {
-  id: "CL-009",
-  name: "Williams, Olivia",
-  initials: "WO",
-  bookingCount: 1,
-  bookings: []
-}, {
-  id: "CL-010",
-  name: "Thompson, Emma",
-  initials: "TE",
-  bookingCount: 2,
-  bookings: []
-}];
+// -- Helper Mappers to UI Types --
 
-// Mock data for carers
-const mockCarers: Carer[] = [{
-  id: "CA-001",
-  name: "Charuma, Charmaine",
-  initials: "CC",
-  bookingCount: 4,
-  bookings: []  // Will be populated
-}, {
-  id: "CA-002",
-  name: "Warren, Susan",
-  initials: "WS",
-  bookingCount: 3,
-  bookings: []
-}, {
-  id: "CA-003",
-  name: "Ayo-Famure, Opeyemi",
-  initials: "AF",
-  bookingCount: 3,
-  bookings: []
-}, {
-  id: "CA-004",
-  name: "Smith, John",
-  initials: "SJ",
-  bookingCount: 2,
-  bookings: []
-}, {
-  id: "CA-005",
-  name: "Williams, Mary",
-  initials: "WM",
-  bookingCount: 1,
-  bookings: []
-}, {
-  id: "CA-006",
-  name: "Davis, Michael",
-  initials: "DM",
-  bookingCount: 2,
-  bookings: []
-}, {
-  id: "CA-007",
-  name: "Brown, David",
-  initials: "BD",
-  bookingCount: 3,
-  bookings: []
-}, {
-  id: "CA-008",
-  name: "Miller, Sarah",
-  initials: "MS",
-  bookingCount: 2,
-  bookings: []
-}, {
-  id: "CA-009",
-  name: "Wilson, Thomas",
-  initials: "WT",
-  bookingCount: 1,
-  bookings: []
-}, {
-  id: "CA-010",
-  name: "Moore, Jennifer",
-  initials: "MJ",
-  bookingCount: 2,
-  bookings: []
-}];
+function mapDBClientToClient(db: any): Client {
+  const firstName = db.first_name ?? "";
+  const lastName = db.last_name ?? "";
+  const name = [firstName, lastName].filter(Boolean).join(" ").trim() || "Unknown";
+  const initials =
+    db.avatar_initials ||
+    (firstName[0] ?? "?") + (lastName[0] ?? "?");
+  return {
+    id: db.id,
+    name,
+    initials,
+    bookings: [], // optional: populate if needed
+    bookingCount: 0, // If you want, calculate later from bookings
+  };
+}
 
-// Mock bookings data
-const mockBookings: Booking[] = [{
-  id: "BK-001",
-  clientId: "CL-001",
-  clientName: "Pender, Eva",
-  clientInitials: "EP",
-  carerId: "CA-001",
-  carerName: "Charuma, Charmaine",
-  carerInitials: "CC",
-  startTime: "07:30",
-  endTime: "08:30",
-  date: new Date().toISOString().split('T')[0],
-  status: "done",
-  notes: "Medication administered as prescribed"
-}, {
-  id: "BK-002",
-  clientId: "CL-001",
-  clientName: "Pender, Eva",
-  clientInitials: "EP",
-  carerId: "CA-002",
-  carerName: "Warren, Susan",
-  carerInitials: "WS",
-  startTime: "12:15",
-  endTime: "13:45",
-  date: new Date().toISOString().split('T')[0],
-  status: "assigned"
-}, {
-  id: "BK-003",
-  clientId: "CL-002",
-  clientName: "Fulcher, Patricia",
-  clientInitials: "FP",
-  carerId: "CA-001",
-  carerName: "Charuma, Charmaine",
-  carerInitials: "CC",
-  startTime: "09:00",
-  endTime: "10:00",
-  date: new Date().toISOString().split('T')[0],
-  status: "done"
-}, {
-  id: "BK-004",
-  clientId: "CL-003",
-  clientName: "Baulch, Ursula",
-  clientInitials: "BU",
-  carerId: "CA-002",
-  carerName: "Warren, Susan",
-  carerInitials: "WS",
-  startTime: "10:30",
-  endTime: "11:30",
-  date: new Date().toISOString().split('T')[0],
-  status: "in-progress"
-}, {
-  id: "BK-005",
-  clientId: "CL-004",
-  clientName: "Ren, Victoria",
-  clientInitials: "RV",
-  carerId: "CA-002",
-  carerName: "Warren, Susan",
-  carerInitials: "WS",
-  startTime: "14:00",
-  endTime: "15:30",
-  date: new Date().toISOString().split('T')[0],
-  status: "assigned"
-}, {
-  id: "BK-006",
-  clientId: "CL-004",
-  clientName: "Ren, Victoria",
-  clientInitials: "RV",
-  carerId: "CA-003",
-  carerName: "Ayo-Famure, Opeyemi",
-  carerInitials: "AF",
-  startTime: "18:00",
-  endTime: "19:00",
-  date: new Date().toISOString().split('T')[0],
-  status: "cancelled"
-}, {
-  id: "BK-007",
-  clientId: "CL-005",
-  clientName: "Iyaniwura, Ifeoluwa",
-  clientInitials: "II",
-  carerId: "CA-001",
-  carerName: "Charuma, Charmaine",
-  carerInitials: "CC",
-  startTime: "16:00",
-  endTime: "17:00",
-  date: new Date().toISOString().split('T')[0],
-  status: "assigned"
-}, {
-  id: "BK-008",
-  clientId: "CL-006",
-  clientName: "Careville Ltd",
-  clientInitials: "CL",
-  carerId: "CA-003",
-  carerName: "Ayo-Famure, Opeyemi",
-  carerInitials: "AF",
-  startTime: "08:30",
-  endTime: "09:30",
-  date: new Date().toISOString().split('T')[0],
-  status: "departed"
-}, {
-  id: "BK-009",
-  clientId: "CL-001",
-  clientName: "Pender, Eva",
-  clientInitials: "EP",
-  carerId: "CA-004",
-  carerName: "Smith, John",
-  carerInitials: "SJ",
-  startTime: "20:00",
-  endTime: "21:00",
-  date: new Date().toISOString().split('T')[0],
-  status: "assigned"
-}];
+function mapDBCarerToCarer(db: any): Carer {
+  const firstName = db.first_name ?? "";
+  const lastName = db.last_name ?? "";
+  const name = [firstName, lastName].filter(Boolean).join(" ").trim() || "Unknown";
+  const initials = (firstName[0] ?? "?") + (lastName[0] ?? "?");
+  return {
+    id: db.id,
+    name,
+    initials,
+    bookings: [], // optional: populate if needed
+    bookingCount: 0,
+  };
+}
+
+// --- Main component ---
 
 export interface BookingsTabProps {
   branchId?: string;
@@ -259,7 +56,7 @@ export interface BookingsTabProps {
 }
 
 export const BookingsTab: React.FC<BookingsTabProps> = ({
-  branchId
+  branchId,
 }) => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [viewType, setViewType] = useState<"daily" | "weekly">("weekly");
@@ -278,9 +75,12 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     carerId?: string;
   } | null>(null);
 
-  // FETCH SUPABASE DATA
+  // -- Fetch from DB
   const { data: bookingsDB = [], isLoading: isLoadingBookings, error: bookingsError } = useBranchBookings(branchId);
-  const { data: clientsData, isLoading: isLoadingClients } = useBranchClients({
+  const {
+    data: clientsData,
+    isLoading: isLoadingClients
+  } = useBranchClients({
     branchId,
     searchTerm: "",
     page: 1,
@@ -289,15 +89,20 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   const { data: carersData = [], isLoading: isLoadingCarers } = useBranchCarers(branchId);
   const createBookingMutation = useCreateBooking(branchId);
 
-  // Map DB: get .clients array if available, else fallback to []
-  const resolvedClients = Array.isArray(clientsData)
+  // -- Map DB: get .clients array if available, else fallback to []
+  const clientsRaw = Array.isArray(clientsData)
     ? clientsData
     : clientsData?.clients ?? [];
+  const carersRaw = carersData || [];
+  const resolvedClients: Client[] = clientsRaw.map(mapDBClientToClient);
+  const resolvedCarers: Carer[] = carersRaw.map(mapDBCarerToCarer);
+
+  // Map ID->object for quick lookup
   const clientsMap = Object.fromEntries(
-    resolvedClients.map((cl: any) => [cl.id, cl])
+    clientsRaw.map((cl: any) => [cl.id, cl])
   );
   const carersMap = Object.fromEntries(
-    (carersData || []).map((cr: any) => [cr.id, cr])
+    carersRaw.map((cr: any) => [cr.id, cr])
   );
   // Compose Booking[]
   const bookings: Booking[] = (bookingsDB || []).map((bk: any) => ({
@@ -320,8 +125,10 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     endTime: bk.end_time ? bk.end_time.slice(11, 16) : "00:00",
     date: bk.start_time ? bk.start_time.slice(0, 10) : "",
     status: "assigned", // TODO: use real status if present in db
-    notes: "",
+    notes: "", // Not present in DB
   }));
+
+  // -- Handler logic (preview, create/edit event)
 
   const handleRefresh = () => {
     setIsLoading(true);
@@ -371,75 +178,10 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     setNewBookingDialogOpen(false);
   };
 
-  const handleUpdateBooking = (updatedBooking: Booking) => {
-    const oldBooking = bookings.find(b => b.id === updatedBooking.id);
-    
-    setBookings(prevBookings => 
-      prevBookings.map(booking => 
-        booking.id === updatedBooking.id ? updatedBooking : booking
-      )
-    );
-    
-    if (oldBooking && oldBooking.clientId !== updatedBooking.clientId) {
-      removeBookingFromEntity("client", oldBooking.clientId, updatedBooking.id);
-      updateEntityWithBooking("client", updatedBooking.clientId, updatedBooking);
-    }
-    
-    if (oldBooking && oldBooking.carerId !== updatedBooking.carerId) {
-      removeBookingFromEntity("carer", oldBooking.carerId, updatedBooking.id);
-      updateEntityWithBooking("carer", updatedBooking.carerId, updatedBooking);
-    }
-    
-    toast.success("Booking updated successfully");
-  };
-
-  const updateEntityWithBooking = (type: "client" | "carer", id: string, newBooking: Booking) => {
-    if (type === "client") {
-      setClients(prevClients => prevClients.map(client => {
-        if (client.id === id) {
-          return {
-            ...client,
-            bookings: [...(client.bookings || []).filter(b => b.id !== newBooking.id), newBooking]
-          };
-        }
-        return client;
-      }));
-    } else {
-      setCarers(prevCarers => prevCarers.map(carer => {
-        if (carer.id === id) {
-          return {
-            ...carer,
-            bookings: [...(carer.bookings || []).filter(b => b.id !== newBooking.id), newBooking]
-          };
-        }
-        return carer;
-      }));
-    }
-  };
-
-  const removeBookingFromEntity = (type: "client" | "carer", id: string, bookingId: string) => {
-    if (type === "client") {
-      setClients(prevClients => prevClients.map(client => {
-        if (client.id === id && client.bookings) {
-          return {
-            ...client,
-            bookings: client.bookings.filter(b => b.id !== bookingId)
-          };
-        }
-        return client;
-      }));
-    } else {
-      setCarers(prevCarers => prevCarers.map(carer => {
-        if (carer.id === id && carer.bookings) {
-          return {
-            ...carer,
-            bookings: carer.bookings.filter(b => b.id !== bookingId)
-          };
-        }
-        return carer;
-      }));
-    }
-  };
+  // --- You may want to implement these in the future, but for now, comment/uncomment if required.
+  // const handleUpdateBooking = (updatedBooking: Booking) => {};
+  // const updateEntityWithBooking = ...;
+  // const removeBookingFromEntity = ...;
 
   return (
     <div className="space-y-4">
@@ -463,9 +205,9 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
             <Button variant="outline" size="sm" onClick={handleRefresh} className="h-8 w-8 p-0" disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
-            <Button 
+            <Button
               onClick={handleNewBooking}
-              variant="default" 
+              variant="default"
               className="h-9 bg-blue-600 hover:bg-blue-700 rounded-full px-3 shadow-sm"
             >
               <Plus className="h-4 w-4 mr-1" />
@@ -475,20 +217,20 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         </div>
       </div>
       {activeTab === "planning" && <>
-        <BookingFilters 
-          searchQuery={searchQuery} 
-          onSearchChange={setSearchQuery} 
-          viewMode={viewMode} 
-          onViewModeChange={setViewMode} 
-          selectedStatuses={selectedStatuses} 
-          onStatusChange={setSelectedStatuses} 
+        <BookingFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          selectedStatuses={selectedStatuses}
+          onStatusChange={setSelectedStatuses}
         />
-        <BookingTimeGrid 
-          date={currentDate} 
-          bookings={bookings} 
+        <BookingTimeGrid
+          date={currentDate}
+          bookings={bookings}
           clients={resolvedClients}
-          carers={carersData}
-          viewType={viewType} 
+          carers={resolvedCarers}
+          viewType={viewType}
           viewMode={viewMode}
           onCreateBooking={handleContextMenuBooking}
           onUpdateBooking={handleEditBooking}
@@ -497,11 +239,11 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       </>}
       {activeTab === "list" && <BookingsList bookings={bookings} />}
       {activeTab === "report" && <BookingReport bookings={bookings} />}
-      <NewBookingDialog 
+      <NewBookingDialog
         open={newBookingDialogOpen}
         onOpenChange={setNewBookingDialogOpen}
         clients={resolvedClients}
-        carers={carersData}
+        carers={resolvedCarers}
         onCreateBooking={handleCreateBooking}
         initialData={newBookingData}
         isLoading={createBookingMutation.isPending}
@@ -512,9 +254,10 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         onOpenChange={setEditBookingDialogOpen}
         booking={selectedBooking}
         clients={resolvedClients}
-        carers={carersData}
+        carers={resolvedCarers}
         onUpdateBooking={() => {}}
       />
     </div>
   );
 };
+
