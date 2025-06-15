@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { useNavigate, useParams } from "react-router-dom";
@@ -9,68 +8,40 @@ import { motion } from "framer-motion";
 import { 
   Building2, Calendar, Users, FileText, Clock, 
   BarChart4, AlertCircle, Clipboard, ArrowLeft, UserCog,
-  LayoutDashboard
+  LayoutDashboard, Loader2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Branch } from "@/pages/Branch";
+import { format } from "date-fns";
+
+const fetchBranchById = async (id: string): Promise<Branch> => {
+    const { data, error } = await supabase
+        .from('branches')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+    if (error) {
+        throw new Error(error.message);
+    }
+    if (!data) {
+        throw new Error("Branch not found.");
+    }
+    return data;
+};
 
 const BranchDetails = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [branchData, setBranchData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Mock data for branch details
-  useEffect(() => {
-    // In a real app, this would be an API call to fetch the branch by ID
-    const fetchBranchData = () => {
-      setLoading(true);
-      setTimeout(() => {
-        const mockBranches = [
-          { 
-            id: "1", 
-            title: "Med-Infinite Health Care Services- Milton Keynes", 
-            country: "England", 
-            currency: "£", 
-            regulatory: "CQC", 
-            branchType: "HomeCare", 
-            createdOn: "01/01/0001", 
-            createdBy: "System", 
-            status: "Active",
-            stats: {
-              carers: 15,
-              clients: 32,
-              bookings: 124,
-              reviews: 28,
-            }
-          },
-          { 
-            id: "2", 
-            title: "Med-Infinite Health Care Services- Hampshire", 
-            country: "England", 
-            currency: "£", 
-            regulatory: "CQC", 
-            branchType: "HomeCare", 
-            createdOn: "06/01/2025", 
-            createdBy: "Laniyan, Aderinsola", 
-            status: "Active",
-            stats: {
-              carers: 8,
-              clients: 17,
-              bookings: 56,
-              reviews: 12,
-            }
-          },
-        ];
-        
-        const branch = mockBranches.find(b => b.id === id);
-        setBranchData(branch || mockBranches[0]);
-        setLoading(false);
-      }, 800);
-    };
-
-    fetchBranchData();
-  }, [id]);
+  
+  const { data: branchData, isLoading, error } = useQuery({
+      queryKey: ['branch', id],
+      queryFn: () => fetchBranchById(id!),
+      enabled: !!id,
+  });
 
   const handleNavigateToBranchAdmins = () => {
     toast.success("Navigating to Branch Admins dashboard");
@@ -80,7 +51,7 @@ const BranchDetails = () => {
   const handleNavigateToBranchDashboard = () => {
     toast.success("Navigating to Branch Dashboard");
     if (branchData) {
-      navigate(`/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.title)}`);
+      navigate(`/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.name)}`);
     }
   };
 
@@ -107,11 +78,25 @@ const BranchDetails = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        {loading ? (
+        {isLoading ? (
           <div className="flex justify-center items-center h-[50vh]">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
           </div>
-        ) : (
+        ) : error ? (
+           <div className="flex flex-col items-center justify-center h-[50vh] bg-red-50 text-red-700 rounded-lg p-8">
+                <AlertCircle className="h-12 w-12 mb-4" />
+                <h2 className="text-xl font-bold mb-2">Error loading branch details</h2>
+                <p>{error.message}</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-6"
+                  onClick={() => navigate('/branch')}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Branches
+                </Button>
+            </div>
+        ) : branchData ? (
           <>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <div className="flex items-start gap-4">
@@ -124,14 +109,17 @@ const BranchDetails = () => {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">{branchData.title}</h1>
-                  <div className="flex items-center gap-3 mt-1">
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">{branchData.name}</h1>
+                  <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1">
                     <Badge className="bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800 font-medium border-0 rounded-full px-3">
                       {branchData.status}
                     </Badge>
                     <span className="text-gray-500 text-sm">
-                      {branchData.branchType} | {branchData.country} | {branchData.regulatory}
+                      {branchData.branch_type} | {branchData.country} | {branchData.regulatory}
                     </span>
+                  </div>
+                   <div className="text-gray-500 text-sm mt-2">
+                    Created on {format(new Date(branchData.created_at), 'dd MMM, yyyy')} by {branchData.created_by || 'System'}
                   </div>
                 </div>
               </div>
@@ -162,31 +150,14 @@ const BranchDetails = () => {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              <StatCard 
-                icon={Users} 
-                title="Carers" 
-                value={branchData.stats.carers} 
-                color="bg-blue-600" 
-              />
-              <StatCard 
-                icon={Users} 
-                title="Clients" 
-                value={branchData.stats.clients} 
-                color="bg-green-600" 
-              />
-              <StatCard 
-                icon={Calendar} 
-                title="Total Bookings" 
-                value={branchData.stats.bookings} 
-                color="bg-purple-600" 
-              />
-              <StatCard 
-                icon={FileText} 
-                title="Reviews" 
-                value={branchData.stats.reviews} 
-                color="bg-amber-600" 
-              />
+            <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-lg mb-8 text-sm">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                <div>
+                    <p className="font-semibold">Coming Soon!</p>
+                    <p>Statistics cards (Carers, Clients, Bookings, Reviews) will be populated with real data in an upcoming step.</p>
+                </div>
+              </div>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -298,6 +269,18 @@ const BranchDetails = () => {
               </motion.div>
             </div>
           </>
+        ) : (
+           <div className="flex flex-col items-center justify-center h-[50vh]">
+                <p>Branch not found.</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-6"
+                  onClick={() => navigate('/branch')}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Branches
+                </Button>
+            </div>
         )}
       </motion.main>
     </div>
