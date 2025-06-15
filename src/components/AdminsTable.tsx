@@ -1,4 +1,5 @@
-import { ArrowUpDown, MoreHorizontal, Search, ChevronLeft, ChevronRight, UserPlus, Loader2 } from "lucide-react";
+
+import { ArrowUpDown, MoreHorizontal, Search, ChevronLeft, ChevronRight, UserPlus, Loader2, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo, useEffect } from "react";
@@ -204,8 +205,20 @@ export function AdminsTable() {
                 </tr>
               ) : filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center p-8 text-gray-500">
-                    No branch admins found.
+                  <td colSpan={6} className="text-center p-16 text-gray-500">
+                    <div className="flex flex-col items-center gap-4">
+                      <Users className="w-16 h-16 text-gray-300" />
+                      <h3 className="text-xl font-semibold text-gray-700 mt-2">No Admins Found</h3>
+                      <p className="max-w-sm text-center">There are currently no branch admins in the system. Get started by adding your first administrator.</p>
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        className="flex items-center hover:bg-blue-700 text-white font-medium rounded-full px-6 mt-4"
+                        onClick={() => setShowAddAdminModal(true)}
+                      >
+                        <UserPlus className="h-4 w-4 mr-2" /> New Admin
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ) : (
