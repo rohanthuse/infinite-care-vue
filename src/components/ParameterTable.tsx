@@ -17,11 +17,11 @@ import { motion } from "framer-motion";
 
 interface ColumnDef {
   header: string;
-  accessorKey: string;
+  accessorKey?: string; // Made optional
   enableSorting?: boolean;
   className?: string;
   id?: string;
-  cell?: ((value: any) => React.ReactNode) | ((value: any, row: any) => React.ReactNode);
+  cell?: (props: { row: { original: ParameterItem } }) => React.ReactNode;
 }
 
 export interface ParameterItem {
@@ -87,7 +87,9 @@ export function ParameterTable({
     setInternalFilteredData(sortedData);
   }, [sortColumn, sortDirection, data]);
 
-  const handleSort = (column: string) => {
+  const handleSort = (columnKey: string | undefined) => {
+    if (!columnKey) return;
+    const column = columnKey;
     if (sortColumn === column) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -224,18 +226,15 @@ export function ParameterTable({
                     {columns.map((column, colIndex) => (
                       <TableCell key={`${rowIndex}-${colIndex}`} className={column.className}>
                         {column.cell ? (
-                          // Update to handle both function signatures
-                          column.cell instanceof Function && column.cell.length > 1 
-                            ? (column.cell as any)(item[column.accessorKey], item)
-                            : (column.cell as any)(item[column.accessorKey])
+                           column.cell({ row: { original: item } })
                         ) : (
-                          column.accessorKey === "color" ? (
+                          column.accessorKey && column.accessorKey === "color" ? (
                             <div 
                               className="h-6 w-12 rounded"
                               style={{ backgroundColor: item[column.accessorKey] }}
                             ></div>
                           ) : (
-                            item[column.accessorKey]
+                            column.accessorKey ? item[column.accessorKey] : null
                           )
                         )}
                       </TableCell>

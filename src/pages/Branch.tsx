@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
@@ -23,26 +22,33 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Tables } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
 
-const fetchBranches = async (searchQuery: string) => {
+// Define a comprehensive Branch type to work around outdated generated types
+export type Branch = {
+    id: string;
+    created_at: string;
+    name: string;
+    country: string;
+    currency: string;
+    regulatory: string;
+    branch_type: string;
+    created_on: string;
+    created_by: string | null;
+    status: string;
+    updated_at: string;
+};
+
+const fetchBranches = async (searchQuery: string): Promise<Branch[]> => {
     let query = supabase.from('branches').select('*').order('name');
     if (searchQuery) {
         query = query.or(`name.ilike.%${searchQuery}%,country.ilike.%${searchQuery}%,branch_type.ilike.%${searchQuery}%,regulatory.ilike.%${searchQuery}%`);
     }
     const { data, error } = await query;
     if (error) throw error;
-    return data;
+    return data as Branch[];
 };
-
-type BranchRow = Tables<'branches'> & {
-    title: string;
-    branchType: string;
-    createdOn: string;
-    createdBy: string | null;
-}
 
 const Branch = () => {
   const navigate = useNavigate();
@@ -56,9 +62,9 @@ const Branch = () => {
   });
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedBranch, setSelectedBranch] = useState<Tables<'branches'> | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<Tables<'branches'> | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<Branch | null>(null);
 
   const { mutate: deleteBranch, isPending: isDeleting } = useMutation({
     mutationFn: async (id: string) => {
@@ -80,12 +86,12 @@ const Branch = () => {
     navigate(`/branch-details/${branchId}`);
   };
 
-  const handleEdit = (branch: Tables<'branches'>) => {
+  const handleEdit = (branch: Branch) => {
     setSelectedBranch(branch);
     setIsEditDialogOpen(true);
   };
 
-  const handleDeleteRequest = (branch: Tables<'branches'>) => {
+  const handleDeleteRequest = (branch: Branch) => {
     setItemToDelete(branch);
     setIsDeleteDialogOpen(true);
   };
@@ -129,10 +135,10 @@ const Branch = () => {
     },
     {
       header: "Created On",
-      accessorKey: "created_on",
+      accessorKey: "created_at",
       enableSorting: true,
       className: "text-gray-700 w-[10%]",
-      cell: (value: string) => value ? format(new Date(value), 'dd/MM/yyyy') : '',
+      cell: ({ row }: { row: { original: Branch } }) => row.original.created_at ? format(new Date(row.original.created_at), 'dd/MM/yyyy') : '',
     },
     {
       header: "Created By",
@@ -145,14 +151,14 @@ const Branch = () => {
       accessorKey: "status",
       enableSorting: true,
       className: "w-[10%]",
-      cell: (value: string) => (
+      cell: ({ row }: { row: { original: Branch } }) => (
         <Badge className={cn(
             "font-medium border-0 rounded-full px-3",
-            value === "Active"
+            row.original.status === "Active"
               ? "bg-green-100 text-green-800 hover:bg-green-200/80"
               : "bg-red-100 text-red-800 hover:bg-red-200/80"
           )}>
-          {value}
+          {row.original.status}
         </Badge>
       ),
     },
@@ -160,7 +166,7 @@ const Branch = () => {
       header: "Actions",
       id: "actions",
       className: "w-[15%] text-right",
-      cell: ({ row }: { row: { original: BranchRow } }) => {
+      cell: ({ row }: { row: { original: Branch } }) => {
         const branch = row.original;
         return (
           <div className="flex items-center justify-end gap-1">
@@ -217,15 +223,6 @@ const Branch = () => {
     );
   }
   
-  const mappedData = branches?.map(branch => ({
-    ...branch,
-    title: branch.name,
-    branchType: branch.branch_type,
-    createdOn: branch.created_on,
-    createdBy: branch.created_by,
-  })) || [];
-
-
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -241,7 +238,7 @@ const Branch = () => {
           title="Branch"
           icon={<Building2 className="h-7 w-7 text-blue-600" />}
           columns={columns}
-          data={mappedData}
+          data={branches || []}
           onSearch={setSearchQuery}
           searchPlaceholder="Search branches..."
           addButton={<AddBranchDialog />}
