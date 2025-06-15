@@ -59,9 +59,18 @@ function makeDummyBookings(
   clients: Client[],
   carers: Carer[]
 ): Booking[] {
-  // Rotating dummy data with a few statuses
-  const statuses = ["assigned", "in-progress", "done", "departed", "cancelled"];
+  const statuses = [
+    "assigned",
+    "in-progress",
+    "done",
+    "departed",
+    "cancelled",
+    "unassigned",
+    "suspended"
+  ] as const; // literal type array
+
   const now = new Date();
+
   return Array.from({ length: 10 }).map((_, i) => {
     const client = clients[i % clients.length];
     const carer = carers[i % carers.length];
@@ -80,7 +89,7 @@ function makeDummyBookings(
       startTime: `${String(startHour).padStart(2, "0")}:00`,
       endTime: `${String(endHour).padStart(2, "0")}:00`,
       date: date.toISOString().slice(0, 10),
-      status: statuses[i % statuses.length],
+      status: statuses[i % statuses.length], // now inferred as Booking["status"]
       notes: "",
     };
   });
