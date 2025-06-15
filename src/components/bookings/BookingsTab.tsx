@@ -262,23 +262,69 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     setNewBookingDialogOpen(true);
   };
 
+  // --- FIX: Map multi-schedule booking dialog form to single booking creation ---
   const handleCreateBooking = (bookingData: any) => {
     if (!branchId) return;
+
+    // Defensive: bookingData.schedules[0] must exist, must have start/end times
+    if (!bookingData || !bookingData.schedules || !Array.isArray(bookingData.schedules) || bookingData.schedules.length === 0) {
+      toast.error("Invalid booking data. Please select at least one schedule.");
+      return;
+    }
+
+    const schedule = bookingData.schedules[0];
+    const startTime = schedule.startTime;
+    const endTime = schedule.endTime;
+
+    // Defensive: all required fields present
+    if (
+      !bookingData.fromDate ||
+      !startTime ||
+      !endTime ||
+      !bookingData.clientId ||
+      !bookingData.carerId
+    ) {
+      toast.error("Missing booking details. Please complete all required fields.");
+      return;
+    }
+
+    // Helper: map day to first selected
+    let bookingDate = bookingData.fromDate;
+    // If days specified: pick first TRUE in days (if any)
+    if (schedule.days) {
+      const dayKeys: { [key: string]: number } = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+      const trueDay = Object.keys(schedule.days).find(
+        (day: string) => day !== "all" && schedule.days[day]
+      );
+      if (trueDay && dayKeys[trueDay]) {
+        // Set bookingDate to next occurrence of that weekday (from fromDate)
+        let start = new Date(bookingData.fromDate);
+        let diff =
+          (dayKeys[trueDay] - start.getDay() + 7) % 7;
+        if (diff !== 0) start.setDate(start.getDate() + diff);
+        bookingDate = start;
+      }
+    }
+
+    // Helper: combine date + time
     const toISO = (date: Date, time: string) => {
+      if (!date || !time) return "";
       const [hours, mins] = time.split(":").map(Number);
       const d = new Date(date);
       d.setHours(hours, mins, 0, 0);
       return d.toISOString();
     };
+
     createBookingMutation.mutate({
       branch_id: branchId,
       client_id: bookingData.clientId,
       staff_id: bookingData.carerId,
-      start_time: toISO(bookingData.date, bookingData.startTime),
-      end_time: toISO(bookingData.date, bookingData.endTime),
-      service_id: bookingData.serviceId || null,
-      revenue: bookingData.revenue || null,
+      start_time: toISO(bookingDate, startTime),
+      end_time: toISO(bookingDate, endTime),
+      service_id: schedule.services?.[0] || null,
+      revenue: null,
     });
+
     setNewBookingDialogOpen(false);
   };
 
