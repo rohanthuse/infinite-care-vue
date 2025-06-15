@@ -73,8 +73,19 @@ export function ParameterTable({
   const [internalFilteredData, setInternalFilteredData] = useState(data);
 
   useEffect(() => {
-    setInternalFilteredData(data);
-  }, [data]);
+    let sortedData = [...data];
+    if (sortColumn) {
+      sortedData.sort((a, b) => {
+        const aValue = a[sortColumn];
+        const bValue = b[sortColumn];
+
+        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    setInternalFilteredData(sortedData);
+  }, [sortColumn, sortDirection, data]);
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
@@ -110,46 +121,41 @@ export function ParameterTable({
       onSearch(value);
     }
   };
+  
+  const headerContent = (
+    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+      {title && (
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-white rounded-xl shadow-sm">
+            {icon}
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">{title}</h1>
+            <p className="text-gray-500 text-sm md:text-base">Manage {title.toLowerCase()}</p>
+          </div>
+        </div>
+      )}
+      
+      <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto md:justify-end">
+          <div className="relative flex-grow">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input 
+              className="pl-9 bg-white border-gray-200 focus:border-blue-300 w-full" 
+              placeholder={searchPlaceholder}
+              value={searchQuery}
+              onChange={handleSearchChange}
+            />
+          </div>
+        
+        {addButton}
+      </div>
+    </div>
+  );
 
   return (
     <div className="w-full">
-      <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-2xl p-6 md:p-8 mb-8">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-white rounded-xl shadow-sm">
-              {icon}
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">{title}</h1>
-              <p className="text-gray-500 text-sm md:text-base">Manage {title.toLowerCase()} parameters</p>
-            </div>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-3">
-            {onSearch && (
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input 
-                  className="pl-9 bg-white border-gray-200 focus:border-blue-300 w-full sm:w-64" 
-                  placeholder={searchPlaceholder}
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                />
-              </div>
-            )}
-            
-            {addButton ? (
-              addButton
-            ) : (
-              <CustomButton 
-                variant="pill" 
-                className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20"
-              >
-                <Plus className="mr-1.5 h-4 w-4" /> New {title.slice(0, -1)}
-              </CustomButton>
-            )}
-          </div>
-        </div>
+      <div className="bg-white rounded-2xl p-6 md:p-8 mb-4 border-b">
+         {headerContent}
       </div>
       
       {showFilter && filterOptions.length > 0 && (
@@ -178,7 +184,7 @@ export function ParameterTable({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="bg-white rounded-xl border border-gray-200/80 shadow-sm overflow-hidden"
+        className="bg-white rounded-xl overflow-hidden"
       >
         <div className="overflow-x-auto">
           <Table>

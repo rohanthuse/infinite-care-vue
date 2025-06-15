@@ -1,57 +1,118 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable } from "@/components/ParameterTable";
-import { Stethoscope, Plus } from "lucide-react";
+import { Stethoscope, Plus, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddMedicalConditionDialog } from "@/components/AddMedicalConditionDialog";
+import { EditMedicalCategoryDialog } from "@/components/EditMedicalCategoryDialog";
+import { EditMedicalConditionDialog } from "@/components/EditMedicalConditionDialog";
 import { CustomButton } from "@/components/ui/CustomButton";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-// Mock data for medical conditions
-const conditionsData = [
-  { id: 1, title: "Cancer", category: "Medical Health Conditions", fieldCaption: "Type", status: "Active" },
-  { id: 2, title: "Arthritis", category: "Medical Health Conditions", fieldCaption: "", status: "Active" },
-  { id: 3, title: "Heart Condition", category: "Medical Health Conditions", fieldCaption: "Type", status: "Active" },
-  { id: 4, title: "Diabetes", category: "Medical Health Conditions", fieldCaption: "Type", status: "Active" },
-  { id: 5, title: "Chronic Pain", category: "Medical Health Conditions", fieldCaption: "Type", status: "Active" },
-  { id: 6, title: "Chronic Respiratory", category: "Medical Health Conditions", fieldCaption: "Type", status: "Active" },
-  { id: 7, title: "Addiction", category: "Medical Health Conditions", fieldCaption: "Type", status: "Active" },
-  { id: 8, title: "Other Medical Conditions", category: "Medical Health Conditions", fieldCaption: "Type", status: "Active" },
-  { id: 9, title: "Blood Pressure", category: "Medical Health Conditions", fieldCaption: "", status: "Active" },
-  { id: 10, title: "Thyroid", category: "Medical Health Conditions", fieldCaption: "", status: "Active" },
-  { id: 11, title: "Multiple Sclerosis", category: "Medical Health Conditions", fieldCaption: "", status: "Active" },
-  { id: 12, title: "Parkinson's", category: "Medical Health Conditions", fieldCaption: "Parkinson's", status: "Active" },
-  { id: 13, title: "Dementia", category: "Mental Health Conditions", fieldCaption: "", status: "Active" },
-  { id: 14, title: "Insomnia", category: "Mental Health Conditions", fieldCaption: "", status: "Active" },
-  { id: 15, title: "Anxiety", category: "Mental Health Conditions", fieldCaption: "", status: "Active" },
-];
+const fetchConditions = async () => {
+    const { data, error } = await supabase
+        .from('medical_conditions')
+        .select(`
+            id,
+            title,
+            field_caption,
+            status,
+            category_id,
+            medical_categories ( name )
+        `)
+        .order('title', { ascending: true });
 
-// Mock data for categories
-const categoriesData = [
-  { id: 1, name: "Medical Health Conditions", status: "Active" },
-  { id: 2, name: "Mental Health Conditions", status: "Active" },
-];
+    if (error) throw error;
+    
+    return data.map(item => ({
+        ...item,
+        category: (item.medical_categories as any)?.name || 'N/A'
+    }));
+};
+
+const fetchCategories = async () => {
+    const { data, error } = await supabase
+        .from('medical_categories')
+        .select('*')
+        .order('name', { ascending: true });
+    if (error) throw error;
+    return data;
+};
 
 const MedicalMental = () => {
   const [activeTab, setActiveTab] = useState("conditions");
-  const [conditions, setConditions] = useState(conditionsData);
-  const [categories, setCategories] = useState(categoriesData);
-  const [filteredConditions, setFilteredConditions] = useState(conditions);
-  const [filteredCategories, setFilteredCategories] = useState(categories);
-  const [conditionsSearchQuery, setConditionsSearchQuery] = useState("");
-  const [categoriesSearchQuery, setCategoriesSearchQuery] = useState("");
   const [showConditionDialog, setShowConditionDialog] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
-  
-  useEffect(() => {
-    handleConditionsSearch(conditionsSearchQuery);
-  }, [conditionsSearchQuery, conditions]);
-  
-  useEffect(() => {
-    handleCategoriesSearch(categoriesSearchQuery);
-  }, [categoriesSearchQuery, categories]);
+  const [editingCondition, setEditingCondition] = useState<any>(null);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [deletingCondition, setDeletingCondition] = useState<any>(null);
+  const [deletingCategory, setDeletingCategory] = useState<any>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: conditions, isLoading: isLoadingConditions, error: errorConditions } = useQuery({
+    queryKey: ['medical_conditions'],
+    queryFn: fetchConditions,
+  });
+
+  const { data: categories, isLoading: isLoadingCategories, error: errorCategories } = useQuery({
+    queryKey: ['medical_categories'],
+    queryFn: fetchCategories,
+  });
+
+  const { mutate: deleteCondition, isPending: isDeletingCondition } = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('medical_conditions').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Condition deleted successfully" });
+      queryClient.invalidateQueries({ queryKey: ['medical_conditions'] });
+      setDeletingCondition(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to delete condition", description: error.message, variant: "destructive" });
+      setDeletingCondition(null);
+    }
+  });
+
+  const { mutate: deleteCategory, isPending: isDeletingCategory } = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('medical_categories').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Category deleted successfully" });
+      queryClient.invalidateQueries({ queryKey: ['medical_categories'] });
+      queryClient.invalidateQueries({ queryKey: ['medical_conditions'] });
+      setDeletingCategory(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to delete category", description: "Make sure no conditions are using this category. " + error.message, variant: "destructive" });
+      setDeletingCategory(null);
+    }
+  });
+
+  const handleEditCondition = (condition: any) => setEditingCondition(condition);
+  const handleDeleteCondition = (condition: any) => setDeletingCondition(condition);
+  const handleEditCategory = (category: any) => setEditingCategory(category);
+  const handleDeleteCategory = (category: any) => setDeletingCategory(category);
   
   const conditionsColumns = [
     {
@@ -68,7 +129,7 @@ const MedicalMental = () => {
     },
     {
       header: "Field Caption",
-      accessorKey: "fieldCaption",
+      accessorKey: "field_caption",
       enableSorting: true,
       className: "text-gray-700 w-[25%]",
     },
@@ -78,7 +139,7 @@ const MedicalMental = () => {
       enableSorting: true,
       className: "w-[15%]",
       cell: (value: string) => (
-        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800 font-medium border-0 rounded-full px-3">
+        <Badge className={`${value === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} hover:bg-green-100 hover:text-green-800 font-medium border-0 rounded-full px-3`}>
           {value}
         </Badge>
       ),
@@ -98,60 +159,39 @@ const MedicalMental = () => {
       enableSorting: true,
       className: "w-[15%]",
       cell: (value: string) => (
-        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800 font-medium border-0 rounded-full px-3">
+        <Badge className={`${value === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} hover:bg-green-100 hover:text-green-800 font-medium border-0 rounded-full px-3`}>
           {value}
         </Badge>
       ),
     },
   ];
   
-  const handleConditionsSearch = (query: string) => {
-    setConditionsSearchQuery(query);
-    if (!query) {
-      setFilteredConditions(conditions);
-    } else {
-      const filtered = conditions.filter(item => 
-        item.title.toLowerCase().includes(query.toLowerCase()) ||
-        item.category.toLowerCase().includes(query.toLowerCase()) ||
-        (item.fieldCaption && item.fieldCaption.toLowerCase().includes(query.toLowerCase()))
-      );
-      setFilteredConditions(filtered);
-    }
-  };
-  
-  const handleCategoriesSearch = (query: string) => {
-    setCategoriesSearchQuery(query);
-    if (!query) {
-      setFilteredCategories(categories);
-    } else {
-      const filtered = categories.filter(item => 
-        item.name.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredCategories(filtered);
-    }
-  };
+  const isLoading = isLoadingConditions || isLoadingCategories;
+  const error = errorConditions || errorCategories;
 
-  const handleAddCondition = (condition: any) => {
-    const newCondition = { ...condition, id: conditions.length + 1 };
-    setConditions([...conditions, newCondition]);
-    
-    if (conditionsSearchQuery) {
-      handleConditionsSearch(conditionsSearchQuery);
-    } else {
-      setFilteredConditions([...conditions, newCondition]);
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        <DashboardNavbar />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        </div>
+      </div>
+    );
+  }
 
-  const handleAddCategory = (category: any) => {
-    const newCategory = { ...category, id: categories.length + 1 };
-    setCategories([...categories, newCategory]);
-    
-    if (categoriesSearchQuery) {
-      handleCategoriesSearch(categoriesSearchQuery);
-    } else {
-      setFilteredCategories([...categories, newCategory]);
-    }
-  };
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        <DashboardNavbar />
+        <div className="flex-1 flex items-center justify-center text-red-500">
+          Error fetching data: {(error as any).message}
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
@@ -206,25 +246,29 @@ const MedicalMental = () => {
               </TabsList>
             </div>
             
-            <TabsContent value="conditions" className="mt-0 p-0">
+            <TabsContent value="conditions" className="mt-0">
               <ParameterTable 
-                title=""
-                icon={<></>}
+                title="Conditions"
+                icon={<Stethoscope className="h-7 w-7 text-blue-600" />}
                 columns={conditionsColumns}
-                data={filteredConditions}
-                onSearch={handleConditionsSearch}
+                data={conditions || []}
                 searchPlaceholder="Search conditions..."
+                onEdit={handleEditCondition}
+                onDelete={handleDeleteCondition}
+                addButton={<></>}
               />
             </TabsContent>
             
-            <TabsContent value="category" className="mt-0 p-0">
+            <TabsContent value="category" className="mt-0">
               <ParameterTable 
-                title=""
-                icon={<></>}
+                title="Categories"
+                icon={<Stethoscope className="h-7 w-7 text-blue-600" />}
                 columns={categoryColumns}
-                data={filteredCategories}
-                onSearch={handleCategoriesSearch}
+                data={categories || []}
                 searchPlaceholder="Search categories..."
+                onEdit={handleEditCategory}
+                onDelete={handleDeleteCategory}
+                addButton={<></>}
               />
             </TabsContent>
           </Tabs>
@@ -233,18 +277,71 @@ const MedicalMental = () => {
         <AddMedicalConditionDialog 
           isOpen={showConditionDialog} 
           onClose={() => setShowConditionDialog(false)}
-          onAdd={handleAddCondition}
-          categories={categoriesData}
+          categories={categories || []}
           isCategory={false}
         />
 
         <AddMedicalConditionDialog 
           isOpen={showCategoryDialog} 
           onClose={() => setShowCategoryDialog(false)}
-          onAdd={handleAddCategory}
           categories={[]}
           isCategory={true}
         />
+
+        {editingCondition && (
+          <EditMedicalConditionDialog 
+            isOpen={!!editingCondition}
+            onClose={() => setEditingCondition(null)}
+            condition={editingCondition}
+          />
+        )}
+        
+        {editingCategory && (
+          <EditMedicalCategoryDialog
+            isOpen={!!editingCategory}
+            onClose={() => setEditingCategory(null)}
+            category={editingCategory}
+          />
+        )}
+
+        {deletingCondition && (
+          <AlertDialog open={!!deletingCondition} onOpenChange={() => setDeletingCondition(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure you want to delete this condition?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the condition titled "{deletingCondition.title}".
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isDeletingCondition}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => deleteCondition(deletingCondition.id)} disabled={isDeletingCondition}>
+                  {isDeletingCondition ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</> : 'Delete'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+        
+        {deletingCategory && (
+          <AlertDialog open={!!deletingCategory} onOpenChange={() => setDeletingCategory(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure you want to delete this category?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the category titled "{deletingCategory.name}".
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isDeletingCategory}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => deleteCategory(deletingCategory.id)} disabled={isDeletingCategory}>
+                  {isDeletingCategory ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</> : 'Delete'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+
       </motion.main>
     </div>
   );
