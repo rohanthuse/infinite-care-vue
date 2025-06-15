@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Routes, Route, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -69,8 +68,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const { data: chartData, isLoading: isLoadingChartData } = useBranchChartData(id);
 
   const getTabFromPath = (path?: string): string => {
-    if (!path || path.startsWith("dashboard")) return "overview";
-    
+    if (!path || path.startsWith("dashboard")) return "dashboard";
     if (path.startsWith("key-parameters")) return "key-parameters";
     if (path.startsWith("workflow")) return "workflow";
     if (path.startsWith("task-matrix")) return "task-matrix";
@@ -85,8 +83,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     if (path.startsWith("care")) return "care";
     if (path.startsWith("agreements")) return "agreements";
     if (path.startsWith("form-builder")) return "forms";
-    
-    return "overview";
+    return "dashboard";
   };
   
   const [activeTab, setActiveTab] = useState(() => {
@@ -267,7 +264,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     setActiveTab(tab);
     
     if (id && branchName) {
-      if (tab === "overview") {
+      if (tab === "dashboard") {
         navigate(`/branch-dashboard/${id}/${branchName}`);
       } else if (tab === "key-parameters") {
         navigate(`/branch-dashboard/${id}/${branchName}/key-parameters`);
@@ -362,7 +359,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
           />
         </div>
         
-        {activeTab === "overview" && (
+        {activeTab === "dashboard" && (
           <motion.div key={activeTab} initial={{
             opacity: 0,
             y: 10
