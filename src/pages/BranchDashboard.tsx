@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Routes, Route, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -68,7 +69,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const { data: chartData, isLoading: isLoadingChartData } = useBranchChartData(id);
 
   const getTabFromPath = (path?: string): string => {
-    if (!path) return "overview";
+    if (!path || path.startsWith("dashboard")) return "overview";
     
     if (path.startsWith("key-parameters")) return "key-parameters";
     if (path.startsWith("workflow")) return "workflow";
@@ -88,7 +89,11 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     return "overview";
   };
   
-  const [activeTab, setActiveTab] = useState(getTabFromPath(restPath));
+  const [activeTab, setActiveTab] = useState(() => {
+    const initialTab = getTabFromPath(restPath);
+    console.log(`[BranchDashboard] Initializing. restPath: '${restPath}', initial tab: '${initialTab}'`);
+    return initialTab;
+  });
   
   useEffect(() => {
     let path = "";
@@ -96,8 +101,9 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     if (parts.length > 4) {
       path = parts.slice(4).join('/');
     }
-    
-    setActiveTab(getTabFromPath(path));
+    const newTab = getTabFromPath(path);
+    console.log(`[BranchDashboard] Pathname changed: ${location.pathname}, parsed path: '${path}', new tab: '${newTab}'`);
+    setActiveTab(newTab);
   }, [location.pathname]);
 
   const [searchValue, setSearchValue] = useState("");
