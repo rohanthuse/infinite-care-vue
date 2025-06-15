@@ -134,7 +134,7 @@ const updateTemplate = async (templateData: { id: string; title: string; content
 
 export const useUpdateTemplate = () => {
     const queryClient = useQueryClient();
-    return useMutation({
+    return useMutation<void, Error, { id: string; title: string; content?: string | null; type_id: string; }>({
         mutationFn: updateTemplate,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['agreement_templates'] });
