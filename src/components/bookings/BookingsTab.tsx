@@ -277,11 +277,10 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     clientId?: string;
     carerId?: string;
   } | null>(null);
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [carers, setCarers] = useState<Carer[]>([]);
+
+  // FETCH SUPABASE DATA
   const { data: bookingsDB = [], isLoading: isLoadingBookings, error: bookingsError } = useBranchBookings(branchId);
-  const { data: clientsData = [], isLoading: isLoadingClients } = useBranchClients({
+  const { data: clientsData, isLoading: isLoadingClients } = useBranchClients({
     branchId,
     searchTerm: "",
     page: 1,
@@ -290,20 +289,26 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   const { data: carersData = [], isLoading: isLoadingCarers } = useBranchCarers(branchId);
   const createBookingMutation = useCreateBooking(branchId);
 
-  // Map DB bookings for display (add client/carer names)
+  // Map DB: get .clients array if available, else fallback to []
+  const resolvedClients = Array.isArray(clientsData)
+    ? clientsData
+    : clientsData?.clients ?? [];
   const clientsMap = Object.fromEntries(
-    (clientsData?.clients || []).map((cl: any) => [cl.id, cl])
+    resolvedClients.map((cl: any) => [cl.id, cl])
   );
   const carersMap = Object.fromEntries(
     (carersData || []).map((cr: any) => [cr.id, cr])
   );
+  // Compose Booking[]
   const bookings: Booking[] = (bookingsDB || []).map((bk: any) => ({
     id: bk.id,
     clientId: bk.client_id,
     clientName: clientsMap[bk.client_id]?.first_name
       ? `${clientsMap[bk.client_id]?.first_name} ${clientsMap[bk.client_id]?.last_name || ""}`
       : "Unknown Client",
-    clientInitials: clientsMap[bk.client_id]?.avatar_initials || (clientsMap[bk.client_id]?.first_name?.slice(0,1) ?? "?") + (clientsMap[bk.client_id]?.last_name?.slice(0,1) ?? "?"),
+    clientInitials: clientsMap[bk.client_id]?.avatar_initials ||
+      ((clientsMap[bk.client_id]?.first_name?.slice(0, 1) ?? "?") +
+        (clientsMap[bk.client_id]?.last_name?.slice(0, 1) ?? "?")),
     carerId: bk.staff_id,
     carerName: carersMap[bk.staff_id]?.first_name
       ? `${carersMap[bk.staff_id]?.first_name} ${carersMap[bk.staff_id]?.last_name || ""}`
@@ -314,111 +319,9 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     startTime: bk.start_time ? bk.start_time.slice(11, 16) : "00:00",
     endTime: bk.end_time ? bk.end_time.slice(11, 16) : "00:00",
     date: bk.start_time ? bk.start_time.slice(0, 10) : "",
-    status: "assigned", // TODO: use real status if present
-    notes: "", // Not present in DB
+    status: "assigned", // TODO: use real status if present in db
+    notes: "",
   }));
-
-  useEffect(() => {
-    // Initialize with mock data
-    const initialBookings = [...mockBookings];
-    
-    const today = new Date().toISOString().split('T')[0];
-    const additionalBookings: Booking[] = [{
-      id: "BK-010",
-      clientId: "CL-007",
-      clientName: "Johnson, Andrew",
-      clientInitials: "JA",
-      carerId: "CA-006",
-      carerName: "Davis, Michael",
-      carerInitials: "DM",
-      startTime: "09:30",
-      endTime: "10:30",
-      date: today,
-      status: "assigned"
-    }, {
-      id: "BK-011",
-      clientId: "CL-008",
-      clientName: "Mistry, Sanjay",
-      clientInitials: "MS",
-      carerId: "CA-007",
-      carerName: "Brown, David",
-      carerInitials: "BD",
-      startTime: "11:00",
-      endTime: "12:00",
-      date: today,
-      status: "in-progress"
-    }, {
-      id: "BK-012",
-      clientId: "CL-009",
-      clientName: "Williams, Olivia",
-      clientInitials: "WO",
-      carerId: "CA-008",
-      carerName: "Miller, Sarah",
-      carerInitials: "MS",
-      startTime: "13:30",
-      endTime: "14:30",
-      date: today,
-      status: "assigned"
-    }, {
-      id: "BK-013",
-      clientId: "CL-010",
-      clientName: "Thompson, Emma",
-      clientInitials: "TE",
-      carerId: "CA-009",
-      carerName: "Wilson, Thomas",
-      carerInitials: "WT",
-      startTime: "15:00",
-      endTime: "16:00",
-      date: today,
-      status: "assigned"
-    }, {
-      id: "BK-014",
-      clientId: "CL-004",
-      clientName: "Ren, Victoria",
-      clientInitials: "RV",
-      carerId: "CA-010",
-      carerName: "Moore, Jennifer",
-      carerInitials: "MJ",
-      startTime: "16:30",
-      endTime: "17:30",
-      date: today,
-      status: "cancelled",
-      notes: "Client requested cancellation due to hospital appointment"
-    }];
-    
-    const allBookings = [...initialBookings, ...additionalBookings];
-    setBookings(allBookings);
-    
-    // Clone clients and carers to avoid reference issues
-    const processedClients = JSON.parse(JSON.stringify(mockClients));
-    const processedCarers = JSON.parse(JSON.stringify(mockCarers));
-    
-    // Add bookings references to clients and carers
-    allBookings.forEach(booking => {
-      // Find client and add booking reference
-      const clientIndex = processedClients.findIndex(c => c.id === booking.clientId);
-      if (clientIndex >= 0) {
-        if (!processedClients[clientIndex].bookings) {
-          processedClients[clientIndex].bookings = [];
-        }
-        processedClients[clientIndex].bookings.push(booking);
-      }
-      
-      // Find carer and add booking reference
-      const carerIndex = processedCarers.findIndex(c => c.id === booking.carerId);
-      if (carerIndex >= 0) {
-        if (!processedCarers[carerIndex].bookings) {
-          processedCarers[carerIndex].bookings = [];
-        }
-        processedCarers[carerIndex].bookings.push(booking);
-      }
-    });
-    
-    // Set the processed data
-    setClients(processedClients);
-    setCarers(processedCarers);
-    
-  }, []);
 
   const handleRefresh = () => {
     setIsLoading(true);
@@ -457,7 +360,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       return d.toISOString();
     };
     createBookingMutation.mutate({
-      branch_id: branchId, // must provide branchId
+      branch_id: branchId,
       client_id: bookingData.clientId,
       staff_id: bookingData.carerId,
       start_time: toISO(bookingData.date, bookingData.startTime),
@@ -538,7 +441,8 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     }
   };
 
-  return <div className="space-y-4">
+  return (
+    <div className="space-y-4">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="bg-white border border-gray-200 p-1 rounded-lg w-full lg:w-auto">
@@ -553,15 +457,12 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
             </TabsTrigger>
           </TabsList>
         </Tabs>
-
         <div className="flex gap-3 w-full lg:w-auto justify-between">
           {activeTab === "planning" && <DateNavigation currentDate={currentDate} onDateChange={setCurrentDate} viewType={viewType} onViewTypeChange={setViewType} />}
-          
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleRefresh} className="h-8 w-8 p-0" disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
-            
             <Button 
               onClick={handleNewBooking}
               variant="default" 
@@ -573,52 +474,47 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
           </div>
         </div>
       </div>
-      
       {activeTab === "planning" && <>
-          <BookingFilters 
-            searchQuery={searchQuery} 
-            onSearchChange={setSearchQuery} 
-            viewMode={viewMode} 
-            onViewModeChange={setViewMode} 
-            selectedStatuses={selectedStatuses} 
-            onStatusChange={setSelectedStatuses} 
-          />
-          
-          <BookingTimeGrid 
-            date={currentDate} 
-            bookings={bookings} 
-            clients={clientsData?.clients || []}
-            carers={carersData || []}
-            viewType={viewType} 
-            viewMode={viewMode}
-            onCreateBooking={handleContextMenuBooking}
-            onUpdateBooking={handleUpdateBooking}
-            onEditBooking={handleEditBooking}
-          />
-        </>}
-
+        <BookingFilters 
+          searchQuery={searchQuery} 
+          onSearchChange={setSearchQuery} 
+          viewMode={viewMode} 
+          onViewModeChange={setViewMode} 
+          selectedStatuses={selectedStatuses} 
+          onStatusChange={setSelectedStatuses} 
+        />
+        <BookingTimeGrid 
+          date={currentDate} 
+          bookings={bookings} 
+          clients={resolvedClients}
+          carers={carersData}
+          viewType={viewType} 
+          viewMode={viewMode}
+          onCreateBooking={handleContextMenuBooking}
+          onUpdateBooking={handleEditBooking}
+          onEditBooking={handleEditBooking}
+        />
+      </>}
       {activeTab === "list" && <BookingsList bookings={bookings} />}
-
       {activeTab === "report" && <BookingReport bookings={bookings} />}
-      
       <NewBookingDialog 
         open={newBookingDialogOpen}
         onOpenChange={setNewBookingDialogOpen}
-        clients={clientsData?.clients || []}
-        carers={carersData || []}
+        clients={resolvedClients}
+        carers={carersData}
         onCreateBooking={handleCreateBooking}
         initialData={newBookingData}
         isLoading={createBookingMutation.isPending}
         error={createBookingMutation.error}
       />
-      
       <EditBookingDialog
         open={editBookingDialogOpen}
         onOpenChange={setEditBookingDialogOpen}
         booking={selectedBooking}
-        clients={clients}
-        carers={carers}
-        onUpdateBooking={handleUpdateBooking}
+        clients={resolvedClients}
+        carers={carersData}
+        onUpdateBooking={() => {}}
       />
-    </div>;
+    </div>
+  );
 };
