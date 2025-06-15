@@ -14,6 +14,7 @@ import { useBranchBookings } from "@/data/hooks/useBranchBookings";
 import { useCreateBooking } from "@/data/hooks/useCreateBooking";
 import { useBranchClients } from "@/data/hooks/useBranchClients";
 import { useBranchCarers } from "@/data/hooks/useBranchCarers";
+import { useBranchServices } from "@/data/hooks/useBranchServices";
 
 // Helper for consistent name and initials with fallback
 function safeName(first: any, last: any, fallback = "Unknown") {
@@ -110,6 +111,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   });
   const { data: carersData = [], isLoading: isLoadingCarers } = useBranchCarers(branchId);
   const createBookingMutation = useCreateBooking(branchId);
+  const { data: services = [], isLoading: isLoadingServices } = useBranchServices(branchId);
 
   // Map DB: get .clients array if available, else fallback to []
   const clientsRaw = Array.isArray(clientsData)
@@ -400,6 +402,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         onOpenChange={setNewBookingDialogOpen}
         clients={resolvedClients}
         carers={resolvedCarers}
+        services={services} {/* <-- pass services as prop */}
         onCreateBooking={handleCreateBooking}
         initialData={newBookingData}
         isLoading={createBookingMutation.isPending}
