@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, UserPlus } from "lucide-react";
 import { DateNavigation } from "./DateNavigation";
 import { BookingFilters } from "./BookingFilters";
 import { BookingTimeGrid, Client, Carer, Booking } from "./BookingTimeGrid";
@@ -9,11 +9,14 @@ import { BookingsList } from "./BookingsList";
 import { BookingReport } from "./BookingReport";
 import { NewBookingDialog } from "./NewBookingDialog";
 import { EditBookingDialog } from "./EditBookingDialog";
+import { CreateAdminDialog } from "./CreateAdminDialog";
+import { AuthDebugInfo } from "./AuthDebugInfo";
 import { toast } from "sonner";
 import { useBranchBookings } from "@/data/hooks/useBranchBookings";
 import { useCreateBooking } from "@/data/hooks/useCreateBooking";
 import { useBranchClients } from "@/data/hooks/useBranchClients";
 import { useBranchCarers } from "@/data/hooks/useBranchCarers";
+import { useAuth } from "@/hooks/useAuth";
 
 // Helper for consistent name and initials with fallback
 function safeName(first: any, last: any, fallback = "Unknown") {
@@ -105,6 +108,7 @@ export interface BookingsTabProps {
 export const BookingsTab: React.FC<BookingsTabProps> = ({
   branchId,
 }) => {
+  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [viewType, setViewType] = useState<"daily" | "weekly">("weekly");
   const [activeTab, setActiveTab] = useState<string>("planning");
@@ -114,6 +118,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState<boolean>(false);
   const [editBookingDialogOpen, setEditBookingDialogOpen] = useState<boolean>(false);
+  const [createAdminDialogOpen, setCreateAdminDialogOpen] = useState<boolean>(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [newBookingData, setNewBookingData] = useState<{
     date: Date;
@@ -265,14 +270,25 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
 
   // --- Improve booking creation robustness ---
   const handleCreateBooking = (bookingData: any) => {
-    if (!branchId) return;
+    if (!user) {
+      toast.error("You must be logged in to create bookings");
+      return;
+    }
+    
+    if (!branchId) {
+      toast.error("Branch ID is required");
+      return;
+    }
+    
     if (!bookingData || !bookingData.schedules || !Array.isArray(bookingData.schedules) || bookingData.schedules.length === 0) {
       toast.error("Invalid booking data. Please select at least one schedule.");
       return;
     }
+    
     const schedule = bookingData.schedules[0];
     const startTime = schedule.startTime;
     const endTime = schedule.endTime;
+    
     if (
       !bookingData.fromDate ||
       !startTime ||
@@ -283,27 +299,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       toast.error("Missing booking details. Please complete all required fields.");
       return;
     }
-    let bookingDate = bookingData.fromDate;
-    if (schedule.days) {
-      const dayKeys: { [key: string]: number } = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
-      const trueDay = Object.keys(schedule.days).find(
-        (day: string) => day !== "all" && schedule.days[day]
-      );
-      if (trueDay && typeof dayKeys[trueDay] === "number") {
-        let start = new Date(bookingData.fromDate);
-        let diff = (dayKeys[trueDay] - start.getDay() + 7) % 7;
-        if (diff !== 0) start.setDate(start.getDate() + diff);
-        bookingDate = start;
-      }
-    }
-    const toISO = (date: Date, time: string) => {
-      if (!date || !time) return "";
-      const [hours, mins] = time.split(":").map(Number);
-      const d = new Date(date);
-      d.setHours(hours, mins, 0, 0);
-      return d.toISOString();
-    };
-
+    
     // Validate service_id: Use only if it's a valid "uuid"-like, else null
     let serviceId: string | null = null;
     if (
@@ -313,19 +309,23 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     ) {
       serviceId = schedule.services[0];
     }
-
+    
     // Logging for debugging
-    console.log("[BookingsTab] handleCreateBooking INPUT DATA:", {
-      branch_id: branchId,
-      client_id: bookingData.clientId,
-      staff_id: bookingData.carerId,
-      start_time: toISO(bookingDate, startTime),
-      end_time: toISO(bookingDate, endTime),
-      service_id: serviceId,
-      revenue: null,
-      status: "assigned",
+    console.log("[BookingsTab] User attempting to create booking:", {
+      userId: user.id,
+      branchId: branchId,
+      bookingData: {
+        branch_id: branchId,
+        client_id: bookingData.clientId,
+        staff_id: bookingData.carerId,
+        start_time: toISO(bookingDate, startTime),
+        end_time: toISO(bookingDate, endTime),
+        service_id: serviceId,
+        revenue: null,
+        status: "assigned",
+      },
     });
-
+    
     createBookingMutation.mutate(
       {
         branch_id: branchId,
@@ -340,15 +340,20 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       {
         onError: (error: any) => {
           console.error("[BookingsTab] Booking creation error:", error);
-          toast.error("Failed to create booking", {
-            description: error?.message || "Unknown error on booking creation. Please check all fields."
-          });
+          if (error.message?.includes("row-level security")) {
+            toast.error("Access denied. You may not be authorized for this branch.", {
+              description: "Contact your administrator or create an admin user for this branch."
+            });
+          } else {
+            toast.error("Failed to create booking", {
+              description: error?.message || "Unknown error on booking creation. Please check all fields."
+            });
+          }
         },
         onSuccess: (data: any) => {
           toast.success("Booking created!", { description: "A new booking has been added." });
           setNewBookingDialogOpen(false);
           createBookingMutation.reset();
-          // The queryClient.invalidateQueries in useCreateBooking hook will refresh bookings
         }
       }
     );
@@ -372,6 +377,8 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
 
   return (
     <div className="space-y-4">
+      <AuthDebugInfo branchId={branchId} />
+      
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="bg-white border border-gray-200 p-1 rounded-lg w-full lg:w-auto">
@@ -392,10 +399,21 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
             <Button variant="outline" size="sm" onClick={handleRefresh} className="h-8 w-8 p-0" disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
+            {!user && (
+              <Button
+                onClick={() => setCreateAdminDialogOpen(true)}
+                variant="outline"
+                className="h-9 border-orange-500 text-orange-600 hover:bg-orange-50 rounded-full px-3 shadow-sm"
+              >
+                <UserPlus className="h-4 w-4 mr-1" />
+                <span>Create Admin</span>
+              </Button>
+            )}
             <Button
               onClick={handleNewBooking}
               variant="default"
               className="h-9 bg-blue-600 hover:bg-blue-700 rounded-full px-3 shadow-sm"
+              disabled={!user}
             >
               <Plus className="h-4 w-4 mr-1" />
               <span>New Booking</span>
@@ -444,6 +462,11 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         clients={resolvedClients}
         carers={resolvedCarers}
         onUpdateBooking={() => {}}
+      />
+      <CreateAdminDialog
+        open={createAdminDialogOpen}
+        onOpenChange={setCreateAdminDialogOpen}
+        branchId={branchId || ""}
       />
     </div>
   );
