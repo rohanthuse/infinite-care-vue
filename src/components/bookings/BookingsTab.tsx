@@ -54,6 +54,38 @@ function mapDBCarerToCarer(db: any): Carer {
   };
 }
 
+// --- Dummy booking generator ---
+function makeDummyBookings(
+  clients: Client[],
+  carers: Carer[]
+): Booking[] {
+  // Rotating dummy data with a few statuses
+  const statuses = ["assigned", "in-progress", "done", "departed", "cancelled"];
+  const now = new Date();
+  return Array.from({ length: 10 }).map((_, i) => {
+    const client = clients[i % clients.length];
+    const carer = carers[i % carers.length];
+    const startHour = 8 + (i % 4) * 2;
+    const endHour = startHour + 1;
+    const date = new Date(now);
+    date.setDate(now.getDate() + (i % 5));
+    return {
+      id: `dummy-bk-${i + 1}`,
+      clientId: client.id,
+      clientName: client.name,
+      clientInitials: client.initials,
+      carerId: carer.id,
+      carerName: carer.name,
+      carerInitials: carer.initials,
+      startTime: `${String(startHour).padStart(2, "0")}:00`,
+      endTime: `${String(endHour).padStart(2, "0")}:00`,
+      date: date.toISOString().slice(0, 10),
+      status: statuses[i % statuses.length],
+      notes: "",
+    };
+  });
+}
+
 // --- Main component ---
 
 export interface BookingsTabProps {
@@ -121,6 +153,10 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   const resolvedCarers: Carer[] = carersRaw.length > 0
     ? carersRaw.map(mapDBCarerToCarer)
     : dummyCarers;
+
+  // Create id-to-object maps for easy lookup
+  const clientsMap = Object.fromEntries(resolvedClients.map((cl) => [cl.id, cl]));
+  const carersMap = Object.fromEntries(resolvedCarers.map((ca) => [ca.id, ca]));
 
   // Helper: placeholder client/carer for missing reference
   function getOrCreatePlaceholderClient(id: any): Client {
