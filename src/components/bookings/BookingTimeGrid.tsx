@@ -22,6 +22,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+// Allow window property for pointer Y coordinate tracking (for react-beautiful-dnd workaround)
+declare global {
+  interface Window {
+    _lastBookingPointerY?: number;
+  }
+}
+
 export interface Booking {
   id: string;
   clientId: string;
@@ -104,14 +111,14 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   }, [bookings]);
 
   const gridRef = useRef<HTMLDivElement>(null);
-  
+
+  // Only define these ONCE!
   const hourHeight = 60; // height in px for one hour
   const timeInterval = 30; // time interval in minutes (30 = half hour intervals)
-  
-  const timeSlots = Array.from({ length: 24 }, (_, i) => 
+  const timeSlots = Array.from({ length: 24 }, (_, i) =>
     i.toString().padStart(2, '0') + ":00"
   );
-  
+
   const getWeekDates = () => {
     const weekStart = startOfWeek(date, { weekStartsOn: 1 }); // Monday as start of week
     return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -288,8 +295,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   // On drop, we estimate the intended time by relating the offset to the interval.
 
   // Helper: get total number of time slots in the day
-  const timeInterval = 30; // minutes
-  const hourHeight = 60;
   const timeSlotsPerDay = 24 * (60 / timeInterval);
 
   const getBookingPositionFromDrop = (y: number) => {
@@ -315,7 +320,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     const bounding = droppable.getBoundingClientRect();
     // Use last stored pointer coords or fallback to center of slot
     let y = 0;
-    if (window._lastBookingPointerY != null) {
+    if (typeof window._lastBookingPointerY !== 'undefined') {
       y = window._lastBookingPointerY - bounding.top;
     } else {
       // fallback: place to center
