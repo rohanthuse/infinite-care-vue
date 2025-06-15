@@ -1,3 +1,4 @@
+
 import React from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
@@ -205,6 +206,8 @@ const BranchDetails = () => {
                         <Skeleton className="h-4 w-[80px]" />
                       </div>
                     ))
+                  ) : errorStats ? (
+                    <p className="text-red-500 text-center py-4">Error loading bookings.</p>
                   ) : stats?.todaysBookings && stats.todaysBookings.length > 0 ? (
                     stats.todaysBookings.map((booking) => (
                       <div key={booking.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
@@ -213,8 +216,8 @@ const BranchDetails = () => {
                             <Users className="h-4 w-4 text-gray-600" />
                           </div>
                           <div>
-                            <p className="font-medium">{booking.staff?.first_name}, {booking.staff?.last_name}</p>
-                            <p className="text-xs text-gray-500">Client: {booking.client?.first_name}, {booking.client?.last_name}</p>
+                            <p className="font-medium">{booking.staff?.first_name || 'N/A'}, {booking.staff?.last_name || ''}</p>
+                            <p className="text-xs text-gray-500">Client: {booking.client?.first_name || 'N/A'}, {booking.client?.last_name || ''}</p>
                           </div>
                         </div>
                         <div className="text-sm text-gray-700">{format(new Date(booking.start_time), 'HH:mm')} - {format(new Date(booking.end_time), 'HH:mm')}</div>
@@ -250,6 +253,8 @@ const BranchDetails = () => {
                         <Skeleton className="h-6 w-[70px] rounded-full" />
                       </div>
                     ))
+                  ) : errorStats ? (
+                    <p className="text-red-500 text-center py-4">Error loading expiry alerts.</p>
                   ) : stats?.expiryAlerts && stats.expiryAlerts.length > 0 ? (
                     stats.expiryAlerts.map((alert) => (
                       <div key={alert.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
@@ -258,7 +263,7 @@ const BranchDetails = () => {
                             <AlertCircle className="h-4 w-4 text-red-600" />
                           </div>
                           <div>
-                            <p className="font-medium">{alert.staff?.first_name}, {alert.staff?.last_name}</p>
+                            <p className="font-medium">{alert.staff?.first_name || 'N/A'}, {alert.staff?.last_name || ''}</p>
                             <p className="text-xs text-gray-500">{alert.document_type}</p>
                           </div>
                         </div>
@@ -297,6 +302,8 @@ const BranchDetails = () => {
                           <Skeleton className="h-4 w-[100px]" />
                         </div>
                       ))
+                  ) : errorStats ? (
+                    <p className="text-red-500 text-center py-4">Error loading latest reviews.</p>
                   ) : stats?.latestReviews && stats.latestReviews.length > 0 ? (
                     stats.latestReviews.map((review) => (
                       <div key={review.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
@@ -305,8 +312,8 @@ const BranchDetails = () => {
                             <Users className="h-4 w-4 text-amber-600" />
                           </div>
                           <div>
-                            <p className="font-medium">{review.client?.first_name}, {review.client?.last_name}</p>
-                            <p className="text-xs text-gray-500">Carer: {review.staff?.first_name}, {review.staff?.last_name}</p>
+                            <p className="font-medium">{review.client?.first_name || 'N/A'}, {review.client?.last_name || ''}</p>
+                            <p className="text-xs text-gray-500">Carer: {review.staff?.first_name || 'N/A'}, {review.staff?.last_name || ''}</p>
                           </div>
                         </div>
                         <div className="flex items-center">
