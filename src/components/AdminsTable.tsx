@@ -1,12 +1,12 @@
-
-import { ArrowUpDown, MoreHorizontal, Search, ChevronLeft, ChevronRight, UserPlus, Loader2, Users } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Search, ChevronLeft, ChevronRight, UserPlus, Loader2, Users, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { AddAdminForm } from "@/components/AddAdminForm";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { EditAdminPermissionsDialog } from "@/components/EditAdminPermissionsDialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +17,7 @@ interface AdminData {
   email: string;
   phone: string;
   branch: string;
+  branchId: string | null;
   status: "Active" | "Inactive" | "Pending";
 }
 
@@ -26,6 +27,8 @@ export function AdminsTable() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState<AdminData | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -57,14 +60,18 @@ export function AdminsTable() {
       
       if (profilesError) throw profilesError;
 
-      return profiles.map((p): AdminData => ({
-        id: p.id,
-        name: p.first_name && p.last_name ? `${p.last_name}, ${p.first_name}` : 'N/A',
-        email: p.email ?? 'N/A',
-        phone: p.phone ?? 'N/A',
-        branch: p.admin_branches.map((ab: any) => ab.branches.name).join(', ') || 'Unassigned',
-        status: capitalize(p.status) as AdminData['status'],
-      }));
+      return profiles.map((p): AdminData => {
+        const branches = p.admin_branches as any[] | null;
+        return {
+            id: p.id,
+            name: p.first_name && p.last_name ? `${p.last_name}, ${p.first_name}` : 'N/A',
+            email: p.email ?? 'N/A',
+            phone: p.phone ?? 'N/A',
+            branch: branches && branches.length > 0 ? branches.map((ab: any) => ab.branches.name).join(', ') : 'Unassigned',
+            branchId: branches && branches.length > 0 ? branches[0].branches.id : null,
+            status: capitalize(p.status) as AdminData['status'],
+        }
+      });
     }
   });
 
@@ -94,6 +101,19 @@ export function AdminsTable() {
     queryClient.invalidateQueries({ queryKey: ['branchAdmins'] });
     setShowAddAdminModal(false);
   }
+
+  const handleEditPermissions = (admin: AdminData) => {
+    if (!admin.branchId) {
+      toast({
+        title: "Cannot Edit Permissions",
+        description: "This admin is not assigned to a branch.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSelectedAdmin(admin);
+    setIsEditModalOpen(true);
+  };
 
   const getStatusBadgeClass = (status: AdminData['status']) => {
     switch (status) {
@@ -248,7 +268,12 @@ export function AdminsTable() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem>View Details</DropdownMenuItem>
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
+                          <DropdownMenuItem>Edit Details</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditPermissions(admin)}>
+                            <Shield className="mr-2 h-4 w-4" />
+                            Edit Permissions
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-red-600">Deactivate</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -279,6 +304,16 @@ export function AdminsTable() {
         onClose={() => setShowAddAdminModal(false)}
         onAdminAdded={onAdminAdded}
       />
+
+      {selectedAdmin && selectedAdmin.branchId && (
+        <EditAdminPermissionsDialog
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          adminId={selectedAdmin.id}
+          branchId={selectedAdmin.branchId}
+          adminName={selectedAdmin.name}
+        />
+      )}
     </div>
   );
 }
