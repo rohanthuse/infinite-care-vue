@@ -343,8 +343,13 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
       <NewBookingDialog
         open={newBookingDialogOpen}
         onOpenChange={setNewBookingDialogOpen}
-        clients={clients}
-        carers={carers}
+        clients={
+          clients.map(client => ({
+            ...client,
+            name: `${client.first_name} ${client.last_name}`,
+          }))
+        }
+        carers={mockCarers}
         services={services}
         onCreateBooking={handleCreateBooking}
       />
