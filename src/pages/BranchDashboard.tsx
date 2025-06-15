@@ -1120,5 +1120,3 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
 };
 
 export default BranchDashboard;
-
-</edits_to_apply>
