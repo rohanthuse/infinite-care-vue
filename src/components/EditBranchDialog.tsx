@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -16,7 +15,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tables } from "@/integrations/supabase/types";
 import { Branch } from "@/pages/Branch";
 
 interface EditBranchDialogProps {
@@ -47,7 +45,7 @@ export function EditBranchDialog({ isOpen, onClose, branch }: EditBranchDialogPr
   }, [branch]);
 
   const { mutate: updateBranch, isPending } = useMutation({
-    mutationFn: async (updatedBranch: Partial<Omit<Tables<'branches'>, 'id' | 'created_at'>>) => {
+    mutationFn: async (updatedBranch: Partial<Omit<Branch, 'id' | 'created_at' | 'created_on' | 'updated_at' | 'created_by'>>) => {
       if (!branch) return;
       const { error } = await supabase
         .from('branches')

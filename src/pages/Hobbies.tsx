@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
@@ -67,9 +68,9 @@ const Hobbies = () => {
       accessorKey: "status",
       enableSorting: true,
       className: "w-[40%]",
-      cell: (value: string) => (
-        <Badge className={`${value === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} font-medium border-0 rounded-full px-3`}>
-          {value}
+      cell: ({ row }: { row: { original: { status: string } } }) => (
+        <Badge className={`${row.original.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} font-medium border-0 rounded-full px-3`}>
+          {row.original.status}
         </Badge>
       ),
     },

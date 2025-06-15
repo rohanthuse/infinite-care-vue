@@ -86,16 +86,16 @@ const TypeOfWork = () => {
       accessorKey: "status",
       enableSorting: true,
       className: "w-[40%]",
-      cell: (value: string) => (
+      cell: ({ row }: { row: { original: ParameterItem } }) => (
         <Badge
           className={cn(
             "font-medium border-0 rounded-full px-3",
-            value === "Active"
+            row.original.status === "Active"
               ? "bg-green-100 text-green-800 hover:bg-green-200/80"
               : "bg-red-100 text-red-800 hover:bg-red-200/80"
           )}
         >
-          {value}
+          {row.original.status}
         </Badge>
       ),
     },
