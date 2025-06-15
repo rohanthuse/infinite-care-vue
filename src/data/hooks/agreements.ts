@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Agreement, AgreementTemplate, ScheduledAgreement, AgreementType } from "@/types/agreements";
+import { Agreement, AgreementTemplate, ScheduledAgreement, AgreementType, AgreementPartyFilter } from "@/types/agreements";
 
 // --- AGREEMENT TYPES ---
 
@@ -18,7 +18,7 @@ export const useAgreementTypes = () => {
 
 // --- SIGNED AGREEMENTS ---
 
-const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dateFilter = "all", branchId, partyFilter = "all" }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; partyFilter?: string; }) => {
+const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dateFilter = "all", branchId, partyFilter = "all" }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; partyFilter?: AgreementPartyFilter; }) => {
     let query = supabase.from('agreements').select(`*, agreement_types ( name )`);
     if (branchId) query = query.eq('branch_id', branchId);
     if (searchQuery) query = query.or(`title.ilike.%${searchQuery}%,signed_by_name.ilike.%${searchQuery}%`);
@@ -39,7 +39,7 @@ const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dat
     return data as Agreement[];
 };
 
-export const useSignedAgreements = ({ searchQuery, typeFilter, dateFilter, branchId, partyFilter }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; partyFilter?: string; }) => {
+export const useSignedAgreements = ({ searchQuery, typeFilter, dateFilter, branchId, partyFilter }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; partyFilter?: AgreementPartyFilter; }) => {
   return useQuery<Agreement[], Error>({
     queryKey: ['agreements', { searchQuery, typeFilter, dateFilter, branchId, partyFilter }],
     queryFn: () => fetchSignedAgreements({ searchQuery, typeFilter, dateFilter, branchId, partyFilter }),

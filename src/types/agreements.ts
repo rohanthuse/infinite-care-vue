@@ -28,6 +28,8 @@ export type Agreement = {
     statusHistory?: { status: string; date: string; reason?: string; changedBy: string; }[];
 };
 
+export type AgreementPartyFilter = "all" | "client" | "staff" | "other";
+
 export type ScheduledAgreement = {
   id: string;
   title: string;

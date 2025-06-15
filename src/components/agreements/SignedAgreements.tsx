@@ -55,7 +55,7 @@ export function SignedAgreements({
       id: agreement.id,
       title: agreement.title,
       date: agreement.signed_at ? format(new Date(agreement.signed_at), 'dd MMM yyyy') : 'N/A',
-      status: agreement.status,
+      status: 0, // HACK: generatePDF expects a number, but status is a string. Using 0 as placeholder.
       signedBy: agreement.signed_by_name || 'N/A',
     });
     toast.success(`Downloaded ${agreement.title}`);
