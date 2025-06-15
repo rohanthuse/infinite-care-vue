@@ -13,24 +13,31 @@ import { CalendarIcon, User, X } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
 interface AddAdminFormProps {
   isOpen: boolean;
   onClose: () => void;
+  onAdminAdded: () => void;
 }
-const branchOptions = ["Med-Infinite - Milton Keynes", "Med-Infinite - London", "Med-Infinite - Manchester"];
+
 const titleOptions = ["Mr", "Mrs", "Ms", "Dr", "Prof"];
 const countryOptions = ["England", "Scotland", "Wales", "Northern Ireland"];
+
 export function AddAdminForm({
   isOpen,
-  onClose
+  onClose,
+  onAdminAdded
 }: AddAdminFormProps) {
   const [activeTab, setActiveTab] = useState("personal");
   const [date, setDate] = useState<Date>();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const {
     toast
   } = useToast();
   const [formData, setFormData] = useState({
-    branch: "",
+    branchId: "",
     title: "",
     firstName: "",
     middleName: "",
@@ -47,40 +54,80 @@ export function AddAdminForm({
     street: "",
     county: ""
   });
+
   const handleFormChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
 
-    // Validate required fields
-    const requiredFields = ['branch', 'title', 'firstName', 'surname', 'email', 'mobile', 'country'];
-    const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
-    if (missingFields.length > 0) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    const { branchId, firstName, surname, email } = formData;
+    if (!branchId || !firstName || !surname || !email) {
       toast({
         title: "Required fields missing",
-        description: `Please fill out all required fields: ${missingFields.join(', ')}`,
+        description: `Please fill out Branch, First Name, Surname, and Email.`,
         variant: "destructive"
       });
+      setIsSubmitting(false);
       return;
     }
-    toast({
-      title: "Admin created successfully",
-      description: "The new administrator has been added to the system",
-      duration: 3000
-    });
-    onClose();
+
+    try {
+      const { error } = await supabase.functions.invoke('invite-admin', {
+        body: {
+          email: formData.email,
+          firstName: formData.firstName,
+          lastName: formData.surname,
+          branchId: formData.branchId,
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      toast({
+        title: "Admin Invited",
+        description: `An invitation email has been sent to ${formData.email}.`,
+        duration: 5000
+      });
+      onAdminAdded(); // This will refetch the admins list and close the modal
+    } catch (error: any) {
+      console.error('Failed to invite admin:', error);
+      toast({
+        title: "Invitation Failed",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const { data: branches, isLoading: isLoadingBranches } = useQuery({
+    queryKey: ['branches'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('branches').select('id, name');
+      if (error) {
+        toast({ title: "Error", description: "Could not fetch branches.", variant: "destructive" });
+        return [];
+      }
+      return data;
+    },
+    enabled: isOpen, // Only fetch when the dialog is open
+  });
+
   return <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[850px] p-0 overflow-hidden rounded-xl">
         <DialogHeader className="px-6 pt-6 pb-2 border-b">
           <DialogTitle className="text-xl flex items-center font-semibold text-gray-800">
             <User className="h-5 w-5 mr-2 text-blue-600" /> Add Admin
           </DialogTitle>
-          
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
@@ -104,12 +151,12 @@ export function AddAdminForm({
                       <Label htmlFor="branch" className="text-gray-700 font-medium flex items-center">
                         Branches<span className="text-red-500 ml-1">*</span>
                       </Label>
-                      <Select value={formData.branch} onValueChange={value => handleFormChange('branch', value)}>
-                        <SelectTrigger id="branch" className="w-full h-10 rounded-md border-gray-300">
-                          <SelectValue placeholder="Select Items..." />
+                      <Select value={formData.branchId} onValueChange={value => handleFormChange('branchId', value)}>
+                        <SelectTrigger id="branch" className="w-full h-10 rounded-md border-gray-300" disabled={isLoadingBranches}>
+                          <SelectValue placeholder={isLoadingBranches ? "Loading branches..." : "Select Branch..."} />
                         </SelectTrigger>
                         <SelectContent>
-                          {branchOptions.map(branch => <SelectItem key={branch} value={branch}>{branch}</SelectItem>)}
+                          {branches?.map(branch => <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
@@ -416,11 +463,11 @@ export function AddAdminForm({
 
             <DialogFooter className="px-6 py-4 border-t bg-gray-50/80">
               <div className="flex justify-end gap-2 w-full">
-                <Button type="button" variant="outline" onClick={onClose} className="border-gray-200 rounded-md">
+                <Button type="button" variant="outline" onClick={onClose} className="border-gray-200 rounded-md" disabled={isSubmitting}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md">
-                  Add Admin
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md" disabled={isSubmitting}>
+                  {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Inviting...</> : 'Invite Admin'}
                 </Button>
               </div>
             </DialogFooter>

@@ -1,12 +1,14 @@
-
-import { ArrowUpDown, MoreHorizontal, Search, ChevronLeft, ChevronRight, UserPlus } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Search, ChevronLeft, ChevronRight, UserPlus, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { AddAdminForm } from "@/components/AddAdminForm";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface AdminData {
   id: string;
@@ -14,67 +16,95 @@ interface AdminData {
   email: string;
   phone: string;
   branch: string;
-  status: "Active" | "Inactive";
+  status: "Active" | "Inactive" | "Pending";
 }
 
-const mockData: AdminData[] = [
-  {
-    id: "1",
-    name: "Ayo-Famure, Opeyemi",
-    email: "admin@briellehealthcareservices.com",
-    phone: "+44 7846427297",
-    branch: "Med-Infinite - Milton Keynes",
-    status: "Active",
-  },
-  {
-    id: "2",
-    name: "Iyaniwura, Ifeoluwa",
-    email: "ifeoluwa@briellehealthcareservices.com",
-    phone: "+44 0744709757",
-    branch: "Med-Infinite - Milton Keynes",
-    status: "Active",
-  },
-  {
-    id: "3",
-    name: "Abiri-Maitland, Aramide",
-    email: "mide@briellehealthcareservices.com",
-    phone: "+44 0772494267",
-    branch: "Med-Infinite - Milton Keynes",
-    status: "Active",
-  },
-];
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function AdminsTable() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
-  const [filteredData, setFilteredData] = useState(mockData);
   const [showInactive, setShowInactive] = useState(false);
-  
-  useEffect(() => {
-    if (!searchQuery.trim() && !showInactive) {
-      setFilteredData(mockData);
-    } else {
-      const filtered = mockData.filter(item => {
-        const matchesSearch = !searchQuery.trim() || 
-          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.branch.toLowerCase().includes(searchQuery.toLowerCase());
-        
-        const matchesStatus = !showInactive || item.status === "Inactive";
-        
-        return matchesSearch && (showInactive ? matchesStatus : true);
-      });
-      setFilteredData(filtered);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: admins, isLoading, error } = useQuery({
+    queryKey: ['branchAdmins'],
+    queryFn: async () => {
+      const { data: adminRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'branch_admin');
+
+      if (rolesError) throw rolesError;
+      const adminIds = adminRoles.map(r => r.user_id);
+
+      if (adminIds.length === 0) return [];
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          first_name,
+          last_name,
+          email,
+          phone,
+          status,
+          admin_branches(branches(id, name))
+        `)
+        .in('id', adminIds);
+      
+      if (profilesError) throw profilesError;
+
+      return profiles.map((p): AdminData => ({
+        id: p.id,
+        name: p.first_name && p.last_name ? `${p.last_name}, ${p.first_name}` : 'N/A',
+        email: p.email ?? 'N/A',
+        phone: p.phone ?? 'N/A',
+        branch: p.admin_branches.map((ab: any) => ab.branches.name).join(', ') || 'Unassigned',
+        status: capitalize(p.status) as AdminData['status'],
+      }));
     }
-  }, [searchQuery, showInactive]);
-  
+  });
+
+  const filteredData = useMemo(() => {
+    if (!admins) return [];
+    return admins.filter(item => {
+      const matchesSearch = !searchQuery.trim() ||
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.branch.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = showInactive ? item.status === "Inactive" : true;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [admins, searchQuery, showInactive]);
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setSearchQuery(query);
+    setSearchQuery(e.target.value);
   };
   
   const toggleInactiveAdmins = () => {
     setShowInactive(!showInactive);
+  };
+
+  const onAdminAdded = () => {
+    queryClient.invalidateQueries({ queryKey: ['branchAdmins'] });
+    setShowAddAdminModal(false);
+  }
+
+  const getStatusBadgeClass = (status: AdminData['status']) => {
+    switch (status) {
+      case 'Active':
+        return 'bg-green-100 text-green-800';
+      case 'Inactive':
+        return 'bg-red-100 text-red-800';
+      case 'Pending':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
   
   return (
@@ -157,39 +187,62 @@ export function AdminsTable() {
               </tr>
             </thead>
             <tbody>
-              {filteredData.map((admin, index) => (
-                <motion.tr 
-                  key={admin.id} 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="border-t border-gray-100/60 hover:bg-gray-50/30 transition-colors"
-                >
-                  <td className="p-4 font-medium text-gray-800">{admin.name}</td>
-                  <td className="p-4 text-gray-700 hidden md:table-cell">{admin.email}</td>
-                  <td className="p-4 text-gray-700 hidden md:table-cell">{admin.phone}</td>
-                  <td className="p-4 text-gray-700 hidden lg:table-cell">{admin.branch}</td>
-                  <td className="p-4">
-                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800 font-medium border-0 rounded-full px-3">
-                      {admin.status}
-                    </Badge>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="text-center p-8">
+                    <div className="flex justify-center items-center">
+                      <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                      <span className="ml-2 text-gray-600">Loading Admins...</span>
+                    </div>
                   </td>
-                  <td className="p-4 text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100/80">
-                          <MoreHorizontal className="h-4 w-4 text-gray-600" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">Deactivate</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                </tr>
+              ) : error ? (
+                 <tr>
+                  <td colSpan={6} className="text-center p-8 text-red-600">
+                    Error fetching admins: {(error as Error).message}
                   </td>
-                </motion.tr>
-              ))}
+                </tr>
+              ) : filteredData.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center p-8 text-gray-500">
+                    No branch admins found.
+                  </td>
+                </tr>
+              ) : (
+                filteredData.map((admin, index) => (
+                  <motion.tr 
+                    key={admin.id} 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    className="border-t border-gray-100/60 hover:bg-gray-50/30 transition-colors"
+                  >
+                    <td className="p-4 font-medium text-gray-800">{admin.name}</td>
+                    <td className="p-4 text-gray-700 hidden md:table-cell">{admin.email}</td>
+                    <td className="p-4 text-gray-700 hidden md:table-cell">{admin.phone}</td>
+                    <td className="p-4 text-gray-700 hidden lg:table-cell">{admin.branch}</td>
+                    <td className="p-4">
+                      <Badge className={`${getStatusBadgeClass(admin.status)} hover:bg-opacity-80 font-medium border-0 rounded-full px-3`}>
+                        {admin.status}
+                      </Badge>
+                    </td>
+                    <td className="p-4 text-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100/80">
+                            <MoreHorizontal className="h-4 w-4 text-gray-600" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>View Details</DropdownMenuItem>
+                          <DropdownMenuItem>Edit</DropdownMenuItem>
+                          <DropdownMenuItem className="text-red-600">Deactivate</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </motion.tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -210,7 +263,8 @@ export function AdminsTable() {
 
       <AddAdminForm 
         isOpen={showAddAdminModal} 
-        onClose={() => setShowAddAdminModal(false)} 
+        onClose={() => setShowAddAdminModal(false)}
+        onAdminAdded={onAdminAdded}
       />
     </div>
   );
