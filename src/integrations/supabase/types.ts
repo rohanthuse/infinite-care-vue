@@ -353,6 +353,8 @@ export type Database = {
           created_at: string | null
           end_time: string
           id: string
+          revenue: number | null
+          service_id: string | null
           staff_id: string | null
           start_time: string
         }
@@ -362,6 +364,8 @@ export type Database = {
           created_at?: string | null
           end_time: string
           id?: string
+          revenue?: number | null
+          service_id?: string | null
           staff_id?: string | null
           start_time: string
         }
@@ -371,6 +375,8 @@ export type Database = {
           created_at?: string | null
           end_time?: string
           id?: string
+          revenue?: number | null
+          service_id?: string | null
           staff_id?: string | null
           start_time?: string
         }
@@ -387,6 +393,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
           {
@@ -961,6 +974,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_branch_chart_data: {
+        Args: { p_branch_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _user_id: string

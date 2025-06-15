@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Routes, Route, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -39,6 +38,7 @@ import { ClientDetail } from "@/components/clients/ClientDetail";
 import { useBranchDashboardStats } from "@/data/hooks/useBranchDashboardStats";
 import { useBranchStatistics } from "@/data/hooks/useBranchStatistics";
 import { useBranchClients } from "@/data/hooks/useBranchClients";
+import { useBranchChartData } from "@/data/hooks/useBranchChartData";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -174,7 +174,7 @@ const DashboardStat = ({
               <>
                 <h3 className="text-lg md:text-2xl font-bold mt-1">{value}</h3>
                 <div className={`flex items-center mt-1 text-xs ${positive ? 'text-green-600' : 'text-red-600'}`}>
-                  {positive ? <ArrowUp className="h-3 w-3 mr-1" /> : <ArrowDown className="h-3 w-3 mr-1" />}
+                  {positive ? <ArrowUp className="h-3 w-3 mr-1" /> : <ArrowDown className="h-3 w-3 mr-1" }
                   <span>{change}</span>
                 </div>
               </>
@@ -313,6 +313,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   
   const { data: dashboardStats, isLoading: isLoadingDashboardStats } = useBranchDashboardStats(id);
   const { data: branchStats, isLoading: isLoadingBranchStats, error: branchStatsError } = useBranchStatistics(id);
+  const { data: chartData, isLoading: isLoadingChartData } = useBranchChartData(id);
 
   const getTabFromPath = (path?: string): string => {
     if (!path) return "overview";
@@ -398,7 +399,6 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedClientSearch, statusFilter, regionFilter]);
-
 
   const handlePreviousPage = () => {
     if (currentPage > 1) {
@@ -552,6 +552,12 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     // Implement document upload functionality
   };
 
+  const totalClientsForDist = chartData?.clientDistribution.reduce((acc, cur) => acc + cur.value, 0) || 0;
+  const returningClientsCount = chartData?.clientDistribution.find(d => d.name === "Returning")?.value || 0;
+  const newClientsCount = chartData?.clientDistribution.find(d => d.name === "New")?.value || 0;
+  const returningPercentage = totalClientsForDist > 0 ? Math.round((returningClientsCount / totalClientsForDist) * 100) : 0;
+  const newPercentage = totalClientsForDist > 0 ? Math.round((newClientsCount / totalClientsForDist) * 100) : 0;
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -691,8 +697,13 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[220px] md:h-[300px] w-full">
+                    {isLoadingChartData ? (
+                      <div className="flex items-center justify-center h-full">
+                        <Skeleton className="h-full w-full" />
+                      </div>
+                    ) : (
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={weeklyData} margin={{
+                      <BarChart data={chartData?.weeklyStats} margin={{
                         top: 20,
                         right: 30,
                         left: 0,
@@ -716,6 +727,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                         }} />
                       </BarChart>
                     </ResponsiveContainer>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -727,12 +739,17 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[180px] md:h-[240px] flex items-center justify-center">
+                    {isLoadingChartData ? (
+                       <div className="flex items-center justify-center h-full">
+                        <Skeleton className="h-48 w-48 rounded-full" />
+                      </div>
+                    ) : (
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
-                        <Pie data={clientTypeData} innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value">
-                          {clientTypeData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                        <Pie data={chartData?.clientDistribution} innerRadius={50} outerRadius={70} paddingAngle={5} dataKey="value">
+                          {chartData?.clientDistribution.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                         </Pie>
-                        <Tooltip formatter={value => [`${value}%`, "Percentage"]} contentStyle={{
+                        <Tooltip formatter={(value, name) => [`${value} clients`, name]} contentStyle={{
                           backgroundColor: "white",
                           border: "1px solid #f0f0f0",
                           borderRadius: "8px",
@@ -740,16 +757,17 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                         }} />
                       </PieChart>
                     </ResponsiveContainer>
+                    )}
                   </div>
                   
                   <div className="flex justify-around mt-3">
                     <div className="flex items-center gap-2">
                       <div className="h-3 w-3 rounded-full bg-indigo-600"></div>
-                      <span className="text-xs md:text-sm">Returning (68%)</span>
+                      <span className="text-xs md:text-sm">Returning ({returningPercentage}%)</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="h-3 w-3 rounded-full bg-indigo-300"></div>
-                      <span className="text-xs md:text-sm">New (32%)</span>
+                      <span className="text-xs md:text-sm">New ({newPercentage}%)</span>
                     </div>
                   </div>
                 </CardContent>
@@ -760,12 +778,17 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base md:text-lg font-semibold">Revenue Trend</CardTitle>
-                  <CardDescription>Monthly revenue in 2025</CardDescription>
+                  <CardDescription>Monthly revenue in {new Date().getFullYear()}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[180px] md:h-[220px] w-full">
+                    {isLoadingChartData ? (
+                      <div className="flex items-center justify-center h-full">
+                        <Skeleton className="h-full w-full" />
+                      </div>
+                    ) : (
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={monthlyRevenueData} margin={{
+                      <AreaChart data={chartData?.monthlyRevenue} margin={{
                         top: 10,
                         right: 30,
                         left: 0,
@@ -780,7 +803,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                         <XAxis dataKey="name" />
                         <YAxis />
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <Tooltip formatter={value => [`£${value}`, "Revenue"]} contentStyle={{
+                        <Tooltip formatter={(value: number) => [`£${value.toLocaleString()}`, "Revenue"]} contentStyle={{
                           backgroundColor: "white",
                           border: "1px solid #f0f0f0",
                           borderRadius: "8px",
@@ -789,6 +812,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                         <Area type="monotone" dataKey="revenue" stroke="#8884d8" fillOpacity={1} fill="url(#colorRevenue)" />
                       </AreaChart>
                     </ResponsiveContainer>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -800,7 +824,16 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3 md:space-y-4">
-                    {serviceData.map((service, index) => <div key={index} className="flex items-center">
+                    {isLoadingChartData ? (
+                      Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="flex items-center gap-4">
+                           <Skeleton className="h-4 w-24" />
+                           <Skeleton className="h-2 flex-1" />
+                           <Skeleton className="h-4 w-8" />
+                        </div>
+                      ))
+                    ) : (
+                      chartData?.serviceUsage.map((service, index) => <div key={index} className="flex items-center">
                         <div className="w-24 md:w-32 font-medium text-xs md:text-sm">{service.name}</div>
                         <div className="flex-1">
                           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -810,7 +843,8 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                           </div>
                         </div>
                         <div className="ml-3 text-xs md:text-sm font-medium">{service.usage}%</div>
-                      </div>)}
+                      </div>)
+                    )}
                   </div>
                 </CardContent>
               </Card>
