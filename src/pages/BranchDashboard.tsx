@@ -76,7 +76,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     if (path.startsWith("bookings")) return "bookings";
     if (path.startsWith("carers")) return "carers";
     if (path.startsWith("clients")) return "clients";
-    if (path.startsWith("communications")) return "communications";
+    if (path.startsWith("communication")) return "communication";
     if (path.startsWith("medication")) return "medication";
     if (path.startsWith("accounting")) return "accounting";
     if (path.startsWith("reviews")) return "reviews";
@@ -278,6 +278,8 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         navigate(`/branch-dashboard/${id}/${branchName}/form-builder`);
       } else if (tab === "care-plan") {
         navigate(`/branch-dashboard/${id}/${branchName}/care-plan`);
+      } else if (tab === "communication") {
+        navigate(`/branch-dashboard/${id}/${branchName}/communication`);
       } else {
         navigate(`/branch-dashboard/${id}/${branchName}/${tab}`);
       }
@@ -1035,7 +1037,9 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         
         {activeTab === "reviews" && <ReviewsTab branchId={id} branchName={branchName} />}
         
-        {activeTab === "communication" && <CommunicationsTab branchId={id} branchName={branchName} />}
+        {activeTab === "communication" && (
+          <CommunicationsTab branchId={id} branchName={branchName} />
+        )}
         
         {activeTab === "notifications" && restPath === "notifications" && (
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
