@@ -118,13 +118,24 @@ const mockServices: Service[] = [
   { id: "svc-008", name: "Shopping Assistance" },
 ];
 
-export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
+export const NewBookingDialog = ({
   open,
   onOpenChange,
   clients,
   carers,
   onCreateBooking,
-  initialData = null,
+  initialData,
+  isLoading,
+  error,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  clients: any[];
+  carers: any[];
+  onCreateBooking: (data: any) => void;
+  initialData?: any;
+  isLoading?: boolean;
+  error?: any;
 }) => {
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(formSchema),
@@ -760,7 +771,14 @@ export const NewBookingDialog: React.FC<NewBookingDialogProps> = ({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit">Create Booking</Button>
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? "Saving..." : "Create Booking"}
+              </Button>
+              {error && (
+                <div className="text-red-600 mt-1 text-sm">
+                  {error.message || "An error occurred while creating booking."}
+                </div>
+              )}
             </DialogFooter>
           </form>
         </Form>

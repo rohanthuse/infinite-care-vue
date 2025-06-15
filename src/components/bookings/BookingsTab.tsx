@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -11,6 +10,10 @@ import { BookingReport } from "./BookingReport";
 import { NewBookingDialog } from "./NewBookingDialog";
 import { EditBookingDialog } from "./EditBookingDialog";
 import { toast } from "sonner";
+import { useBranchBookings } from "@/data/hooks/useBranchBookings";
+import { useCreateBooking } from "@/data/hooks/useCreateBooking";
+import { useBranchClients } from "@/data/hooks/useBranchClients";
+import { useBranchCarers } from "@/data/hooks/useBranchCarers";
 
 // Mock data for clients
 const mockClients: Client[] = [{
@@ -277,8 +280,44 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [carers, setCarers] = useState<Carer[]>([]);
+  const { data: bookingsDB = [], isLoading: isLoadingBookings, error: bookingsError } = useBranchBookings(branchId);
+  const { data: clientsData = [], isLoading: isLoadingClients } = useBranchClients({
+    branchId,
+    searchTerm: "",
+    page: 1,
+    itemsPerPage: 100
+  });
+  const { data: carersData = [], isLoading: isLoadingCarers } = useBranchCarers(branchId);
+  const createBookingMutation = useCreateBooking(branchId);
 
-  // Initialize data
+  // Map DB bookings for display (add client/carer names)
+  const clientsMap = Object.fromEntries(
+    (clientsData?.clients || []).map((cl: any) => [cl.id, cl])
+  );
+  const carersMap = Object.fromEntries(
+    (carersData || []).map((cr: any) => [cr.id, cr])
+  );
+  const bookings: Booking[] = (bookingsDB || []).map((bk: any) => ({
+    id: bk.id,
+    clientId: bk.client_id,
+    clientName: clientsMap[bk.client_id]?.first_name
+      ? `${clientsMap[bk.client_id]?.first_name} ${clientsMap[bk.client_id]?.last_name || ""}`
+      : "Unknown Client",
+    clientInitials: clientsMap[bk.client_id]?.avatar_initials || (clientsMap[bk.client_id]?.first_name?.slice(0,1) ?? "?") + (clientsMap[bk.client_id]?.last_name?.slice(0,1) ?? "?"),
+    carerId: bk.staff_id,
+    carerName: carersMap[bk.staff_id]?.first_name
+      ? `${carersMap[bk.staff_id]?.first_name} ${carersMap[bk.staff_id]?.last_name || ""}`
+      : "Unknown Carer",
+    carerInitials: carersMap[bk.staff_id]?.first_name
+      ? `${carersMap[bk.staff_id]?.first_name?.[0] || ""}${carersMap[bk.staff_id]?.last_name?.[0] || ""}`
+      : "??",
+    startTime: bk.start_time ? bk.start_time.slice(11, 16) : "00:00",
+    endTime: bk.end_time ? bk.end_time.slice(11, 16) : "00:00",
+    date: bk.start_time ? bk.start_time.slice(0, 10) : "",
+    status: "assigned", // TODO: use real status if present
+    notes: "", // Not present in DB
+  }));
+
   useEffect(() => {
     // Initialize with mock data
     const initialBookings = [...mockBookings];
@@ -381,7 +420,6 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     
   }, []);
 
-  // Handle refresh button
   const handleRefresh = () => {
     setIsLoading(true);
     setTimeout(() => {
@@ -390,19 +428,16 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     }, 800);
   };
 
-  // Open new booking dialog
   const handleNewBooking = () => {
     setNewBookingData(null);
     setNewBookingDialogOpen(true);
   };
 
-  // Open edit booking dialog from context menu
   const handleEditBooking = (booking: Booking) => {
     setSelectedBooking(booking);
     setEditBookingDialogOpen(true);
   };
 
-  // Handle right-click or context menu event in grid
   const handleContextMenuBooking = (date: Date, time: string, clientId?: string, carerId?: string) => {
     setNewBookingData({
       date,
@@ -413,74 +448,48 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     setNewBookingDialogOpen(true);
   };
 
-  // Create a new booking
   const handleCreateBooking = (bookingData: any) => {
-    console.log("Creating new booking:", bookingData);
-    
-    const newId = `BK-${Math.floor(Math.random() * 9000) + 1000}`;
-    
-    const selectedClient = clients.find(c => c.id === bookingData.clientId);
-    const selectedCarer = carers.find(c => c.id === bookingData.carerId);
-    
-    if (selectedClient && selectedCarer) {
-      const newBooking: Booking = {
-        id: newId,
-        clientId: selectedClient.id,
-        clientName: selectedClient.name,
-        clientInitials: selectedClient.initials,
-        carerId: selectedCarer.id,
-        carerName: selectedCarer.name,
-        carerInitials: selectedCarer.initials,
-        startTime: bookingData.startTime,
-        endTime: bookingData.endTime,
-        date: bookingData.date.toISOString().split('T')[0],
-        status: "assigned",
-        notes: bookingData.notes || undefined
-      };
-      
-      // Add the new booking to the bookings array
-      setBookings(prev => [...prev, newBooking]);
-      
-      // Update client and carer references
-      updateEntityWithBooking("client", selectedClient.id, newBooking);
-      updateEntityWithBooking("carer", selectedCarer.id, newBooking);
-      
-      toast.success("Booking created successfully");
-    }
+    if (!branchId) return;
+    const toISO = (date: Date, time: string) => {
+      const [hours, mins] = time.split(":").map(Number);
+      const d = new Date(date);
+      d.setHours(hours, mins, 0, 0);
+      return d.toISOString();
+    };
+    createBookingMutation.mutate({
+      branch_id: branchId, // must provide branchId
+      client_id: bookingData.clientId,
+      staff_id: bookingData.carerId,
+      start_time: toISO(bookingData.date, bookingData.startTime),
+      end_time: toISO(bookingData.date, bookingData.endTime),
+      service_id: bookingData.serviceId || null,
+      revenue: bookingData.revenue || null,
+    });
+    setNewBookingDialogOpen(false);
   };
 
-  // Update an existing booking
   const handleUpdateBooking = (updatedBooking: Booking) => {
-    // Find the old booking
     const oldBooking = bookings.find(b => b.id === updatedBooking.id);
     
-    // Update bookings array
     setBookings(prevBookings => 
       prevBookings.map(booking => 
         booking.id === updatedBooking.id ? updatedBooking : booking
       )
     );
     
-    // If client changed, update client references
     if (oldBooking && oldBooking.clientId !== updatedBooking.clientId) {
-      // Remove from old client
       removeBookingFromEntity("client", oldBooking.clientId, updatedBooking.id);
-      // Add to new client
       updateEntityWithBooking("client", updatedBooking.clientId, updatedBooking);
     }
     
-    // If carer changed, update carer references
     if (oldBooking && oldBooking.carerId !== updatedBooking.carerId) {
-      // Remove from old carer
       removeBookingFromEntity("carer", oldBooking.carerId, updatedBooking.id);
-      // Add to new carer
       updateEntityWithBooking("carer", updatedBooking.carerId, updatedBooking);
     }
     
     toast.success("Booking updated successfully");
   };
 
-  // Add a booking to a client or carer
   const updateEntityWithBooking = (type: "client" | "carer", id: string, newBooking: Booking) => {
     if (type === "client") {
       setClients(prevClients => prevClients.map(client => {
@@ -505,7 +514,6 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     }
   };
 
-  // Remove a booking from a client or carer
   const removeBookingFromEntity = (type: "client" | "carer", id: string, bookingId: string) => {
     if (type === "client") {
       setClients(prevClients => prevClients.map(client => {
@@ -579,8 +587,8 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
           <BookingTimeGrid 
             date={currentDate} 
             bookings={bookings} 
-            clients={clients} 
-            carers={carers} 
+            clients={clientsData?.clients || []}
+            carers={carersData || []}
             viewType={viewType} 
             viewMode={viewMode}
             onCreateBooking={handleContextMenuBooking}
@@ -596,10 +604,12 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       <NewBookingDialog 
         open={newBookingDialogOpen}
         onOpenChange={setNewBookingDialogOpen}
-        clients={clients}
-        carers={carers}
+        clients={clientsData?.clients || []}
+        carers={carersData || []}
         onCreateBooking={handleCreateBooking}
         initialData={newBookingData}
+        isLoading={createBookingMutation.isPending}
+        error={createBookingMutation.error}
       />
       
       <EditBookingDialog
