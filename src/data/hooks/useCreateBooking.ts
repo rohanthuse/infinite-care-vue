@@ -10,7 +10,6 @@ export interface CreateBookingInput {
   end_time: string;   // ISO string
   service_id?: string;
   revenue?: number;
-  status?: string;    // <-- ADD status property
 }
 
 export async function createBooking(input: CreateBookingInput) {
@@ -23,7 +22,6 @@ export async function createBooking(input: CreateBookingInput) {
       end_time: input.end_time,
       service_id: input.service_id || null,
       revenue: input.revenue || null,
-      status: input.status || "assigned", // Pass 'status' if provided, else default
     },
   ]).select().single();
 
