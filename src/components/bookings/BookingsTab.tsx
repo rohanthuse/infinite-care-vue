@@ -19,6 +19,7 @@ import { useBranchCarers } from "@/data/hooks/useBranchCarers";
 import { useAuth } from "@/hooks/useAuth";
 import { useCreateMultipleBookings } from "@/data/hooks/useCreateMultipleBookings";
 import { useServices } from "@/data/hooks/useServices";
+import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
 
 // Helper for consistent name and initials with fallback
 function safeName(first: any, last: any, fallback = "Unknown") {
@@ -158,6 +159,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   const { data: carersData = [], isLoading: isLoadingCarers } = useBranchCarers(branchId);
   const createBookingMutation = useCreateBooking(branchId);
   const createMultipleBookingsMutation = useCreateMultipleBookings(branchId);
+  const updateBookingMutation = useUpdateBooking(branchId);
 
   // Map DB: get .clients array if available, else fallback to []
   const clientsRaw = Array.isArray(clientsData)
@@ -303,6 +305,34 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       carerId
     });
     setNewBookingDialogOpen(true);
+  };
+
+  const handleUpdateBooking = (bookingToUpdate: Booking & {notes?: string}) => {
+    if (!bookingToUpdate.id) {
+      toast.error("Cannot update booking without an ID.");
+      return;
+    }
+
+    const payload: any = {
+      client_id: bookingToUpdate.clientId,
+      staff_id: bookingToUpdate.carerId,
+      status: bookingToUpdate.status,
+    };
+    
+    if (bookingToUpdate.date && bookingToUpdate.startTime) {
+        payload.start_time = combineDateAndTimeToISO(new Date(bookingToUpdate.date), bookingToUpdate.startTime);
+    }
+    if (bookingToUpdate.date && bookingToUpdate.endTime) {
+        payload.end_time = combineDateAndTimeToISO(new Date(bookingToUpdate.date), bookingToUpdate.endTime);
+    }
+
+    updateBookingMutation.mutate({ bookingId: bookingToUpdate.id, updatedData: payload }, {
+        onSuccess: () => {
+            if (editBookingDialogOpen) {
+                setEditBookingDialogOpen(false);
+            }
+        }
+    });
   };
 
   // --- Recurring bookings: New improved handler for multiple bookings ---
@@ -513,8 +543,9 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
             viewType={viewType}
             viewMode={viewMode}
             onCreateBooking={handleContextMenuBooking}
-            onUpdateBooking={handleEditBooking}
+            onUpdateBooking={handleUpdateBooking}
             onEditBooking={handleEditBooking}
+            isUpdatingBooking={updateBookingMutation.isPending}
           />
         </>
       )}
@@ -537,7 +568,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         booking={selectedBooking}
         clients={clientsWithBookings}
         carers={carersWithBookings}
-        onUpdateBooking={() => {}}
+        onUpdateBooking={handleUpdateBooking}
       />
       <CreateAdminDialog
         open={createAdminDialogOpen}

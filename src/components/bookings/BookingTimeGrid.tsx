@@ -70,6 +70,7 @@ interface BookingTimeGridProps {
   onCreateBooking?: (date: Date, time: string, clientId?: string, carerId?: string) => void;
   onUpdateBooking?: (booking: Booking) => void;
   onEditBooking?: (booking: Booking) => void;
+  isUpdatingBooking?: boolean;
 }
 
 interface PendingBookingMove {
@@ -92,6 +93,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   onCreateBooking,
   onUpdateBooking,
   onEditBooking,
+  isUpdatingBooking,
 }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -710,8 +712,8 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={handleCancelBookingMove}>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-blue-600 hover:bg-blue-700" onClick={handleConfirmBookingMove}>
-              Confirm Change
+            <AlertDialogAction disabled={isUpdatingBooking} className="bg-blue-600 hover:bg-blue-700" onClick={handleConfirmBookingMove}>
+              {isUpdatingBooking ? "Updating..." : "Confirm Change"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
