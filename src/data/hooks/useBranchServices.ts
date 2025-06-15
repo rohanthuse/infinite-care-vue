@@ -1,15 +1,18 @@
 
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
 
 export interface BranchService {
   id: string;
   name: string;
 }
 
-// Use explicit Supabase type to avoid deep type inference
-type ServiceFromDB = Tables<'services'>;
+// Simple type for what we actually select from the database
+type ServiceSelectResult = {
+  id: string;
+  title: string;
+};
 
 export async function fetchBranchServices(branchId?: string): Promise<BranchService[]> {
   if (!branchId) return [];
@@ -22,10 +25,10 @@ export async function fetchBranchServices(branchId?: string): Promise<BranchServ
     
   if (error) throw error;
   
-  // Explicitly type the data to break inference chain
-  const services: ServiceFromDB[] = data ?? [];
+  // Type the data as what we actually selected
+  const services: ServiceSelectResult[] = data ?? [];
   
-  return services.map((service: ServiceFromDB) => ({
+  return services.map((service) => ({
     id: service.id,
     name: service.title,
   }));
@@ -38,3 +41,4 @@ export function useBranchServices(branchId?: string) {
     enabled: !!branchId,
   });
 }
+
