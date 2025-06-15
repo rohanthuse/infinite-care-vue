@@ -1,3 +1,4 @@
+import { Agreement, AgreementPartyFilter } from "@/types/agreements";
 
 export type AgreementType = {
   id: string;
@@ -43,6 +44,9 @@ export type ScheduledAgreement = {
 export type AgreementTemplate = {
   id: string;
   title: string;
+  content: string | null;
+  type_id: string | null;
+  branch_id: string | null;
   usage_count: number;
   created_at: string;
   updated_at: string;

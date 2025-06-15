@@ -100,8 +100,20 @@ export const useDeleteScheduledAgreement = () => {
 // --- AGREEMENT TEMPLATES ---
 
 const fetchTemplates = async ({ searchQuery = "", typeFilter = "all", branchId }: { searchQuery?: string; typeFilter?: string; branchId: string; }) => {
-    let query = supabase.from('agreement_templates').select(`*, agreement_types ( name )`).eq('branch_id', branchId);
-    // Add filters
+    let query = supabase.from('agreement_templates').select(`*, agreement_types ( name )`);
+    
+    if (branchId && branchId !== "global") {
+        query = query.eq('branch_id', branchId);
+    }
+    
+    if (searchQuery) {
+        query = query.ilike('title', `%${searchQuery}%`);
+    }
+
+    if (typeFilter !== 'all') {
+        query = query.eq('type_id', typeFilter);
+    }
+
     const { data, error } = await query.order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
     return data as AgreementTemplate[];
@@ -111,6 +123,24 @@ export const useAgreementTemplates = ({ searchQuery, typeFilter, branchId }: { s
     return useQuery<AgreementTemplate[], Error>({
         queryKey: ['agreement_templates', { searchQuery, typeFilter, branchId }],
         queryFn: () => fetchTemplates({ searchQuery, typeFilter, branchId }),
+    });
+};
+
+const updateTemplate = async (templateData: { id: string; title: string; content?: string | null; type_id: string; }) => {
+    const { id, ...updates } = templateData;
+    const { error } = await supabase.from('agreement_templates').update(updates).eq('id', id);
+    if (error) throw new Error(error.message);
+};
+
+export const useUpdateTemplate = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: updateTemplate,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['agreement_templates'] });
+            toast.success("Template updated successfully.");
+        },
+        onError: (error: any) => toast.error(`Update failed: ${error.message}`),
     });
 };
 
