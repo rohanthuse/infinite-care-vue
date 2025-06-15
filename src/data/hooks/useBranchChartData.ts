@@ -41,7 +41,7 @@ const fetchBranchChartData = async (branchId: string): Promise<BranchChartData> 
         throw new Error('Could not fetch chart data');
     }
     
-    return data as BranchChartData;
+    return data as unknown as BranchChartData;
 };
 
 export const useBranchChartData = (branchId: string | undefined) => {
