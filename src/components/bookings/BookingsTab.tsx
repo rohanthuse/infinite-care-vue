@@ -222,6 +222,27 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     bookings = makeDummyBookings(resolvedClients, resolvedCarers);
   }
 
+  // === [FIX] Assign bookings and bookingCount to clients ===
+  // assign bookings to each client, and count
+  const clientsWithBookings: Client[] = resolvedClients.map(client => {
+    const clientBookings = bookings.filter(bk => bk.clientId === client.id);
+    return {
+      ...client,
+      bookings: clientBookings,
+      bookingCount: clientBookings.length,
+    };
+  });
+
+  // Optionally you can do the same for carers if needed.
+  const carersWithBookings: Carer[] = resolvedCarers.map(carer => {
+    const carerBookings = bookings.filter(bk => bk.carerId === carer.id);
+    return {
+      ...carer,
+      bookings: carerBookings,
+      bookingCount: carerBookings.length,
+    };
+  });
+
   // --- FILTER BOOKINGS BY SEARCH & STATUS ---
   function filterBookings(bookings: Booking[]) {
     return bookings.filter(bk => {
@@ -450,8 +471,8 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         <BookingTimeGrid
           date={currentDate}
           bookings={filteredBookings}
-          clients={resolvedClients}
-          carers={resolvedCarers}
+          clients={clientsWithBookings} {/* << USE UPDATED CLIENTS */}
+          carers={carersWithBookings}   {/* << USE UPDATED CARERS */}
           viewType={viewType}
           viewMode={viewMode}
           onCreateBooking={handleContextMenuBooking}
@@ -464,8 +485,8 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       <NewBookingDialog
         open={newBookingDialogOpen}
         onOpenChange={setNewBookingDialogOpen}
-        clients={resolvedClients}
-        carers={resolvedCarers}
+        clients={clientsWithBookings}
+        carers={carersWithBookings}
         onCreateBooking={handleCreateBooking}
         initialData={newBookingData}
         isLoading={createBookingMutation.isPending}
@@ -475,8 +496,8 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         open={editBookingDialogOpen}
         onOpenChange={setEditBookingDialogOpen}
         booking={selectedBooking}
-        clients={resolvedClients}
-        carers={resolvedCarers}
+        clients={clientsWithBookings}
+        carers={carersWithBookings}
         onUpdateBooking={() => {}}
       />
       <CreateAdminDialog
