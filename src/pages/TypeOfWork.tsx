@@ -1,37 +1,79 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
-import { ParameterTable } from "@/components/ParameterTable";
-import { Briefcase } from "lucide-react";
+import { ParameterTable, ParameterItem } from "@/components/ParameterTable";
+import { Briefcase, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { AddWorkTypeDialog } from "@/components/AddWorkTypeDialog";
+import { EditWorkTypeDialog } from "@/components/EditWorkTypeDialog";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
-// Mock data for type of work
-const typeOfWorkData = [
-  { id: 1, title: "Night Shift", status: "Active" },
-  { id: 2, title: "Companionship", status: "Active" },
-  { id: 3, title: "Personal Care", status: "Active" },
-  { id: 4, title: "Manual Handling", status: "Active" },
-  { id: 5, title: "Weekend Work", status: "Active" },
-  { id: 6, title: "Bank Holiday Work", status: "Active" },
-  { id: 7, title: "Medication Support", status: "Active" },
-  { id: 8, title: "Respite for Carers", status: "Active" },
-  { id: 9, title: "Learning Disability Support", status: "Active" },
-  { id: 10, title: "Dementia Support", status: "Active" },
-  { id: 11, title: "Urgent Responder", status: "Active" },
-  { id: 12, title: "Fall Responder", status: "Active" },
-  { id: 13, title: "Clients' Transport", status: "Active" },
-  { id: 14, title: "Home Help", status: "Active" },
-  { id: 15, title: "Meal Preparation", status: "Active" },
-  { id: 16, title: "Shopping", status: "Active" },
-];
+const fetchWorkTypes = async () => {
+    const { data, error } = await supabase.from('work_types').select('*').order('title');
+    if (error) throw error;
+    return data;
+};
 
 const TypeOfWork = () => {
-  const [workTypes, setWorkTypes] = useState(typeOfWorkData);
-  const [filteredData, setFilteredData] = useState(workTypes);
-  const [searchQuery, setSearchQuery] = useState("");
-  
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { data: workTypes, isLoading, error } = useQuery({
+      queryKey: ['work_types'],
+      queryFn: fetchWorkTypes,
+  });
+
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedWorkType, setSelectedWorkType] = useState<ParameterItem | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<ParameterItem | null>(null);
+
+  const { mutate: deleteWorkType, isPending: isDeleting } = useMutation({
+    mutationFn: async (id: string | number) => {
+      const { error } = await supabase.from('work_types').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Work Type deleted successfully" });
+      queryClient.invalidateQueries({ queryKey: ['work_types'] });
+      setIsDeleteDialogOpen(false);
+      setItemToDelete(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to delete Work Type", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleEdit = (item: ParameterItem) => {
+    setSelectedWorkType(item);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteRequest = (item: ParameterItem) => {
+    setItemToDelete(item);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (itemToDelete) {
+      deleteWorkType(itemToDelete.id);
+    }
+  };
+
   const columns = [
     {
       header: "Title",
@@ -45,39 +87,43 @@ const TypeOfWork = () => {
       enableSorting: true,
       className: "w-[40%]",
       cell: (value: string) => (
-        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800 font-medium border-0 rounded-full px-3">
+        <Badge
+          className={cn(
+            "font-medium border-0 rounded-full px-3",
+            value === "Active"
+              ? "bg-green-100 text-green-800 hover:bg-green-200/80"
+              : "bg-red-100 text-red-800 hover:bg-red-200/80"
+          )}
+        >
           {value}
         </Badge>
       ),
     },
   ];
-  
-  useEffect(() => {
-    handleSearch(searchQuery);
-  }, [searchQuery, workTypes]);
-  
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (!query) {
-      setFilteredData(workTypes);
-    } else {
-      const filtered = workTypes.filter(item => 
-        item.title.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredData(filtered);
-    }
-  };
-  
-  const handleAddWorkType = (newWorkType: { title: string; status: string }) => {
-    const newWorkTypeWithId = {
-      id: workTypes.length + 1,
-      ...newWorkType
-    };
-    
-    const updatedWorkTypes = [...workTypes, newWorkTypeWithId];
-    setWorkTypes(updatedWorkTypes);
-    setFilteredData(!searchQuery ? updatedWorkTypes : filteredData);
-  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        <DashboardNavbar />
+        <main className="flex-1 flex items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        <DashboardNavbar />
+        <main className="flex-1 flex items-center justify-center bg-red-50 text-red-700">
+          Error loading data: {error.message}
+        </main>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
@@ -94,12 +140,36 @@ const TypeOfWork = () => {
           title="Type of Work"
           icon={<Briefcase className="h-7 w-7 text-blue-600" />}
           columns={columns}
-          data={filteredData}
-          onSearch={handleSearch}
+          data={workTypes || []}
           searchPlaceholder="Search work types..."
-          addButton={<AddWorkTypeDialog onAdd={handleAddWorkType} />}
+          addButton={<AddWorkTypeDialog />}
+          onEdit={handleEdit}
+          onDelete={handleDeleteRequest}
         />
       </motion.main>
+
+      <EditWorkTypeDialog
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        workType={selectedWorkType}
+      />
+      
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the work type "{itemToDelete?.title}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} disabled={isDeleting} className="bg-red-600 hover:bg-red-700">
+              {isDeleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</> : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

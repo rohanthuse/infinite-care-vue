@@ -12,17 +12,40 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-interface AddWorkTypeDialogProps {
-  onAdd: (workType: { title: string; status: string }) => void;
-}
-
-export function AddWorkTypeDialog({ onAdd }: AddWorkTypeDialogProps) {
+export function AddWorkTypeDialog() {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { mutate: addWorkType, isPending } = useMutation({
+    mutationFn: async (newWorkType: { title: string; status: string }) => {
+      const { data, error } = await supabase.from('work_types').insert([newWorkType]).select();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Work Type added",
+        description: `${data[0].title} has been added successfully`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['work_types'] });
+      setTitle("");
+      setOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to add work type",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,13 +58,7 @@ export function AddWorkTypeDialog({ onAdd }: AddWorkTypeDialogProps) {
       return;
     }
 
-    onAdd({ title, status: "Active" });
-    setTitle("");
-    setOpen(false);
-    toast({
-      title: "Work Type added",
-      description: `${title} has been added successfully`,
-    });
+    addWorkType({ title, status: "Active" });
   };
 
   return (
@@ -74,11 +91,11 @@ export function AddWorkTypeDialog({ onAdd }: AddWorkTypeDialogProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
               Cancel
             </Button>
-            <Button type="submit" className="hover:bg-blue-700 text-white">
-              Add Work Type
+            <Button type="submit" className="hover:bg-blue-700 text-white" disabled={isPending}>
+              {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding...</> : "Add Work Type"}
             </Button>
           </DialogFooter>
         </form>
