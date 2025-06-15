@@ -142,62 +142,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     };
   }
 
-  // Compose Booking[] with consistent real + dummy fallback logic
-  // To avoid no-data, supply dummy bookings only if both bookingsDB and branchId are empty or no results
-  function makeDummyBookings(clients: Client[], carers: Carer[]): Booking[] {
-    // Block times for the coming week
-    const today = new Date();
-    const days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(today);
-      d.setDate(d.getDate() + i);
-      return d.toISOString().slice(0, 10);
-    });
-    const statuses: Booking["status"][] = [
-      "assigned",
-      "in-progress",
-      "cancelled",
-      "done",
-      "unassigned",
-      "departed",
-      "suspended",
-    ];
-    let res: Booking[] = [];
-    let count = 0;
-    for (let d = 0; d < days.length; d++) {
-      // 2-4 per day
-      for (let i = 0; i < 3; i++) {
-        const client = clients[(d + i) % clients.length];
-        const carer = carers[(i + d + 1) % carers.length];
-        const startHour = 7 + i * 3 + d % 2;
-        res.push({
-          id: `demo-bk-${d}-${i}`,
-          clientId: client.id,
-          clientName: client.name,
-          clientInitials: client.initials,
-          carerId: carer.id,
-          carerName: carer.name,
-          carerInitials: carer.initials,
-          startTime: `${String(startHour).padStart(2, '0')}:00`,
-          endTime: `${String(startHour + 1 + (i % 2)).padStart(2, '0')}:30`,
-          date: days[d],
-          status: statuses[(d + i) % statuses.length],
-          notes: (count % 4 === 0) ? "Demo note - medication given" : "",
-        });
-        count += 1;
-      }
-    }
-    return res;
-  }
-
-  // Compose map for name lookup
-  const clientsMap = Object.fromEntries(
-    resolvedClients.map((cl: any) => [cl.id, cl])
-  );
-  const carersMap = Object.fromEntries(
-    resolvedCarers.map((cr: any) => [cr.id, cr])
-  );
-
-  // --- FIX: Always display bookings from DB, keep status from DB ---
+  // Compose Booking[] from DB or dummy
   let bookings: Booking[] = [];
   if ((bookingsDB || []).length > 0) {
     bookings = (bookingsDB || []).map((bk: any) => {
@@ -218,7 +163,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         startTime: bk.start_time ? bk.start_time.slice(11, 16) : "07:00",
         endTime: bk.end_time ? bk.end_time.slice(11, 16) : "07:30",
         date: bk.start_time ? bk.start_time.slice(0, 10) : "",
-        status: bk.status || "assigned", // ** Accept from DB **
+        status: bk.status || "assigned", // <-- from DB
         notes: "",
       };
     });
@@ -226,6 +171,25 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   if (bookings.length === 0) {
     bookings = makeDummyBookings(resolvedClients, resolvedCarers);
   }
+
+  // --- FILTER BOOKINGS BY SEARCH & STATUS ---
+  function filterBookings(bookings: Booking[]) {
+    return bookings.filter(bk => {
+      // Filter by status
+      const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(bk.status);
+      // Filter by search
+      const q = searchQuery.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
+        (bk.clientName && bk.clientName.toLowerCase().includes(q)) ||
+        (bk.carerName && bk.carerName.toLowerCase().includes(q)) ||
+        (bk.clientInitials && bk.clientInitials.toLowerCase().includes(q)) ||
+        (bk.carerInitials && bk.carerInitials.toLowerCase().includes(q));
+      return matchesStatus && matchesSearch;
+    });
+  }
+
+  const filteredBookings = filterBookings(bookings);
 
   // Dev logs for validation
   console.log("[BookingsTab] Bookings count supplied:", bookings.length);
@@ -264,18 +228,13 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   // --- FIX: Map multi-schedule booking dialog form to single booking creation ---
   const handleCreateBooking = (bookingData: any) => {
     if (!branchId) return;
-
-    // Defensive: bookingData.schedules[0] must exist, must have start/end times
     if (!bookingData || !bookingData.schedules || !Array.isArray(bookingData.schedules) || bookingData.schedules.length === 0) {
       toast.error("Invalid booking data. Please select at least one schedule.");
       return;
     }
-
     const schedule = bookingData.schedules[0];
     const startTime = schedule.startTime;
     const endTime = schedule.endTime;
-
-    // Defensive: all required fields present
     if (
       !bookingData.fromDate ||
       !startTime ||
@@ -286,26 +245,19 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       toast.error("Missing booking details. Please complete all required fields.");
       return;
     }
-
-    // Helper: map day to first selected
     let bookingDate = bookingData.fromDate;
-    // If days specified: pick first TRUE in days (if any)
     if (schedule.days) {
       const dayKeys: { [key: string]: number } = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
       const trueDay = Object.keys(schedule.days).find(
         (day: string) => day !== "all" && schedule.days[day]
       );
       if (trueDay && dayKeys[trueDay]) {
-        // Set bookingDate to next occurrence of that weekday (from fromDate)
         let start = new Date(bookingData.fromDate);
-        let diff =
-          (dayKeys[trueDay] - start.getDay() + 7) % 7;
+        let diff = (dayKeys[trueDay] - start.getDay() + 7) % 7;
         if (diff !== 0) start.setDate(start.getDate() + diff);
         bookingDate = start;
       }
     }
-
-    // Helper: combine date + time
     const toISO = (date: Date, time: string) => {
       if (!date || !time) return "";
       const [hours, mins] = time.split(":").map(Number);
@@ -322,7 +274,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       end_time: toISO(bookingDate, endTime),
       service_id: schedule.services?.[0] || null,
       revenue: null,
-      status: "assigned", // ** Always set on create **
+      status: "assigned", // Provide status prop.
     });
 
     setNewBookingDialogOpen(false);
@@ -379,7 +331,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         />
         <BookingTimeGrid
           date={currentDate}
-          bookings={bookings}
+          bookings={filteredBookings}
           clients={resolvedClients}
           carers={resolvedCarers}
           viewType={viewType}
@@ -389,8 +341,8 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
           onEditBooking={handleEditBooking}
         />
       </>}
-      {activeTab === "list" && <BookingsList bookings={bookings} />}
-      {activeTab === "report" && <BookingReport bookings={bookings} />}
+      {activeTab === "list" && <BookingsList bookings={filteredBookings} />}
+      {activeTab === "report" && <BookingReport bookings={filteredBookings} />}
       <NewBookingDialog
         open={newBookingDialogOpen}
         onOpenChange={setNewBookingDialogOpen}

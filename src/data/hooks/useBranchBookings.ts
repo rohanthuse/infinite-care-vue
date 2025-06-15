@@ -12,6 +12,7 @@ export interface BookingDB {
   revenue: number | null;
   service_id: string | null;
   created_at: string | null;
+  status: string | null; // <-- ADDED
 }
 
 export async function fetchBranchBookings(branchId?: string) {
@@ -19,7 +20,7 @@ export async function fetchBranchBookings(branchId?: string) {
   const { data, error } = await supabase
     .from("bookings")
     .select(
-      "id, client_id, staff_id, branch_id, start_time, end_time, revenue, service_id, created_at"
+      "id, client_id, staff_id, branch_id, start_time, end_time, revenue, service_id, created_at, status" // <-- status added
     )
     .eq("branch_id", branchId)
     .order("start_time", { ascending: true });

@@ -10,20 +10,26 @@ export interface CreateBookingInput {
   end_time: string;   // ISO string
   service_id?: string;
   revenue?: number;
+  status?: string; // <-- ADDED
 }
 
 export async function createBooking(input: CreateBookingInput) {
-  const { data, error } = await supabase.from("bookings").insert([
-    {
-      branch_id: input.branch_id,
-      client_id: input.client_id,
-      staff_id: input.staff_id,
-      start_time: input.start_time,
-      end_time: input.end_time,
-      service_id: input.service_id || null,
-      revenue: input.revenue || null,
-    },
-  ]).select().single();
+  const { data, error } = await supabase
+    .from("bookings")
+    .insert([
+      {
+        branch_id: input.branch_id,
+        client_id: input.client_id,
+        staff_id: input.staff_id,
+        start_time: input.start_time,
+        end_time: input.end_time,
+        service_id: input.service_id || null,
+        revenue: input.revenue || null,
+        status: input.status || "assigned", // <-- ADDED
+      },
+    ])
+    .select()
+    .single();
 
   if (error) throw error;
   return data;
