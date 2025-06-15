@@ -70,7 +70,12 @@ export const EditTemplateDialog: React.FC<EditTemplateDialogProps> = ({
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     if (!template) return;
     updateTemplateMutation.mutate(
-      { id: template.id, ...values },
+      {
+        id: template.id,
+        title: values.title,
+        type_id: values.type_id,
+        content: values.content || null,
+      },
       {
         onSuccess: () => {
           onOpenChange(false);

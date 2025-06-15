@@ -1,5 +1,3 @@
-import { Agreement, AgreementPartyFilter } from "@/types/agreements";
-
 export type AgreementType = {
   id: string;
   name: string;
