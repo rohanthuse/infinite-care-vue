@@ -958,6 +958,56 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                 </CardContent>
               </Card>
             </div>
+            
+            <div className="grid grid-cols-1 gap-4 md:gap-6 mb-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base md:text-lg font-semibold">Expiry Alerts</CardTitle>
+                      <CardDescription>Staff documents requiring attention</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {isLoadingBranchStats ? (
+                      Array.from({ length: 2 }).map((_, i) => (
+                        <div key={i} className="flex items-start gap-4 p-4 border rounded-lg">
+                          <Skeleton className="h-6 w-6 mt-1" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-1/3" />
+                            <Skeleton className="h-3 w-2/3" />
+                          </div>
+                        </div>
+                      ))
+                    ) : branchStatsError ? (
+                      <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>Could not load expiry alerts.</AlertDescription>
+                      </Alert>
+                    ) : branchStats?.expiryAlerts && branchStats.expiryAlerts.length > 0 ? (
+                      branchStats.expiryAlerts.map((alert) => (
+                        <Alert key={alert.id} variant="destructive">
+                          <AlertTriangle className="h-4 w-4" />
+                          <AlertTitle>{alert.document_type} Expired</AlertTitle>
+                          <AlertDescription>
+                            {alert.staff ? `${alert.staff.first_name} ${alert.staff.last_name}'s` : "A staff member's"}{' '}
+                            {alert.document_type} document has expired and requires renewal.
+                          </AlertDescription>
+                        </Alert>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <ClipboardCheck className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                        <p>No expired documents. All staff records are up-to-date.</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </motion.div>
         )}
         
