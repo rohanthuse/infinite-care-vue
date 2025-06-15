@@ -25,6 +25,33 @@ interface AddAdminFormProps {
 const titleOptions = ["Mr", "Mrs", "Ms", "Dr", "Prof"];
 const countryOptions = ["England", "Scotland", "Wales", "Northern Ireland"];
 
+const initialPermissions = {
+  system: true,
+  finance: true,
+  under_review_care_plan: true,
+  confirmed_care_plan: true,
+  reviews: true,
+  third_party: true,
+  report_accounting: true,
+  report_total_working_hours: true,
+  report_staff: true,
+  report_client: true,
+  report_service: true,
+  accounting_extra_time: true,
+  accounting_expense: true,
+  accounting_travel: true,
+  accounting_invoices: true,
+  accounting_gross_payslip: true,
+  accounting_travel_management: true,
+  accounting_client_rate: true,
+  accounting_authority_rate: true,
+  accounting_staff_rate: true,
+  accounting_rate_management: true,
+  accounting_staff_bank_detail: true,
+};
+
+type Permissions = typeof initialPermissions;
+
 export function AddAdminForm({
   isOpen,
   onClose,
@@ -33,6 +60,8 @@ export function AddAdminForm({
   const [activeTab, setActiveTab] = useState("personal");
   const [date, setDate] = useState<Date>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [permissions, setPermissions] = useState<Permissions>(initialPermissions);
+
   const {
     toast
   } = useToast();
@@ -54,6 +83,10 @@ export function AddAdminForm({
     street: "",
     county: ""
   });
+
+  const handlePermissionChange = (permission: keyof Permissions, value: boolean) => {
+    setPermissions(prev => ({ ...prev, [permission]: value }));
+  };
 
   const handleFormChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -84,6 +117,7 @@ export function AddAdminForm({
           firstName: formData.firstName,
           lastName: formData.surname,
           branchId: formData.branchId,
+          permissions: permissions,
         }
       });
 
@@ -341,11 +375,11 @@ export function AddAdminForm({
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="system" className="text-gray-700">System</Label>
-                      <Switch id="system" />
+                      <Switch id="system" checked={permissions.system} onCheckedChange={(value) => handlePermissionChange('system', value)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="finance" className="text-gray-700">Finance</Label>
-                      <Switch id="finance" />
+                      <Switch id="finance" checked={permissions.finance} onCheckedChange={(value) => handlePermissionChange('finance', value)} />
                     </div>
                   </div>
                 </div>
@@ -356,11 +390,11 @@ export function AddAdminForm({
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="underReviewCarePlan" className="text-gray-700">Under Review Care Plan</Label>
-                      <Switch id="underReviewCarePlan" />
+                      <Switch id="underReviewCarePlan" checked={permissions.under_review_care_plan} onCheckedChange={(value) => handlePermissionChange('under_review_care_plan', value)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="confirmedCarePlan" className="text-gray-700">Confirmed Care Plan</Label>
-                      <Switch id="confirmedCarePlan" />
+                      <Switch id="confirmedCarePlan" checked={permissions.confirmed_care_plan} onCheckedChange={(value) => handlePermissionChange('confirmed_care_plan', value)} />
                     </div>
                   </div>
                 </div>
@@ -371,7 +405,7 @@ export function AddAdminForm({
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="reviews" className="text-gray-700">Reviews</Label>
-                      <Switch id="reviews" />
+                      <Switch id="reviews" checked={permissions.reviews} onCheckedChange={(value) => handlePermissionChange('reviews', value)} />
                     </div>
                   </div>
                 </div>
@@ -382,7 +416,7 @@ export function AddAdminForm({
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="thirdParty" className="text-gray-700">Third Party</Label>
-                      <Switch id="thirdParty" />
+                      <Switch id="thirdParty" checked={permissions.third_party} onCheckedChange={(value) => handlePermissionChange('third_party', value)} />
                     </div>
                   </div>
                 </div>
@@ -393,23 +427,23 @@ export function AddAdminForm({
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="accounting" className="text-gray-700">Accounting</Label>
-                      <Switch id="accounting" />
+                      <Switch id="accounting" checked={permissions.report_accounting} onCheckedChange={(value) => handlePermissionChange('report_accounting', value)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="totalWorkingHours" className="text-gray-700">Total Working Hours</Label>
-                      <Switch id="totalWorkingHours" />
+                      <Switch id="totalWorkingHours" checked={permissions.report_total_working_hours} onCheckedChange={(value) => handlePermissionChange('report_total_working_hours', value)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="staff" className="text-gray-700">Staff</Label>
-                      <Switch id="staff" />
+                      <Switch id="staff" checked={permissions.report_staff} onCheckedChange={(value) => handlePermissionChange('report_staff', value)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="client" className="text-gray-700">Client</Label>
-                      <Switch id="client" />
+                      <Switch id="client" checked={permissions.report_client} onCheckedChange={(value) => handlePermissionChange('report_client', value)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="service" className="text-gray-700">Service</Label>
-                      <Switch id="service" />
+                      <Switch id="service" checked={permissions.report_service} onCheckedChange={(value) => handlePermissionChange('report_service', value)} />
                     </div>
                   </div>
                 </div>
@@ -420,47 +454,47 @@ export function AddAdminForm({
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="extraTime" className="text-gray-700">Extra Time</Label>
-                      <Switch id="extraTime" />
+                      <Switch id="extraTime" checked={permissions.accounting_extra_time} onCheckedChange={(value) => handlePermissionChange('accounting_extra_time', value)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="expense" className="text-gray-700">Expense</Label>
-                      <Switch id="expense" />
+                      <Switch id="expense" checked={permissions.accounting_expense} onCheckedChange={(value) => handlePermissionChange('accounting_expense', value)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="travel" className="text-gray-700">Travel</Label>
-                      <Switch id="travel" />
+                      <Switch id="travel" checked={permissions.accounting_travel} onCheckedChange={(value) => handlePermissionChange('accounting_travel', value)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="invoices" className="text-gray-700">Invoices</Label>
-                      <Switch id="invoices" />
+                      <Switch id="invoices" checked={permissions.accounting_invoices} onCheckedChange={(value) => handlePermissionChange('accounting_invoices', value)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="grossPayslip" className="text-gray-700">Gross Payslip</Label>
-                      <Switch id="grossPayslip" />
+                      <Switch id="grossPayslip" checked={permissions.accounting_gross_payslip} onCheckedChange={(value) => handlePermissionChange('accounting_gross_payslip', value)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="travelManagement" className="text-gray-700">Travel Management</Label>
-                      <Switch id="travelManagement" />
+                      <Switch id="travelManagement" checked={permissions.accounting_travel_management} onCheckedChange={(value) => handlePermissionChange('accounting_travel_management', value)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="clientRate" className="text-gray-700">Client Rate</Label>
-                      <Switch id="clientRate" />
+                      <Switch id="clientRate" checked={permissions.accounting_client_rate} onCheckedChange={(value) => handlePermissionChange('accounting_client_rate', value)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="authorityRate" className="text-gray-700">Authority Rate</Label>
-                      <Switch id="authorityRate" />
+                      <Switch id="authorityRate" checked={permissions.accounting_authority_rate} onCheckedChange={(value) => handlePermissionChange('accounting_authority_rate', value)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="staffRate" className="text-gray-700">Staff Rate</Label>
-                      <Switch id="staffRate" />
+                      <Switch id="staffRate" checked={permissions.accounting_staff_rate} onCheckedChange={(value) => handlePermissionChange('accounting_staff_rate', value)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="rateManagement" className="text-gray-700">Rate Management</Label>
-                      <Switch id="rateManagement" />
+                      <Switch id="rateManagement" checked={permissions.accounting_rate_management} onCheckedChange={(value) => handlePermissionChange('accounting_rate_management', value)} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="staffBankDetail" className="text-gray-700">Staff's Bank Detail</Label>
-                      <Switch id="staffBankDetail" />
+                      <Switch id="staffBankDetail" checked={permissions.accounting_staff_bank_detail} onCheckedChange={(value) => handlePermissionChange('accounting_staff_bank_detail', value)} />
                     </div>
                   </div>
                 </div>

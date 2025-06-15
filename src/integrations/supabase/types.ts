@@ -39,6 +39,108 @@ export type Database = {
           },
         ]
       }
+      admin_permissions: {
+        Row: {
+          accounting_authority_rate: boolean
+          accounting_client_rate: boolean
+          accounting_expense: boolean
+          accounting_extra_time: boolean
+          accounting_gross_payslip: boolean
+          accounting_invoices: boolean
+          accounting_rate_management: boolean
+          accounting_staff_bank_detail: boolean
+          accounting_staff_rate: boolean
+          accounting_travel: boolean
+          accounting_travel_management: boolean
+          admin_id: string
+          branch_id: string
+          confirmed_care_plan: boolean
+          created_at: string
+          finance: boolean
+          id: string
+          report_accounting: boolean
+          report_client: boolean
+          report_service: boolean
+          report_staff: boolean
+          report_total_working_hours: boolean
+          reviews: boolean
+          system: boolean
+          third_party: boolean
+          under_review_care_plan: boolean
+        }
+        Insert: {
+          accounting_authority_rate?: boolean
+          accounting_client_rate?: boolean
+          accounting_expense?: boolean
+          accounting_extra_time?: boolean
+          accounting_gross_payslip?: boolean
+          accounting_invoices?: boolean
+          accounting_rate_management?: boolean
+          accounting_staff_bank_detail?: boolean
+          accounting_staff_rate?: boolean
+          accounting_travel?: boolean
+          accounting_travel_management?: boolean
+          admin_id: string
+          branch_id: string
+          confirmed_care_plan?: boolean
+          created_at?: string
+          finance?: boolean
+          id?: string
+          report_accounting?: boolean
+          report_client?: boolean
+          report_service?: boolean
+          report_staff?: boolean
+          report_total_working_hours?: boolean
+          reviews?: boolean
+          system?: boolean
+          third_party?: boolean
+          under_review_care_plan?: boolean
+        }
+        Update: {
+          accounting_authority_rate?: boolean
+          accounting_client_rate?: boolean
+          accounting_expense?: boolean
+          accounting_extra_time?: boolean
+          accounting_gross_payslip?: boolean
+          accounting_invoices?: boolean
+          accounting_rate_management?: boolean
+          accounting_staff_bank_detail?: boolean
+          accounting_staff_rate?: boolean
+          accounting_travel?: boolean
+          accounting_travel_management?: boolean
+          admin_id?: string
+          branch_id?: string
+          confirmed_care_plan?: boolean
+          created_at?: string
+          finance?: boolean
+          id?: string
+          report_accounting?: boolean
+          report_client?: boolean
+          report_service?: boolean
+          report_staff?: boolean
+          report_total_working_hours?: boolean
+          reviews?: boolean
+          system?: boolean
+          third_party?: boolean
+          under_review_care_plan?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_permissions_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_permissions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branches: {
         Row: {
           created_at: string

@@ -33,12 +33,12 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { email, firstName, lastName, branchId } = await req.json()
+    const { email, firstName, lastName, branchId, permissions } = await req.json()
     console.log('Received invite request for:', { email, firstName, lastName, branchId });
 
-    if (!email || !firstName || !lastName || !branchId) {
+    if (!email || !firstName || !lastName || !branchId || !permissions) {
       console.error('Validation Error: Missing required fields.');
-      return new Response(JSON.stringify({ error: 'Email, name, and branch are required.' }), {
+      return new Response(JSON.stringify({ error: 'Email, name, branch, and permissions are required.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       })
@@ -83,6 +83,16 @@ serve(async (req) => {
           console.error('Error linking existing user to branch in admin_branches:', branchLinkError);
           throw branchLinkError;
         }
+
+        const { error: permissionsError } = await supabaseAdmin.from('admin_permissions').upsert({
+            admin_id: user.id,
+            branch_id: branchId,
+            ...permissions
+        });
+        if (permissionsError) {
+            console.error('Error setting permissions for existing user:', permissionsError);
+            throw permissionsError;
+        }
         
         const { error: roleError } = await supabaseAdmin.from('user_roles').upsert({ user_id: user.id, role: 'branch_admin' });
         if (roleError) {
@@ -90,7 +100,7 @@ serve(async (req) => {
           throw roleError;
         }
         
-        console.log(`Successfully linked existing user ${email} to branch.`);
+        console.log(`Successfully linked existing user ${email} to branch and set permissions.`);
         return new Response(JSON.stringify({ message: 'Existing user assigned as admin to the branch.' }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200,
@@ -115,6 +125,20 @@ serve(async (req) => {
       console.error('Failed to link newly invited user to branch:', branchLinkError)
       throw new Error('User was invited, but could not be assigned to the branch.')
     }
+
+    const { error: permissionsError } = await supabaseAdmin.from('admin_permissions').upsert({
+        admin_id: newUser.id,
+        branch_id: branchId,
+        ...permissions
+    });
+
+    if (permissionsError) {
+        console.error('Failed to set permissions for newly invited user:', permissionsError)
+        // Ideally, here you might want to roll back the user creation or branch linking.
+        // For now, we'll throw an error which will be caught below.
+        throw new Error('User was invited and linked, but permissions could not be set.')
+    }
+
 
     console.log(`Successfully invited ${email} and linked to branch.`);
     return new Response(JSON.stringify({ message: 'Admin invited successfully' }), {
