@@ -86,19 +86,18 @@ export function ParameterTable({
   };
 
   useEffect(() => {
-    if (!onSearch && searchQuery) {
-      const filtered = data.filter(item => {
+    let filteredData = data;
+    if (searchQuery) {
+      filteredData = data.filter(item => {
         return Object.values(item).some(value => 
           value != null && 
           value.toString().toLowerCase().includes(searchQuery.toLowerCase())
         );
       });
-      setInternalFilteredData(filtered);
-      setCurrentPage(1);
-    } else if (!onSearch) {
-      setInternalFilteredData(data);
     }
-  }, [searchQuery, data, onSearch]);
+    setInternalFilteredData(filteredData);
+    setCurrentPage(1);
+  }, [searchQuery, data]);
 
   const totalPages = Math.ceil(internalFilteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;

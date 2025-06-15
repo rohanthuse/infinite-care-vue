@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
@@ -22,26 +21,22 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const fetchHobbies = async (searchQuery: string) => {
+const fetchHobbies = async () => {
   let query = supabase.from('hobbies').select('*').order('title', { ascending: true });
-  if (searchQuery) {
-    query = query.ilike('title', `%${searchQuery}%`);
-  }
   const { data, error } = await query;
   if (error) throw error;
   return data;
 };
 
 const Hobbies = () => {
-  const [searchQuery, setSearchQuery] = useState("");
   const [editingHobby, setEditingHobby] = useState<any>(null);
   const [deletingHobby, setDeletingHobby] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: hobbies, isLoading, error } = useQuery({
-    queryKey: ['hobbies', searchQuery],
-    queryFn: () => fetchHobbies(searchQuery),
+    queryKey: ['hobbies'],
+    queryFn: fetchHobbies,
   });
 
   const { mutate: deleteHobby, isPending: isDeleting } = useMutation({
@@ -80,10 +75,6 @@ const Hobbies = () => {
     },
   ];
   
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-  };
-
   const handleEdit = (hobby: any) => {
     setEditingHobby(hobby);
   };
@@ -132,7 +123,7 @@ const Hobbies = () => {
           icon={<Heart className="h-7 w-7 text-blue-600" />}
           columns={columns}
           data={hobbies || []}
-          onSearch={handleSearch}
+          onSearch={() => {}} // Pass an empty function to enable the search input
           searchPlaceholder="Search hobbies..."
           addButton={<AddHobbyDialog />}
           onEdit={handleEdit}
