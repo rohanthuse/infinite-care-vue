@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { motion } from "framer-motion";
-import { Settings as SettingsIcon, Building2, Save, XCircle, Loader2 } from "lucide-react";
+import { Settings as SettingsIcon, Building2, Save, XCircle, Loader2, Lock, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,6 +11,17 @@ import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 type CompanySettings = {
   id: string;
@@ -49,6 +59,16 @@ const updateCompanySettings = async (settings: Partial<CompanySettings>) => {
   if (error) throw new Error(error.message);
 };
 
+const passwordFormSchema = z.object({
+  password: z.string().min(8, { message: "Password must be at least 8 characters long." }),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+type PasswordFormValues = z.infer<typeof passwordFormSchema>;
+
 const Settings = () => {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<Partial<CompanySettings>>({});
@@ -76,6 +96,30 @@ const Settings = () => {
       toast.error(`Failed to save settings: ${error.message}`);
     },
   });
+
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const passwordForm = useForm<PasswordFormValues>({
+    resolver: zodResolver(passwordFormSchema),
+    defaultValues: {
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  const handlePasswordSubmit = async (values: PasswordFormValues) => {
+    setIsUpdatingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: values.password });
+    if (error) {
+      toast.error(`Failed to update password: ${error.message}`);
+    } else {
+      toast.success("Password updated successfully!");
+      passwordForm.reset();
+    }
+    setIsUpdatingPassword(false);
+  };
 
   const handleChange = (field: keyof Omit<CompanySettings, 'id'>, value: string) => {
     setFormData((prev) => ({
@@ -111,7 +155,7 @@ const Settings = () => {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm overflow-hidden mb-8 p-5 md:p-8 space-y-6">
+          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm overflow-hidden mb-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {Array.from({ length: 9 }).map((_, i) => (
                 <div key={i} className={`space-y-2 ${i === 6 ? 'md:col-span-2' : ''}`}>
@@ -326,6 +370,88 @@ const Settings = () => {
               </CustomButton>
             </div>
           </form>
+        </div>
+        
+        <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm overflow-hidden mb-8">
+          <div className="border-b border-gray-100 p-5">
+            <div className="flex items-center gap-3">
+              <Lock className="h-5 w-5 text-blue-600" />
+              <h2 className="text-lg font-semibold text-gray-800">Change Password</h2>
+            </div>
+          </div>
+          
+          <Form {...passwordForm}>
+            <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="p-5 md:p-8 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={passwordForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700 font-medium">New Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            className="border-gray-200 focus:border-blue-300 pr-10"
+                            disabled={isUpdatingPassword}
+                            {...field}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                          >
+                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={passwordForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700 font-medium">Confirm New Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                           <Input
+                            type={showConfirmPassword ? "text" : "password"}
+                            className="border-gray-200 focus:border-blue-300 pr-10"
+                            disabled={isUpdatingPassword}
+                            {...field}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                            aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                          >
+                            {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <CustomButton
+                  type="submit"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={isUpdatingPassword}
+                >
+                  {isUpdatingPassword ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                  {isUpdatingPassword ? 'Saving...' : 'Update Password'}
+                </CustomButton>
+              </div>
+            </form>
+          </Form>
         </div>
       </motion.main>
     </div>
