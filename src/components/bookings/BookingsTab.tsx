@@ -197,15 +197,17 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     resolvedCarers.map((cr: any) => [cr.id, cr])
   );
 
-  // Main unified bookings array—ensure real bookings are always shown, and fallback dummy bookings if DB empty.
+  // --- FIX: Always display bookings from DB, even if client/carer reference is missing
   let bookings: Booking[] = [];
   if ((bookingsDB || []).length > 0) {
     bookings = (bookingsDB || []).map((bk: any) => {
-      // Robust lookup
       let client = clientsMap[bk.client_id];
       let carer = carersMap[bk.staff_id];
-      if (!client && bk.client_id) client = getOrCreatePlaceholderClient(bk.client_id);
-      if (!carer && bk.staff_id) carer = getOrCreatePlaceholderCarer(bk.staff_id);
+      // Always fallback to placeholder if missing
+      if (!client && bk.client_id)
+        client = getOrCreatePlaceholderClient(bk.client_id);
+      if (!carer && bk.staff_id)
+        carer = getOrCreatePlaceholderCarer(bk.staff_id);
       return {
         id: bk.id,
         clientId: bk.client_id,
@@ -217,12 +219,11 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         startTime: bk.start_time ? bk.start_time.slice(11, 16) : "07:00",
         endTime: bk.end_time ? bk.end_time.slice(11, 16) : "07:30",
         date: bk.start_time ? bk.start_time.slice(0, 10) : "",
-        status: "assigned", // TODO: update when db has real status
+        status: "assigned",
         notes: "",
       };
     });
   }
-  // Add dummy bookings ONLY if DB is empty (so both views show same entries)
   if (bookings.length === 0) {
     bookings = makeDummyBookings(resolvedClients, resolvedCarers);
   }

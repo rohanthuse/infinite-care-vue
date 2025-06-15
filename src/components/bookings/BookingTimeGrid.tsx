@@ -331,7 +331,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     const booking = localBookings.find(b => b.id === draggableId);
     if (!booking) return;
 
-    // Use the day/date for that slot (for weekly, slot has the day index)
+    // --- FIX: Use format() instead of .toISOString().slice(0, 10)
     let bkDate = booking.date;
     const parts = destination.droppableId.split('-');
     const type = parts[0];
@@ -339,10 +339,10 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     if (viewType === "weekly") {
       const idx = parseInt(dateStr, 10);
       if (!isNaN(idx) && idx >= 0 && idx < weekDates.length) {
-        bkDate = weekDates[idx].toISOString().slice(0, 10);
+        // Bugfix: use date-fns format (local date) not UTC
+        bkDate = format(weekDates[idx], 'yyyy-MM-dd');
       }
     } else {
-      // daily - use single view date
       bkDate = format(date, 'yyyy-MM-dd');
     }
 
