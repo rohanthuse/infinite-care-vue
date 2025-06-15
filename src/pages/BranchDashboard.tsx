@@ -46,6 +46,7 @@ import { DashboardStat } from "@/components/dashboard/DashboardStat";
 import { BookingItem } from "@/components/dashboard/BookingItem";
 import { ReviewItem, ReviewItemSkeleton } from "@/components/dashboard/ReviewItem";
 import { ActionItem } from "@/components/dashboard/ActionItem";
+import { useServices } from "@/data/hooks/useServices";
 
 interface BranchDashboardProps {
   tab?: string;
@@ -166,6 +167,8 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
       setCurrentPage(currentPage + 1);
     }
   };
+
+  const { data: services = [], isLoading: isLoadingServices } = useServices();
 
   const handleNewBooking = () => {
     setNewBookingDialogOpen(true);
@@ -337,7 +340,14 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         />
       )}
       
-      <NewBookingDialog open={newBookingDialogOpen} onOpenChange={setNewBookingDialogOpen} clients={mockClients} carers={mockCarers} onCreateBooking={handleCreateBooking} />
+      <NewBookingDialog
+        open={newBookingDialogOpen}
+        onOpenChange={setNewBookingDialogOpen}
+        clients={clients}
+        carers={carers}
+        services={services}
+        onCreateBooking={handleCreateBooking}
+      />
       
       {clientDetailOpen && selectedClient && (
         <ClientDetail 
