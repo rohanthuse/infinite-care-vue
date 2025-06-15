@@ -80,7 +80,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     if (path.startsWith("medication")) return "medication";
     if (path.startsWith("accounting")) return "accounting";
     if (path.startsWith("reviews")) return "reviews";
-    if (path.startsWith("care")) return "care";
+    if (path.startsWith("care-plan")) return "care-plan";
     if (path.startsWith("agreements")) return "agreements";
     if (path.startsWith("form-builder")) return "forms";
     return "dashboard";
@@ -276,6 +276,8 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         navigate(`/branch-dashboard/${id}/${branchName}/training-matrix`);
       } else if (tab === "forms") {
         navigate(`/branch-dashboard/${id}/${branchName}/form-builder`);
+      } else if (tab === "care-plan") {
+        navigate(`/branch-dashboard/${id}/${branchName}/care-plan`);
       } else {
         navigate(`/branch-dashboard/${id}/${branchName}/${tab}`);
       }
