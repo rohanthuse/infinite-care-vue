@@ -234,14 +234,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     });
   }
 
-  const filteredBookings = filterBookings(bookings);
-
-  // Dev logs for validation
-  console.log("[BookingsTab] Bookings count supplied:", bookings.length);
-  console.log("[BookingsTab] Example Booking:", bookings[0]);
-  console.log("[BookingsTab] List of client names in bookings:", bookings.map(bk => bk.clientName));
-
-  // --- Handler logic (preview, create/edit event)
+  // --- Updated Handler logic (preview, create/edit event)
   const handleRefresh = () => {
     setIsLoading(true);
     setTimeout(() => {
@@ -270,7 +263,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     setNewBookingDialogOpen(true);
   };
 
-  // --- FIX: Map multi-schedule booking dialog form to single booking creation ---
+  // --- Improve booking creation robustness ---
   const handleCreateBooking = (bookingData: any) => {
     if (!branchId) return;
     if (!bookingData || !bookingData.schedules || !Array.isArray(bookingData.schedules) || bookingData.schedules.length === 0) {
@@ -296,7 +289,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       const trueDay = Object.keys(schedule.days).find(
         (day: string) => day !== "all" && schedule.days[day]
       );
-      if (trueDay && dayKeys[trueDay]) {
+      if (trueDay && typeof dayKeys[trueDay] === "number") {
         let start = new Date(bookingData.fromDate);
         let diff = (dayKeys[trueDay] - start.getDay() + 7) % 7;
         if (diff !== 0) start.setDate(start.getDate() + diff);
@@ -311,19 +304,65 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       return d.toISOString();
     };
 
-    createBookingMutation.mutate({
+    // Validate service_id: Use only if it's a valid "uuid"-like, else null
+    let serviceId: string | null = null;
+    if (
+      Array.isArray(schedule.services) &&
+      schedule.services[0] &&
+      /^[0-9a-fA-F-]{36}$/.test(schedule.services[0])
+    ) {
+      serviceId = schedule.services[0];
+    }
+
+    // Logging for debugging
+    console.log("[BookingsTab] handleCreateBooking INPUT DATA:", {
       branch_id: branchId,
       client_id: bookingData.clientId,
       staff_id: bookingData.carerId,
       start_time: toISO(bookingDate, startTime),
       end_time: toISO(bookingDate, endTime),
-      service_id: schedule.services?.[0] || null,
+      service_id: serviceId,
       revenue: null,
-      status: "assigned", // Provide status prop.
+      status: "assigned",
     });
 
-    setNewBookingDialogOpen(false);
+    createBookingMutation.mutate(
+      {
+        branch_id: branchId,
+        client_id: bookingData.clientId,
+        staff_id: bookingData.carerId,
+        start_time: toISO(bookingDate, startTime),
+        end_time: toISO(bookingDate, endTime),
+        service_id: serviceId,
+        revenue: null,
+        status: "assigned",
+      },
+      {
+        onError: (error: any) => {
+          console.error("[BookingsTab] Booking creation error:", error);
+          toast.error("Failed to create booking", {
+            description: error?.message || "Unknown error on booking creation. Please check all fields."
+          });
+        },
+        onSuccess: (data: any) => {
+          toast.success("Booking created!", { description: "A new booking has been added." });
+          setNewBookingDialogOpen(false);
+          createBookingMutation.reset();
+          // The queryClient.invalidateQueries in useCreateBooking hook will refresh bookings
+        }
+      }
+    );
   };
+
+  // --- Logging for filtered bookings ---
+  const filteredBookings = filterBookings(bookings);
+
+  console.log("[BookingsTab] FILTERED bookings for display (length):", filteredBookings.length);
+  if (filteredBookings.length > 0) {
+    console.log("[BookingsTab] First filtered booking:", filteredBookings[0]);
+  } else {
+    console.log("[BookingsTab] No filtered bookings.");
+  }
 
   // --- Status counts for filters ---
   const statusCounts = bookings.reduce<Record<string, number>>((acc, booking) => {
