@@ -239,6 +239,19 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     });
   }
 
+  // --- Helper: Combine date and time to ISO ---
+  function combineDateAndTimeToISO(date: Date, time: string): string {
+    // "YYYY-MM-DD" from date
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    let [h, m] = time.split(':');
+    h = h.padStart(2, '0');
+    m = m.padStart(2, '0');
+    // Always use local time in iso format: YYYY-MM-DDTHH:MM
+    return `${yyyy}-${mm}-${dd}T${h}:${m}:00.000Z`;
+  }
+
   // --- Updated Handler logic (preview, create/edit event)
   const handleRefresh = () => {
     setIsLoading(true);
@@ -288,7 +301,10 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     const schedule = bookingData.schedules[0];
     const startTime = schedule.startTime;
     const endTime = schedule.endTime;
-    
+    const bookingDate = bookingData.fromDate instanceof Date
+      ? bookingData.fromDate
+      : new Date(bookingData.fromDate);
+
     if (
       !bookingData.fromDate ||
       !startTime ||
@@ -299,7 +315,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       toast.error("Missing booking details. Please complete all required fields.");
       return;
     }
-    
+
     // Validate service_id: Use only if it's a valid "uuid"-like, else null
     let serviceId: string | null = null;
     if (
@@ -318,8 +334,8 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         branch_id: branchId,
         client_id: bookingData.clientId,
         staff_id: bookingData.carerId,
-        start_time: toISO(bookingDate, startTime),
-        end_time: toISO(bookingDate, endTime),
+        start_time: combineDateAndTimeToISO(bookingDate, startTime),
+        end_time: combineDateAndTimeToISO(bookingDate, endTime),
         service_id: serviceId,
         revenue: null,
         status: "assigned",
@@ -331,8 +347,8 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         branch_id: branchId,
         client_id: bookingData.clientId,
         staff_id: bookingData.carerId,
-        start_time: toISO(bookingDate, startTime),
-        end_time: toISO(bookingDate, endTime),
+        start_time: combineDateAndTimeToISO(bookingDate, startTime),
+        end_time: combineDateAndTimeToISO(bookingDate, endTime),
         service_id: serviceId,
         revenue: null,
         status: "assigned",
