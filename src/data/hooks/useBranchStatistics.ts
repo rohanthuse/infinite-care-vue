@@ -43,7 +43,7 @@ const fetchBranchStatistics = async (branchId: string): Promise<BranchStatistics
     const bookingsQuery = (supabase as any).from('bookings').select('id', { count: 'exact', head: true }).eq('branch_id', branchId);
     const reviewsQuery = (supabase as any).from('reviews').select('id', { count: 'exact', head: true }).eq('branch_id', branchId);
     
-    const todaysBookingsQuery = (supabase as any).from('bookings').select('id, start_time, end_time, client:clients(first_name, last_name), staff:staff(first_name, last_name)').eq('branch_id', branchId).gte('start_time', startOfDay).lte('start_time', endOfDay).order('start_time').limit(3);
+    const todaysBookingsQuery = (supabase as any).from('bookings').select('id, start_time, end_time, client:clients(first_name, last_name), staff:staff(first_name, last_name)').eq('branch_id', branchId).gte('start_time', startOfDay).lte('start_time', endOfDay).order('start_time').limit(5);
     
     // First, get staff IDs for the given branch
     const { data: staffInBranch, error: staffErrorForDocs } = await supabase.from('staff').select('id').eq('branch_id', branchId);

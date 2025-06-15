@@ -35,6 +35,9 @@ import TrainingMatrix from "./TrainingMatrix";
 import AccountingTab from "@/components/accounting/AccountingTab";
 import { FormBuilderTab } from "@/components/form-builder/FormBuilderTab";
 import { ClientDetail } from "@/components/clients/ClientDetail";
+import { useBranchDashboardStats } from "@/data/hooks/useBranchDashboardStats";
+import { useBranchStatistics } from "@/data/hooks/useBranchStatistics";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface BranchDashboardProps {
   tab?: string;
@@ -226,24 +229,35 @@ const DashboardStat = ({
   value,
   change,
   icon,
-  positive
+  positive,
+  isLoading
 }: {
   title: string;
   value: string;
   change: string;
   icon: React.ReactNode;
   positive: boolean;
+  isLoading?: boolean;
 }) => {
   return <Card>
       <CardContent className="p-4 md:p-6">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-sm text-gray-500">{title}</p>
-            <h3 className="text-lg md:text-2xl font-bold mt-1">{value}</h3>
-            <div className={`flex items-center mt-1 text-xs ${positive ? 'text-green-600' : 'text-red-600'}`}>
-              {positive ? <ArrowUp className="h-3 w-3 mr-1" /> : <ArrowDown className="h-3 w-3 mr-1" />}
-              <span>{change}</span>
-            </div>
+            {isLoading ? (
+              <div className="mt-1 space-y-2">
+                <Skeleton className="h-7 w-24" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+            ) : (
+              <>
+                <h3 className="text-lg md:text-2xl font-bold mt-1">{value}</h3>
+                <div className={`flex items-center mt-1 text-xs ${positive ? 'text-green-600' : 'text-red-600'}`}>
+                  {positive ? <ArrowUp className="h-3 w-3 mr-1" /> : <ArrowDown className="h-3 w-3 mr-1" />}
+                  <span>{change}</span>
+                </div>
+              </>
+            )}
           </div>
           <div className="p-2 rounded-md bg-gray-50 border border-gray-100">
             {icon}
@@ -357,6 +371,9 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const navigate = useNavigate();
   const location = useLocation();
   
+  const { data: dashboardStats, isLoading: isLoadingDashboardStats } = useBranchDashboardStats(id);
+  const { data: branchStats, isLoading: isLoadingBranchStats, error: branchStatsError } = useBranchStatistics(id);
+
   const getTabFromPath = (path?: string): string => {
     if (!path) return "overview";
     
@@ -642,10 +659,38 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6">
-              <DashboardStat title="Total Clients" value="128" change="+12%" icon={<Users className="h-5 w-5 text-blue-600" />} positive={true} />
-              <DashboardStat title="Today's Bookings" value="24" change="+8%" icon={<Calendar className="h-5 w-5 text-green-600" />} positive={true} />
-              <DashboardStat title="Pending Reviews" value="7" change="-3%" icon={<FileText className="h-5 w-5 text-amber-600" />} positive={false} />
-              <DashboardStat title="Monthly Revenue" value="£18,947" change="+15.3%" icon={<BarChart4 className="h-5 w-5 text-purple-600" />} positive={true} />
+              <DashboardStat 
+                title="Total Clients" 
+                value={dashboardStats?.clientsCount?.toString() ?? "0"} 
+                change="+12%" 
+                icon={<Users className="h-5 w-5 text-blue-600" />} 
+                positive={true} 
+                isLoading={isLoadingDashboardStats}
+              />
+              <DashboardStat 
+                title="Today's Bookings" 
+                value={dashboardStats?.todaysBookingsCount?.toString() ?? "0"} 
+                change="+8%" 
+                icon={<Calendar className="h-5 w-5 text-green-600" />} 
+                positive={true} 
+                isLoading={isLoadingDashboardStats}
+              />
+              <DashboardStat 
+                title="Pending Reviews" 
+                value={dashboardStats?.pendingReviewsCount?.toString() ?? "0"} 
+                change="-3%" 
+                icon={<FileText className="h-5 w-5 text-amber-600" />} 
+                positive={false} 
+                isLoading={isLoadingDashboardStats}
+              />
+              <DashboardStat 
+                title="Monthly Revenue" 
+                value={`£${(dashboardStats?.monthlyRevenue ?? 0).toLocaleString()}`} 
+                change="+15.3%" 
+                icon={<BarChart4 className="h-5 w-5 text-purple-600" />} 
+                positive={true} 
+                isLoading={isLoadingDashboardStats}
+              />
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
@@ -809,41 +854,50 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                 </CardHeader>
                 <CardContent className="overflow-x-auto">
                   <div className="space-y-1 min-w-[400px]">
-                    <BookingItem
-                      number="1"
-                      staff="Dr. James Wilson"
-                      client="Wendy Smith"
-                      time="09:00 AM"
-                      status="Done"
-                    />
-                    <BookingItem
-                      number="2"
-                      staff="Nurse Sarah Johnson"
-                      client="John Michael"
-                      time="10:30 AM"
-                      status="Done"
-                    />
-                    <BookingItem
-                      number="3"
-                      staff="Dr. Emma Thompson"
-                      client="Lisa Rodrigues"
-                      time="11:45 AM"
-                      status="Booked"
-                    />
-                    <BookingItem
-                      number="4"
-                      staff="Nurse David Wilson"
-                      client="Kate Williams"
-                      time="02:15 PM"
-                      status="Waiting"
-                    />
-                    <BookingItem
-                      number="5"
-                      staff="Dr. Michael Scott"
-                      client="Robert Johnson"
-                      time="03:30 PM"
-                      status="Booked"
-                    />
+                    {isLoadingBranchStats ? (
+                      Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="py-2 border-b last:border-0 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <Skeleton className="h-8 w-8" />
+                                <div className="space-y-1">
+                                    <Skeleton className="h-4 w-32" />
+                                    <Skeleton className="h-3 w-24" />
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <Skeleton className="h-4 w-20" />
+                                <Skeleton className="h-5 w-14 rounded-full" />
+                            </div>
+                        </div>
+                      ))
+                    ) : branchStatsError ? (
+                      <p className="text-red-500 text-center py-4">Error loading bookings.</p>
+                    ) : branchStats?.todaysBookings && branchStats.todaysBookings.length > 0 ? (
+                      branchStats.todaysBookings.map((booking, index) => {
+                        const now = new Date();
+                        const startTime = new Date(booking.start_time);
+                        const endTime = new Date(booking.end_time);
+                        let status = "Booked";
+                        if (now > endTime) {
+                          status = "Done";
+                        } else if (now >= startTime) {
+                          status = "Waiting";
+                        }
+
+                        return (
+                          <BookingItem
+                            key={booking.id}
+                            number={`${index + 1}`}
+                            staff={`${booking.staff?.first_name || 'N/A'} ${booking.staff?.last_name || ''}`}
+                            client={`${booking.client?.first_name || 'N/A'} ${booking.client?.last_name || ''}`}
+                            time={`${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}`}
+                            status={status}
+                          />
+                        );
+                      })
+                    ) : (
+                      <p className="text-gray-500 text-center py-4">No bookings for today.</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
