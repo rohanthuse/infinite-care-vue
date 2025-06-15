@@ -1,3 +1,4 @@
+
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { News2Patient, News2Observation } from "@/components/reports/news2/news2Types";
@@ -15,7 +16,7 @@ declare module "jspdf" {
 type Color = [number, number, number];
 
 export const generatePDF = (agreement: { 
-  id: number; 
+  id: string; 
   title: string; 
   date: string; 
   status: string;

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Table, TableBody, TableCell, TableHead, 
@@ -82,7 +81,7 @@ export function SignedAgreements({
       id: agreement.id,
       title: agreement.title,
       date: agreement.signed_at ? format(new Date(agreement.signed_at), 'dd MMM yyyy') : 'N/A',
-      status: statusToNumber(agreement.status),
+      status: agreement.status,
       signedBy: agreement.signed_by_name || 'N/A',
     });
     toast.success(`Downloaded ${agreement.title}`);
