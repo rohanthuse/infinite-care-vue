@@ -10,8 +10,7 @@ export interface Service {
 async function fetchServices() {
   const { data, error } = await supabase
     .from("services")
-    .select("id, title")
-    .eq("category", "Care"); // Remove this .eq if you want all services, not just care
+    .select("id, title");
   if (error) throw error;
   return data || [];
 }
