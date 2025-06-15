@@ -8,40 +8,21 @@ import { motion } from "framer-motion";
 import { 
   Building2, Calendar, Users, FileText, Clock, 
   BarChart4, AlertCircle, Clipboard, ArrowLeft, UserCog,
-  LayoutDashboard, Loader2
+  LayoutDashboard, Loader2, Star
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Branch } from "@/pages/Branch";
+import { useBranch } from "@/data/hooks/branches";
+import { useBranchStatistics } from "@/data/hooks/useBranchStatistics";
 import { format } from "date-fns";
-
-const fetchBranchById = async (id: string): Promise<Branch> => {
-    const { data, error } = await supabase
-        .from('branches')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-    if (error) {
-        throw new Error(error.message);
-    }
-    if (!data) {
-        throw new Error("Branch not found.");
-    }
-    return data;
-};
+import { Skeleton } from "@/components/ui/skeleton";
 
 const BranchDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  const { data: branchData, isLoading, error } = useQuery({
-      queryKey: ['branch', id],
-      queryFn: () => fetchBranchById(id!),
-      enabled: !!id,
-  });
+  const { data: branchData, isLoading, error } = useBranch(id);
+  const { data: stats, isLoading: isLoadingStats, error: errorStats } = useBranchStatistics(id);
 
   const handleNavigateToBranchAdmins = () => {
     toast.success("Navigating to Branch Admins dashboard");
@@ -55,7 +36,7 @@ const BranchDetails = () => {
     }
   };
 
-  const StatCard = ({ icon: Icon, title, value, color }: { icon: any, title: string, value: number | string, color: string }) => (
+  const StatCard = ({ icon: Icon, title, value, color, isLoading }: { icon: any, title: string, value: number | string, color: string, isLoading?: boolean }) => (
     <div className={`bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex flex-col`}>
       <div className="flex items-center mb-2">
         <div className={`p-2 rounded-md ${color} mr-3`}>
@@ -63,9 +44,20 @@ const BranchDetails = () => {
         </div>
         <h3 className="text-sm font-medium text-gray-500">{title}</h3>
       </div>
-      <p className="text-2xl font-bold">{value}</p>
+      {isLoading ? (
+        <Skeleton className="h-8 w-1/2" />
+      ) : (
+        <p className="text-2xl font-bold">{value}</p>
+      )}
     </div>
   );
+
+  const statCardsData = [
+    { title: "Active Carers", value: stats?.staffCount ?? 0, icon: Users, color: "bg-blue-500" },
+    { title: "Active Clients", value: stats?.clientsCount ?? 0, icon: Users, color: "bg-green-500" },
+    { title: "Total Bookings", value: stats?.bookingsCount ?? 0, icon: Calendar, color: "bg-purple-500" },
+    { title: "Total Reviews", value: stats?.reviewsCount ?? 0, icon: FileText, color: "bg-yellow-500" },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
@@ -160,6 +152,19 @@ const BranchDetails = () => {
               </div>
             </div>
             
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {statCardsData.map(card => (
+                <StatCard 
+                  key={card.title}
+                  icon={card.icon}
+                  title={card.title}
+                  value={card.value}
+                  color={card.color}
+                  isLoading={isLoadingStats}
+                />
+              ))}
+            </div>
+            
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
@@ -187,20 +192,37 @@ const BranchDetails = () => {
                   <h2 className="text-lg font-bold text-gray-800">Today's Bookings</h2>
                 </div>
                 <div className="mt-4">
-                  {Array(3).fill(0).map((_, i) => (
-                    <div key={i} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-gray-100 p-2 rounded-full">
-                          <Users className="h-4 w-4 text-gray-600" />
+                  {isLoadingStats ? (
+                    Array(3).fill(0).map((_, i) => (
+                      <div key={i} className="flex items-center justify-between py-3">
+                        <div className="flex items-center gap-3">
+                           <Skeleton className="h-10 w-10 rounded-full" />
+                           <div className="space-y-2">
+                            <Skeleton className="h-4 w-[150px]" />
+                            <Skeleton className="h-3 w-[100px]" />
+                           </div>
                         </div>
-                        <div>
-                          <p className="font-medium">Charuma, Charmaine</p>
-                          <p className="text-xs text-gray-500">Client: Pender, Eva</p>
-                        </div>
+                        <Skeleton className="h-4 w-[80px]" />
                       </div>
-                      <div className="text-sm text-gray-700">09:00 - 10:30</div>
-                    </div>
-                  ))}
+                    ))
+                  ) : stats?.todaysBookings && stats.todaysBookings.length > 0 ? (
+                    stats.todaysBookings.map((booking) => (
+                      <div key={booking.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-gray-100 p-2 rounded-full">
+                            <Users className="h-4 w-4 text-gray-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{booking.staff?.first_name}, {booking.staff?.last_name}</p>
+                            <p className="text-xs text-gray-500">Client: {booking.client?.first_name}, {booking.client?.last_name}</p>
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-700">{format(new Date(booking.start_time), 'HH:mm')} - {format(new Date(booking.end_time), 'HH:mm')}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">No bookings for today.</p>
+                  )}
                 </div>
               </motion.div>
               
@@ -215,24 +237,39 @@ const BranchDetails = () => {
                   <h2 className="text-lg font-bold text-gray-800">Expiry Alerts</h2>
                 </div>
                 <div className="mt-4">
-                  {Array(3).fill(0).map((_, i) => (
-                    <div key={i} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-red-100 p-2 rounded-full">
-                          <AlertCircle className="h-4 w-4 text-red-600" />
+                  {isLoadingStats ? (
+                     Array(3).fill(0).map((_, i) => (
+                      <div key={i} className="flex items-center justify-between py-3">
+                        <div className="flex items-center gap-3">
+                           <Skeleton className="h-10 w-10 rounded-full" />
+                           <div className="space-y-2">
+                            <Skeleton className="h-4 w-[150px]" />
+                            <Skeleton className="h-3 w-[100px]" />
+                           </div>
                         </div>
-                        <div>
-                          <p className="font-medium">Warren, Susan</p>
-                          <p className="text-xs text-gray-500">
-                            {i === 0 ? "NI Number" : i === 1 ? "Bank Details" : "Employment Reference"}
-                          </p>
-                        </div>
+                        <Skeleton className="h-6 w-[70px] rounded-full" />
                       </div>
-                      <Badge variant="outline" className="text-red-600 border-red-200">
-                        Expired
-                      </Badge>
-                    </div>
-                  ))}
+                    ))
+                  ) : stats?.expiryAlerts && stats.expiryAlerts.length > 0 ? (
+                    stats.expiryAlerts.map((alert) => (
+                      <div key={alert.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-red-100 p-2 rounded-full">
+                            <AlertCircle className="h-4 w-4 text-red-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{alert.staff?.first_name}, {alert.staff?.last_name}</p>
+                            <p className="text-xs text-gray-500">{alert.document_type}</p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-red-600 border-red-200">
+                          Expired
+                        </Badge>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">No expiry alerts.</p>
+                  )}
                 </div>
               </motion.div>
               
@@ -247,24 +284,41 @@ const BranchDetails = () => {
                   <h2 className="text-lg font-bold text-gray-800">Latest Reviews</h2>
                 </div>
                 <div className="mt-4">
-                  {Array(3).fill(0).map((_, i) => (
-                    <div key={i} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-amber-100 p-2 rounded-full">
-                          <Users className="h-4 w-4 text-amber-600" />
+                  {isLoadingStats ? (
+                     Array(3).fill(0).map((_, i) => (
+                        <div key={i} className="flex items-center justify-between py-3">
+                          <div className="flex items-center gap-3">
+                             <Skeleton className="h-10 w-10 rounded-full" />
+                             <div className="space-y-2">
+                              <Skeleton className="h-4 w-[150px]" />
+                              <Skeleton className="h-3 w-[100px]" />
+                             </div>
+                          </div>
+                          <Skeleton className="h-4 w-[100px]" />
                         </div>
-                        <div>
-                          <p className="font-medium">Pender, Eva</p>
-                          <p className="text-xs text-gray-500">Carer: Warren, Susan</p>
+                      ))
+                  ) : stats?.latestReviews && stats.latestReviews.length > 0 ? (
+                    stats.latestReviews.map((review) => (
+                      <div key={review.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-amber-100 p-2 rounded-full">
+                            <Users className="h-4 w-4 text-amber-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{review.client?.first_name}, {review.client?.last_name}</p>
+                            <p className="text-xs text-gray-500">Carer: {review.staff?.first_name}, {review.staff?.last_name}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center">
+                          {Array.from({ length: 5 }).map((_, j) => (
+                            <Star key={j} className={`h-4 w-4 ${j < review.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}`} />
+                          ))}
                         </div>
                       </div>
-                      <div className="flex text-amber-500">
-                        {Array(5).fill(0).map((_, j) => (
-                          <span key={j}>★</span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">No reviews yet.</p>
+                  )}
                 </div>
               </motion.div>
             </div>
