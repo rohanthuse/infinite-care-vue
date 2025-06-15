@@ -21,11 +21,13 @@ export async function fetchBranchServices(branchId?: string): Promise<BranchServ
   }));
 }
 
-// Fix: Remove explicit generic, let TS infer from function
+// Fix: Add explicit async and return type to queryFn to avoid deep type instantiation.
 export function useBranchServices(branchId?: string) {
   return useQuery({
     queryKey: ["branch-services", branchId],
-    queryFn: () => fetchBranchServices(branchId),
+    queryFn: async (): Promise<BranchService[]> => {
+      return fetchBranchServices(branchId);
+    },
     enabled: !!branchId,
   });
 }
