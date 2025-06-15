@@ -34,7 +34,6 @@ export type Branch = {
     currency: string;
     regulatory: string;
     branch_type: string;
-    created_on: string;
     created_by: string | null;
     status: string;
     updated_at: string;

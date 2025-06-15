@@ -45,7 +45,7 @@ export function EditBranchDialog({ isOpen, onClose, branch }: EditBranchDialogPr
   }, [branch]);
 
   const { mutate: updateBranch, isPending } = useMutation({
-    mutationFn: async (updatedBranch: Partial<Omit<Branch, 'id' | 'created_at' | 'created_on' | 'updated_at' | 'created_by'>>) => {
+    mutationFn: async (updatedBranch: Partial<Omit<Branch, 'id' | 'created_at' | 'updated_at' | 'created_by'>>) => {
       if (!branch) return;
       const { error } = await supabase
         .from('branches')

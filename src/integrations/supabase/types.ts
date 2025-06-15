@@ -348,19 +348,40 @@ export type Database = {
       }
       branches: {
         Row: {
+          branch_type: string
+          country: string
           created_at: string
+          created_by: string | null
+          currency: string
           id: string
           name: string
+          regulatory: string
+          status: string
+          updated_at: string | null
         }
         Insert: {
+          branch_type: string
+          country: string
           created_at?: string
+          created_by?: string | null
+          currency: string
           id?: string
           name: string
+          regulatory: string
+          status: string
+          updated_at?: string | null
         }
         Update: {
+          branch_type?: string
+          country?: string
           created_at?: string
+          created_by?: string | null
+          currency?: string
           id?: string
           name?: string
+          regulatory?: string
+          status?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
