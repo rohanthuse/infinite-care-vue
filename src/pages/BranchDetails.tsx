@@ -1,4 +1,3 @@
-
 import React from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
@@ -140,16 +139,6 @@ const BranchDetails = () => {
                 <CustomButton className="bg-blue-600 hover:bg-blue-700">
                   Manage Carers
                 </CustomButton>
-              </div>
-            </div>
-            
-            <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-lg mb-8 text-sm">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                <div>
-                    <p className="font-semibold">Coming Soon!</p>
-                    <p>Statistics cards (Carers, Clients, Bookings, Reviews) will be populated with real data in an upcoming step.</p>
-                </div>
               </div>
             </div>
             
