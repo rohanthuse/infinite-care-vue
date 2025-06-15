@@ -60,6 +60,7 @@ const updateCompanySettings = async (settings: Partial<CompanySettings>) => {
 };
 
 const passwordFormSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required."),
   password: z.string().min(8, { message: "Password must be at least 8 characters long." }),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -98,12 +99,14 @@ const Settings = () => {
   });
 
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordFormSchema),
     defaultValues: {
+      currentPassword: "",
       password: "",
       confirmPassword: "",
     },
@@ -111,7 +114,30 @@ const Settings = () => {
 
   const handlePasswordSubmit = async (values: PasswordFormValues) => {
     setIsUpdatingPassword(true);
+    
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user?.email) {
+      toast.error("Unable to verify user. Please log in again.");
+      setIsUpdatingPassword(false);
+      return;
+    }
+
+    // Verify current password by attempting to sign in.
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: values.currentPassword,
+    });
+
+    if (signInError) {
+      toast.error("Incorrect current password. Please try again.");
+      setIsUpdatingPassword(false);
+      return;
+    }
+
+    // If current password is correct, proceed to update to the new password.
     const { error } = await supabase.auth.updateUser({ password: values.password });
+    
     if (error) {
       toast.error(`Failed to update password: ${error.message}`);
     } else {
@@ -382,7 +408,38 @@ const Settings = () => {
           
           <Form {...passwordForm}>
             <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="p-5 md:p-8 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
+                <div className="md:col-span-2">
+                  <FormField
+                    control={passwordForm.control}
+                    name="currentPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700 font-medium">Current Password</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type={showCurrentPassword ? "text" : "password"}
+                              className="border-gray-200 focus:border-blue-300 pr-10"
+                              disabled={isUpdatingPassword}
+                              {...field}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                              aria-label={showCurrentPassword ? "Hide password" : "Show password"}
+                            >
+                              {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={passwordForm.control}
                   name="password"
@@ -447,7 +504,7 @@ const Settings = () => {
                   disabled={isUpdatingPassword}
                 >
                   {isUpdatingPassword ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                  {isUpdatingPassword ? 'Saving...' : 'Update Password'}
+                  {isUpdatingPassword ? 'Updating...' : 'Update Password'}
                 </CustomButton>
               </div>
             </form>
