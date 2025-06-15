@@ -98,7 +98,6 @@ interface NewBookingDialogProps {
   onOpenChange: (open: boolean) => void;
   clients: Client[];
   carers: Carer[];
-  services?: Service[];
   onCreateBooking: (bookingData: BookingFormValues) => void;
   initialData?: {
     date?: Date;
@@ -108,12 +107,22 @@ interface NewBookingDialogProps {
   } | null;
 }
 
+const mockServices: Service[] = [
+  { id: "svc-001", name: "24/7 On-call Support" },
+  { id: "svc-002", name: "Client Transport" },
+  { id: "svc-003", name: "Companionship" },
+  { id: "svc-004", name: "Dementia Support" },
+  { id: "svc-005", name: "Double Handed Care" },
+  { id: "svc-006", name: "Home and Meal Support" },
+  { id: "svc-007", name: "Home Support" },
+  { id: "svc-008", name: "Shopping Assistance" },
+];
+
 export const NewBookingDialog = ({
   open,
   onOpenChange,
   clients,
   carers,
-  services = [],
   onCreateBooking,
   initialData,
   isLoading,
@@ -123,7 +132,6 @@ export const NewBookingDialog = ({
   onOpenChange: (open: boolean) => void;
   clients: any[];
   carers: any[];
-  services?: Service[]; // <-- NEW PROP
   onCreateBooking: (data: any) => void;
   initialData?: any;
   isLoading?: boolean;
@@ -543,7 +551,7 @@ export const NewBookingDialog = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {services.map((service) => (
+                              {mockServices.map((service) => (
                                 <SelectItem key={service.id} value={service.id}>
                                   {service.name}
                                 </SelectItem>
@@ -554,7 +562,7 @@ export const NewBookingDialog = ({
                             {field.value && field.value.length > 0 ? (
                               <div className="flex flex-wrap gap-2">
                                 {field.value.map((serviceId) => {
-                                  const service = services.find(s => s.id === serviceId);
+                                  const service = mockServices.find(s => s.id === serviceId);
                                   return service ? (
                                     <div key={serviceId} className="flex items-center bg-primary/10 px-2.5 py-1 rounded-full text-xs">
                                       {service.name}
@@ -564,7 +572,7 @@ export const NewBookingDialog = ({
                                         size="icon"
                                         className="h-4 w-4 ml-1 p-0"
                                         onClick={() => {
-                                          field.onChange(field.value?.filter((id: string) => id !== serviceId));
+                                          field.onChange(field.value?.filter(id => id !== serviceId));
                                         }}
                                       >
                                         <X className="h-3 w-3" />

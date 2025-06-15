@@ -20,8 +20,7 @@ export const BookingsList: React.FC<BookingsListProps> = ({ bookings }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Dynamically get unique statuses from bookings data for filter options (and counts)
-  const uniqueStatuses = Array.from(new Set(bookings.map(b => b.status))).filter(Boolean);
+  // Compute actual filter counts
   const statusCounts = bookings.reduce<Record<string, number>>((acc, booking) => {
     acc[booking.status] = (acc[booking.status] || 0) + 1;
     return acc;
@@ -36,19 +35,15 @@ export const BookingsList: React.FC<BookingsListProps> = ({ bookings }) => {
 
   // Filter bookings based on search and status
   const filteredBookings = sortedBookings.filter(booking => {
-    // Search matches: client, carer, id (case-insensitive)
-    const matchesSearch =
-      (booking.clientName?.toLowerCase().includes(searchQuery.toLowerCase()))
-      || (booking.carerName?.toLowerCase().includes(searchQuery.toLowerCase()))
-      || (booking.id?.toLowerCase().includes(searchQuery.toLowerCase()));
-    // Updated: matchesStatus is always true if filter is "all", otherwise require match
-    const matchesStatus = statusFilter === "all" ? true : booking.status === statusFilter;
+    const matchesSearch = 
+      booking.clientName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      booking.carerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      booking.id?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
+    
     return matchesSearch && matchesStatus;
   });
-
-  console.log("[BookingsList] Booking count BEFORE FILTER:", bookings.length);
-  console.log("[BookingsList] Status filter is", statusFilter, "; Available:", uniqueStatuses);
-  console.log("[BookingsList] Bookings AFTER FILTER:", filteredBookings.map(b => ({ id: b.id, status: b.status, client: b.clientName })));
 
   // Paginate bookings
   const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
@@ -139,15 +134,15 @@ export const BookingsList: React.FC<BookingsListProps> = ({ bookings }) => {
               <SelectContent>
                 <SelectItem value="all">
                   All Status
-                  <Badge className="ml-2">{bookings.length}</Badge>
+                  {typeof statusCounts === "object" ? (
+                    <Badge className="ml-2">{Object.values(statusCounts).reduce((a, b) => a + b, 0)}</Badge>
+                  ) : null}
                 </SelectItem>
-                {/* Dynamically create status options */}
-                {uniqueStatuses.map(status => (
-                  <SelectItem key={status} value={status}>
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                    <Badge className="ml-2">{statusCounts[status] || 0}</Badge>
-                  </SelectItem>
-                ))}
+                <SelectItem value="assigned">Assigned <Badge className="ml-2">{statusCounts.assigned || 0}</Badge></SelectItem>
+                <SelectItem value="in-progress">In Progress <Badge className="ml-2">{statusCounts["in-progress"] || 0}</Badge></SelectItem>
+                <SelectItem value="done">Done <Badge className="ml-2">{statusCounts.done || 0}</Badge></SelectItem>
+                <SelectItem value="departed">Departed <Badge className="ml-2">{statusCounts.departed || 0}</Badge></SelectItem>
+                <SelectItem value="cancelled">Cancelled <Badge className="ml-2">{statusCounts.cancelled || 0}</Badge></SelectItem>
               </SelectContent>
             </Select>
           </div>
