@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Table, TableHeader, TableBody, TableHead, 
@@ -47,6 +46,8 @@ interface ParameterTableProps {
   searchPlaceholder?: string;
   hasColorColumn?: boolean;
   addButton?: React.ReactNode;
+  onEdit?: (item: ParameterItem) => void;
+  onDelete?: (item: ParameterItem) => void;
 }
 
 export function ParameterTable({
@@ -61,6 +62,8 @@ export function ParameterTable({
   searchPlaceholder = "Search...",
   hasColorColumn = false,
   addButton,
+  onEdit,
+  onDelete,
 }: ParameterTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -239,6 +242,8 @@ export function ParameterTable({
                             variant="ghost" 
                             size="icon" 
                             className="rounded-full p-2 h-8 w-8"
+                            onClick={() => onEdit && onEdit(item)}
+                            disabled={!onEdit}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -246,6 +251,8 @@ export function ParameterTable({
                             variant="ghost" 
                             size="icon" 
                             className="rounded-full p-2 h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => onDelete && onDelete(item)}
+                            disabled={!onDelete}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

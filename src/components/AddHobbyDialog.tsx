@@ -12,17 +12,40 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-interface AddHobbyDialogProps {
-  onAdd: (hobby: { title: string; status: string }) => void;
-}
-
-export function AddHobbyDialog({ onAdd }: AddHobbyDialogProps) {
+export function AddHobbyDialog() {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { mutate: addHobby, isPending } = useMutation({
+    mutationFn: async (newHobby: { title: string; status: string }) => {
+      const { data, error } = await supabase.from('hobbies').insert([newHobby]).select();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Hobby added",
+        description: `${title} has been added successfully`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['hobbies'] });
+      setTitle("");
+      setOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to add hobby",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,13 +58,7 @@ export function AddHobbyDialog({ onAdd }: AddHobbyDialogProps) {
       return;
     }
 
-    onAdd({ title, status: "Active" });
-    setTitle("");
-    setOpen(false);
-    toast({
-      title: "Hobby added",
-      description: `${title} has been added successfully`,
-    });
+    addHobby({ title, status: "Active" });
   };
 
   return (
@@ -74,11 +91,11 @@ export function AddHobbyDialog({ onAdd }: AddHobbyDialogProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
-              Add Hobby
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isPending}>
+              {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding...</> : 'Add Hobby'}
             </Button>
           </DialogFooter>
         </form>

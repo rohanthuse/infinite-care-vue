@@ -1,37 +1,64 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable } from "@/components/ParameterTable";
-import { Heart } from "lucide-react";
+import { Heart, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { AddHobbyDialog } from "@/components/AddHobbyDialog";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { EditHobbyDialog } from "@/components/EditHobbyDialog";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-// Mock data for hobbies
-const hobbiesData = [
-  { id: 1, title: "Listening to Music", status: "Active" },
-  { id: 2, title: "Swimming", status: "Active" },
-  { id: 3, title: "Reading", status: "Active" },
-  { id: 4, title: "Playing Musical Instruments", status: "Active" },
-  { id: 5, title: "Dancing", status: "Active" },
-  { id: 6, title: "Walking", status: "Active" },
-  { id: 7, title: "Yoga", status: "Active" },
-  { id: 8, title: "Cooking", status: "Active" },
-  { id: 9, title: "Knitting", status: "Active" },
-  { id: 10, title: "Fishing", status: "Active" },
-  { id: 11, title: "Fishkeeping", status: "Active" },
-  { id: 12, title: "Photography", status: "Active" },
-  { id: 13, title: "Mountaineering", status: "Active" },
-  { id: 14, title: "Watching TV", status: "Active" },
-  { id: 15, title: "Painting", status: "Active" },
-  { id: 16, title: "Gardening", status: "Active" },
-];
+const fetchHobbies = async (searchQuery: string) => {
+  let query = supabase.from('hobbies').select('*').order('title', { ascending: true });
+  if (searchQuery) {
+    query = query.ilike('title', `%${searchQuery}%`);
+  }
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+};
 
 const Hobbies = () => {
-  const [hobbies, setHobbies] = useState(hobbiesData);
-  const [filteredData, setFilteredData] = useState(hobbies);
   const [searchQuery, setSearchQuery] = useState("");
+  const [editingHobby, setEditingHobby] = useState<any>(null);
+  const [deletingHobby, setDeletingHobby] = useState<any>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: hobbies, isLoading, error } = useQuery({
+    queryKey: ['hobbies', searchQuery],
+    queryFn: () => fetchHobbies(searchQuery),
+  });
+
+  const { mutate: deleteHobby, isPending: isDeleting } = useMutation({
+    mutationFn: async (hobbyId: string) => {
+      const { error } = await supabase.from('hobbies').delete().eq('id', hobbyId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Hobby deleted successfully" });
+      queryClient.invalidateQueries({ queryKey: ['hobbies'] });
+      setDeletingHobby(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to delete hobby", description: error.message, variant: "destructive" });
+      setDeletingHobby(null);
+    }
+  });
   
   const columns = [
     {
@@ -46,40 +73,48 @@ const Hobbies = () => {
       enableSorting: true,
       className: "w-[40%]",
       cell: (value: string) => (
-        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800 font-medium border-0 rounded-full px-3">
+        <Badge className={`${value === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} font-medium border-0 rounded-full px-3`}>
           {value}
         </Badge>
       ),
     },
   ];
   
-  // Update search whenever query changes
-  useEffect(() => {
-    handleSearch(searchQuery);
-  }, [searchQuery, hobbies]);
-  
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    if (!query) {
-      setFilteredData(hobbies);
-    } else {
-      const filtered = hobbies.filter(item => 
-        item.title.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredData(filtered);
-    }
   };
 
-  const handleAddHobby = (newHobby: { title: string; status: string }) => {
-    const newHobbyWithId = {
-      id: hobbies.length + 1,
-      ...newHobby
-    };
-    
-    const updatedHobbies = [...hobbies, newHobbyWithId];
-    setHobbies(updatedHobbies);
-    setFilteredData(!searchQuery ? updatedHobbies : filteredData);
+  const handleEdit = (hobby: any) => {
+    setEditingHobby(hobby);
   };
+
+  const handleDelete = (hobby: any) => {
+    setDeletingHobby(hobby);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        <DashboardNavbar />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        <DashboardNavbar />
+        <div className="flex-1 flex items-center justify-center text-red-500">
+          Error fetching hobbies: {error.message}
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
@@ -96,12 +131,41 @@ const Hobbies = () => {
           title="Hobbies"
           icon={<Heart className="h-7 w-7 text-blue-600" />}
           columns={columns}
-          data={filteredData}
+          data={hobbies || []}
           onSearch={handleSearch}
           searchPlaceholder="Search hobbies..."
-          addButton={<AddHobbyDialog onAdd={handleAddHobby} />}
+          addButton={<AddHobbyDialog />}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
         />
       </motion.main>
+      
+      {editingHobby && (
+        <EditHobbyDialog
+          isOpen={!!editingHobby}
+          onClose={() => setEditingHobby(null)}
+          hobby={editingHobby}
+        />
+      )}
+
+      {deletingHobby && (
+        <AlertDialog open={!!deletingHobby} onOpenChange={() => setDeletingHobby(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to delete this hobby?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the hobby titled "{deletingHobby.title}".
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => deleteHobby(deletingHobby.id)} disabled={isDeleting}>
+                {isDeleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</> : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 };
