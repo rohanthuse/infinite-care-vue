@@ -1,36 +1,61 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { ParameterTable } from "@/components/ParameterTable";
-import { Brain } from "lucide-react";
+import { Brain, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { AddSkillDialog } from "@/components/AddSkillDialog";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { EditSkillDialog } from "@/components/EditSkillDialog";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-// Mock data for skills
-const skillsData = [
-  { id: 1, name: "Patience", explanation: "", status: "Active" },
-  { id: 2, name: "Pleasant", explanation: "", status: "Active" },
-  { id: 3, name: "Friendly", explanation: "", status: "Active" },
-  { id: 4, name: "Personable", explanation: "", status: "Active" },
-  { id: 5, name: "Cheerful", explanation: "", status: "Active" },
-  { id: 6, name: "Ability to multi-task", explanation: "", status: "Active" },
-  { id: 7, name: "Ability to think quickly", explanation: "", status: "Active" },
-  { id: 8, name: "Punctual", explanation: "", status: "Active" },
-  { id: 9, name: "A good listener", explanation: "", status: "Active" },
-  { id: 10, name: "Empathetic", explanation: "", status: "Active" },
-  { id: 11, name: "Kind", explanation: "", status: "Active" },
-  { id: 12, name: "Ability to take responsibility", explanation: "", status: "Active" },
-  { id: 13, name: "Willingness to go the extra mile", explanation: "", status: "Active" },
-  { id: 14, name: "Knowledge of dementia", explanation: "", status: "Active" },
-  { id: 15, name: "Communication skills", explanation: "", status: "Active" },
-];
+const fetchSkills = async () => {
+  let query = supabase.from('skills').select('*').order('name', { ascending: true });
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+};
 
 const Skills = () => {
-  const [skills, setSkills] = useState(skillsData);
-  const [filteredData, setFilteredData] = useState(skills);
-  const [searchQuery, setSearchQuery] = useState("");
-  
+  const [editingSkill, setEditingSkill] = useState<any>(null);
+  const [deletingSkill, setDeletingSkill] = useState<any>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: skills, isLoading, error } = useQuery({
+    queryKey: ['skills'],
+    queryFn: fetchSkills,
+  });
+
+  const { mutate: deleteSkill, isPending: isDeleting } = useMutation({
+    mutationFn: async (skillId: string) => {
+      const { error } = await supabase.from('skills').delete().eq('id', skillId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Skill deleted successfully" });
+      queryClient.invalidateQueries({ queryKey: ['skills'] });
+      setDeletingSkill(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to delete skill", description: error.message, variant: "destructive" });
+      setDeletingSkill(null);
+    }
+  });
+
   const columns = [
     {
       header: "Skill Name",
@@ -50,40 +75,44 @@ const Skills = () => {
       enableSorting: true,
       className: "w-[20%]",
       cell: (value: string) => (
-        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800 font-medium border-0 rounded-full px-3">
+        <Badge className={`${value === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} font-medium border-0 rounded-full px-3`}>
           {value}
         </Badge>
       ),
     },
   ];
   
-  useEffect(() => {
-    handleSearch(searchQuery);
-  }, [searchQuery, skills]);
-  
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (!query) {
-      setFilteredData(skills);
-    } else {
-      const filtered = skills.filter(item => 
-        item.name.toLowerCase().includes(query.toLowerCase()) ||
-        (item.explanation && item.explanation.toLowerCase().includes(query.toLowerCase()))
-      );
-      setFilteredData(filtered);
-    }
+  const handleEdit = (skill: any) => {
+    setEditingSkill(skill);
   };
-  
-  const handleAddSkill = (newSkill: { name: string; explanation: string; status: string }) => {
-    const newSkillWithId = {
-      id: skills.length + 1,
-      ...newSkill
-    };
-    
-    const updatedSkills = [...skills, newSkillWithId];
-    setSkills(updatedSkills);
-    setFilteredData(!searchQuery ? updatedSkills : filteredData);
+
+  const handleDelete = (skill: any) => {
+    setDeletingSkill(skill);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        <DashboardNavbar />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        <DashboardNavbar />
+        <div className="flex-1 flex items-center justify-center text-red-500">
+          Error fetching skills: {error.message}
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
@@ -100,12 +129,41 @@ const Skills = () => {
           title="Skills"
           icon={<Brain className="h-7 w-7 text-blue-600" />}
           columns={columns}
-          data={filteredData}
-          onSearch={handleSearch}
+          data={skills || []}
+          onSearch={() => {}}
           searchPlaceholder="Search skills..."
-          addButton={<AddSkillDialog onAdd={handleAddSkill} />}
+          addButton={<AddSkillDialog />}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
         />
       </motion.main>
+
+      {editingSkill && (
+        <EditSkillDialog
+          isOpen={!!editingSkill}
+          onClose={() => setEditingSkill(null)}
+          skill={editingSkill}
+        />
+      )}
+
+      {deletingSkill && (
+        <AlertDialog open={!!deletingSkill} onOpenChange={() => setDeletingSkill(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to delete this skill?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the skill titled "{deletingSkill.name}".
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => deleteSkill(deletingSkill.id)} disabled={isDeleting}>
+                {isDeleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</> : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 };
