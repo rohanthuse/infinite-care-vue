@@ -15,34 +15,41 @@ import { useCreateBooking } from "@/data/hooks/useCreateBooking";
 import { useBranchClients } from "@/data/hooks/useBranchClients";
 import { useBranchCarers } from "@/data/hooks/useBranchCarers";
 
-// -- Helper Mappers to UI Types --
-
+// Helper for consistent name and initials with fallback
+function safeName(first: any, last: any, fallback = "Unknown") {
+  const name = [first ?? "", last ?? ""].filter(Boolean).join(" ").trim();
+  return name || fallback;
+}
+function safeInitials(first: any, last: any, fallback = "??") {
+  const f = (first && first[0]) || "?";
+  const l = (last && last[0]) || "?";
+  return `${f}${l}`;
+}
 function mapDBClientToClient(db: any): Client {
   const firstName = db.first_name ?? "";
   const lastName = db.last_name ?? "";
-  const name = [firstName, lastName].filter(Boolean).join(" ").trim() || "Unknown";
+  const name = db.avatar_initials
+    ? db.first_name + " " + db.last_name
+    : safeName(firstName, lastName);
   const initials =
     db.avatar_initials ||
-    (firstName[0] ?? "?") + (lastName[0] ?? "?");
+    safeInitials(firstName, lastName);
   return {
     id: db.id,
     name,
     initials,
-    bookings: [], // optional: populate if needed
-    bookingCount: 0, // If you want, calculate later from bookings
+    bookings: [],
+    bookingCount: 0,
   };
 }
-
 function mapDBCarerToCarer(db: any): Carer {
   const firstName = db.first_name ?? "";
   const lastName = db.last_name ?? "";
-  const name = [firstName, lastName].filter(Boolean).join(" ").trim() || "Unknown";
-  const initials = (firstName[0] ?? "?") + (lastName[0] ?? "?");
   return {
     id: db.id,
-    name,
-    initials,
-    bookings: [], // optional: populate if needed
+    name: safeName(firstName, lastName),
+    initials: safeInitials(firstName, lastName),
+    bookings: [],
     bookingCount: 0,
   };
 }
@@ -74,7 +81,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     carerId?: string;
   } | null>(null);
 
-  // Add dummy carers and clients if branchId is not set or db arrays are empty.
+  // Dummy data
   const dummyClients: Client[] = [
     { id: 'c1', name: 'Alice Lowe', initials: 'AL', bookingCount: 0, bookings: [] },
     { id: 'c2', name: 'Sam James', initials: 'SJ', bookingCount: 0, bookings: [] },
@@ -103,7 +110,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   const { data: carersData = [], isLoading: isLoadingCarers } = useBranchCarers(branchId);
   const createBookingMutation = useCreateBooking(branchId);
 
-  // -- Map DB: get .clients array if available, else fallback to []
+  // Map DB: get .clients array if available, else fallback to []
   const clientsRaw = Array.isArray(clientsData)
     ? clientsData
     : clientsData?.clients ?? [];
@@ -115,7 +122,28 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     ? carersRaw.map(mapDBCarerToCarer)
     : dummyCarers;
 
-  // More realistic dummy bookings for visual demo (if DB empty)
+  // Helper: placeholder client/carer for missing reference
+  function getOrCreatePlaceholderClient(id: any): Client {
+    return {
+      id,
+      name: "(Unknown Client)",
+      initials: "??",
+      bookingCount: 0,
+      bookings: [],
+    };
+  }
+  function getOrCreatePlaceholderCarer(id: any): Carer {
+    return {
+      id,
+      name: "(Unknown Carer)",
+      initials: "??",
+      bookingCount: 0,
+      bookings: [],
+    };
+  }
+
+  // Compose Booking[] with consistent real + dummy fallback logic
+  // To avoid no-data, supply dummy bookings only if both bookingsDB and branchId are empty or no results
   function makeDummyBookings(clients: Client[], carers: Carer[]): Booking[] {
     // Block times for the coming week
     const today = new Date();
@@ -161,33 +189,50 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     return res;
   }
 
-  // Compose Booking[]
+  // Compose map for name lookup
   const clientsMap = Object.fromEntries(
     resolvedClients.map((cl: any) => [cl.id, cl])
   );
   const carersMap = Object.fromEntries(
     resolvedCarers.map((cr: any) => [cr.id, cr])
   );
-  const bookings: Booking[] =
-    (bookingsDB || []).length > 0
-      ? (bookingsDB || []).map((bk: any) => ({
-          id: bk.id,
-          clientId: bk.client_id,
-          clientName: clientsMap[bk.client_id]?.name || "Unknown Client",
-          clientInitials: clientsMap[bk.client_id]?.initials || "??",
-          carerId: bk.staff_id,
-          carerName: carersMap[bk.staff_id]?.name || "Unknown Carer",
-          carerInitials: carersMap[bk.staff_id]?.initials || "??",
-          startTime: bk.start_time ? bk.start_time.slice(11, 16) : "07:00",
-          endTime: bk.end_time ? bk.end_time.slice(11, 16) : "07:30",
-          date: bk.start_time ? bk.start_time.slice(0, 10) : "",
-          status: "assigned", // db doesn't have status, for demo
-          notes: "",
-        }))
-      : makeDummyBookings(resolvedClients, resolvedCarers);
 
-  // -- Handler logic (preview, create/edit event)
+  // Main unified bookings array—ensure real bookings are always shown, and fallback dummy bookings if DB empty.
+  let bookings: Booking[] = [];
+  if ((bookingsDB || []).length > 0) {
+    bookings = (bookingsDB || []).map((bk: any) => {
+      // Robust lookup
+      let client = clientsMap[bk.client_id];
+      let carer = carersMap[bk.staff_id];
+      if (!client && bk.client_id) client = getOrCreatePlaceholderClient(bk.client_id);
+      if (!carer && bk.staff_id) carer = getOrCreatePlaceholderCarer(bk.staff_id);
+      return {
+        id: bk.id,
+        clientId: bk.client_id,
+        clientName: client?.name || "(Unknown Client)",
+        clientInitials: client?.initials || "??",
+        carerId: bk.staff_id,
+        carerName: carer?.name || "(Unknown Carer)",
+        carerInitials: carer?.initials || "??",
+        startTime: bk.start_time ? bk.start_time.slice(11, 16) : "07:00",
+        endTime: bk.end_time ? bk.end_time.slice(11, 16) : "07:30",
+        date: bk.start_time ? bk.start_time.slice(0, 10) : "",
+        status: "assigned", // TODO: update when db has real status
+        notes: "",
+      };
+    });
+  }
+  // Add dummy bookings ONLY if DB is empty (so both views show same entries)
+  if (bookings.length === 0) {
+    bookings = makeDummyBookings(resolvedClients, resolvedCarers);
+  }
 
+  // Dev logs for validation
+  console.log("[BookingsTab] Bookings count supplied:", bookings.length);
+  console.log("[BookingsTab] Example Booking:", bookings[0]);
+  console.log("[BookingsTab] List of client names in bookings:", bookings.map(bk => bk.clientName));
+
+  // --- Handler logic (preview, create/edit event)
   const handleRefresh = () => {
     setIsLoading(true);
     setTimeout(() => {
@@ -235,11 +280,6 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     });
     setNewBookingDialogOpen(false);
   };
-
-  // --- You may want to implement these in the future, but for now, comment/uncomment if required.
-  // const handleUpdateBooking = (updatedBooking: Booking) => {};
-  // const updateEntityWithBooking = ...;
-  // const removeBookingFromEntity = ...;
 
   return (
     <div className="space-y-4">
