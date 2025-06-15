@@ -1,213 +1,25 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { 
   Table, TableBody, TableCell, TableHead, 
   TableHeader, TableRow 
 } from "@/components/ui/table";
 import { 
-  Eye, Download, FileText, Calendar, User, PenLine, Trash2, UserCheck, FileCheck
+  Eye, Download, FileText, Calendar, User, Trash2, UserCheck, Loader2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { ViewAgreementDialog } from "./ViewAgreementDialog";
-
-interface Agreement {
-  id: number;
-  title: string;
-  signedBy: string;
-  signedDate: string;
-  type: string;
-  status: string;
-  content: string;
-  signingParty?: "client" | "staff";
-  digitalSignature?: string;
-  statusHistory?: StatusChange[];
-  clientId?: string;
-  staffId?: string;
-}
-
-interface StatusChange {
-  status: string;
-  date: string;
-  reason?: string;
-  changedBy: string;
-}
-
-const mockSignedAgreements: Agreement[] = [
-  {
-    id: 1,
-    title: "Employment Contract",
-    signedBy: "Aderinsola Thomas",
-    signedDate: "15 May 2023",
-    type: "Employment Agreement",
-    status: "Active",
-    clientId: "CL001",
-    content: "This is the employment agreement content for Aderinsola Thomas.",
-    signingParty: "client",
-    digitalSignature: "Aderinsola Thomas",
-    statusHistory: [
-      {
-        status: "Active",
-        date: "15 May 2023",
-        reason: "Initial agreement",
-        changedBy: "System"
-      }
-    ]
-  },
-  {
-    id: 2,
-    title: "Non-Disclosure Agreement",
-    signedBy: "James Wilson",
-    signedDate: "24 June 2023",
-    type: "NDA",
-    status: "Active",
-    clientId: "CL002",
-    content: "This is the non-disclosure agreement content for James Wilson.",
-    signingParty: "client",
-    digitalSignature: "James Wilson",
-    statusHistory: [
-      {
-        status: "Active",
-        date: "24 June 2023",
-        reason: "Initial agreement",
-        changedBy: "System"
-      }
-    ]
-  },
-  {
-    id: 3,
-    title: "Service Level Agreement",
-    signedBy: "Sophia Martinez",
-    signedDate: "07 August 2023",
-    type: "Service Agreement",
-    status: "Active",
-    clientId: "CL003",
-    content: "This is the service level agreement content for Sophia Martinez.",
-    signingParty: "client",
-    digitalSignature: "Sophia Martinez",
-    statusHistory: [
-      {
-        status: "Active",
-        date: "07 August 2023",
-        reason: "Initial agreement",
-        changedBy: "System"
-      }
-    ]
-  },
-  {
-    id: 4,
-    title: "Caretaker Contract",
-    signedBy: "Michael Johnson",
-    signedDate: "12 September 2023",
-    type: "Employment Agreement",
-    status: "Active",
-    clientId: "CL004",
-    content: "This is the caretaker contract content for Michael Johnson.",
-    signingParty: "client",
-    digitalSignature: "Michael Johnson",
-    statusHistory: [
-      {
-        status: "Active",
-        date: "12 September 2023",
-        reason: "Initial agreement",
-        changedBy: "System"
-      }
-    ]
-  },
-  {
-    id: 5,
-    title: "Data Processing Agreement",
-    signedBy: "Emma Williams",
-    signedDate: "05 October 2023",
-    type: "Data Agreement",
-    status: "Expired",
-    clientId: "CL005",
-    content: "This is the data processing agreement content for Emma Williams.",
-    signingParty: "client",
-    digitalSignature: "Emma Williams",
-    statusHistory: [
-      {
-        status: "Active",
-        date: "05 October 2023",
-        reason: "Initial agreement",
-        changedBy: "System"
-      },
-      {
-        status: "Expired",
-        date: "05 January 2024",
-        reason: "Term completed",
-        changedBy: "System"
-      }
-    ]
-  },
-  {
-    id: 6,
-    title: "Branch Operational Agreement",
-    signedBy: "Daniel Smith",
-    signedDate: "18 November 2023",
-    type: "Service Agreement",
-    status: "Active",
-    clientId: "CL006",
-    content: "This is the branch operational agreement content for Daniel Smith.",
-    signingParty: "client",
-    digitalSignature: "Daniel Smith",
-    statusHistory: [
-      {
-        status: "Active",
-        date: "18 November 2023",
-        reason: "Initial agreement",
-        changedBy: "System"
-      }
-    ]
-  },
-  {
-    id: 7,
-    title: "Staff Employment Contract",
-    signedBy: "Alex Chen",
-    signedDate: "10 February 2024",
-    type: "Employment Agreement",
-    status: "Active",
-    staffId: "ST001",
-    content: "This is the employment contract for staff member Alex Chen.",
-    signingParty: "staff",
-    digitalSignature: "Alex Chen",
-    statusHistory: [
-      {
-        status: "Active",
-        date: "10 February 2024",
-        reason: "Initial agreement",
-        changedBy: "System"
-      }
-    ]
-  },
-  {
-    id: 8,
-    title: "Staff Confidentiality Agreement",
-    signedBy: "Maria Rodriguez",
-    signedDate: "15 March 2024",
-    type: "NDA",
-    status: "Active",
-    staffId: "ST002",
-    content: "This is the confidentiality agreement for staff member Maria Rodriguez.",
-    signingParty: "staff",
-    digitalSignature: "Maria Rodriguez",
-    statusHistory: [
-      {
-        status: "Active",
-        date: "15 March 2024",
-        reason: "Initial agreement",
-        changedBy: "System"
-      }
-    ]
-  }
-];
+import { useSignedAgreements, useDeleteAgreement } from "@/data/hooks/agreements";
+import { Agreement } from "@/types/agreements";
+import { format } from "date-fns";
 
 type SignedAgreementsProps = {
   searchQuery?: string;
   typeFilter?: string;
   dateFilter?: string;
-  branchId: string;
+  branchId?: string; // Optional for global view
 };
 
 export function SignedAgreements({ 
@@ -216,82 +28,37 @@ export function SignedAgreements({
   dateFilter = "all",
   branchId
 }: SignedAgreementsProps) {
-  const [agreements, setAgreements] = useState<Agreement[]>(mockSignedAgreements);
-  const [filteredAgreements, setFilteredAgreements] = useState<Agreement[]>(agreements);
-  const [viewingAgreementId, setViewingAgreementId] = useState<number | null>(null);
+  const [viewingAgreementId, setViewingAgreementId] = useState<string | null>(null);
   const [partyFilter, setPartyFilter] = useState<"all" | "client" | "staff">("all");
   
-  useEffect(() => {
-    setAgreements(mockSignedAgreements);
-  }, [branchId]);
-  
-  useEffect(() => {
-    let filtered = agreements;
-    
-    if (searchQuery) {
-      filtered = filtered.filter(
-        agreement => 
-          agreement.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          agreement.signedBy.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          agreement.type.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  const { data: agreements, isLoading, isError, error } = useSignedAgreements({
+    searchQuery,
+    typeFilter,
+    dateFilter,
+    branchId,
+    partyFilter,
+  });
+
+  const deleteAgreementMutation = useDeleteAgreement();
+
+  const handleDeleteAgreement = (id: string) => {
+    if(window.confirm("Are you sure you want to delete this agreement?")) {
+      deleteAgreementMutation.mutate(id);
     }
-    
-    if (typeFilter && typeFilter !== "all") {
-      filtered = filtered.filter(agreement => agreement.type === typeFilter);
-    }
-    
-    if (partyFilter !== "all") {
-      filtered = filtered.filter(agreement => agreement.signingParty === partyFilter);
-    }
-    
-    if (dateFilter !== "all") {
-      const now = new Date();
-      const filterDate = new Date();
-      
-      switch(dateFilter) {
-        case "last7days":
-          filterDate.setDate(now.getDate() - 7);
-          break;
-        case "last30days":
-          filterDate.setDate(now.getDate() - 30);
-          break;
-        case "last90days":
-          filterDate.setDate(now.getDate() - 90);
-          break;
-      }
-      
-      filtered = filtered.filter(agreement => {
-        const agreementDate = new Date(agreement.signedDate);
-        return agreementDate >= filterDate;
-      });
-    }
-    
-    setFilteredAgreements(filtered);
-  }, [searchQuery, typeFilter, dateFilter, partyFilter, agreements]);
-  
-  const handleView = (id: number) => {
-    setViewingAgreementId(id);
   };
-  
-  const handleDownload = (id: number) => {
-    const agreement = agreements.find(a => a.id === id);
+
+  const viewingAgreement = agreements?.find(a => a.id === viewingAgreementId);
+
+  const handleDownload = (agreement: Agreement) => {
     if (!agreement) return;
-    
     generatePDF({
       id: agreement.id,
       title: agreement.title,
-      date: agreement.signedDate,
+      date: agreement.signed_at ? format(new Date(agreement.signed_at), 'dd MMM yyyy') : 'N/A',
       status: agreement.status,
-      signedBy: agreement.signedBy
+      signedBy: agreement.signed_by_name || 'N/A',
     });
-    
     toast.success(`Downloaded ${agreement.title}`);
-  };
-
-  const handleDeleteAgreement = (id: number) => {
-    setAgreements(agreements.filter(a => a.id !== id));
-    toast.success("Agreement deleted successfully");
   };
 
   const getStatusBadgeClass = (status: string) => {
@@ -309,22 +76,32 @@ export function SignedAgreements({
     }
   };
 
+  if (isLoading) {
+    return <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-blue-500" /></div>;
+  }
+
+  if (isError) {
+    return <div className="p-8 text-center text-red-500">Error: {error.message}</div>;
+  }
+
   return (
     <>
-      <div className="px-4 py-2 bg-white">
-        <div className="flex items-center gap-3 text-sm text-gray-600">
-          <span className="font-medium">Filter by:</span>
-          <select 
-            className="px-2 py-1 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-300"
-            value={partyFilter}
-            onChange={(e) => setPartyFilter(e.target.value as "all" | "client" | "staff")}
-          >
-            <option value="all">All Parties</option>
-            <option value="client">Client Agreements</option>
-            <option value="staff">Staff Agreements</option>
-          </select>
+      {branchId && (
+        <div className="px-4 py-2 bg-white">
+          <div className="flex items-center gap-3 text-sm text-gray-600">
+            <span className="font-medium">Filter by:</span>
+            <select 
+              className="px-2 py-1 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-300"
+              value={partyFilter}
+              onChange={(e) => setPartyFilter(e.target.value as "all" | "client" | "staff")}
+            >
+              <option value="all">All Parties</option>
+              <option value="client">Client Agreements</option>
+              <option value="staff">Staff Agreements</option>
+            </select>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="w-full overflow-auto">
         <Table>
@@ -340,10 +117,10 @@ export function SignedAgreements({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAgreements.length > 0 ? (
-              filteredAgreements.map((agreement) => (
+            {agreements && agreements.length > 0 ? (
+              agreements.map((agreement, index) => (
                 <TableRow key={agreement.id} className="border-b border-gray-100 hover:bg-gray-50/40">
-                  <TableCell className="font-medium">{agreement.id}</TableCell>
+                  <TableCell className="font-medium">{index + 1}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-blue-500" />
@@ -352,25 +129,25 @@ export function SignedAgreements({
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {agreement.signingParty === "client" ? (
+                      {agreement.signing_party === "client" ? (
                         <User className="h-4 w-4 text-gray-400" />
                       ) : (
                         <UserCheck className="h-4 w-4 text-blue-400" />
                       )}
-                      <span>{agreement.signedBy}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {agreement.signingParty === "client" ? "Client" : "Staff"}
-                      </Badge>
+                      <span>{agreement.signed_by_name}</span>
+                      {agreement.signing_party && <Badge variant="outline" className="text-xs capitalize">
+                        {agreement.signing_party}
+                      </Badge>}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-gray-400" />
-                      <span>{agreement.signedDate}</span>
+                      <span>{agreement.signed_at ? format(new Date(agreement.signed_at), 'dd MMM yyyy') : 'N/A'}</span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-gray-600">{agreement.type}</span>
+                    <span className="text-gray-600">{agreement.agreement_types?.name || 'N/A'}</span>
                   </TableCell>
                   <TableCell>
                     <Badge 
@@ -385,7 +162,7 @@ export function SignedAgreements({
                         size="sm"
                         variant="ghost"
                         className="h-8 w-8 p-0"
-                        onClick={() => handleView(agreement.id)}
+                        onClick={() => setViewingAgreementId(agreement.id)}
                       >
                         <Eye className="h-4 w-4 text-blue-600" />
                       </Button>
@@ -393,7 +170,7 @@ export function SignedAgreements({
                         size="sm"
                         variant="ghost"
                         className="h-8 w-8 p-0"
-                        onClick={() => handleDownload(agreement.id)}
+                        onClick={() => handleDownload(agreement)}
                       >
                         <Download className="h-4 w-4 text-blue-600" />
                       </Button>
@@ -402,6 +179,7 @@ export function SignedAgreements({
                         variant="ghost"
                         className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
                         onClick={() => handleDeleteAgreement(agreement.id)}
+                        disabled={deleteAgreementMutation.isPending}
                       >
                         <Trash2 className="h-4 w-4 text-gray-600 hover:text-red-600" />
                       </Button>
@@ -414,7 +192,7 @@ export function SignedAgreements({
                 <TableCell colSpan={7} className="h-24 text-center">
                   <div className="flex flex-col items-center justify-center gap-1 py-4 text-gray-500">
                     <FileText className="h-10 w-10 text-gray-300" />
-                    <p className="text-sm">No agreements found</p>
+                    <p className="text-sm">No signed agreements found</p>
                     {searchQuery && (
                       <p className="text-xs text-gray-400">Try a different search term</p>
                     )}
@@ -429,8 +207,7 @@ export function SignedAgreements({
       <ViewAgreementDialog 
         open={viewingAgreementId !== null} 
         onOpenChange={(open) => !open && setViewingAgreementId(null)}
-        agreementId={viewingAgreementId}
-        agreements={agreements}
+        agreement={viewingAgreement}
         onDownload={handleDownload}
       />
     </>

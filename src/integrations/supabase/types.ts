@@ -141,6 +141,181 @@ export type Database = {
           },
         ]
       }
+      agreement_templates: {
+        Row: {
+          branch_id: string | null
+          content: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          title: string
+          type_id: string | null
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          branch_id?: string | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          title: string
+          type_id?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          branch_id?: string | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          title?: string
+          type_id?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_templates_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_templates_type_id_fkey"
+            columns: ["type_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agreement_types: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      agreements: {
+        Row: {
+          branch_id: string | null
+          content: string | null
+          created_at: string
+          digital_signature: string | null
+          id: string
+          signed_at: string | null
+          signed_by_client_id: string | null
+          signed_by_name: string | null
+          signed_by_staff_id: string | null
+          signing_party: Database["public"]["Enums"]["agreement_party"] | null
+          status: Database["public"]["Enums"]["agreement_status"]
+          template_id: string | null
+          title: string
+          type_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          branch_id?: string | null
+          content?: string | null
+          created_at?: string
+          digital_signature?: string | null
+          id?: string
+          signed_at?: string | null
+          signed_by_client_id?: string | null
+          signed_by_name?: string | null
+          signed_by_staff_id?: string | null
+          signing_party?: Database["public"]["Enums"]["agreement_party"] | null
+          status?: Database["public"]["Enums"]["agreement_status"]
+          template_id?: string | null
+          title: string
+          type_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string | null
+          content?: string | null
+          created_at?: string
+          digital_signature?: string | null
+          id?: string
+          signed_at?: string | null
+          signed_by_client_id?: string | null
+          signed_by_name?: string | null
+          signed_by_staff_id?: string | null
+          signing_party?: Database["public"]["Enums"]["agreement_party"] | null
+          status?: Database["public"]["Enums"]["agreement_status"]
+          template_id?: string | null
+          title?: string
+          type_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreements_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreements_signed_by_client_id_fkey"
+            columns: ["signed_by_client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreements_signed_by_staff_id_fkey"
+            columns: ["signed_by_staff_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreements_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreements_type_id_fkey"
+            columns: ["type_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       body_map_points: {
         Row: {
           color: string
@@ -353,6 +528,90 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_agreements: {
+        Row: {
+          branch_id: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          scheduled_for: string | null
+          scheduled_with_client_id: string | null
+          scheduled_with_name: string | null
+          scheduled_with_staff_id: string | null
+          status: Database["public"]["Enums"]["scheduled_agreement_status"]
+          template_id: string | null
+          title: string
+          type_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          scheduled_for?: string | null
+          scheduled_with_client_id?: string | null
+          scheduled_with_name?: string | null
+          scheduled_with_staff_id?: string | null
+          status?: Database["public"]["Enums"]["scheduled_agreement_status"]
+          template_id?: string | null
+          title: string
+          type_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          scheduled_for?: string | null
+          scheduled_with_client_id?: string | null
+          scheduled_with_name?: string | null
+          scheduled_with_staff_id?: string | null
+          status?: Database["public"]["Enums"]["scheduled_agreement_status"]
+          template_id?: string | null
+          title?: string
+          type_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_agreements_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_agreements_scheduled_with_client_id_fkey"
+            columns: ["scheduled_with_client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_agreements_scheduled_with_staff_id_fkey"
+            columns: ["scheduled_with_staff_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_agreements_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_agreements_type_id_fkey"
+            columns: ["type_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           category: string
@@ -466,7 +725,15 @@ export type Database = {
       }
     }
     Enums: {
+      agreement_party: "client" | "staff" | "other"
+      agreement_status: "Active" | "Pending" | "Expired" | "Terminated"
       app_role: "super_admin" | "branch_admin"
+      scheduled_agreement_status:
+        | "Upcoming"
+        | "Pending Approval"
+        | "Under Review"
+        | "Completed"
+        | "Cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -582,7 +849,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      agreement_party: ["client", "staff", "other"],
+      agreement_status: ["Active", "Pending", "Expired", "Terminated"],
       app_role: ["super_admin", "branch_admin"],
+      scheduled_agreement_status: [
+        "Upcoming",
+        "Pending Approval",
+        "Under Review",
+        "Completed",
+        "Cancelled",
+      ],
     },
   },
 } as const

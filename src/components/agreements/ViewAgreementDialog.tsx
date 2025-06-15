@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Download, FileCheck, Clock, History, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,45 +20,22 @@ import {
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface Agreement {
-  id: number;
-  title: string;
-  signedBy: string;
-  signedDate: string;
-  type: string;
-  status: string;
-  content: string;
-  signingParty?: "client" | "staff";
-  digitalSignature?: string;
-  statusHistory?: StatusChange[];
-  clientId?: string;
-  staffId?: string;
-}
-
-interface StatusChange {
-  status: string;
-  date: string;
-  reason?: string;
-  changedBy: string;
-}
+import { Agreement } from "@/types/agreements";
+import { format } from "date-fns";
 
 interface ViewAgreementDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  agreementId: number | null;
-  agreements: Agreement[];
-  onDownload: (id: number) => void;
+  agreement: Agreement | null | undefined;
+  onDownload: (agreement: Agreement) => void;
 }
 
 export function ViewAgreementDialog({
   open,
   onOpenChange,
-  agreementId,
-  agreements,
+  agreement,
   onDownload
 }: ViewAgreementDialogProps) {
-  const agreement = agreements.find(a => a.id === agreementId) || null;
   const [showStatusForm, setShowStatusForm] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [statusReason, setStatusReason] = useState("");
@@ -132,7 +108,7 @@ export function ViewAgreementDialog({
         <DialogHeader className="sticky top-0 z-10 bg-white px-6 pt-6 pb-2 border-b">
           <DialogTitle>{agreement.title}</DialogTitle>
           <DialogDescription>
-            Signed by {agreement.signedBy} on {agreement.signedDate}
+            Signed by {agreement.signed_by_name} on {agreement.signed_at ? format(new Date(agreement.signed_at), 'dd MMM yyyy') : 'N/A'}
           </DialogDescription>
         </DialogHeader>
         
@@ -144,19 +120,19 @@ export function ViewAgreementDialog({
               >
                 {agreement.status}
               </Badge>
-              <span className="text-sm text-gray-500">Type: {agreement.type}</span>
+              <span className="text-sm text-gray-500">Type: {agreement.agreement_types?.name}</span>
             </div>
             
-            {agreement.signingParty && (
+            {agreement.signing_party && (
               <div className="text-sm text-gray-500">
-                <span className="font-medium">Signing Party:</span> {agreement.signingParty === "client" ? "Client" : "Staff"}
+                <span className="font-medium">Signing Party:</span> {agreement.signing_party === "client" ? "Client" : "Staff"}
               </div>
             )}
             
-            {agreement.digitalSignature && (
+            {agreement.digital_signature && (
               <div className="text-sm">
                 <span className="font-medium">Digital Signature:</span> 
-                <span className="ml-2 font-handwriting text-lg">{agreement.digitalSignature}</span>
+                <span className="ml-2 font-handwriting text-lg">{agreement.digital_signature}</span>
               </div>
             )}
             
@@ -275,7 +251,7 @@ export function ViewAgreementDialog({
             Close
           </Button>
           <Button 
-            onClick={() => onDownload(agreement.id)}
+            onClick={() => onDownload(agreement)}
           >
             <Download className="mr-2 h-4 w-4" /> 
             Download PDF

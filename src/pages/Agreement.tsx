@@ -2,13 +2,13 @@
 import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
-import { AgreementList } from "@/components/AgreementList";
+import { SignedAgreements } from "@/components/agreements/SignedAgreements";
 import { FileText, Download, Filter, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { toast } from "sonner";
-import { generatePDF } from "@/utils/pdfGenerator";
+import { useAgreementTypes } from "@/data/hooks/agreements";
 
 const Agreement = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,6 +16,8 @@ const Agreement = () => {
   const [typeFilter, setTypeFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   
+  const { data: agreementTypes } = useAgreementTypes();
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
@@ -25,7 +27,7 @@ const Agreement = () => {
   }, [searchQuery]);
   
   const handleDownloadAll = () => {
-    toast.success("All agreements have been queued for download");
+    toast.success("This feature is not yet implemented.");
   };
   
   return (
@@ -47,7 +49,7 @@ const Agreement = () => {
               </div>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Agreements</h1>
-                <p className="text-gray-500 text-sm md:text-base">Manage signed agreements</p>
+                <p className="text-gray-500 text-sm md:text-base">Manage all signed agreements</p>
               </div>
             </div>
             
@@ -84,10 +86,7 @@ const Agreement = () => {
                   onChange={(e) => setTypeFilter(e.target.value)}
                 >
                   <option value="all">All Types</option>
-                  <option value="Employment Agreement">Employment Agreement</option>
-                  <option value="Service Agreement">Service Agreement</option>
-                  <option value="NDA">NDA</option>
-                  <option value="Data Agreement">Data Agreement</option>
+                  {agreementTypes?.map(type => <option key={type.id} value={type.id}>{type.name}</option>)}
                 </select>
                 <select 
                   className="px-3 py-1.5 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-300"
@@ -101,11 +100,9 @@ const Agreement = () => {
                 </select>
               </div>
             </div>
-            
-            {/* Removed the "Add New Agreement" button */}
           </div>
           
-          <AgreementList 
+          <SignedAgreements 
             searchQuery={debouncedSearchQuery} 
             typeFilter={typeFilter} 
             dateFilter={dateFilter}
