@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { 
   Table, TableBody, TableCell, TableHead, 
@@ -12,7 +13,7 @@ import { toast } from "sonner";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { ViewAgreementDialog } from "./ViewAgreementDialog";
 import { useSignedAgreements, useDeleteAgreement } from "@/data/hooks/agreements";
-import { Agreement } from "@/types/agreements";
+import { Agreement, AgreementPartyFilter } from "@/types/agreements";
 import { format } from "date-fns";
 import type { VariantProps } from "class-variance-authority";
 
@@ -55,7 +56,7 @@ export function SignedAgreements({
   branchId
 }: SignedAgreementsProps) {
   const [viewingAgreementId, setViewingAgreementId] = useState<string | null>(null);
-  const [partyFilter, setPartyFilter] = useState<"all" | "client" | "staff">("all");
+  const [partyFilter, setPartyFilter] = useState<AgreementPartyFilter>("all");
   
   const { data: agreements, isLoading, isError, error } = useSignedAgreements({
     searchQuery,
@@ -104,7 +105,7 @@ export function SignedAgreements({
             <select 
               className="px-2 py-1 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-300"
               value={partyFilter}
-              onChange={(e) => setPartyFilter(e.target.value as "all" | "client" | "staff")}
+              onChange={(e) => setPartyFilter(e.target.value as AgreementPartyFilter)}
             >
               <option value="all">All Parties</option>
               <option value="client">Client Agreements</option>
