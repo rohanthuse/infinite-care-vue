@@ -69,7 +69,8 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   const [activeTab, setActiveTab] = useState<string>("planning");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [viewMode, setViewMode] = useState<"client" | "group">("client");
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["assigned", "in-progress"]);
+  // Set default status filter to "assigned" only (not "in-progress")
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["assigned"]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState<boolean>(false);
   const [editBookingDialogOpen, setEditBookingDialogOpen] = useState<boolean>(false);
@@ -218,7 +219,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         startTime: bk.start_time ? bk.start_time.slice(11, 16) : "07:00",
         endTime: bk.end_time ? bk.end_time.slice(11, 16) : "07:30",
         date: bk.start_time ? bk.start_time.slice(0, 10) : "",
-        status: bk.status || "assigned", // ** Accept from DB **
+        status: bk.status || "assigned",
         notes: "",
       };
     });
@@ -227,12 +228,10 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     bookings = makeDummyBookings(resolvedClients, resolvedCarers);
   }
 
-  // Dev logs for validation
-  console.log("[BookingsTab] Bookings count supplied:", bookings.length);
-  console.log("[BookingsTab] Example Booking:", bookings[0]);
-  console.log("[BookingsTab] List of client names in bookings:", bookings.map(bk => bk.clientName));
+  // Debug: Log what bookings are available and their statuses
+  console.log("[BookingsTab] DB Bookings (for filter):", bookings.map(b => ({ id: b.id, status: b.status, client: b.clientName })));
 
-  // --- Handler logic (preview, create/edit event)
+  // --- Handler logic (preview, create/edit event) the same as before ---
   const handleRefresh = () => {
     setIsLoading(true);
     setTimeout(() => {
@@ -265,7 +264,6 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   const handleCreateBooking = (bookingData: any) => {
     if (!branchId) return;
 
-    // Defensive: bookingData.schedules[0] must exist, must have start/end times
     if (!bookingData || !bookingData.schedules || !Array.isArray(bookingData.schedules) || bookingData.schedules.length === 0) {
       toast.error("Invalid booking data. Please select at least one schedule.");
       return;
@@ -275,7 +273,6 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     const startTime = schedule.startTime;
     const endTime = schedule.endTime;
 
-    // Defensive: all required fields present
     if (
       !bookingData.fromDate ||
       !startTime ||
@@ -287,16 +284,13 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       return;
     }
 
-    // Helper: map day to first selected
     let bookingDate = bookingData.fromDate;
-    // If days specified: pick first TRUE in days (if any)
     if (schedule.days) {
       const dayKeys: { [key: string]: number } = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
       const trueDay = Object.keys(schedule.days).find(
         (day: string) => day !== "all" && schedule.days[day]
       );
       if (trueDay && dayKeys[trueDay]) {
-        // Set bookingDate to next occurrence of that weekday (from fromDate)
         let start = new Date(bookingData.fromDate);
         let diff =
           (dayKeys[trueDay] - start.getDay() + 7) % 7;
@@ -305,7 +299,6 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       }
     }
 
-    // Helper: combine date + time
     const toISO = (date: Date, time: string) => {
       if (!date || !time) return "";
       const [hours, mins] = time.split(":").map(Number);
@@ -314,6 +307,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       return d.toISOString();
     };
 
+    // Wrap mutate call in try/catch and show toast for error
     createBookingMutation.mutate({
       branch_id: branchId,
       client_id: bookingData.clientId,
@@ -322,13 +316,28 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       end_time: toISO(bookingDate, endTime),
       service_id: schedule.services?.[0] || null,
       revenue: null,
-      status: "assigned", // ** Always set on create **
+      status: "assigned", // set always as assigned
+    }, {
+      onSuccess: (data) => {
+        toast.success("Booking created successfully.");
+        setNewBookingDialogOpen(false);
+      },
+      onError: (error: any) => {
+        toast.error("Failed to create booking: " + (error?.message || error));
+        console.error("[BookingsTab] Booking creation error:", error);
+      }
     });
-
-    setNewBookingDialogOpen(false);
   };
 
   // --- Status counts for filters ---
+  const statusCounts = bookings.reduce<Record<string, number>>((acc, booking) => {
+    acc[booking.status] = (acc[booking.status] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Determine unique statuses in current data for filters
+  const bookingStatusesInUse = Array.from(new Set(bookings.map(b => b.status))).filter(Boolean);
+
   const statusCounts = bookings.reduce<Record<string, number>>((acc, booking) => {
     acc[booking.status] = (acc[booking.status] || 0) + 1;
     return acc;
