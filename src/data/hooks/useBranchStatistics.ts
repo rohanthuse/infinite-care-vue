@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -46,7 +45,15 @@ const fetchBranchStatistics = async (branchId: string): Promise<BranchStatistics
     
     const todaysBookingsQuery = (supabase as any).from('bookings').select('id, start_time, end_time, client:clients(first_name, last_name), staff:staff(first_name, last_name)').eq('branch_id', branchId).gte('start_time', startOfDay).lte('start_time', endOfDay).order('start_time').limit(3);
     
-    const expiryAlertsQuery = (supabase as any).from('staff_documents').select('id, document_type, staff:staff!inner(first_name, last_name, branch_id)').eq('status', 'Expired').eq('staff.branch_id', branchId).limit(3);
+    // First, get staff IDs for the given branch
+    const { data: staffInBranch, error: staffErrorForDocs } = await supabase.from('staff').select('id').eq('branch_id', branchId);
+    if (staffErrorForDocs) throw staffErrorForDocs;
+    const staffIds = staffInBranch?.map(s => s.id) || [];
+
+    // Then, query for expired documents for those staff members
+    const expiryAlertsQuery = staffIds.length > 0
+        ? (supabase as any).from('staff_documents').select('id, document_type, staff:staff!inner(first_name, last_name)').in('staff_id', staffIds).eq('status', 'Expired').limit(3)
+        : Promise.resolve({ data: [], error: null });
 
     const latestReviewsQuery = (supabase as any).from('reviews').select('id, rating, comment, client:clients(first_name, last_name), staff:staff(first_name, last_name)').eq('branch_id', branchId).order('created_at', { ascending: false }).limit(3);
 
@@ -70,7 +77,7 @@ const fetchBranchStatistics = async (branchId: string): Promise<BranchStatistics
 
     const errors = [staffError, clientsError, bookingsError, reviewsError, todaysBookingsError, expiryAlertsError, latestReviewsError].filter(Boolean);
     if (errors.length > 0) {
-        throw new Error(errors.map(e => e.message).join(', '));
+        throw new Error(errors.map(e => (e as Error).message).join(', '));
     }
     
     return {

@@ -346,6 +346,58 @@ export type Database = {
         }
         Relationships: []
       }
+      bookings: {
+        Row: {
+          branch_id: string | null
+          client_id: string | null
+          created_at: string | null
+          end_time: string
+          id: string
+          staff_id: string | null
+          start_time: string
+        }
+        Insert: {
+          branch_id?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          end_time: string
+          id?: string
+          staff_id?: string | null
+          start_time: string
+        }
+        Update: {
+          branch_id?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          end_time?: string
+          id?: string
+          staff_id?: string | null
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branches: {
         Row: {
           branch_type: string
@@ -384,6 +436,38 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      clients: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          first_name: string
+          id: string
+          last_name: string
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company_settings: {
         Row: {
@@ -549,6 +633,58 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          branch_id: string | null
+          client_id: string | null
+          comment: string | null
+          created_at: string | null
+          id: string
+          rating: number
+          staff_id: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          client_id?: string | null
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          rating: number
+          staff_id?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          client_id?: string | null
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          rating?: number
+          staff_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_agreements: {
         Row: {
           branch_id: string | null
@@ -689,6 +825,73 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      staff: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          first_name: string
+          id: string
+          last_name: string
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_documents: {
+        Row: {
+          created_at: string | null
+          document_type: string
+          expiry_date: string | null
+          id: string
+          staff_id: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          document_type: string
+          expiry_date?: string | null
+          id?: string
+          staff_id?: string | null
+          status: string
+        }
+        Update: {
+          created_at?: string | null
+          document_type?: string
+          expiry_date?: string | null
+          id?: string
+          staff_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_documents_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
