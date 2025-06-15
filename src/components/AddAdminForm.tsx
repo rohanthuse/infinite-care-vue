@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -67,11 +66,11 @@ export function AddAdminForm({
     e.preventDefault();
     setIsSubmitting(true);
 
-    const { branchId, firstName, surname, email } = formData;
-    if (!branchId || !firstName || !surname || !email) {
+    const { branchId, title, firstName, surname, email, mobile, country } = formData;
+    if (!branchId || !title || !firstName || !surname || !email || !mobile || !country) {
       toast({
         title: "Required fields missing",
-        description: `Please fill out Branch, First Name, Surname, and Email.`,
+        description: "Please fill out all fields marked with an asterisk (*).",
         variant: "destructive"
       });
       setIsSubmitting(false);
@@ -79,7 +78,7 @@ export function AddAdminForm({
     }
 
     try {
-      const { error } = await supabase.functions.invoke('invite-admin', {
+      const { data, error } = await supabase.functions.invoke('invite-admin', {
         body: {
           email: formData.email,
           firstName: formData.firstName,
@@ -89,7 +88,13 @@ export function AddAdminForm({
       });
 
       if (error) {
+        // Catches network errors or function crashes
         throw new Error(error.message);
+      }
+      
+      if (data && data.error) {
+        // Catches application-level errors from the function
+        throw new Error(data.error);
       }
 
       toast({
@@ -102,7 +107,7 @@ export function AddAdminForm({
       console.error('Failed to invite admin:', error);
       toast({
         title: "Invitation Failed",
-        description: error.message || "An unexpected error occurred.",
+        description: error.message || "An unexpected error occurred. Please check the function logs for details.",
         variant: "destructive"
       });
     } finally {

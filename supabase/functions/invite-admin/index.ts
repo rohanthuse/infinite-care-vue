@@ -34,8 +34,10 @@ serve(async (req) => {
     )
 
     const { email, firstName, lastName, branchId } = await req.json()
+    console.log('Received invite request for:', { email, firstName, lastName, branchId });
 
     if (!email || !firstName || !lastName || !branchId) {
+      console.error('Validation Error: Missing required fields.');
       return new Response(JSON.stringify({ error: 'Email, name, and branch are required.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
@@ -43,12 +45,14 @@ serve(async (req) => {
     }
     
     if (await isAlreadyAdminOfBranch(supabaseAdmin, email, branchId)) {
+        console.log(`Conflict: User ${email} is already an admin for branch ${branchId}.`);
         return new Response(JSON.stringify({ error: 'This user is already an administrator for this branch.' }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 409, // Conflict
+          status: 409,
         })
     }
 
+    console.log(`Attempting to invite ${email} via auth.admin.inviteUserByEmail.`);
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
       data: {
         first_name: firstName,
@@ -58,23 +62,35 @@ serve(async (req) => {
     })
 
     if (inviteError) {
-      // If user already exists, inviteUserByEmail will error. We can handle this gracefully.
+      console.error('Error during supabaseAdmin.auth.admin.inviteUserByEmail:', inviteError);
       if (inviteError.message.includes('User already exists')) {
+        console.log(`User ${email} already exists. Attempting to link to branch ${branchId}.`);
+
         const { data: { users }, error: getUserError } = await supabaseAdmin.auth.admin.listUsers({ email });
-        if (getUserError || users.length === 0) throw new Error("Failed to retrieve existing user.");
+        if (getUserError || users.length === 0) {
+          console.error('Error fetching existing user by email:', getUserError);
+          throw new Error("Failed to retrieve existing user after invite failed.");
+        }
         
         const user = users[0];
-        // Link existing user to branch
+        console.log(`Found existing user with ID: ${user.id}. Proceeding to link.`);
+        
         const { error: branchLinkError } = await supabaseAdmin.from('admin_branches').insert({
             admin_id: user.id,
             branch_id: branchId
         });
-        if (branchLinkError) throw branchLinkError;
+        if (branchLinkError) {
+          console.error('Error linking existing user to branch in admin_branches:', branchLinkError);
+          throw branchLinkError;
+        }
         
-        // Also ensure they have the branch_admin role
         const { error: roleError } = await supabaseAdmin.from('user_roles').upsert({ user_id: user.id, role: 'branch_admin' });
-        if (roleError) throw roleError;
+        if (roleError) {
+          console.error('Error upserting branch_admin role for existing user:', roleError);
+          throw roleError;
+        }
         
+        console.log(`Successfully linked existing user ${email} to branch.`);
         return new Response(JSON.stringify({ message: 'Existing user assigned as admin to the branch.' }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200,
@@ -85,29 +101,28 @@ serve(async (req) => {
     
     const newUser = inviteData.user
     if (!newUser) {
+      console.error('Invite successful but newUser object is missing from response.');
       throw new Error('Could not get user from invitation.')
     }
 
-    // The handle_new_user trigger creates the profile and user_role.
-    // Now we just link the admin to the branch.
+    console.log(`New user ${email} invited with ID: ${newUser.id}. Linking to branch.`);
     const { error: branchLinkError } = await supabaseAdmin.from('admin_branches').insert({
       admin_id: newUser.id,
       branch_id: branchId,
     })
 
     if (branchLinkError) {
-      // This part is tricky. The user is invited but not linked.
-      // A more robust solution might involve a transactional process or cleanup job.
-      // For now, we'll return an error to the client.
-      console.error('Failed to link invited user to branch:', branchLinkError)
+      console.error('Failed to link newly invited user to branch:', branchLinkError)
       throw new Error('User was invited, but could not be assigned to the branch.')
     }
 
+    console.log(`Successfully invited ${email} and linked to branch.`);
     return new Response(JSON.stringify({ message: 'Admin invited successfully' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
   } catch (error) {
+    console.error('Unhandled exception in invite-admin function:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
