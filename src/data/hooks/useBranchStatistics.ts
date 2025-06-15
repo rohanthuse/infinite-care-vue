@@ -19,6 +19,7 @@ export type ReviewWithDetails = {
   id: string;
   rating: number;
   comment: string | null;
+  created_at: string;
   client: { first_name: string; last_name: string; } | null;
   staff: { first_name: string; last_name: string; } | null;
 };
@@ -55,7 +56,7 @@ const fetchBranchStatistics = async (branchId: string): Promise<BranchStatistics
         ? (supabase as any).from('staff_documents').select('id, document_type, staff:staff!inner(first_name, last_name)').in('staff_id', staffIds).eq('status', 'Expired').limit(3)
         : Promise.resolve({ data: [], error: null });
 
-    const latestReviewsQuery = (supabase as any).from('reviews').select('id, rating, comment, client:clients(first_name, last_name), staff:staff(first_name, last_name)').eq('branch_id', branchId).order('created_at', { ascending: false }).limit(3);
+    const latestReviewsQuery = (supabase as any).from('reviews').select('id, rating, comment, created_at, client:clients(first_name, last_name), staff:staff(first_name, last_name)').eq('branch_id', branchId).order('created_at', { ascending: false }).limit(3);
 
     const [
         { count: staffCount, error: staffError },

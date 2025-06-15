@@ -20,7 +20,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { CommunicationsTab } from "@/components/communications/CommunicationsTab";
@@ -331,6 +331,25 @@ const ReviewItem = ({
       </div>
     </div>;
 };
+
+const ReviewItemSkeleton = () => (
+  <div className="py-2 border-b last:border-0">
+    <div className="flex justify-between items-start">
+      <div className="space-y-1">
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="h-3 w-36" />
+      </div>
+      <Skeleton className="h-3 w-20" />
+    </div>
+    <div className="flex items-center mt-2">
+      <Skeleton className="h-4 w-24" />
+    </div>
+    <div className="mt-1">
+      <Skeleton className="h-3 w-full" />
+      <Skeleton className="h-3 w-2/3 mt-1" />
+    </div>
+  </div>
+);
 
 const ActionItem = ({
   title,
@@ -909,34 +928,30 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-1">
-                    <ReviewItem
-                      client="Wendy S."
-                      staff="Dr. James Wilson"
-                      date="Today"
-                      rating={5}
-                      comment="Excellent service and care. Very attentive to my needs."
-                    />
-                    <ReviewItem
-                      client="John M."
-                      staff="Nurse Sarah Johnson"
-                      date="Yesterday"
-                      rating={4}
-                      comment="Professional and caring. Would recommend."
-                    />
-                    <ReviewItem
-                      client="Lisa R."
-                      staff="Dr. Emma Thompson"
-                      date="2 days ago"
-                      rating={5}
-                      comment="Amazing experience. Dr. Thompson was very thorough."
-                    />
-                    <ReviewItem
-                      client="Kate W."
-                      staff="The Clinic"
-                      date="3 days ago"
-                      rating={3}
-                      comment="Good service but had to wait a bit longer than expected."
-                    />
+                    {isLoadingBranchStats ? (
+                      Array.from({ length: 3 }).map((_, i) => <ReviewItemSkeleton key={i} />)
+                    ) : branchStatsError ? (
+                      <p className="text-red-500 text-center py-4">Error loading reviews.</p>
+                    ) : branchStats?.latestReviews && branchStats.latestReviews.length > 0 ? (
+                      branchStats.latestReviews.map((review) => {
+                        const clientName = review.client ? `${review.client.first_name} ${review.client.last_name.charAt(0)}.` : 'Anonymous';
+                        const staffName = review.staff ? `for ${review.staff.first_name} ${review.staff.last_name}` : '';
+                        const dateText = review.created_at ? formatDistanceToNow(new Date(review.created_at), { addSuffix: true }) : 'some time ago';
+                        
+                        return (
+                          <ReviewItem
+                            key={review.id}
+                            client={clientName}
+                            staff={staffName}
+                            date={dateText}
+                            rating={review.rating}
+                            comment={review.comment || ''}
+                          />
+                        )
+                      })
+                    ) : (
+                      <p className="text-gray-500 text-center py-4">No reviews yet.</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
