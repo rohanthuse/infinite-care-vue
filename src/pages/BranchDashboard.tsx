@@ -768,27 +768,22 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                         </div>
                       ))
                     ) : branchStatsError ? (
-                      <Alert variant="destructive">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
-                        <AlertDescription>Could not load expiry alerts.</AlertDescription>
-                      </Alert>
+                       <p className="text-red-500 text-center py-4 col-span-full">Error loading action items.</p>
                     ) : branchStats?.expiryAlerts && branchStats.expiryAlerts.length > 0 ? (
                       branchStats.expiryAlerts.map((alert) => (
-                        <Alert key={alert.id} variant="destructive">
-                          <AlertTriangle className="h-4 w-4" />
-                          <AlertTitle>{alert.document_type} Expired</AlertTitle>
-                          <AlertDescription>
-                            {alert.staff ? `${alert.staff.first_name} ${alert.staff.last_name}'s` : "A staff member's"}{' '}
-                            {alert.document_type} document has expired and requires renewal.
-                          </AlertDescription>
-                        </Alert>
+                        <ActionItem
+                          key={alert.id}
+                          title={`Renew ${alert.document_type}`}
+                          name={alert.staff ? `${alert.staff.first_name} ${alert.staff.last_name}` : 'N/A'}
+                          date={alert.expiry_date ? `Expired: ${format(new Date(alert.expiry_date), 'dd MMM yyyy')}` : 'Expired'}
+                          priority="High"
+                        />
                       ))
                     ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <ClipboardCheck className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                        <p>No expired documents. All staff records are up-to-date.</p>
-                      </div>
+                       <div className="col-span-full text-center py-8 text-gray-500">
+                         <ClipboardCheck className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                         <p>No urgent action items found.</p>
+                       </div>
                     )}
                   </div>
                 </CardContent>

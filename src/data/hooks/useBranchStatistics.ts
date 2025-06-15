@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -12,6 +13,7 @@ export type BookingWithDetails = {
 export type ExpiryAlert = {
   id: string;
   document_type: string;
+  expiry_date: string | null;
   staff: { first_name: string; last_name: string; } | null;
 };
 
@@ -53,7 +55,7 @@ const fetchBranchStatistics = async (branchId: string): Promise<BranchStatistics
 
     // Then, query for expired documents for those staff members
     const expiryAlertsQuery = staffIds.length > 0
-        ? (supabase as any).from('staff_documents').select('id, document_type, staff:staff!inner(first_name, last_name)').in('staff_id', staffIds).eq('status', 'Expired').limit(3)
+        ? (supabase as any).from('staff_documents').select('id, document_type, expiry_date, staff:staff!inner(first_name, last_name)').in('staff_id', staffIds).eq('status', 'Expired').limit(4)
         : Promise.resolve({ data: [], error: null });
 
     const latestReviewsQuery = (supabase as any).from('reviews').select('id, rating, comment, created_at, client:clients(first_name, last_name), staff:staff(first_name, last_name)').eq('branch_id', branchId).order('created_at', { ascending: false }).limit(3);
