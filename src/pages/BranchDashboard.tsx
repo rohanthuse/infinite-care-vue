@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Routes, Route, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { motion } from "framer-motion";
 import { 
-  Calendar, Users, BarChart4, Clock, FileText, AlertCircle, Search, Bell, ChevronRight, Home, ArrowUpRight, Phone, Mail, MapPin, Plus, Clock7, RefreshCw, Download, Filter, ClipboardCheck, ThumbsUp, ArrowUp, ArrowDown, ChevronDown, Edit, Eye, HelpCircle, CalendarIcon, ChevronLeft, FilePlus
+  Calendar, Users, BarChart4, Clock, FileText, AlertCircle, Search, Bell, ChevronRight, Home, ArrowUpRight, Phone, Mail, MapPin, Plus, Clock7, RefreshCw, Download, Filter, ClipboardCheck, ThumbsUp, ArrowUp, ArrowDown, ChevronDown, Edit, Eye, HelpCircle, CalendarIcon, ChevronLeft, FilePlus, AlertTriangle
 } from "lucide-react";
 import { BranchAgreementsTab } from "@/components/agreements/BranchAgreementsTab";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ import { useBranchDashboardStats } from "@/data/hooks/useBranchDashboardStats";
 import { useBranchStatistics } from "@/data/hooks/useBranchStatistics";
 import { useBranchClients } from "@/data/hooks/useBranchClients";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface BranchDashboardProps {
   tab?: string;
