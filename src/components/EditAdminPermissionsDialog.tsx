@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
@@ -140,7 +139,7 @@ export function EditAdminPermissionsDialog({ isOpen, onClose, adminId, branchId,
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
-          <div className="p-6 max-h-[70vh] overflow-y-auto space-y-6">
+          <div className="px-6 pt-6 pb-24 max-h-[70vh] overflow-y-auto space-y-6">
             {isLoadingPermissions ? (
                  <div className="flex justify-center items-center h-96">
                      <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
