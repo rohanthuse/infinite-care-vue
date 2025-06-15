@@ -44,7 +44,7 @@ const TypeOfWork = () => {
 
   const { mutate: deleteWorkType, isPending: isDeleting } = useMutation({
     mutationFn: async (id: string | number) => {
-      const { error } = await supabase.from('work_types').delete().eq('id', id);
+      const { error } = await supabase.from('work_types').delete().eq('id', String(id));
       if (error) throw error;
     },
     onSuccess: () => {

@@ -43,7 +43,7 @@ export function EditWorkTypeDialog({ isOpen, onClose, workType }: EditWorkTypeDi
       const { error } = await supabase
         .from('work_types')
         .update(updatedWorkType)
-        .eq('id', workType.id);
+        .eq('id', String(workType.id));
       if (error) throw error;
     },
     onSuccess: () => {
