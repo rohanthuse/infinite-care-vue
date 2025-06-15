@@ -168,7 +168,10 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     }
   };
 
-  const { data: services = [], isLoading: isLoadingServices } = useServices();
+  const { data: services = [], isLoading: isLoadingServices, error: servicesError } = useServices();
+  React.useEffect(() => {
+    console.log("[BranchDashboard] services:", services, "isLoadingServices:", isLoadingServices, "servicesError:", servicesError);
+  }, [services, isLoadingServices, servicesError]);
 
   const handleNewBooking = () => {
     setNewBookingDialogOpen(true);
@@ -351,6 +354,8 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         }
         carers={mockCarers}
         services={services}
+        servicesLoading={isLoadingServices}
+        servicesError={servicesError}
         onCreateBooking={handleCreateBooking}
       />
       

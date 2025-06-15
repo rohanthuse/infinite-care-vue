@@ -108,6 +108,8 @@ interface NewBookingDialogProps {
   } | null;
   isLoading?: boolean;
   error?: any;
+  servicesLoading?: boolean;
+  servicesError?: any;
 }
 
 export const NewBookingDialog = ({
@@ -120,6 +122,8 @@ export const NewBookingDialog = ({
   initialData,
   isLoading,
   error,
+  servicesLoading,
+  servicesError,
 }: NewBookingDialogProps) => {
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(formSchema),
@@ -271,6 +275,14 @@ export const NewBookingDialog = ({
     schedules.splice(index, 1);
     form.setValue("schedules", schedules);
   };
+
+  // LOG the value of services for debugging!
+  React.useEffect(() => {
+    if (open) {
+      console.log("[NewBookingDialog] services prop:", services);
+      console.log("[NewBookingDialog] servicesLoading:", servicesLoading, "servicesError:", servicesError);
+    }
+  }, [open, services, servicesLoading, servicesError]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -521,27 +533,37 @@ export const NewBookingDialog = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="after:content-['*'] after:ml-0.5 after:text-primary">Services</FormLabel>
-                          <Select
-                            onValueChange={(value) => {
-                              const currentServices = field.value || [];
-                              if (!currentServices.includes(value)) {
-                                field.onChange([...currentServices, value]);
-                              }
-                            }}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select services" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {services.map((service) => (
-                                <SelectItem key={service.id} value={service.id}>
-                                  {service.title}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          {servicesLoading ? (
+                            <div className="py-2 text-gray-500">Loading services...</div>
+                          ) : servicesError ? (
+                            <div className="py-2 text-red-600">
+                              Failed to load services.
+                            </div>
+                          ) : services.length === 0 ? (
+                            <div className="py-2 text-gray-400">No services available</div>
+                          ) : (
+                            <Select
+                              onValueChange={(value) => {
+                                const currentServices = field.value || [];
+                                if (!currentServices.includes(value)) {
+                                  field.onChange([...currentServices, value]);
+                                }
+                              }}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select services" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="bg-white z-[60] shadow-lg">
+                                {services.map((service) => (
+                                  <SelectItem key={service.id} value={service.id}>
+                                    {service.title}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
                           <div className="mt-2">
                             {field.value && field.value.length > 0 ? (
                               <div className="flex flex-wrap gap-2">
