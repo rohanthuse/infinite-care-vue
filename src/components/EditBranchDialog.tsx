@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,123 +7,101 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tables } from "@/integrations/supabase/types";
 
-export function AddBranchDialog() {
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
+interface EditBranchDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  branch: Tables<'branches'> | null;
+}
+
+export function EditBranchDialog({ isOpen, onClose, branch }: EditBranchDialogProps) {
+  const [name, setName] = useState("");
   const [country, setCountry] = useState("England");
   const [currency, setCurrency] = useState("£");
   const [regulatory, setRegulatory] = useState("CQC");
   const [branchType, setBranchType] = useState("HomeCare");
+  const [status, setStatus] = useState("Active");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { mutate: addBranch, isPending } = useMutation({
-    mutationFn: async (newBranch: {
-      name: string;
-      country: string;
-      currency: string;
-      regulatory: string;
-      branch_type: string;
-      status: string;
-    }) => {
-      const { data, error } = await supabase
-        .from('branches')
-        .insert([newBranch])
-        .select();
+  useEffect(() => {
+    if (branch) {
+      setName(branch.name);
+      setCountry(branch.country || "England");
+      setCurrency(branch.currency || "£");
+      setRegulatory(branch.regulatory || "CQC");
+      setBranchType(branch.branch_type || "HomeCare");
+      setStatus(branch.status || "Active");
+    }
+  }, [branch]);
 
-      if (error) {
-        throw error;
-      }
-      return data;
+  const { mutate: updateBranch, isPending } = useMutation({
+    mutationFn: async (updatedBranch: Partial<Tables<'branches'>>) => {
+      if (!branch) return;
+      const { error } = await supabase
+        .from('branches')
+        .update(updatedBranch)
+        .eq('id', branch.id);
+      if (error) throw error;
     },
-    onSuccess: (data) => {
-        const newBranch = data?.[0];
-        toast({
-            title: "Branch added",
-            description: `${newBranch?.name} has been added successfully`,
-        });
-        queryClient.invalidateQueries({ queryKey: ['branches'] });
-        setOpen(false);
-        setTitle("");
-        setCountry("England");
-        setCurrency("£");
-        setRegulatory("CQC");
-        setBranchType("HomeCare");
+    onSuccess: () => {
+      toast({ title: "Branch updated successfully" });
+      queryClient.invalidateQueries({ queryKey: ['branches'] });
+      onClose();
     },
     onError: (error: any) => {
-        toast({
-            title: "Error adding branch",
-            description: error.message,
-            variant: "destructive",
-        });
+      toast({ title: "Failed to update branch", description: error.message, variant: "destructive" });
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) {
-      toast({
-        title: "Title is required",
-        description: "Please enter a title for the branch",
-        variant: "destructive",
-      });
+    if (!name.trim()) {
+      toast({ title: "Title is required", variant: "destructive" });
       return;
     }
-
-    addBranch({ 
-      name: title, 
-      country, 
-      currency, 
-      regulatory, 
-      branch_type: branchType, 
-      status: "Active" 
+    updateBranch({
+      name,
+      country,
+      currency,
+      regulatory,
+      branch_type: branchType,
+      status,
     });
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 rounded-full">
-          <Plus className="mr-1.5 h-4 w-4" /> New Branch
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl">Add New Branch</DialogTitle>
+          <DialogTitle className="text-xl">Edit Branch</DialogTitle>
           <DialogDescription>
-            Enter the details for the new branch
+            Update the details for this branch.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="title" className="text-right">
-                Title
-              </Label>
+              <Label htmlFor="title" className="text-right">Title</Label>
               <Input
                 id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="col-span-3"
-                placeholder="E.g., Med-Infinite - London"
               />
             </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="country" className="text-right">
-                Country
-              </Label>
+             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="country" className="text-right">Country</Label>
               <Select value={country} onValueChange={setCountry}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select country" />
@@ -136,11 +114,8 @@ export function AddBranchDialog() {
                 </SelectContent>
               </Select>
             </div>
-            
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="currency" className="text-right">
-                Currency
-              </Label>
+              <Label htmlFor="currency" className="text-right">Currency</Label>
               <Select value={currency} onValueChange={setCurrency}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select currency" />
@@ -152,11 +127,8 @@ export function AddBranchDialog() {
                 </SelectContent>
               </Select>
             </div>
-            
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="regulatory" className="text-right">
-                Regulatory
-              </Label>
+              <Label htmlFor="regulatory" className="text-right">Regulatory</Label>
               <Select value={regulatory} onValueChange={setRegulatory}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select regulatory" />
@@ -169,11 +141,8 @@ export function AddBranchDialog() {
                 </SelectContent>
               </Select>
             </div>
-            
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="branchType" className="text-right">
-                Branch Type
-              </Label>
+              <Label htmlFor="branchType" className="text-right">Branch Type</Label>
               <Select value={branchType} onValueChange={setBranchType}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select branch type" />
@@ -185,13 +154,25 @@ export function AddBranchDialog() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="status" className="text-right">Status</Label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
               Cancel
             </Button>
             <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isPending}>
-              {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding...</> : 'Add Branch'}
+              {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Save Changes'}
             </Button>
           </DialogFooter>
         </form>
