@@ -338,11 +338,6 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   // Determine unique statuses in current data for filters
   const bookingStatusesInUse = Array.from(new Set(bookings.map(b => b.status))).filter(Boolean);
 
-  const statusCounts = bookings.reduce<Record<string, number>>((acc, booking) => {
-    acc[booking.status] = (acc[booking.status] || 0) + 1;
-    return acc;
-  }, {});
-
   return (
     <div className="space-y-4">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
