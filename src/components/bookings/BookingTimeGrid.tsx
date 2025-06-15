@@ -281,79 +281,106 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     }
   };
 
-  // Modified handleDragEnd to show confirmation dialog
+  // -- DRAG AND DROP LOGIC UPGRADE --
+  // Instead of mapping drop zone by "fake index", snap bookings to nearest time slot. All times are valid.
+
+  // Each 30-minute interval in the calendar is a valid drop slot. We'll calculate y offset against "hourHeight".
+  // On drop, we estimate the intended time by relating the offset to the interval.
+
+  // Helper: get total number of time slots in the day
+  const timeInterval = 30; // minutes
+  const hourHeight = 60;
+  const timeSlotsPerDay = 24 * (60 / timeInterval);
+
+  const getBookingPositionFromDrop = (y: number) => {
+    // Snap Y to nearest 30-min grid
+    const slotHeight = hourHeight / (60 / timeInterval); // 30min = 30px if 60px = 1hr
+    let slotIdx = Math.round(y / slotHeight);
+    let hours = Math.floor(slotIdx * timeInterval / 60);
+    let mins = (slotIdx * timeInterval) % 60;
+    // Clamp to valid times
+    hours = Math.max(6, Math.min(21, hours)) // booking window 06:00-21:59
+    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+  };
+
+  // MAIN: handle drag. Instead of using the destination.index (which can be random), we use the y coordinate over the calendar and snap it.
   const handleDragEnd = (result: DropResult) => {
-    const { destination, source, draggableId } = result;
-    
-    if (!destination || (source.droppableId === destination.droppableId && source.index === destination.index)) {
-      return;
+    const { destination, draggableId } = result;
+    if (!destination) return;
+    // Get the DOM slot for the drop
+    const droppable = document.querySelector(`[data-rbd-droppable-id="${destination.droppableId}"]`);
+    if (!droppable) return;
+
+    // Get Y offset within the droppable slot
+    const bounding = droppable.getBoundingClientRect();
+    // Use last stored pointer coords or fallback to center of slot
+    let y = 0;
+    if (window._lastBookingPointerY != null) {
+      y = window._lastBookingPointerY - bounding.top;
+    } else {
+      // fallback: place to center
+      y = bounding.height / 2;
     }
+    const newStartTime = getBookingPositionFromDrop(y);
 
     const booking = localBookings.find(b => b.id === draggableId);
     if (!booking) return;
 
+    // Use the day/date for that slot (for weekly, slot has the day index)
+    let bkDate = booking.date;
     const parts = destination.droppableId.split('-');
     const type = parts[0];
-    let dateStr = parts.slice(1).join('-');
-    
+    let dateStr = parts?.[1] || '';
     if (viewType === "weekly") {
-      const dayIndex = parseInt(dateStr);
-      if (!isNaN(dayIndex) && dayIndex >= 0 && dayIndex < weekDates.length) {
-        dateStr = format(weekDates[dayIndex], 'yyyy-MM-dd');
+      const idx = parseInt(dateStr, 10);
+      if (!isNaN(idx) && idx >= 0 && idx < weekDates.length) {
+        bkDate = weekDates[idx].toISOString().slice(0, 10);
       }
+    } else {
+      // daily - use single view date
+      bkDate = format(date, 'yyyy-MM-dd');
     }
-    
-    // Get the y-coordinate from the destination.index
-    const dropPositionY = destination.index * 10;
-    const newStartTime = getTimeFromPosition(dropPositionY);
-    
-    // Parse the times to calculate duration
-    const [startHour, startMin] = booking.startTime.split(':').map(Number);
-    const [endHour, endMin] = booking.endTime.split(':').map(Number);
-    
-    // Calculate total minutes for start and end times
-    const startInMinutes = startHour * 60 + startMin;
-    const endInMinutes = endHour * 60 + endMin;
-    const durationMinutes = endInMinutes - startInMinutes;
-    
-    // Calculate new start time in minutes
-    const [newHour, newMin] = newStartTime.split(':').map(Number);
-    const newStartInMinutes = newHour * 60 + newMin;
-    
-    // Calculate new end time by adding duration
-    const newEndInMinutes = newStartInMinutes + durationMinutes;
-    const newEndHour = Math.floor(newEndInMinutes / 60) % 24;
-    const newEndMin = newEndInMinutes % 60;
-    const newEndTime = `${String(newEndHour).padStart(2, '0')}:${String(newEndMin).padStart(2, '0')}`;
-    
-    // Check if new booking is within business hours (6:00 to 22:00)
-    if (newHour < 6 || newHour >= 22) {
-      toast.error("Bookings can only be scheduled between 6:00 and 22:00");
-      return;
+
+    // Calculate duration
+    const [sh, sm] = booking.startTime.split(":").map(Number);
+    const [eh, em] = booking.endTime.split(":").map(Number);
+    const duration = (eh * 60 + em) - (sh * 60 + sm);
+
+    // Compute end time. Clamp to max 22:00.
+    let [nh, nm] = newStartTime.split(":").map(Number);
+    let newEnd = nh * 60 + nm + duration;
+    let endHour = Math.floor(newEnd / 60);
+    let endMin = newEnd % 60;
+    if (endHour > 22) {
+      endHour = 22;
+      endMin = 0;
     }
-    
-    // Check if the end time exceeds business hours
-    if (newEndHour >= 22 || (newEndHour === 21 && newEndMin > 30)) {
-      toast.error("Booking would end after business hours (22:00)");
-      return;
-    }
-    
-    // Set pending booking move instead of updating immediately
+    const newEndTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
+
+    // Always ask for confirmation
     setPendingBookingMove({
       booking,
-      newDate: dateStr,
+      newDate: bkDate,
       newStartTime,
       newEndTime,
       originalDate: booking.date,
       originalStartTime: booking.startTime,
       originalEndTime: booking.endTime
     });
-    
-    // Open confirmation dialog
     setConfirmDialogOpen(true);
+    // ES: pointer memory cleanup for next drag
+    delete window._lastBookingPointerY;
   };
 
-  // New function to handle confirmed booking move
+  // -- Listen for mouse move for pointer Y coordinate (hack for rbd) --
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      window._lastBookingPointerY = e.clientY;
+    };
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
+  }, []);
+
   const handleConfirmBookingMove = () => {
     if (!pendingBookingMove) return;
     
@@ -442,6 +469,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                         onContextMenu={(e) => handleContextMenuOpen(e, e.currentTarget)}
                         ref={provided.innerRef}
                         {...provided.droppableProps}
+                        data-rbd-droppable-id={`${entityType}-${format(date, 'yyyy-MM-dd')}`}
                       >
                         {timeSlots.map((_, timeIndex) => (
                           <div key={timeIndex} className="hour-cell"></div>
@@ -502,6 +530,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                               onContextMenu={(e) => handleContextMenuOpen(e, e.currentTarget)}
                               ref={provided.innerRef}
                               {...provided.droppableProps}
+                              data-rbd-droppable-id={`${entityType}-${dayIndex}`}
                             >
                               {timeSlots.map((_, timeIndex) => (
                                 <div key={timeIndex} className="hour-cell"></div>

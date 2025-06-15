@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -75,7 +74,22 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     carerId?: string;
   } | null>(null);
 
-  // -- Fetch from DB
+  // Add dummy carers and clients if branchId is not set or db arrays are empty.
+  const dummyClients: Client[] = [
+    { id: 'c1', name: 'Alice Lowe', initials: 'AL', bookingCount: 0, bookings: [] },
+    { id: 'c2', name: 'Sam James', initials: 'SJ', bookingCount: 0, bookings: [] },
+    { id: 'c3', name: 'George Pan', initials: 'GP', bookingCount: 0, bookings: [] },
+    { id: 'c4', name: 'Helen Ford', initials: 'HF', bookingCount: 0, bookings: [] },
+    { id: 'c5', name: 'Maria Lee', initials: 'ML', bookingCount: 0, bookings: [] },
+  ];
+  const dummyCarers: Carer[] = [
+    { id: 'x1', name: 'John Smith', initials: 'JS', bookingCount: 0, bookings: [] },
+    { id: 'x2', name: 'Kay Lum', initials: 'KL', bookingCount: 0, bookings: [] },
+    { id: 'x3', name: 'Priya Patel', initials: 'PP', bookingCount: 0, bookings: [] },
+    { id: 'x4', name: 'Mohamed Shaheen', initials: 'MS', bookingCount: 0, bookings: [] },
+  ];
+
+  // Use real data if available
   const { data: bookingsDB = [], isLoading: isLoadingBookings, error: bookingsError } = useBranchBookings(branchId);
   const {
     data: clientsData,
@@ -94,39 +108,83 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     ? clientsData
     : clientsData?.clients ?? [];
   const carersRaw = carersData || [];
-  const resolvedClients: Client[] = clientsRaw.map(mapDBClientToClient);
-  const resolvedCarers: Carer[] = carersRaw.map(mapDBCarerToCarer);
+  const resolvedClients: Client[] = clientsRaw.length > 0
+    ? clientsRaw.map(mapDBClientToClient)
+    : dummyClients;
+  const resolvedCarers: Carer[] = carersRaw.length > 0
+    ? carersRaw.map(mapDBCarerToCarer)
+    : dummyCarers;
 
-  // Map ID->object for quick lookup
+  // More realistic dummy bookings for visual demo (if DB empty)
+  function makeDummyBookings(clients: Client[], carers: Carer[]): Booking[] {
+    // Block times for the coming week
+    const today = new Date();
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() + i);
+      return d.toISOString().slice(0, 10);
+    });
+    const statuses: Booking["status"][] = [
+      "assigned",
+      "in-progress",
+      "cancelled",
+      "done",
+      "unassigned",
+      "departed",
+      "suspended",
+    ];
+    let res: Booking[] = [];
+    let count = 0;
+    for (let d = 0; d < days.length; d++) {
+      // 2-4 per day
+      for (let i = 0; i < 3; i++) {
+        const client = clients[(d + i) % clients.length];
+        const carer = carers[(i + d + 1) % carers.length];
+        const startHour = 7 + i * 3 + d % 2;
+        res.push({
+          id: `demo-bk-${d}-${i}`,
+          clientId: client.id,
+          clientName: client.name,
+          clientInitials: client.initials,
+          carerId: carer.id,
+          carerName: carer.name,
+          carerInitials: carer.initials,
+          startTime: `${String(startHour).padStart(2, '0')}:00`,
+          endTime: `${String(startHour + 1 + (i % 2)).padStart(2, '0')}:30`,
+          date: days[d],
+          status: statuses[(d + i) % statuses.length],
+          notes: (count % 4 === 0) ? "Demo note - medication given" : "",
+        });
+        count += 1;
+      }
+    }
+    return res;
+  }
+
+  // Compose Booking[]
   const clientsMap = Object.fromEntries(
-    clientsRaw.map((cl: any) => [cl.id, cl])
+    resolvedClients.map((cl: any) => [cl.id, cl])
   );
   const carersMap = Object.fromEntries(
-    carersRaw.map((cr: any) => [cr.id, cr])
+    resolvedCarers.map((cr: any) => [cr.id, cr])
   );
-  // Compose Booking[]
-  const bookings: Booking[] = (bookingsDB || []).map((bk: any) => ({
-    id: bk.id,
-    clientId: bk.client_id,
-    clientName: clientsMap[bk.client_id]?.first_name
-      ? `${clientsMap[bk.client_id]?.first_name} ${clientsMap[bk.client_id]?.last_name || ""}`
-      : "Unknown Client",
-    clientInitials: clientsMap[bk.client_id]?.avatar_initials ||
-      ((clientsMap[bk.client_id]?.first_name?.slice(0, 1) ?? "?") +
-        (clientsMap[bk.client_id]?.last_name?.slice(0, 1) ?? "?")),
-    carerId: bk.staff_id,
-    carerName: carersMap[bk.staff_id]?.first_name
-      ? `${carersMap[bk.staff_id]?.first_name} ${carersMap[bk.staff_id]?.last_name || ""}`
-      : "Unknown Carer",
-    carerInitials: carersMap[bk.staff_id]?.first_name
-      ? `${carersMap[bk.staff_id]?.first_name?.[0] || ""}${carersMap[bk.staff_id]?.last_name?.[0] || ""}`
-      : "??",
-    startTime: bk.start_time ? bk.start_time.slice(11, 16) : "00:00",
-    endTime: bk.end_time ? bk.end_time.slice(11, 16) : "00:00",
-    date: bk.start_time ? bk.start_time.slice(0, 10) : "",
-    status: "assigned", // TODO: use real status if present in db
-    notes: "", // Not present in DB
-  }));
+  const bookings: Booking[] =
+    (bookingsDB || []).length > 0
+      ? (bookingsDB || []).map((bk: any) => ({
+          id: bk.id,
+          clientId: bk.client_id,
+          clientName: clientsMap[bk.client_id]?.name || "Unknown Client",
+          clientInitials: clientsMap[bk.client_id]?.initials || "??",
+          carerId: bk.staff_id,
+          carerName: carersMap[bk.staff_id]?.name || "Unknown Carer",
+          carerInitials: carersMap[bk.staff_id]?.initials || "??",
+          startTime: bk.start_time ? bk.start_time.slice(11, 16) : "07:00",
+          endTime: bk.end_time ? bk.end_time.slice(11, 16) : "07:30",
+          date: bk.start_time ? bk.start_time.slice(0, 10) : "",
+          status: "assigned", // db doesn't have status, for demo
+          notes: "",
+        }))
+      : makeDummyBookings(resolvedClients, resolvedCarers);
 
   // -- Handler logic (preview, create/edit event)
 
@@ -260,4 +318,3 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     </div>
   );
 };
-
