@@ -39,16 +39,16 @@ const fetchBranchStatistics = async (branchId: string): Promise<BranchStatistics
     const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
     const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
 
-    const staffQuery = supabase.from('staff').select('id', { count: 'exact', head: true }).eq('branch_id', branchId);
-    const clientsQuery = supabase.from('clients').select('id', { count: 'exact', head: true }).eq('branch_id', branchId);
-    const bookingsQuery = supabase.from('bookings').select('id', { count: 'exact', head: true }).eq('branch_id', branchId);
-    const reviewsQuery = supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('branch_id', branchId);
+    const staffQuery = (supabase as any).from('staff').select('id', { count: 'exact', head: true }).eq('branch_id', branchId);
+    const clientsQuery = (supabase as any).from('clients').select('id', { count: 'exact', head: true }).eq('branch_id', branchId);
+    const bookingsQuery = (supabase as any).from('bookings').select('id', { count: 'exact', head: true }).eq('branch_id', branchId);
+    const reviewsQuery = (supabase as any).from('reviews').select('id', { count: 'exact', head: true }).eq('branch_id', branchId);
     
-    const todaysBookingsQuery = supabase.from('bookings').select('id, start_time, end_time, client:clients(first_name, last_name), staff:staff(first_name, last_name)').eq('branch_id', branchId).gte('start_time', startOfDay).lte('start_time', endOfDay).order('start_time').limit(3);
+    const todaysBookingsQuery = (supabase as any).from('bookings').select('id, start_time, end_time, client:clients(first_name, last_name), staff:staff(first_name, last_name)').eq('branch_id', branchId).gte('start_time', startOfDay).lte('start_time', endOfDay).order('start_time').limit(3);
     
-    const expiryAlertsQuery = supabase.from('staff_documents').select('id, document_type, staff:staff!inner(first_name, last_name, branch_id)').eq('status', 'Expired').eq('staff.branch_id', branchId).limit(3);
+    const expiryAlertsQuery = (supabase as any).from('staff_documents').select('id, document_type, staff:staff!inner(first_name, last_name, branch_id)').eq('status', 'Expired').eq('staff.branch_id', branchId).limit(3);
 
-    const latestReviewsQuery = supabase.from('reviews').select('id, rating, comment, client:clients(first_name, last_name), staff:staff(first_name, last_name)').eq('branch_id', branchId).order('created_at', { ascending: false }).limit(3);
+    const latestReviewsQuery = (supabase as any).from('reviews').select('id, rating, comment, client:clients(first_name, last_name), staff:staff(first_name, last_name)').eq('branch_id', branchId).order('created_at', { ascending: false }).limit(3);
 
     const [
         { count: staffCount, error: staffError },
@@ -78,9 +78,9 @@ const fetchBranchStatistics = async (branchId: string): Promise<BranchStatistics
         clientsCount,
         bookingsCount,
         reviewsCount,
-        todaysBookings: todaysBookings as BookingWithDetails[],
-        expiryAlerts: expiryAlerts as ExpiryAlert[],
-        latestReviews: latestReviews as ReviewWithDetails[],
+        todaysBookings: (todaysBookings || []) as BookingWithDetails[],
+        expiryAlerts: (expiryAlerts || []) as ExpiryAlert[],
+        latestReviews: (latestReviews || []) as ReviewWithDetails[],
     };
 };
 
