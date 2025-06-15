@@ -39,6 +39,7 @@ import { useBranchDashboardStats } from "@/data/hooks/useBranchDashboardStats";
 import { useBranchStatistics } from "@/data/hooks/useBranchStatistics";
 import { useBranchClients } from "@/data/hooks/useBranchClients";
 import { useBranchChartData } from "@/data/hooks/useBranchChartData";
+import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DashboardStat } from "@/components/dashboard/DashboardStat";
@@ -60,6 +61,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   
   const { data: dashboardStats, isLoading: isLoadingDashboardStats } = useBranchDashboardStats(id);
   const { data: branchStats, isLoading: isLoadingBranchStats, error: branchStatsError } = useBranchStatistics(id);
@@ -168,6 +170,13 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
 
   const handleNewClient = () => {
     setAddClientDialogOpen(true);
+  };
+
+  const handleClientAdded = () => {
+    queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
+    queryClient.invalidateQueries({ queryKey: ['branch-statistics', id] });
+    queryClient.invalidateQueries({ queryKey: ['branch-dashboard-stats', id] });
+    queryClient.invalidateQueries({ queryKey: ['branch-chart-data', id] });
   };
 
   const mockClients = [{
@@ -312,7 +321,14 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
       
-      <AddClientDialog open={addClientDialogOpen} onOpenChange={setAddClientDialogOpen} />
+      {id && (
+        <AddClientDialog
+          open={addClientDialogOpen}
+          onOpenChange={setAddClientDialogOpen}
+          branchId={id}
+          onSuccess={handleClientAdded}
+        />
+      )}
       
       <NewBookingDialog open={newBookingDialogOpen} onOpenChange={setNewBookingDialogOpen} clients={mockClients} carers={mockCarers} onCreateBooking={handleCreateBooking} />
       
@@ -1104,3 +1120,5 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
 };
 
 export default BranchDashboard;
+
+</edits_to_apply>

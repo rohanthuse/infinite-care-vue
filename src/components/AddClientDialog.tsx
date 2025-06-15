@@ -1,9 +1,10 @@
-
-import React, { useState } from "react";
+import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { format } from "date-fns";
+import { useMutation } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Calendar,
   CalendarIcon,
@@ -104,9 +105,13 @@ const defaultValues: Partial<ClientFormValues> = {
 export function AddClientDialog({
   open,
   onOpenChange,
+  branchId,
+  onSuccess,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  branchId: string;
+  onSuccess: () => void;
 }) {
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
@@ -114,14 +119,60 @@ export function AddClientDialog({
     mode: "onChange",
   });
 
+  const addClientMutation = useMutation({
+    mutationFn: async (newClient: ClientFormValues) => {
+      const { data: insertedData, error } = await supabase
+        .from("clients")
+        .insert({
+          branch_id: branchId,
+          title: newClient.title,
+          first_name: newClient.firstName,
+          middle_name: newClient.middleName,
+          last_name: newClient.familyName,
+          preferred_name: newClient.preferredName,
+          email: newClient.email || null,
+          gender: newClient.gender,
+          pronouns: newClient.pronouns,
+          date_of_birth: format(newClient.dateOfBirth, "yyyy-MM-dd"),
+          country_code: newClient.countryCode,
+          mobile_number: newClient.mobileNumber,
+          telephone_number: newClient.telephoneNumber,
+          referral_route: newClient.referralRoute,
+          other_identifier: newClient.otherIdentifier,
+          additional_information: newClient.additionalInformation,
+          status: "New Enquiries",
+          registered_on: format(new Date(), "yyyy-MM-dd"),
+          avatar_initials: `${newClient.firstName[0] || ""}${
+            newClient.familyName[0] || ""
+          }`.toUpperCase(),
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+      return insertedData;
+    },
+    onSuccess: (data) => {
+      toast.success("Client added successfully", {
+        description: `${data.first_name} ${data.last_name} has been added to the system.`,
+      });
+      onSuccess();
+      onOpenChange(false);
+      form.reset();
+    },
+    onError: (error) => {
+      toast.error("Failed to add client", {
+        description: error.message.includes('unique constraint "clients_email_key"')
+          ? "A client with this email already exists."
+          : error.message,
+      });
+    },
+  });
+
   function onSubmit(data: ClientFormValues) {
-    toast.success("Client added successfully", {
-      description: `${data.firstName} ${data.familyName} has been added to the system.`,
-    });
-    
-    console.log(data);
-    onOpenChange(false);
-    form.reset();
+    addClientMutation.mutate(data);
   }
 
   return (
@@ -457,10 +508,17 @@ export function AddClientDialog({
                 type="button" 
                 variant="outline" 
                 onClick={() => onOpenChange(false)}
+                disabled={addClientMutation.isPending}
               >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Add Client</Button>
+              <Button 
+                type="submit" 
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={addClientMutation.isPending}
+              >
+                {addClientMutation.isPending ? "Adding Client..." : "Add Client"}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

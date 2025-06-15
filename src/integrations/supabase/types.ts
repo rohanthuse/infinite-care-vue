@@ -452,46 +452,82 @@ export type Database = {
       }
       clients: {
         Row: {
+          additional_information: string | null
           address: string | null
           avatar_initials: string | null
           branch_id: string | null
+          country_code: string | null
           created_at: string | null
+          date_of_birth: string | null
           email: string | null
           first_name: string
+          gender: string | null
           id: string
           last_name: string
+          middle_name: string | null
+          mobile_number: string | null
+          other_identifier: string | null
           phone: string | null
+          preferred_name: string | null
+          pronouns: string | null
+          referral_route: string | null
           region: string | null
           registered_on: string | null
           status: string | null
+          telephone_number: string | null
+          title: string | null
         }
         Insert: {
+          additional_information?: string | null
           address?: string | null
           avatar_initials?: string | null
           branch_id?: string | null
+          country_code?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           email?: string | null
           first_name: string
+          gender?: string | null
           id?: string
           last_name: string
+          middle_name?: string | null
+          mobile_number?: string | null
+          other_identifier?: string | null
           phone?: string | null
+          preferred_name?: string | null
+          pronouns?: string | null
+          referral_route?: string | null
           region?: string | null
           registered_on?: string | null
           status?: string | null
+          telephone_number?: string | null
+          title?: string | null
         }
         Update: {
+          additional_information?: string | null
           address?: string | null
           avatar_initials?: string | null
           branch_id?: string | null
+          country_code?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           email?: string | null
           first_name?: string
+          gender?: string | null
           id?: string
           last_name?: string
+          middle_name?: string | null
+          mobile_number?: string | null
+          other_identifier?: string | null
           phone?: string | null
+          preferred_name?: string | null
+          pronouns?: string | null
+          referral_route?: string | null
           region?: string | null
           registered_on?: string | null
           status?: string | null
+          telephone_number?: string | null
+          title?: string | null
         }
         Relationships: [
           {
