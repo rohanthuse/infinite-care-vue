@@ -22,7 +22,7 @@ export async function fetchBranchServices(branchId?: string): Promise<BranchServ
 }
 
 export function useBranchServices(branchId?: string) {
-  return useQuery({
+  return useQuery<BranchService[]>({
     queryKey: ["branch-services", branchId],
     queryFn: () => fetchBranchServices(branchId),
     enabled: !!branchId,
