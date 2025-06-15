@@ -51,7 +51,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
 
   const handlePrintCarePlan = () => {
     generatePDF({
-      id: parseInt(carePlan.id.replace('CP-', '')),
+      id: carePlan.id,
       title: `Care Plan for ${carePlan.patientName}`,
       date: format(carePlan.lastUpdated, 'yyyy-MM-dd'),
       status: carePlan.status,

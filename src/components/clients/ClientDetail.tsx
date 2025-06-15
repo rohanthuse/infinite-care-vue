@@ -113,7 +113,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
 
   const handlePrintClientProfile = () => {
     generatePDF({
-      id: parseInt(client.id.replace('CL-', '')),
+      id: client.id,
       title: `Client Profile for ${client.name}`,
       date: client.registeredOn,
       status: client.status,
