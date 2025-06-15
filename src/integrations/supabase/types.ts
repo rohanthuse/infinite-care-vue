@@ -189,6 +189,54 @@ export type Database = {
         }
         Relationships: []
       }
+      company_settings: {
+        Row: {
+          address: string | null
+          company_name: string | null
+          country: string | null
+          created_at: string
+          director: string | null
+          email: string | null
+          id: string
+          mobile_number: string | null
+          registration_number: string | null
+          singleton_enforcer: boolean
+          telephone: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          director?: string | null
+          email?: string | null
+          id?: string
+          mobile_number?: string | null
+          registration_number?: string | null
+          singleton_enforcer?: boolean
+          telephone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          company_name?: string | null
+          country?: string | null
+          created_at?: string
+          director?: string | null
+          email?: string | null
+          id?: string
+          mobile_number?: string | null
+          registration_number?: string | null
+          singleton_enforcer?: boolean
+          telephone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       hobbies: {
         Row: {
           created_at: string
