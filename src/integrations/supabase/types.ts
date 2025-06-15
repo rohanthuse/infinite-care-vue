@@ -357,6 +357,7 @@ export type Database = {
           service_id: string | null
           staff_id: string | null
           start_time: string
+          status: string | null
         }
         Insert: {
           branch_id?: string | null
@@ -368,6 +369,7 @@ export type Database = {
           service_id?: string | null
           staff_id?: string | null
           start_time: string
+          status?: string | null
         }
         Update: {
           branch_id?: string | null
@@ -379,6 +381,7 @@ export type Database = {
           service_id?: string | null
           staff_id?: string | null
           start_time?: string
+          status?: string | null
         }
         Relationships: [
           {

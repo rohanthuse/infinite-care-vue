@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,12 @@ export const BookingsList: React.FC<BookingsListProps> = ({ bookings }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Compute actual filter counts
+  const statusCounts = bookings.reduce<Record<string, number>>((acc, booking) => {
+    acc[booking.status] = (acc[booking.status] || 0) + 1;
+    return acc;
+  }, {});
+
   // Sort bookings by date and time
   const sortedBookings = [...bookings].sort((a, b) => {
     const dateCompare = a.date.localeCompare(b.date);
@@ -31,9 +36,9 @@ export const BookingsList: React.FC<BookingsListProps> = ({ bookings }) => {
   // Filter bookings based on search and status
   const filteredBookings = sortedBookings.filter(booking => {
     const matchesSearch = 
-      booking.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.carerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.id.toLowerCase().includes(searchQuery.toLowerCase());
+      booking.clientName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      booking.carerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      booking.id?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
     
@@ -77,7 +82,6 @@ export const BookingsList: React.FC<BookingsListProps> = ({ bookings }) => {
     }
   };
 
-  // Format date for display
   const formatBookingDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -87,7 +91,6 @@ export const BookingsList: React.FC<BookingsListProps> = ({ bookings }) => {
     }
   };
 
-  // Format status for display
   const formatStatus = (status: string) => {
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
@@ -120,7 +123,6 @@ export const BookingsList: React.FC<BookingsListProps> = ({ bookings }) => {
               />
             </div>
           </div>
-          
           <div className="w-[200px]">
             <Select 
               value={statusFilter}
@@ -130,12 +132,17 @@ export const BookingsList: React.FC<BookingsListProps> = ({ bookings }) => {
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="assigned">Assigned</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="done">Done</SelectItem>
-                <SelectItem value="departed">Departed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="all">
+                  All Status
+                  {typeof statusCounts === "object" ? (
+                    <Badge className="ml-2">{Object.values(statusCounts).reduce((a, b) => a + b, 0)}</Badge>
+                  ) : null}
+                </SelectItem>
+                <SelectItem value="assigned">Assigned <Badge className="ml-2">{statusCounts.assigned || 0}</Badge></SelectItem>
+                <SelectItem value="in-progress">In Progress <Badge className="ml-2">{statusCounts["in-progress"] || 0}</Badge></SelectItem>
+                <SelectItem value="done">Done <Badge className="ml-2">{statusCounts.done || 0}</Badge></SelectItem>
+                <SelectItem value="departed">Departed <Badge className="ml-2">{statusCounts.departed || 0}</Badge></SelectItem>
+                <SelectItem value="cancelled">Cancelled <Badge className="ml-2">{statusCounts.cancelled || 0}</Badge></SelectItem>
               </SelectContent>
             </Select>
           </div>

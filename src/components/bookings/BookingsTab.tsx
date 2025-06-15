@@ -197,13 +197,12 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     resolvedCarers.map((cr: any) => [cr.id, cr])
   );
 
-  // --- FIX: Always display bookings from DB, even if client/carer reference is missing
+  // --- FIX: Always display bookings from DB, keep status from DB ---
   let bookings: Booking[] = [];
   if ((bookingsDB || []).length > 0) {
     bookings = (bookingsDB || []).map((bk: any) => {
       let client = clientsMap[bk.client_id];
       let carer = carersMap[bk.staff_id];
-      // Always fallback to placeholder if missing
       if (!client && bk.client_id)
         client = getOrCreatePlaceholderClient(bk.client_id);
       if (!carer && bk.staff_id)
@@ -219,7 +218,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         startTime: bk.start_time ? bk.start_time.slice(11, 16) : "07:00",
         endTime: bk.end_time ? bk.end_time.slice(11, 16) : "07:30",
         date: bk.start_time ? bk.start_time.slice(0, 10) : "",
-        status: "assigned",
+        status: bk.status || "assigned", // ** Accept from DB **
         notes: "",
       };
     });
@@ -323,10 +322,17 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
       end_time: toISO(bookingDate, endTime),
       service_id: schedule.services?.[0] || null,
       revenue: null,
+      status: "assigned", // ** Always set on create **
     });
 
     setNewBookingDialogOpen(false);
   };
+
+  // --- Status counts for filters ---
+  const statusCounts = bookings.reduce<Record<string, number>>((acc, booking) => {
+    acc[booking.status] = (acc[booking.status] || 0) + 1;
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-4">
@@ -369,6 +375,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
           onViewModeChange={setViewMode}
           selectedStatuses={selectedStatuses}
           onStatusChange={setSelectedStatuses}
+          statusCounts={statusCounts}
         />
         <BookingTimeGrid
           date={currentDate}

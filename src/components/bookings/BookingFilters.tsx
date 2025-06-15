@@ -11,13 +11,15 @@ interface BookingFiltersProps {
   onViewModeChange: (mode: "client" | "group") => void;
   selectedStatuses: string[];
   onStatusChange: (statuses: string[]) => void;
+  statusCounts?: Record<string, number>;
 }
 
 export const BookingFilters: React.FC<BookingFiltersProps> = ({
   searchQuery,
   onSearchChange,
   selectedStatuses,
-  onStatusChange
+  onStatusChange,
+  statusCounts,
 }) => {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onSearchChange(e.target.value);
@@ -40,6 +42,7 @@ export const BookingFilters: React.FC<BookingFiltersProps> = ({
       <BookingStatusFilters 
         selectedStatuses={selectedStatuses} 
         onStatusChange={onStatusChange} 
+        statusCounts={statusCounts}
       />
     </div>
   );

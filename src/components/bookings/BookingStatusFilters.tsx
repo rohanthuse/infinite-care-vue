@@ -7,28 +7,29 @@ import { Badge } from "@/components/ui/badge";
 interface BookingStatus {
   id: string;
   label: string;
-  count: number;
   color: string;
 }
 
 const statuses: BookingStatus[] = [
-  { id: "assigned", label: "Assigned", count: 125, color: "bg-green-100 text-green-800" },
-  { id: "unassigned", label: "Unassigned", count: 32, color: "bg-amber-100 text-amber-800" },
-  { id: "done", label: "Done", count: 67, color: "bg-blue-100 text-blue-800" },
-  { id: "in-progress", label: "In Progress", count: 14, color: "bg-purple-100 text-purple-800" },
-  { id: "cancelled", label: "Cancelled", count: 48, color: "bg-red-100 text-red-800" },
-  { id: "departed", label: "Departed", count: 21, color: "bg-teal-100 text-teal-800" },
-  { id: "suspended", label: "Suspended", count: 7, color: "bg-gray-100 text-gray-800" },
+  { id: "assigned", label: "Assigned", color: "bg-green-100 text-green-800" },
+  { id: "unassigned", label: "Unassigned", color: "bg-amber-100 text-amber-800" },
+  { id: "done", label: "Done", color: "bg-blue-100 text-blue-800" },
+  { id: "in-progress", label: "In Progress", color: "bg-purple-100 text-purple-800" },
+  { id: "cancelled", label: "Cancelled", color: "bg-red-100 text-red-800" },
+  { id: "departed", label: "Departed", color: "bg-teal-100 text-teal-800" },
+  { id: "suspended", label: "Suspended", color: "bg-gray-100 text-gray-800" },
 ];
 
 interface BookingStatusFiltersProps {
   selectedStatuses: string[];
   onStatusChange: (statuses: string[]) => void;
+  statusCounts?: Record<string, number>;
 }
 
 export const BookingStatusFilters: React.FC<BookingStatusFiltersProps> = ({
   selectedStatuses,
   onStatusChange,
+  statusCounts = {},
 }) => {
   const handleStatusChange = (statusId: string) => {
     if (selectedStatuses.includes(statusId)) {
@@ -56,7 +57,7 @@ export const BookingStatusFilters: React.FC<BookingStatusFiltersProps> = ({
             >
               {status.label}
               <Badge className={`ml-1.5 ${status.color} font-normal text-xs`} variant="outline">
-                {status.count}
+                {statusCounts[status.id] ?? 0}
               </Badge>
             </Label>
           </div>
