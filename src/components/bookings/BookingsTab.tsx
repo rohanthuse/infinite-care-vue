@@ -17,6 +17,7 @@ import { useCreateBooking } from "@/data/hooks/useCreateBooking";
 import { useBranchClients } from "@/data/hooks/useBranchClients";
 import { useBranchCarers } from "@/data/hooks/useBranchCarers";
 import { useAuth } from "@/hooks/useAuth";
+import { useCreateMultipleBookings } from "@/data/hooks/useCreateMultipleBookings";
 
 // Helper for consistent name and initials with fallback
 function safeName(first: any, last: any, fallback = "Unknown") {
@@ -155,6 +156,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
   });
   const { data: carersData = [], isLoading: isLoadingCarers } = useBranchCarers(branchId);
   const createBookingMutation = useCreateBooking(branchId);
+  const createMultipleBookingsMutation = useCreateMultipleBookings(branchId);
 
   // Map DB: get .clients array if available, else fallback to []
   const clientsRaw = Array.isArray(clientsData)
@@ -260,7 +262,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     });
   }
 
-  // --- Helper: Combine date and time to ISO ---
+  // --- Helper: Combine date and time to ISO (no change, but exposed here) ---
   function combineDateAndTimeToISO(date: Date, time: string): string {
     // "YYYY-MM-DD" from date
     const yyyy = date.getFullYear();
@@ -302,98 +304,128 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
     setNewBookingDialogOpen(true);
   };
 
-  // --- Improve booking creation robustness ---
+  // --- Recurring bookings: New improved handler for multiple bookings ---
   const handleCreateBooking = (bookingData: any) => {
     if (!user) {
       toast.error("You must be logged in to create bookings");
       return;
     }
-    
     if (!branchId) {
       toast.error("Branch ID is required");
       return;
     }
-    
-    if (!bookingData || !bookingData.schedules || !Array.isArray(bookingData.schedules) || bookingData.schedules.length === 0) {
+    if (
+      !bookingData ||
+      !bookingData.schedules ||
+      !Array.isArray(bookingData.schedules) ||
+      bookingData.schedules.length === 0
+    ) {
       toast.error("Invalid booking data. Please select at least one schedule.");
       return;
     }
-    
-    const schedule = bookingData.schedules[0];
-    const startTime = schedule.startTime;
-    const endTime = schedule.endTime;
-    const bookingDate = bookingData.fromDate instanceof Date
+    // Guard: dates
+    const from = bookingData.fromDate instanceof Date
       ? bookingData.fromDate
       : new Date(bookingData.fromDate);
-
-    if (
-      !bookingData.fromDate ||
-      !startTime ||
-      !endTime ||
-      !bookingData.clientId ||
-      !bookingData.carerId
-    ) {
-      toast.error("Missing booking details. Please complete all required fields.");
+    const until = bookingData.untilDate instanceof Date
+      ? bookingData.untilDate
+      : new Date(bookingData.untilDate);
+    if (!from || !until) {
+      toast.error("Please select both a start and end date.");
       return;
     }
 
-    // Validate service_id: Use only if it's a valid "uuid"-like, else null
-    let serviceId: string | null = null;
-    if (
-      Array.isArray(schedule.services) &&
-      schedule.services[0] &&
-      /^[0-9a-fA-F-]{36}$/.test(schedule.services[0])
-    ) {
-      serviceId = schedule.services[0];
+    // Generate all booking instances (flat list)
+    const bookingsToCreate: any[] = [];
+    // For each schedule (can have multiple time slots)
+    for (const schedule of bookingData.schedules) {
+      // Check for required fields
+      const { startTime, endTime, services, days } = schedule;
+      if (!startTime || !endTime) continue;
+
+      // Service (first one)
+      let serviceId: string | null = null;
+      if (
+        Array.isArray(services) &&
+        services[0] &&
+        /^[0-9a-fA-F-]{36}$/.test(services[0])
+      ) {
+        serviceId = services[0];
+      }
+
+      // Figure out which days of the week are checked (object: { mon: true, tue: ... })
+      const dayBooleans: Partial<Record<number, boolean>> = {};
+      if (days) {
+        // Days mapping: Mon=1, ..., Sun=0 (matching JS getDay)
+        if (days.mon) dayBooleans[1] = true;
+        if (days.tue) dayBooleans[2] = true;
+        if (days.wed) dayBooleans[3] = true;
+        if (days.thu) dayBooleans[4] = true;
+        if (days.fri) dayBooleans[5] = true;
+        if (days.sat) dayBooleans[6] = true;
+        if (days.sun) dayBooleans[0] = true;
+      }
+
+      // If all days or no days are selected, default to all days
+      const anyDaysSelected = Object.values(dayBooleans).some(Boolean);
+      const daysSelected = anyDaysSelected
+        ? dayBooleans
+        : { 0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true };
+
+      // For each day in date range
+      let curr = new Date(from);
+      curr.setHours(0, 0, 0, 0);
+      const end = new Date(until);
+      end.setHours(0, 0, 0, 0);
+
+      while (curr <= end) {
+        const dayNum = curr.getDay(); // 0=Sun, 1=Mon ...
+        if (daysSelected[dayNum]) {
+          // booking for this day
+          bookingsToCreate.push({
+            branch_id: branchId,
+            client_id: bookingData.clientId,
+            staff_id: bookingData.carerId,
+            start_time: combineDateAndTimeToISO(curr, startTime),
+            end_time: combineDateAndTimeToISO(curr, endTime),
+            service_id: serviceId,
+            revenue: null,
+            status: "assigned",
+          });
+        }
+        curr.setDate(curr.getDate() + 1);
+      }
     }
-    
-    // Logging for debugging
-    console.log("[BookingsTab] User attempting to create booking:", {
-      userId: user.id,
-      branchId: branchId,
-      bookingData: {
-        branch_id: branchId,
-        client_id: bookingData.clientId,
-        staff_id: bookingData.carerId,
-        start_time: combineDateAndTimeToISO(bookingDate, startTime),
-        end_time: combineDateAndTimeToISO(bookingDate, endTime),
-        service_id: serviceId,
-        revenue: null,
-        status: "assigned",
+
+    if (bookingsToCreate.length === 0) {
+      toast.error("No valid days/times selected for recurrence.");
+      return;
+    }
+
+    // Logging for review
+    console.log("[BookingsTab] Creating recurring bookings:", bookingsToCreate);
+
+    createMultipleBookingsMutation.mutate(bookingsToCreate, {
+      onError: (error: any) => {
+        console.error("[BookingsTab] Booking creation error:", error);
+        if (error.message?.includes("row-level security")) {
+          toast.error("Access denied. You may not be authorized for this branch.", {
+            description: "Contact your administrator or create an admin user for this branch.",
+          });
+        } else {
+          toast.error("Failed to create bookings", {
+            description: error?.message || "Unknown error on booking creation. Please check all fields.",
+          });
+        }
+      },
+      onSuccess: (data: any) => {
+        toast.success("Bookings created!", {
+          description: `Created ${data.length || bookingsToCreate.length} bookings for selected range.`,
+        });
+        setNewBookingDialogOpen(false);
+        createMultipleBookingsMutation.reset();
       },
     });
-    
-    createBookingMutation.mutate(
-      {
-        branch_id: branchId,
-        client_id: bookingData.clientId,
-        staff_id: bookingData.carerId,
-        start_time: combineDateAndTimeToISO(bookingDate, startTime),
-        end_time: combineDateAndTimeToISO(bookingDate, endTime),
-        service_id: serviceId,
-        revenue: null,
-        status: "assigned",
-      },
-      {
-        onError: (error: any) => {
-          console.error("[BookingsTab] Booking creation error:", error);
-          if (error.message?.includes("row-level security")) {
-            toast.error("Access denied. You may not be authorized for this branch.", {
-              description: "Contact your administrator or create an admin user for this branch."
-            });
-          } else {
-            toast.error("Failed to create booking", {
-              description: error?.message || "Unknown error on booking creation. Please check all fields."
-            });
-          }
-        },
-        onSuccess: (data: any) => {
-          toast.success("Booking created!", { description: "A new booking has been added." });
-          setNewBookingDialogOpen(false);
-          createBookingMutation.reset();
-        }
-      }
-    );
   };
 
   // --- Logging for filtered bookings ---
@@ -491,8 +523,8 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         carers={carersWithBookings}
         onCreateBooking={handleCreateBooking}
         initialData={newBookingData}
-        isLoading={createBookingMutation.isPending}
-        error={createBookingMutation.error}
+        isLoading={createMultipleBookingsMutation.isPending}
+        error={createMultipleBookingsMutation.error}
       />
       <EditBookingDialog
         open={editBookingDialogOpen}
