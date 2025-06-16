@@ -32,7 +32,7 @@ export const BookingFilters: React.FC<BookingFiltersProps> = ({
   carers,
 }) => {
   return (
-    <div className="space-y-4 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+    <div className="space-y-4 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">  
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
@@ -60,7 +60,7 @@ export const BookingFilters: React.FC<BookingFiltersProps> = ({
               <SelectValue placeholder="All clients" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Clients</SelectItem>
+              <SelectItem value="all-clients">All Clients</SelectItem>
               {clients.map((client) => (
                 <SelectItem key={client.id} value={client.id}>
                   {client.name}
@@ -77,7 +77,7 @@ export const BookingFilters: React.FC<BookingFiltersProps> = ({
               <SelectValue placeholder="All carers" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Carers</SelectItem>
+              <SelectItem value="all-carers">All Carers</SelectItem>
               {carers.map((carer) => (
                 <SelectItem key={carer.id} value={carer.id}>
                   {carer.name}

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw } from "lucide-react";
@@ -24,8 +23,8 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewType, setViewType] = useState<"daily" | "weekly">("daily");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedClientId, setSelectedClientId] = useState<string>("");
-  const [selectedCarerId, setSelectedCarerId] = useState<string>("");
+  const [selectedClientId, setSelectedClientId] = useState<string>("all-clients");
+  const [selectedCarerId, setSelectedCarerId] = useState<string>("all-carers");
 
   const { data: services = [], isLoading: isLoadingServices } = useServices();
   const { clients, carers, bookings, isLoading } = useBookingData(branchId);
@@ -62,8 +61,8 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const filteredBookings = useMemo(() => {
     return bookings.filter((booking) => {
       const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
-      const matchesClient = !selectedClientId || booking.clientId === selectedClientId;
-      const matchesCarer = !selectedCarerId || booking.carerId === selectedCarerId;
+      const matchesClient = selectedClientId === "all-clients" || booking.clientId === selectedClientId;
+      const matchesCarer = selectedCarerId === "all-carers" || booking.carerId === selectedCarerId;
       return matchesStatus && matchesClient && matchesCarer;
     });
   }, [bookings, statusFilter, selectedClientId, selectedCarerId]);
