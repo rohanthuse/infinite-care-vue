@@ -6,6 +6,7 @@ import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
 import { useBookingOverlapCheck } from "./useBookingOverlapCheck";
 import { useRealTimeOverlapCheck } from "./useRealTimeOverlapCheck";
 import { combineDateAndTimeToISO } from "../utils/bookingUtils";
+import { useEnhancedOverlapValidation } from "@/data/hooks/useEnhancedOverlapValidation";
 
 export function useBookingHandlers(branchId?: string, user?: any) {
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
@@ -31,6 +32,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   const updateBookingMutation = useUpdateBooking(branchId);
   const { checkOverlap, findAvailableCarers } = useBookingOverlapCheck(branchId);
   const { checkOverlapRealTime, isChecking } = useRealTimeOverlapCheck(branchId);
+  const { validateBooking, isValidating: isEnhancedValidating } = useEnhancedOverlapValidation(branchId);
 
   const handleRefresh = () => {
     toast.success("Bookings refreshed successfully");
@@ -58,7 +60,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   };
 
   const handleUpdateBooking = async (bookingToUpdate: Booking & {notes?: string}, carers: any[] = []) => {
-    console.log("[useBookingHandlers] === UPDATE BOOKING START ===");
+    console.log("[useBookingHandlers] === ENHANCED UPDATE BOOKING START ===");
     console.log("[useBookingHandlers] Updating booking:", {
       bookingId: bookingToUpdate.id,
       carerId: bookingToUpdate.carerId,
@@ -73,11 +75,10 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       return;
     }
 
-    // CRITICAL: Set validation state immediately to prevent race conditions
     setIsValidatingUpdate(true);
 
     try {
-      // Check for overlaps if carer, time, or date has changed from the original booking
+      // Check if schedule has changed
       const hasChangedSchedule = selectedBooking && (
         bookingToUpdate.carerId !== selectedBooking.carerId ||
         bookingToUpdate.startTime !== selectedBooking.startTime ||
@@ -85,44 +86,20 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         bookingToUpdate.date !== selectedBooking.date
       );
 
-      console.log("[useBookingHandlers] Schedule change analysis:", {
-        hasChangedSchedule,
-        selectedBooking: selectedBooking ? {
-          id: selectedBooking.id,
-          carerId: selectedBooking.carerId,
-          startTime: selectedBooking.startTime,
-          endTime: selectedBooking.endTime,
-          date: selectedBooking.date
-        } : null,
-        updatedBooking: {
-          id: bookingToUpdate.id,
-          carerId: bookingToUpdate.carerId,
-          startTime: bookingToUpdate.startTime,
-          endTime: bookingToUpdate.endTime,
-          date: bookingToUpdate.date
-        }
-      });
-
       if (hasChangedSchedule && bookingToUpdate.carerId) {
-        console.log("[useBookingHandlers] SCHEDULE CHANGED - PERFORMING CRITICAL OVERLAP CHECK");
+        console.log("[useBookingHandlers] SCHEDULE CHANGED - PERFORMING ENHANCED VALIDATION");
         
-        // CRITICAL: Use real-time overlap checking with STRICT validation
-        const overlap = await checkOverlapRealTime(
+        // Use enhanced validation
+        const validation = await validateBooking(
           bookingToUpdate.carerId,
           bookingToUpdate.startTime,
           bookingToUpdate.endTime,
           bookingToUpdate.date,
-          bookingToUpdate.id // Exclude current booking
+          bookingToUpdate.id
         );
 
-        console.log("[useBookingHandlers] CRITICAL overlap check completed:", {
-          hasOverlap: overlap.hasOverlap,
-          conflictingBookings: overlap.conflictingBookings,
-          excludedBookingId: bookingToUpdate.id
-        });
-
-        if (overlap.hasOverlap) {
-          console.log("[useBookingHandlers] ❌ OVERLAP DETECTED - BLOCKING SAVE COMPLETELY");
+        if (!validation.isValid) {
+          console.log("[useBookingHandlers] ❌ ENHANCED VALIDATION FAILED");
           
           const selectedCarer = carers.find(c => c.id === bookingToUpdate.carerId);
           const availableCarers = findAvailableCarers(
@@ -130,17 +107,11 @@ export function useBookingHandlers(branchId?: string, user?: any) {
             bookingToUpdate.startTime,
             bookingToUpdate.endTime,
             bookingToUpdate.date,
-            bookingToUpdate.id // Exclude current booking
+            bookingToUpdate.id
           );
 
-          console.log("[useBookingHandlers] Overlap alert data:", {
-            selectedCarer: selectedCarer?.name,
-            availableCarersCount: availableCarers.length,
-            conflictCount: overlap.conflictingBookings.length
-          });
-
           setUpdateOverlapData({
-            conflictingBookings: overlap.conflictingBookings,
+            conflictingBookings: validation.conflictingBookings || [],
             carerName: selectedCarer?.name || bookingToUpdate.carerName,
             proposedTime: `${bookingToUpdate.startTime} - ${bookingToUpdate.endTime}`,
             proposedDate: bookingToUpdate.date,
@@ -149,29 +120,24 @@ export function useBookingHandlers(branchId?: string, user?: any) {
           setPendingUpdateData(bookingToUpdate);
           setUpdateOverlapAlertOpen(true);
           
-          // CRITICAL: Show clear blocking message
           toast.error("❌ Booking Conflict Detected!", {
-            description: "Save blocked due to overlapping appointments. Please resolve the conflict first."
+            description: validation.error || "Overlapping appointments found. Please resolve the conflict."
           });
           
-          console.log("[useBookingHandlers] ❌ SAVE COMPLETELY BLOCKED - User must resolve conflict");
-          return; // CRITICAL: Don't proceed with update
-        } else {
-          console.log("[useBookingHandlers] ✅ No overlaps detected, proceeding with update");
+          return;
         }
-      } else {
-        console.log("[useBookingHandlers] No schedule changes detected or no carer assigned, proceeding with update");
       }
 
-      // If we reach here, no conflicts were detected
+      // Proceed with update if validation passes
       proceedWithBookingUpdate(bookingToUpdate);
       
     } catch (error) {
-      console.error("[useBookingHandlers] CRITICAL ERROR during overlap check:", error);
-      toast.error("Failed to validate booking conflicts. Please try again.");
+      console.error("[useBookingHandlers] CRITICAL ERROR during enhanced validation:", error);
+      toast.error("Failed to validate booking conflicts. Please try again.", {
+        description: error instanceof Error ? error.message : "Unknown validation error"
+      });
       return;
     } finally {
-      // CRITICAL: Always reset validation state
       setIsValidatingUpdate(false);
     }
   };
@@ -197,13 +163,23 @@ export function useBookingHandlers(branchId?: string, user?: any) {
             if (editBookingDialogOpen) {
                 setEditBookingDialogOpen(false);
             }
-            toast.success("✅ Booking updated successfully");
-        },
-        onError: (error) => {
-            console.error("[useBookingHandlers] Failed to update booking:", error);
-            toast.error("❌ Failed to update booking", {
-                description: error?.message || "Please try again"
+            toast.success("✅ Booking updated successfully", {
+              description: "Calendar will refresh automatically"
             });
+        },
+        onError: (error: any) => {
+            console.error("[useBookingHandlers] Failed to update booking:", error);
+            
+            // Handle database constraint errors
+            if (error?.message?.includes('Booking conflict detected')) {
+              toast.error("❌ Database Blocked Save", {
+                description: "The database detected a booking conflict. This is an additional safety check."
+              });
+            } else {
+              toast.error("❌ Failed to update booking", {
+                  description: error?.message || "Please try again"
+              });
+            }
         }
     });
   };
@@ -433,6 +409,8 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     setUpdateOverlapData(null);
   };
 
+  const isCheckingOverlap = isChecking || isValidatingUpdate || isEnhancedValidating;
+
   return {
     newBookingDialogOpen,
     setNewBookingDialogOpen,
@@ -446,7 +424,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     updateOverlapAlertOpen,
     setUpdateOverlapAlertOpen,
     updateOverlapData,
-    isCheckingOverlap: isChecking || isValidatingUpdate,
+    isCheckingOverlap,
     handleRefresh,
     handleNewBooking,
     handleEditBooking,

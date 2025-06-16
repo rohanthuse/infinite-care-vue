@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw } from "lucide-react";
@@ -17,6 +16,8 @@ import { useBookingHandlers } from "./hooks/useBookingHandlers";
 import { useAuth } from "@/hooks/useAuth";
 import { useServices } from "@/data/hooks/useServices";
 import { toast } from "sonner";
+import { useRealTimeBookingSync } from "./hooks/useRealTimeBookingSync";
+import { BookingValidationAlert } from "./BookingValidationAlert";
 
 interface BookingsTabProps {
   branchId?: string;
@@ -33,6 +34,8 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
 
   const { data: services = [], isLoading: isLoadingServices } = useServices();
   const { clients, carers, bookings, isLoading } = useBookingData(branchId);
+  
+  const { isConnected: isRealTimeConnected } = useRealTimeBookingSync(branchId);
   
   const {
     newBookingDialogOpen,
@@ -93,7 +96,15 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Bookings</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold">Bookings</h2>
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${isRealTimeConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+            <span className="text-xs text-muted-foreground">
+              {isRealTimeConnected ? 'Live' : 'Offline'}
+            </span>
+          </div>
+        </div>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -110,6 +121,12 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
           </Button>
         </div>
       </div>
+
+      {/* Enhanced validation alert */}
+      <BookingValidationAlert 
+        isValidating={isCheckingOverlap}
+        isValid={!isCheckingOverlap && !overlapAlertOpen && !updateOverlapAlertOpen}
+      />
 
       <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
         <TabsList className="grid w-full grid-cols-3">

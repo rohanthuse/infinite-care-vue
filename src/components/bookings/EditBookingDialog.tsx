@@ -25,6 +25,7 @@ import { format, parseISO } from "date-fns";
 import { EntitySelector } from "./EntitySelector";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { BookingValidationAlert } from "./BookingValidationAlert";
 
 interface EditBookingDialogProps {
   open: boolean;
@@ -352,7 +353,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
         <DialogHeader className="border-b pb-2">
           <DialogTitle>Edit Booking</DialogTitle>
           <DialogDescription>
-            Update booking details for {booking.clientName}
+            Update booking details for {booking?.clientName}
           </DialogDescription>
         </DialogHeader>
         
@@ -364,13 +365,12 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
         ) : (
           <ScrollArea className="max-h-[60vh] overflow-y-auto py-2 pr-3">
             <div className="grid gap-4 py-2">
-              {/* CRITICAL: Enhanced validation alerts */}
-              {hasValidationErrors && (
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>{validationMessage}</AlertDescription>
-                </Alert>
-              )}
+              {/* Enhanced validation alerts */}
+              <BookingValidationAlert 
+                isValidating={isCheckingOverlap || isSaveBlocked}
+                validationError={hasValidationErrors ? validationMessage : undefined}
+                isValid={!hasValidationErrors && !isCheckingOverlap && !isSaveBlocked && hasValidSelections}
+              />
 
               {/* CRITICAL: Overlap checking status */}
               {(isCheckingOverlap || isSaveBlocked) && (
