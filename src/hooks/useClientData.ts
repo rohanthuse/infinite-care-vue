@@ -73,7 +73,7 @@ export const useClientProfile = () => {
         .single();
 
       if (error) throw error;
-      return data as unknown as ClientProfile;
+      return data as ClientProfile;
     },
     enabled: !!user?.id,
   });
@@ -93,7 +93,7 @@ export const useClientCarePlans = (clientId: string) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []) as unknown as ClientCarePlan[];
+      return (data || []) as ClientCarePlan[];
     },
     enabled: !!clientId,
   });
@@ -111,7 +111,7 @@ export const useCarePlanGoals = (carePlanId: string) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []) as unknown as ClientCarePlanGoal[];
+      return (data || []) as ClientCarePlanGoal[];
     },
     enabled: !!carePlanId,
   });
@@ -131,7 +131,7 @@ export const useClientAppointments = (clientId: string) => {
         .order('appointment_date', { ascending: true });
 
       if (error) throw error;
-      return (data || []) as unknown as ClientAppointment[];
+      return (data || []) as ClientAppointment[];
     },
     enabled: !!clientId,
   });
@@ -154,7 +154,7 @@ export const useUpdateClientProfile = () => {
         .single();
 
       if (error) throw error;
-      return data as unknown as ClientProfile;
+      return data as ClientProfile;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-profile'] });
@@ -176,7 +176,7 @@ export const useUpdateCarePlanGoal = () => {
         .single();
 
       if (error) throw error;
-      return data as unknown as ClientCarePlanGoal;
+      return data as ClientCarePlanGoal;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['care-plan-goals', data.care_plan_id] });
@@ -202,7 +202,7 @@ export const useRescheduleAppointment = () => {
         .single();
 
       if (error) throw error;
-      return data as unknown as ClientAppointment;
+      return data as ClientAppointment;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['client-appointments', data.client_id] });
