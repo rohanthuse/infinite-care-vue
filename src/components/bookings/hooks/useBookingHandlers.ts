@@ -19,6 +19,11 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   const [overlapAlertOpen, setOverlapAlertOpen] = useState(false);
   const [overlapData, setOverlapData] = useState<any>(null);
   const [pendingBookingData, setPendingBookingData] = useState<any>(null);
+  
+  // Add state for update overlaps
+  const [updateOverlapAlertOpen, setUpdateOverlapAlertOpen] = useState(false);
+  const [updateOverlapData, setUpdateOverlapData] = useState<any>(null);
+  const [pendingUpdateData, setPendingUpdateData] = useState<any>(null);
 
   const createMultipleBookingsMutation = useCreateMultipleBookings(branchId);
   const updateBookingMutation = useUpdateBooking(branchId);
@@ -48,12 +53,60 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     setNewBookingDialogOpen(true);
   };
 
-  const handleUpdateBooking = (bookingToUpdate: Booking & {notes?: string}) => {
+  const handleUpdateBooking = (bookingToUpdate: Booking & {notes?: string}, carers: any[] = []) => {
     if (!bookingToUpdate.id) {
       toast.error("Cannot update booking without an ID.");
       return;
     }
 
+    // Check for overlaps if carer, time, or date has changed from the original booking
+    const hasChangedSchedule = selectedBooking && (
+      bookingToUpdate.carerId !== selectedBooking.carerId ||
+      bookingToUpdate.startTime !== selectedBooking.startTime ||
+      bookingToUpdate.endTime !== selectedBooking.endTime ||
+      bookingToUpdate.date !== selectedBooking.date
+    );
+
+    if (hasChangedSchedule && bookingToUpdate.carerId) {
+      const overlap = checkOverlap(
+        bookingToUpdate.carerId,
+        bookingToUpdate.startTime,
+        bookingToUpdate.endTime,
+        bookingToUpdate.date
+      );
+
+      // Filter out the current booking from conflicts
+      const filteredConflicts = overlap.conflictingBookings.filter(
+        conflict => conflict.id !== bookingToUpdate.id
+      );
+
+      if (filteredConflicts.length > 0) {
+        const selectedCarer = carers.find(c => c.id === bookingToUpdate.carerId);
+        const availableCarers = findAvailableCarers(
+          carers,
+          bookingToUpdate.startTime,
+          bookingToUpdate.endTime,
+          bookingToUpdate.date
+        );
+
+        setUpdateOverlapData({
+          conflictingBookings: filteredConflicts,
+          carerName: selectedCarer?.name || bookingToUpdate.carerName,
+          proposedTime: `${bookingToUpdate.startTime} - ${bookingToUpdate.endTime}`,
+          proposedDate: bookingToUpdate.date,
+          availableCarers,
+        });
+        setPendingUpdateData(bookingToUpdate);
+        setUpdateOverlapAlertOpen(true);
+        return;
+      }
+    }
+
+    // Proceed with update if no conflicts
+    proceedWithBookingUpdate(bookingToUpdate);
+  };
+
+  const proceedWithBookingUpdate = (bookingToUpdate: Booking & {notes?: string}) => {
     const payload: any = {
       client_id: bookingToUpdate.clientId,
       staff_id: bookingToUpdate.carerId,
@@ -72,6 +125,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
             if (editBookingDialogOpen) {
                 setEditBookingDialogOpen(false);
             }
+            toast.success("Booking updated successfully");
         }
     });
   };
@@ -280,6 +334,26 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     setOverlapData(null);
   };
 
+  // Add handlers for update overlaps
+  const handleUpdateOverlapChooseDifferentCarer = () => {
+    setUpdateOverlapAlertOpen(false);
+    // Keep the edit dialog open to allow carer selection
+  };
+
+  const handleUpdateOverlapModifyTime = () => {
+    setUpdateOverlapAlertOpen(false);
+    // Keep the edit dialog open to allow time modification
+  };
+
+  const handleUpdateOverlapForceUpdate = () => {
+    if (pendingUpdateData) {
+      proceedWithBookingUpdate(pendingUpdateData);
+    }
+    setUpdateOverlapAlertOpen(false);
+    setPendingUpdateData(null);
+    setUpdateOverlapData(null);
+  };
+
   return {
     newBookingDialogOpen,
     setNewBookingDialogOpen,
@@ -290,6 +364,9 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     overlapAlertOpen,
     setOverlapAlertOpen,
     overlapData,
+    updateOverlapAlertOpen,
+    setUpdateOverlapAlertOpen,
+    updateOverlapData,
     handleRefresh,
     handleNewBooking,
     handleEditBooking,
@@ -299,6 +376,9 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     handleOverlapChooseDifferentCarer,
     handleOverlapModifyTime,
     handleOverlapForceCreate,
+    handleUpdateOverlapChooseDifferentCarer,
+    handleUpdateOverlapModifyTime,
+    handleUpdateOverlapForceUpdate,
     createMultipleBookingsMutation,
     updateBookingMutation
   };

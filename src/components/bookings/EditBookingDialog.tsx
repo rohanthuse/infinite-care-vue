@@ -21,18 +21,8 @@ import { Label } from "@/components/ui/label";
 import { Booking, Client, Carer } from "./BookingTimeGrid";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, AlertTriangle, CalendarCheck, Users, RefreshCw, ArrowLeftRight, CheckCircle, XCircle, Loader2 } from "lucide-react";
-import { format, parseISO, isSameDay, isAfter, isBefore } from "date-fns";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle
-} from "@/components/ui/alert-dialog";
+import { Calendar, Clock, CalendarCheck, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { format, parseISO } from "date-fns";
 import { EntitySelector } from "./EntitySelector";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -42,7 +32,7 @@ interface EditBookingDialogProps {
   booking: Booking | null;
   clients: Client[];
   carers: Carer[];
-  onUpdateBooking: (booking: Booking) => void;
+  onUpdateBooking: (booking: Booking, carers: Carer[]) => void;
 }
 
 export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
@@ -60,17 +50,10 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const [startTime, setStartTime] = useState<string>("");
   const [endTime, setEndTime] = useState<string>("");
   const [bookingDate, setBookingDate] = useState<string>("");
-  const [showScheduleConflict, setShowScheduleConflict] = useState<boolean>(false);
-  const [conflictType, setConflictType] = useState<"client" | "carer" | null>(null);
-  const [conflictEntity, setConflictEntity] = useState<string>("");
-  const [clientSchedule, setClientSchedule] = useState<Booking[]>([]);
-  const [carerSchedule, setCarerSchedule] = useState<Booking[]>([]);
-  const [showSwapView, setShowSwapView] = useState<boolean>(false);
-  const [availableTimeSlots, setAvailableTimeSlots] = useState<{start: string, end: string}[]>([]);
   const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [carerSelectorKey, setCarerSelectorKey] = useState<number>(0); // Key to force re-render of carer selector
-  const [clientSelectorKey, setClientSelectorKey] = useState<number>(0); // Key to force re-render of client selector
+  const [carerSelectorKey, setCarerSelectorKey] = useState<number>(0);
+  const [clientSelectorKey, setClientSelectorKey] = useState<number>(0);
 
   // Reset the dialog state when it opens/closes
   useEffect(() => {
@@ -89,15 +72,9 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
         setEndTime(booking.endTime);
         setBookingDate(booking.date);
         
-        // Fetch schedules for client and carer
         setTimeout(() => {
-          console.log("Loading schedules for client:", booking.clientId, "and carer:", booking.carerId);
-          updateClientSchedule(booking.clientId);
-          updateCarerSchedule(booking.carerId);
-          
           setClientSelectorKey(prev => prev + 1);
           setCarerSelectorKey(prev => prev + 1);
-          
           setIsDataLoaded(true);
           console.log("Dialog data loaded. Client ID:", booking.clientId, "Carer ID:", booking.carerId);
         }, 100);
@@ -112,69 +89,10 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       setStartTime("");
       setEndTime("");
       setBookingDate("");
-      setClientSchedule([]);
-      setCarerSchedule([]);
       setCarerSelectorKey(prev => prev + 1);
       setClientSelectorKey(prev => prev + 1);
     }
   }, [open, booking]);
-  
-  // Update client schedule
-  const updateClientSchedule = (clientId: string) => {
-    console.log("Updating client schedule for ID:", clientId);
-    const selectedClient = clients.find(c => c.id === clientId);
-    if (selectedClient) {
-      // Get bookings for this client
-      const clientBookings = getBookingsForEntity("client", clientId);
-      console.log("Found client bookings:", clientBookings.length);
-      setClientSchedule(clientBookings);
-    } else {
-      console.log("No bookings found for client");
-      setClientSchedule([]);
-    }
-  };
-  
-  // Update carer schedule
-  const updateCarerSchedule = (carerId: string) => {
-    console.log("Updating carer schedule for ID:", carerId);
-    const selectedCarer = carers.find(c => c.id === carerId);
-    if (selectedCarer) {
-      // Get bookings for this carer
-      const carerBookings = getBookingsForEntity("carer", carerId);
-      console.log("Found carer bookings:", carerBookings.length);
-      setCarerSchedule(carerBookings);
-    } else {
-      console.log("No bookings found for carer");
-      setCarerSchedule([]);
-    }
-  };
-  
-  // Helper function to get all bookings for a client or carer
-  const getBookingsForEntity = (type: "client" | "carer", id: string): Booking[] => {
-    if (!booking) return [];
-    
-    // Mock implementation to find all bookings for this entity
-    // In a real app, this would come from a database or API
-    return type === "client" 
-      ? getAllBookings().filter(b => b.clientId === id)
-      : getAllBookings().filter(b => b.carerId === id);
-  };
-  
-  // Helper function to get all bookings
-  // This is a placeholder - in a real app, you'd get this data from props or context
-  const getAllBookings = (): Booking[] => {
-    // Return the current booking plus any bookings from client/carer schedules
-    const allBookings = [
-      ...(booking ? [booking] : []),
-      ...clientSchedule,
-      ...carerSchedule
-    ];
-    
-    // Remove duplicates by ID
-    return allBookings.filter((booking, index, self) =>
-      index === self.findIndex((b) => b.id === booking.id)
-    );
-  };
   
   // Handle client selection
   const handleClientChange = (clientId: string | null) => {
@@ -187,7 +105,6 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     setIsProcessing(true);
     
     setSelectedClientId(clientId);
-    updateClientSchedule(clientId);
     
     const selectedClient = clients.find(c => c.id === clientId);
     if (selectedClient) {
@@ -195,7 +112,6 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     }
     
     setTimeout(() => {
-      findAvailableTimeSlots();
       setIsProcessing(false);
     }, 100);
   };
@@ -211,7 +127,6 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     setIsProcessing(true);
     
     setSelectedCarerId(carerId);
-    updateCarerSchedule(carerId);
     
     const selectedCarer = carers.find(c => c.id === carerId);
     if (selectedCarer) {
@@ -220,80 +135,8 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     }
     
     setTimeout(() => {
-      findAvailableTimeSlots();
       setIsProcessing(false);
     }, 100);
-  };
-  
-  // Find available time slots for the selected date
-  const findAvailableTimeSlots = () => {
-    if (!selectedClientId || !selectedCarerId || !bookingDate) return;
-    
-    const businessHours = [];
-    for (let hour = 6; hour < 22; hour++) {
-      businessHours.push(`${hour.toString().padStart(2, '0')}:00`);
-      businessHours.push(`${hour.toString().padStart(2, '0')}:30`);
-    }
-    
-    const availableTimes = businessHours.filter(time => {
-      const startSlot = time;
-      const [startHour, startMin] = startSlot.split(':').map(Number);
-      let endHour = startHour + 1;
-      let endMin = startMin;
-      
-      if (endHour >= 24) {
-        endHour -= 24;
-      }
-      
-      const endSlot = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
-      
-      const clientConflict = clientSchedule.some(b => {
-        if (!isSameDay(parseISO(b.date), parseISO(bookingDate))) return false;
-        if (booking && b.id === booking.id) return false;
-        
-        const [bStartHour, bStartMin] = b.startTime.split(':').map(Number);
-        const [bEndHour, bEndMin] = b.endTime.split(':').map(Number);
-        
-        const bookingStart = new Date(2023, 0, 1, startHour, startMin);
-        const bookingEnd = new Date(2023, 0, 1, endHour, endMin);
-        const bStart = new Date(2023, 0, 1, bStartHour, bStartMin);
-        const bEnd = new Date(2023, 0, 1, bEndHour, bEndMin);
-        
-        return !(isAfter(bookingStart, bEnd) || isAfter(bStart, bookingEnd));
-      });
-      
-      const carerConflict = carerSchedule.some(b => {
-        if (!isSameDay(parseISO(b.date), parseISO(bookingDate))) return false;
-        if (booking && b.id === booking.id) return false;
-        
-        const [bStartHour, bStartMin] = b.startTime.split(':').map(Number);
-        const [bEndHour, bEndMin] = b.endTime.split(':').map(Number);
-        
-        const bookingStart = new Date(2023, 0, 1, startHour, startMin);
-        const bookingEnd = new Date(2023, 0, 1, endHour, endMin);
-        const bStart = new Date(2023, 0, 1, bStartHour, bStartMin);
-        const bEnd = new Date(2023, 0, 1, bEndHour, bEndMin);
-        
-        return !(isAfter(bookingStart, bEnd) || isAfter(bStart, bookingEnd));
-      });
-      
-      return !clientConflict && !carerConflict;
-    });
-    
-    const slots = availableTimes.map(time => {
-      const [startHour, startMin] = time.split(':').map(Number);
-      let endHour = startHour + 1;
-      let endMin = startMin;
-      
-      if (endHour >= 24) {
-        endHour -= 24;
-      }
-      
-      const endTime = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
-      return { start: time, end: endTime };
-    });
-    
-    setAvailableTimeSlots(slots);
   };
   
   // Format date for display
@@ -334,63 +177,6 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     return hours || minutes || "0 minutes";
   };
   
-  // Check for scheduling conflicts
-  const checkSchedulingConflicts = (): boolean => {
-    if (!booking) return false;
-    
-    const [startHour, startMin] = startTime.split(':').map(Number);
-    const [endHour, endMin] = endTime.split(':').map(Number);
-    
-    const startInMinutes = startHour * 60 + startMin;
-    const endInMinutes = endHour * 60 + endMin;
-    
-    const clientConflicts = clientSchedule.filter(b => {
-      if (b.id === booking.id) return false;
-      
-      if (!isSameDay(parseISO(b.date), parseISO(bookingDate))) return false;
-      
-      const bStartParts = b.startTime.split(':').map(Number);
-      const bEndParts = b.endTime.split(':').map(Number);
-      
-      const bStartInMinutes = bStartParts[0] * 60 + bStartParts[1];
-      const bEndInMinutes = bEndParts[0] * 60 + bEndParts[1];
-      
-      return (startInMinutes < bEndInMinutes && endInMinutes > bStartInMinutes);
-    });
-    
-    const carerConflicts = carerSchedule.filter(b => {
-      if (b.id === booking.id) return false;
-      
-      if (!isSameDay(parseISO(b.date), parseISO(bookingDate))) return false;
-      
-      const bStartParts = b.startTime.split(':').map(Number);
-      const bEndParts = b.endTime.split(':').map(Number);
-      
-      const bStartInMinutes = bStartParts[0] * 60 + bStartParts[1];
-      const bEndInMinutes = bEndParts[0] * 60 + bEndParts[1];
-      
-      return (startInMinutes < bEndInMinutes && endInMinutes > bStartInMinutes);
-    });
-    
-    if (clientConflicts.length > 0) {
-      const client = clients.find(c => c.id === selectedClientId);
-      setConflictType("client");
-      setConflictEntity(client ? client.name : "Client");
-      setShowScheduleConflict(true);
-      return true;
-    }
-    
-    if (carerConflicts.length > 0) {
-      const carer = carers.find(c => c.id === selectedCarerId);
-      setConflictType("carer");
-      setConflictEntity(carer ? carer.name : "Carer");
-      setShowScheduleConflict(true);
-      return true;
-    }
-    
-    return false;
-  };
-  
   // Handle save button click
   const handleSave = () => {
     if (!booking) return;
@@ -402,10 +188,6 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     
     if (!selectedClient || !selectedCarer) {
       toast.error("Please select both client and carer");
-      return;
-    }
-    
-    if (checkSchedulingConflicts()) {
       return;
     }
     
@@ -425,9 +207,9 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     };
     
     console.log("Updated booking:", updatedBooking);
-    onUpdateBooking(updatedBooking);
-    toast.success("Booking updated successfully");
-    onOpenChange(false);
+    
+    // Pass the carers array to the update handler for overlap detection
+    onUpdateBooking(updatedBooking, carers);
   };
 
   // Validate time change
@@ -473,62 +255,6 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     }
   };
   
-  // Apply a selected time slot
-  const handleApplyTimeSlot = (slot: {start: string, end: string}) => {
-    setStartTime(slot.start);
-    setEndTime(slot.end);
-    toast.success(`Applied time slot: ${slot.start} - ${slot.end}`);
-  };
-  
-  // Toggle between schedule and available slots view
-  const toggleSwapView = () => {
-    setShowSwapView(!showSwapView);
-    findAvailableTimeSlots();
-  };
-  
-  // Format schedule times for display
-  const formatScheduleTimes = (startTime: string, endTime: string): string => {
-    return `${startTime} - ${endTime}`;
-  };
-  
-  // Get bookings for today
-  const getTodayBookings = (schedule: Booking[]): Booking[] => {
-    if (!bookingDate || !schedule.length) return [];
-    
-    return schedule.filter(b => 
-      isSameDay(parseISO(b.date), parseISO(bookingDate))
-    ).sort((a, b) => {
-      const [aHour, aMin] = a.startTime.split(':').map(Number);
-      const [bHour, bMin] = b.startTime.split(':').map(Number);
-      
-      const aMinutes = aHour * 60 + aMin;
-      const bMinutes = bHour * 60 + bMin;
-      
-      return aMinutes - bMinutes;
-    });
-  };
-  
-  const clientTodayBookings = getTodayBookings(clientSchedule);
-  const carerTodayBookings = getTodayBookings(carerSchedule);
-
-  // Check if a booking conflicts with the current time range
-  const isConflictingBooking = (booking: Booking): boolean => {
-    if (!startTime || !endTime) return false;
-    
-    const [bookingStartHour, bookingStartMin] = booking.startTime.split(':').map(Number);
-    const [bookingEndHour, bookingEndMin] = booking.endTime.split(':').map(Number);
-    
-    const [currentStartHour, currentStartMin] = startTime.split(':').map(Number);
-    const [currentEndHour, currentEndMin] = endTime.split(':').map(Number);
-    
-    const bookingStart = bookingStartHour * 60 + bookingStartMin;
-    const bookingEnd = bookingEndHour * 60 + bookingEndMin;
-    const currentStart = currentStartHour * 60 + currentStartMin;
-    const currentEnd = currentEndHour * 60 + currentEndMin;
-    
-    return (currentStart < bookingEnd && currentEnd > bookingStart);
-  };
-  
   // Get background color for booking status
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -548,344 +274,167 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const selectedClient = clients.find(c => c.id === selectedClientId);
   const selectedCarer = carers.find(c => c.id === selectedCarerId);
   
+  // Check if we have valid selections for both client and carer
+  const hasValidSelections = selectedClientId && selectedCarerId;
+  
   // Render dialog
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md md:max-w-xl">
-          <DialogHeader className="border-b pb-2">
-            <DialogTitle>Edit Booking</DialogTitle>
-            <DialogDescription>
-              Update booking details for {booking.clientName}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {!isDataLoaded ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="ml-2">Loading booking details...</span>
-            </div>
-          ) : (
-            <ScrollArea className="max-h-[60vh] overflow-y-auto py-2 pr-3">
-              <div className="grid gap-4 py-2">
-                <div className="rounded-md bg-slate-50 p-3 border border-slate-200">
-                  <h3 className="text-sm font-medium text-slate-900 mb-2 flex items-center">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    Schedule Information
-                  </h3>
-                  <div className="grid gap-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-600">Date:</span>
-                      <span className="font-medium">{formatDate(bookingDate)}</span>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md md:max-w-xl">
+        <DialogHeader className="border-b pb-2">
+          <DialogTitle>Edit Booking</DialogTitle>
+          <DialogDescription>
+            Update booking details for {booking.clientName}
+          </DialogDescription>
+        </DialogHeader>
+        
+        {!isDataLoaded ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2">Loading booking details...</span>
+          </div>
+        ) : (
+          <ScrollArea className="max-h-[60vh] overflow-y-auto py-2 pr-3">
+            <div className="grid gap-4 py-2">
+              <div className="rounded-md bg-slate-50 p-3 border border-slate-200">
+                <h3 className="text-sm font-medium text-slate-900 mb-2 flex items-center">
+                  <Calendar className="h-4 w-4 mr-1" />
+                  Schedule Information
+                </h3>
+                <div className="grid gap-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-600">Date:</span>
+                    <span className="font-medium">{formatDate(bookingDate)}</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-2 items-center">
+                    <div className="col-span-1">
+                      <Label htmlFor="startTime" className="text-xs">Start Time</Label>
+                      <div className="flex items-center">
+                        <Clock className="h-3 w-3 mr-1 text-slate-400" />
+                        <Input 
+                          id="startTime"
+                          type="time"
+                          value={startTime}
+                          onChange={(e) => handleStartTimeChange(e.target.value)}
+                          className="h-7 text-xs" 
+                        />
+                      </div>
                     </div>
-                    
-                    <div className="grid grid-cols-3 gap-2 items-center">
-                      <div className="col-span-1">
-                        <Label htmlFor="startTime" className="text-xs">Start Time</Label>
-                        <div className="flex items-center">
-                          <Clock className="h-3 w-3 mr-1 text-slate-400" />
-                          <Input 
-                            id="startTime"
-                            type="time"
-                            value={startTime}
-                            onChange={(e) => handleStartTimeChange(e.target.value)}
-                            className="h-7 text-xs" 
-                          />
-                        </div>
+                    <div className="col-span-1">
+                      <Label htmlFor="endTime" className="text-xs">End Time</Label>
+                      <div className="flex items-center">
+                        <Clock className="h-3 w-3 mr-1 text-slate-400" />
+                        <Input 
+                          id="endTime"
+                          type="time"
+                          value={endTime}
+                          onChange={(e) => handleEndTimeChange(e.target.value)}
+                          className="h-7 text-xs" 
+                        />
                       </div>
-                      <div className="col-span-1">
-                        <Label htmlFor="endTime" className="text-xs">End Time</Label>
-                        <div className="flex items-center">
-                          <Clock className="h-3 w-3 mr-1 text-slate-400" />
-                          <Input 
-                            id="endTime"
-                            type="time"
-                            value={endTime}
-                            onChange={(e) => handleEndTimeChange(e.target.value)}
-                            className="h-7 text-xs" 
-                          />
-                        </div>
-                      </div>
-                      <div className="col-span-1">
-                        <Label className="text-xs">Duration</Label>
-                        <div className="bg-white border border-slate-200 rounded p-1 text-xs h-7 flex items-center justify-center text-slate-700">
-                          {calculateDuration()}
-                        </div>
+                    </div>
+                    <div className="col-span-1">
+                      <Label className="text-xs">Duration</Label>
+                      <div className="bg-white border border-slate-200 rounded p-1 text-xs h-7 flex items-center justify-center text-slate-700">
+                        {calculateDuration()}
                       </div>
                     </div>
                   </div>
                 </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="client" className="font-medium">Client</Label>
-                  <EntitySelector
-                    type="client"
-                    entities={clients}
-                    selectedEntity={selectedClientId || null}
-                    onSelect={handleClientChange}
-                    key={`client-selector-${clientSelectorKey}`}
-                  />
-                  
-                  {selectedClientId && (
-                    <div className="bg-blue-50 rounded-md p-3 border border-blue-100 mt-1">
-                      <div className="flex justify-between items-center mb-2">
-                        <h4 className="text-xs font-medium text-blue-800 flex items-center">
-                          <CalendarCheck className="h-3 w-3 mr-1" />
-                          {selectedClient?.name}'s Schedule for {format(parseISO(bookingDate), 'EEE, MMM d')}
-                        </h4>
-                      </div>
-                      
-                      <ScrollArea className="h-24 w-full">
-                        {clientTodayBookings.length > 0 ? (
-                          <div className="space-y-1.5 p-1">
-                            {clientTodayBookings.map((b) => (
-                              <div 
-                                key={b.id} 
-                                className={`text-xs p-1.5 rounded border ${
-                                  b.id === booking.id ? 'bg-blue-200 border-blue-400' : 
-                                  isConflictingBooking(b) ? 'bg-red-100 border-red-300 animate-pulse' : 
-                                  getStatusColor(b.status)
-                                } flex justify-between items-center`}
-                              >
-                                <div className="flex items-center">
-                                  <span className="font-medium">{formatScheduleTimes(b.startTime, b.endTime)}</span>
-                                  <span className="mx-2">•</span>
-                                  <span className="truncate max-w-[100px]">{b.carerName.split(',')[0]}</span>
-                                </div>
-                                {isConflictingBooking(b) && b.id !== booking.id && (
-                                  <span className="text-red-600 font-medium flex items-center text-[10px]">
-                                    <AlertTriangle className="h-3 w-3 mr-0.5" />
-                                    Conflict
-                                  </span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="bg-white rounded p-2 text-xs text-blue-700">
-                            No other bookings for today
-                          </div>
-                        )}
-                      </ScrollArea>
-                      
-                      <div className="mt-2 pt-2 border-t border-blue-200 text-xs text-blue-700 flex justify-between items-center">
-                        <span>
-                          {clientTodayBookings.length} booking(s) today
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="carer" className="font-medium">Carer</Label>
-                  {isProcessing ? (
-                    <div className="flex items-center space-x-2 p-2 border rounded-md">
-                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                      <span className="text-sm">Processing selection...</span>
-                    </div>
-                  ) : (
-                    <EntitySelector
-                      type="carer"
-                      entities={carers}
-                      selectedEntity={selectedCarerId || null}
-                      onSelect={handleCarerChange}
-                      key={`carer-selector-${carerSelectorKey}`}
-                    />
-                  )}
-                  
-                  {selectedCarerId && (
-                    <div className="bg-purple-50 rounded-md p-3 border border-purple-100 mt-1">
-                      <div className="flex justify-between items-center mb-2">
-                        <h4 className="text-xs font-medium text-purple-800 flex items-center">
-                          <CalendarCheck className="h-3 w-3 mr-1" />
-                          {selectedCarer?.name}'s Schedule for {format(parseISO(bookingDate), 'EEE, MMM d')}
-                        </h4>
-                        
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-6 px-2 text-xs text-purple-700 hover:text-purple-900 hover:bg-purple-100"
-                          onClick={toggleSwapView}
-                        >
-                          {showSwapView ? (
-                            <>
-                              <CalendarCheck className="h-3 w-3 mr-1" />
-                              View Schedule
-                            </>
-                          ) : (
-                            <>
-                              <ArrowLeftRight className="h-3 w-3 mr-1" />
-                              Available Slots
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                      
-                      <ScrollArea className="h-24 w-full">
-                        {!showSwapView ? (
-                          carerTodayBookings.length > 0 ? (
-                            <div className="space-y-1.5 p-1">
-                              {carerTodayBookings.map((b) => (
-                                <div 
-                                  key={b.id} 
-                                  className={`text-xs p-1.5 rounded border ${
-                                    b.id === booking.id ? 'bg-purple-200 border-purple-400' : 
-                                    isConflictingBooking(b) ? 'bg-red-100 border-red-300 animate-pulse' : 
-                                    getStatusColor(b.status)
-                                  } flex justify-between items-center`}
-                                >
-                                  <div className="flex items-center">
-                                    <span className="font-medium">{formatScheduleTimes(b.startTime, b.endTime)}</span>
-                                    <span className="mx-2">•</span>
-                                    <span className="truncate max-w-[100px]">{b.clientName.split(',')[0]}</span>
-                                  </div>
-                                  {isConflictingBooking(b) && b.id !== booking.id && (
-                                    <span className="text-red-600 font-medium flex items-center text-[10px]">
-                                      <AlertTriangle className="h-3 w-3 mr-0.5" />
-                                      Conflict
-                                    </span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="bg-white rounded p-2 text-xs text-purple-700">
-                              No other bookings for today
-                            </div>
-                          )
-                        ) : (
-                          <div>
-                            {availableTimeSlots.length > 0 ? (
-                              <div className="grid grid-cols-2 gap-1.5 p-1">
-                                {availableTimeSlots.slice(0, 10).map((slot, index) => (
-                                  <Button 
-                                    key={index} 
-                                    variant="outline" 
-                                    size="sm"
-                                    className="h-7 text-xs bg-white hover:bg-purple-100"
-                                    onClick={() => handleApplyTimeSlot(slot)}
-                                  >
-                                    {slot.start} - {slot.end}
-                                  </Button>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="bg-white rounded p-2 text-xs text-purple-700">
-                                No available time slots found
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </ScrollArea>
-                      
-                      <div className="mt-2 pt-2 border-t border-purple-200 text-xs text-purple-700 flex justify-between items-center">
-                        <span>
-                          {carerTodayBookings.length} booking(s) today
-                        </span>
-                        {selectedClientId && selectedCarerId && (
-                          <div>
-                            {isConflictingBooking({...booking, startTime, endTime}) ? (
-                              <span className="text-red-600 font-medium flex items-center">
-                                <XCircle className="h-3 w-3 mr-1" />
-                                Schedule conflict detected
-                              </span>
-                            ) : (
-                              <span className="text-green-600 font-medium flex items-center">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Time slot available
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={status}
-                    onValueChange={setStatus}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="assigned">Assigned</SelectItem>
-                      <SelectItem value="unassigned">Unassigned</SelectItem>
-                      <SelectItem value="done">Done</SelectItem>
-                      <SelectItem value="in-progress">In Progress</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                      <SelectItem value="departed">Departed</SelectItem>
-                      <SelectItem value="suspended">Suspended</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Add any notes about this booking"
-                    className="resize-none h-20"
-                  />
-                </div>
               </div>
-            </ScrollArea>
-          )}
-          
-          <DialogFooter className="sm:justify-between border-t pt-4 mt-2">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSave}
-              disabled={!isDataLoaded}
-            >
-              {isDataLoaded ? "Save Changes" : "Loading..."}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <AlertDialog open={showScheduleConflict} onOpenChange={setShowScheduleConflict}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center">
-              <AlertTriangle className="h-5 w-5 text-amber-500 mr-2" />
-              Scheduling Conflict
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This booking time conflicts with another booking for {conflictEntity} on {formatDate(bookingDate)}.
               
-              {conflictType === "client" && (
-                <p className="mt-2 font-medium text-amber-600">
-                  The client already has a booking during this time period.
-                </p>
-              )}
+              <div className="grid gap-2">
+                <Label htmlFor="client" className="font-medium">Client</Label>
+                <EntitySelector
+                  type="client"
+                  entities={clients}
+                  selectedEntity={selectedClientId || null}
+                  onSelect={handleClientChange}
+                  key={`client-selector-${clientSelectorKey}`}
+                />
+              </div>
               
-              {conflictType === "carer" && (
-                <p className="mt-2 font-medium text-amber-600">
-                  The carer already has a booking during this time period.
-                </p>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => setShowScheduleConflict(false)}>
-              Review Schedule
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+              <div className="grid gap-2">
+                <Label htmlFor="carer" className="font-medium">Carer</Label>
+                {isProcessing ? (
+                  <div className="flex items-center space-x-2 p-2 border rounded-md">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <span className="text-sm">Processing selection...</span>
+                  </div>
+                ) : (
+                  <EntitySelector
+                    type="carer"
+                    entities={carers}
+                    selectedEntity={selectedCarerId || null}
+                    onSelect={handleCarerChange}
+                    key={`carer-selector-${carerSelectorKey}`}
+                  />
+                )}
+                
+                {hasValidSelections && (
+                  <div className="mt-2 pt-2 border-t border-slate-200 text-xs text-slate-700 flex justify-between items-center">
+                    <span>
+                      Overlap detection will check when saving
+                    </span>
+                    <div className="text-green-600 font-medium flex items-center">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Ready to save
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={status}
+                  onValueChange={setStatus}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="assigned">Assigned</SelectItem>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    <SelectItem value="done">Done</SelectItem>
+                    <SelectItem value="in-progress">In Progress</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</Select>
+                    <SelectItem value="departed">Departed</SelectItem>
+                    <SelectItem value="suspended">Suspended</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Add any notes about this booking"
+                  className="resize-none h-20"
+                />
+              </div>
+            </div>
+          </ScrollArea>
+        )}
+        
+        <DialogFooter className="sm:justify-between border-t pt-4 mt-2">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSave}
+            disabled={!isDataLoaded || !hasValidSelections}
+          >
+            {isDataLoaded ? "Save Changes" : "Loading..."}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
