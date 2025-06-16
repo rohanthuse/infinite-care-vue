@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw } from "lucide-react";
@@ -11,6 +12,7 @@ import { BookingFilters } from "./BookingFilters";
 import { useBookingData } from "./hooks/useBookingData";
 import { useBookingHandlers } from "./hooks/useBookingHandlers";
 import { useAuth } from "@/hooks/useAuth";
+import { useServices } from "@/data/hooks/useServices";
 import { toast } from "sonner";
 
 interface BookingsTabProps {
@@ -20,10 +22,12 @@ interface BookingsTabProps {
 export function BookingsTab({ branchId }: BookingsTabProps) {
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [viewType, setViewType] = useState<"daily" | "weekly">("daily");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [selectedCarerId, setSelectedCarerId] = useState<string>("");
 
+  const { data: services = [], isLoading: isLoadingServices } = useServices(branchId);
   const { clients, carers, bookings, isLoading } = useBookingData(branchId);
   
   const {
@@ -97,8 +101,10 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       </div>
 
       <DateNavigation 
-        selectedDate={selectedDate} 
-        onDateChange={setSelectedDate} 
+        currentDate={selectedDate} 
+        onDateChange={setSelectedDate}
+        viewType={viewType}
+        onViewTypeChange={setViewType}
       />
       
       <BookingFilters
@@ -126,6 +132,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         onOpenChange={setNewBookingDialogOpen}
         clients={clients}
         carers={carers}
+        services={services}
         onCreateBooking={handleCreateBooking}
         isLoading={createMultipleBookingsMutation.isPending}
         initialData={newBookingData}

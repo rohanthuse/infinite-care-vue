@@ -1,7 +1,8 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
-import { format, addDays, subDays, startOfWeek, endOfWeek } from "date-fns";
+import { format, addDays, subDays, startOfWeek, endOfWeek, isValid } from "date-fns";
 
 interface DateNavigationProps {
   currentDate: Date;
@@ -16,21 +17,24 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
   viewType,
   onViewTypeChange,
 }) => {
+  // Ensure we have a valid date
+  const validDate = isValid(currentDate) ? currentDate : new Date();
+
   const handlePreviousDate = () => {
     if (viewType === "daily") {
-      onDateChange(subDays(currentDate, 1));
+      onDateChange(subDays(validDate, 1));
     } else {
       // For weekly view, go back 7 days
-      onDateChange(subDays(currentDate, 7));
+      onDateChange(subDays(validDate, 7));
     }
   };
 
   const handleNextDate = () => {
     if (viewType === "daily") {
-      onDateChange(addDays(currentDate, 1));
+      onDateChange(addDays(validDate, 1));
     } else {
       // For weekly view, go forward 7 days
-      onDateChange(addDays(currentDate, 7));
+      onDateChange(addDays(validDate, 7));
     }
   };
 
@@ -39,12 +43,17 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
   };
 
   const getDateDisplay = () => {
-    if (viewType === "daily") {
-      return format(currentDate, "dd MMM yyyy");
-    } else {
-      const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-      const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
-      return `${format(weekStart, "dd MMM")} - ${format(weekEnd, "dd MMM yyyy")}`;
+    try {
+      if (viewType === "daily") {
+        return format(validDate, "dd MMM yyyy");
+      } else {
+        const weekStart = startOfWeek(validDate, { weekStartsOn: 1 });
+        const weekEnd = endOfWeek(validDate, { weekStartsOn: 1 });
+        return `${format(weekStart, "dd MMM")} - ${format(weekEnd, "dd MMM yyyy")}`;
+      }
+    } catch (error) {
+      console.error("Date formatting error:", error);
+      return "Invalid Date";
     }
   };
 
