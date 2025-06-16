@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { 
   Select, 
   SelectContent, 
@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { DateRange } from "react-day-picker";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format, addDays, subDays } from "date-fns";
+import { format, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { 
   Calendar as CalendarIcon, 
@@ -21,7 +21,13 @@ import {
   Filter,
   RefreshCw,
   Search, 
-  User
+  User,
+  TrendingUp,
+  Users,
+  CheckCircle,
+  XCircle,
+  Clock,
+  DollarSign
 } from "lucide-react";
 import {
   Table,
@@ -32,11 +38,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Booking } from "./BookingTimeGrid";
 import { toast } from "sonner";
+import { ReportGenerator, ReportData } from "@/services/reportGenerator";
 
 interface BookingReportProps {
   bookings: Booking[];
+  branchName?: string;
 }
 
 // A mapping of status to color for the badges
@@ -50,9 +59,9 @@ const statusColors: Record<string, string> = {
   "suspended": "bg-gray-100 text-gray-800 border-gray-200",
 }
 
-export const BookingReport: React.FC<BookingReportProps> = ({ bookings }) => {
+export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchName = "Med-Infinite Branch" }) => {
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [reportType, setReportType] = useState<string>("all");
+  const [reportType, setReportType] = useState<string>("summary");
   const [status, setStatus] = useState<string>("all");
   const [date, setDate] = useState<DateRange | undefined>({
     from: subDays(new Date(), 7),
@@ -61,6 +70,7 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings }) => {
   const [carerFilter, setCarerFilter] = useState<string>("all");
   const [clientFilter, setClientFilter] = useState<string>("all");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [reportData, setReportData] = useState<ReportData | null>(null);
 
   // Get unique carers and clients for the dropdowns
   const carers = Array.from(new Set(bookings.map(booking => booking.carerId)))
@@ -76,57 +86,134 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings }) => {
     });
 
   // Filter bookings based on current filters
-  const filteredBookings = bookings.filter(booking => {
-    const bookingDate = new Date(booking.date);
-    
-    // Check if booking matches date range
-    const matchesDate = 
-      (!date?.from || bookingDate >= date.from) && 
-      (!date?.to || bookingDate <= date.to);
+  const filteredBookings = useMemo(() => {
+    return bookings.filter(booking => {
+      const bookingDate = new Date(booking.date);
       
-    // Check if booking matches search query
-    const matchesSearch = 
-      searchQuery === "" || 
-      booking.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.carerName.toLowerCase().includes(searchQuery.toLowerCase());
+      // Check if booking matches date range
+      const matchesDate = 
+        (!date?.from || bookingDate >= date.from) && 
+        (!date?.to || bookingDate <= date.to);
+        
+      // Check if booking matches search query
+      const matchesSearch = 
+        searchQuery === "" || 
+        booking.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        booking.carerName.toLowerCase().includes(searchQuery.toLowerCase());
+        
+      // Check if booking matches status filter
+      const matchesStatus = status === "all" || booking.status === status;
       
-    // Check if booking matches status filter
-    const matchesStatus = status === "all" || booking.status === status;
-    
-    // Check if booking matches carer filter
-    const matchesCarer = carerFilter === "all" || booking.carerId === carerFilter;
-    
-    // Check if booking matches client filter
-    const matchesClient = clientFilter === "all" || booking.clientId === clientFilter;
-    
-    return matchesDate && matchesSearch && matchesStatus && matchesCarer && matchesClient;
-  });
+      // Check if booking matches carer filter
+      const matchesCarer = carerFilter === "all" || booking.carerId === carerFilter;
+      
+      // Check if booking matches client filter
+      const matchesClient = clientFilter === "all" || booking.clientId === clientFilter;
+      
+      return matchesDate && matchesSearch && matchesStatus && matchesCarer && matchesClient;
+    });
+  }, [bookings, date, searchQuery, status, carerFilter, clientFilter]);
 
   const handleGenerateReport = () => {
+    if (!date?.from || !date?.to) {
+      toast.error("Please select a date range");
+      return;
+    }
+
     setIsGenerating(true);
     
-    setTimeout(() => {
-      setIsGenerating(false);
+    try {
+      const filters = {
+        dateRange: { from: date.from, to: date.to },
+        status: status !== 'all' ? status : undefined,
+        carerId: carerFilter !== 'all' ? carerFilter : undefined,
+        clientId: clientFilter !== 'all' ? clientFilter : undefined,
+        reportType
+      };
+
+      const generatedReportData = ReportGenerator.generateReportData(bookings, filters);
+      setReportData(generatedReportData);
+      
       toast.success("Report generated successfully", {
-        description: `Generated ${reportType} report with ${filteredBookings.length} bookings`
+        description: `Generated ${reportType} report with ${generatedReportData.totalBookings} bookings`
       });
-    }, 1500);
+    } catch (error) {
+      console.error("Report generation error:", error);
+      toast.error("Failed to generate report", {
+        description: "Please try again or contact support"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
-  const handleExportReport = () => {
+  const handleExportPDF = () => {
+    if (!reportData || !date?.from || !date?.to) {
+      toast.error("Please generate a report first");
+      return;
+    }
+
     setIsGenerating(true);
     
-    setTimeout(() => {
-      setIsGenerating(false);
+    try {
+      const filters = {
+        dateRange: { from: date.from, to: date.to },
+        status: status !== 'all' ? status : undefined,
+        carerId: carerFilter !== 'all' ? carerFilter : undefined,
+        clientId: clientFilter !== 'all' ? clientFilter : undefined,
+        reportType
+      };
+
+      ReportGenerator.generatePDF(reportData, filters, branchName);
+      
       toast.success("Report exported successfully", {
-        description: "The report has been downloaded as a PDF"
+        description: "The PDF report has been downloaded"
       });
-    }, 1500);
+    } catch (error) {
+      console.error("PDF export error:", error);
+      toast.error("Failed to export PDF", {
+        description: "Please try again"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (!date?.from || !date?.to) {
+      toast.error("Please select a date range");
+      return;
+    }
+
+    setIsGenerating(true);
+    
+    try {
+      const filters = {
+        dateRange: { from: date.from, to: date.to },
+        status: status !== 'all' ? status : undefined,
+        carerId: carerFilter !== 'all' ? carerFilter : undefined,
+        clientId: clientFilter !== 'all' ? clientFilter : undefined,
+        reportType
+      };
+
+      ReportGenerator.generateCSV(bookings, filters);
+      
+      toast.success("Data exported successfully", {
+        description: "The CSV file has been downloaded"
+      });
+    } catch (error) {
+      console.error("CSV export error:", error);
+      toast.error("Failed to export CSV", {
+        description: "Please try again"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const resetFilters = () => {
     setSearchQuery("");
-    setReportType("all");
+    setReportType("summary");
     setStatus("all");
     setDate({
       from: subDays(new Date(), 7),
@@ -134,6 +221,7 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings }) => {
     });
     setCarerFilter("all");
     setClientFilter("all");
+    setReportData(null);
   };
 
   return (
@@ -141,7 +229,7 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings }) => {
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-800">Booking Reports</h2>
-          <p className="text-gray-500 mt-1">Generate and export booking reports with custom filters</p>
+          <p className="text-gray-500 mt-1">Generate and export comprehensive booking reports with real data analysis</p>
         </div>
         
         <div className="p-6 space-y-6">
@@ -163,7 +251,6 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings }) => {
                   <SelectValue placeholder="Report Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Bookings</SelectItem>
                   <SelectItem value="summary">Summary Report</SelectItem>
                   <SelectItem value="daily">Daily Report</SelectItem>
                   <SelectItem value="weekly">Weekly Report</SelectItem>
@@ -277,11 +364,19 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings }) => {
             </Button>
             <Button 
               variant="outline" 
-              onClick={handleExportReport}
-              disabled={isGenerating}
+              onClick={handleExportPDF}
+              disabled={isGenerating || !reportData}
             >
               <FileDown className="h-4 w-4 mr-2" />
               Export PDF
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleExportCSV}
+              disabled={isGenerating}
+            >
+              <FileDown className="h-4 w-4 mr-2" />
+              Export CSV
             </Button>
             <Button 
               variant="outline" 
@@ -294,11 +389,122 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings }) => {
         </div>
       </div>
       
+      {/* Report Summary Cards */}
+      {reportData && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{reportData.totalBookings}</div>
+              <p className="text-xs text-muted-foreground">
+                {reportData.completedBookings} completed
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{reportData.completionRate.toFixed(1)}%</div>
+              <p className="text-xs text-muted-foreground">
+                {reportData.cancelledBookings} cancelled
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">£{reportData.totalRevenue.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">
+                Estimated revenue
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avg Duration</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{reportData.averageDuration.toFixed(0)}m</div>
+              <p className="text-xs text-muted-foreground">
+                Per booking
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Top Performers */}
+      {reportData && reportData.topCarers.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Performing Carers</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {reportData.topCarers.map((carer, index) => (
+                  <div key={carer.name} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium">{carer.name}</p>
+                        <p className="text-sm text-gray-500">{carer.bookings} bookings</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="bg-green-50 text-green-700">
+                      {carer.completionRate.toFixed(1)}%
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Most Active Clients</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {reportData.topClients.map((client, index) => (
+                  <div key={client.name} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-sm font-medium">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium">{client.name}</p>
+                        <p className="text-sm text-gray-500">{client.bookings} bookings</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      
       {/* Report Results Table */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800">
-            Report Results 
+            Detailed Booking Data 
             <span className="text-sm font-normal text-gray-500 ml-2">
               ({filteredBookings.length} bookings)
             </span>
@@ -315,34 +521,43 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings }) => {
                 <TableHead>Client</TableHead>
                 <TableHead>Carer</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Notes</TableHead>
+                <TableHead>Duration</TableHead>
+                <TableHead>Est. Revenue</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredBookings.length > 0 ? (
-                filteredBookings.map((booking) => (
-                  <TableRow key={booking.id}>
-                    <TableCell className="font-medium">{booking.id}</TableCell>
-                    <TableCell>{booking.date}</TableCell>
-                    <TableCell>{booking.startTime} - {booking.endTime}</TableCell>
-                    <TableCell>{booking.clientName}</TableCell>
-                    <TableCell>{booking.carerName}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant="outline" 
-                        className={cn("capitalize", statusColors[booking.status] || "bg-gray-100")}
-                      >
-                        {booking.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="max-w-[200px] truncate">
-                      {booking.notes || "-"}
-                    </TableCell>
-                  </TableRow>
-                ))
+                filteredBookings.map((booking) => {
+                  const duration = (() => {
+                    const [startHour, startMin] = booking.startTime.split(':').map(Number);
+                    const [endHour, endMin] = booking.endTime.split(':').map(Number);
+                    return (endHour * 60 + endMin) - (startHour * 60 + startMin);
+                  })();
+                  const revenue = (duration / 60) * 25; // £25 per hour base rate
+                  
+                  return (
+                    <TableRow key={booking.id}>
+                      <TableCell className="font-medium">{booking.id.slice(0, 8)}...</TableCell>
+                      <TableCell>{format(new Date(booking.date), 'MMM dd, yyyy')}</TableCell>
+                      <TableCell>{booking.startTime} - {booking.endTime}</TableCell>
+                      <TableCell>{booking.clientName}</TableCell>
+                      <TableCell>{booking.carerName}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="outline" 
+                          className={cn("capitalize", statusColors[booking.status] || "bg-gray-100")}
+                        >
+                          {booking.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{duration}m</TableCell>
+                      <TableCell>£{revenue.toFixed(2)}</TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
+                  <TableCell colSpan={8} className="h-24 text-center">
                     No bookings found for the selected filters
                   </TableCell>
                 </TableRow>

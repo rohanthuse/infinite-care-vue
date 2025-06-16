@@ -109,6 +109,7 @@ export interface BookingsTabProps {
 
 export const BookingsTab: React.FC<BookingsTabProps> = ({
   branchId,
+  branchName,
 }) => {
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -548,7 +549,7 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
         </>
       )}
       {activeTab === "list" && <BookingsList bookings={filteredBookings} />}
-      {activeTab === "report" && <BookingReport bookings={filteredBookings} />}
+      {activeTab === "report" && <BookingReport bookings={filteredBookings} branchName={branchName} />}
       <NewBookingDialog
         open={newBookingDialogOpen}
         onOpenChange={setNewBookingDialogOpen}
