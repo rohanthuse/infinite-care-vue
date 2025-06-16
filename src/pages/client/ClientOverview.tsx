@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, FileText, CreditCard, Clock } from "lucide-react";
@@ -10,11 +11,14 @@ import { format, parseISO, differenceInDays } from "date-fns";
 
 const ClientOverview = () => {
   const { user } = useAuth();
-  const { data: clientProfile, isLoading: profileLoading } = useClientProfile();
   
-  // Now we pass the clientId explicitly to avoid circular dependencies
-  const { data: carePlans, isLoading: carePlansLoading } = useClientCarePlans(clientProfile?.id || '');
-  const { data: appointments, isLoading: appointmentsLoading } = useClientAppointments(clientProfile?.id || '');
+  // For now, we'll use the user's ID as the client ID
+  // In a real implementation, you'd get this from the client context or route params
+  const clientId = user?.id || '';
+  
+  const { data: clientProfile, isLoading: profileLoading } = useClientProfile(clientId);
+  const { data: carePlans, isLoading: carePlansLoading } = useClientCarePlans(clientId);
+  const { data: appointments, isLoading: appointmentsLoading } = useClientAppointments(clientId);
   
   const [carePlanDialogOpen, setCarePlanDialogOpen] = useState(false);
   const [isRescheduling, setIsRescheduling] = useState(false);

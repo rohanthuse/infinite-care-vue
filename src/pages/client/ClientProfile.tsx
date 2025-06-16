@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,11 @@ const ClientProfile = () => {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { data: clientProfile, isLoading } = useClientProfile();
+  // For now, we'll use the user's ID as the client ID
+  // In a real implementation, you'd get this from the client context or route params
+  const clientId = user?.id || '';
+  
+  const { data: clientProfile, isLoading } = useClientProfile(clientId);
   const updateClientMutation = useUpdateClientProfile();
   
   // Local state for form data
@@ -103,8 +108,20 @@ const ClientProfile = () => {
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID is required to update profile.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
-      await updateClientMutation.mutateAsync(profile);
+      await updateClientMutation.mutateAsync({
+        clientId: clientId,
+        updates: profile
+      });
       
       toast({
         title: "Profile updated",
