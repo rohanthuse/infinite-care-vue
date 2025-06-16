@@ -68,9 +68,10 @@ interface BookingTimeGridProps {
   viewType: "daily" | "weekly";
   viewMode: "client" | "group";
   onCreateBooking?: (date: Date, time: string, clientId?: string, carerId?: string) => void;
-  onUpdateBooking?: (booking: Booking) => void;
+  onUpdateBooking?: (booking: Booking, carers: Carer[]) => void;
   onEditBooking?: (booking: Booking) => void;
   isUpdatingBooking?: boolean;
+  isCheckingOverlap?: boolean;
 }
 
 interface PendingBookingMove {
@@ -94,6 +95,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   onUpdateBooking,
   onEditBooking,
   isUpdatingBooking,
+  isCheckingOverlap = false,
 }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -288,14 +290,17 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     setEditBookingDialogOpen(true);
   };
 
+  // Use the overlap-aware update handler passed from parent
   const handleUpdateBooking = (updatedBooking: Booking) => {
+    // Update local state for immediate UI feedback
     const updatedBookings = localBookings.map(b => 
       b.id === updatedBooking.id ? updatedBooking : b
     );
     setLocalBookings(updatedBookings);
     
+    // Use the parent's overlap-aware update handler
     if (onUpdateBooking) {
-      onUpdateBooking(updatedBooking);
+      onUpdateBooking(updatedBooking, carers);
     }
   };
 
@@ -342,7 +347,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     const booking = localBookings.find(b => b.id === draggableId);
     if (!booking) return;
 
-    // --- FIX: Use format() instead of .toISOString().slice(0, 10)
     let bkDate = booking.date;
     const parts = destination.droppableId.split('-');
     const type = parts[0];
@@ -357,12 +361,10 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
       bkDate = format(date, 'yyyy-MM-dd');
     }
 
-    // Calculate duration
     const [sh, sm] = booking.startTime.split(":").map(Number);
     const [eh, em] = booking.endTime.split(":").map(Number);
     const duration = (eh * 60 + em) - (sh * 60 + sm);
 
-    // Compute end time. Clamp to max 22:00.
     let [nh, nm] = newStartTime.split(":").map(Number);
     let newEnd = nh * 60 + nm + duration;
     let endHour = Math.floor(newEnd / 60);
@@ -373,7 +375,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     }
     const newEndTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
 
-    // Always ask for confirmation
     setPendingBookingMove({
       booking,
       newDate: bkDate,
@@ -384,7 +385,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
       originalEndTime: booking.endTime
     });
     setConfirmDialogOpen(true);
-    // ES: pointer memory cleanup for next drag
     delete window._lastBookingPointerY;
   };
 
@@ -413,11 +413,10 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     setLocalBookings(updatedBookings);
     
     if (onUpdateBooking) {
-      onUpdateBooking(updatedBooking);
+      onUpdateBooking(updatedBooking, carers);
       toast.success(`Booking updated: ${updatedBooking.startTime} - ${updatedBooking.endTime}`);
     }
     
-    // Close dialog and clear pending move
     setConfirmDialogOpen(false);
     setPendingBookingMove(null);
   };
@@ -662,6 +661,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
         clients={clients}
         carers={carers}
         onUpdateBooking={handleUpdateBooking}
+        isCheckingOverlap={isCheckingOverlap}
       />
 
       {/* Confirmation Dialog */}
