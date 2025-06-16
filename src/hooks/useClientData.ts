@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
+// Completely isolated interfaces - no complex generics
 export interface ClientProfile {
   id: string;
   first_name: string;
@@ -57,44 +58,43 @@ export interface ClientAppointment {
   updated_at: string;
 }
 
-// Simple data fetching functions that return unknown and cast explicitly
-const fetchClientProfile = async (userId: string): Promise<ClientProfile> => {
-  const response = await supabase
+// Type-safe data fetchers with explicit return types
+async function fetchClientProfile(userId: string): Promise<ClientProfile> {
+  const { data, error } = await supabase
     .from('clients')
     .select('*')
     .eq('user_id', userId)
     .single();
 
-  if (response.error) throw response.error;
+  if (error) throw error;
   
-  const rawData = response.data as any;
+  // Manual construction to avoid type inference
   return {
-    id: rawData.id,
-    first_name: rawData.first_name,
-    last_name: rawData.last_name,
-    email: rawData.email,
-    phone: rawData.phone,
-    date_of_birth: rawData.date_of_birth,
-    address: rawData.address,
-    gender: rawData.gender,
-    preferred_name: rawData.preferred_name,
-    status: rawData.status,
-    branch_id: rawData.branch_id,
-    user_id: rawData.user_id,
+    id: data.id,
+    first_name: data.first_name,
+    last_name: data.last_name,
+    email: data.email,
+    phone: data.phone,
+    date_of_birth: data.date_of_birth,
+    address: data.address,
+    gender: data.gender,
+    preferred_name: data.preferred_name,
+    status: data.status,
+    branch_id: data.branch_id,
+    user_id: data.user_id,
   };
-};
+}
 
-const fetchClientCarePlans = async (clientId: string): Promise<ClientCarePlan[]> => {
-  const response = await supabase
+async function fetchClientCarePlans(clientId: string): Promise<ClientCarePlan[]> {
+  const { data, error } = await supabase
     .from('client_care_plans')
     .select('*')
     .eq('client_id', clientId)
     .order('created_at', { ascending: false });
 
-  if (response.error) throw response.error;
+  if (error) throw error;
   
-  const rawData = response.data as any[];
-  return rawData.map(item => ({
+  return (data as any[]).map((item: any): ClientCarePlan => ({
     id: item.id,
     client_id: item.client_id,
     title: item.title,
@@ -107,19 +107,18 @@ const fetchClientCarePlans = async (clientId: string): Promise<ClientCarePlan[]>
     created_at: item.created_at,
     updated_at: item.updated_at,
   }));
-};
+}
 
-const fetchCarePlanGoals = async (carePlanId: string): Promise<ClientCarePlanGoal[]> => {
-  const response = await supabase
+async function fetchCarePlanGoals(carePlanId: string): Promise<ClientCarePlanGoal[]> {
+  const { data, error } = await supabase
     .from('client_care_plan_goals')
     .select('*')
     .eq('care_plan_id', carePlanId)
     .order('created_at', { ascending: false });
 
-  if (response.error) throw response.error;
+  if (error) throw error;
   
-  const rawData = response.data as any[];
-  return rawData.map(item => ({
+  return (data as any[]).map((item: any): ClientCarePlanGoal => ({
     id: item.id,
     care_plan_id: item.care_plan_id,
     description: item.description,
@@ -129,19 +128,18 @@ const fetchCarePlanGoals = async (carePlanId: string): Promise<ClientCarePlanGoa
     created_at: item.created_at,
     updated_at: item.updated_at,
   }));
-};
+}
 
-const fetchClientAppointments = async (clientId: string): Promise<ClientAppointment[]> => {
-  const response = await supabase
+async function fetchClientAppointments(clientId: string): Promise<ClientAppointment[]> {
+  const { data, error } = await supabase
     .from('client_appointments')
     .select('*')
     .eq('client_id', clientId)
     .order('appointment_date', { ascending: true });
 
-  if (response.error) throw response.error;
+  if (error) throw error;
   
-  const rawData = response.data as any[];
-  return rawData.map(item => ({
+  return (data as any[]).map((item: any): ClientAppointment => ({
     id: item.id,
     client_id: item.client_id,
     appointment_type: item.appointment_type,
@@ -154,17 +152,17 @@ const fetchClientAppointments = async (clientId: string): Promise<ClientAppointm
     created_at: item.created_at,
     updated_at: item.updated_at,
   }));
-};
+}
 
-// Hook implementations using the separate functions
+// Hooks with minimal type inference
 export const useClientProfile = () => {
   const { user } = useAuth();
   
   return useQuery({
     queryKey: ['client-profile', user?.id],
-    queryFn: () => {
+    queryFn: async () => {
       if (!user?.id) throw new Error('No authenticated user');
-      return fetchClientProfile(user.id);
+      return await fetchClientProfile(user.id);
     },
     enabled: !!user?.id,
   });
@@ -173,9 +171,9 @@ export const useClientProfile = () => {
 export const useClientCarePlans = (clientId: string) => {
   return useQuery({
     queryKey: ['client-care-plans', clientId],
-    queryFn: () => {
+    queryFn: async () => {
       if (!clientId) throw new Error('No client ID provided');
-      return fetchClientCarePlans(clientId);
+      return await fetchClientCarePlans(clientId);
     },
     enabled: !!clientId,
   });
@@ -184,7 +182,7 @@ export const useClientCarePlans = (clientId: string) => {
 export const useCarePlanGoals = (carePlanId: string) => {
   return useQuery({
     queryKey: ['care-plan-goals', carePlanId],
-    queryFn: () => fetchCarePlanGoals(carePlanId),
+    queryFn: async () => await fetchCarePlanGoals(carePlanId),
     enabled: !!carePlanId,
   });
 };
@@ -192,15 +190,15 @@ export const useCarePlanGoals = (carePlanId: string) => {
 export const useClientAppointments = (clientId: string) => {
   return useQuery({
     queryKey: ['client-appointments', clientId],
-    queryFn: () => {
+    queryFn: async () => {
       if (!clientId) throw new Error('No client ID provided');
-      return fetchClientAppointments(clientId);
+      return await fetchClientAppointments(clientId);
     },
     enabled: !!clientId,
   });
 };
 
-// Mutation hooks
+// Mutation hooks with explicit typing
 export const useUpdateClientProfile = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -209,29 +207,28 @@ export const useUpdateClientProfile = () => {
     mutationFn: async (updates: Partial<ClientProfile>) => {
       if (!user?.id) throw new Error('No authenticated user');
 
-      const response = await supabase
+      const { data, error } = await supabase
         .from('clients')
         .update(updates)
         .eq('user_id', user.id)
         .select()
         .single();
 
-      if (response.error) throw response.error;
+      if (error) throw error;
       
-      const rawData = response.data as any;
       return {
-        id: rawData.id,
-        first_name: rawData.first_name,
-        last_name: rawData.last_name,
-        email: rawData.email,
-        phone: rawData.phone,
-        date_of_birth: rawData.date_of_birth,
-        address: rawData.address,
-        gender: rawData.gender,
-        preferred_name: rawData.preferred_name,
-        status: rawData.status,
-        branch_id: rawData.branch_id,
-        user_id: rawData.user_id,
+        id: data.id,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        phone: data.phone,
+        date_of_birth: data.date_of_birth,
+        address: data.address,
+        gender: data.gender,
+        preferred_name: data.preferred_name,
+        status: data.status,
+        branch_id: data.branch_id,
+        user_id: data.user_id,
       } as ClientProfile;
     },
     onSuccess: () => {
@@ -245,25 +242,24 @@ export const useUpdateCarePlanGoal = () => {
 
   return useMutation({
     mutationFn: async ({ goalId, updates }: { goalId: string; updates: Partial<ClientCarePlanGoal> }) => {
-      const response = await supabase
+      const { data, error } = await supabase
         .from('client_care_plan_goals')
         .update(updates)
         .eq('id', goalId)
         .select()
         .single();
 
-      if (response.error) throw response.error;
+      if (error) throw error;
       
-      const rawData = response.data as any;
       return {
-        id: rawData.id,
-        care_plan_id: rawData.care_plan_id,
-        description: rawData.description,
-        status: rawData.status,
-        progress: rawData.progress,
-        notes: rawData.notes,
-        created_at: rawData.created_at,
-        updated_at: rawData.updated_at,
+        id: data.id,
+        care_plan_id: data.care_plan_id,
+        description: data.description,
+        status: data.status,
+        progress: data.progress,
+        notes: data.notes,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
       } as ClientCarePlanGoal;
     },
     onSuccess: (data) => {
@@ -277,7 +273,7 @@ export const useRescheduleAppointment = () => {
 
   return useMutation({
     mutationFn: async ({ appointmentId, newDate, newTime }: { appointmentId: string; newDate: string; newTime: string }) => {
-      const response = await supabase
+      const { data, error } = await supabase
         .from('client_appointments')
         .update({
           appointment_date: newDate,
@@ -288,21 +284,20 @@ export const useRescheduleAppointment = () => {
         .select()
         .single();
 
-      if (response.error) throw response.error;
+      if (error) throw error;
       
-      const rawData = response.data as any;
       return {
-        id: rawData.id,
-        client_id: rawData.client_id,
-        appointment_type: rawData.appointment_type,
-        appointment_date: rawData.appointment_date,
-        appointment_time: rawData.appointment_time,
-        provider_name: rawData.provider_name,
-        location: rawData.location,
-        status: rawData.status,
-        notes: rawData.notes,
-        created_at: rawData.created_at,
-        updated_at: rawData.updated_at,
+        id: data.id,
+        client_id: data.client_id,
+        appointment_type: data.appointment_type,
+        appointment_date: data.appointment_date,
+        appointment_time: data.appointment_time,
+        provider_name: data.provider_name,
+        location: data.location,
+        status: data.status,
+        notes: data.notes,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
       } as ClientAppointment;
     },
     onSuccess: (data) => {
