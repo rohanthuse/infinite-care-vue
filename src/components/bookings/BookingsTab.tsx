@@ -20,13 +20,11 @@ import { filterBookings, getStatusCounts } from "./utils/bookingUtils";
 export interface BookingsTabProps {
   branchId?: string;
   branchName?: string;
-  hideNewBookingButton?: boolean;
 }
 
 export const BookingsTab: React.FC<BookingsTabProps> = ({
   branchId,
   branchName,
-  hideNewBookingButton = false,
 }) => {
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -95,17 +93,15 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
                 <span>Create Admin</span>
               </Button>
             )}
-            {!hideNewBookingButton && (
-              <Button
-                onClick={handleNewBooking}
-                variant="default"
-                className="h-9 bg-blue-600 hover:bg-blue-700 rounded-full px-3 shadow-sm"
-                disabled={!user}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                <span>New Booking</span>
-              </Button>
-            )}
+            <Button
+              onClick={handleNewBooking}
+              variant="default"
+              className="h-9 bg-blue-600 hover:bg-blue-700 rounded-full px-3 shadow-sm"
+              disabled={!user}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              <span>New Booking</span>
+            </Button>
           </div>
         </div>
       </div>
