@@ -61,7 +61,7 @@ export interface ClientAppointment {
 export const useClientProfile = () => {
   const { user } = useAuth();
   
-  return useQuery<ClientProfile>({
+  return useQuery({
     queryKey: ['client-profile', user?.id],
     queryFn: async (): Promise<ClientProfile> => {
       if (!user?.id) throw new Error('No authenticated user');
@@ -81,7 +81,7 @@ export const useClientProfile = () => {
 
 // Hook to get client care plans - completely independent, requires clientId
 export const useClientCarePlans = (clientId: string) => {
-  return useQuery<ClientCarePlan[]>({
+  return useQuery({
     queryKey: ['client-care-plans', clientId],
     queryFn: async (): Promise<ClientCarePlan[]> => {
       if (!clientId) throw new Error('No client ID provided');
@@ -101,7 +101,7 @@ export const useClientCarePlans = (clientId: string) => {
 
 // Hook to get care plan goals - completely independent
 export const useCarePlanGoals = (carePlanId: string) => {
-  return useQuery<ClientCarePlanGoal[]>({
+  return useQuery({
     queryKey: ['care-plan-goals', carePlanId],
     queryFn: async (): Promise<ClientCarePlanGoal[]> => {
       const { data, error } = await supabase
@@ -119,7 +119,7 @@ export const useCarePlanGoals = (carePlanId: string) => {
 
 // Hook to get client appointments - completely independent, requires clientId
 export const useClientAppointments = (clientId: string) => {
-  return useQuery<ClientAppointment[]>({
+  return useQuery({
     queryKey: ['client-appointments', clientId],
     queryFn: async (): Promise<ClientAppointment[]> => {
       if (!clientId) throw new Error('No client ID provided');
@@ -142,7 +142,7 @@ export const useUpdateClientProfile = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  return useMutation<ClientProfile, Error, Partial<ClientProfile>>({
+  return useMutation({
     mutationFn: async (updates: Partial<ClientProfile>): Promise<ClientProfile> => {
       if (!user?.id) throw new Error('No authenticated user');
 
@@ -166,8 +166,8 @@ export const useUpdateClientProfile = () => {
 export const useUpdateCarePlanGoal = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<ClientCarePlanGoal, Error, { goalId: string; updates: Partial<ClientCarePlanGoal> }>({
-    mutationFn: async ({ goalId, updates }): Promise<ClientCarePlanGoal> => {
+  return useMutation({
+    mutationFn: async ({ goalId, updates }: { goalId: string; updates: Partial<ClientCarePlanGoal> }): Promise<ClientCarePlanGoal> => {
       const { data, error } = await supabase
         .from('client_care_plan_goals')
         .update(updates)
@@ -188,8 +188,8 @@ export const useUpdateCarePlanGoal = () => {
 export const useRescheduleAppointment = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<ClientAppointment, Error, { appointmentId: string; newDate: string; newTime: string }>({
-    mutationFn: async ({ appointmentId, newDate, newTime }): Promise<ClientAppointment> => {
+  return useMutation({
+    mutationFn: async ({ appointmentId, newDate, newTime }: { appointmentId: string; newDate: string; newTime: string }): Promise<ClientAppointment> => {
       const { data, error } = await supabase
         .from('client_appointments')
         .update({
