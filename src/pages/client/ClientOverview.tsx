@@ -5,93 +5,19 @@ import { Calendar, FileText, CreditCard, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClientCarePlanDetailDialog } from "@/components/client/ClientCarePlanDetailDialog";
 import { RescheduleAppointmentDialog } from "@/components/client/RescheduleAppointmentDialog";
+import { useClientProfile, useClientCarePlans, useClientAppointments } from "@/hooks/useClientData";
+import { useAuth } from "@/hooks/useAuth";
+import { format, parseISO, differenceInDays } from "date-fns";
 
 const ClientOverview = () => {
+  const { user } = useAuth();
+  const { data: clientProfile, isLoading: profileLoading } = useClientProfile();
+  const { data: carePlans, isLoading: carePlansLoading } = useClientCarePlans();
+  const { data: appointments, isLoading: appointmentsLoading } = useClientAppointments();
+  
   const [carePlanDialogOpen, setCarePlanDialogOpen] = useState(false);
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
-  
-  // Mock care plan data (this would be fetched from an API in a real application)
-  const carePlan = {
-    id: 1,
-    title: "Rehabilitation Care Plan",
-    createdAt: "March 15, 2025",
-    updatedAt: "April 25, 2025",
-    reviewDate: "May 25, 2025",
-    provider: "Dr. Emily Smith",
-    goalsProgress: 65,
-    goals: [
-      {
-        id: 1,
-        description: "Improve mobility in left leg",
-        status: "in-progress",
-        progress: 70,
-        notes: "Making good progress with physical therapy exercises"
-      },
-      {
-        id: 2,
-        description: "Complete daily exercises",
-        status: "in-progress",
-        progress: 85,
-        notes: "Consistent with morning exercises, sometimes missing evening routine"
-      },
-      {
-        id: 3,
-        description: "Maintain healthy diet",
-        status: "in-progress",
-        progress: 60,
-        notes: "Following meal plan with occasional deviations"
-      },
-      {
-        id: 4,
-        description: "Reduce pain medication",
-        status: "not-started",
-        progress: 0,
-        notes: "Will begin after consultation with pain specialist"
-      }
-    ],
-    medications: [
-      {
-        id: 1,
-        name: "Ibuprofen",
-        dosage: "400mg",
-        frequency: "Twice daily",
-        startDate: "March 20, 2025",
-        endDate: "Ongoing"
-      },
-      {
-        id: 2,
-        name: "Vitamin D",
-        dosage: "2000 IU",
-        frequency: "Once daily",
-        startDate: "March 15, 2025",
-        endDate: "Ongoing"
-      }
-    ],
-    activities: [
-      {
-        id: 1,
-        name: "Morning Stretches",
-        description: "15 minutes of stretching focusing on lower body",
-        frequency: "Daily",
-        status: "active"
-      },
-      {
-        id: 2,
-        name: "Walking",
-        description: "30 minutes of walking with support",
-        frequency: "3 times per week",
-        status: "active"
-      },
-      {
-        id: 3,
-        name: "Resistance Training",
-        description: "Light resistance exercises for upper body strength",
-        frequency: "2 times per week",
-        status: "active"
-      }
-    ]
-  };
 
   // Handle reschedule button click
   const handleReschedule = (appointment: any) => {
@@ -99,12 +25,42 @@ const ClientOverview = () => {
     setIsRescheduling(true);
   };
 
+  if (profileLoading || carePlansLoading || appointmentsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Get upcoming appointments (next 30 days)
+  const upcomingAppointments = appointments?.filter(apt => {
+    const appointmentDate = parseISO(apt.appointment_date);
+    const today = new Date();
+    const daysDiff = differenceInDays(appointmentDate, today);
+    return daysDiff >= 0 && daysDiff <= 30;
+  }) || [];
+
+  // Get active care plans
+  const activeCarePlans = carePlans?.filter(plan => plan.status === 'active') || [];
+
+  // Calculate next review date
+  const nextReview = activeCarePlans.find(plan => plan.review_date)?.review_date;
+  const daysUntilReview = nextReview ? differenceInDays(parseISO(nextReview), new Date()) : null;
+
+  // Mock payment data (this would come from client_billing table)
+  const mockPaymentDue = 150.00;
+
   return (
     <div className="space-y-8">
       {/* Welcome Banner */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-xl">
-        <h2 className="text-2xl font-bold">Welcome back, {localStorage.getItem("clientName")}</h2>
-        <p className="mt-2 text-blue-100">Welcome to your personal health dashboard. Here's a summary of your care plan and upcoming appointments.</p>
+        <h2 className="text-2xl font-bold">
+          Welcome back, {clientProfile?.preferred_name || clientProfile?.first_name || 'Client'}
+        </h2>
+        <p className="mt-2 text-blue-100">
+          Welcome to your personal health dashboard. Here's a summary of your care plan and upcoming appointments.
+        </p>
       </div>
       
       {/* Stats Cards */}
@@ -115,10 +71,15 @@ const ClientOverview = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">2</div>
+              <div className="text-2xl font-bold">{upcomingAppointments.length}</div>
               <Calendar className="h-5 w-5 text-blue-600" />
             </div>
-            <p className="text-xs text-gray-500 mt-2">Next: Therapy Session, May 3</p>
+            <p className="text-xs text-gray-500 mt-2">
+              {upcomingAppointments.length > 0 
+                ? `Next: ${format(parseISO(upcomingAppointments[0].appointment_date), 'MMM d')}`
+                : 'No upcoming appointments'
+              }
+            </p>
           </CardContent>
         </Card>
         
@@ -128,10 +89,15 @@ const ClientOverview = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">1</div>
+              <div className="text-2xl font-bold">{activeCarePlans.length}</div>
               <FileText className="h-5 w-5 text-blue-600" />
             </div>
-            <p className="text-xs text-gray-500 mt-2">Updated: 2 days ago</p>
+            <p className="text-xs text-gray-500 mt-2">
+              {activeCarePlans.length > 0 
+                ? `Updated: ${format(parseISO(activeCarePlans[0].updated_at), 'MMM d')}`
+                : 'No active care plans'
+              }
+            </p>
           </CardContent>
         </Card>
         
@@ -141,7 +107,7 @@ const ClientOverview = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">$150.00</div>
+              <div className="text-2xl font-bold">${mockPaymentDue.toFixed(2)}</div>
               <CreditCard className="h-5 w-5 text-blue-600" />
             </div>
             <p className="text-xs text-gray-500 mt-2">Due: May 15, 2025</p>
@@ -154,10 +120,14 @@ const ClientOverview = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">21 Days</div>
+              <div className="text-2xl font-bold">
+                {daysUntilReview !== null ? `${daysUntilReview} Days` : 'N/A'}
+              </div>
               <Clock className="h-5 w-5 text-blue-600" />
             </div>
-            <p className="text-xs text-gray-500 mt-2">Care Plan Review: May 25</p>
+            <p className="text-xs text-gray-500 mt-2">
+              {nextReview ? `Care Plan Review: ${format(parseISO(nextReview), 'MMM d')}` : 'No review scheduled'}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -168,55 +138,40 @@ const ClientOverview = () => {
           <h3 className="text-lg font-bold">Upcoming Appointments</h3>
         </div>
         <div className="divide-y divide-gray-200">
-          <div className="p-6 flex justify-between items-center">
-            <div>
-              <p className="font-medium">Therapy Session</p>
-              <p className="text-sm text-gray-500">Dr. Smith, Physical Therapist</p>
-              <div className="flex items-center mt-2 text-xs text-gray-500">
-                <Calendar className="h-3 w-3 mr-1" />
-                <span>May 3, 2025 • 10:00 AM</span>
+          {upcomingAppointments.length > 0 ? (
+            upcomingAppointments.slice(0, 3).map((appointment) => (
+              <div key={appointment.id} className="p-6 flex justify-between items-center">
+                <div>
+                  <p className="font-medium">{appointment.appointment_type}</p>
+                  <p className="text-sm text-gray-500">{appointment.provider_name}</p>
+                  <div className="flex items-center mt-2 text-xs text-gray-500">
+                    <Calendar className="h-3 w-3 mr-1" />
+                    <span>
+                      {format(parseISO(appointment.appointment_date), 'MMM d, yyyy')} • {appointment.appointment_time}
+                    </span>
+                  </div>
+                </div>
+                <Button 
+                  size="sm" 
+                  onClick={() => handleReschedule({
+                    id: appointment.id,
+                    type: appointment.appointment_type,
+                    provider: appointment.provider_name,
+                    date: format(parseISO(appointment.appointment_date), 'MMM d, yyyy'),
+                    time: appointment.appointment_time,
+                    location: appointment.location,
+                    status: appointment.status
+                  })}
+                >
+                  Reschedule
+                </Button>
               </div>
+            ))
+          ) : (
+            <div className="p-6 text-center text-gray-500">
+              No upcoming appointments scheduled
             </div>
-            <Button 
-              size="sm" 
-              onClick={() => handleReschedule({
-                id: 1,
-                type: "Therapy Session",
-                provider: "Dr. Smith, Physical Therapist",
-                date: "May 3, 2025",
-                time: "10:00 AM",
-                location: "Main Clinic, Room 204",
-                status: "confirmed"
-              })}
-            >
-              Reschedule
-            </Button>
-          </div>
-          
-          <div className="p-6 flex justify-between items-center">
-            <div>
-              <p className="font-medium">Weekly Check-in</p>
-              <p className="text-sm text-gray-500">Nurse Johnson</p>
-              <div className="flex items-center mt-2 text-xs text-gray-500">
-                <Calendar className="h-3 w-3 mr-1" />
-                <span>May 10, 2025 • 2:00 PM</span>
-              </div>
-            </div>
-            <Button 
-              size="sm"
-              onClick={() => handleReschedule({
-                id: 2,
-                type: "Weekly Check-in",
-                provider: "Nurse Johnson",
-                date: "May 10, 2025",
-                time: "2:00 PM",
-                location: "Video Call",
-                status: "confirmed"
-              })}
-            >
-              Reschedule
-            </Button>
-          </div>
+          )}
         </div>
       </div>
       
@@ -228,52 +183,60 @@ const ClientOverview = () => {
             variant="outline" 
             size="sm"
             onClick={() => setCarePlanDialogOpen(true)}
+            disabled={activeCarePlans.length === 0}
           >
             View Full Plan
           </Button>
         </div>
         <div className="p-6">
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-medium text-gray-900">Current Goals</h4>
-              <ul className="mt-2 space-y-2">
-                <li className="flex items-start">
-                  <div className="h-5 w-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs mr-2 mt-0.5">
-                    1
-                  </div>
-                  <span>Improve mobility in left leg</span>
-                </li>
-                <li className="flex items-start">
-                  <div className="h-5 w-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs mr-2 mt-0.5">
-                    2
-                  </div>
-                  <span>Complete daily exercises</span>
-                </li>
-                <li className="flex items-start">
-                  <div className="h-5 w-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs mr-2 mt-0.5">
-                    3
-                  </div>
-                  <span>Maintain healthy diet</span>
-                </li>
-              </ul>
+          {activeCarePlans.length > 0 ? (
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium text-gray-900">Active Care Plan</h4>
+                <p className="text-sm text-gray-600 mt-1">{activeCarePlans[0].title}</p>
+                <p className="text-sm text-gray-500">Provider: {activeCarePlans[0].provider_name}</p>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-gray-900">Progress</h4>
+                <div className="mt-2 bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full" 
+                    style={{ width: `${activeCarePlans[0].goals_progress || 0}%` }}
+                  ></div>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  {activeCarePlans[0].goals_progress || 0}% complete
+                </p>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-gray-900">Next Steps</h4>
+                <p className="mt-1 text-sm text-gray-600">
+                  {nextReview 
+                    ? `Your next care plan review is scheduled for ${format(parseISO(nextReview), 'MMM d, yyyy')}. Please complete your weekly self-assessment forms before this date.`
+                    : 'Continue following your care plan. Contact your provider if you have any questions.'
+                  }
+                </p>
+              </div>
             </div>
-            
-            <div>
-              <h4 className="font-medium text-gray-900">Next Steps</h4>
-              <p className="mt-1 text-sm text-gray-600">
-                Your next care plan review is scheduled for May 25. Please complete your weekly self-assessment forms before this date.
-              </p>
+          ) : (
+            <div className="text-center text-gray-500 py-8">
+              <p>No active care plans found.</p>
+              <p className="text-sm mt-1">Contact your provider to set up a care plan.</p>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
       {/* Care Plan Detail Dialog */}
-      <ClientCarePlanDetailDialog
-        open={carePlanDialogOpen}
-        onOpenChange={setCarePlanDialogOpen}
-        carePlan={carePlan}
-      />
+      {activeCarePlans.length > 0 && (
+        <ClientCarePlanDetailDialog
+          open={carePlanDialogOpen}
+          onOpenChange={setCarePlanDialogOpen}
+          carePlan={activeCarePlans[0]}
+        />
+      )}
 
       {/* Reschedule Appointment Dialog */}
       {selectedAppointment && (

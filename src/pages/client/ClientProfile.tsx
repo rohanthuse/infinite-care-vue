@@ -9,43 +9,48 @@ import { User, Lock, Shield, Bell, Eye, EyeOff, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { useClientProfile, useUpdateClientProfile } from "@/hooks/useClientData";
+import { useAuth } from "@/hooks/useAuth";
 
 const ClientProfile = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Mock client data
+  const { data: clientProfile, isLoading } = useClientProfile();
+  const updateClientMutation = useUpdateClientProfile();
+  
+  // Local state for form data
   const [profile, setProfile] = useState({
-    name: "Prasad K",
-    email: "prasad.k@example.com",
-    phone: "+1 (555) 123-4567",
-    address: "123 Main Street, Apt 4B",
-    city: "New York",
-    state: "NY",
-    zipCode: "10001",
-    country: "United States",
-    dateOfBirth: "1985-06-15",
-    emergencyContact: "Sarah K",
-    emergencyPhone: "+1 (555) 987-6543"
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    address: "",
+    date_of_birth: "",
+    preferred_name: "",
+    gender: ""
   });
 
   // Photo state
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
-  // Load saved profile from localStorage on component mount
+  // Update local state when client profile loads
   useEffect(() => {
-    const savedProfile = localStorage.getItem("clientProfile");
-    if (savedProfile) {
-      setProfile(JSON.parse(savedProfile));
+    if (clientProfile) {
+      setProfile({
+        first_name: clientProfile.first_name || "",
+        last_name: clientProfile.last_name || "",
+        email: clientProfile.email || "",
+        phone: clientProfile.phone || "",
+        address: clientProfile.address || "",
+        date_of_birth: clientProfile.date_of_birth || "",
+        preferred_name: clientProfile.preferred_name || "",
+        gender: clientProfile.gender || ""
+      });
     }
-    
-    const savedPhoto = localStorage.getItem("clientProfilePhoto");
-    if (savedPhoto) {
-      setProfilePhoto(savedPhoto);
-      setPhotoPreview(savedPhoto);
-    }
-  }, []);
+  }, [clientProfile]);
 
   // Form state for password change
   const [passwordForm, setPasswordForm] = useState({
@@ -81,9 +86,6 @@ const ClientProfile = () => {
       setProfilePhoto(file.name);
       setPhotoPreview(result);
       
-      // Save photo to localStorage 
-      localStorage.setItem("clientProfilePhoto", result);
-      
       toast({
         title: "Photo uploaded",
         description: "Your profile photo has been updated.",
@@ -98,16 +100,23 @@ const ClientProfile = () => {
   };
 
   // Handle profile form submission
-  const handleProfileUpdate = (e: React.FormEvent) => {
+  const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Save profile data to localStorage for persistence between sessions
-    localStorage.setItem("clientProfile", JSON.stringify(profile));
-    
-    toast({
-      title: "Profile updated",
-      description: "Your profile information has been saved.",
-    });
+    try {
+      await updateClientMutation.mutateAsync(profile);
+      
+      toast({
+        title: "Profile updated",
+        description: "Your profile information has been saved.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error updating profile",
+        description: "There was an error saving your profile. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Handle password change form submission
@@ -158,6 +167,16 @@ const ClientProfile = () => {
     }));
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  const displayName = profile.preferred_name || profile.first_name || "Client";
+
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-xl border border-gray-200">
@@ -168,14 +187,14 @@ const ClientProfile = () => {
           <div className="w-full md:w-64 flex flex-col items-center text-center">
             <Avatar className="h-24 w-24">
               {photoPreview ? (
-                <AvatarImage src={photoPreview} alt={profile.name} />
+                <AvatarImage src={photoPreview} alt={displayName} />
               ) : (
                 <AvatarFallback className="bg-blue-100 text-blue-800 text-3xl">
-                  {profile.name.charAt(0)}
+                  {displayName.charAt(0)}
                 </AvatarFallback>
               )}
             </Avatar>
-            <h3 className="font-bold mt-4">{profile.name}</h3>
+            <h3 className="font-bold mt-4">{displayName}</h3>
             <p className="text-gray-500 text-sm">Client</p>
             <div className="mt-4 w-full">
               <input 
@@ -219,18 +238,34 @@ const ClientProfile = () => {
                   <CardHeader>
                     <CardTitle>Personal Information</CardTitle>
                     <CardDescription>
-                      Update your personal details and address information.
+                      Update your personal details and contact information.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={handleProfileUpdate} className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="name">Full Name</Label>
+                          <Label htmlFor="first_name">First Name</Label>
                           <Input
-                            id="name"
-                            value={profile.name}
-                            onChange={(e) => setProfile({...profile, name: e.target.value})}
+                            id="first_name"
+                            value={profile.first_name}
+                            onChange={(e) => setProfile({...profile, first_name: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="last_name">Last Name</Label>
+                          <Input
+                            id="last_name"
+                            value={profile.last_name}
+                            onChange={(e) => setProfile({...profile, last_name: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="preferred_name">Preferred Name</Label>
+                          <Input
+                            id="preferred_name"
+                            value={profile.preferred_name}
+                            onChange={(e) => setProfile({...profile, preferred_name: e.target.value})}
                           />
                         </div>
                         <div className="space-y-2">
@@ -251,12 +286,12 @@ const ClientProfile = () => {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="dob">Date of Birth</Label>
+                          <Label htmlFor="date_of_birth">Date of Birth</Label>
                           <Input
-                            id="dob"
+                            id="date_of_birth"
                             type="date"
-                            value={profile.dateOfBirth}
-                            onChange={(e) => setProfile({...profile, dateOfBirth: e.target.value})}
+                            value={profile.date_of_birth}
+                            onChange={(e) => setProfile({...profile, date_of_birth: e.target.value})}
                           />
                         </div>
                       </div>
@@ -272,65 +307,22 @@ const ClientProfile = () => {
                         />
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="city">City</Label>
-                          <Input
-                            id="city"
-                            value={profile.city}
-                            onChange={(e) => setProfile({...profile, city: e.target.value})}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="state">State/Province</Label>
-                          <Input
-                            id="state"
-                            value={profile.state}
-                            onChange={(e) => setProfile({...profile, state: e.target.value})}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="zipCode">Zip/Postal Code</Label>
-                          <Input
-                            id="zipCode"
-                            value={profile.zipCode}
-                            onChange={(e) => setProfile({...profile, zipCode: e.target.value})}
-                          />
-                        </div>
-                      </div>
-                      
                       <div className="space-y-2">
-                        <Label htmlFor="country">Country</Label>
+                        <Label htmlFor="gender">Gender</Label>
                         <Input
-                          id="country"
-                          value={profile.country}
-                          onChange={(e) => setProfile({...profile, country: e.target.value})}
+                          id="gender"
+                          value={profile.gender}
+                          onChange={(e) => setProfile({...profile, gender: e.target.value})}
                         />
                       </div>
                       
-                      <Separator />
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="emergencyContact">Emergency Contact Name</Label>
-                          <Input
-                            id="emergencyContact"
-                            value={profile.emergencyContact}
-                            onChange={(e) => setProfile({...profile, emergencyContact: e.target.value})}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="emergencyPhone">Emergency Contact Phone</Label>
-                          <Input
-                            id="emergencyPhone"
-                            value={profile.emergencyPhone}
-                            onChange={(e) => setProfile({...profile, emergencyPhone: e.target.value})}
-                          />
-                        </div>
-                      </div>
-                      
                       <div className="flex justify-end">
-                        <Button type="submit">Save Changes</Button>
+                        <Button 
+                          type="submit" 
+                          disabled={updateClientMutation.isPending}
+                        >
+                          {updateClientMutation.isPending ? 'Saving...' : 'Save Changes'}
+                        </Button>
                       </div>
                     </form>
                   </CardContent>
