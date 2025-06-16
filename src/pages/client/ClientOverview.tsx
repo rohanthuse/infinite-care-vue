@@ -92,7 +92,7 @@ const ClientOverview = () => {
             </div>
             {carePlans[0] && (
               <p className="text-xs text-gray-500 mt-2">
-                Updated: {new Date(carePlans[0].created_at).toLocaleDateString()}
+                Updated: {new Date(carePlans[0].start_date).toLocaleDateString()}
               </p>
             )}
           </CardContent>
