@@ -97,9 +97,32 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     const until = bookingData.untilDate instanceof Date
       ? bookingData.untilDate
       : new Date(bookingData.untilDate);
+    
     if (!from || !until) {
       toast.error("Please select both a start and end date.");
       return;
+    }
+
+    // Server-side date validation
+    if (from > until) {
+      toast.error("Invalid date range", {
+        description: "From date must be before or equal to until date.",
+      });
+      return;
+    }
+
+    // Same-day time validation
+    if (from.toDateString() === until.toDateString()) {
+      const hasInvalidTimes = bookingData.schedules.some((schedule: any) => 
+        schedule.startTime && schedule.endTime && schedule.startTime >= schedule.endTime
+      );
+      
+      if (hasInvalidTimes) {
+        toast.error("Invalid time range", {
+          description: "For same-day bookings, start time must be before end time.",
+        });
+        return;
+      }
     }
 
     const bookingsToCreate: any[] = [];

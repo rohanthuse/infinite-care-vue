@@ -74,6 +74,25 @@ const formSchema = z.object({
     }),
   })).min(1),
   notes: z.string().optional(),
+}).refine((data) => {
+  return data.fromDate <= data.untilDate;
+}, {
+  message: "From date must be before or equal to until date",
+  path: ["untilDate"],
+}).refine((data) => {
+  // If same day, validate that start times are before end times
+  if (data.fromDate.toDateString() === data.untilDate.toDateString()) {
+    return data.schedules.every(schedule => {
+      if (schedule.startTime && schedule.endTime) {
+        return schedule.startTime < schedule.endTime;
+      }
+      return true;
+    });
+  }
+  return true;
+}, {
+  message: "For same-day bookings, start time must be before end time",
+  path: ["schedules"],
 });
 
 type BookingFormValues = z.infer<typeof formSchema>;
@@ -153,6 +172,16 @@ export const NewBookingDialog = ({
     },
   });
 
+  const watchedFromDate = form.watch("fromDate");
+  const watchedUntilDate = form.watch("untilDate");
+
+  // Auto-adjust until date if it becomes invalid
+  useEffect(() => {
+    if (watchedFromDate && watchedUntilDate && watchedFromDate > watchedUntilDate) {
+      form.setValue("untilDate", watchedFromDate);
+    }
+  }, [watchedFromDate, watchedUntilDate, form]);
+
   useEffect(() => {
     if (open && initialData) {
       if (initialData.date) {
@@ -212,6 +241,28 @@ export const NewBookingDialog = ({
   }, [open, initialData, form]);
 
   const handleSubmit = (values: BookingFormValues) => {
+    // Additional client-side validation
+    if (values.fromDate > values.untilDate) {
+      toast.error("Invalid date range", {
+        description: "From date must be before or equal to until date",
+      });
+      return;
+    }
+
+    // Validate same-day time ranges
+    if (values.fromDate.toDateString() === values.untilDate.toDateString()) {
+      const hasInvalidTimes = values.schedules.some(schedule => 
+        schedule.startTime && schedule.endTime && schedule.startTime >= schedule.endTime
+      );
+      
+      if (hasInvalidTimes) {
+        toast.error("Invalid time range", {
+          description: "For same-day bookings, start time must be before end time",
+        });
+        return;
+      }
+    }
+
     onCreateBooking(values);
     form.reset();
     onOpenChange(false);
@@ -425,6 +476,10 @@ export const NewBookingDialog = ({
                           mode="single"
                           selected={field.value}
                           onSelect={field.onChange}
+                          disabled={(date) => {
+                            const fromDate = form.getValues("fromDate");
+                            return fromDate ? date < fromDate : false;
+                          }}
                           initialFocus
                           className={cn("p-3 pointer-events-auto")}
                         />
