@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-// Completely isolated interfaces - no complex generics
+// Completely isolated interfaces matching actual database schema
 export interface ClientProfile {
   id: string;
   first_name: string;
@@ -16,7 +16,19 @@ export interface ClientProfile {
   preferred_name?: string;
   status?: string;
   branch_id?: string;
-  user_id?: string;
+  title?: string;
+  middle_name?: string;
+  telephone_number?: string;
+  mobile_number?: string;
+  country_code?: string;
+  region?: string;
+  referral_route?: string;
+  pronouns?: string;
+  other_identifier?: string;
+  additional_information?: string;
+  avatar_initials?: string;
+  registered_on?: string;
+  created_at?: string;
 }
 
 export interface ClientCarePlan {
@@ -58,250 +70,162 @@ export interface ClientAppointment {
   updated_at: string;
 }
 
-// Type-safe data fetchers with explicit return types
-async function fetchClientProfile(userId: string): Promise<ClientProfile> {
-  const { data, error } = await supabase
+// Simple fetcher functions with basic return types
+const fetchClientProfile = async (clientId: string) => {
+  const response = await supabase
     .from('clients')
     .select('*')
-    .eq('user_id', userId)
+    .eq('id', clientId)
     .single();
 
-  if (error) throw error;
-  
-  // Manual construction to avoid type inference
-  return {
-    id: data.id,
-    first_name: data.first_name,
-    last_name: data.last_name,
-    email: data.email,
-    phone: data.phone,
-    date_of_birth: data.date_of_birth,
-    address: data.address,
-    gender: data.gender,
-    preferred_name: data.preferred_name,
-    status: data.status,
-    branch_id: data.branch_id,
-    user_id: data.user_id,
-  };
-}
+  if (response.error) throw response.error;
+  return response.data;
+};
 
-async function fetchClientCarePlans(clientId: string): Promise<ClientCarePlan[]> {
-  const { data, error } = await supabase
+const fetchClientCarePlans = async (clientId: string) => {
+  const response = await supabase
     .from('client_care_plans')
     .select('*')
     .eq('client_id', clientId)
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
-  
-  return (data as any[]).map((item: any): ClientCarePlan => ({
-    id: item.id,
-    client_id: item.client_id,
-    title: item.title,
-    provider_name: item.provider_name,
-    start_date: item.start_date,
-    end_date: item.end_date,
-    review_date: item.review_date,
-    status: item.status,
-    goals_progress: item.goals_progress,
-    created_at: item.created_at,
-    updated_at: item.updated_at,
-  }));
-}
+  if (response.error) throw response.error;
+  return response.data || [];
+};
 
-async function fetchCarePlanGoals(carePlanId: string): Promise<ClientCarePlanGoal[]> {
-  const { data, error } = await supabase
+const fetchCarePlanGoals = async (carePlanId: string) => {
+  const response = await supabase
     .from('client_care_plan_goals')
     .select('*')
     .eq('care_plan_id', carePlanId)
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
-  
-  return (data as any[]).map((item: any): ClientCarePlanGoal => ({
-    id: item.id,
-    care_plan_id: item.care_plan_id,
-    description: item.description,
-    status: item.status,
-    progress: item.progress,
-    notes: item.notes,
-    created_at: item.created_at,
-    updated_at: item.updated_at,
-  }));
-}
+  if (response.error) throw response.error;
+  return response.data || [];
+};
 
-async function fetchClientAppointments(clientId: string): Promise<ClientAppointment[]> {
-  const { data, error } = await supabase
+const fetchClientAppointments = async (clientId: string) => {
+  const response = await supabase
     .from('client_appointments')
     .select('*')
     .eq('client_id', clientId)
     .order('appointment_date', { ascending: true });
 
-  if (error) throw error;
-  
-  return (data as any[]).map((item: any): ClientAppointment => ({
-    id: item.id,
-    client_id: item.client_id,
-    appointment_type: item.appointment_type,
-    appointment_date: item.appointment_date,
-    appointment_time: item.appointment_time,
-    provider_name: item.provider_name,
-    location: item.location,
-    status: item.status,
-    notes: item.notes,
-    created_at: item.created_at,
-    updated_at: item.updated_at,
-  }));
-}
+  if (response.error) throw response.error;
+  return response.data || [];
+};
 
-// Hooks with minimal type inference
-export const useClientProfile = () => {
-  const { user } = useAuth();
+// Basic hooks with explicit query configuration
+export const useClientProfile = (clientId: string) => {
+  const config = {
+    queryKey: ['client-profile', clientId] as const,
+    queryFn: () => fetchClientProfile(clientId),
+    enabled: Boolean(clientId),
+  };
   
-  return useQuery({
-    queryKey: ['client-profile', user?.id],
-    queryFn: async () => {
-      if (!user?.id) throw new Error('No authenticated user');
-      return await fetchClientProfile(user.id);
-    },
-    enabled: !!user?.id,
-  });
+  return useQuery(config);
 };
 
 export const useClientCarePlans = (clientId: string) => {
-  return useQuery({
-    queryKey: ['client-care-plans', clientId],
-    queryFn: async () => {
-      if (!clientId) throw new Error('No client ID provided');
-      return await fetchClientCarePlans(clientId);
-    },
-    enabled: !!clientId,
-  });
+  const config = {
+    queryKey: ['client-care-plans', clientId] as const,
+    queryFn: () => fetchClientCarePlans(clientId),
+    enabled: Boolean(clientId),
+  };
+  
+  return useQuery(config);
 };
 
 export const useCarePlanGoals = (carePlanId: string) => {
-  return useQuery({
-    queryKey: ['care-plan-goals', carePlanId],
-    queryFn: async () => await fetchCarePlanGoals(carePlanId),
-    enabled: !!carePlanId,
-  });
+  const config = {
+    queryKey: ['care-plan-goals', carePlanId] as const,
+    queryFn: () => fetchCarePlanGoals(carePlanId),
+    enabled: Boolean(carePlanId),
+  };
+  
+  return useQuery(config);
 };
 
 export const useClientAppointments = (clientId: string) => {
-  return useQuery({
-    queryKey: ['client-appointments', clientId],
-    queryFn: async () => {
-      if (!clientId) throw new Error('No client ID provided');
-      return await fetchClientAppointments(clientId);
-    },
-    enabled: !!clientId,
-  });
+  const config = {
+    queryKey: ['client-appointments', clientId] as const,
+    queryFn: () => fetchClientAppointments(clientId),
+    enabled: Boolean(clientId),
+  };
+  
+  return useQuery(config);
 };
 
-// Mutation hooks with explicit typing
+// Mutation hooks with simplified configuration
 export const useUpdateClientProfile = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
-  return useMutation({
-    mutationFn: async (updates: Partial<ClientProfile>) => {
-      if (!user?.id) throw new Error('No authenticated user');
-
-      const { data, error } = await supabase
+  const config = {
+    mutationFn: async (params: { clientId: string; updates: Partial<ClientProfile> }) => {
+      const response = await supabase
         .from('clients')
-        .update(updates)
-        .eq('user_id', user.id)
+        .update(params.updates)
+        .eq('id', params.clientId)
         .select()
         .single();
 
-      if (error) throw error;
-      
-      return {
-        id: data.id,
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email,
-        phone: data.phone,
-        date_of_birth: data.date_of_birth,
-        address: data.address,
-        gender: data.gender,
-        preferred_name: data.preferred_name,
-        status: data.status,
-        branch_id: data.branch_id,
-        user_id: data.user_id,
-      } as ClientProfile;
+      if (response.error) throw response.error;
+      return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['client-profile'] });
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['client-profile', data.id] });
     },
-  });
+  };
+
+  return useMutation(config);
 };
 
 export const useUpdateCarePlanGoal = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async ({ goalId, updates }: { goalId: string; updates: Partial<ClientCarePlanGoal> }) => {
-      const { data, error } = await supabase
+  const config = {
+    mutationFn: async (params: { goalId: string; updates: Partial<ClientCarePlanGoal> }) => {
+      const response = await supabase
         .from('client_care_plan_goals')
-        .update(updates)
-        .eq('id', goalId)
+        .update(params.updates)
+        .eq('id', params.goalId)
         .select()
         .single();
 
-      if (error) throw error;
-      
-      return {
-        id: data.id,
-        care_plan_id: data.care_plan_id,
-        description: data.description,
-        status: data.status,
-        progress: data.progress,
-        notes: data.notes,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-      } as ClientCarePlanGoal;
+      if (response.error) throw response.error;
+      return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['care-plan-goals', data.care_plan_id] });
     },
-  });
+  };
+
+  return useMutation(config);
 };
 
 export const useRescheduleAppointment = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async ({ appointmentId, newDate, newTime }: { appointmentId: string; newDate: string; newTime: string }) => {
-      const { data, error } = await supabase
+  const config = {
+    mutationFn: async (params: { appointmentId: string; newDate: string; newTime: string }) => {
+      const response = await supabase
         .from('client_appointments')
         .update({
-          appointment_date: newDate,
-          appointment_time: newTime,
+          appointment_date: params.newDate,
+          appointment_time: params.newTime,
           updated_at: new Date().toISOString()
         })
-        .eq('id', appointmentId)
+        .eq('id', params.appointmentId)
         .select()
         .single();
 
-      if (error) throw error;
-      
-      return {
-        id: data.id,
-        client_id: data.client_id,
-        appointment_type: data.appointment_type,
-        appointment_date: data.appointment_date,
-        appointment_time: data.appointment_time,
-        provider_name: data.provider_name,
-        location: data.location,
-        status: data.status,
-        notes: data.notes,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-      } as ClientAppointment;
+      if (response.error) throw response.error;
+      return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['client-appointments', data.client_id] });
     },
-  });
+  };
+
+  return useMutation(config);
 };
