@@ -41,6 +41,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Booking } from "./BookingTimeGrid";
 import { toast } from "sonner";
 import { generateBookingReportPDF } from "@/services/enhancedPdfGenerator";
+import { ReportGenerator, ReportData } from "@/services/reportGenerator";
 
 interface BookingReportProps {
   bookings: Booking[];
@@ -69,6 +70,7 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
   const [carerFilter, setCarerFilter] = useState<string>("all");
   const [clientFilter, setClientFilter] = useState<string>("all");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [reportData, setReportData] = useState<ReportData | null>(null);
 
   const carers = Array.from(new Set(bookings.map(booking => booking.carerId)))
     .map(id => {
@@ -83,7 +85,7 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
     });
 
   const filteredBookings = useMemo(() => {
-    return bookings.filter(booking => {
+    const filtered = bookings.filter(booking => {
       const bookingDate = new Date(booking.date);
       
       const matchesDate = 
@@ -103,7 +105,24 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
       
       return matchesDate && matchesSearch && matchesStatus && matchesCarer && matchesClient;
     });
-  }, [bookings, date, searchQuery, status, carerFilter, clientFilter]);
+
+    // Generate report data when filters change
+    if (filtered.length > 0) {
+      const filters = {
+        dateRange: date ? { from: date.from!, to: date.to! } : undefined,
+        status: status !== 'all' ? status : undefined,
+        carerId: carerFilter !== 'all' ? carerFilter : undefined,
+        clientId: clientFilter !== 'all' ? clientFilter : undefined,
+        reportType
+      };
+      const data = ReportGenerator.generateReportData(filtered, filters);
+      setReportData(data);
+    } else {
+      setReportData(null);
+    }
+
+    return filtered;
+  }, [bookings, date, searchQuery, status, carerFilter, clientFilter, reportType]);
 
   const handleExportPDF = () => {
     if (!date?.from || !date?.to) {
@@ -146,44 +165,13 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
     setIsGenerating(true);
     
     try {
-      // Prepare CSV data
-      const csvHeaders = ["Date", "Start Time", "End Time", "Client", "Carer", "Status", "Duration (mins)", "Estimated Revenue"];
-      
-      const csvData = filteredBookings.map(booking => {
-        const duration = (() => {
-          const [startHour, startMin] = booking.startTime.split(':').map(Number);
-          const [endHour, endMin] = booking.endTime.split(':').map(Number);
-          return (endHour * 60 + endMin) - (startHour * 60 + startMin);
-        })();
-        const revenue = (duration / 60) * 25; // £25 per hour base rate
-        
-        return [
-          format(new Date(booking.date), 'yyyy-MM-dd'),
-          booking.startTime,
-          booking.endTime,
-          booking.clientName,
-          booking.carerName,
-          booking.status,
-          duration.toString(),
-          `£${revenue.toFixed(2)}`
-        ];
+      ReportGenerator.generateCSV(filteredBookings, {
+        dateRange: { from: date.from, to: date.to },
+        status: status !== 'all' ? status : undefined,
+        carerId: carerFilter !== 'all' ? carerFilter : undefined,
+        clientId: clientFilter !== 'all' ? clientFilter : undefined,
+        reportType
       });
-
-      // Create CSV content
-      const csvContent = [csvHeaders, ...csvData]
-        .map(row => row.map(cell => `"${cell}"`).join(','))
-        .join('\n');
-
-      // Create and download blob
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `Med-Infinite_Booking_Data_${format(new Date(), "yyyy-MM-dd")}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
       
       toast.success("CSV Data Exported Successfully", {
         description: `Downloaded booking data with ${filteredBookings.length} records`
@@ -352,17 +340,7 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
             </Button>
             <Button 
               variant="outline" 
-              onClick={() => {
-                setSearchQuery("");
-                setReportType("summary");
-                setStatus("all");
-                setDate({
-                  from: subDays(new Date(), 7),
-                  to: new Date(),
-                });
-                setCarerFilter("all");
-                setClientFilter("all");
-              }} 
+              onClick={resetFilters} 
               className="sm:ml-auto"
             >
               Reset Filters

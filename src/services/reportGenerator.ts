@@ -28,6 +28,17 @@ export interface ReportFilters {
   reportType: string;
 }
 
+interface CarerStats {
+  name: string;
+  total: number;
+  completed: number;
+}
+
+interface ClientStats {
+  name: string;
+  bookings: number;
+}
+
 export class ReportGenerator {
   static generateReportData(bookings: any[], filters: Partial<ReportFilters>): ReportData {
     const totalBookings = bookings.length;
@@ -52,7 +63,7 @@ export class ReportGenerator {
     const averageDuration = totalBookings > 0 ? totalDuration / totalBookings : 0;
 
     // Calculate top carers
-    const carerStats = bookings.reduce((acc, booking) => {
+    const carerStats = bookings.reduce((acc: Record<string, CarerStats>, booking) => {
       if (!booking.carerId || !booking.carerName) return acc;
       
       if (!acc[booking.carerId]) {
@@ -69,10 +80,10 @@ export class ReportGenerator {
       }
       
       return acc;
-    }, {} as Record<string, { name: string; total: number; completed: number }>);
+    }, {});
 
     const topCarers = Object.values(carerStats)
-      .map(carer => ({
+      .map((carer: CarerStats) => ({
         name: carer.name,
         bookings: carer.total,
         completionRate: carer.total > 0 ? (carer.completed / carer.total) * 100 : 0
@@ -81,7 +92,7 @@ export class ReportGenerator {
       .slice(0, 5);
 
     // Calculate top clients
-    const clientStats = bookings.reduce((acc, booking) => {
+    const clientStats = bookings.reduce((acc: Record<string, ClientStats>, booking) => {
       if (!booking.clientId || !booking.clientName) return acc;
       
       if (!acc[booking.clientId]) {
@@ -93,10 +104,10 @@ export class ReportGenerator {
       
       acc[booking.clientId].bookings++;
       return acc;
-    }, {} as Record<string, { name: string; bookings: number }>);
+    }, {});
 
     const topClients = Object.values(clientStats)
-      .sort((a, b) => b.bookings - a.bookings)
+      .sort((a: ClientStats, b: ClientStats) => b.bookings - a.bookings)
       .slice(0, 5);
 
     return {
