@@ -1,17 +1,23 @@
+
 import React from "react";
-import { Phone, Mail, MapPin, Clock, CalendarRange } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, CalendarRange, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
+
 interface BranchInfoHeaderProps {
   branchName: string;
   branchId: string;
   onNewBooking: () => void;
 }
+
 export const BranchInfoHeader = ({
   branchName,
   branchId,
   onNewBooking
 }: BranchInfoHeaderProps) => {
+  const { user } = useAuth();
+  
   // These would typically come from an API call based on branchId
   // For now, we'll use static mock data
   const branchInfo = {
@@ -22,6 +28,7 @@ export const BranchInfoHeader = ({
     operatingHours: "Mon-Fri: 8:00 - 18:00",
     establishedDate: "Est. 2020"
   };
+
   return <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 mb-6">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
@@ -53,8 +60,14 @@ export const BranchInfoHeader = ({
         </div>
         
         <div className="flex justify-start md:justify-end">
-          <Button onClick={onNewBooking} className="bg-blue-600 hover:bg-blue-700">
-            New Booking
+          <Button 
+            onClick={onNewBooking} 
+            variant="default"
+            className="h-9 bg-blue-600 hover:bg-blue-700 rounded-full px-3 shadow-sm"
+            disabled={!user}
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            <span>New Booking</span>
           </Button>
         </div>
       </div>
