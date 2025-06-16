@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Booking } from "./BookingTimeGrid";
 import { BookingTimeGrid } from "./BookingTimeGrid";
 import { BookingsList } from "./BookingsList";
@@ -11,7 +12,6 @@ import { EditBookingDialog } from "./EditBookingDialog";
 import { BookingOverlapAlert } from "./BookingOverlapAlert";
 import { DateNavigation } from "./DateNavigation";
 import { BookingFilters } from "./BookingFilters";
-import { TabNavigation } from "@/components/TabNavigation";
 import { useBookingData } from "./hooks/useBookingData";
 import { useBookingHandlers } from "./hooks/useBookingHandlers";
 import { useAuth } from "@/hooks/useAuth";
@@ -73,12 +73,6 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
     });
   }, [bookings, statusFilter, selectedClientId, selectedCarerId]);
 
-  const tabs = [
-    { id: "calendar", label: "Calendar" },
-    { id: "list", label: "List" },
-    { id: "reports", label: "Reports" }
-  ];
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -89,52 +83,6 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       </div>
     );
   }
-
-  const renderContent = () => {
-    switch (activeView) {
-      case "calendar":
-        return (
-          <>
-            <DateNavigation 
-              currentDate={selectedDate} 
-              onDateChange={setSelectedDate}
-              viewType={viewType}
-              onViewTypeChange={setViewType}
-            />
-            
-            <BookingFilters
-              statusFilter={statusFilter}
-              onStatusFilterChange={setStatusFilter}
-              selectedClientId={selectedClientId}
-              onClientChange={setSelectedClientId}
-              selectedCarerId={selectedCarerId}
-              onCarerChange={setSelectedCarerId}
-              clients={clients}
-              carers={carers}
-            />
-
-            <BookingTimeGrid
-              date={selectedDate}
-              bookings={filteredBookings}
-              clients={clients}
-              carers={carers}
-              viewType={viewType}
-              viewMode="client"
-              onCreateBooking={handleContextMenuBooking}
-              onUpdateBooking={handleUpdateBooking}
-              onEditBooking={handleEditBooking}
-              isCheckingOverlap={isCheckingOverlap}
-            />
-          </>
-        );
-      case "list":
-        return <BookingsList bookings={filteredBookings} />;
-      case "reports":
-        return <BookingReport bookings={filteredBookings} />;
-      default:
-        return null;
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -157,13 +105,54 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         </div>
       </div>
 
-      <TabNavigation
-        tabs={tabs}
-        activeTab={activeView}
-        onTabChange={setActiveView}
-      />
+      <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="calendar">Calendar</TabsTrigger>
+          <TabsTrigger value="list">List</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="calendar" className="space-y-4">
+          <DateNavigation 
+            currentDate={selectedDate} 
+            onDateChange={setSelectedDate}
+            viewType={viewType}
+            onViewTypeChange={setViewType}
+          />
+          
+          <BookingFilters
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            selectedClientId={selectedClientId}
+            onClientChange={setSelectedClientId}
+            selectedCarerId={selectedCarerId}
+            onCarerChange={setSelectedCarerId}
+            clients={clients}
+            carers={carers}
+          />
 
-      {renderContent()}
+          <BookingTimeGrid
+            date={selectedDate}
+            bookings={filteredBookings}
+            clients={clients}
+            carers={carers}
+            viewType={viewType}
+            viewMode="client"
+            onCreateBooking={handleContextMenuBooking}
+            onUpdateBooking={handleUpdateBooking}
+            onEditBooking={handleEditBooking}
+            isCheckingOverlap={isCheckingOverlap}
+          />
+        </TabsContent>
+        
+        <TabsContent value="list">
+          <BookingsList bookings={filteredBookings} />
+        </TabsContent>
+        
+        <TabsContent value="reports">
+          <BookingReport bookings={filteredBookings} />
+        </TabsContent>
+      </Tabs>
 
       <NewBookingDialog
         open={newBookingDialogOpen}
