@@ -1,49 +1,92 @@
 
 import React from "react";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import { BookingStatusFilters } from "./BookingStatusFilters";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Client, Carer } from "./BookingTimeGrid";
 
 interface BookingFiltersProps {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  viewMode: "client" | "group";
-  onViewModeChange: (mode: "client" | "group") => void;
-  selectedStatuses: string[];
-  onStatusChange: (statuses: string[]) => void;
-  statusCounts?: Record<string, number>;
+  statusFilter: string;
+  onStatusFilterChange: (status: string) => void;
+  selectedClientId: string;
+  onClientChange: (clientId: string) => void;
+  selectedCarerId: string;
+  onCarerChange: (carerId: string) => void;
+  clients: Client[];
+  carers: Carer[];
 }
 
 export const BookingFilters: React.FC<BookingFiltersProps> = ({
-  searchQuery,
-  onSearchChange,
-  selectedStatuses,
-  onStatusChange,
-  statusCounts,
+  statusFilter,
+  onStatusFilterChange,
+  selectedClientId,
+  onClientChange,
+  selectedCarerId,
+  onCarerChange,
+  clients,
+  carers,
 }) => {
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onSearchChange(e.target.value);
-  };
-
   return (
     <div className="space-y-4 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-      <div className="flex items-center gap-4">
-        <div className="relative flex-grow">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input 
-            placeholder="Search clients or carers..." 
-            className="pl-9 h-9" 
-            value={searchQuery} 
-            onChange={handleSearchChange} 
-          />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="status">Status</Label>
+          <Select value={statusFilter} onValueChange={onStatusFilterChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="assigned">Assigned</SelectItem>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
+              <SelectItem value="done">Done</SelectItem>
+              <SelectItem value="in-progress">In Progress</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="departed">Departed</SelectItem>
+              <SelectItem value="suspended">Suspended</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="client">Client</Label>
+          <Select value={selectedClientId} onValueChange={onClientChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="All clients" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Clients</SelectItem>
+              {clients.map((client) => (
+                <SelectItem key={client.id} value={client.id}>
+                  {client.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="carer">Carer</Label>
+          <Select value={selectedCarerId} onValueChange={onCarerChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="All carers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Carers</SelectItem>
+              {carers.map((carer) => (
+                <SelectItem key={carer.id} value={carer.id}>
+                  {carer.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
-      
-      <BookingStatusFilters 
-        selectedStatuses={selectedStatuses} 
-        onStatusChange={onStatusChange} 
-        statusCounts={statusCounts}
-      />
     </div>
   );
 };

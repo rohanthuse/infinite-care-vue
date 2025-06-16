@@ -27,7 +27,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [selectedCarerId, setSelectedCarerId] = useState<string>("");
 
-  const { data: services = [], isLoading: isLoadingServices } = useServices(branchId);
+  const { data: services = [], isLoading: isLoadingServices } = useServices();
   const { clients, carers, bookings, isLoading } = useBookingData(branchId);
   
   const {
@@ -119,7 +119,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       />
 
       <BookingTimeGrid
-        selectedDate={selectedDate}
+        currentDate={selectedDate}
         bookings={filteredBookings}
         clients={clients}
         carers={carers}
