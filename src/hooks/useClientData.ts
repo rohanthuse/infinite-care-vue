@@ -73,21 +73,21 @@ export const useClientProfile = () => {
         .single();
 
       if (error) throw error;
-      return data as ClientProfile;
+      return data;
     },
     enabled: !!user?.id,
   });
 };
 
-// Hook to get client care plans - completely rewritten to avoid type depth issues
+// Hook to get client care plans
 export const useClientCarePlans = (clientId?: string) => {
   const { user } = useAuth();
-  const { data: clientProfile } = useClientProfile();
+  const clientProfileQuery = useClientProfile();
 
   return useQuery({
-    queryKey: ['client-care-plans', clientId || clientProfile?.id],
+    queryKey: ['client-care-plans', clientId || clientProfileQuery.data?.id],
     queryFn: async () => {
-      const targetClientId = clientId || clientProfile?.id;
+      const targetClientId = clientId || clientProfileQuery.data?.id;
       if (!targetClientId) throw new Error('No client ID available');
 
       const { data, error } = await supabase
@@ -97,9 +97,9 @@ export const useClientCarePlans = (clientId?: string) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []) as ClientCarePlan[];
+      return data || [];
     },
-    enabled: !!(clientId || clientProfile?.id),
+    enabled: !!(clientId || clientProfileQuery.data?.id),
   });
 };
 
@@ -115,21 +115,21 @@ export const useCarePlanGoals = (carePlanId: string) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []) as ClientCarePlanGoal[];
+      return data || [];
     },
     enabled: !!carePlanId,
   });
 };
 
-// Hook to get client appointments - completely rewritten to avoid type depth issues
+// Hook to get client appointments
 export const useClientAppointments = (clientId?: string) => {
   const { user } = useAuth();
-  const { data: clientProfile } = useClientProfile();
+  const clientProfileQuery = useClientProfile();
 
   return useQuery({
-    queryKey: ['client-appointments', clientId || clientProfile?.id],
+    queryKey: ['client-appointments', clientId || clientProfileQuery.data?.id],
     queryFn: async () => {
-      const targetClientId = clientId || clientProfile?.id;
+      const targetClientId = clientId || clientProfileQuery.data?.id;
       if (!targetClientId) throw new Error('No client ID available');
 
       const { data, error } = await supabase
@@ -139,9 +139,9 @@ export const useClientAppointments = (clientId?: string) => {
         .order('appointment_date', { ascending: true });
 
       if (error) throw error;
-      return (data || []) as ClientAppointment[];
+      return data || [];
     },
-    enabled: !!(clientId || clientProfile?.id),
+    enabled: !!(clientId || clientProfileQuery.data?.id),
   });
 };
 
@@ -162,7 +162,7 @@ export const useUpdateClientProfile = () => {
         .single();
 
       if (error) throw error;
-      return data as ClientProfile;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-profile'] });
@@ -184,7 +184,7 @@ export const useUpdateCarePlanGoal = () => {
         .single();
 
       if (error) throw error;
-      return data as ClientCarePlanGoal;
+      return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['care-plan-goals', data.care_plan_id] });
@@ -218,7 +218,7 @@ export const useRescheduleAppointment = () => {
         .single();
 
       if (error) throw error;
-      return data as ClientAppointment;
+      return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['client-appointments', data.client_id] });
