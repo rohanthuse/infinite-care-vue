@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { ClientProvider } from "@/contexts/ClientContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import Dashboard from "@/pages/Dashboard";
 import ClientDashboard from "@/pages/ClientDashboard";
 import CarerDashboard from "@/pages/CarerDashboard";
@@ -17,21 +18,23 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ClientProvider>
-        <Router>
-          <div className="min-h-screen bg-gray-50">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/client-login" element={<ClientLogin />} />
-              <Route path="/carer-login" element={<CarerLogin />} />
-              <Route path="/carer-dashboard/*" element={<CarerDashboard />} />
-              <Route path="/branch-dashboard/*" element={<BranchDashboard />} />
-              <Route path="/client-dashboard/*" element={<ClientDashboard />} />
-            </Routes>
-            <Toaster />
-          </div>
-        </Router>
-      </ClientProvider>
+      <AuthProvider>
+        <ClientProvider>
+          <Router>
+            <div className="min-h-screen bg-gray-50">
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/client-login" element={<ClientLogin />} />
+                <Route path="/carer-login" element={<CarerLogin />} />
+                <Route path="/carer-dashboard/*" element={<CarerDashboard />} />
+                <Route path="/branch-dashboard/*" element={<BranchDashboard />} />
+                <Route path="/client-dashboard/*" element={<ClientDashboard />} />
+              </Routes>
+              <Toaster />
+            </div>
+          </Router>
+        </ClientProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
