@@ -47,6 +47,7 @@ import { BookingItem } from "@/components/dashboard/BookingItem";
 import { ReviewItem, ReviewItemSkeleton } from "@/components/dashboard/ReviewItem";
 import { ActionItem } from "@/components/dashboard/ActionItem";
 import { useServices } from "@/data/hooks/useServices";
+import { useBookingData } from "@/components/bookings/hooks/useBookingData";
 
 interface BranchDashboardProps {
   tab?: string;
@@ -67,6 +68,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const { data: dashboardStats, isLoading: isLoadingDashboardStats } = useBranchDashboardStats(id);
   const { data: branchStats, isLoading: isLoadingBranchStats, error: branchStatsError } = useBranchStatistics(id);
   const { data: chartData, isLoading: isLoadingChartData } = useBranchChartData(id);
+  const { clients: bookingClients, carers: bookingCarers } = useBookingData(id);
 
   const getTabFromPath = (path?: string): string => {
     if (!path || path.startsWith("dashboard")) return "dashboard";
@@ -188,75 +190,6 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     queryClient.invalidateQueries({ queryKey: ['branch-chart-data', id] });
   };
 
-  const mockClients = [{
-    id: "CL-001",
-    name: "Pender, Eva",
-    initials: "EP",
-    bookingCount: 3
-  }, {
-    id: "CL-002",
-    name: "Fulcher, Patricia",
-    initials: "FP",
-    bookingCount: 2
-  }, {
-    id: "CL-003",
-    name: "Baulch, Ursula",
-    initials: "BU",
-    bookingCount: 1
-  }, {
-    id: "CL-004",
-    name: "Ren, Victoria",
-    initials: "RV",
-    bookingCount: 2
-  }, {
-    id: "CL-005",
-    name: "Iyaniwura, Ifeoluwa",
-    initials: "II",
-    bookingCount: 1
-  }, {
-    id: "CL-006",
-    name: "Careville Ltd",
-    initials: "CL",
-    bookingCount: 4
-  }, {
-    id: "CL-007",
-    name: "Johnson, Andrew",
-    initials: "JA",
-    bookingCount: 2
-  }, {
-    id: "CL-008",
-    name: "Mistry, Sanjay",
-    initials: "MS",
-    bookingCount: 3
-  }];
-
-  const mockCarers = [{
-    id: "CA-001",
-    name: "Charuma, Charmaine",
-    initials: "CC",
-    bookingCount: 4
-  }, {
-    id: "CA-002",
-    name: "Warren, Susan",
-    initials: "WS",
-    bookingCount: 3
-  }, {
-    id: "CA-003",
-    name: "Ayo-Famure, Opeyemi",
-    initials: "AF",
-    bookingCount: 3
-  }, {
-    id: "CA-004",
-    name: "Smith, John",
-    initials: "SJ",
-    bookingCount: 2
-  }, {
-    id: "CA-005",
-    name: "Williams, Mary",
-    initials: "WM",
-    bookingCount: 1
-  }];
-
   const handleCreateBooking = (bookingData: any) => {
     console.log("Creating new booking:", bookingData);
     setNewBookingDialogOpen(false);
@@ -346,13 +279,8 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
       <NewBookingDialog
         open={newBookingDialogOpen}
         onOpenChange={setNewBookingDialogOpen}
-        clients={
-          clients.map(client => ({
-            ...client,
-            name: `${client.first_name} ${client.last_name}`,
-          }))
-        }
-        carers={mockCarers}
+        clients={bookingClients}
+        carers={bookingCarers}
         services={services}
         servicesLoading={isLoadingServices}
         servicesError={servicesError}
