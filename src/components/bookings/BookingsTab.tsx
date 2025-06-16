@@ -42,6 +42,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
     updateOverlapAlertOpen,
     setUpdateOverlapAlertOpen,
     updateOverlapData,
+    isCheckingOverlap,
     handleRefresh,
     handleNewBooking,
     handleEditBooking,
@@ -147,6 +148,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         clients={clients}
         carers={carers}
         onUpdateBooking={handleUpdateBooking}
+        isCheckingOverlap={isCheckingOverlap}
       />
 
       <BookingOverlapAlert

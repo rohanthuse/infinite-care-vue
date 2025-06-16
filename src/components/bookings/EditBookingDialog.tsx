@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -33,6 +32,7 @@ interface EditBookingDialogProps {
   clients: Client[];
   carers: Carer[];
   onUpdateBooking: (booking: Booking, carers: Carer[]) => void;
+  isCheckingOverlap?: boolean;
 }
 
 export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
@@ -42,6 +42,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   clients,
   carers,
   onUpdateBooking,
+  isCheckingOverlap = false,
 }) => {
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [selectedCarerId, setSelectedCarerId] = useState<string>("");
@@ -190,6 +191,17 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       toast.error("Please select both client and carer");
       return;
     }
+
+    // Validate time inputs
+    if (!startTime || !endTime) {
+      toast.error("Please set both start and end times");
+      return;
+    }
+
+    if (startTime >= endTime) {
+      toast.error("End time must be after start time");
+      return;
+    }
     
     const updatedBooking: Booking = {
       ...booking,
@@ -276,6 +288,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   
   // Check if we have valid selections for both client and carer
   const hasValidSelections = selectedClientId && selectedCarerId;
+  const isSaveDisabled = !isDataLoaded || !hasValidSelections || isCheckingOverlap;
   
   // Render dialog
   return (
@@ -375,7 +388,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                 {hasValidSelections && (
                   <div className="mt-2 pt-2 border-t border-slate-200 text-xs text-slate-700 flex justify-between items-center">
                     <span>
-                      Overlap detection will check when saving
+                      {isCheckingOverlap ? "Checking for conflicts..." : "Overlap detection will check when saving"}
                     </span>
                     <div className="text-green-600 font-medium flex items-center">
                       <CheckCircle className="h-3 w-3 mr-1" />
@@ -429,9 +442,18 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
           </Button>
           <Button 
             onClick={handleSave}
-            disabled={!isDataLoaded || !hasValidSelections}
+            disabled={isSaveDisabled}
           >
-            {isDataLoaded ? "Save Changes" : "Loading..."}
+            {isCheckingOverlap ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Checking conflicts...
+              </>
+            ) : isDataLoaded ? (
+              "Save Changes"
+            ) : (
+              "Loading..."
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -4,6 +4,7 @@ import { Booking } from "../BookingTimeGrid";
 import { useCreateMultipleBookings } from "@/data/hooks/useCreateMultipleBookings";
 import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
 import { useBookingOverlapCheck } from "./useBookingOverlapCheck";
+import { useRealTimeOverlapCheck } from "./useRealTimeOverlapCheck";
 import { combineDateAndTimeToISO } from "../utils/bookingUtils";
 
 export function useBookingHandlers(branchId?: string, user?: any) {
@@ -28,6 +29,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   const createMultipleBookingsMutation = useCreateMultipleBookings(branchId);
   const updateBookingMutation = useUpdateBooking(branchId);
   const { checkOverlap, findAvailableCarers } = useBookingOverlapCheck(branchId);
+  const { checkOverlapRealTime, isChecking } = useRealTimeOverlapCheck(branchId);
 
   const handleRefresh = () => {
     toast.success("Bookings refreshed successfully");
@@ -54,7 +56,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     setNewBookingDialogOpen(true);
   };
 
-  const handleUpdateBooking = (bookingToUpdate: Booking & {notes?: string}, carers: any[] = []) => {
+  const handleUpdateBooking = async (bookingToUpdate: Booking & {notes?: string}, carers: any[] = []) => {
     console.log("[useBookingHandlers] === UPDATE BOOKING START ===");
     console.log("[useBookingHandlers] Updating booking:", {
       bookingId: bookingToUpdate.id,
@@ -93,63 +95,70 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         startTime: bookingToUpdate.startTime,
         endTime: bookingToUpdate.endTime,
         date: bookingToUpdate.date
-      },
-      carerChanged: selectedBooking ? bookingToUpdate.carerId !== selectedBooking.carerId : false,
-      startTimeChanged: selectedBooking ? bookingToUpdate.startTime !== selectedBooking.startTime : false,
-      endTimeChanged: selectedBooking ? bookingToUpdate.endTime !== selectedBooking.endTime : false,
-      dateChanged: selectedBooking ? bookingToUpdate.date !== selectedBooking.date : false
+      }
     });
 
     if (hasChangedSchedule && bookingToUpdate.carerId) {
-      console.log("[useBookingHandlers] SCHEDULE CHANGED - Checking for overlaps");
-      console.log("[useBookingHandlers] Calling overlap check with excludeId:", bookingToUpdate.id);
+      console.log("[useBookingHandlers] SCHEDULE CHANGED - Checking for overlaps using real-time data");
       
-      // Pass the booking ID to exclude it from overlap checking
-      const overlap = checkOverlap(
-        bookingToUpdate.carerId,
-        bookingToUpdate.startTime,
-        bookingToUpdate.endTime,
-        bookingToUpdate.date,
-        bookingToUpdate.id // Exclude current booking
-      );
-
-      console.log("[useBookingHandlers] Overlap check completed:", {
-        hasOverlap: overlap.hasOverlap,
-        conflictingBookings: overlap.conflictingBookings,
-        excludedBookingId: bookingToUpdate.id
-      });
-
-      if (overlap.hasOverlap) {
-        console.log("[useBookingHandlers] OVERLAP DETECTED - Setting up alert");
-        
-        const selectedCarer = carers.find(c => c.id === bookingToUpdate.carerId);
-        const availableCarers = findAvailableCarers(
-          carers,
+      try {
+        // Use real-time overlap checking
+        const overlap = await checkOverlapRealTime(
+          bookingToUpdate.carerId,
           bookingToUpdate.startTime,
           bookingToUpdate.endTime,
           bookingToUpdate.date,
           bookingToUpdate.id // Exclude current booking
         );
 
-        console.log("[useBookingHandlers] Overlap alert data:", {
-          selectedCarer: selectedCarer?.name,
-          availableCarersCount: availableCarers.length,
-          conflictCount: overlap.conflictingBookings.length
+        console.log("[useBookingHandlers] Real-time overlap check completed:", {
+          hasOverlap: overlap.hasOverlap,
+          conflictingBookings: overlap.conflictingBookings,
+          excludedBookingId: bookingToUpdate.id
         });
 
-        setUpdateOverlapData({
-          conflictingBookings: overlap.conflictingBookings,
-          carerName: selectedCarer?.name || bookingToUpdate.carerName,
-          proposedTime: `${bookingToUpdate.startTime} - ${bookingToUpdate.endTime}`,
-          proposedDate: bookingToUpdate.date,
-          availableCarers,
-        });
-        setPendingUpdateData(bookingToUpdate);
-        setUpdateOverlapAlertOpen(true);
-        console.log("[useBookingHandlers] Overlap alert should now be visible");
+        if (overlap.hasOverlap) {
+          console.log("[useBookingHandlers] OVERLAP DETECTED - Setting up alert");
+          
+          const selectedCarer = carers.find(c => c.id === bookingToUpdate.carerId);
+          const availableCarers = findAvailableCarers(
+            carers,
+            bookingToUpdate.startTime,
+            bookingToUpdate.endTime,
+            bookingToUpdate.date,
+            bookingToUpdate.id // Exclude current booking
+          );
+
+          console.log("[useBookingHandlers] Overlap alert data:", {
+            selectedCarer: selectedCarer?.name,
+            availableCarersCount: availableCarers.length,
+            conflictCount: overlap.conflictingBookings.length
+          });
+
+          setUpdateOverlapData({
+            conflictingBookings: overlap.conflictingBookings,
+            carerName: selectedCarer?.name || bookingToUpdate.carerName,
+            proposedTime: `${bookingToUpdate.startTime} - ${bookingToUpdate.endTime}`,
+            proposedDate: bookingToUpdate.date,
+            availableCarers,
+          });
+          setPendingUpdateData(bookingToUpdate);
+          setUpdateOverlapAlertOpen(true);
+          
+          // Show user feedback
+          toast.warning("Booking conflict detected!", {
+            description: "Please resolve the scheduling conflict before saving."
+          });
+          
+          console.log("[useBookingHandlers] Overlap alert should now be visible");
+          return; // Don't proceed with update
+        } else {
+          console.log("[useBookingHandlers] No overlaps detected, proceeding with update");
+        }
+      } catch (error) {
+        console.error("[useBookingHandlers] Error during overlap check:", error);
+        toast.error("Failed to check for booking conflicts. Please try again.");
         return;
-      } else {
-        console.log("[useBookingHandlers] No overlaps detected, proceeding with update");
       }
     } else {
       console.log("[useBookingHandlers] No schedule changes detected or no carer assigned, proceeding with update");
@@ -422,6 +431,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     updateOverlapAlertOpen,
     setUpdateOverlapAlertOpen,
     updateOverlapData,
+    isCheckingOverlap: isChecking,
     handleRefresh,
     handleNewBooking,
     handleEditBooking,
