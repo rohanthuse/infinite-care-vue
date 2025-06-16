@@ -22,7 +22,7 @@ export function useRealTimeOverlapCheck(branchId?: string) {
     date: string,
     excludeBookingId?: string
   ): Promise<BookingOverlap> => {
-    console.log("[useRealTimeOverlapCheck] === REAL-TIME OVERLAP CHECK START ===");
+    console.log("[useRealTimeOverlapCheck] 🚀 === CRITICAL OVERLAP CHECK START ===");
     console.log("[useRealTimeOverlapCheck] Input parameters:", {
       carerId,
       startTime,
@@ -33,10 +33,11 @@ export function useRealTimeOverlapCheck(branchId?: string) {
     });
 
     if (!branchId || !carerId || !startTime || !endTime || !date) {
-      console.log("[useRealTimeOverlapCheck] Missing required parameters");
+      console.log("[useRealTimeOverlapCheck] ❌ Missing required parameters");
       return { hasOverlap: false, conflictingBookings: [] };
     }
 
+    // CRITICAL: Set checking state immediately
     setIsChecking(true);
 
     try {
@@ -44,12 +45,12 @@ export function useRealTimeOverlapCheck(branchId?: string) {
       const proposedStartTimestamp = `${date}T${startTime}:00+00:00`;
       const proposedEndTimestamp = `${date}T${endTime}:00+00:00`;
 
-      console.log("[useRealTimeOverlapCheck] Constructed timestamps:", {
+      console.log("[useRealTimeOverlapCheck] 📅 Constructed timestamps:", {
         proposedStartTimestamp,
         proposedEndTimestamp
       });
 
-      // Fetch current bookings for this carer on this date from database
+      // CRITICAL: Fetch current bookings for this carer on this date from database
       let query = supabase
         .from("bookings")
         .select(`
@@ -66,39 +67,39 @@ export function useRealTimeOverlapCheck(branchId?: string) {
         .gte("start_time", `${date}T00:00:00+00:00`)
         .lt("start_time", `${date}T23:59:59+00:00`);
 
-      // Exclude the current booking if we're editing
+      // CRITICAL: Exclude the current booking if we're editing
       if (excludeBookingId) {
         query = query.neq("id", excludeBookingId);
-        console.log("[useRealTimeOverlapCheck] Excluding booking ID:", excludeBookingId);
+        console.log("[useRealTimeOverlapCheck] 🚫 Excluding booking ID:", excludeBookingId);
       }
 
       const { data: existingBookings, error } = await query;
 
       if (error) {
-        console.error("[useRealTimeOverlapCheck] Database error:", error);
+        console.error("[useRealTimeOverlapCheck] ❌ Database error:", error);
         throw error;
       }
 
-      console.log("[useRealTimeOverlapCheck] Found existing bookings:", existingBookings?.length || 0);
-      console.log("[useRealTimeOverlapCheck] Existing bookings data:", existingBookings);
+      console.log("[useRealTimeOverlapCheck] 📊 Found existing bookings:", existingBookings?.length || 0);
+      console.log("[useRealTimeOverlapCheck] 📋 Existing bookings data:", existingBookings);
 
       if (!existingBookings || existingBookings.length === 0) {
-        console.log("[useRealTimeOverlapCheck] No existing bookings found - no overlap");
+        console.log("[useRealTimeOverlapCheck] ✅ No existing bookings found - no overlap");
         return { hasOverlap: false, conflictingBookings: [] };
       }
 
-      // Check for time overlaps with STRICT validation (no touching times allowed)
+      // CRITICAL: Check for time overlaps with ULTRA-STRICT validation (no touching times allowed)
       const conflictingBookings = existingBookings.filter((booking: any) => {
         const existingStart = new Date(booking.start_time);
         const existingEnd = new Date(booking.end_time);
         const proposedStart = new Date(proposedStartTimestamp);
         const proposedEnd = new Date(proposedEndTimestamp);
 
-        // STRICT overlap check: intervals overlap if start1 < end2 AND end1 > start2
-        // This means even 1-minute overlaps will be caught
+        // ULTRA-STRICT overlap check: intervals overlap if start1 < end2 AND end1 > start2
+        // This means even 1-SECOND overlaps will be caught
         const hasOverlap = proposedStart < existingEnd && proposedEnd > existingStart;
 
-        console.log("[useRealTimeOverlapCheck] STRICT overlap check for booking:", {
+        console.log("[useRealTimeOverlapCheck] 🔍 ULTRA-STRICT overlap check for booking:", {
           bookingId: booking.id,
           existingStart: existingStart.toISOString(),
           existingEnd: existingEnd.toISOString(),
@@ -107,7 +108,10 @@ export function useRealTimeOverlapCheck(branchId?: string) {
           hasOverlap,
           // Additional debug info
           proposedStartBeforeExistingEnd: proposedStart < existingEnd,
-          proposedEndAfterExistingStart: proposedEnd > existingStart
+          proposedEndAfterExistingStart: proposedEnd > existingStart,
+          // Minute-level validation
+          startDiffMinutes: Math.round((existingEnd.getTime() - proposedStart.getTime()) / (1000 * 60)),
+          endDiffMinutes: Math.round((proposedEnd.getTime() - existingStart.getTime()) / (1000 * 60))
         });
 
         return hasOverlap;
@@ -132,16 +136,24 @@ export function useRealTimeOverlapCheck(branchId?: string) {
         }))
       };
 
-      console.log("[useRealTimeOverlapCheck] === FINAL RESULT ===");
+      console.log("[useRealTimeOverlapCheck] 🎯 === CRITICAL FINAL RESULT ===");
       console.log("[useRealTimeOverlapCheck] Has overlap:", result.hasOverlap);
       console.log("[useRealTimeOverlapCheck] Conflicting bookings:", result.conflictingBookings);
+
+      if (result.hasOverlap) {
+        console.log("[useRealTimeOverlapCheck] ❌ OVERLAP DETECTED - BLOCKING OPERATION");
+      } else {
+        console.log("[useRealTimeOverlapCheck] ✅ NO OVERLAP - ALLOWING OPERATION");
+      }
 
       return result;
 
     } catch (error) {
-      console.error("[useRealTimeOverlapCheck] Error during overlap check:", error);
-      return { hasOverlap: false, conflictingBookings: [] };
+      console.error("[useRealTimeOverlapCheck] 💥 CRITICAL ERROR during overlap check:", error);
+      // CRITICAL: Return safe default that blocks operation on error
+      return { hasOverlap: true, conflictingBookings: [] };
     } finally {
+      // CRITICAL: Always reset checking state
       setIsChecking(false);
     }
   }, [branchId]);

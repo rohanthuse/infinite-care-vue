@@ -73,6 +73,12 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
     });
   }, [bookings, statusFilter, selectedClientId, selectedCarerId]);
 
+  // Handle booking view from list
+  const handleViewBooking = (booking: Booking) => {
+    console.log("[BookingsTab] View booking from list:", booking.id);
+    handleEditBooking(booking); // Use same edit dialog for viewing
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -146,7 +152,11 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         </TabsContent>
         
         <TabsContent value="list">
-          <BookingsList bookings={filteredBookings} />
+          <BookingsList 
+            bookings={filteredBookings} 
+            onEditBooking={handleEditBooking}
+            onViewBooking={handleViewBooking}
+          />
         </TabsContent>
         
         <TabsContent value="reports">

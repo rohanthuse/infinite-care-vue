@@ -12,9 +12,15 @@ import { format } from "date-fns";
 
 interface BookingsListProps {
   bookings: Booking[];
+  onEditBooking?: (booking: Booking) => void;
+  onViewBooking?: (booking: Booking) => void;
 }
 
-export const BookingsList: React.FC<BookingsListProps> = ({ bookings }) => {
+export const BookingsList: React.FC<BookingsListProps> = ({ 
+  bookings, 
+  onEditBooking,
+  onViewBooking 
+}) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -61,6 +67,25 @@ export const BookingsList: React.FC<BookingsListProps> = ({ bookings }) => {
   const handleNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
+    }
+  };
+
+  // Handle edit booking click
+  const handleEditClick = (booking: Booking) => {
+    console.log("[BookingsList] Edit clicked for booking:", booking.id);
+    if (onEditBooking) {
+      onEditBooking(booking);
+    }
+  };
+
+  // Handle view booking click
+  const handleViewClick = (booking: Booking) => {
+    console.log("[BookingsList] View clicked for booking:", booking.id);
+    if (onViewBooking) {
+      onViewBooking(booking);
+    } else if (onEditBooking) {
+      // Fallback to edit if view handler not provided
+      onEditBooking(booking);
     }
   };
 
@@ -215,10 +240,22 @@ export const BookingsList: React.FC<BookingsListProps> = ({ bookings }) => {
                     <TableCell>{durationText}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => handleViewClick(booking)}
+                          title="View booking details"
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => handleEditClick(booking)}
+                          title="Edit booking"
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                       </div>
