@@ -1,16 +1,17 @@
-
 import React from "react";
 import { Phone, Mail, MapPin, Clock, CalendarRange } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
 interface BranchInfoHeaderProps {
   branchName: string;
   branchId: string;
   onNewBooking: () => void;
 }
-
-export const BranchInfoHeader = ({ branchName, branchId, onNewBooking }: BranchInfoHeaderProps) => {
+export const BranchInfoHeader = ({
+  branchName,
+  branchId,
+  onNewBooking
+}: BranchInfoHeaderProps) => {
   // These would typically come from an API call based on branchId
   // For now, we'll use static mock data
   const branchInfo = {
@@ -21,9 +22,7 @@ export const BranchInfoHeader = ({ branchName, branchId, onNewBooking }: BranchI
     operatingHours: "Mon-Fri: 8:00 - 18:00",
     establishedDate: "Est. 2020"
   };
-
-  return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 mb-6">
+  return <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 mb-6">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -50,16 +49,7 @@ export const BranchInfoHeader = ({ branchName, branchId, onNewBooking }: BranchI
             </div>
           </div>
           
-          <div className="flex flex-row items-center gap-3 mt-2 text-xs text-gray-500">
-            <div className="flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5" />
-              <span>{branchInfo.operatingHours}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <CalendarRange className="h-3.5 w-3.5" />
-              <span>{branchInfo.establishedDate}</span>
-            </div>
-          </div>
+          
         </div>
         
         <div className="flex justify-start md:justify-end">
@@ -68,6 +58,5 @@ export const BranchInfoHeader = ({ branchName, branchId, onNewBooking }: BranchI
           </Button>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
