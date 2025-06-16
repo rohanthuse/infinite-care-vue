@@ -399,7 +399,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                     <SelectItem value="unassigned">Unassigned</SelectItem>
                     <SelectItem value="done">Done</SelectItem>
                     <SelectItem value="in-progress">In Progress</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</Select>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
                     <SelectItem value="departed">Departed</SelectItem>
                     <SelectItem value="suspended">Suspended</SelectItem>
                   </SelectContent>
