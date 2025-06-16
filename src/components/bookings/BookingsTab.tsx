@@ -10,7 +10,6 @@ import { BookingReport } from "./BookingReport";
 import { NewBookingDialog } from "./NewBookingDialog";
 import { EditBookingDialog } from "./EditBookingDialog";
 import { CreateAdminDialog } from "./CreateAdminDialog";
-import { AuthDebugInfo } from "./AuthDebugInfo";
 import { toast } from "sonner";
 import { useBranchBookings } from "@/data/hooks/useBranchBookings";
 import { useCreateBooking } from "@/data/hooks/useCreateBooking";
@@ -480,7 +479,6 @@ export const BookingsTab: React.FC<BookingsTabProps> = ({
 
   return (
     <div className="space-y-4">
-      <AuthDebugInfo branchId={branchId} />
       
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
