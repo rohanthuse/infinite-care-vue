@@ -31,6 +31,7 @@ import Library from "@/pages/Library";
 import ThirdPartyAccess from "@/pages/ThirdPartyAccess";
 import Reports from "@/pages/Reports";
 import BookingApprovals from "@/pages/BookingApprovals";
+import ClientEdit from "@/pages/client/ClientEdit";
 
 const RequireAdminAuth = () => {
   const { session, loading } = useAuth();
@@ -77,6 +78,7 @@ const AdminRoutes = () => {
       <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
       <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
       <Route path="/branch-dashboard/:id/:branchName/care-plan/:carePlanId" element={<CarePlanView />} />
+      <Route path="/branch-dashboard/:id/:branchName/clients/:clientId/edit" element={<ClientEdit />} />
       <Route path="/branch-dashboard/:id/:branchName/events-logs" element={<EventsLogs />} />
       <Route path="/branch-dashboard/:id/:branchName/attendance" element={<Attendance />} />
       <Route path="/branch-dashboard/:id/:branchName/form-builder" element={<FormBuilder />} />
