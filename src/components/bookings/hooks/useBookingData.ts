@@ -15,7 +15,7 @@ import { makeDummyBookings, dummyClients, dummyCarers } from "../utils/dummyData
 export function useBookingData(branchId?: string) {
   const { data: bookingsDB = [], isLoading: isLoadingBookings } = useBranchBookings(branchId);
   const {
-    data: clientsData,
+    data: clientsResponse,
     isLoading: isLoadingClients
   } = useBranchClients({
     branchId,
@@ -27,19 +27,15 @@ export function useBookingData(branchId?: string) {
 
   const { clients, carers, bookings } = useMemo(() => {
     console.log("[useBookingData] Raw data received:");
-    console.log("- clientsData:", clientsData);
+    console.log("- clientsResponse:", clientsResponse);
     console.log("- carersData:", carersData);
     console.log("- bookingsDB:", bookingsDB);
     console.log("- branchId:", branchId);
 
-    // Extract clients from the response - handle both array and object with clients property
+    // Extract clients from the response - the hook returns { clients: [], count: number }
     let clientsRaw = [];
-    if (Array.isArray(clientsData)) {
-      clientsRaw = clientsData;
-    } else if (clientsData && Array.isArray(clientsData.clients)) {
-      clientsRaw = clientsData.clients;
-    } else if (clientsData && clientsData.data && Array.isArray(clientsData.data)) {
-      clientsRaw = clientsData.data;
+    if (clientsResponse && Array.isArray(clientsResponse.clients)) {
+      clientsRaw = clientsResponse.clients;
     }
 
     // Extract carers - should be a direct array
@@ -51,14 +47,14 @@ export function useBookingData(branchId?: string) {
     console.log("- clientsRaw sample:", clientsRaw[0]);
     console.log("- carersRaw sample:", carersRaw[0]);
 
-    // Map to our internal format or use dummy data as fallback
+    // Map to our internal format - only use dummy data if no branchId (demo mode)
     const resolvedClients: Client[] = clientsRaw.length > 0
       ? clientsRaw.map(mapDBClientToClient)
-      : (branchId ? [] : dummyClients); // Only use dummy data if no branchId
+      : (branchId ? [] : dummyClients);
 
     const resolvedCarers: Carer[] = carersRaw.length > 0
       ? carersRaw.map(mapDBCarerToCarer)
-      : (branchId ? [] : dummyCarers); // Only use dummy data if no branchId
+      : (branchId ? [] : dummyCarers);
 
     console.log("[useBookingData] Resolved data:");
     console.log("- resolvedClients length:", resolvedClients.length);
@@ -131,7 +127,7 @@ export function useBookingData(branchId?: string) {
       carers: carersWithBookings,
       bookings
     };
-  }, [bookingsDB, clientsData, carersData, branchId]);
+  }, [bookingsDB, clientsResponse, carersData, branchId]);
 
   return {
     clients,
