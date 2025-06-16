@@ -772,7 +772,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         {activeTab === "training-matrix" && <TrainingMatrix branchId={id || "main"} branchName={decodeURIComponent(branchName || "Main Branch")} />}
       
         {activeTab === "bookings" && (
-          <BookingsTab branchId={branchId} />
+          <BookingsTab branchId={id} />
         )}
         
         {activeTab === "carers" && <CarersTab branchId={id} branchName={branchName} />}
