@@ -14,33 +14,45 @@ export function safeInitials(first: any, last: any, fallback = "??") {
 }
 
 export function mapDBClientToClient(db: any): Client {
+  console.log("[mapDBClientToClient] Mapping client:", db);
+  
   const firstName = db.first_name ?? "";
   const lastName = db.last_name ?? "";
-  const name = db.avatar_initials
-    ? db.first_name + " " + db.last_name
-    : safeName(firstName, lastName);
-  const initials =
-    db.avatar_initials ||
-    safeInitials(firstName, lastName);
-  return {
+  
+  // Use avatar_initials if available, otherwise generate from names
+  const name = safeName(firstName, lastName);
+  const initials = db.avatar_initials || safeInitials(firstName, lastName);
+  
+  const mappedClient = {
     id: db.id,
     name,
     initials,
     bookings: [],
     bookingCount: 0,
   };
+  
+  console.log("[mapDBClientToClient] Mapped to:", mappedClient);
+  
+  return mappedClient;
 }
 
 export function mapDBCarerToCarer(db: any): Carer {
+  console.log("[mapDBCarerToCarer] Mapping carer:", db);
+  
   const firstName = db.first_name ?? "";
   const lastName = db.last_name ?? "";
-  return {
+  
+  const mappedCarer = {
     id: db.id,
     name: safeName(firstName, lastName),
     initials: safeInitials(firstName, lastName),
     bookings: [],
     bookingCount: 0,
   };
+  
+  console.log("[mapDBCarerToCarer] Mapped to:", mappedCarer);
+  
+  return mappedCarer;
 }
 
 // Helper: placeholder client/carer for missing reference
