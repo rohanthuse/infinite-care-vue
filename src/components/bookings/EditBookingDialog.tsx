@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -20,10 +21,11 @@ import { Label } from "@/components/ui/label";
 import { Booking, Client, Carer } from "./BookingTimeGrid";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, CalendarCheck, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Calendar, Clock, CalendarCheck, CheckCircle, XCircle, Loader2, AlertTriangle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { EntitySelector } from "./EntitySelector";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface EditBookingDialogProps {
   open: boolean;
@@ -55,13 +57,17 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [carerSelectorKey, setCarerSelectorKey] = useState<number>(0);
   const [clientSelectorKey, setClientSelectorKey] = useState<number>(0);
+  const [hasValidationErrors, setHasValidationErrors] = useState<boolean>(false);
+  const [validationMessage, setValidationMessage] = useState<string>("");
 
   // Reset the dialog state when it opens/closes
   useEffect(() => {
     if (open) {
-      console.log("Dialog opened");
+      console.log("[EditBookingDialog] Dialog opened");
       setIsDataLoaded(false);
       setIsProcessing(false);
+      setHasValidationErrors(false);
+      setValidationMessage("");
       
       if (booking) {
         // Initialize dialog with booking data
@@ -77,11 +83,11 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
           setClientSelectorKey(prev => prev + 1);
           setCarerSelectorKey(prev => prev + 1);
           setIsDataLoaded(true);
-          console.log("Dialog data loaded. Client ID:", booking.clientId, "Carer ID:", booking.carerId);
+          console.log("[EditBookingDialog] Data loaded. Client:", booking.clientId, "Carer:", booking.carerId);
         }, 100);
       }
     } else {
-      console.log("Dialog closed, resetting state");
+      console.log("[EditBookingDialog] Dialog closed, resetting state");
       // Reset state when dialog closes
       setSelectedClientId("");
       setSelectedCarerId("");
@@ -92,8 +98,66 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       setBookingDate("");
       setCarerSelectorKey(prev => prev + 1);
       setClientSelectorKey(prev => prev + 1);
+      setHasValidationErrors(false);
+      setValidationMessage("");
     }
   }, [open, booking]);
+
+  // Validate scheduling changes
+  const validateScheduleChange = (): boolean => {
+    if (!booking) return false;
+    
+    // Check if schedule has changed
+    const hasScheduleChanged = (
+      selectedCarerId !== booking.carerId ||
+      startTime !== booking.startTime ||
+      endTime !== booking.endTime ||
+      bookingDate !== booking.date
+    );
+
+    if (!hasScheduleChanged) {
+      setHasValidationErrors(false);
+      setValidationMessage("");
+      return true;
+    }
+
+    // Validate time range
+    if (startTime && endTime && startTime >= endTime) {
+      setHasValidationErrors(true);
+      setValidationMessage("End time must be after start time");
+      return false;
+    }
+
+    // Check business hours
+    if (startTime) {
+      const [hour] = startTime.split(':').map(Number);
+      if (hour < 6 || hour >= 22) {
+        setHasValidationErrors(true);
+        setValidationMessage("Bookings must be between 06:00 and 22:00");
+        return false;
+      }
+    }
+
+    if (endTime) {
+      const [hour] = endTime.split(':').map(Number);
+      if (hour > 22) {
+        setHasValidationErrors(true);
+        setValidationMessage("Bookings must end by 22:00");
+        return false;
+      }
+    }
+
+    setHasValidationErrors(false);
+    setValidationMessage("");
+    return true;
+  };
+
+  // Validate whenever time or carer changes
+  useEffect(() => {
+    if (isDataLoaded && booking) {
+      validateScheduleChange();
+    }
+  }, [selectedCarerId, startTime, endTime, bookingDate, isDataLoaded, booking]);
   
   // Handle client selection
   const handleClientChange = (clientId: string | null) => {
@@ -102,7 +166,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       return;
     }
     
-    console.log("Client selected:", clientId, "Previous:", selectedClientId);
+    console.log("[EditBookingDialog] Client selected:", clientId);
     setIsProcessing(true);
     
     setSelectedClientId(clientId);
@@ -124,7 +188,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       return;
     }
     
-    console.log("Carer selected:", carerId, "Previous:", selectedCarerId);
+    console.log("[EditBookingDialog] Carer selected:", carerId);
     setIsProcessing(true);
     
     setSelectedCarerId(carerId);
@@ -132,7 +196,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     const selectedCarer = carers.find(c => c.id === carerId);
     if (selectedCarer) {
       toast.success(`Selected carer: ${selectedCarer.name}`);
-      console.log("Carer assignment updated to:", selectedCarer.name);
+      console.log("[EditBookingDialog] Carer assignment updated to:", selectedCarer.name);
     }
     
     setTimeout(() => {
@@ -182,7 +246,23 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const handleSave = () => {
     if (!booking) return;
     
-    console.log("Saving booking with client:", selectedClientId, "and carer:", selectedCarerId);
+    console.log("[EditBookingDialog] Save attempted with validation:", {
+      hasValidationErrors,
+      isCheckingOverlap,
+      validationMessage
+    });
+
+    // Don't allow save if there are validation errors
+    if (hasValidationErrors) {
+      toast.error("Please fix validation errors before saving");
+      return;
+    }
+
+    // Don't allow save if currently checking for overlaps
+    if (isCheckingOverlap) {
+      toast.warning("Please wait for overlap check to complete");
+      return;
+    }
     
     const selectedClient = clients.find(c => c.id === selectedClientId);
     const selectedCarer = carers.find(c => c.id === selectedCarerId);
@@ -192,14 +272,8 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       return;
     }
 
-    // Validate time inputs
-    if (!startTime || !endTime) {
-      toast.error("Please set both start and end times");
-      return;
-    }
-
-    if (startTime >= endTime) {
-      toast.error("End time must be after start time");
+    // Final validation
+    if (!validateScheduleChange()) {
       return;
     }
     
@@ -218,53 +292,20 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       status: status as Booking["status"],
     };
     
-    console.log("Updated booking:", updatedBooking);
+    console.log("[EditBookingDialog] Saving booking:", updatedBooking);
     
     // Pass the carers array to the update handler for overlap detection
     onUpdateBooking(updatedBooking, carers);
   };
 
-  // Validate time change
-  const validateTimeChange = (newStartTime: string, newEndTime: string): boolean => {
-    const [startHour, startMin] = newStartTime.split(':').map(Number);
-    const [endHour, endMin] = newEndTime.split(':').map(Number);
-    
-    const startInMinutes = startHour * 60 + startMin;
-    const endInMinutes = endHour * 60 + endMin;
-    
-    if (endInMinutes <= startInMinutes) {
-      toast.error("End time must be after start time");
-      return false;
-    }
-    
-    const businessStartMinutes = 6 * 60;
-    const businessEndMinutes = 22 * 60;
-    
-    if (startInMinutes < businessStartMinutes) {
-      toast.error("Bookings can only start at or after 06:00");
-      return false;
-    }
-    
-    if (endInMinutes > businessEndMinutes) {
-      toast.error("Bookings must end at or before 22:00");
-      return false;
-    }
-    
-    return true;
-  };
-  
   // Handle start time change
   const handleStartTimeChange = (newStartTime: string) => {
-    if (validateTimeChange(newStartTime, endTime)) {
-      setStartTime(newStartTime);
-    }
+    setStartTime(newStartTime);
   };
   
   // Handle end time change
   const handleEndTimeChange = (newEndTime: string) => {
-    if (validateTimeChange(startTime, newEndTime)) {
-      setEndTime(newEndTime);
-    }
+    setEndTime(newEndTime);
   };
   
   // Get background color for booking status
@@ -288,7 +329,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   
   // Check if we have valid selections for both client and carer
   const hasValidSelections = selectedClientId && selectedCarerId;
-  const isSaveDisabled = !isDataLoaded || !hasValidSelections || isCheckingOverlap;
+  const isSaveDisabled = !isDataLoaded || !hasValidSelections || isCheckingOverlap || hasValidationErrors;
   
   // Render dialog
   return (
@@ -309,6 +350,22 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
         ) : (
           <ScrollArea className="max-h-[60vh] overflow-y-auto py-2 pr-3">
             <div className="grid gap-4 py-2">
+              {/* Validation Error Alert */}
+              {hasValidationErrors && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>{validationMessage}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Overlap Check Status */}
+              {isCheckingOverlap && (
+                <Alert>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <AlertDescription>Checking for booking conflicts...</AlertDescription>
+                </Alert>
+              )}
+
               <div className="rounded-md bg-slate-50 p-3 border border-slate-200">
                 <h3 className="text-sm font-medium text-slate-900 mb-2 flex items-center">
                   <Calendar className="h-4 w-4 mr-1" />
@@ -385,14 +442,12 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                   />
                 )}
                 
-                {hasValidSelections && (
+                {hasValidSelections && !hasValidationErrors && !isCheckingOverlap && (
                   <div className="mt-2 pt-2 border-t border-slate-200 text-xs text-slate-700 flex justify-between items-center">
-                    <span>
-                      {isCheckingOverlap ? "Checking for conflicts..." : "Overlap detection will check when saving"}
-                    </span>
+                    <span>Ready to save - overlap detection will run automatically</span>
                     <div className="text-green-600 font-medium flex items-center">
                       <CheckCircle className="h-3 w-3 mr-1" />
-                      Ready to save
+                      Validated
                     </div>
                   </div>
                 )}
@@ -448,6 +503,11 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 Checking conflicts...
+              </>
+            ) : hasValidationErrors ? (
+              <>
+                <XCircle className="h-4 w-4 mr-2" />
+                Fix errors to save
               </>
             ) : isDataLoaded ? (
               "Save Changes"

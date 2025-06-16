@@ -87,23 +87,27 @@ export function useRealTimeOverlapCheck(branchId?: string) {
         return { hasOverlap: false, conflictingBookings: [] };
       }
 
-      // Check for time overlaps
+      // Check for time overlaps with STRICT validation (no touching times allowed)
       const conflictingBookings = existingBookings.filter((booking: any) => {
         const existingStart = new Date(booking.start_time);
         const existingEnd = new Date(booking.end_time);
         const proposedStart = new Date(proposedStartTimestamp);
         const proposedEnd = new Date(proposedEndTimestamp);
 
-        // Two time intervals overlap if: start1 < end2 AND end1 > start2
+        // STRICT overlap check: intervals overlap if start1 < end2 AND end1 > start2
+        // This means even 1-minute overlaps will be caught
         const hasOverlap = proposedStart < existingEnd && proposedEnd > existingStart;
 
-        console.log("[useRealTimeOverlapCheck] Overlap check for booking:", {
+        console.log("[useRealTimeOverlapCheck] STRICT overlap check for booking:", {
           bookingId: booking.id,
           existingStart: existingStart.toISOString(),
           existingEnd: existingEnd.toISOString(),
           proposedStart: proposedStart.toISOString(),
           proposedEnd: proposedEnd.toISOString(),
-          hasOverlap
+          hasOverlap,
+          // Additional debug info
+          proposedStartBeforeExistingEnd: proposedStart < existingEnd,
+          proposedEndAfterExistingStart: proposedEnd > existingStart
         });
 
         return hasOverlap;

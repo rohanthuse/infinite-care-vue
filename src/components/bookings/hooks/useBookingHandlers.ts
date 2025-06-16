@@ -99,10 +99,10 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     });
 
     if (hasChangedSchedule && bookingToUpdate.carerId) {
-      console.log("[useBookingHandlers] SCHEDULE CHANGED - Checking for overlaps using real-time data");
+      console.log("[useBookingHandlers] SCHEDULE CHANGED -PERFORMING STRICT OVERLAP CHECK");
       
       try {
-        // Use real-time overlap checking
+        // Use real-time overlap checking with STRICT validation
         const overlap = await checkOverlapRealTime(
           bookingToUpdate.carerId,
           bookingToUpdate.startTime,
@@ -111,14 +111,14 @@ export function useBookingHandlers(branchId?: string, user?: any) {
           bookingToUpdate.id // Exclude current booking
         );
 
-        console.log("[useBookingHandlers] Real-time overlap check completed:", {
+        console.log("[useBookingHandlers] STRICT overlap check completed:", {
           hasOverlap: overlap.hasOverlap,
           conflictingBookings: overlap.conflictingBookings,
           excludedBookingId: bookingToUpdate.id
         });
 
         if (overlap.hasOverlap) {
-          console.log("[useBookingHandlers] OVERLAP DETECTED - Setting up alert");
+          console.log("[useBookingHandlers] OVERLAP DETECTED - BLOCKING SAVE");
           
           const selectedCarer = carers.find(c => c.id === bookingToUpdate.carerId);
           const availableCarers = findAvailableCarers(
@@ -145,18 +145,18 @@ export function useBookingHandlers(branchId?: string, user?: any) {
           setPendingUpdateData(bookingToUpdate);
           setUpdateOverlapAlertOpen(true);
           
-          // Show user feedback
-          toast.warning("Booking conflict detected!", {
-            description: "Please resolve the scheduling conflict before saving."
+          // Show user feedback - CRITICAL: Make it clear the save was blocked
+          toast.error("Booking conflict detected!", {
+            description: "The booking overlaps with existing appointments. Please resolve the conflict to continue."
           });
           
-          console.log("[useBookingHandlers] Overlap alert should now be visible");
-          return; // Don't proceed with update
+          console.log("[useBookingHandlers] SAVE BLOCKED - User must resolve conflict");
+          return; // CRITICAL: Don't proceed with update
         } else {
           console.log("[useBookingHandlers] No overlaps detected, proceeding with update");
         }
       } catch (error) {
-        console.error("[useBookingHandlers] Error during overlap check:", error);
+        console.error("[useBookingHandlers] Error during STRICT overlap check:", error);
         toast.error("Failed to check for booking conflicts. Please try again.");
         return;
       }
@@ -190,6 +190,12 @@ export function useBookingHandlers(branchId?: string, user?: any) {
                 setEditBookingDialogOpen(false);
             }
             toast.success("Booking updated successfully");
+        },
+        onError: (error) => {
+            console.error("[useBookingHandlers] Failed to update booking:", error);
+            toast.error("Failed to update booking", {
+                description: error?.message || "Please try again"
+            });
         }
     });
   };

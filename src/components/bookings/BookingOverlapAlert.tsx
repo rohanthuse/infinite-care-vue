@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Clock, User, AlertTriangle } from "lucide-react";
+import { Clock, User, AlertTriangle, Ban } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface ConflictingBooking {
@@ -51,31 +51,39 @@ export function BookingOverlapAlert({
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-600" />
-            <AlertDialogTitle>Booking Conflict Detected</AlertDialogTitle>
+            <Ban className="h-6 w-6 text-red-600" />
+            <AlertDialogTitle className="text-red-900">Booking Conflict - Save Blocked</AlertDialogTitle>
           </div>
           <AlertDialogDescription asChild>
             <div className="space-y-4">
-              <p>
-                The selected carer <strong>{carerName}</strong> has conflicting bookings on{" "}
-                <strong>{new Date(proposedDate).toLocaleDateString()}</strong> at{" "}
-                <strong>{proposedTime}</strong>.
-              </p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-800 font-medium">
+                  The booking cannot be saved because <strong>{carerName}</strong> has conflicting appointments on{" "}
+                  <strong>{new Date(proposedDate).toLocaleDateString()}</strong> at{" "}
+                  <strong>{proposedTime}</strong>.
+                </p>
+                <p className="text-red-700 text-sm mt-2">
+                  Even 1-minute overlaps are not allowed to ensure proper scheduling.
+                </p>
+              </div>
               
               <div className="space-y-2">
-                <h4 className="font-medium text-sm">Conflicting Bookings:</h4>
+                <h4 className="font-medium text-sm flex items-center text-red-700">
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Conflicting Bookings:
+                </h4>
                 {conflictingBookings.map((booking) => (
-                  <div key={booking.id} className="border rounded-lg p-3 bg-red-50">
+                  <div key={booking.id} className="border rounded-lg p-3 bg-red-50 border-red-200">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-gray-600" />
-                        <span className="text-sm font-medium">{booking.clientName}</span>
+                        <User className="h-4 w-4 text-red-600" />
+                        <span className="text-sm font-medium text-red-900">{booking.clientName}</span>
                       </div>
                       <Badge variant="destructive" className="text-xs">
                         Conflict
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-1 mt-1 text-xs text-gray-600">
+                    <div className="flex items-center gap-1 mt-1 text-xs text-red-700">
                       <Clock className="h-3 w-3" />
                       {booking.startTime} - {booking.endTime}
                     </div>
@@ -90,18 +98,27 @@ export function BookingOverlapAlert({
                   </h4>
                   <div className="flex flex-wrap gap-1">
                     {availableCarers.slice(0, 3).map((carer) => (
-                      <Badge key={carer.id} variant="outline" className="text-xs">
+                      <Badge key={carer.id} variant="outline" className="text-xs border-green-300 text-green-700">
                         {carer.name}
                       </Badge>
                     ))}
                     {availableCarers.length > 3 && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs border-green-300 text-green-700">
                         +{availableCarers.length - 3} more
                       </Badge>
                     )}
                   </div>
                 </div>
               )}
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <h4 className="font-medium text-blue-900 text-sm mb-2">How to resolve:</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Choose a different carer who is available</li>
+                  <li>• Modify the booking time to avoid conflicts</li>
+                  <li>• Cancel this booking attempt</li>
+                </ul>
+              </div>
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -127,7 +144,7 @@ export function BookingOverlapAlert({
               onClick={onForceCreate}
               className="w-full text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Force Create (Not Recommended)
+              Force Save (Not Recommended - May Cause Issues)
             </AlertDialogAction>
           )}
           
