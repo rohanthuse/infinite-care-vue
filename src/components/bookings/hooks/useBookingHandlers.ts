@@ -1,9 +1,9 @@
-
 import { useState } from "react";
 import { toast } from "sonner";
 import { Booking } from "../BookingTimeGrid";
 import { useCreateMultipleBookings } from "@/data/hooks/useCreateMultipleBookings";
 import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
+import { useBookingOverlapCheck } from "./useBookingOverlapCheck";
 import { combineDateAndTimeToISO } from "../utils/bookingUtils";
 
 export function useBookingHandlers(branchId?: string, user?: any) {
@@ -16,9 +16,13 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     clientId?: string;
     carerId?: string;
   } | null>(null);
+  const [overlapAlertOpen, setOverlapAlertOpen] = useState(false);
+  const [overlapData, setOverlapData] = useState<any>(null);
+  const [pendingBookingData, setPendingBookingData] = useState<any>(null);
 
   const createMultipleBookingsMutation = useCreateMultipleBookings(branchId);
   const updateBookingMutation = useUpdateBooking(branchId);
+  const { checkOverlap, findAvailableCarers } = useBookingOverlapCheck(branchId);
 
   const handleRefresh = () => {
     toast.success("Bookings refreshed successfully");
@@ -72,7 +76,54 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     });
   };
 
-  const handleCreateBooking = (bookingData: any) => {
+  const checkForOverlapsAndCreate = (bookingData: any, carers: any[]) => {
+    if (!bookingData.carerId) {
+      proceedWithBookingCreation(bookingData);
+      return;
+    }
+
+    // Check for overlaps in the first schedule
+    const firstSchedule = bookingData.schedules[0];
+    if (!firstSchedule) {
+      proceedWithBookingCreation(bookingData);
+      return;
+    }
+
+    const proposedDate = bookingData.fromDate instanceof Date 
+      ? bookingData.fromDate.toISOString().slice(0, 10)
+      : new Date(bookingData.fromDate).toISOString().slice(0, 10);
+
+    const overlap = checkOverlap(
+      bookingData.carerId,
+      firstSchedule.startTime,
+      firstSchedule.endTime,
+      proposedDate
+    );
+
+    if (overlap.hasOverlap) {
+      const selectedCarer = carers.find(c => c.id === bookingData.carerId);
+      const availableCarers = findAvailableCarers(
+        carers,
+        firstSchedule.startTime,
+        firstSchedule.endTime,
+        proposedDate
+      );
+
+      setOverlapData({
+        conflictingBookings: overlap.conflictingBookings,
+        carerName: selectedCarer?.name || "Unknown Carer",
+        proposedTime: `${firstSchedule.startTime} - ${firstSchedule.endTime}`,
+        proposedDate,
+        availableCarers,
+      });
+      setPendingBookingData(bookingData);
+      setOverlapAlertOpen(true);
+    } else {
+      proceedWithBookingCreation(bookingData);
+    }
+  };
+
+  const proceedWithBookingCreation = (bookingData: any) => {
     if (!user) {
       toast.error("You must be logged in to create bookings");
       return;
@@ -206,6 +257,29 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     });
   };
 
+  const handleCreateBooking = (bookingData: any, carers: any[] = []) => {
+    checkForOverlapsAndCreate(bookingData, carers);
+  };
+
+  const handleOverlapChooseDifferentCarer = () => {
+    setOverlapAlertOpen(false);
+    // Keep the dialog open to allow carer selection
+  };
+
+  const handleOverlapModifyTime = () => {
+    setOverlapAlertOpen(false);
+    // Keep the dialog open to allow time modification
+  };
+
+  const handleOverlapForceCreate = () => {
+    if (pendingBookingData) {
+      proceedWithBookingCreation(pendingBookingData);
+    }
+    setOverlapAlertOpen(false);
+    setPendingBookingData(null);
+    setOverlapData(null);
+  };
+
   return {
     newBookingDialogOpen,
     setNewBookingDialogOpen,
@@ -213,12 +287,18 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     setEditBookingDialogOpen,
     selectedBooking,
     newBookingData,
+    overlapAlertOpen,
+    setOverlapAlertOpen,
+    overlapData,
     handleRefresh,
     handleNewBooking,
     handleEditBooking,
     handleContextMenuBooking,
     handleUpdateBooking,
     handleCreateBooking,
+    handleOverlapChooseDifferentCarer,
+    handleOverlapModifyTime,
+    handleOverlapForceCreate,
     createMultipleBookingsMutation,
     updateBookingMutation
   };
