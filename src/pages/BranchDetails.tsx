@@ -1,6 +1,7 @@
 import React from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
+import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
@@ -33,6 +34,12 @@ const BranchDetails = () => {
     toast.success("Navigating to Branch Dashboard");
     if (branchData) {
       navigate(`/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.name)}`);
+    }
+  };
+
+  const handleNewBooking = () => {
+    if (branchData) {
+      navigate(`/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.name)}/bookings`);
     }
   };
 
@@ -141,6 +148,12 @@ const BranchDetails = () => {
                 </CustomButton>
               </div>
             </div>
+
+            <BranchInfoHeader 
+              branchId={id!} 
+              onNewBooking={handleNewBooking}
+              showNewBookingButton={true}
+            />
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {statCardsData.map(card => (

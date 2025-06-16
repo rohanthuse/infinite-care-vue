@@ -416,37 +416,52 @@ export type Database = {
       }
       branches: {
         Row: {
+          address: string | null
           branch_type: string
           country: string
           created_at: string
           created_by: string | null
           currency: string
+          email: string | null
+          established_date: string | null
           id: string
           name: string
+          operating_hours: string | null
+          phone: string | null
           regulatory: string
           status: string
           updated_at: string | null
         }
         Insert: {
+          address?: string | null
           branch_type: string
           country: string
           created_at?: string
           created_by?: string | null
           currency: string
+          email?: string | null
+          established_date?: string | null
           id?: string
           name: string
+          operating_hours?: string | null
+          phone?: string | null
           regulatory: string
           status: string
           updated_at?: string | null
         }
         Update: {
+          address?: string | null
           branch_type?: string
           country?: string
           created_at?: string
           created_by?: string | null
           currency?: string
+          email?: string | null
+          established_date?: string | null
           id?: string
           name?: string
+          operating_hours?: string | null
+          phone?: string | null
           regulatory?: string
           status?: string
           updated_at?: string | null
