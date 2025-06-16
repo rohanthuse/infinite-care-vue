@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ClientProfile, ClientCarePlan, ClientAppointment } from './useClientData';
+import { ClientProfile } from './useClientData';
 
 // Hook for admins to get all clients in their branch
 export const useAdminClients = (branchId: string) => {
@@ -28,12 +28,7 @@ export const useAdminClientDetail = (clientId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
-        .select(`
-          *,
-          client_care_plans(*),
-          client_appointments(*),
-          client_billing(*)
-        `)
+        .select('*')
         .eq('id', clientId)
         .single();
 
