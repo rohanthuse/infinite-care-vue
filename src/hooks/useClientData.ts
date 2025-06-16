@@ -79,7 +79,7 @@ export const useClientProfile = () => {
   });
 };
 
-// Hook to get client care plans
+// Hook to get client care plans - simplified to avoid type depth issues
 export const useClientCarePlans = (clientId?: string) => {
   const { user } = useAuth();
   const { data: clientProfile } = useClientProfile();
@@ -90,6 +90,7 @@ export const useClientCarePlans = (clientId?: string) => {
       const targetClientId = clientId || clientProfile?.id;
       if (!targetClientId) throw new Error('No client ID available');
 
+      // Simplified query to avoid type depth issues
       const { data, error } = await supabase
         .from('client_care_plans')
         .select('*')
@@ -121,7 +122,7 @@ export const useCarePlanGoals = (carePlanId: string) => {
   });
 };
 
-// Hook to get client appointments
+// Hook to get client appointments - simplified
 export const useClientAppointments = (clientId?: string) => {
   const { user } = useAuth();
   const { data: clientProfile } = useClientProfile();
