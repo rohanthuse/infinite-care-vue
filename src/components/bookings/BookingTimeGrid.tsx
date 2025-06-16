@@ -121,8 +121,11 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     i.toString().padStart(2, '0') + ":00"
   );
 
+  // Ensure we have a valid date
+  const validDate = date && !isNaN(date.getTime()) ? date : new Date();
+
   const getWeekDates = () => {
-    const weekStart = startOfWeek(date, { weekStartsOn: 1 }); // Monday as start of week
+    const weekStart = startOfWeek(validDate, { weekStartsOn: 1 }); // Monday as start of week
     return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   };
   
@@ -200,8 +203,14 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
 
   const isBookingOnDate = (booking: Booking, checkDate: Date) => {
     if (!booking.date) return false;
-    const bookingDate = new Date(booking.date);
-    return isSameDay(bookingDate, checkDate);
+    try {
+      const bookingDate = new Date(booking.date);
+      if (isNaN(bookingDate.getTime())) return false;
+      return isSameDay(bookingDate, checkDate);
+    } catch (error) {
+      console.error("Error parsing booking date:", booking.date, error);
+      return false;
+    }
   };
   
   useEffect(() => {
@@ -210,11 +219,11 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
       const scrollTarget = Math.max(0, (currentHour - 2) * hourHeight);
       
       if ((viewType === "weekly" && weekDates.some(d => isToday(d))) || 
-          (viewType === "daily" && isToday(date))) {
+          (viewType === "daily" && isToday(validDate))) {
         gridRef.current.scrollTop = scrollTarget;
       }
     }
-  }, [viewType, date, hourHeight, weekDates]);
+  }, [viewType, validDate, hourHeight, weekDates]);
   
   const getBookingPosition = (startTime: string, endTime: string) => {
     const [startHour, startMin] = startTime.split(':').map(Number);
@@ -590,10 +599,15 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
         <div className="flex items-center gap-2 text-sm">
           <Calendar className="h-4 w-4 text-gray-500" />
           {viewType === "daily" ? (
-            <span className="font-medium">{format(date, 'EEEE, MMMM d, yyyy')}</span>
+            <span className="font-medium">
+              {validDate && !isNaN(validDate.getTime()) ? format(validDate, 'EEEE, MMMM d, yyyy') : 'Invalid Date'}
+            </span>
           ) : (
             <span className="font-medium">
-              {format(weekDates[0], 'MMM d')} - {format(weekDates[6], 'MMM d, yyyy')}
+              {weekDates.length > 0 && weekDates[0] && weekDates[6] ? 
+                `${format(weekDates[0], 'MMM d')} - ${format(weekDates[6], 'MMM d, yyyy')}` : 
+                'Invalid Date Range'
+              }
             </span>
           )}
         </div>

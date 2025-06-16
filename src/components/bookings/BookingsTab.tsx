@@ -119,12 +119,15 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       />
 
       <BookingTimeGrid
-        selectedDate={selectedDate}
+        date={selectedDate}
         bookings={filteredBookings}
         clients={clients}
         carers={carers}
+        viewType={viewType}
+        viewMode="client"
         onEditBooking={handleEditBooking}
         onContextMenuBooking={handleContextMenuBooking}
+        onUpdateBooking={handleUpdateBooking}
       />
 
       <NewBookingDialog
