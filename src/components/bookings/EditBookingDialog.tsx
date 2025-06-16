@@ -369,7 +369,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
               <BookingValidationAlert 
                 isValidating={isCheckingOverlap || isSaveBlocked}
                 validationError={hasValidationErrors ? validationMessage : undefined}
-                isValid={!hasValidationErrors && !isCheckingOverlap && !isSaveBlocked && hasValidSelections}
+                isValid={!hasValidationErrors && !isCheckingOverlap && !isSaveBlocked && !!hasValidSelections}
               />
 
               {/* CRITICAL: Overlap checking status */}

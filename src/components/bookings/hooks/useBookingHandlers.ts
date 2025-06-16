@@ -6,7 +6,7 @@ import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
 import { useBookingOverlapCheck } from "./useBookingOverlapCheck";
 import { useRealTimeOverlapCheck } from "./useRealTimeOverlapCheck";
 import { combineDateAndTimeToISO } from "../utils/bookingUtils";
-import { useEnhancedOverlapValidation } from "@/data/hooks/useEnhancedOverlapValidation";
+import { useEnhancedOverlapValidation } from "./useEnhancedOverlapValidation";
 
 export function useBookingHandlers(branchId?: string, user?: any) {
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
