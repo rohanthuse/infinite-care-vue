@@ -1,22 +1,23 @@
 
-import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
-import { Booking } from "@/components/bookings/BookingTimeGrid";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { format } from "date-fns";
+import { generateBookingReportPDF, generateClientReportPDF, generateStaffReportPDF } from "./enhancedPdfGenerator";
 
 export interface ReportData {
   totalBookings: number;
   completedBookings: number;
   cancelledBookings: number;
+  completionRate: number;
   totalRevenue: number;
   averageDuration: number;
-  completionRate: number;
-  topCarers: Array<{ name: string; bookings: number; completionRate: number }>;
-  topClients: Array<{ name: string; bookings: number }>;
-  statusBreakdown: Record<string, number>;
-  dailyStats?: Array<{ date: string; bookings: number; revenue: number }>;
-  weeklyStats?: Array<{ week: string; bookings: number; revenue: number }>;
-  monthlyStats?: Array<{ month: string; bookings: number; revenue: number }>;
+  topCarers: Array<{
+    name: string;
+    bookings: number;
+    completionRate: number;
+  }>;
+  topClients: Array<{
+    name: string;
+    bookings: number;
+  }>;
 }
 
 export interface ReportFilters {
@@ -28,303 +29,117 @@ export interface ReportFilters {
 }
 
 export class ReportGenerator {
-  
-  static generateReportData(bookings: Booking[], filters: ReportFilters): ReportData {
-    const filteredBookings = this.filterBookings(bookings, filters);
-    
-    const totalBookings = filteredBookings.length;
-    const completedBookings = filteredBookings.filter(b => b.status === 'done').length;
-    const cancelledBookings = filteredBookings.filter(b => b.status === 'cancelled').length;
+  static generateReportData(bookings: any[], filters: Partial<ReportFilters>): ReportData {
+    const totalBookings = bookings.length;
+    const completedBookings = bookings.filter(b => b.status === 'done').length;
+    const cancelledBookings = bookings.filter(b => b.status === 'cancelled').length;
     const completionRate = totalBookings > 0 ? (completedBookings / totalBookings) * 100 : 0;
-    
-    // Calculate total revenue (assuming some bookings have revenue data)
-    const totalRevenue = filteredBookings.reduce((sum, booking) => {
-      // Since our Booking interface doesn't have revenue, we'll simulate it
-      // In a real app, you'd have this data from the database
-      return sum + this.estimateBookingRevenue(booking);
+
+    // Calculate total revenue (estimated)
+    const totalRevenue = bookings.reduce((sum, booking) => {
+      const [startHour, startMin] = booking.startTime.split(':').map(Number);
+      const [endHour, endMin] = booking.endTime.split(':').map(Number);
+      const duration = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+      return sum + (duration / 60) * 25; // £25 per hour base rate
     }, 0);
 
     // Calculate average duration
-    const averageDuration = this.calculateAverageDuration(filteredBookings);
+    const totalDuration = bookings.reduce((sum, booking) => {
+      const [startHour, startMin] = booking.startTime.split(':').map(Number);
+      const [endHour, endMin] = booking.endTime.split(':').map(Number);
+      return sum + ((endHour * 60 + endMin) - (startHour * 60 + startMin));
+    }, 0);
+    const averageDuration = totalBookings > 0 ? totalDuration / totalBookings : 0;
 
-    // Status breakdown
-    const statusBreakdown = filteredBookings.reduce((acc, booking) => {
-      acc[booking.status] = (acc[booking.status] || 0) + 1;
+    // Calculate top carers
+    const carerStats = bookings.reduce((acc, booking) => {
+      if (!booking.carerId || !booking.carerName) return acc;
+      
+      if (!acc[booking.carerId]) {
+        acc[booking.carerId] = {
+          name: booking.carerName,
+          total: 0,
+          completed: 0
+        };
+      }
+      
+      acc[booking.carerId].total++;
+      if (booking.status === 'done') {
+        acc[booking.carerId].completed++;
+      }
+      
       return acc;
-    }, {} as Record<string, number>);
+    }, {} as Record<string, { name: string; total: number; completed: number }>);
 
-    // Top carers
-    const carerStats = this.getCarerStats(filteredBookings);
-    const topCarers = Object.entries(carerStats)
-      .map(([name, stats]) => ({
-        name,
-        bookings: stats.total,
-        completionRate: stats.total > 0 ? (stats.completed / stats.total) * 100 : 0
+    const topCarers = Object.values(carerStats)
+      .map(carer => ({
+        name: carer.name,
+        bookings: carer.total,
+        completionRate: carer.total > 0 ? (carer.completed / carer.total) * 100 : 0
       }))
       .sort((a, b) => b.bookings - a.bookings)
       .slice(0, 5);
 
-    // Top clients
-    const clientStats = this.getClientStats(filteredBookings);
-    const topClients = Object.entries(clientStats)
-      .map(([name, count]) => ({ name, bookings: count }))
+    // Calculate top clients
+    const clientStats = bookings.reduce((acc, booking) => {
+      if (!booking.clientId || !booking.clientName) return acc;
+      
+      if (!acc[booking.clientId]) {
+        acc[booking.clientId] = {
+          name: booking.clientName,
+          bookings: 0
+        };
+      }
+      
+      acc[booking.clientId].bookings++;
+      return acc;
+    }, {} as Record<string, { name: string; bookings: number }>);
+
+    const topClients = Object.values(clientStats)
       .sort((a, b) => b.bookings - a.bookings)
       .slice(0, 5);
-
-    let dailyStats, weeklyStats, monthlyStats;
-
-    // Generate time-based stats based on report type
-    if (filters.reportType === 'daily') {
-      dailyStats = this.getDailyStats(filteredBookings, filters.dateRange);
-    } else if (filters.reportType === 'weekly') {
-      weeklyStats = this.getWeeklyStats(filteredBookings, filters.dateRange);
-    } else if (filters.reportType === 'monthly') {
-      monthlyStats = this.getMonthlyStats(filteredBookings, filters.dateRange);
-    }
 
     return {
       totalBookings,
       completedBookings,
       cancelledBookings,
+      completionRate,
       totalRevenue,
       averageDuration,
-      completionRate,
       topCarers,
-      topClients,
-      statusBreakdown,
-      dailyStats,
-      weeklyStats,
-      monthlyStats
+      topClients
     };
   }
 
-  private static filterBookings(bookings: Booking[], filters: ReportFilters): Booking[] {
-    return bookings.filter(booking => {
-      const bookingDate = new Date(booking.date);
-      
-      // Date range filter
-      if (bookingDate < filters.dateRange.from || bookingDate > filters.dateRange.to) {
-        return false;
-      }
-      
-      // Status filter
-      if (filters.status && filters.status !== 'all' && booking.status !== filters.status) {
-        return false;
-      }
-      
-      // Carer filter
-      if (filters.carerId && filters.carerId !== 'all' && booking.carerId !== filters.carerId) {
-        return false;
-      }
-      
-      // Client filter
-      if (filters.clientId && filters.clientId !== 'all' && booking.clientId !== filters.clientId) {
-        return false;
-      }
-      
-      return true;
-    });
-  }
-
-  private static estimateBookingRevenue(booking: Booking): number {
-    // Simulate revenue calculation based on duration and service type
-    const duration = this.calculateBookingDuration(booking);
-    const baseRate = 25; // £25 per hour base rate
-    return (duration / 60) * baseRate;
-  }
-
-  private static calculateBookingDuration(booking: Booking): number {
-    const [startHour, startMin] = booking.startTime.split(':').map(Number);
-    const [endHour, endMin] = booking.endTime.split(':').map(Number);
-    return (endHour * 60 + endMin) - (startHour * 60 + startMin);
-  }
-
-  private static calculateAverageDuration(bookings: Booking[]): number {
-    if (bookings.length === 0) return 0;
-    const totalDuration = bookings.reduce((sum, booking) => {
-      return sum + this.calculateBookingDuration(booking);
-    }, 0);
-    return totalDuration / bookings.length;
-  }
-
-  private static getCarerStats(bookings: Booking[]): Record<string, { total: number; completed: number }> {
-    return bookings.reduce((acc, booking) => {
-      if (!acc[booking.carerName]) {
-        acc[booking.carerName] = { total: 0, completed: 0 };
-      }
-      acc[booking.carerName].total++;
-      if (booking.status === 'done') {
-        acc[booking.carerName].completed++;
-      }
-      return acc;
-    }, {} as Record<string, { total: number; completed: number }>);
-  }
-
-  private static getClientStats(bookings: Booking[]): Record<string, number> {
-    return bookings.reduce((acc, booking) => {
-      acc[booking.clientName] = (acc[booking.clientName] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-  }
-
-  private static getDailyStats(bookings: Booking[], dateRange: { from: Date; to: Date }) {
-    const dailyMap = new Map<string, { bookings: number; revenue: number }>();
-    
-    bookings.forEach(booking => {
-      const date = booking.date;
-      if (!dailyMap.has(date)) {
-        dailyMap.set(date, { bookings: 0, revenue: 0 });
-      }
-      const stats = dailyMap.get(date)!;
-      stats.bookings++;
-      stats.revenue += this.estimateBookingRevenue(booking);
-    });
-
-    return Array.from(dailyMap.entries()).map(([date, stats]) => ({
-      date: format(new Date(date), 'MMM dd'),
-      bookings: stats.bookings,
-      revenue: stats.revenue
-    })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }
-
-  private static getWeeklyStats(bookings: Booking[], dateRange: { from: Date; to: Date }) {
-    const weeklyMap = new Map<string, { bookings: number; revenue: number }>();
-    
-    bookings.forEach(booking => {
-      const bookingDate = new Date(booking.date);
-      const weekStart = startOfWeek(bookingDate, { weekStartsOn: 1 });
-      const weekKey = format(weekStart, 'MMM dd');
-      
-      if (!weeklyMap.has(weekKey)) {
-        weeklyMap.set(weekKey, { bookings: 0, revenue: 0 });
-      }
-      const stats = weeklyMap.get(weekKey)!;
-      stats.bookings++;
-      stats.revenue += this.estimateBookingRevenue(booking);
-    });
-
-    return Array.from(weeklyMap.entries()).map(([week, stats]) => ({
-      week,
-      bookings: stats.bookings,
-      revenue: stats.revenue
-    }));
-  }
-
-  private static getMonthlyStats(bookings: Booking[], dateRange: { from: Date; to: Date }) {
-    const monthlyMap = new Map<string, { bookings: number; revenue: number }>();
-    
-    bookings.forEach(booking => {
-      const bookingDate = new Date(booking.date);
-      const monthKey = format(bookingDate, 'MMM yyyy');
-      
-      if (!monthlyMap.has(monthKey)) {
-        monthlyMap.set(monthKey, { bookings: 0, revenue: 0 });
-      }
-      const stats = monthlyMap.get(monthKey)!;
-      stats.bookings++;
-      stats.revenue += this.estimateBookingRevenue(booking);
-    });
-
-    return Array.from(monthlyMap.entries()).map(([month, stats]) => ({
-      month,
-      bookings: stats.bookings,
-      revenue: stats.revenue
-    }));
-  }
-
-  static generatePDF(reportData: ReportData, filters: ReportFilters, branchName: string): void {
-    const doc = new jsPDF();
-    
-    // Header
-    doc.setFontSize(20);
-    doc.text(`${branchName} - Booking Report`, 20, 20);
-    
-    doc.setFontSize(12);
-    doc.text(`Report Type: ${filters.reportType.charAt(0).toUpperCase() + filters.reportType.slice(1)}`, 20, 35);
-    doc.text(`Date Range: ${format(filters.dateRange.from, 'MMM dd, yyyy')} - ${format(filters.dateRange.to, 'MMM dd, yyyy')}`, 20, 45);
-    doc.text(`Generated: ${format(new Date(), 'MMM dd, yyyy HH:mm')}`, 20, 55);
-
-    // Summary Statistics
-    doc.setFontSize(16);
-    doc.text('Summary Statistics', 20, 75);
-    
-    const summaryData = [
-      ['Total Bookings', reportData.totalBookings.toString()],
-      ['Completed Bookings', reportData.completedBookings.toString()],
-      ['Cancelled Bookings', reportData.cancelledBookings.toString()],
-      ['Completion Rate', `${reportData.completionRate.toFixed(1)}%`],
-      ['Total Revenue', `£${reportData.totalRevenue.toFixed(2)}`],
-      ['Average Duration', `${reportData.averageDuration.toFixed(0)} minutes`]
-    ];
-
-    (doc as any).autoTable({
-      startY: 85,
-      head: [['Metric', 'Value']],
-      body: summaryData,
-      theme: 'grid',
-      styles: { fontSize: 10 }
-    });
-
-    // Top Carers
-    if (reportData.topCarers.length > 0) {
-      doc.setFontSize(16);
-      doc.text('Top Performing Carers', 20, (doc as any).lastAutoTable.finalY + 20);
-      
-      const carerData = reportData.topCarers.map(carer => [
-        carer.name,
-        carer.bookings.toString(),
-        `${carer.completionRate.toFixed(1)}%`
-      ]);
-
-      (doc as any).autoTable({
-        startY: (doc as any).lastAutoTable.finalY + 30,
-        head: [['Carer Name', 'Total Bookings', 'Completion Rate']],
-        body: carerData,
-        theme: 'grid',
-        styles: { fontSize: 10 }
-      });
+  static generatePDF(reportData: ReportData, filters: Partial<ReportFilters>, branchName: string): void {
+    // Use the enhanced PDF generator for consistent branding
+    if (filters.reportType === 'booking' || !filters.reportType) {
+      generateBookingReportPDF([], filters, branchName, "Booking Summary Report");
     }
-
-    // Status Breakdown
-    doc.setFontSize(16);
-    doc.text('Booking Status Breakdown', 20, (doc as any).lastAutoTable.finalY + 20);
-    
-    const statusData = Object.entries(reportData.statusBreakdown).map(([status, count]) => [
-      status.charAt(0).toUpperCase() + status.slice(1),
-      count.toString(),
-      `${((count / reportData.totalBookings) * 100).toFixed(1)}%`
-    ]);
-
-    (doc as any).autoTable({
-      startY: (doc as any).lastAutoTable.finalY + 30,
-      head: [['Status', 'Count', 'Percentage']],
-      body: statusData,
-      theme: 'grid',
-      styles: { fontSize: 10 }
-    });
-
-    // Save the PDF
-    doc.save(`booking-report-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`);
   }
 
-  static generateCSV(bookings: Booking[], filters: ReportFilters): void {
-    const filteredBookings = this.filterBookings(bookings, filters);
+  static generateCSV(bookings: any[], filters: Partial<ReportFilters>): void {
+    const csvHeaders = ["Date", "Start Time", "End Time", "Client", "Carer", "Status", "Duration (mins)", "Revenue"];
     
-    const headers = ['ID', 'Date', 'Start Time', 'End Time', 'Client', 'Carer', 'Status', 'Duration (mins)', 'Estimated Revenue'];
-    
-    const csvData = filteredBookings.map(booking => [
-      booking.id,
-      booking.date,
-      booking.startTime,
-      booking.endTime,
-      booking.clientName,
-      booking.carerName,
-      booking.status,
-      this.calculateBookingDuration(booking).toString(),
-      `£${this.estimateBookingRevenue(booking).toFixed(2)}`
-    ]);
+    const csvData = bookings.map(booking => {
+      const [startHour, startMin] = booking.startTime.split(':').map(Number);
+      const [endHour, endMin] = booking.endTime.split(':').map(Number);
+      const duration = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+      const revenue = (duration / 60) * 25;
+      
+      return [
+        format(new Date(booking.date), 'yyyy-MM-dd'),
+        booking.startTime,
+        booking.endTime,
+        booking.clientName || 'N/A',
+        booking.carerName || 'N/A',
+        booking.status,
+        duration.toString(),
+        `£${revenue.toFixed(2)}`
+      ];
+    });
 
-    const csvContent = [headers, ...csvData]
+    const csvContent = [csvHeaders, ...csvData]
       .map(row => row.map(cell => `"${cell}"`).join(','))
       .join('\n');
 
@@ -332,7 +147,7 @@ export class ReportGenerator {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `booking-data-${format(new Date(), 'yyyy-MM-dd-HHmm')}.csv`);
+    link.setAttribute('download', `Med-Infinite_Report_${format(new Date(), "yyyy-MM-dd")}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();

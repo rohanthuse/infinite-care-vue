@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { 
   Select, 
@@ -41,7 +40,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Booking } from "./BookingTimeGrid";
 import { toast } from "sonner";
-import { ReportGenerator, ReportData } from "@/services/reportGenerator";
+import { generateBookingReportPDF } from "@/services/enhancedPdfGenerator";
 
 interface BookingReportProps {
   bookings: Booking[];
@@ -70,9 +69,7 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
   const [carerFilter, setCarerFilter] = useState<string>("all");
   const [clientFilter, setClientFilter] = useState<string>("all");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [reportData, setReportData] = useState<ReportData | null>(null);
 
-  // Get unique carers and clients for the dropdowns
   const carers = Array.from(new Set(bookings.map(booking => booking.carerId)))
     .map(id => {
       const booking = bookings.find(b => b.carerId === id);
@@ -85,36 +82,30 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
       return { id, name: booking?.clientName || "" };
     });
 
-  // Filter bookings based on current filters
   const filteredBookings = useMemo(() => {
     return bookings.filter(booking => {
       const bookingDate = new Date(booking.date);
       
-      // Check if booking matches date range
       const matchesDate = 
         (!date?.from || bookingDate >= date.from) && 
         (!date?.to || bookingDate <= date.to);
         
-      // Check if booking matches search query
       const matchesSearch = 
         searchQuery === "" || 
         booking.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         booking.carerName.toLowerCase().includes(searchQuery.toLowerCase());
         
-      // Check if booking matches status filter
       const matchesStatus = status === "all" || booking.status === status;
       
-      // Check if booking matches carer filter
       const matchesCarer = carerFilter === "all" || booking.carerId === carerFilter;
       
-      // Check if booking matches client filter
       const matchesClient = clientFilter === "all" || booking.clientId === clientFilter;
       
       return matchesDate && matchesSearch && matchesStatus && matchesCarer && matchesClient;
     });
   }, [bookings, date, searchQuery, status, carerFilter, clientFilter]);
 
-  const handleGenerateReport = () => {
+  const handleExportPDF = () => {
     if (!date?.from || !date?.to) {
       toast.error("Please select a date range");
       return;
@@ -131,48 +122,15 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
         reportType
       };
 
-      const generatedReportData = ReportGenerator.generateReportData(bookings, filters);
-      setReportData(generatedReportData);
+      generateBookingReportPDF(filteredBookings, filters, branchName, `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report`);
       
-      toast.success("Report generated successfully", {
-        description: `Generated ${reportType} report with ${generatedReportData.totalBookings} bookings`
-      });
-    } catch (error) {
-      console.error("Report generation error:", error);
-      toast.error("Failed to generate report", {
-        description: "Please try again or contact support"
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleExportPDF = () => {
-    if (!reportData || !date?.from || !date?.to) {
-      toast.error("Please generate a report first");
-      return;
-    }
-
-    setIsGenerating(true);
-    
-    try {
-      const filters = {
-        dateRange: { from: date.from, to: date.to },
-        status: status !== 'all' ? status : undefined,
-        carerId: carerFilter !== 'all' ? carerFilter : undefined,
-        clientId: clientFilter !== 'all' ? clientFilter : undefined,
-        reportType
-      };
-
-      ReportGenerator.generatePDF(reportData, filters, branchName);
-      
-      toast.success("Report exported successfully", {
-        description: "The PDF report has been downloaded"
+      toast.success("PDF Report Generated Successfully", {
+        description: `Downloaded ${reportType} report with ${filteredBookings.length} bookings for ${branchName}`
       });
     } catch (error) {
       console.error("PDF export error:", error);
-      toast.error("Failed to export PDF", {
-        description: "Please try again"
+      toast.error("Failed to generate PDF report", {
+        description: error instanceof Error ? error.message : "Please try again"
       });
     } finally {
       setIsGenerating(false);
@@ -188,22 +146,51 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
     setIsGenerating(true);
     
     try {
-      const filters = {
-        dateRange: { from: date.from, to: date.to },
-        status: status !== 'all' ? status : undefined,
-        carerId: carerFilter !== 'all' ? carerFilter : undefined,
-        clientId: clientFilter !== 'all' ? clientFilter : undefined,
-        reportType
-      };
-
-      ReportGenerator.generateCSV(bookings, filters);
+      // Prepare CSV data
+      const csvHeaders = ["Date", "Start Time", "End Time", "Client", "Carer", "Status", "Duration (mins)", "Estimated Revenue"];
       
-      toast.success("Data exported successfully", {
-        description: "The CSV file has been downloaded"
+      const csvData = filteredBookings.map(booking => {
+        const duration = (() => {
+          const [startHour, startMin] = booking.startTime.split(':').map(Number);
+          const [endHour, endMin] = booking.endTime.split(':').map(Number);
+          return (endHour * 60 + endMin) - (startHour * 60 + startMin);
+        })();
+        const revenue = (duration / 60) * 25; // £25 per hour base rate
+        
+        return [
+          format(new Date(booking.date), 'yyyy-MM-dd'),
+          booking.startTime,
+          booking.endTime,
+          booking.clientName,
+          booking.carerName,
+          booking.status,
+          duration.toString(),
+          `£${revenue.toFixed(2)}`
+        ];
+      });
+
+      // Create CSV content
+      const csvContent = [csvHeaders, ...csvData]
+        .map(row => row.map(cell => `"${cell}"`).join(','))
+        .join('\n');
+
+      // Create and download blob
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Med-Infinite_Booking_Data_${format(new Date(), "yyyy-MM-dd")}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("CSV Data Exported Successfully", {
+        description: `Downloaded booking data with ${filteredBookings.length} records`
       });
     } catch (error) {
       console.error("CSV export error:", error);
-      toast.error("Failed to export CSV", {
+      toast.error("Failed to export CSV data", {
         description: "Please try again"
       });
     } finally {
@@ -229,11 +216,10 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-800">Booking Reports</h2>
-          <p className="text-gray-500 mt-1">Generate and export comprehensive booking reports with real data analysis</p>
+          <p className="text-gray-500 mt-1">Generate and export comprehensive booking reports with Med-Infinite branding</p>
         </div>
         
         <div className="p-6 space-y-6">
-          {/* Search & Report Type */}
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-grow">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -262,9 +248,7 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
             </div>
           </div>
           
-          {/* Filters */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Date Range */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -297,7 +281,6 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
               </PopoverContent>
             </Popover>
             
-            {/* Status Filter */}
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger>
                 <Filter className="h-4 w-4 mr-2" />
@@ -315,7 +298,6 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
               </SelectContent>
             </Select>
             
-            {/* Carer Filter */}
             <Select value={carerFilter} onValueChange={setCarerFilter}>
               <SelectTrigger>
                 <User className="h-4 w-4 mr-2" />
@@ -331,7 +313,6 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
               </SelectContent>
             </Select>
             
-            {/* Client Filter */}
             <Select value={clientFilter} onValueChange={setClientFilter}>
               <SelectTrigger>
                 <User className="h-4 w-4 mr-2" />
@@ -348,27 +329,18 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
             </Select>
           </div>
 
-          {/* Buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
             <Button 
               className="bg-blue-600 hover:bg-blue-700" 
-              onClick={handleGenerateReport}
+              onClick={handleExportPDF}
               disabled={isGenerating}
             >
               {isGenerating ? (
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
               ) : (
-                <FileText className="h-4 w-4 mr-2" />
+                <FileDown className="h-4 w-4 mr-2" />
               )}
-              Generate Report
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleExportPDF}
-              disabled={isGenerating || !reportData}
-            >
-              <FileDown className="h-4 w-4 mr-2" />
-              Export PDF
+              Export PDF Report
             </Button>
             <Button 
               variant="outline" 
@@ -376,11 +348,21 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
               disabled={isGenerating}
             >
               <FileDown className="h-4 w-4 mr-2" />
-              Export CSV
+              Export CSV Data
             </Button>
             <Button 
               variant="outline" 
-              onClick={resetFilters} 
+              onClick={() => {
+                setSearchQuery("");
+                setReportType("summary");
+                setStatus("all");
+                setDate({
+                  from: subDays(new Date(), 7),
+                  to: new Date(),
+                });
+                setCarerFilter("all");
+                setClientFilter("all");
+              }} 
               className="sm:ml-auto"
             >
               Reset Filters
