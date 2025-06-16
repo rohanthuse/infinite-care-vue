@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { toast } from "sonner";
 import { Booking } from "../BookingTimeGrid";
@@ -99,7 +100,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         );
 
         if (!validation.isValid) {
-          console.log("[useBookingHandlers] ❌ ENHANCED VALIDATION FAILED");
+          console.log("[useBookingHandlers] ENHANCED VALIDATION FAILED");
           
           const selectedCarer = carers.find(c => c.id === bookingToUpdate.carerId);
           const availableCarers = findAvailableCarers(
@@ -120,7 +121,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
           setPendingUpdateData(bookingToUpdate);
           setUpdateOverlapAlertOpen(true);
           
-          toast.error("❌ Booking Conflict Detected!", {
+          toast.error("Booking Conflict Detected!", {
             description: validation.error || "Overlapping appointments found. Please resolve the conflict."
           });
           
@@ -143,7 +144,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   };
 
   const proceedWithBookingUpdate = (bookingToUpdate: Booking & {notes?: string}) => {
-    console.log("[useBookingHandlers] ✅ Proceeding with booking update:", bookingToUpdate.id);
+    console.log("[useBookingHandlers] Proceeding with booking update:", bookingToUpdate.id);
     
     const payload: any = {
       client_id: bookingToUpdate.clientId,
@@ -163,7 +164,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
             if (editBookingDialogOpen) {
                 setEditBookingDialogOpen(false);
             }
-            toast.success("✅ Booking updated successfully", {
+            toast.success("Booking updated successfully", {
               description: "Calendar will refresh automatically"
             });
         },
@@ -172,11 +173,11 @@ export function useBookingHandlers(branchId?: string, user?: any) {
             
             // Handle database constraint errors
             if (error?.message?.includes('Booking conflict detected')) {
-              toast.error("❌ Database Blocked Save", {
+              toast.error("Database Blocked Save", {
                 description: "The database detected a booking conflict. This is an additional safety check."
               });
             } else {
-              toast.error("❌ Failed to update booking", {
+              toast.error("Failed to update booking", {
                   description: error?.message || "Please try again"
               });
             }
@@ -400,7 +401,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   };
 
   const handleUpdateOverlapForceUpdate = () => {
-    console.log("[useBookingHandlers] ⚠️ FORCE UPDATE REQUESTED - This should be rare!");
+    console.log("[useBookingHandlers] FORCE UPDATE REQUESTED - This should be rare!");
     if (pendingUpdateData) {
       proceedWithBookingUpdate(pendingUpdateData);
     }

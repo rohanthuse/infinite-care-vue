@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -109,10 +110,10 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   // CRITICAL: Block save when overlap check is running
   useEffect(() => {
     if (isCheckingOverlap) {
-      console.log("[EditBookingDialog] 🔒 BLOCKING SAVE - Overlap check in progress");
+      console.log("[EditBookingDialog] BLOCKING SAVE - Overlap check in progress");
       setIsSaveBlocked(true);
     } else {
-      console.log("[EditBookingDialog] 🔓 UNBLOCKING SAVE - Overlap check completed");
+      console.log("[EditBookingDialog] UNBLOCKING SAVE - Overlap check completed");
       setIsSaveBlocked(false);
     }
   }, [isCheckingOverlap]);
@@ -138,7 +139,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     // CRITICAL: Validate time range
     if (startTime && endTime && startTime >= endTime) {
       setHasValidationErrors(true);
-      setValidationMessage("⚠️ End time must be after start time");
+      setValidationMessage("End time must be after start time");
       return false;
     }
 
@@ -147,7 +148,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       const [hour] = startTime.split(':').map(Number);
       if (hour < 6 || hour >= 22) {
         setHasValidationErrors(true);
-        setValidationMessage("⚠️ Bookings must be between 06:00 and 22:00");
+        setValidationMessage("Bookings must be between 06:00 and 22:00");
         return false;
       }
     }
@@ -156,7 +157,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       const [hour] = endTime.split(':').map(Number);
       if (hour > 22) {
         setHasValidationErrors(true);
-        setValidationMessage("⚠️ Bookings must end by 22:00");
+        setValidationMessage("Bookings must end by 22:00");
         return false;
       }
     }
@@ -260,7 +261,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
   const handleSave = () => {
     if (!booking) return;
     
-    console.log("[EditBookingDialog] 🚀 SAVE ATTEMPTED with state:", {
+    console.log("[EditBookingDialog] SAVE ATTEMPTED with state:", {
       hasValidationErrors,
       isCheckingOverlap,
       isSaveBlocked,
@@ -269,12 +270,12 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
 
     // CRITICAL: Multiple blocking conditions
     if (hasValidationErrors) {
-      toast.error("❌ Please fix validation errors before saving");
+      toast.error("Please fix validation errors before saving");
       return;
     }
 
     if (isCheckingOverlap || isSaveBlocked) {
-      toast.warning("⏳ Please wait for overlap validation to complete");
+      toast.warning("Please wait for overlap validation to complete");
       return;
     }
     
@@ -282,13 +283,13 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     const selectedCarer = carers.find(c => c.id === selectedCarerId);
     
     if (!selectedClient || !selectedCarer) {
-      toast.error("❌ Please select both client and carer");
+      toast.error("Please select both client and carer");
       return;
     }
 
     // Final validation before proceeding
     if (!validateScheduleChange()) {
-      toast.error("❌ Please fix validation errors before saving");
+      toast.error("Please fix validation errors before saving");
       return;
     }
     
@@ -307,7 +308,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       status: status as Booking["status"],
     };
     
-    console.log("[EditBookingDialog] 🎯 INITIATING SAVE with booking:", updatedBooking);
+    console.log("[EditBookingDialog] INITIATING SAVE with booking:", updatedBooking);
     
     // Pass the carers array to the update handler for overlap detection
     onUpdateBooking(updatedBooking, carers);
@@ -377,7 +378,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                 <Alert>
                   <Shield className="h-4 w-4 animate-pulse" />
                   <AlertDescription>
-                    🔐 <strong>Save Blocked:</strong> Validating for booking conflicts... Please wait.
+                    <strong>Save Blocked:</strong> Validating for booking conflicts... Please wait.
                   </AlertDescription>
                 </Alert>
               )}
@@ -462,7 +463,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                 
                 {hasValidSelections && !hasValidationErrors && !isCheckingOverlap && !isSaveBlocked && (
                   <div className="mt-2 pt-2 border-t border-slate-200 text-xs text-slate-700 flex justify-between items-center">
-                    <span>✅ Ready to save - overlap detection will run automatically</span>
+                    <span>Ready to save - overlap detection will run automatically</span>
                     <div className="text-green-600 font-medium flex items-center">
                       <CheckCircle className="h-3 w-3 mr-1" />
                       Validated
@@ -522,7 +523,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
             {(isCheckingOverlap || isSaveBlocked) ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                🔐 Validating conflicts...
+                Validating conflicts...
               </>
             ) : hasValidationErrors ? (
               <>
@@ -530,7 +531,7 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                 Fix errors to save
               </>
             ) : isDataLoaded ? (
-              "💾 Save Changes"
+              "Save Changes"
             ) : (
               "Loading..."
             )}

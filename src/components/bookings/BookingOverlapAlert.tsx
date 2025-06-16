@@ -52,25 +52,25 @@ export function BookingOverlapAlert({
         <AlertDialogHeader>
           <div className="flex items-center gap-2">
             <Shield className="h-6 w-6 text-red-600" />
-            <AlertDialogTitle className="text-red-900">🚫 Critical Booking Conflict</AlertDialogTitle>
+            <AlertDialogTitle className="text-red-900">Critical Booking Conflict</AlertDialogTitle>
           </div>
           <AlertDialogDescription asChild>
             <div className="space-y-4">
               <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                 <p className="text-red-800 font-medium">
-                  ❌ <strong>SAVE BLOCKED:</strong> <strong>{carerName}</strong> has conflicting appointments on{" "}
+                  <strong>SAVE BLOCKED:</strong> <strong>{carerName}</strong> has conflicting appointments on{" "}
                   <strong>{new Date(proposedDate).toLocaleDateString()}</strong> at{" "}
                   <strong>{proposedTime}</strong>.
                 </p>
                 <p className="text-red-700 text-sm mt-2">
-                  🛡️ Even 1-minute overlaps are blocked to ensure proper scheduling and prevent conflicts.
+                  Even 1-minute overlaps are blocked to ensure proper scheduling and prevent conflicts.
                 </p>
               </div>
               
               <div className="space-y-2">
                 <h4 className="font-medium text-sm flex items-center text-red-700">
                   <AlertTriangle className="h-4 w-4 mr-2" />
-                  ⚠️ Conflicting Bookings:
+                  Conflicting Bookings:
                 </h4>
                 {conflictingBookings.map((booking) => (
                   <div key={booking.id} className="border rounded-lg p-3 bg-red-50 border-red-200">
@@ -80,7 +80,7 @@ export function BookingOverlapAlert({
                         <span className="text-sm font-medium text-red-900">{booking.clientName}</span>
                       </div>
                       <Badge variant="destructive" className="text-xs">
-                        ❌ Conflict
+                        Conflict
                       </Badge>
                     </div>
                     <div className="flex items-center gap-1 mt-1 text-xs text-red-700">
@@ -94,7 +94,7 @@ export function BookingOverlapAlert({
               {availableCarers.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="font-medium text-sm text-green-700">
-                    ✅ Available Carers for this time slot:
+                    Available Carers for this time slot:
                   </h4>
                   <div className="flex flex-wrap gap-1">
                     {availableCarers.slice(0, 3).map((carer) => (
@@ -112,11 +112,11 @@ export function BookingOverlapAlert({
               )}
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <h4 className="font-medium text-blue-900 text-sm mb-2">🔧 How to resolve:</h4>
+                <h4 className="font-medium text-blue-900 text-sm mb-2">How to resolve:</h4>
                 <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• 👤 Choose a different carer who is available</li>
-                  <li>• ⏰ Modify the booking time to avoid conflicts</li>
-                  <li>• ❌ Cancel this booking attempt</li>
+                  <li>• Choose a different carer who is available</li>
+                  <li>• Modify the booking time to avoid conflicts</li>
+                  <li>• Cancel this booking attempt</li>
                 </ul>
               </div>
             </div>
@@ -129,13 +129,13 @@ export function BookingOverlapAlert({
               onClick={onChooseDifferentCarer}
               className="flex-1 bg-blue-600 hover:bg-blue-700"
             >
-              👤 Choose Different Carer
+              Choose Different Carer
             </AlertDialogAction>
             <AlertDialogAction
               onClick={onModifyTime}
               className="flex-1 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
             >
-              ⏰ Modify Time
+              Modify Time
             </AlertDialogAction>
           </div>
           
@@ -144,11 +144,11 @@ export function BookingOverlapAlert({
               onClick={onForceCreate}
               className="w-full text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              ⚠️ Force Save (Emergency Only - May Cause Serious Issues)
+              Force Save (Emergency Only - May Cause Serious Issues)
             </AlertDialogAction>
           )}
           
-          <AlertDialogCancel className="w-full">❌ Cancel</AlertDialogCancel>
+          <AlertDialogCancel className="w-full">Cancel</AlertDialogCancel>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
