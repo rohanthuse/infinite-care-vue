@@ -116,8 +116,7 @@ export function BookingOverlapAlert({
             </AlertDialogAction>
             <AlertDialogAction
               onClick={onModifyTime}
-              variant="outline"
-              className="flex-1"
+              className="flex-1 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
             >
               Modify Time
             </AlertDialogAction>
@@ -126,8 +125,7 @@ export function BookingOverlapAlert({
           {onForceCreate && (
             <AlertDialogAction
               onClick={onForceCreate}
-              variant="destructive"
-              className="w-full text-xs"
+              className="w-full text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Force Create (Not Recommended)
             </AlertDialogAction>
