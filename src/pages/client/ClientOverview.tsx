@@ -7,14 +7,15 @@ import { ClientCarePlanDetailDialog } from "@/components/client/ClientCarePlanDe
 import { RescheduleAppointmentDialog } from "@/components/client/RescheduleAppointmentDialog";
 import { useClientProfile, useClientCarePlans, useClientAppointments } from "@/hooks/useClientData";
 import { useAuth } from "@/hooks/useAuth";
+import { useParams } from "react-router-dom";
 import { format, parseISO, differenceInDays } from "date-fns";
 
 const ClientOverview = () => {
   const { user } = useAuth();
+  const params = useParams();
   
-  // For now, we'll use the user's ID as the client ID
-  // In a real implementation, you'd get this from the client context or route params
-  const clientId = user?.id || '';
+  // Get client ID from URL params or use user ID as fallback for self-service context
+  const clientId = params.clientId || user?.id || '';
   
   const { data: clientProfile, isLoading: profileLoading } = useClientProfile(clientId);
   const { data: carePlans, isLoading: carePlansLoading } = useClientCarePlans(clientId);
