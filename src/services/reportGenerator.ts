@@ -106,7 +106,7 @@ export class ReportGenerator {
       return acc;
     }, {});
 
-    const topClients = Object.values(clientStats)
+    const topClients = (Object.values(clientStats) as ClientStats[])
       .sort((a: ClientStats, b: ClientStats) => b.bookings - a.bookings)
       .slice(0, 5);
 
