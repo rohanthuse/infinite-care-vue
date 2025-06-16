@@ -55,6 +55,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   };
 
   const handleUpdateBooking = (bookingToUpdate: Booking & {notes?: string}, carers: any[] = []) => {
+    console.log("[useBookingHandlers] === UPDATE BOOKING START ===");
     console.log("[useBookingHandlers] Updating booking:", {
       bookingId: bookingToUpdate.id,
       carerId: bookingToUpdate.carerId,
@@ -64,6 +65,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     });
 
     if (!bookingToUpdate.id) {
+      console.log("[useBookingHandlers] ERROR: Cannot update booking without an ID");
       toast.error("Cannot update booking without an ID.");
       return;
     }
@@ -76,9 +78,9 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       bookingToUpdate.date !== selectedBooking.date
     );
 
-    console.log("[useBookingHandlers] Schedule change check:", {
+    console.log("[useBookingHandlers] Schedule change analysis:", {
       hasChangedSchedule,
-      originalBooking: selectedBooking ? {
+      selectedBooking: selectedBooking ? {
         id: selectedBooking.id,
         carerId: selectedBooking.carerId,
         startTime: selectedBooking.startTime,
@@ -91,10 +93,17 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         startTime: bookingToUpdate.startTime,
         endTime: bookingToUpdate.endTime,
         date: bookingToUpdate.date
-      }
+      },
+      carerChanged: selectedBooking ? bookingToUpdate.carerId !== selectedBooking.carerId : false,
+      startTimeChanged: selectedBooking ? bookingToUpdate.startTime !== selectedBooking.startTime : false,
+      endTimeChanged: selectedBooking ? bookingToUpdate.endTime !== selectedBooking.endTime : false,
+      dateChanged: selectedBooking ? bookingToUpdate.date !== selectedBooking.date : false
     });
 
     if (hasChangedSchedule && bookingToUpdate.carerId) {
+      console.log("[useBookingHandlers] SCHEDULE CHANGED - Checking for overlaps");
+      console.log("[useBookingHandlers] Calling overlap check with excludeId:", bookingToUpdate.id);
+      
       // Pass the booking ID to exclude it from overlap checking
       const overlap = checkOverlap(
         bookingToUpdate.carerId,
@@ -104,12 +113,15 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         bookingToUpdate.id // Exclude current booking
       );
 
-      console.log("[useBookingHandlers] Overlap check result:", {
+      console.log("[useBookingHandlers] Overlap check completed:", {
         hasOverlap: overlap.hasOverlap,
-        conflictingBookings: overlap.conflictingBookings
+        conflictingBookings: overlap.conflictingBookings,
+        excludedBookingId: bookingToUpdate.id
       });
 
       if (overlap.hasOverlap) {
+        console.log("[useBookingHandlers] OVERLAP DETECTED - Setting up alert");
+        
         const selectedCarer = carers.find(c => c.id === bookingToUpdate.carerId);
         const availableCarers = findAvailableCarers(
           carers,
@@ -119,9 +131,10 @@ export function useBookingHandlers(branchId?: string, user?: any) {
           bookingToUpdate.id // Exclude current booking
         );
 
-        console.log("[useBookingHandlers] Setting up overlap alert:", {
+        console.log("[useBookingHandlers] Overlap alert data:", {
           selectedCarer: selectedCarer?.name,
-          availableCarersCount: availableCarers.length
+          availableCarersCount: availableCarers.length,
+          conflictCount: overlap.conflictingBookings.length
         });
 
         setUpdateOverlapData({
@@ -133,8 +146,13 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         });
         setPendingUpdateData(bookingToUpdate);
         setUpdateOverlapAlertOpen(true);
+        console.log("[useBookingHandlers] Overlap alert should now be visible");
         return;
+      } else {
+        console.log("[useBookingHandlers] No overlaps detected, proceeding with update");
       }
+    } else {
+      console.log("[useBookingHandlers] No schedule changes detected or no carer assigned, proceeding with update");
     }
 
     // Proceed with update if no conflicts

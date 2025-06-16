@@ -20,7 +20,8 @@ export function checkBookingOverlaps(
   existingBookings: Booking[],
   excludeBookingId?: string
 ): BookingOverlap {
-  console.log("[checkBookingOverlaps] Starting overlap check:", {
+  console.log("[checkBookingOverlaps] === OVERLAP DETECTION START ===");
+  console.log("[checkBookingOverlaps] Input parameters:", {
     carerId,
     proposedStartTime,
     proposedEndTime,
@@ -30,33 +31,60 @@ export function checkBookingOverlaps(
   });
 
   if (!carerId || !proposedStartTime || !proposedEndTime || !proposedDate) {
-    console.log("[checkBookingOverlaps] Missing required parameters");
+    console.log("[checkBookingOverlaps] ERROR: Missing required parameters");
     return { hasOverlap: false, conflictingBookings: [] };
   }
 
   // Filter bookings for the specific carer on the same date
+  console.log("[checkBookingOverlaps] Filtering bookings for carer:", carerId, "on date:", proposedDate);
   const carerBookingsOnDate = existingBookings.filter(
     booking => {
-      const matches = booking.carerId === carerId && booking.date === proposedDate;
+      const carerMatches = booking.carerId === carerId;
+      const dateMatches = booking.date === proposedDate;
+      const matches = carerMatches && dateMatches;
+      
       console.log("[checkBookingOverlaps] Booking filter check:", {
         bookingId: booking.id,
         bookingCarerId: booking.carerId,
         bookingDate: booking.date,
         targetCarerId: carerId,
         targetDate: proposedDate,
-        matches
+        carerMatches,
+        dateMatches,
+        matches,
+        bookingStartTime: booking.startTime,
+        bookingEndTime: booking.endTime
       });
+      
       return matches;
     }
   );
 
-  console.log("[checkBookingOverlaps] Found carer bookings on date:", carerBookingsOnDate.length);
+  console.log("[checkBookingOverlaps] Found", carerBookingsOnDate.length, "bookings for carer on date");
+  console.log("[checkBookingOverlaps] Carer bookings on date:", carerBookingsOnDate.map(b => ({
+    id: b.id,
+    startTime: b.startTime,
+    endTime: b.endTime,
+    clientName: b.clientName
+  })));
 
   const conflictingBookings = carerBookingsOnDate.filter(booking => {
     // Exclude the current booking being edited
-    if (excludeBookingId && booking.id === excludeBookingId) {
-      console.log("[checkBookingOverlaps] Excluding current booking:", booking.id);
-      return false;
+    if (excludeBookingId) {
+      const shouldExclude = String(booking.id) === String(excludeBookingId);
+      console.log("[checkBookingOverlaps] Exclusion check:", {
+        bookingId: booking.id,
+        excludeBookingId,
+        bookingIdType: typeof booking.id,
+        excludeIdType: typeof excludeBookingId,
+        stringComparison: String(booking.id) === String(excludeBookingId),
+        shouldExclude
+      });
+      
+      if (shouldExclude) {
+        console.log("[checkBookingOverlaps] EXCLUDING current booking:", booking.id);
+        return false;
+      }
     }
 
     // Convert time strings to minutes for easier comparison
@@ -65,27 +93,27 @@ export function checkBookingOverlaps(
     const existingStart = timeToMinutes(booking.startTime);
     const existingEnd = timeToMinutes(booking.endTime);
 
-    // Check for time overlap
+    // Check for time overlap: overlaps if (start1 < end2 && end1 > start2)
     const hasOverlap = (proposedStart < existingEnd && proposedEnd > existingStart);
     
-    console.log("[checkBookingOverlaps] Time overlap check:", {
+    console.log("[checkBookingOverlaps] Time overlap analysis:", {
       bookingId: booking.id,
+      proposedTimeRange: `${proposedStartTime} - ${proposedEndTime}`,
+      existingTimeRange: `${booking.startTime} - ${booking.endTime}`,
       proposedStart,
       proposedEnd,
       existingStart,
       existingEnd,
-      hasOverlap
+      condition1: proposedStart < existingEnd,
+      condition2: proposedEnd > existingStart,
+      hasOverlap,
+      clientName: booking.clientName
     });
 
     return hasOverlap;
   });
 
-  console.log("[checkBookingOverlaps] Final result:", {
-    hasOverlap: conflictingBookings.length > 0,
-    conflictingCount: conflictingBookings.length
-  });
-
-  return {
+  const result = {
     hasOverlap: conflictingBookings.length > 0,
     conflictingBookings: conflictingBookings.map(booking => ({
       id: booking.id,
@@ -95,6 +123,14 @@ export function checkBookingOverlaps(
       date: booking.date,
     }))
   };
+
+  console.log("[checkBookingOverlaps] === FINAL RESULT ===");
+  console.log("[checkBookingOverlaps] Conflicts found:", result.hasOverlap);
+  console.log("[checkBookingOverlaps] Number of conflicts:", conflictingBookings.length);
+  console.log("[checkBookingOverlaps] Conflicting bookings:", result.conflictingBookings);
+  console.log("[checkBookingOverlaps] === OVERLAP DETECTION END ===");
+
+  return result;
 }
 
 export function getAvailableCarers(
@@ -121,7 +157,8 @@ export function getAvailableCarers(
     console.log("[getAvailableCarers] Carer availability:", {
       carerId: carer.id,
       carerName: carer.name,
-      isAvailable
+      isAvailable,
+      conflicts: overlap.conflictingBookings.length
     });
     
     return isAvailable;
@@ -129,6 +166,19 @@ export function getAvailableCarers(
 }
 
 function timeToMinutes(timeString: string): number {
+  if (!timeString || typeof timeString !== 'string') {
+    console.log("[timeToMinutes] Invalid time string:", timeString);
+    return 0;
+  }
+  
   const [hours, minutes] = timeString.split(':').map(Number);
-  return hours * 60 + minutes;
+  
+  if (isNaN(hours) || isNaN(minutes)) {
+    console.log("[timeToMinutes] Failed to parse time:", timeString);
+    return 0;
+  }
+  
+  const result = hours * 60 + minutes;
+  console.log("[timeToMinutes] Converted", timeString, "to", result, "minutes");
+  return result;
 }
