@@ -61,9 +61,9 @@ export interface ClientAppointment {
 export const useClientProfile = () => {
   const { user } = useAuth();
   
-  return useQuery<ClientProfile>({
+  return useQuery({
     queryKey: ['client-profile', user?.id],
-    queryFn: async (): Promise<ClientProfile> => {
+    queryFn: async () => {
       if (!user?.id) throw new Error('No authenticated user');
       
       const { data, error } = await supabase
@@ -79,14 +79,14 @@ export const useClientProfile = () => {
   });
 };
 
-// Hook to get client care plans - explicitly typed to prevent type depth issues
+// Hook to get client care plans - completely rewritten to avoid type depth issues
 export const useClientCarePlans = (clientId?: string) => {
   const { user } = useAuth();
   const { data: clientProfile } = useClientProfile();
 
-  return useQuery<ClientCarePlan[]>({
+  return useQuery({
     queryKey: ['client-care-plans', clientId || clientProfile?.id],
-    queryFn: async (): Promise<ClientCarePlan[]> => {
+    queryFn: async () => {
       const targetClientId = clientId || clientProfile?.id;
       if (!targetClientId) throw new Error('No client ID available');
 
@@ -97,7 +97,7 @@ export const useClientCarePlans = (clientId?: string) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as ClientCarePlan[];
+      return (data || []) as ClientCarePlan[];
     },
     enabled: !!(clientId || clientProfile?.id),
   });
@@ -105,9 +105,9 @@ export const useClientCarePlans = (clientId?: string) => {
 
 // Hook to get care plan goals
 export const useCarePlanGoals = (carePlanId: string) => {
-  return useQuery<ClientCarePlanGoal[]>({
+  return useQuery({
     queryKey: ['care-plan-goals', carePlanId],
-    queryFn: async (): Promise<ClientCarePlanGoal[]> => {
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('client_care_plan_goals')
         .select('*')
@@ -115,20 +115,20 @@ export const useCarePlanGoals = (carePlanId: string) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as ClientCarePlanGoal[];
+      return (data || []) as ClientCarePlanGoal[];
     },
     enabled: !!carePlanId,
   });
 };
 
-// Hook to get client appointments - explicitly typed to prevent type depth issues
+// Hook to get client appointments - completely rewritten to avoid type depth issues
 export const useClientAppointments = (clientId?: string) => {
   const { user } = useAuth();
   const { data: clientProfile } = useClientProfile();
 
-  return useQuery<ClientAppointment[]>({
+  return useQuery({
     queryKey: ['client-appointments', clientId || clientProfile?.id],
-    queryFn: async (): Promise<ClientAppointment[]> => {
+    queryFn: async () => {
       const targetClientId = clientId || clientProfile?.id;
       if (!targetClientId) throw new Error('No client ID available');
 
@@ -139,7 +139,7 @@ export const useClientAppointments = (clientId?: string) => {
         .order('appointment_date', { ascending: true });
 
       if (error) throw error;
-      return data as ClientAppointment[];
+      return (data || []) as ClientAppointment[];
     },
     enabled: !!(clientId || clientProfile?.id),
   });
@@ -151,7 +151,7 @@ export const useUpdateClientProfile = () => {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (updates: Partial<ClientProfile>): Promise<ClientProfile> => {
+    mutationFn: async (updates: Partial<ClientProfile>) => {
       if (!user?.id) throw new Error('No authenticated user');
 
       const { data, error } = await supabase
@@ -175,7 +175,7 @@ export const useUpdateCarePlanGoal = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ goalId, updates }: { goalId: string; updates: Partial<ClientCarePlanGoal> }): Promise<ClientCarePlanGoal> => {
+    mutationFn: async ({ goalId, updates }: { goalId: string; updates: Partial<ClientCarePlanGoal> }) => {
       const { data, error } = await supabase
         .from('client_care_plan_goals')
         .update(updates)
@@ -205,7 +205,7 @@ export const useRescheduleAppointment = () => {
       appointmentId: string; 
       newDate: string; 
       newTime: string; 
-    }): Promise<ClientAppointment> => {
+    }) => {
       const { data, error } = await supabase
         .from('client_appointments')
         .update({
