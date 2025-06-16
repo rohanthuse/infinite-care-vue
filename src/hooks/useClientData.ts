@@ -57,23 +57,89 @@ export interface ClientAppointment {
   updated_at: string;
 }
 
+// Type-safe data transformers to break inference chains
+const transformToClientProfile = (data: any): ClientProfile => {
+  return {
+    id: data.id,
+    first_name: data.first_name,
+    last_name: data.last_name,
+    email: data.email,
+    phone: data.phone,
+    date_of_birth: data.date_of_birth,
+    address: data.address,
+    gender: data.gender,
+    preferred_name: data.preferred_name,
+    status: data.status,
+    branch_id: data.branch_id,
+    user_id: data.user_id,
+  };
+};
+
+const transformToCarePlan = (data: any): ClientCarePlan => {
+  return {
+    id: data.id,
+    client_id: data.client_id,
+    title: data.title,
+    provider_name: data.provider_name,
+    start_date: data.start_date,
+    end_date: data.end_date,
+    review_date: data.review_date,
+    status: data.status,
+    goals_progress: data.goals_progress,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+  };
+};
+
+const transformToCarePlanGoal = (data: any): ClientCarePlanGoal => {
+  return {
+    id: data.id,
+    care_plan_id: data.care_plan_id,
+    description: data.description,
+    status: data.status,
+    progress: data.progress,
+    notes: data.notes,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+  };
+};
+
+const transformToAppointment = (data: any): ClientAppointment => {
+  return {
+    id: data.id,
+    client_id: data.client_id,
+    appointment_type: data.appointment_type,
+    appointment_date: data.appointment_date,
+    appointment_time: data.appointment_time,
+    provider_name: data.provider_name,
+    location: data.location,
+    status: data.status,
+    notes: data.notes,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+  };
+};
+
 // Hook to get current client profile - completely independent
 export const useClientProfile = () => {
   const { user } = useAuth();
   
   return useQuery({
     queryKey: ['client-profile', user?.id],
-    queryFn: async (): Promise<ClientProfile> => {
+    queryFn: async () => {
       if (!user?.id) throw new Error('No authenticated user');
       
-      const { data, error } = await supabase
+      const response = await supabase
         .from('clients')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
-      if (error) throw error;
-      return data as ClientProfile;
+      if (response.error) throw response.error;
+      
+      // Use explicit transformation to break type inference chain
+      const transformedData = transformToClientProfile(response.data);
+      return transformedData;
     },
     enabled: !!user?.id,
   });
@@ -83,17 +149,19 @@ export const useClientProfile = () => {
 export const useClientCarePlans = (clientId: string) => {
   return useQuery({
     queryKey: ['client-care-plans', clientId],
-    queryFn: async (): Promise<ClientCarePlan[]> => {
+    queryFn: async () => {
       if (!clientId) throw new Error('No client ID provided');
 
-      const { data, error } = await supabase
+      const response = await supabase
         .from('client_care_plans')
         .select('*')
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return (data || []) as ClientCarePlan[];
+      if (response.error) throw response.error;
+      
+      const transformedData = (response.data || []).map(transformToCarePlan);
+      return transformedData;
     },
     enabled: !!clientId,
   });
@@ -103,15 +171,17 @@ export const useClientCarePlans = (clientId: string) => {
 export const useCarePlanGoals = (carePlanId: string) => {
   return useQuery({
     queryKey: ['care-plan-goals', carePlanId],
-    queryFn: async (): Promise<ClientCarePlanGoal[]> => {
-      const { data, error } = await supabase
+    queryFn: async () => {
+      const response = await supabase
         .from('client_care_plan_goals')
         .select('*')
         .eq('care_plan_id', carePlanId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return (data || []) as ClientCarePlanGoal[];
+      if (response.error) throw response.error;
+      
+      const transformedData = (response.data || []).map(transformToCarePlanGoal);
+      return transformedData;
     },
     enabled: !!carePlanId,
   });
@@ -121,17 +191,19 @@ export const useCarePlanGoals = (carePlanId: string) => {
 export const useClientAppointments = (clientId: string) => {
   return useQuery({
     queryKey: ['client-appointments', clientId],
-    queryFn: async (): Promise<ClientAppointment[]> => {
+    queryFn: async () => {
       if (!clientId) throw new Error('No client ID provided');
 
-      const { data, error } = await supabase
+      const response = await supabase
         .from('client_appointments')
         .select('*')
         .eq('client_id', clientId)
         .order('appointment_date', { ascending: true });
 
-      if (error) throw error;
-      return (data || []) as ClientAppointment[];
+      if (response.error) throw response.error;
+      
+      const transformedData = (response.data || []).map(transformToAppointment);
+      return transformedData;
     },
     enabled: !!clientId,
   });
@@ -143,18 +215,20 @@ export const useUpdateClientProfile = () => {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (updates: Partial<ClientProfile>): Promise<ClientProfile> => {
+    mutationFn: async (updates: Partial<ClientProfile>) => {
       if (!user?.id) throw new Error('No authenticated user');
 
-      const { data, error } = await supabase
+      const response = await supabase
         .from('clients')
         .update(updates)
         .eq('user_id', user.id)
         .select()
         .single();
 
-      if (error) throw error;
-      return data as ClientProfile;
+      if (response.error) throw response.error;
+      
+      const transformedData = transformToClientProfile(response.data);
+      return transformedData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-profile'] });
@@ -167,16 +241,18 @@ export const useUpdateCarePlanGoal = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ goalId, updates }: { goalId: string; updates: Partial<ClientCarePlanGoal> }): Promise<ClientCarePlanGoal> => {
-      const { data, error } = await supabase
+    mutationFn: async ({ goalId, updates }: { goalId: string; updates: Partial<ClientCarePlanGoal> }) => {
+      const response = await supabase
         .from('client_care_plan_goals')
         .update(updates)
         .eq('id', goalId)
         .select()
         .single();
 
-      if (error) throw error;
-      return data as ClientCarePlanGoal;
+      if (response.error) throw response.error;
+      
+      const transformedData = transformToCarePlanGoal(response.data);
+      return transformedData;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['care-plan-goals', data.care_plan_id] });
@@ -189,8 +265,8 @@ export const useRescheduleAppointment = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ appointmentId, newDate, newTime }: { appointmentId: string; newDate: string; newTime: string }): Promise<ClientAppointment> => {
-      const { data, error } = await supabase
+    mutationFn: async ({ appointmentId, newDate, newTime }: { appointmentId: string; newDate: string; newTime: string }) => {
+      const response = await supabase
         .from('client_appointments')
         .update({
           appointment_date: newDate,
@@ -201,8 +277,10 @@ export const useRescheduleAppointment = () => {
         .select()
         .single();
 
-      if (error) throw error;
-      return data as ClientAppointment;
+      if (response.error) throw response.error;
+      
+      const transformedData = transformToAppointment(response.data);
+      return transformedData;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['client-appointments', data.client_id] });
