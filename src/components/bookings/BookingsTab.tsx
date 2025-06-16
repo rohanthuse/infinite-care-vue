@@ -125,9 +125,9 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         carers={carers}
         viewType={viewType}
         viewMode="client"
-        onEditBooking={handleEditBooking}
-        onContextMenuBooking={handleContextMenuBooking}
+        onCreateBooking={handleContextMenuBooking}
         onUpdateBooking={handleUpdateBooking}
+        onEditBooking={handleEditBooking}
       />
 
       <NewBookingDialog
