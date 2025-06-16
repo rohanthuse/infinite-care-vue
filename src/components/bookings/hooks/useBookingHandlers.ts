@@ -39,6 +39,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   };
 
   const handleEditBooking = (booking: Booking) => {
+    console.log("[useBookingHandlers] Opening edit dialog for booking:", booking.id);
     setSelectedBooking(booking);
     setEditBookingDialogOpen(true);
   };
@@ -54,6 +55,14 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   };
 
   const handleUpdateBooking = (bookingToUpdate: Booking & {notes?: string}, carers: any[] = []) => {
+    console.log("[useBookingHandlers] Updating booking:", {
+      bookingId: bookingToUpdate.id,
+      carerId: bookingToUpdate.carerId,
+      startTime: bookingToUpdate.startTime,
+      endTime: bookingToUpdate.endTime,
+      date: bookingToUpdate.date
+    });
+
     if (!bookingToUpdate.id) {
       toast.error("Cannot update booking without an ID.");
       return;
@@ -67,30 +76,56 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       bookingToUpdate.date !== selectedBooking.date
     );
 
+    console.log("[useBookingHandlers] Schedule change check:", {
+      hasChangedSchedule,
+      originalBooking: selectedBooking ? {
+        id: selectedBooking.id,
+        carerId: selectedBooking.carerId,
+        startTime: selectedBooking.startTime,
+        endTime: selectedBooking.endTime,
+        date: selectedBooking.date
+      } : null,
+      updatedBooking: {
+        id: bookingToUpdate.id,
+        carerId: bookingToUpdate.carerId,
+        startTime: bookingToUpdate.startTime,
+        endTime: bookingToUpdate.endTime,
+        date: bookingToUpdate.date
+      }
+    });
+
     if (hasChangedSchedule && bookingToUpdate.carerId) {
+      // Pass the booking ID to exclude it from overlap checking
       const overlap = checkOverlap(
         bookingToUpdate.carerId,
         bookingToUpdate.startTime,
         bookingToUpdate.endTime,
-        bookingToUpdate.date
+        bookingToUpdate.date,
+        bookingToUpdate.id // Exclude current booking
       );
 
-      // Filter out the current booking from conflicts
-      const filteredConflicts = overlap.conflictingBookings.filter(
-        conflict => conflict.id !== bookingToUpdate.id
-      );
+      console.log("[useBookingHandlers] Overlap check result:", {
+        hasOverlap: overlap.hasOverlap,
+        conflictingBookings: overlap.conflictingBookings
+      });
 
-      if (filteredConflicts.length > 0) {
+      if (overlap.hasOverlap) {
         const selectedCarer = carers.find(c => c.id === bookingToUpdate.carerId);
         const availableCarers = findAvailableCarers(
           carers,
           bookingToUpdate.startTime,
           bookingToUpdate.endTime,
-          bookingToUpdate.date
+          bookingToUpdate.date,
+          bookingToUpdate.id // Exclude current booking
         );
 
+        console.log("[useBookingHandlers] Setting up overlap alert:", {
+          selectedCarer: selectedCarer?.name,
+          availableCarersCount: availableCarers.length
+        });
+
         setUpdateOverlapData({
-          conflictingBookings: filteredConflicts,
+          conflictingBookings: overlap.conflictingBookings,
           carerName: selectedCarer?.name || bookingToUpdate.carerName,
           proposedTime: `${bookingToUpdate.startTime} - ${bookingToUpdate.endTime}`,
           proposedDate: bookingToUpdate.date,
@@ -107,6 +142,8 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   };
 
   const proceedWithBookingUpdate = (bookingToUpdate: Booking & {notes?: string}) => {
+    console.log("[useBookingHandlers] Proceeding with booking update:", bookingToUpdate.id);
+    
     const payload: any = {
       client_id: bookingToUpdate.clientId,
       staff_id: bookingToUpdate.carerId,
