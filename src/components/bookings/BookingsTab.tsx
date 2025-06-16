@@ -119,7 +119,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       />
 
       <BookingTimeGrid
-        currentDate={selectedDate}
+        selectedDate={selectedDate}
         bookings={filteredBookings}
         clients={clients}
         carers={carers}
