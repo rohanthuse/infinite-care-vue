@@ -70,82 +70,110 @@ export interface CarePlanWithDetails extends CarePlanData {
 }
 
 const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData | null> => {
-  console.log('[fetchCarePlanData] Fetching care plan:', carePlanId);
+  console.log('[fetchCarePlanData] Starting fetch for care plan:', carePlanId);
+  
+  if (!carePlanId) {
+    console.error('[fetchCarePlanData] No care plan ID provided');
+    throw new Error('Care plan ID is required');
+  }
   
   // Resolve the care plan ID (handles CP-001 -> UUID mapping)
   const resolvedId = resolveCarePlanId(carePlanId);
+  console.log('[fetchCarePlanData] Resolved ID:', resolvedId);
   
-  const { data, error } = await supabase
-    .from('client_care_plans')
-    .select(`
-      *,
-      client:clients(*)
-    `)
-    .eq('id', resolvedId)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('client_care_plans')
+      .select(`
+        *,
+        client:clients(*)
+      `)
+      .eq('id', resolvedId)
+      .single();
 
-  if (error) {
-    console.error('[fetchCarePlanData] Error:', error);
-    return null;
+    if (error) {
+      console.error('[fetchCarePlanData] Supabase error:', error);
+      if (error.code === 'PGRST116') {
+        console.log('[fetchCarePlanData] No data found for ID:', resolvedId);
+        return null;
+      }
+      throw error;
+    }
+    
+    console.log('[fetchCarePlanData] Successfully fetched data:', data);
+    return data;
+  } catch (error) {
+    console.error('[fetchCarePlanData] Unexpected error:', error);
+    throw error;
   }
-  
-  console.log('[fetchCarePlanData] Fetched data:', data);
-  return data;
 };
 
 const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePlanWithDetails[]> => {
   console.log('[fetchClientCarePlansWithDetails] Fetching care plans for client:', clientId);
   
-  const { data: carePlans, error } = await supabase
-    .from('client_care_plans')
-    .select(`
-      *,
-      client:clients(*)
-    `)
-    .eq('client_id', clientId)
-    .order('created_at', { ascending: false });
+  if (!clientId) {
+    console.error('[fetchClientCarePlansWithDetails] No client ID provided');
+    throw new Error('Client ID is required');
+  }
+  
+  try {
+    const { data: carePlans, error } = await supabase
+      .from('client_care_plans')
+      .select(`
+        *,
+        client:clients(*)
+      `)
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('[fetchClientCarePlansWithDetails] Error:', error);
+    if (error) {
+      console.error('[fetchClientCarePlansWithDetails] Error:', error);
+      throw error;
+    }
+
+    if (!carePlans || carePlans.length === 0) {
+      console.log('[fetchClientCarePlansWithDetails] No care plans found for client:', clientId);
+      return [];
+    }
+
+    // Fetch related data for each care plan
+    const carePlansWithDetails = await Promise.all(
+      carePlans.map(async (carePlan) => {
+        console.log('[fetchClientCarePlansWithDetails] Fetching details for care plan:', carePlan.id);
+        
+        // Fetch goals
+        const { data: goals } = await supabase
+          .from('client_care_plan_goals')
+          .select('*')
+          .eq('care_plan_id', carePlan.id);
+
+        // Fetch medications
+        const { data: medications } = await supabase
+          .from('client_medications')
+          .select('*')
+          .eq('care_plan_id', carePlan.id);
+
+        // Fetch activities
+        const { data: activities } = await supabase
+          .from('client_activities')
+          .select('*')
+          .eq('care_plan_id', carePlan.id);
+
+        return {
+          ...carePlan,
+          goals: goals || [],
+          medications: medications || [],
+          activities: activities || []
+        } as CarePlanWithDetails;
+      })
+    );
+
+    console.log('[fetchClientCarePlansWithDetails] Fetched care plans with details:', carePlansWithDetails);
+    return carePlansWithDetails;
+  } catch (error) {
+    console.error('[fetchClientCarePlansWithDetails] Unexpected error:', error);
     throw error;
   }
-
-  if (!carePlans || carePlans.length === 0) {
-    return [];
-  }
-
-  // Fetch related data for each care plan
-  const carePlansWithDetails = await Promise.all(
-    carePlans.map(async (carePlan) => {
-      // Fetch goals
-      const { data: goals } = await supabase
-        .from('client_care_plan_goals')
-        .select('*')
-        .eq('care_plan_id', carePlan.id);
-
-      // Fetch medications
-      const { data: medications } = await supabase
-        .from('client_medications')
-        .select('*')
-        .eq('care_plan_id', carePlan.id);
-
-      // Fetch activities
-      const { data: activities } = await supabase
-        .from('client_activities')
-        .select('*')
-        .eq('care_plan_id', carePlan.id);
-
-      return {
-        ...carePlan,
-        goals: goals || [],
-        medications: medications || [],
-        activities: activities || []
-      } as CarePlanWithDetails;
-    })
-  );
-
-  console.log('[fetchClientCarePlansWithDetails] Fetched care plans with details:', carePlansWithDetails);
-  return carePlansWithDetails;
 };
 
 export const useCarePlanData = (carePlanId: string) => {
@@ -153,6 +181,10 @@ export const useCarePlanData = (carePlanId: string) => {
     queryKey: ['care-plan-data', carePlanId],
     queryFn: () => fetchCarePlanData(carePlanId),
     enabled: Boolean(carePlanId),
+    retry: (failureCount, error) => {
+      console.log('[useCarePlanData] Query failed, attempt:', failureCount + 1, 'Error:', error);
+      return failureCount < 2; // Retry up to 2 times
+    }
   });
 };
 
@@ -161,5 +193,9 @@ export const useClientCarePlansWithDetails = (clientId: string) => {
     queryKey: ['client-care-plans-with-details', clientId],
     queryFn: () => fetchClientCarePlansWithDetails(clientId),
     enabled: Boolean(clientId),
+    retry: (failureCount, error) => {
+      console.log('[useClientCarePlansWithDetails] Query failed, attempt:', failureCount + 1, 'Error:', error);
+      return failureCount < 2; // Retry up to 2 times
+    }
   });
 };

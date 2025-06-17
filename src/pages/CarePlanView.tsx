@@ -83,10 +83,26 @@ const CarePlanView = () => {
   const [documentDialogOpen, setDocumentDialogOpen] = useState(false);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
 
+  // Debug logging
+  console.log('[CarePlanView] Component mounted with params:', { branchId, branchName, carePlanId });
+
   // Fetch data from database
-  const { data: carePlanData, isLoading: isCarePlanLoading } = useCarePlanData(carePlanId || '');
-  const { data: goalsData, isLoading: isGoalsLoading } = useCarePlanGoals(carePlanId || '');
-  const { data: notesData, isLoading: isNotesLoading } = useClientNotes(carePlanData?.client_id || '');
+  const { data: carePlanData, isLoading: isCarePlanLoading, error: carePlanError } = useCarePlanData(carePlanId || '');
+  const { data: goalsData, isLoading: isGoalsLoading, error: goalsError } = useCarePlanGoals(carePlanId || '');
+  const { data: notesData, isLoading: isNotesLoading, error: notesError } = useClientNotes(carePlanData?.client_id || '');
+
+  // Debug logging for data fetching
+  console.log('[CarePlanView] Data fetching status:', {
+    carePlanData,
+    isCarePlanLoading,
+    carePlanError,
+    goalsData,
+    isGoalsLoading,
+    goalsError,
+    notesData,
+    isNotesLoading,
+    notesError
+  });
 
   // Create unified care plan object combining database and mock data
   const carePlan = carePlanData ? {
@@ -99,6 +115,8 @@ const CarePlanView = () => {
     assignedTo: carePlanData.provider_name,
     avatar: carePlanData.client?.avatar_initials || "JM"
   } : null;
+
+  console.log('[CarePlanView] Unified care plan object:', carePlan);
 
   // Transform database goals to match component expected format
   const transformedGoals = goalsData?.map(goal => ({
@@ -213,7 +231,9 @@ const CarePlanView = () => {
     onUploadDocument: () => setDocumentDialogOpen(true)
   };
 
-  if (isCarePlanLoading) {
+  // Enhanced error handling
+  if (carePlanError) {
+    console.error('[CarePlanView] Care plan error:', carePlanError);
     return (
       <div className="flex flex-col min-h-screen">
         <DashboardHeader />
@@ -223,11 +243,70 @@ const CarePlanView = () => {
           onNewBooking={() => {}} 
         />
         <div className="flex-1 p-6 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Care Plan</h3>
+            <p className="text-gray-600 mb-4">
+              Failed to load care plan {carePlanId}: {carePlanError.message}
+            </p>
+            <Button onClick={() => navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan`)}>
+              Back to Care Plans
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
+
+  // Enhanced loading state
+  if (isCarePlanLoading) {
+    console.log('[CarePlanView] Loading care plan data...');
+    return (
+      <div className="flex flex-col min-h-screen">
+        <DashboardHeader />
+        <BranchInfoHeader 
+          branchId={branchId || ""} 
+          branchName={branchName || ""} 
+          onNewBooking={() => {}} 
+        />
+        <div className="flex-1 p-6 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading care plan {carePlanId}...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle case where care plan is not found
+  if (!carePlan && !isCarePlanLoading) {
+    console.warn('[CarePlanView] Care plan not found:', carePlanId);
+    return (
+      <div className="flex flex-col min-h-screen">
+        <DashboardHeader />
+        <BranchInfoHeader 
+          branchId={branchId || ""} 
+          branchName={branchName || ""} 
+          onNewBooking={() => {}} 
+        />
+        <div className="flex-1 p-6 flex items-center justify-center">
+          <div className="text-center">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Care Plan Not Found</h3>
+            <p className="text-gray-600 mb-4">
+              The care plan "{carePlanId}" could not be found.
+            </p>
+            <Button onClick={() => navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan`)}>
+              Back to Care Plans
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('[CarePlanView] Rendering care plan view for:', carePlan?.patientName);
 
   return (
     <div className="flex flex-col min-h-screen">
