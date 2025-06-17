@@ -1,111 +1,152 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { format } from "date-fns";
-import { CheckCircle, AlertCircle, Plus, Book } from "lucide-react";
+import { FileText, Clock, Plus, User, Calendar } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-interface Goal {
-  title: string;
-  status: string;
-  target: string;
-  notes: string;
-}
-interface CarePlan {
-  id: string;
-  title: string;
-  startDate: Date;
-  endDate?: Date;
-  goals: Goal[];
-  progress: number;
-}
+import { CreateCarePlanDialog } from "../dialogs/CreateCarePlanDialog";
+import { useClientCarePlans } from "@/hooks/useClientData";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
 interface CarePlansTabProps {
   clientId: string;
-  carePlans?: CarePlan[];
+  carePlans?: any[];
 }
-export const CarePlansTab: React.FC<CarePlansTabProps> = ({
-  clientId,
-  carePlans = []
-}) => {
+
+export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const { data: carePlans = [], isLoading } = useClientCarePlans(clientId);
+  const queryClient = useQueryClient();
+
+  const createCarePlanMutation = useMutation({
+    mutationFn: async (carePlanData: any) => {
+      const { data, error } = await supabase
+        .from('client_care_plans')
+        .insert([{
+          client_id: clientId,
+          title: carePlanData.title,
+          provider_name: carePlanData.provider_name,
+          start_date: carePlanData.start_date.toISOString().split('T')[0],
+          end_date: carePlanData.end_date ? carePlanData.end_date.toISOString().split('T')[0] : null,
+          review_date: carePlanData.review_date ? carePlanData.review_date.toISOString().split('T')[0] : null,
+          status: 'active'
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client-care-plans', clientId] });
+    },
+  });
+
+  const handleCreateCarePlan = async (carePlanData: any) => {
+    await createCarePlanMutation.mutateAsync(carePlanData);
+  };
+
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'in progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'completed':
-        return 'bg-purple-100 text-purple-800';
-      case 'pending':
-        return 'bg-amber-100 text-amber-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'completed': return 'bg-blue-100 text-blue-800';
+      case 'on-hold': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
-  const getProgressColor = (progress: number) => {
-    if (progress >= 75) return 'bg-green-600';
-    if (progress >= 50) return 'bg-blue-600';
-    if (progress >= 25) return 'bg-amber-600';
-    return 'bg-gray-600';
-  };
-  return <div className="space-y-4">
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
       <Card>
         <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Book className="h-5 w-5 text-blue-600" />
-              <CardTitle className="text-lg">Client Care Plans</CardTitle>
+              <FileText className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-lg">Care Plans</CardTitle>
             </div>
-            
+            <Button size="sm" className="gap-1" onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4" />
+              <span>Create Plan</span>
+            </Button>
           </div>
-          <CardDescription>Care plans and goals for client {clientId}</CardDescription>
+          <CardDescription>Care plans and treatment programs for client {clientId}</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
-          {carePlans.length === 0 ? <div className="text-center py-8 text-gray-500">
-              <Book className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-              <p className="text-sm">No care plans have been created for this client</p>
-            </div> : <div className="space-y-6">
-              {carePlans.map((plan, index) => <Card key={index} className="border-2 border-blue-100 shadow-sm">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle>{plan.title}</CardTitle>
-                        <CardDescription>
-                          {format(plan.startDate, 'MMM d, yyyy')} 
-                          {plan.endDate && ` - ${format(plan.endDate, 'MMM d, yyyy')}`}
-                        </CardDescription>
+          {carePlans.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-sm">No care plans available for this client</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {carePlans.map((plan) => (
+                <div key={plan.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium">{plan.title}</h3>
+                        <Badge className={getStatusColor(plan.status)}>
+                          {plan.status}
+                        </Badge>
                       </div>
-                      <div>
-                        <Badge>ID: {plan.id}</Badge>
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <User className="h-4 w-4" />
+                          <span>{plan.provider_name}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>Started: {format(new Date(plan.start_date), 'MMM dd, yyyy')}</span>
+                        </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm font-medium">Progress</span>
-                        <span className="text-sm font-medium">{plan.progress}%</span>
-                      </div>
-                      <Progress value={plan.progress} className={getProgressColor(plan.progress)} />
-                    </div>
-                    
-                    <h4 className="font-medium mb-2">Goals</h4>
-                    <div className="space-y-3">
-                      {plan.goals.map((goal, gIndex) => <div key={gIndex} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-md">
-                          {goal.status.toLowerCase() === 'completed' ? <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" /> : <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />}
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <h5 className="font-medium">{goal.title}</h5>
-                              <Badge className={getStatusColor(goal.status)}>{goal.status}</Badge>
-                            </div>
-                            <p className="text-sm text-gray-600 mt-1">Target: {goal.target}</p>
-                            {goal.notes && <p className="text-sm text-gray-500 mt-1">{goal.notes}</p>}
+                      {plan.end_date && (
+                        <div className="text-sm text-gray-600">
+                          End Date: {format(new Date(plan.end_date), 'MMM dd, yyyy')}
+                        </div>
+                      )}
+                      {plan.review_date && (
+                        <div className="text-sm text-gray-600">
+                          Next Review: {format(new Date(plan.review_date), 'MMM dd, yyyy')}
+                        </div>
+                      )}
+                      {plan.goals_progress !== null && (
+                        <div className="mt-2">
+                          <div className="flex items-center justify-between text-sm mb-1">
+                            <span>Progress</span>
+                            <span>{plan.goals_progress}%</span>
                           </div>
-                        </div>)}
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full" 
+                              style={{ width: `${plan.goals_progress}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>)}
-            </div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
-    </div>;
+
+      <CreateCarePlanDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSave={handleCreateCarePlan}
+      />
+    </div>
+  );
 };

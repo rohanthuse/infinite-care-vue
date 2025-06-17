@@ -39,10 +39,6 @@ interface ClientDetailProps {
 export const ClientDetail: React.FC<ClientDetailProps> = ({ 
   client, 
   onClose,
-  onAddNote,
-  onScheduleAppointment,
-  onUploadDocument,
-  onAddEvent
 }) => {
   const [activeTab, setActiveTab] = useState("personal");
   const navigate = useNavigate();
@@ -149,23 +145,6 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                     <p className="font-medium">{realClientData?.status || client.status}</p>
                   </div>
                 </div>
-                <div className="p-4 space-y-2 border-t">
-                  {onAddNote && (
-                    <Button variant="outline" className="w-full justify-start" onClick={onAddNote}>
-                      Add Note
-                    </Button>
-                  )}
-                  {onScheduleAppointment && (
-                    <Button variant="outline" className="w-full justify-start" onClick={onScheduleAppointment}>
-                      Schedule Appointment
-                    </Button>
-                  )}
-                  {onUploadDocument && (
-                    <Button variant="outline" className="w-full justify-start" onClick={onUploadDocument}>
-                      Upload Document
-                    </Button>
-                  )}
-                </div>
               </div>
             </div>
             
@@ -178,30 +157,27 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="notes">
-                  <NotesTab clientId={client.id} notes={[]} />
+                  <NotesTab clientId={client.id} />
                 </TabsContent>
                 
                 <TabsContent value="documents">
-                  <DocumentsTab clientId={client.id} documents={[]} />
+                  <DocumentsTab clientId={client.id} />
                 </TabsContent>
                 
                 <TabsContent value="appointments">
-                  <AppointmentsTab clientId={client.id} appointments={[]} />
+                  <AppointmentsTab clientId={client.id} />
                 </TabsContent>
                 
                 <TabsContent value="billing">
-                  <BillingTab clientId={client.id} billingItems={[]} />
+                  <BillingTab clientId={client.id} />
                 </TabsContent>
                 
                 <TabsContent value="careplans">
-                  <CarePlansTab clientId={client.id} carePlans={[]} />
+                  <CarePlansTab clientId={client.id} />
                 </TabsContent>
                 
                 <TabsContent value="eventslogs">
-                  <EventsLogsTab 
-                    clientId={client.id}
-                    onAddEvent={onAddEvent}
-                  />
+                  <EventsLogsTab clientId={client.id} />
                 </TabsContent>
               </Tabs>
             </div>

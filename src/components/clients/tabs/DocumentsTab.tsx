@@ -1,31 +1,54 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { format } from "date-fns";
-import { File, FileText, FilePlus, Clock } from "lucide-react";
+import { File, FileText, FilePlus, Clock, Download, Eye } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-interface Document {
-  name: string;
-  date: Date;
-  type: string;
-  author: string;
-}
+import { UploadDocumentDialog } from "../dialogs/UploadDocumentDialog";
+import { useClientDocuments, useUploadClientDocument } from "@/hooks/useClientDocuments";
 
 interface DocumentsTabProps {
   clientId: string;
-  documents?: Document[];
+  documents?: any[];
 }
 
-export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, documents = [] }) => {
+export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const { data: documents = [], isLoading } = useClientDocuments(clientId);
+  const uploadDocumentMutation = useUploadClientDocument();
+
+  const handleUploadDocument = async (documentData: { name: string; type: string; uploaded_by: string; file: File }) => {
+    await uploadDocumentMutation.mutateAsync({
+      clientId,
+      file: documentData.file,
+      name: documentData.name,
+      type: documentData.type,
+      uploaded_by: documentData.uploaded_by,
+    });
+  };
+
   const getDocIcon = (type: string) => {
     switch(type.toLowerCase()) {
-      case 'pdf': return <File className="text-red-500" />;
-      case 'docx': return <FileText className="text-blue-500" />;
-      default: return <FileText className="text-gray-500" />;
+      case 'medical report': 
+      case 'care plan': 
+      case 'assessment': 
+        return <File className="text-red-500" />;
+      case 'legal document': 
+      case 'insurance': 
+        return <FileText className="text-blue-500" />;
+      default: 
+        return <FileText className="text-gray-500" />;
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -36,7 +59,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, documents 
               <FileText className="h-5 w-5 text-blue-600" />
               <CardTitle className="text-lg">Client Documents</CardTitle>
             </div>
-            <Button size="sm" className="gap-1">
+            <Button size="sm" className="gap-1" onClick={() => setIsUploadDialogOpen(true)}>
               <FilePlus className="h-4 w-4 mr-1" />
               <span>Upload Document</span>
             </Button>
@@ -51,8 +74,8 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, documents 
             </div>
           ) : (
             <div className="divide-y">
-              {documents.map((doc, index) => (
-                <div key={index} className="flex items-center justify-between py-3 hover:bg-gray-50 px-2 rounded-md">
+              {documents.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between py-3 hover:bg-gray-50 px-2 rounded-md">
                   <div className="flex items-center space-x-3">
                     <div className="p-2 bg-gray-100 rounded-md">
                       {getDocIcon(doc.type)}
@@ -60,20 +83,40 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, documents 
                     <div>
                       <p className="font-medium">{doc.name}</p>
                       <div className="flex items-center text-sm text-gray-500">
-                        <span>{doc.author}</span>
+                        <span>{doc.uploaded_by}</span>
                         <span className="mx-1">•</span>
                         <Clock className="h-3 w-3 mr-1" />
-                        <span>{format(doc.date, 'MMM dd, yyyy')}</span>
+                        <span>{format(new Date(doc.upload_date), 'MMM dd, yyyy')}</span>
+                        {doc.file_size && (
+                          <>
+                            <span className="mx-1">•</span>
+                            <span>{doc.file_size}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
-                  <Badge>{doc.type.toUpperCase()}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge>{doc.type}</Badge>
+                    <Button variant="outline" size="icon" title="View Document">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="icon" title="Download Document">
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <UploadDocumentDialog
+        open={isUploadDialogOpen}
+        onOpenChange={setIsUploadDialogOpen}
+        onSave={handleUploadDocument}
+      />
     </div>
   );
 };
