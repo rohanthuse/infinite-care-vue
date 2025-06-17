@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { EnhancedClientBilling, useAddPaymentRecord } from "@/hooks/useEnhancedClientBilling";
+import { formatCurrency } from "@/utils/currencyFormatter";
 import { toast } from "sonner";
 
 interface AddPaymentDialogProps {
@@ -41,7 +42,7 @@ export function AddPaymentDialog({ open, onOpenChange, invoice }: AddPaymentDial
     if (!invoice) return 0;
     const totalAmount = invoice.total_amount || invoice.amount;
     const totalPaid = invoice.payment_records?.reduce((sum, payment) => sum + payment.payment_amount, 0) || 0;
-    return totalAmount - totalPaid;
+    return Math.max(0, totalAmount - totalPaid);
   };
 
   const onSubmit = async (data: PaymentFormData) => {
@@ -90,23 +91,23 @@ export function AddPaymentDialog({ open, onOpenChange, invoice }: AddPaymentDial
           <div className="bg-gray-50 rounded-lg p-4 space-y-2">
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Invoice Total:</span>
-              <span className="font-medium">${(invoice.total_amount || invoice.amount).toFixed(2)}</span>
+              <span className="font-medium">{formatCurrency(invoice.total_amount || invoice.amount)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Amount Paid:</span>
               <span className="font-medium">
-                ${(invoice.payment_records?.reduce((sum, payment) => sum + payment.payment_amount, 0) || 0).toFixed(2)}
+                {formatCurrency(invoice.payment_records?.reduce((sum, payment) => sum + payment.payment_amount, 0) || 0)}
               </span>
             </div>
             <div className="flex justify-between border-t pt-2">
               <span className="text-sm font-medium">Remaining Balance:</span>
-              <span className="font-bold text-red-600">${remainingBalance.toFixed(2)}</span>
+              <span className="font-bold text-red-600">{formatCurrency(remainingBalance)}</span>
             </div>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="payment_amount">Payment Amount ($)</Label>
+              <Label htmlFor="payment_amount">Payment Amount (£)</Label>
               <Input
                 id="payment_amount"
                 type="number"
@@ -125,7 +126,7 @@ export function AddPaymentDialog({ open, onOpenChange, invoice }: AddPaymentDial
                 size="sm"
                 onClick={() => setValue('payment_amount', remainingBalance)}
               >
-                Pay Full Amount (${remainingBalance.toFixed(2)})
+                Pay Full Amount ({formatCurrency(remainingBalance)})
               </Button>
             </div>
 

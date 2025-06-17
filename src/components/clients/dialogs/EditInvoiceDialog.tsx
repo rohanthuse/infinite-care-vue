@@ -16,8 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useForm } from "react-hook-form";
-import { EnhancedClientBilling } from "@/hooks/useEnhancedClientBilling";
-import { toast } from "sonner";
+import { EnhancedClientBilling, useUpdateInvoice } from "@/hooks/useEnhancedClientBilling";
+import { formatCurrency } from "@/utils/currencyFormatter";
 
 interface EditInvoiceDialogProps {
   open: boolean;
@@ -48,6 +48,7 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register, handleSubmit, setValue, watch, reset } = useForm<InvoiceFormData>();
+  const updateInvoiceMutation = useUpdateInvoice();
 
   useEffect(() => {
     if (invoice) {
@@ -95,7 +96,7 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
     // Recalculate line total
     if (field === 'quantity' || field === 'unit_price' || field === 'discount_amount') {
       const item = updatedItems[index];
-      item.line_total = (item.quantity * item.unit_price) - item.discount_amount;
+      item.line_total = Math.max(0, (item.quantity * item.unit_price) - item.discount_amount);
     }
     
     setLineItems(updatedItems);
@@ -114,12 +115,27 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
 
     setIsSubmitting(true);
     try {
-      // Here you would implement the actual update logic
-      // For now, we'll show a success message
-      toast.success('Invoice updated successfully');
+      await updateInvoiceMutation.mutateAsync({
+        invoiceId: invoice.id,
+        invoiceData: {
+          description: data.description,
+          invoice_date: data.invoice_date,
+          due_date: data.due_date,
+          tax_amount: data.tax_amount,
+          notes: data.notes,
+          status: data.status,
+          line_items: lineItems.map(item => ({
+            id: item.id,
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            discount_amount: item.discount_amount
+          }))
+        }
+      });
       onOpenChange(false);
     } catch (error) {
-      toast.error('Failed to update invoice');
+      console.error('Failed to update invoice:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -184,7 +200,7 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="tax_amount">Tax Amount ($)</Label>
+              <Label htmlFor="tax_amount">Tax Amount (£)</Label>
               <Input
                 id="tax_amount"
                 type="number"
@@ -210,8 +226,8 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
                   <TableRow>
                     <TableHead>Description</TableHead>
                     <TableHead>Qty</TableHead>
-                    <TableHead>Unit Price</TableHead>
-                    <TableHead>Discount</TableHead>
+                    <TableHead>Unit Price (£)</TableHead>
+                    <TableHead>Discount (£)</TableHead>
                     <TableHead>Total</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -253,7 +269,7 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
                         />
                       </TableCell>
                       <TableCell className="font-medium">
-                        ${item.line_total.toFixed(2)}
+                        {formatCurrency(item.line_total)}
                       </TableCell>
                       <TableCell>
                         <Button
@@ -278,15 +294,15 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
               <div className="text-right space-y-1">
                 <div className="flex justify-between w-48">
                   <span>Subtotal:</span>
-                  <span>${calculateSubtotal().toFixed(2)}</span>
+                  <span>{formatCurrency(calculateSubtotal())}</span>
                 </div>
                 <div className="flex justify-between w-48">
                   <span>Tax:</span>
-                  <span>${(watch('tax_amount') || 0).toFixed(2)}</span>
+                  <span>{formatCurrency(watch('tax_amount') || 0)}</span>
                 </div>
                 <div className="flex justify-between w-48 font-bold text-lg border-t pt-1">
                   <span>Total:</span>
-                  <span>${calculateTotal().toFixed(2)}</span>
+                  <span>{formatCurrency(calculateTotal())}</span>
                 </div>
               </div>
             </div>

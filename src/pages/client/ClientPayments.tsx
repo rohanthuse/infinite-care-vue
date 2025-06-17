@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreditCard, Download, CheckCircle, AlertCircle, Calendar } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { formatCurrency } from "@/utils/currencyFormatter";
 
 const ClientPayments = () => {
   const [activeTab, setActiveTab] = useState("invoices");
@@ -121,7 +122,7 @@ const ClientPayments = () => {
                       </div>
                       <p className="text-sm text-gray-600 mt-1">{invoice.description}</p>
                     </div>
-                    <div className="text-lg font-bold">${invoice.amount.toFixed(2)}</div>
+                    <div className="text-lg font-bold">{formatCurrency(invoice.amount)}</div>
                   </div>
                   <div className="p-4 flex flex-col sm:flex-row justify-between gap-4">
                     <div className="space-y-2">

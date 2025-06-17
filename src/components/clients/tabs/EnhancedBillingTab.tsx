@@ -14,6 +14,7 @@ import { AddPaymentDialog } from "../dialogs/AddPaymentDialog";
 import { ViewInvoiceDialog } from "../dialogs/ViewInvoiceDialog";
 import { UninvoicedServicesAlert } from "../alerts/UninvoicedServicesAlert";
 import { generateInvoicePDF } from "@/utils/invoicePdfGenerator";
+import { formatCurrency } from "@/utils/currencyFormatter";
 import { 
   useEnhancedClientBilling, 
   useUninvoicedBookings, 
@@ -137,7 +138,7 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Outstanding</p>
-                <p className="text-2xl font-bold text-red-600">${calculateTotalOutstanding().toFixed(2)}</p>
+                <p className="text-2xl font-bold text-red-600">{formatCurrency(calculateTotalOutstanding())}</p>
               </div>
               <AlertTriangle className="h-8 w-8 text-red-600" />
             </div>
@@ -149,7 +150,7 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Paid</p>
-                <p className="text-2xl font-bold text-green-600">${calculateTotalPaid().toFixed(2)}</p>
+                <p className="text-2xl font-bold text-green-600">{formatCurrency(calculateTotalPaid())}</p>
               </div>
               <Check className="h-8 w-8 text-green-600" />
             </div>
@@ -221,29 +222,29 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
                             <div className="flex items-center gap-1">
                               <DollarSign className="h-4 w-4" />
                               <span className="font-medium">
-                                ${invoice.total_amount ? invoice.total_amount.toFixed(2) : invoice.amount.toFixed(2)}
+                                {formatCurrency(invoice.total_amount || invoice.amount)}
                               </span>
                               {invoice.tax_amount > 0 && (
-                                <span className="text-xs">(+${invoice.tax_amount.toFixed(2)} tax)</span>
+                                <span className="text-xs">(+{formatCurrency(invoice.tax_amount)} tax)</span>
                               )}
                             </div>
                             <div className="flex items-center gap-1">
                               <Clock className="h-4 w-4" />
-                              <span>Due: {format(new Date(invoice.due_date), 'MMM dd, yyyy')}</span>
+                              <span>Due: {format(new Date(invoice.due_date), 'dd/MM/yyyy')}</span>
                             </div>
                             {invoice.service_provided_date && (
                               <div className="text-xs">
-                                Service: {format(new Date(invoice.service_provided_date), 'MMM dd, yyyy')}
+                                Service: {format(new Date(invoice.service_provided_date), 'dd/MM/yyyy')}
                               </div>
                             )}
                           </div>
                           <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <span>Created: {format(new Date(invoice.invoice_date), 'MMM dd, yyyy')}</span>
+                            <span>Created: {format(new Date(invoice.invoice_date), 'dd/MM/yyyy')}</span>
                             {invoice.sent_date && (
-                              <span>• Sent: {format(new Date(invoice.sent_date), 'MMM dd, yyyy')}</span>
+                              <span>• Sent: {format(new Date(invoice.sent_date), 'dd/MM/yyyy')}</span>
                             )}
                             {invoice.paid_date && (
-                              <span>• Paid: {format(new Date(invoice.paid_date), 'MMM dd, yyyy')}</span>
+                              <span>• Paid: {format(new Date(invoice.paid_date), 'dd/MM/yyyy')}</span>
                             )}
                           </div>
                         </div>
@@ -294,10 +295,10 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
                         <div>
                           <p className="font-medium">Payment for Invoice #{invoice.invoice_number}</p>
                           <p className="text-sm text-gray-600">
-                            ${payment.payment_amount.toFixed(2)} via {payment.payment_method}
+                            {formatCurrency(payment.payment_amount)} via {payment.payment_method}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {format(new Date(payment.payment_date), 'MMM dd, yyyy')}
+                            {format(new Date(payment.payment_date), 'dd/MM/yyyy')}
                             {payment.transaction_id && ` • Ref: ${payment.transaction_id}`}
                           </p>
                         </div>

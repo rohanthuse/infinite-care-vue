@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { EnhancedClientBilling } from "@/hooks/useEnhancedClientBilling";
 import { generateInvoicePDF } from "@/utils/invoicePdfGenerator";
 import { useAdminClientDetail } from "@/hooks/useAdminClientData";
+import { formatCurrency } from "@/utils/currencyFormatter";
 
 interface ViewInvoiceDialogProps {
   open: boolean;
@@ -99,22 +100,22 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Invoice Date:</span>
-                  <span>{format(new Date(invoice.invoice_date), 'MMM dd, yyyy')}</span>
+                  <span>{format(new Date(invoice.invoice_date), 'dd/MM/yyyy')}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Due Date:</span>
-                  <span>{format(new Date(invoice.due_date), 'MMM dd, yyyy')}</span>
+                  <span>{format(new Date(invoice.due_date), 'dd/MM/yyyy')}</span>
                 </div>
                 {invoice.paid_date && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Paid Date:</span>
-                    <span>{format(new Date(invoice.paid_date), 'MMM dd, yyyy')}</span>
+                    <span>{format(new Date(invoice.paid_date), 'dd/MM/yyyy')}</span>
                   </div>
                 )}
                 {invoice.service_provided_date && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Service Date:</span>
-                    <span>{format(new Date(invoice.service_provided_date), 'MMM dd, yyyy')}</span>
+                    <span>{format(new Date(invoice.service_provided_date), 'dd/MM/yyyy')}</span>
                   </div>
                 )}
               </div>
@@ -125,17 +126,17 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal:</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>{formatCurrency(subtotal)}</span>
                 </div>
                 {invoice.tax_amount > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tax:</span>
-                    <span>${invoice.tax_amount.toFixed(2)}</span>
+                    <span>{formatCurrency(invoice.tax_amount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-semibold text-lg border-t pt-2">
                   <span>Total:</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>{formatCurrency(total)}</span>
                 </div>
               </div>
             </div>
@@ -166,9 +167,9 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                     <TableRow key={item.id}>
                       <TableCell>{item.description}</TableCell>
                       <TableCell>{item.quantity}</TableCell>
-                      <TableCell>${item.unit_price.toFixed(2)}</TableCell>
-                      <TableCell>${item.discount_amount.toFixed(2)}</TableCell>
-                      <TableCell className="font-medium">${item.line_total.toFixed(2)}</TableCell>
+                      <TableCell>{formatCurrency(item.unit_price)}</TableCell>
+                      <TableCell>{formatCurrency(item.discount_amount)}</TableCell>
+                      <TableCell className="font-medium">{formatCurrency(item.line_total)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -193,9 +194,9 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                 <TableBody>
                   {invoice.payment_records.map((payment) => (
                     <TableRow key={payment.id}>
-                      <TableCell>{format(new Date(payment.payment_date), 'MMM dd, yyyy')}</TableCell>
+                      <TableCell>{format(new Date(payment.payment_date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell className="capitalize">{payment.payment_method.replace('_', ' ')}</TableCell>
-                      <TableCell className="font-medium">${payment.payment_amount.toFixed(2)}</TableCell>
+                      <TableCell className="font-medium">{formatCurrency(payment.payment_amount)}</TableCell>
                       <TableCell>{payment.transaction_id || '-'}</TableCell>
                       <TableCell>{payment.payment_reference || '-'}</TableCell>
                     </TableRow>

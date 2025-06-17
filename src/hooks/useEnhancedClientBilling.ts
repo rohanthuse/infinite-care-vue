@@ -197,6 +197,87 @@ const createEnhancedInvoice = async (invoiceData: {
   return invoice;
 };
 
+// Update invoice data
+const updateInvoice = async (invoiceId: string, invoiceData: {
+  description?: string;
+  invoice_date?: string;
+  due_date?: string;
+  tax_amount?: number;
+  notes?: string;
+  status?: string;
+  line_items?: Array<{
+    id?: string;
+    service_id?: string;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    discount_amount?: number;
+  }>;
+}) => {
+  console.log('[updateInvoice] Updating invoice:', invoiceId, invoiceData);
+  
+  // Update the main invoice
+  const { data: invoice, error: invoiceError } = await supabase
+    .from('client_billing')
+    .update({
+      description: invoiceData.description,
+      invoice_date: invoiceData.invoice_date,
+      due_date: invoiceData.due_date,
+      tax_amount: invoiceData.tax_amount || 0,
+      notes: invoiceData.notes,
+      status: invoiceData.status,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', invoiceId)
+    .select()
+    .single();
+
+  if (invoiceError) {
+    console.error('[updateInvoice] Invoice update error:', invoiceError);
+    throw invoiceError;
+  }
+
+  // Update line items if provided
+  if (invoiceData.line_items) {
+    // First, delete existing line items
+    const { error: deleteError } = await supabase
+      .from('invoice_line_items')
+      .delete()
+      .eq('invoice_id', invoiceId);
+
+    if (deleteError) {
+      console.error('[updateInvoice] Error deleting line items:', deleteError);
+      throw deleteError;
+    }
+
+    // Then insert new line items
+    const lineItemsData = invoiceData.line_items.map(item => ({
+      invoice_id: invoiceId,
+      service_id: item.service_id,
+      description: item.description,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      discount_amount: item.discount_amount || 0,
+      line_total: (item.quantity * item.unit_price) - (item.discount_amount || 0)
+    }));
+
+    const { error: lineItemsError } = await supabase
+      .from('invoice_line_items')
+      .insert(lineItemsData);
+
+    if (lineItemsError) {
+      console.error('[updateInvoice] Line items creation error:', lineItemsError);
+      throw lineItemsError;
+    }
+
+    // Recalculate totals
+    await supabase.rpc('calculate_invoice_total', { invoice_id: invoiceId });
+  }
+
+  console.log('[updateInvoice] Invoice updated successfully');
+  return invoice;
+};
+
 // Update invoice status
 const updateInvoiceStatus = async (invoiceId: string, status: string, additionalData?: any) => {
   console.log('[updateInvoiceStatus] Updating invoice status:', invoiceId, status);
@@ -313,19 +394,21 @@ export const useCreateEnhancedInvoice = () => {
   });
 };
 
-export const useUpdateInvoiceStatus = () => {
+export const useUpdateInvoice = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ invoiceId, status, additionalData }: { invoiceId: string; status: string; additionalData?: any }) =>
-      updateInvoiceStatus(invoiceId, status, additionalData),
+    mutationFn: ({ invoiceId, invoiceData }: { 
+      invoiceId: string; 
+      invoiceData: Parameters<typeof updateInvoice>[1] 
+    }) => updateInvoice(invoiceId, invoiceData),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['enhanced-client-billing', data.client_id] });
-      toast.success('Invoice status updated successfully');
+      toast.success('Invoice updated successfully');
     },
     onError: (error: any) => {
-      console.error('[useUpdateInvoiceStatus] Error:', error);
-      toast.error('Failed to update invoice status', {
+      console.error('[useUpdateInvoice] Error:', error);
+      toast.error('Failed to update invoice', {
         description: error.message || 'Please try again later'
       });
     },

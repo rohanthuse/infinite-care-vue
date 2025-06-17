@@ -3,6 +3,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { format } from 'date-fns';
 import { EnhancedClientBilling } from '@/hooks/useEnhancedClientBilling';
+import { formatCurrency } from './currencyFormatter';
 
 declare module 'jspdf' {
   interface jsPDF {
@@ -72,10 +73,10 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
   doc.setFontSize(10);
   doc.setTextColor('#000000');
   doc.text('Invoice Date:', pageWidth - margin - 75, infoBoxY + 8);
-  doc.text(format(new Date(invoice.invoice_date), 'MMM dd, yyyy'), pageWidth - margin - 75, infoBoxY + 15);
+  doc.text(format(new Date(invoice.invoice_date), 'dd/MM/yyyy'), pageWidth - margin - 75, infoBoxY + 15);
   
   doc.text('Due Date:', pageWidth - margin - 75, infoBoxY + 23);
-  doc.text(format(new Date(invoice.due_date), 'MMM dd, yyyy'), pageWidth - margin - 75, infoBoxY + 30);
+  doc.text(format(new Date(invoice.due_date), 'dd/MM/yyyy'), pageWidth - margin - 75, infoBoxY + 30);
   
   doc.text('Status:', pageWidth - margin - 75, infoBoxY + 38);
   doc.setTextColor(invoice.status === 'paid' ? '#16a34a' : '#dc2626');
@@ -113,9 +114,9 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
   const tableData = invoice.line_items?.map(item => [
     item.description,
     item.quantity.toString(),
-    `$${item.unit_price.toFixed(2)}`,
-    `$${item.discount_amount.toFixed(2)}`,
-    `$${item.line_total.toFixed(2)}`
+    formatCurrency(item.unit_price),
+    formatCurrency(item.discount_amount),
+    formatCurrency(item.line_total)
   ]) || [];
 
   doc.autoTable({
@@ -154,13 +155,13 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
   
   // Subtotal
   doc.text('Subtotal:', totalsX, yPosition);
-  doc.text(`$${subtotal.toFixed(2)}`, totalsX + 50, yPosition);
+  doc.text(formatCurrency(subtotal), totalsX + 50, yPosition);
   yPosition += 8;
   
   // Tax
   if (invoice.tax_amount > 0) {
     doc.text('Tax:', totalsX, yPosition);
-    doc.text(`$${invoice.tax_amount.toFixed(2)}`, totalsX + 50, yPosition);
+    doc.text(formatCurrency(invoice.tax_amount), totalsX + 50, yPosition);
     yPosition += 8;
   }
   
@@ -172,7 +173,7 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
   doc.setFontSize(12);
   doc.setFont(undefined, 'bold');
   doc.text('Total:', totalsX, yPosition);
-  doc.text(`$${(invoice.total_amount || invoice.amount).toFixed(2)}`, totalsX + 50, yPosition);
+  doc.text(formatCurrency(invoice.total_amount || invoice.amount), totalsX + 50, yPosition);
 
   // Payment History (if any)
   if (invoice.payment_records && invoice.payment_records.length > 0) {
@@ -185,9 +186,9 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
     yPosition += 10;
     
     const paymentData = invoice.payment_records.map(payment => [
-      format(new Date(payment.payment_date), 'MMM dd, yyyy'),
+      format(new Date(payment.payment_date), 'dd/MM/yyyy'),
       payment.payment_method,
-      `$${payment.payment_amount.toFixed(2)}`,
+      formatCurrency(payment.payment_amount),
       payment.transaction_id || '-'
     ]);
 
@@ -229,7 +230,7 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
   doc.setFontSize(8);
   doc.setTextColor(grayColor);
   doc.text('Thank you for your business!', margin, footerY);
-  doc.text(`Generated on ${format(new Date(), 'MMM dd, yyyy')}`, pageWidth - margin - 60, footerY);
+  doc.text(`Generated on ${format(new Date(), 'dd/MM/yyyy')}`, pageWidth - margin - 60, footerY);
 
   // Download the PDF
   doc.save(`Invoice-${invoice.invoice_number}.pdf`);
