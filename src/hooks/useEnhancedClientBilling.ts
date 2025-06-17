@@ -415,6 +415,28 @@ export const useUpdateInvoice = () => {
   });
 };
 
+export const useUpdateInvoiceStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ invoiceId, status, additionalData }: { 
+      invoiceId: string; 
+      status: string; 
+      additionalData?: any 
+    }) => updateInvoiceStatus(invoiceId, status, additionalData),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['enhanced-client-billing', data.client_id] });
+      toast.success('Invoice status updated successfully');
+    },
+    onError: (error: any) => {
+      console.error('[useUpdateInvoiceStatus] Error:', error);
+      toast.error('Failed to update invoice status', {
+        description: error.message || 'Please try again later'
+      });
+    },
+  });
+};
+
 export const useAddPaymentRecord = () => {
   const queryClient = useQueryClient();
 
