@@ -12,6 +12,7 @@ export interface CarePlanData {
   end_date?: string;
   review_date?: string;
   status: string;
+  care_plan_type?: string;
   goals_progress?: number;
   created_at: string;
   updated_at: string;
