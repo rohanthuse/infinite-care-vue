@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
@@ -40,7 +39,7 @@ const formSchema = z.object({
   invoice_date: z.string().min(1, "Invoice date is required"),
   due_date: z.string().min(1, "Due date is required"),
   tax_amount: z.number().min(0, "Tax amount must be positive"),
-  currency: z.string().default("USD"),
+  currency: z.string().default("GBP"),
   payment_terms: z.string().default("30 days"),
   notes: z.string().optional(),
   booking_id: z.string().optional(),
@@ -79,7 +78,7 @@ export function CreateEnhancedInvoiceDialog({
       invoice_date: new Date().toISOString().split('T')[0],
       due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       tax_amount: 0,
-      currency: "USD",
+      currency: "GBP",
       payment_terms: "30 days",
       notes: "",
       line_items: [
