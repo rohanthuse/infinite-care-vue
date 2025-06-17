@@ -176,7 +176,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                     <TableRow key={item.id}>
                       <TableCell>{item.description}</TableCell>
                       <TableCell>{item.quantity}</TableCell>
-                      <TableCell>{formatCurrency(item.unit_price)}</Table>
+                      <TableCell>{formatCurrency(item.unit_price)}</TableCell>
                       <TableCell>{formatCurrency(item.discount_amount)}</TableCell>
                       <TableCell className="font-medium">{formatCurrency(item.line_total)}</TableCell>
                     </TableRow>
