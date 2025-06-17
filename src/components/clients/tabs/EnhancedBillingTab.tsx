@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { format } from "date-fns";
 import { 
@@ -14,12 +13,14 @@ import { EditInvoiceDialog } from "../dialogs/EditInvoiceDialog";
 import { AddPaymentDialog } from "../dialogs/AddPaymentDialog";
 import { ViewInvoiceDialog } from "../dialogs/ViewInvoiceDialog";
 import { UninvoicedServicesAlert } from "../alerts/UninvoicedServicesAlert";
+import { generateInvoicePDF } from "@/utils/invoicePdfGenerator";
 import { 
   useEnhancedClientBilling, 
   useUninvoicedBookings, 
   useUpdateInvoiceStatus,
   EnhancedClientBilling 
 } from "@/hooks/useEnhancedClientBilling";
+import { useAdminClientDetail } from "@/hooks/useAdminClientData";
 
 interface EnhancedBillingTabProps {
   clientId: string;
@@ -36,6 +37,7 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
 
   const { data: billingItems = [], isLoading } = useEnhancedClientBilling(clientId);
   const { data: uninvoicedBookings = [] } = useUninvoicedBookings(branchId);
+  const { data: clientData } = useAdminClientDetail(clientId);
   const updateStatusMutation = useUpdateInvoiceStatus();
 
   const getStatusColor = (status: string) => {
@@ -77,6 +79,25 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
   const handleAddPayment = (invoice: EnhancedClientBilling) => {
     setSelectedInvoice(invoice);
     setIsPaymentDialogOpen(true);
+  };
+
+  const handleDownloadInvoice = (invoice: EnhancedClientBilling) => {
+    const clientName = clientData ? 
+      `${clientData.preferred_name || clientData.first_name || ''} ${clientData.last_name || ''}`.trim() : 
+      'Client';
+    
+    generateInvoicePDF({
+      invoice,
+      clientName,
+      clientAddress: clientData?.address,
+      clientEmail: clientData?.email,
+      companyInfo: {
+        name: 'Your Company Name',
+        address: 'Company Address',
+        phone: 'Company Phone',
+        email: 'Company Email'
+      }
+    });
   };
 
   const calculateTotalOutstanding = () => {
@@ -253,7 +274,7 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
                               <Plus className="h-4 w-4" />
                             </Button>
                           )}
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => handleDownloadInvoice(invoice)}>
                             <Download className="h-4 w-4" />
                           </Button>
                         </div>
