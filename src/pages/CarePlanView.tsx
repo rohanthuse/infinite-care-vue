@@ -45,6 +45,9 @@ import { RecordActivityDialog } from "@/components/care/dialogs/RecordActivityDi
 import { UploadDocumentDialog } from "@/components/care/dialogs/UploadDocumentDialog";
 import { AddEventDialog } from "@/components/care/dialogs/AddEventDialog";
 import { resolveCarePlanId, getDisplayCarePlanId } from "@/utils/carePlanIdMapping";
+import { useCarePlanData } from "@/hooks/useCarePlanData";
+import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
+import { useClientNotes } from "@/hooks/useClientNotes";
 
 const mockCarePlans = [
   {
@@ -73,7 +76,6 @@ const CarePlanView = () => {
   const { id: branchId, branchName, carePlanId } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("personal");
-  const [carePlan, setCarePlan] = useState<typeof mockCarePlans[0] | null>(null);
   
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [followUpDialogOpen, setFollowUpDialogOpen] = useState(false);
@@ -81,39 +83,37 @@ const CarePlanView = () => {
   const [documentDialogOpen, setDocumentDialogOpen] = useState(false);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
 
-  useEffect(() => {
-    // Resolve the care plan ID (convert mock ID to real UUID if needed)
-    const resolvedCarePlanId = resolveCarePlanId(carePlanId || '');
-    console.log('Original care plan ID:', carePlanId);
-    console.log('Resolved care plan ID:', resolvedCarePlanId);
-    
-    // First try to find in mock data using original ID
-    let plan = mockCarePlans.find(p => p.id === carePlanId);
-    
-    // If not found and we have a resolved ID, try finding by resolved ID
-    if (!plan && resolvedCarePlanId !== carePlanId) {
-      plan = mockCarePlans.find(p => p.id === resolvedCarePlanId);
-    }
-    
-    // If still not found, create a placeholder with resolved ID
-    if (!plan && carePlanId) {
-      // Create a basic care plan structure that matches the expected format
-      plan = {
-        id: carePlanId, // Keep original for display consistency
-        patientName: "John Michael", // Default for CP-001
-        patientId: "PT-2356",
-        dateCreated: new Date("2023-10-15"),
-        lastUpdated: new Date("2023-11-05"),
-        status: "Active",
-        assignedTo: "Dr. Sarah Johnson",
-        avatar: "JM"
-      };
-    }
-    
-    if (plan) {
-      setCarePlan(plan);
-    }
-  }, [carePlanId]);
+  // Fetch data from database
+  const { data: carePlanData, isLoading: isCarePlanLoading } = useCarePlanData(carePlanId || '');
+  const { data: goalsData, isLoading: isGoalsLoading } = useCarePlanGoals(carePlanId || '');
+  const { data: notesData, isLoading: isNotesLoading } = useClientNotes(carePlanData?.client_id || '');
+
+  // Create unified care plan object combining database and mock data
+  const carePlan = carePlanData ? {
+    id: carePlanId || '', // Keep original ID for display
+    patientName: carePlanData.client ? `${carePlanData.client.first_name} ${carePlanData.client.last_name}` : "John Michael",
+    patientId: carePlanData.client?.other_identifier || "PT-2356",
+    dateCreated: new Date(carePlanData.created_at),
+    lastUpdated: new Date(carePlanData.updated_at),
+    status: carePlanData.status,
+    assignedTo: carePlanData.provider_name,
+    avatar: carePlanData.client?.avatar_initials || "JM"
+  } : null;
+
+  // Transform database goals to match component expected format
+  const transformedGoals = goalsData?.map(goal => ({
+    title: goal.description,
+    status: goal.status,
+    target: `Progress: ${goal.progress || 0}%`,
+    notes: goal.notes || 'No additional notes'
+  })) || [];
+
+  // Transform database notes to match component expected format
+  const transformedNotes = notesData?.map(note => ({
+    date: new Date(note.created_at),
+    author: note.author,
+    content: note.content
+  })) || [];
 
   const handlePrintCarePlan = () => {
     if (!carePlan) return;
@@ -213,6 +213,22 @@ const CarePlanView = () => {
     onUploadDocument: () => setDocumentDialogOpen(true)
   };
 
+  if (isCarePlanLoading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <DashboardHeader />
+        <BranchInfoHeader 
+          branchId={branchId || ""} 
+          branchName={branchName || ""} 
+          onNewBooking={() => {}} 
+        />
+        <div className="flex-1 p-6 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <DashboardHeader />
@@ -279,13 +295,13 @@ const CarePlanView = () => {
               
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="w-full md:w-1/4">
-                  {carePlan && <CarePlanSidebar 
+                  <CarePlanSidebar 
                     carePlan={carePlan} 
                     onAddNote={() => setNoteDialogOpen(true)}
                     onScheduleFollowUp={() => setFollowUpDialogOpen(true)}
                     onRecordActivity={() => setActivityDialogOpen(true)}
                     onUploadDocument={() => setDocumentDialogOpen(true)}
-                  />}
+                  />
                 </div>
                 
                 <div className="w-full md:w-3/4">
@@ -309,8 +325,11 @@ const CarePlanView = () => {
                               items={[
                                 { label: "Full Name", value: carePlan.patientName },
                                 { label: "Patient ID", value: carePlan.patientId },
-                                { label: "Gender", value: mockPatientData.gender },
-                                { label: "Date of Birth", value: `${format(mockPatientData.dateOfBirth, 'MMM dd, yyyy')} (Age: ${new Date().getFullYear() - mockPatientData.dateOfBirth.getFullYear()})` }
+                                { label: "Gender", value: carePlanData?.client?.gender || mockPatientData.gender },
+                                { label: "Date of Birth", value: carePlanData?.client?.date_of_birth ? 
+                                  `${format(new Date(carePlanData.client.date_of_birth), 'MMM dd, yyyy')} (Age: ${new Date().getFullYear() - new Date(carePlanData.client.date_of_birth).getFullYear()})` : 
+                                  `${format(mockPatientData.dateOfBirth, 'MMM dd, yyyy')} (Age: ${new Date().getFullYear() - mockPatientData.dateOfBirth.getFullYear()})`
+                                }
                               ]}
                             />
                             
@@ -318,9 +337,9 @@ const CarePlanView = () => {
                               icon={<Phone className="h-5 w-5 text-med-500" />}
                               title="Contact Information"
                               items={[
-                                { label: "Address", value: mockPatientData.address },
-                                { label: "Phone", value: mockPatientData.phone },
-                                { label: "Email", value: mockPatientData.email },
+                                { label: "Address", value: carePlanData?.client?.address || mockPatientData.address },
+                                { label: "Phone", value: carePlanData?.client?.phone || mockPatientData.phone },
+                                { label: "Email", value: carePlanData?.client?.email || mockPatientData.email },
                                 { label: "Preferred Language", value: mockPatientData.preferredLanguage }
                               ]}
                             />
@@ -399,7 +418,13 @@ const CarePlanView = () => {
                     </TabsContent>
                     
                     <TabsContent value="goals" className="space-y-4">
-                      <GoalsTab goals={mockPatientData.goals} />
+                      {isGoalsLoading ? (
+                        <div className="flex items-center justify-center h-32">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        </div>
+                      ) : (
+                        <GoalsTab goals={transformedGoals.length > 0 ? transformedGoals : mockPatientData.goals} />
+                      )}
                     </TabsContent>
                     
                     <TabsContent value="activities" className="space-y-4">
@@ -410,10 +435,16 @@ const CarePlanView = () => {
                     </TabsContent>
                     
                     <TabsContent value="notes" className="space-y-4">
-                      <NotesTab 
-                        notes={mockPatientData.notes} 
-                        onAddNote={() => setNoteDialogOpen(true)}
-                      />
+                      {isNotesLoading ? (
+                        <div className="flex items-center justify-center h-32">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        </div>
+                      ) : (
+                        <NotesTab 
+                          notes={transformedNotes.length > 0 ? transformedNotes : mockPatientData.notes} 
+                          onAddNote={() => setNoteDialogOpen(true)}
+                        />
+                      )}
                     </TabsContent>
                     
                     <TabsContent value="documents" className="space-y-4">
