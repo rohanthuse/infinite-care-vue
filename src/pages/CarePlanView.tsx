@@ -49,29 +49,6 @@ import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
 import { useClientDocuments, useUploadClientDocument } from "@/hooks/useClientDocuments";
 import { useClientEvents, useCreateClientEvent } from "@/hooks/useClientEvents";
 
-const mockCarePlans = [
-  {
-    id: "CP-001",
-    patientName: "John Michael",
-    patientId: "PT-2356",
-    dateCreated: new Date("2023-10-15"),
-    lastUpdated: new Date("2023-11-05"),
-    status: "Active",
-    assignedTo: "Dr. Sarah Johnson",
-    avatar: "JM"
-  },
-  {
-    id: "CP-002",
-    patientName: "Emma Thompson",
-    patientId: "PT-1122",
-    dateCreated: new Date("2023-09-22"),
-    lastUpdated: new Date("2023-10-30"),
-    status: "Under Review",
-    assignedTo: "Dr. James Wilson",
-    avatar: "ET"
-  }
-];
-
 const CarePlanView = () => {
   const { id: branchId, branchName, carePlanId } = useParams();
   const navigate = useNavigate();
@@ -89,8 +66,29 @@ const CarePlanView = () => {
   // Fetch real care plan data
   const { data: carePlans, isLoading: carePlansLoading, error: carePlansError } = useClientCarePlansWithDetails(clientId);
   
-  // Get the specific care plan or the first one
-  const carePlan = carePlans?.find(plan => plan.id === carePlanId) || carePlans?.[0];
+  // Enhanced care plan selection logic
+  const carePlan = React.useMemo(() => {
+    if (!carePlans || carePlans.length === 0) return null;
+    
+    // If carePlanId is provided, try to find exact match first
+    if (carePlanId) {
+      const exactMatch = carePlans.find(plan => plan.id === carePlanId);
+      if (exactMatch) {
+        console.log('[CarePlanView] Found exact care plan match:', exactMatch.id);
+        return exactMatch;
+      }
+      
+      // If no exact match and it's a mock ID (like CP-001), use the first available care plan
+      if (carePlanId.startsWith('CP-')) {
+        console.log('[CarePlanView] Mock ID detected, using first available care plan');
+        return carePlans[0];
+      }
+    }
+    
+    // Default to first care plan
+    console.log('[CarePlanView] Using first available care plan');
+    return carePlans[0];
+  }, [carePlans, carePlanId]);
   
   // Fetch related data
   const { data: notes, isLoading: notesLoading } = useClientNotes(clientId);
@@ -101,6 +99,13 @@ const CarePlanView = () => {
   const createNoteMutation = useCreateClientNote();
   const uploadDocumentMutation = useUploadClientDocument();
   const createEventMutation = useCreateClientEvent();
+
+  // Add debug logging
+  useEffect(() => {
+    console.log('[CarePlanView] Route params:', { branchId, branchName, carePlanId });
+    console.log('[CarePlanView] Care plans data:', carePlans);
+    console.log('[CarePlanView] Selected care plan:', carePlan);
+  }, [branchId, branchName, carePlanId, carePlans, carePlan]);
 
   const handlePrintCarePlan = () => {
     if (!carePlan) return;
@@ -197,8 +202,13 @@ const CarePlanView = () => {
     );
   }
 
-  // Error state
+  // Error state - Enhanced with better debugging info
   if (carePlansError || !carePlan) {
+    const errorMessage = carePlansError?.message || `No care plan found for ID: ${carePlanId}`;
+    const debugInfo = `Available care plans: ${carePlans?.length || 0}`;
+    
+    console.error('[CarePlanView] Error details:', { carePlansError, carePlanId, carePlans });
+    
     return (
       <div className="flex flex-col min-h-screen">
         <DashboardHeader />
@@ -211,7 +221,8 @@ const CarePlanView = () => {
           <div className="text-center py-12">
             <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading care plan</h3>
-            <p className="text-gray-600">{carePlansError?.message || "Care plan not found"}</p>
+            <p className="text-gray-600 mb-2">{errorMessage}</p>
+            <p className="text-sm text-gray-500">{debugInfo}</p>
             <Button 
               onClick={() => navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan`)}
               className="mt-4"
