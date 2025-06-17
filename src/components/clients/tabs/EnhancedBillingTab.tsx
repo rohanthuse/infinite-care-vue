@@ -1,0 +1,321 @@
+
+import React, { useState } from "react";
+import { format } from "date-fns";
+import { 
+  CreditCard, Clock, Plus, DollarSign, AlertTriangle, 
+  Eye, Edit, Send, Check, X, FileText, Download 
+} from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CreateEnhancedInvoiceDialog } from "../dialogs/CreateEnhancedInvoiceDialog";
+import { EditInvoiceDialog } from "../dialogs/EditInvoiceDialog";
+import { AddPaymentDialog } from "../dialogs/AddPaymentDialog";
+import { ViewInvoiceDialog } from "../dialogs/ViewInvoiceDialog";
+import { UninvoicedServicesAlert } from "../alerts/UninvoicedServicesAlert";
+import { 
+  useEnhancedClientBilling, 
+  useUninvoicedBookings, 
+  useUpdateInvoiceStatus,
+  EnhancedClientBilling 
+} from "@/hooks/useEnhancedClientBilling";
+
+interface EnhancedBillingTabProps {
+  clientId: string;
+  branchId?: string;
+}
+
+export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId, branchId }) => {
+  const [activeTab, setActiveTab] = useState("invoices");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<EnhancedClientBilling | null>(null);
+
+  const { data: billingItems = [], isLoading } = useEnhancedClientBilling(clientId);
+  const { data: uninvoicedBookings = [] } = useUninvoicedBookings(branchId);
+  const updateStatusMutation = useUpdateInvoiceStatus();
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'paid': return 'bg-green-100 text-green-800';
+      case 'sent': return 'bg-blue-100 text-blue-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'overdue': return 'bg-red-100 text-red-800';
+      case 'draft': return 'bg-gray-100 text-gray-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'refunded': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'paid': return <Check className="h-3 w-3" />;
+      case 'overdue': return <AlertTriangle className="h-3 w-3" />;
+      case 'draft': return <Edit className="h-3 w-3" />;
+      default: return <Clock className="h-3 w-3" />;
+    }
+  };
+
+  const handleStatusChange = async (invoiceId: string, newStatus: string) => {
+    await updateStatusMutation.mutateAsync({ invoiceId, status: newStatus });
+  };
+
+  const handleViewInvoice = (invoice: EnhancedClientBilling) => {
+    setSelectedInvoice(invoice);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEditInvoice = (invoice: EnhancedClientBilling) => {
+    setSelectedInvoice(invoice);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleAddPayment = (invoice: EnhancedClientBilling) => {
+    setSelectedInvoice(invoice);
+    setIsPaymentDialogOpen(true);
+  };
+
+  const calculateTotalOutstanding = () => {
+    return billingItems
+      .filter(item => item.status !== 'paid' && item.status !== 'cancelled')
+      .reduce((sum, item) => sum + (item.total_amount || item.amount), 0);
+  };
+
+  const calculateTotalPaid = () => {
+    return billingItems
+      .filter(item => item.status === 'paid')
+      .reduce((sum, item) => sum + (item.total_amount || item.amount), 0);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Uninvoiced Services Alert */}
+      {uninvoicedBookings.length > 0 && (
+        <UninvoicedServicesAlert 
+          uninvoicedBookings={uninvoicedBookings.filter(booking => booking.client_id === clientId)} 
+          onCreateInvoice={() => setIsCreateDialogOpen(true)}
+        />
+      )}
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Outstanding</p>
+                <p className="text-2xl font-bold text-red-600">${calculateTotalOutstanding().toFixed(2)}</p>
+              </div>
+              <AlertTriangle className="h-8 w-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Paid</p>
+                <p className="text-2xl font-bold text-green-600">${calculateTotalPaid().toFixed(2)}</p>
+              </div>
+              <Check className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Invoices</p>
+                <p className="text-2xl font-bold text-blue-600">{billingItems.length}</p>
+              </div>
+              <FileText className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content */}
+      <Card>
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-lg">Enhanced Billing & Invoicing</CardTitle>
+            </div>
+            <Button size="sm" className="gap-1" onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4" />
+              <span>Create Invoice</span>
+            </Button>
+          </div>
+          <CardDescription>Comprehensive invoicing system with payment tracking</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="invoices">Invoices</TabsTrigger>
+              <TabsTrigger value="payments">Payment History</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="invoices" className="space-y-4">
+              {billingItems.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <CreditCard className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                  <p className="text-sm">No invoices available for this client</p>
+                  <Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
+                    Create First Invoice
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {billingItems.map((invoice) => (
+                    <div key={invoice.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center gap-3">
+                            <h3 className="font-medium">Invoice #{invoice.invoice_number}</h3>
+                            <Badge className={`${getStatusColor(invoice.status)} flex items-center gap-1`}>
+                              {getStatusIcon(invoice.status)}
+                              {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                            </Badge>
+                            {invoice.generated_from_booking && (
+                              <Badge variant="outline" className="text-xs">Auto-generated</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600">{invoice.description}</p>
+                          <div className="flex items-center gap-6 text-sm text-gray-600">
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="h-4 w-4" />
+                              <span className="font-medium">
+                                ${invoice.total_amount ? invoice.total_amount.toFixed(2) : invoice.amount.toFixed(2)}
+                              </span>
+                              {invoice.tax_amount > 0 && (
+                                <span className="text-xs">(+${invoice.tax_amount.toFixed(2)} tax)</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-4 w-4" />
+                              <span>Due: {format(new Date(invoice.due_date), 'MMM dd, yyyy')}</span>
+                            </div>
+                            {invoice.service_provided_date && (
+                              <div className="text-xs">
+                                Service: {format(new Date(invoice.service_provided_date), 'MMM dd, yyyy')}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span>Created: {format(new Date(invoice.invoice_date), 'MMM dd, yyyy')}</span>
+                            {invoice.sent_date && (
+                              <span>• Sent: {format(new Date(invoice.sent_date), 'MMM dd, yyyy')}</span>
+                            )}
+                            {invoice.paid_date && (
+                              <span>• Paid: {format(new Date(invoice.paid_date), 'MMM dd, yyyy')}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 ml-4">
+                          <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {invoice.status !== 'paid' && (
+                            <Button variant="ghost" size="sm" onClick={() => handleEditInvoice(invoice)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {invoice.status === 'draft' && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleStatusChange(invoice.id, 'sent')}
+                            >
+                              <Send className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {['sent', 'pending', 'overdue'].includes(invoice.status) && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleAddPayment(invoice)}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="sm">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="payments" className="space-y-4">
+              <div className="space-y-4">
+                {billingItems.flatMap(invoice => 
+                  (invoice.payment_records || []).map(payment => (
+                    <div key={payment.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">Payment for Invoice #{invoice.invoice_number}</p>
+                          <p className="text-sm text-gray-600">
+                            ${payment.payment_amount.toFixed(2)} via {payment.payment_method}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {format(new Date(payment.payment_date), 'MMM dd, yyyy')}
+                            {payment.transaction_id && ` • Ref: ${payment.transaction_id}`}
+                          </p>
+                        </div>
+                        <Badge className="bg-green-100 text-green-800">Completed</Badge>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* Dialogs */}
+      <CreateEnhancedInvoiceDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        clientId={clientId}
+        uninvoicedBookings={uninvoicedBookings.filter(booking => booking.client_id === clientId)}
+      />
+
+      <EditInvoiceDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        invoice={selectedInvoice}
+      />
+
+      <AddPaymentDialog
+        open={isPaymentDialogOpen}
+        onOpenChange={setIsPaymentDialogOpen}
+        invoice={selectedInvoice}
+      />
+
+      <ViewInvoiceDialog
+        open={isViewDialogOpen}
+        onOpenChange={setIsViewDialogOpen}
+        invoice={selectedInvoice}
+      />
+    </div>
+  );
+};

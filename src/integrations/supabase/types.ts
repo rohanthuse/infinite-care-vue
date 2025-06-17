@@ -562,44 +562,84 @@ export type Database = {
       client_billing: {
         Row: {
           amount: number
+          booking_id: string | null
           client_id: string
           created_at: string
+          currency: string | null
           description: string
           due_date: string
+          generated_from_booking: boolean | null
           id: string
           invoice_date: string
           invoice_number: string
+          invoice_type: string | null
+          notes: string | null
+          overdue_date: string | null
           paid_date: string | null
+          payment_terms: string | null
+          sent_date: string | null
+          service_provided_date: string | null
           status: string
+          tax_amount: number | null
+          total_amount: number | null
           updated_at: string
         }
         Insert: {
           amount: number
+          booking_id?: string | null
           client_id: string
           created_at?: string
+          currency?: string | null
           description: string
           due_date: string
+          generated_from_booking?: boolean | null
           id?: string
           invoice_date: string
           invoice_number: string
+          invoice_type?: string | null
+          notes?: string | null
+          overdue_date?: string | null
           paid_date?: string | null
+          payment_terms?: string | null
+          sent_date?: string | null
+          service_provided_date?: string | null
           status?: string
+          tax_amount?: number | null
+          total_amount?: number | null
           updated_at?: string
         }
         Update: {
           amount?: number
+          booking_id?: string | null
           client_id?: string
           created_at?: string
+          currency?: string | null
           description?: string
           due_date?: string
+          generated_from_booking?: boolean | null
           id?: string
           invoice_date?: string
           invoice_number?: string
+          invoice_type?: string | null
+          notes?: string | null
+          overdue_date?: string | null
           paid_date?: string | null
+          payment_terms?: string | null
+          sent_date?: string | null
+          service_provided_date?: string | null
           status?: string
+          tax_amount?: number | null
+          total_amount?: number | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "client_billing_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "client_billing_client_id_fkey"
             columns: ["client_id"]
@@ -1087,6 +1127,60 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_line_items: {
+        Row: {
+          created_at: string
+          description: string
+          discount_amount: number | null
+          id: string
+          invoice_id: string
+          line_total: number
+          quantity: number | null
+          service_id: string | null
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          discount_amount?: number | null
+          id?: string
+          invoice_id: string
+          line_total: number
+          quantity?: number | null
+          service_id?: string | null
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          discount_amount?: number | null
+          id?: string
+          invoice_id?: string
+          line_total?: number
+          quantity?: number | null
+          service_id?: string | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_line_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "client_billing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_line_items_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medical_categories: {
         Row: {
           created_at: string
@@ -1145,6 +1239,53 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "medical_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_records: {
+        Row: {
+          created_at: string
+          id: string
+          invoice_id: string
+          notes: string | null
+          payment_amount: number
+          payment_date: string
+          payment_method: string
+          payment_reference: string | null
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invoice_id: string
+          notes?: string | null
+          payment_amount: number
+          payment_date?: string
+          payment_method?: string
+          payment_reference?: string | null
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          notes?: string | null
+          payment_amount?: number
+          payment_date?: string
+          payment_method?: string
+          payment_reference?: string | null
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_records_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "client_billing"
             referencedColumns: ["id"]
           },
         ]
@@ -1486,9 +1627,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_invoice_total: {
+        Args: { invoice_id: string }
+        Returns: number
+      }
       get_branch_chart_data: {
         Args: { p_branch_id: string }
         Returns: Json
+      }
+      get_uninvoiced_bookings: {
+        Args: { branch_id_param?: string }
+        Returns: {
+          booking_id: string
+          client_id: string
+          client_name: string
+          service_title: string
+          start_time: string
+          end_time: string
+          revenue: number
+          days_since_service: number
+        }[]
       }
       has_role: {
         Args: {
