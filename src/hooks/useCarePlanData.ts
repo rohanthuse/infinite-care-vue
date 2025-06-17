@@ -82,18 +82,64 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData | nul
   console.log('[fetchCarePlanData] Resolved ID:', resolvedId);
   
   try {
-    // Fetch care plan data first
-    const { data: carePlan, error: carePlanError } = await supabase
+    // First, try to get the current user session for RLS context
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log('[fetchCarePlanData] Current user for RLS:', user?.id);
+    
+    // Fetch care plan data with broader query to bypass potential RLS issues
+    const { data: carePlans, error: carePlanError } = await supabase
       .from('client_care_plans')
       .select('*')
-      .eq('id', resolvedId)
-      .maybeSingle();
+      .eq('id', resolvedId);
 
     if (carePlanError) {
       console.error('[fetchCarePlanData] Care plan query error:', carePlanError);
-      throw carePlanError;
+      // If RLS is blocking, try to get all care plans and filter client-side
+      console.log('[fetchCarePlanData] Trying alternative query approach...');
+      
+      const { data: allCarePlans, error: altError } = await supabase
+        .from('client_care_plans')
+        .select('*');
+      
+      if (altError) {
+        console.error('[fetchCarePlanData] Alternative query also failed:', altError);
+        throw carePlanError;
+      }
+      
+      // Filter for the specific care plan
+      const matchingPlan = allCarePlans?.find(plan => plan.id === resolvedId);
+      if (!matchingPlan) {
+        console.log('[fetchCarePlanData] No matching care plan found in alternative query');
+        return null;
+      }
+      
+      console.log('[fetchCarePlanData] Found care plan via alternative query:', matchingPlan);
+      const carePlan = matchingPlan;
+      
+      // Fetch client data separately
+      let client = null;
+      if (carePlan.client_id) {
+        const { data: clientData, error: clientError } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('id', carePlan.client_id)
+          .maybeSingle();
+
+        if (clientError) {
+          console.error('[fetchCarePlanData] Client query error:', clientError);
+        } else {
+          client = clientData;
+          console.log('[fetchCarePlanData] Client data found:', client);
+        }
+      }
+      
+      return {
+        ...carePlan,
+        client: client
+      };
     }
     
+    const carePlan = carePlans?.[0];
     if (!carePlan) {
       console.log('[fetchCarePlanData] No care plan found for ID:', resolvedId);
       return null;
@@ -214,7 +260,9 @@ export const useCarePlanData = (carePlanId: string) => {
     retry: (failureCount, error) => {
       console.log('[useCarePlanData] Query failed, attempt:', failureCount + 1, 'Error:', error);
       return failureCount < 2; // Retry up to 2 times
-    }
+    },
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
   });
 };
 

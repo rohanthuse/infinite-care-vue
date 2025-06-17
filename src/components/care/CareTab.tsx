@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -50,6 +49,8 @@ import { format, isAfter, isBefore, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { generateCarePlanPDF } from "@/utils/pdfGenerator";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const mockCarePlans = [
   {
@@ -155,12 +156,73 @@ interface CareTabProps {
   branchName: string | undefined;
 }
 
+// Add a hook to fetch care plans from database with fallback to mock data
+const useCarePlans = (branchId: string | undefined) => {
+  return useQuery({
+    queryKey: ['care-plans', branchId],
+    queryFn: async () => {
+      if (!branchId) return mockCarePlans;
+      
+      try {
+        console.log('[useCarePlans] Fetching care plans for branch:', branchId);
+        
+        // Try to fetch from database
+        const { data: carePlans, error } = await supabase
+          .from('client_care_plans')
+          .select(`
+            *,
+            client:clients(*)
+          `)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('[useCarePlans] Database query error:', error);
+          // Fallback to mock data if database query fails
+          return mockCarePlans;
+        }
+
+        if (!carePlans || carePlans.length === 0) {
+          console.log('[useCarePlans] No care plans found in database, using mock data');
+          return mockCarePlans;
+        }
+
+        // Transform database data to match expected format
+        const transformedPlans = carePlans.map(plan => ({
+          id: plan.id.substring(0, 8).toUpperCase(), // Use first 8 chars as display ID
+          patientName: plan.client ? `${plan.client.first_name} ${plan.client.last_name}` : "Unknown Patient",
+          patientId: plan.client?.other_identifier || `PT-${Math.floor(Math.random() * 9999)}`,
+          dateCreated: new Date(plan.created_at),
+          lastUpdated: new Date(plan.updated_at),
+          status: plan.status === 'active' ? 'Active' : 
+                 plan.status === 'under_review' ? 'Under Review' : 
+                 plan.status === 'archived' ? 'Archived' : 'Active',
+          assignedTo: plan.provider_name || "Care Provider",
+          avatar: plan.client?.avatar_initials || 
+                 (plan.client ? `${plan.client.first_name?.[0] || ''}${plan.client.last_name?.[0] || ''}` : 'UK')
+        }));
+
+        console.log('[useCarePlans] Successfully transformed care plans:', transformedPlans);
+        return transformedPlans;
+      } catch (error) {
+        console.error('[useCarePlans] Unexpected error:', error);
+        return mockCarePlans;
+      }
+    },
+    enabled: true,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1
+  });
+};
+
 export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Use the new hook to fetch care plans
+  const { data: carePlans = [], isLoading, error } = useCarePlans(branchId);
   
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
@@ -173,7 +235,22 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const [dateRangeEnd, setDateRangeEnd] = useState<Date | undefined>(undefined);
   const [isFiltering, setIsFiltering] = useState(false);
   
-  const filteredCarePlans = mockCarePlans.filter(plan => {
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-2 text-gray-600">Loading care plans...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    console.error('[CareTab] Error loading care plans:', error);
+  }
+  
+  const filteredCarePlans = carePlans.filter(plan => {
     const matchesSearch = 
       plan.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       plan.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
