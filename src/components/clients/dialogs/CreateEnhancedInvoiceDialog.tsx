@@ -131,7 +131,15 @@ export function CreateEnhancedInvoiceDialog({
 
   async function onSubmit(data: FormValues) {
     try {
-      // Explicitly provide all required fields
+      // Validate and transform line items to ensure required fields
+      const validatedLineItems = data.line_items.map(item => ({
+        service_id: undefined, // Optional field
+        description: item.description || "", // Ensure it's not undefined
+        quantity: item.quantity || 1, // Ensure it's not undefined
+        unit_price: item.unit_price || 0, // Ensure it's not undefined
+        discount_amount: item.discount_amount || 0,
+      }));
+
       const invoiceData = {
         client_id: clientId,
         description: data.description,
@@ -144,7 +152,7 @@ export function CreateEnhancedInvoiceDialog({
         notes: data.notes,
         booking_id: data.booking_id,
         service_provided_date: data.service_provided_date,
-        line_items: data.line_items,
+        line_items: validatedLineItems,
       };
       
       await createInvoiceMutation.mutateAsync(invoiceData);
