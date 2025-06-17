@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { X, FileEdit, Download } from "lucide-react";
 import { format } from "date-fns";
@@ -167,7 +168,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="billing">
-                  <BillingTab clientId={client.id} />
+                  <BillingTab clientId={client.id} branchId={branchId} />
                 </TabsContent>
                 
                 <TabsContent value="careplans">

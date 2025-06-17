@@ -1,18 +1,16 @@
 
 import React from "react";
-import { useParams } from "react-router-dom";
 import { EnhancedBillingTab } from "./EnhancedBillingTab";
 
 interface BillingTabProps {
   clientId: string;
+  branchId: string;
   billingItems?: any[];
 }
 
-export const BillingTab: React.FC<BillingTabProps> = ({ clientId }) => {
-  const { branchId } = useParams();
-  
+export const BillingTab: React.FC<BillingTabProps> = ({ clientId, branchId }) => {
   if (!branchId) {
-    console.error('Branch ID not found in route parameters');
+    console.error('Branch ID not provided as prop');
     return (
       <div className="flex items-center justify-center h-32">
         <p className="text-red-600">Error: Branch information not available</p>
