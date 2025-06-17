@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -237,7 +236,7 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const [dateRangeEnd, setDateRangeEnd] = useState<Date | undefined>(undefined);
   const [isFiltering, setIsFiltering] = useState(false);
 
-  // useEffect hooks MUST also be at the top
+  // useEffect hooks MUST also be at the top - ONLY ONE useEffect with these dependencies
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, statusFilter, assignedToFilter, dateRangeStart, dateRangeEnd]);
@@ -286,10 +285,6 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
     (currentPage - 1) * itemsPerPage, 
     currentPage * itemsPerPage
   );
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, statusFilter, assignedToFilter, dateRangeStart, dateRangeEnd]);
   
   const handleAddCarePlan = () => {
     console.log("Add care plan");
