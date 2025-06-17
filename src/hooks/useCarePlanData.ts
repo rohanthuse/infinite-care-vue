@@ -82,26 +82,51 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData | nul
   console.log('[fetchCarePlanData] Resolved ID:', resolvedId);
   
   try {
-    const { data, error } = await supabase
+    // Fetch care plan data first
+    const { data: carePlan, error: carePlanError } = await supabase
       .from('client_care_plans')
-      .select(`
-        *,
-        client:clients(*)
-      `)
+      .select('*')
       .eq('id', resolvedId)
-      .single();
+      .maybeSingle();
 
-    if (error) {
-      console.error('[fetchCarePlanData] Supabase error:', error);
-      if (error.code === 'PGRST116') {
-        console.log('[fetchCarePlanData] No data found for ID:', resolvedId);
-        return null;
-      }
-      throw error;
+    if (carePlanError) {
+      console.error('[fetchCarePlanData] Care plan query error:', carePlanError);
+      throw carePlanError;
     }
     
-    console.log('[fetchCarePlanData] Successfully fetched data:', data);
-    return data;
+    if (!carePlan) {
+      console.log('[fetchCarePlanData] No care plan found for ID:', resolvedId);
+      return null;
+    }
+
+    console.log('[fetchCarePlanData] Care plan found:', carePlan);
+
+    // Fetch client data separately
+    let client = null;
+    if (carePlan.client_id) {
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('id', carePlan.client_id)
+        .maybeSingle();
+
+      if (clientError) {
+        console.error('[fetchCarePlanData] Client query error:', clientError);
+        // Don't throw error, just log it and continue without client data
+      } else {
+        client = clientData;
+        console.log('[fetchCarePlanData] Client data found:', client);
+      }
+    }
+    
+    // Combine care plan and client data
+    const result = {
+      ...carePlan,
+      client: client
+    };
+    
+    console.log('[fetchCarePlanData] Successfully fetched combined data:', result);
+    return result;
   } catch (error) {
     console.error('[fetchCarePlanData] Unexpected error:', error);
     throw error;
@@ -119,10 +144,7 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
   try {
     const { data: carePlans, error } = await supabase
       .from('client_care_plans')
-      .select(`
-        *,
-        client:clients(*)
-      `)
+      .select('*')
       .eq('client_id', clientId)
       .order('created_at', { ascending: false });
 
@@ -135,6 +157,13 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
       console.log('[fetchClientCarePlansWithDetails] No care plans found for client:', clientId);
       return [];
     }
+
+    // Fetch client data
+    const { data: client } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('id', clientId)
+      .maybeSingle();
 
     // Fetch related data for each care plan
     const carePlansWithDetails = await Promise.all(
@@ -161,6 +190,7 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
 
         return {
           ...carePlan,
+          client: client,
           goals: goals || [],
           medications: medications || [],
           activities: activities || []
