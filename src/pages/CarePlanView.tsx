@@ -44,15 +44,35 @@ import { ScheduleFollowUpDialog } from "@/components/care/dialogs/ScheduleFollow
 import { RecordActivityDialog } from "@/components/care/dialogs/RecordActivityDialog";
 import { UploadDocumentDialog } from "@/components/care/dialogs/UploadDocumentDialog";
 import { AddEventDialog } from "@/components/care/dialogs/AddEventDialog";
-import { useClientCarePlansWithDetails } from "@/hooks/useCarePlanData";
-import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
-import { useClientDocuments, useUploadClientDocument } from "@/hooks/useClientDocuments";
-import { useClientEvents, useCreateClientEvent } from "@/hooks/useClientEvents";
+
+const mockCarePlans = [
+  {
+    id: "CP-001",
+    patientName: "John Michael",
+    patientId: "PT-2356",
+    dateCreated: new Date("2023-10-15"),
+    lastUpdated: new Date("2023-11-05"),
+    status: "Active",
+    assignedTo: "Dr. Sarah Johnson",
+    avatar: "JM"
+  },
+  {
+    id: "CP-002",
+    patientName: "Emma Thompson",
+    patientId: "PT-1122",
+    dateCreated: new Date("2023-09-22"),
+    lastUpdated: new Date("2023-10-30"),
+    status: "Under Review",
+    assignedTo: "Dr. James Wilson",
+    avatar: "ET"
+  }
+];
 
 const CarePlanView = () => {
   const { id: branchId, branchName, carePlanId } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("personal");
+  const [carePlan, setCarePlan] = useState<typeof mockCarePlans[0] | null>(null);
   
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [followUpDialogOpen, setFollowUpDialogOpen] = useState(false);
@@ -60,62 +80,22 @@ const CarePlanView = () => {
   const [documentDialogOpen, setDocumentDialogOpen] = useState(false);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
 
-  // Get the client ID (John Michael's ID from the database)
-  const clientId = "76394b1f-d2e3-43f2-b0ae-4605dcb75551";
-  
-  // Fetch real care plan data
-  const { data: carePlans, isLoading: carePlansLoading, error: carePlansError } = useClientCarePlansWithDetails(clientId);
-  
-  // Enhanced care plan selection logic
-  const carePlan = React.useMemo(() => {
-    if (!carePlans || carePlans.length === 0) return null;
-    
-    // If carePlanId is provided, try to find exact match first
-    if (carePlanId) {
-      const exactMatch = carePlans.find(plan => plan.id === carePlanId);
-      if (exactMatch) {
-        console.log('[CarePlanView] Found exact care plan match:', exactMatch.id);
-        return exactMatch;
-      }
-      
-      // If no exact match and it's a mock ID (like CP-001), use the first available care plan
-      if (carePlanId.startsWith('CP-')) {
-        console.log('[CarePlanView] Mock ID detected, using first available care plan');
-        return carePlans[0];
-      }
-    }
-    
-    // Default to first care plan
-    console.log('[CarePlanView] Using first available care plan');
-    return carePlans[0];
-  }, [carePlans, carePlanId]);
-  
-  // Fetch related data
-  const { data: notes, isLoading: notesLoading } = useClientNotes(clientId);
-  const { data: documents, isLoading: documentsLoading } = useClientDocuments(clientId);
-  const { data: events, isLoading: eventsLoading } = useClientEvents(clientId);
-  
-  // Mutations
-  const createNoteMutation = useCreateClientNote();
-  const uploadDocumentMutation = useUploadClientDocument();
-  const createEventMutation = useCreateClientEvent();
-
-  // Add debug logging
   useEffect(() => {
-    console.log('[CarePlanView] Route params:', { branchId, branchName, carePlanId });
-    console.log('[CarePlanView] Care plans data:', carePlans);
-    console.log('[CarePlanView] Selected care plan:', carePlan);
-  }, [branchId, branchName, carePlanId, carePlans, carePlan]);
+    const plan = mockCarePlans.find(p => p.id === carePlanId);
+    if (plan) {
+      setCarePlan(plan);
+    }
+  }, [carePlanId]);
 
   const handlePrintCarePlan = () => {
     if (!carePlan) return;
     
     generatePDF({
       id: carePlan.id,
-      title: `Care Plan for ${carePlan.title}`,
-      date: format(new Date(carePlan.updated_at), 'yyyy-MM-dd'),
+      title: `Care Plan for ${carePlan.patientName}`,
+      date: format(carePlan.lastUpdated, 'yyyy-MM-dd'),
       status: carePlan.status,
-      signedBy: carePlan.provider_name
+      signedBy: carePlan.assignedTo
     });
   };
 
@@ -129,11 +109,17 @@ const CarePlanView = () => {
   const handleSaveNote = (note: { content: string; date: Date }) => {
     console.log("Saving note:", note);
     
-    createNoteMutation.mutate({
-      client_id: clientId,
-      title: "Care Note",
-      content: note.content,
-      author: carePlan?.provider_name || "Care Provider"
+    const newNote = {
+      date: note.date,
+      author: carePlan?.assignedTo || "Care Provider",
+      content: note.content
+    };
+    
+    mockPatientData.notes.unshift(newNote);
+    
+    toast({
+      title: "Note added",
+      description: "The note has been successfully added to the patient's record."
     });
   };
 
@@ -149,6 +135,15 @@ const CarePlanView = () => {
   const handleSaveActivity = (activity: any) => {
     console.log("Recording activity:", activity);
     
+    const newActivity = {
+      date: activity.date,
+      action: activity.action,
+      performer: activity.performer,
+      status: activity.status
+    };
+    
+    mockPatientData.activities.unshift(newActivity);
+    
     toast({
       title: "Activity recorded",
       description: `The activity "${activity.action}" has been recorded.`
@@ -158,126 +153,37 @@ const CarePlanView = () => {
   const handleSaveDocument = (document: { name: string; date: Date; type: string; author: string; file: File }) => {
     console.log("Uploading document:", document);
     
-    uploadDocumentMutation.mutate({
-      clientId: clientId,
-      file: document.file,
+    const newDocument = {
       name: document.name,
+      date: document.date,
       type: document.type,
-      uploaded_by: document.author
+      author: document.author
+    };
+    
+    mockPatientData.documents.unshift(newDocument);
+    
+    toast({
+      title: "Document uploaded",
+      description: `The document "${document.name}" has been uploaded.`
     });
   };
 
   const handleSaveEvent = (event: any) => {
     console.log("Creating new event:", event);
     
-    createEventMutation.mutate({
-      client_id: clientId,
-      title: event.title,
-      description: event.description,
-      event_type: event.type,
-      severity: event.severity,
-      reporter: carePlan?.provider_name || "Care Provider"
+    toast({
+      title: "Event recorded",
+      description: `The event "${event.title}" has been recorded.`
     });
   };
 
-  // Loading state
-  if (carePlansLoading) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <DashboardHeader />
-        <BranchInfoHeader 
-          branchId={branchId || ""} 
-          branchName={branchName || ""} 
-          onNewBooking={handleNewBooking} 
-        />
-        <div className="flex-1 p-6 space-y-6">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading care plan...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state - Enhanced with better debugging info
-  if (carePlansError || !carePlan) {
-    const errorMessage = carePlansError?.message || `No care plan found for ID: ${carePlanId}`;
-    const debugInfo = `Available care plans: ${carePlans?.length || 0}`;
-    
-    console.error('[CarePlanView] Error details:', { carePlansError, carePlanId, carePlans });
-    
-    return (
-      <div className="flex flex-col min-h-screen">
-        <DashboardHeader />
-        <BranchInfoHeader 
-          branchId={branchId || ""} 
-          branchName={branchName || ""} 
-          onNewBooking={handleNewBooking} 
-        />
-        <div className="flex-1 p-6 space-y-6">
-          <div className="text-center py-12">
-            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading care plan</h3>
-            <p className="text-gray-600 mb-2">{errorMessage}</p>
-            <p className="text-sm text-gray-500">{debugInfo}</p>
-            <Button 
-              onClick={() => navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan`)}
-              className="mt-4"
-            >
-              Back to Care Plans
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Transform care plan data to match the expected format
-  const transformedCarePlan = {
-    id: carePlan.id,
-    patientName: carePlan.title.replace('Comprehensive Care Plan for ', ''),
-    patientId: carePlan.client_id,
-    dateCreated: new Date(carePlan.created_at),
-    lastUpdated: new Date(carePlan.updated_at),
-    status: carePlan.status,
-    assignedTo: carePlan.provider_name,
-    avatar: carePlan.title.replace('Comprehensive Care Plan for ', '').split(' ').map(n => n[0]).join('')
+  const sidebarProps = {
+    carePlan: carePlan!,
+    onAddNote: () => setNoteDialogOpen(true),
+    onScheduleFollowUp: () => setFollowUpDialogOpen(true),
+    onRecordActivity: () => setActivityDialogOpen(true),
+    onUploadDocument: () => setDocumentDialogOpen(true)
   };
-
-  // Transform goals for GoalsTab
-  const transformedGoals = carePlan.goals?.map(goal => ({
-    title: goal.description,
-    status: goal.status === 'in-progress' ? 'In Progress' : 
-            goal.status === 'completed' ? 'Completed' : 'Active',
-    target: `Progress: ${goal.progress || 0}%`,
-    notes: goal.notes || 'No additional notes'
-  })) || [];
-
-  // Transform activities for ActivitiesTab
-  const transformedActivities = carePlan.activities?.map(activity => ({
-    date: new Date(activity.created_at),
-    action: activity.name,
-    performer: carePlan.provider_name,
-    status: activity.status === 'active' ? 'Completed' : activity.status
-  })) || [];
-
-  // Transform notes for NotesTab
-  const transformedNotes = notes?.map(note => ({
-    date: new Date(note.created_at),
-    author: note.author,
-    content: note.content
-  })) || [];
-
-  // Transform documents for DocumentsTab
-  const transformedDocuments = documents?.map(doc => ({
-    name: doc.name,
-    date: new Date(doc.upload_date),
-    type: doc.type,
-    author: doc.uploaded_by
-  })) || [];
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -334,194 +240,196 @@ const CarePlanView = () => {
             </div>
           </div>
           
-          <div className="flex flex-col space-y-6">
-            <PatientHeader carePlan={transformedCarePlan} />
-            
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="w-full md:w-1/4">
-                <CarePlanSidebar 
-                  carePlan={transformedCarePlan} 
-                  onAddNote={() => setNoteDialogOpen(true)}
-                  onScheduleFollowUp={() => setFollowUpDialogOpen(true)}
-                  onRecordActivity={() => setActivityDialogOpen(true)}
-                  onUploadDocument={() => setDocumentDialogOpen(true)}
-                />
-              </div>
+          {carePlan && (
+            <div className="flex flex-col space-y-6">
+              <PatientHeader carePlan={carePlan} />
               
-              <div className="w-full md:w-3/4">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <CarePlanTabBar activeTab={activeTab} onChange={setActiveTab} />
-                  
-                  <TabsContent value="personal" className="space-y-6">
-                    <Card className="overflow-hidden border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                      <CardHeader className="pb-3 bg-gradient-to-r from-med-50 to-white border-b border-med-100">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <User className="h-5 w-5 text-med-600" />
-                          <span className="bg-gradient-to-r from-med-700 to-med-500 bg-clip-text text-transparent">Personal Information</span>
-                        </CardTitle>
-                        <CardDescription>Patient demographic and contact details</CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <InfoCard 
-                            icon={<User className="h-5 w-5 text-med-500" />}
-                            title="Basic Information"
-                            items={[
-                              { label: "Full Name", value: transformedCarePlan.patientName },
-                              { label: "Patient ID", value: transformedCarePlan.patientId },
-                              { label: "Gender", value: mockPatientData.gender },
-                              { label: "Date of Birth", value: `${format(mockPatientData.dateOfBirth, 'MMM dd, yyyy')} (Age: ${new Date().getFullYear() - mockPatientData.dateOfBirth.getFullYear()})` }
-                            ]}
-                          />
-                          
-                          <InfoCard 
-                            icon={<Phone className="h-5 w-5 text-med-500" />}
-                            title="Contact Information"
-                            items={[
-                              { label: "Address", value: mockPatientData.address },
-                              { label: "Phone", value: mockPatientData.phone },
-                              { label: "Email", value: mockPatientData.email },
-                              { label: "Preferred Language", value: mockPatientData.preferredLanguage }
-                            ]}
-                          />
-                          
-                          <div className="md:col-span-2">
-                            <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                              <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                                <Shield className="h-5 w-5 mr-2 text-med-600" />
-                                Emergency Contact
-                              </h3>
-                              <div className="p-4 rounded-lg bg-med-50 border border-med-100">
-                                <p className="text-gray-700">{mockPatientData.emergencyContact}</p>
+              <div className="flex flex-col md:flex-row gap-6">
+                <div className="w-full md:w-1/4">
+                  {carePlan && <CarePlanSidebar 
+                    carePlan={carePlan} 
+                    onAddNote={() => setNoteDialogOpen(true)}
+                    onScheduleFollowUp={() => setFollowUpDialogOpen(true)}
+                    onRecordActivity={() => setActivityDialogOpen(true)}
+                    onUploadDocument={() => setDocumentDialogOpen(true)}
+                  />}
+                </div>
+                
+                <div className="w-full md:w-3/4">
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <CarePlanTabBar activeTab={activeTab} onChange={setActiveTab} />
+                    
+                    <TabsContent value="personal" className="space-y-6">
+                      <Card className="overflow-hidden border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                        <CardHeader className="pb-3 bg-gradient-to-r from-med-50 to-white border-b border-med-100">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <User className="h-5 w-5 text-med-600" />
+                            <span className="bg-gradient-to-r from-med-700 to-med-500 bg-clip-text text-transparent">Personal Information</span>
+                          </CardTitle>
+                          <CardDescription>Patient demographic and contact details</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <InfoCard 
+                              icon={<User className="h-5 w-5 text-med-500" />}
+                              title="Basic Information"
+                              items={[
+                                { label: "Full Name", value: carePlan.patientName },
+                                { label: "Patient ID", value: carePlan.patientId },
+                                { label: "Gender", value: mockPatientData.gender },
+                                { label: "Date of Birth", value: `${format(mockPatientData.dateOfBirth, 'MMM dd, yyyy')} (Age: ${new Date().getFullYear() - mockPatientData.dateOfBirth.getFullYear()})` }
+                              ]}
+                            />
+                            
+                            <InfoCard 
+                              icon={<Phone className="h-5 w-5 text-med-500" />}
+                              title="Contact Information"
+                              items={[
+                                { label: "Address", value: mockPatientData.address },
+                                { label: "Phone", value: mockPatientData.phone },
+                                { label: "Email", value: mockPatientData.email },
+                                { label: "Preferred Language", value: mockPatientData.preferredLanguage }
+                              ]}
+                            />
+                            
+                            <div className="md:col-span-2">
+                              <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                                <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+                                  <Shield className="h-5 w-5 mr-2 text-med-600" />
+                                  Emergency Contact
+                                </h3>
+                                <div className="p-4 rounded-lg bg-med-50 border border-med-100">
+                                  <p className="text-gray-700">{mockPatientData.emergencyContact}</p>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="overflow-hidden border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                        <CardHeader className="pb-3 bg-gradient-to-r from-med-50 to-white border-b border-med-100">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <Heart className="h-5 w-5 text-med-600" />
+                            <span className="bg-gradient-to-r from-med-700 to-med-500 bg-clip-text text-transparent">Medical Information</span>
+                          </CardTitle>
+                          <CardDescription>Allergies, conditions, and current medications</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                          <div className="space-y-6">
+                            <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                              <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+                                <AlertTriangle className="h-5 w-5 mr-2 text-red-500" />
+                                Allergies
+                              </h3>
+                              <div className="flex flex-wrap gap-2">
+                                {mockPatientData.allergies.map((allergy, index) => (
+                                  <Badge key={index} variant="outline" className="bg-red-50 text-red-700 border-red-200 px-3 py-1 hover:bg-red-100 transition-colors">
+                                    {allergy}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                              <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+                                <FileBarChart2 className="h-5 w-5 mr-2 text-med-600" />
+                                Medical Conditions
+                              </h3>
+                              <div className="flex flex-wrap gap-2">
+                                {mockPatientData.medicalConditions.map((condition, index) => (
+                                  <Badge key={index} variant="outline" className="bg-med-50 text-med-700 border-med-200 px-3 py-1 hover:bg-med-100 transition-colors">
+                                    {condition}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                              <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+                                <Activity className="h-5 w-5 mr-2 text-med-600" />
+                                Medications
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {mockPatientData.medications.map((medication, index) => (
+                                  <MedicationCard key={index} medication={medication} />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
                     
-                    <Card className="overflow-hidden border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                      <CardHeader className="pb-3 bg-gradient-to-r from-med-50 to-white border-b border-med-100">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <Heart className="h-5 w-5 text-med-600" />
-                          <span className="bg-gradient-to-r from-med-700 to-med-500 bg-clip-text text-transparent">Medical Information</span>
-                        </CardTitle>
-                        <CardDescription>Allergies, conditions, and current medications</CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-6">
-                        <div className="space-y-6">
-                          <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                            <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                              <AlertTriangle className="h-5 w-5 mr-2 text-red-500" />
-                              Allergies
-                            </h3>
-                            <div className="flex flex-wrap gap-2">
-                              {mockPatientData.allergies.map((allergy, index) => (
-                                <Badge key={index} variant="outline" className="bg-red-50 text-red-700 border-red-200 px-3 py-1 hover:bg-red-100 transition-colors">
-                                  {allergy}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                          
-                          <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                            <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                              <FileBarChart2 className="h-5 w-5 mr-2 text-med-600" />
-                              Medical Conditions
-                            </h3>
-                            <div className="flex flex-wrap gap-2">
-                              {mockPatientData.medicalConditions.map((condition, index) => (
-                                <Badge key={index} variant="outline" className="bg-med-50 text-med-700 border-med-200 px-3 py-1 hover:bg-med-100 transition-colors">
-                                  {condition}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                          
-                          <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                            <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                              <Activity className="h-5 w-5 mr-2 text-med-600" />
-                              Medications
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              {mockPatientData.medications.map((medication, index) => (
-                                <MedicationCard key={index} medication={medication} />
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                  
-                  <TabsContent value="aboutme" className="space-y-4">
-                    <AboutMeTab aboutMe={mockPatientData.aboutMe} />
-                  </TabsContent>
-                  
-                  <TabsContent value="goals" className="space-y-4">
-                    <GoalsTab goals={transformedGoals} />
-                  </TabsContent>
-                  
-                  <TabsContent value="activities" className="space-y-4">
-                    <ActivitiesTab 
-                      activities={transformedActivities} 
-                      onAddActivity={() => setActivityDialogOpen(true)}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="notes" className="space-y-4">
-                    <NotesTab 
-                      notes={transformedNotes} 
-                      onAddNote={() => setNoteDialogOpen(true)}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="documents" className="space-y-4">
-                    <DocumentsTab 
-                      documents={transformedDocuments} 
-                      onUploadDocument={() => setDocumentDialogOpen(true)}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="assessments" className="space-y-4">
-                    <AssessmentsTab assessments={mockPatientData.assessments} />
-                  </TabsContent>
-                  
-                  <TabsContent value="equipment" className="space-y-4">
-                    <EquipmentTab equipment={mockPatientData.equipment} />
-                  </TabsContent>
-                  
-                  <TabsContent value="dietary" className="space-y-4">
-                    <DietaryTab dietaryRequirements={mockPatientData.dietaryRequirements} />
-                  </TabsContent>
-                  
-                  <TabsContent value="personalcare" className="space-y-4">
-                    <PersonalCareTab personalCare={mockPatientData.personalCare} />
-                  </TabsContent>
-                  
-                  <TabsContent value="risk" className="space-y-4">
-                    <RiskTab riskAssessments={mockPatientData.riskAssessments} />
-                  </TabsContent>
-                  
-                  <TabsContent value="serviceplan" className="space-y-4">
-                    <ServicePlanTab serviceActions={mockPatientData.serviceActions} />
-                  </TabsContent>
-                  
-                  <TabsContent value="serviceactions" className="space-y-4">
-                    <ServiceActionsTab serviceActions={mockPatientData.serviceActions} />
-                  </TabsContent>
-                  
-                  <TabsContent value="eventslogs" className="space-y-4">
-                    <EventsLogsTab 
-                      carePlanId={transformedCarePlan.id}
-                      patientName={transformedCarePlan.patientName}
-                      onAddEvent={() => setEventDialogOpen(true)}
-                    />
-                  </TabsContent>
-                </Tabs>
+                    <TabsContent value="aboutme" className="space-y-4">
+                      <AboutMeTab aboutMe={mockPatientData.aboutMe} />
+                    </TabsContent>
+                    
+                    <TabsContent value="goals" className="space-y-4">
+                      <GoalsTab goals={mockPatientData.goals} />
+                    </TabsContent>
+                    
+                    <TabsContent value="activities" className="space-y-4">
+                      <ActivitiesTab 
+                        activities={mockPatientData.activities} 
+                        onAddActivity={() => setActivityDialogOpen(true)}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="notes" className="space-y-4">
+                      <NotesTab 
+                        notes={mockPatientData.notes} 
+                        onAddNote={() => setNoteDialogOpen(true)}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="documents" className="space-y-4">
+                      <DocumentsTab 
+                        documents={mockPatientData.documents} 
+                        onUploadDocument={() => setDocumentDialogOpen(true)}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="assessments" className="space-y-4">
+                      <AssessmentsTab assessments={mockPatientData.assessments} />
+                    </TabsContent>
+                    
+                    <TabsContent value="equipment" className="space-y-4">
+                      <EquipmentTab equipment={mockPatientData.equipment} />
+                    </TabsContent>
+                    
+                    <TabsContent value="dietary" className="space-y-4">
+                      <DietaryTab dietaryRequirements={mockPatientData.dietaryRequirements} />
+                    </TabsContent>
+                    
+                    <TabsContent value="personalcare" className="space-y-4">
+                      <PersonalCareTab personalCare={mockPatientData.personalCare} />
+                    </TabsContent>
+                    
+                    <TabsContent value="risk" className="space-y-4">
+                      <RiskTab riskAssessments={mockPatientData.riskAssessments} />
+                    </TabsContent>
+                    
+                    <TabsContent value="serviceplan" className="space-y-4">
+                      <ServicePlanTab serviceActions={mockPatientData.serviceActions} />
+                    </TabsContent>
+                    
+                    <TabsContent value="serviceactions" className="space-y-4">
+                      <ServiceActionsTab serviceActions={mockPatientData.serviceActions} />
+                    </TabsContent>
+                    
+                    <TabsContent value="eventslogs" className="space-y-4">
+                      <EventsLogsTab 
+                        carePlanId={carePlan.id}
+                        patientName={carePlan.patientName}
+                        onAddEvent={() => setEventDialogOpen(true)}
+                      />
+                    </TabsContent>
+                  </Tabs>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
       
@@ -553,9 +461,9 @@ const CarePlanView = () => {
         open={eventDialogOpen}
         onOpenChange={setEventDialogOpen}
         onSave={handleSaveEvent}
-        carePlanId={transformedCarePlan.id}
-        patientName={transformedCarePlan.patientName}
-        patientId={transformedCarePlan.patientId}
+        carePlanId={carePlan?.id || ""}
+        patientName={carePlan?.patientName || ""}
+        patientId={carePlan?.patientId || ""}
       />
     </div>
   );
