@@ -250,7 +250,9 @@ export function NewBookingDialog({
                           initialFocus
                         />
                       </PopoverContent>
-                    </FormItem>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
                 )}
               />
 
@@ -288,7 +290,9 @@ export function NewBookingDialog({
                           initialFocus
                         />
                       </PopoverContent>
-                    </FormItem>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
                 )}
               />
             </div>
