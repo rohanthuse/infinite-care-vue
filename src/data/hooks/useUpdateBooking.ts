@@ -11,6 +11,7 @@ interface UpdateBookingPayload {
     start_time: string;
     end_time: string;
     status: string;
+    service_id: string;
   }>;
 }
 
@@ -34,8 +35,10 @@ export function useUpdateBooking(branchId?: string) {
 
   return useMutation({
     mutationFn: updateBooking,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Invalidate both branch bookings and client-specific bookings
       queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
+      queryClient.invalidateQueries({ queryKey: ["client-bookings", data.client_id] });
       toast.success("Booking updated successfully!");
     },
     onError: (error: any) => {
