@@ -28,12 +28,12 @@ const fetchClientBookings = async (clientId: string): Promise<ClientBooking[]> =
     .from('bookings')
     .select(`
       *,
-      staff!inner (
+      staff (
         id,
         first_name,
         last_name
       ),
-      services!inner (
+      services (
         id,
         title
       )
@@ -51,7 +51,7 @@ const fetchClientBookings = async (clientId: string): Promise<ClientBooking[]> =
   return (data || []).map(booking => {
     const staffName = booking.staff 
       ? `${booking.staff.first_name} ${booking.staff.last_name}` 
-      : 'Unassigned Staff';
+      : 'Staff Not Assigned';
     
     const serviceName = booking.services?.title || 'No Service Selected';
     
@@ -60,8 +60,8 @@ const fetchClientBookings = async (clientId: string): Promise<ClientBooking[]> =
       staff_name: staffName,
       service_name: serviceName,
       service_title: serviceName,
-      staff_first_name: booking.staff?.first_name,
-      staff_last_name: booking.staff?.last_name
+      staff_first_name: booking.staff?.first_name || '',
+      staff_last_name: booking.staff?.last_name || ''
     };
   });
 };
