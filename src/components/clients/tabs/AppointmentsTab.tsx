@@ -5,44 +5,28 @@ import { Calendar, Clock, MapPin, Plus, User } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScheduleAppointmentDialog } from "../dialogs/ScheduleAppointmentDialog";
-import { useClientAppointments } from "@/hooks/useClientData";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { NewBookingDialog } from "@/components/bookings/dialogs/NewBookingDialog";
+import { useClientBookings } from "@/hooks/useClientBookings";
+import { useBranchCarers } from "@/data/hooks/useBranchCarers";
+import { useBranchServices } from "@/data/hooks/useBranchServices";
+import { useParams } from "react-router-dom";
 
 interface AppointmentsTabProps {
   clientId: string;
-  appointments?: any[];
 }
 
 export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) => {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
-  const { data: appointments = [], isLoading } = useClientAppointments(clientId);
-  const queryClient = useQueryClient();
+  const { data: bookings = [], isLoading } = useClientBookings(clientId);
+  const params = useParams();
+  const branchId = params.id;
+  
+  // Get carers and services for the booking dialog
+  const { data: carers = [] } = useBranchCarers(branchId);
+  const { data: services = [] } = useBranchServices(branchId);
 
-  const createAppointmentMutation = useMutation({
-    mutationFn: async (appointmentData: any) => {
-      const { data, error } = await supabase
-        .from('client_appointments')
-        .insert([{
-          client_id: clientId,
-          ...appointmentData,
-          appointment_date: appointmentData.appointment_date.toISOString().split('T')[0],
-          status: 'confirmed'
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['client-appointments', clientId] });
-    },
-  });
-
-  const handleScheduleAppointment = async (appointmentData: any) => {
-    await createAppointmentMutation.mutateAsync(appointmentData);
+  const handleScheduleAppointment = () => {
+    setIsScheduleDialogOpen(true);
   };
 
   if (isLoading) {
@@ -53,6 +37,22 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
     );
   }
 
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'confirmed':
+      case 'assigned':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      case 'completed':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-blue-100 text-blue-800';
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -62,7 +62,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
               <Calendar className="h-5 w-5 text-blue-600" />
               <CardTitle className="text-lg">Appointments</CardTitle>
             </div>
-            <Button size="sm" className="gap-1" onClick={() => setIsScheduleDialogOpen(true)}>
+            <Button size="sm" className="gap-1" onClick={handleScheduleAppointment}>
               <Plus className="h-4 w-4" />
               <span>Schedule</span>
             </Button>
@@ -70,59 +70,66 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
           <CardDescription>Scheduled appointments for client {clientId}</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
-          {appointments.length === 0 ? (
+          {bookings.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-300" />
               <p className="text-sm">No appointments scheduled for this client</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {appointments.map((appointment) => (
-                <div key={appointment.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium">{appointment.appointment_type}</h3>
-                        <Badge variant={appointment.status === 'confirmed' ? 'default' : 'secondary'}>
-                          {appointment.status}
-                        </Badge>
+              {bookings.map((booking) => {
+                const startDate = new Date(booking.start_time);
+                const endDate = new Date(booking.end_time);
+                
+                return (
+                  <div key={booking.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium">{booking.service_name}</h3>
+                          <Badge variant="outline" className={getStatusColor(booking.status)}>
+                            {booking.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            <span>{format(startDate, 'MMM dd, yyyy')}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            <span>{format(startDate, 'HH:mm')} - {format(endDate, 'HH:mm')}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <User className="h-4 w-4" />
+                            <span>{booking.staff_name}</span>
+                          </div>
+                          {booking.revenue && (
+                            <div className="flex items-center gap-1">
+                              <span>Revenue: £{booking.revenue}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{format(new Date(appointment.appointment_date), 'MMM dd, yyyy')}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          <span>{appointment.appointment_time}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <User className="h-4 w-4" />
-                          <span>{appointment.provider_name}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          <span>{appointment.location}</span>
-                        </div>
-                      </div>
-                      {appointment.notes && (
-                        <p className="text-sm text-gray-600 mt-2">{appointment.notes}</p>
-                      )}
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
 
-      <ScheduleAppointmentDialog
+      <NewBookingDialog
         open={isScheduleDialogOpen}
         onOpenChange={setIsScheduleDialogOpen}
-        onSave={handleScheduleAppointment}
+        onCreateBooking={() => {}}
+        carers={carers}
+        services={services}
+        branchId={branchId}
+        preSelectedClientId={clientId}
       />
     </div>
   );

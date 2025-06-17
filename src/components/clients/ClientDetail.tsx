@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { X, FileEdit, Download } from "lucide-react";
 import { format } from "date-fns";
@@ -31,7 +30,6 @@ interface ClientDetailProps {
   } | null;
   onClose: () => void;
   onAddNote?: () => void;
-  onScheduleAppointment?: () => void;
   onUploadDocument?: () => void;
   onAddEvent?: () => void;
 }
