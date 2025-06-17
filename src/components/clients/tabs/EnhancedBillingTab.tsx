@@ -104,13 +104,27 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
   const calculateTotalOutstanding = () => {
     return billingItems
       .filter(item => item.status !== 'paid' && item.status !== 'cancelled')
-      .reduce((sum, item) => sum + (item.total_amount || item.amount), 0);
+      .reduce((sum, item) => {
+        const subtotal = item.line_items?.reduce((lineSum, lineItem) => 
+          lineSum + (lineItem.quantity * lineItem.unit_price), 0) || item.amount;
+        const discounts = item.line_items?.reduce((discSum, lineItem) => 
+          discSum + lineItem.discount_amount, 0) || 0;
+        const taxAmount = subtotal * ((item.tax_amount || 0) / 100);
+        return sum + (subtotal - discounts + taxAmount);
+      }, 0);
   };
 
   const calculateTotalPaid = () => {
     return billingItems
       .filter(item => item.status === 'paid')
-      .reduce((sum, item) => sum + (item.total_amount || item.amount), 0);
+      .reduce((sum, item) => {
+        const subtotal = item.line_items?.reduce((lineSum, lineItem) => 
+          lineSum + (lineItem.quantity * lineItem.unit_price), 0) || item.amount;
+        const discounts = item.line_items?.reduce((discSum, lineItem) => 
+          discSum + lineItem.discount_amount, 0) || 0;
+        const taxAmount = subtotal * ((item.tax_amount || 0) / 100);
+        return sum + (subtotal - discounts + taxAmount);
+      }, 0);
   };
 
   if (isLoading) {
@@ -203,85 +217,95 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {billingItems.map((invoice) => (
-                    <div key={invoice.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-2 flex-1">
-                          <div className="flex items-center gap-3">
-                            <h3 className="font-medium">Invoice #{invoice.invoice_number}</h3>
-                            <Badge className={`${getStatusColor(invoice.status)} flex items-center gap-1`}>
-                              {getStatusIcon(invoice.status)}
-                              {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-                            </Badge>
-                            {invoice.generated_from_booking && (
-                              <Badge variant="outline" className="text-xs">Auto-generated</Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-600">{invoice.description}</p>
-                          <div className="flex items-center gap-6 text-sm text-gray-600">
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="h-4 w-4" />
-                              <span className="font-medium">
-                                {formatCurrency(invoice.total_amount || invoice.amount)}
-                              </span>
-                              {invoice.tax_amount > 0 && (
-                                <span className="text-xs">(+{formatCurrency(invoice.tax_amount)} tax)</span>
+                  {billingItems.map((invoice) => {
+                    const subtotal = invoice.line_items?.reduce((sum, item) => 
+                      sum + (item.quantity * item.unit_price), 0) || invoice.amount;
+                    const discounts = invoice.line_items?.reduce((sum, item) => 
+                      sum + item.discount_amount, 0) || 0;
+                    const taxAmount = subtotal * ((invoice.tax_amount || 0) / 100);
+                    const total = subtotal - discounts + taxAmount;
+
+                    return (
+                      <div key={invoice.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center gap-3">
+                              <h3 className="font-medium">Invoice #{invoice.invoice_number}</h3>
+                              <Badge className={`${getStatusColor(invoice.status)} flex items-center gap-1`}>
+                                {getStatusIcon(invoice.status)}
+                                {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                              </Badge>
+                              {invoice.generated_from_booking && (
+                                <Badge variant="outline" className="text-xs">Auto-generated</Badge>
                               )}
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-4 w-4" />
-                              <span>Due: {format(new Date(invoice.due_date), 'dd/MM/yyyy')}</span>
-                            </div>
-                            {invoice.service_provided_date && (
-                              <div className="text-xs">
-                                Service: {format(new Date(invoice.service_provided_date), 'dd/MM/yyyy')}
+                            <p className="text-sm text-gray-600">{invoice.description}</p>
+                            <div className="flex items-center gap-6 text-sm text-gray-600">
+                              <div className="flex items-center gap-1">
+                                <DollarSign className="h-4 w-4" />
+                                <span className="font-medium">{formatCurrency(total)}</span>
+                                {(invoice.tax_amount || 0) > 0 && (
+                                  <span className="text-xs">(+{invoice.tax_amount}% tax)</span>
+                                )}
+                                {discounts > 0 && (
+                                  <span className="text-xs">(-{formatCurrency(discounts)} discount)</span>
+                                )}
                               </div>
-                            )}
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-4 w-4" />
+                                <span>Due: {format(new Date(invoice.due_date), 'dd/MM/yyyy')}</span>
+                              </div>
+                              {invoice.service_provided_date && (
+                                <div className="text-xs">
+                                  Service: {format(new Date(invoice.service_provided_date), 'dd/MM/yyyy')}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <span>Created: {format(new Date(invoice.invoice_date), 'dd/MM/yyyy')}</span>
+                              {invoice.sent_date && (
+                                <span>• Sent: {format(new Date(invoice.sent_date), 'dd/MM/yyyy')}</span>
+                              )}
+                              {invoice.paid_date && (
+                                <span>• Paid: {format(new Date(invoice.paid_date), 'dd/MM/yyyy')}</span>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <span>Created: {format(new Date(invoice.invoice_date), 'dd/MM/yyyy')}</span>
-                            {invoice.sent_date && (
-                              <span>• Sent: {format(new Date(invoice.sent_date), 'dd/MM/yyyy')}</span>
+                          <div className="flex items-center gap-2 ml-4">
+                            <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {invoice.status !== 'paid' && (
+                              <Button variant="ghost" size="sm" onClick={() => handleEditInvoice(invoice)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
                             )}
-                            {invoice.paid_date && (
-                              <span>• Paid: {format(new Date(invoice.paid_date), 'dd/MM/yyyy')}</span>
+                            {invoice.status === 'draft' && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleStatusChange(invoice.id, 'sent')}
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
                             )}
+                            {['sent', 'pending', 'overdue'].includes(invoice.status) && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleAddPayment(invoice)}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" onClick={() => handleDownloadInvoice(invoice)}>
+                              <Download className="h-4 w-4" />
+                            </Button>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2 ml-4">
-                          <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {invoice.status !== 'paid' && (
-                            <Button variant="ghost" size="sm" onClick={() => handleEditInvoice(invoice)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {invoice.status === 'draft' && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleStatusChange(invoice.id, 'sent')}
-                            >
-                              <Send className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {['sent', 'pending', 'overdue'].includes(invoice.status) && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleAddPayment(invoice)}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button variant="ghost" size="sm" onClick={() => handleDownloadInvoice(invoice)}>
-                            <Download className="h-4 w-4" />
-                          </Button>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>

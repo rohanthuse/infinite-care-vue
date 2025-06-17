@@ -1,10 +1,11 @@
 
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { EnhancedClientBilling } from '@/hooks/useEnhancedClientBilling';
 import { formatCurrency } from './currencyFormatter';
 
+// Extend jsPDF type to include autoTable
 declare module 'jspdf' {
   interface jsPDF {
     autoTable: (options: any) => jsPDF;
@@ -28,6 +29,10 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
   const { invoice, clientName, clientAddress, clientEmail, companyInfo } = data;
   
   const doc = new jsPDF();
+  
+  // Add autoTable plugin
+  autoTable(doc, {});
+  
   const pageWidth = doc.internal.pageSize.width;
   const margin = 20;
   let yPosition = margin;
@@ -149,19 +154,29 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
   // Totals Section
   const totalsX = pageWidth - margin - 80;
   const subtotal = invoice.line_items?.reduce((sum, item) => sum + item.line_total, 0) || invoice.amount;
+  const totalDiscounts = invoice.line_items?.reduce((sum, item) => sum + item.discount_amount, 0) || 0;
+  const taxPercentage = invoice.tax_amount || 0;
+  const taxAmount = (subtotal + totalDiscounts) * (taxPercentage / 100);
   
   doc.setFontSize(10);
   doc.setTextColor('#000000');
   
   // Subtotal
   doc.text('Subtotal:', totalsX, yPosition);
-  doc.text(formatCurrency(subtotal), totalsX + 50, yPosition);
+  doc.text(formatCurrency(subtotal + totalDiscounts), totalsX + 50, yPosition);
   yPosition += 8;
   
+  // Total Discounts
+  if (totalDiscounts > 0) {
+    doc.text('Total Discounts:', totalsX, yPosition);
+    doc.text('-' + formatCurrency(totalDiscounts), totalsX + 50, yPosition);
+    yPosition += 8;
+  }
+  
   // Tax
-  if (invoice.tax_amount > 0) {
-    doc.text('Tax:', totalsX, yPosition);
-    doc.text(formatCurrency(invoice.tax_amount), totalsX + 50, yPosition);
+  if (taxPercentage > 0) {
+    doc.text(`Tax (${taxPercentage}%):`, totalsX, yPosition);
+    doc.text(formatCurrency(taxAmount), totalsX + 50, yPosition);
     yPosition += 8;
   }
   
@@ -173,7 +188,7 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
   doc.setFontSize(12);
   doc.setFont(undefined, 'bold');
   doc.text('Total:', totalsX, yPosition);
-  doc.text(formatCurrency(invoice.total_amount || invoice.amount), totalsX + 50, yPosition);
+  doc.text(formatCurrency(subtotal + taxAmount), totalsX + 50, yPosition);
 
   // Payment History (if any)
   if (invoice.payment_records && invoice.payment_records.length > 0) {

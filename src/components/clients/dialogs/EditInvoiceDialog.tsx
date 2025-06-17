@@ -38,7 +38,7 @@ interface InvoiceFormData {
   description: string;
   invoice_date: string;
   due_date: string;
-  tax_amount: number;
+  tax_percentage: number;
   notes: string;
   status: string;
 }
@@ -55,7 +55,7 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
       setValue('description', invoice.description);
       setValue('invoice_date', invoice.invoice_date);
       setValue('due_date', invoice.due_date);
-      setValue('tax_amount', invoice.tax_amount);
+      setValue('tax_percentage', invoice.tax_amount || 0);
       setValue('notes', invoice.notes || '');
       setValue('status', invoice.status);
 
@@ -103,11 +103,24 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
   };
 
   const calculateSubtotal = () => {
-    return lineItems.reduce((sum, item) => sum + item.line_total, 0);
+    return lineItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+  };
+
+  const calculateTotalDiscounts = () => {
+    return lineItems.reduce((sum, item) => sum + item.discount_amount, 0);
+  };
+
+  const calculateTaxAmount = () => {
+    const subtotal = calculateSubtotal();
+    const taxPercentage = watch('tax_percentage') || 0;
+    return subtotal * (taxPercentage / 100);
   };
 
   const calculateTotal = () => {
-    return calculateSubtotal() + (watch('tax_amount') || 0);
+    const subtotal = calculateSubtotal();
+    const discounts = calculateTotalDiscounts();
+    const tax = calculateTaxAmount();
+    return subtotal - discounts + tax;
   };
 
   const onSubmit = async (data: InvoiceFormData) => {
@@ -121,7 +134,7 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
           description: data.description,
           invoice_date: data.invoice_date,
           due_date: data.due_date,
-          tax_amount: data.tax_amount,
+          tax_amount: data.tax_percentage,
           notes: data.notes,
           status: data.status,
           line_items: lineItems.map(item => ({
@@ -200,12 +213,15 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="tax_amount">Tax Amount (£)</Label>
+              <Label htmlFor="tax_percentage">Tax Percentage (%)</Label>
               <Input
-                id="tax_amount"
+                id="tax_percentage"
                 type="number"
                 step="0.01"
-                {...register('tax_amount', { valueAsNumber: true })}
+                min="0"
+                max="100"
+                {...register('tax_percentage', { valueAsNumber: true })}
+                placeholder="0.00"
               />
             </div>
           </div>
@@ -296,10 +312,18 @@ export function EditInvoiceDialog({ open, onOpenChange, invoice }: EditInvoiceDi
                   <span>Subtotal:</span>
                   <span>{formatCurrency(calculateSubtotal())}</span>
                 </div>
-                <div className="flex justify-between w-48">
-                  <span>Tax:</span>
-                  <span>{formatCurrency(watch('tax_amount') || 0)}</span>
-                </div>
+                {calculateTotalDiscounts() > 0 && (
+                  <div className="flex justify-between w-48">
+                    <span>Total Discounts:</span>
+                    <span>-{formatCurrency(calculateTotalDiscounts())}</span>
+                  </div>
+                )}
+                {(watch('tax_percentage') || 0) > 0 && (
+                  <div className="flex justify-between w-48">
+                    <span>Tax ({watch('tax_percentage') || 0}%):</span>
+                    <span>{formatCurrency(calculateTaxAmount())}</span>
+                  </div>
+                )}
                 <div className="flex justify-between w-48 font-bold text-lg border-t pt-1">
                   <span>Total:</span>
                   <span>{formatCurrency(calculateTotal())}</span>

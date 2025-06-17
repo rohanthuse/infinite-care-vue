@@ -62,8 +62,11 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
 
   if (!invoice) return null;
 
-  const subtotal = invoice.line_items?.reduce((sum, item) => sum + item.line_total, 0) || invoice.amount;
-  const total = invoice.total_amount || invoice.amount;
+  const subtotal = invoice.line_items?.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0) || invoice.amount;
+  const totalDiscounts = invoice.line_items?.reduce((sum, item) => sum + item.discount_amount, 0) || 0;
+  const taxPercentage = invoice.tax_amount || 0;
+  const taxAmount = subtotal * (taxPercentage / 100);
+  const total = subtotal - totalDiscounts + taxAmount;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -128,10 +131,16 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                   <span className="text-gray-600">Subtotal:</span>
                   <span>{formatCurrency(subtotal)}</span>
                 </div>
-                {invoice.tax_amount > 0 && (
+                {totalDiscounts > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Tax:</span>
-                    <span>{formatCurrency(invoice.tax_amount)}</span>
+                    <span className="text-gray-600">Total Discounts:</span>
+                    <span>-{formatCurrency(totalDiscounts)}</span>
+                  </div>
+                )}
+                {taxPercentage > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Tax ({taxPercentage}%):</span>
+                    <span>{formatCurrency(taxAmount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-semibold text-lg border-t pt-2">
@@ -167,7 +176,7 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                     <TableRow key={item.id}>
                       <TableCell>{item.description}</TableCell>
                       <TableCell>{item.quantity}</TableCell>
-                      <TableCell>{formatCurrency(item.unit_price)}</TableCell>
+                      <TableCell>{formatCurrency(item.unit_price)}</Table>
                       <TableCell>{formatCurrency(item.discount_amount)}</TableCell>
                       <TableCell className="font-medium">{formatCurrency(item.line_total)}</TableCell>
                     </TableRow>
