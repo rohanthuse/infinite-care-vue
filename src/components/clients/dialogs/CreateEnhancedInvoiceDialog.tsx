@@ -3,6 +3,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2, Calendar } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -128,6 +129,10 @@ export function CreateEnhancedInvoiceDialog({
     return calculateSubtotal() + (form.watch('tax_amount') || 0);
   };
 
+  const getCurrentCurrency = () => {
+    return form.watch('currency') || 'GBP';
+  };
+
   async function onSubmit(data: FormValues) {
     try {
       // Validate and transform line items to ensure required fields
@@ -192,7 +197,7 @@ export function CreateEnhancedInvoiceDialog({
                     <SelectContent>
                       {uninvoicedBookings.map((booking) => (
                         <SelectItem key={booking.booking_id} value={booking.booking_id}>
-                          {booking.service_title} - {booking.client_name} (${booking.revenue})
+                          {booking.service_title} - {booking.client_name} ({formatCurrency(booking.revenue, 'en-GB', getCurrentCurrency())})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -408,7 +413,7 @@ export function CreateEnhancedInvoiceDialog({
                     
                     <div className="mt-2 text-right">
                       <span className="text-sm font-medium">
-                        Line Total: ${calculateLineTotal(index).toFixed(2)}
+                        Line Total: {formatCurrency(calculateLineTotal(index), 'en-GB', getCurrentCurrency())}
                       </span>
                     </div>
                   </div>
@@ -475,15 +480,15 @@ export function CreateEnhancedInvoiceDialog({
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
-                      <span>${calculateSubtotal().toFixed(2)}</span>
+                      <span>{formatCurrency(calculateSubtotal(), 'en-GB', getCurrentCurrency())}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Tax:</span>
-                      <span>${(form.watch('tax_amount') || 0).toFixed(2)}</span>
+                      <span>{formatCurrency(form.watch('tax_amount') || 0, 'en-GB', getCurrentCurrency())}</span>
                     </div>
                     <div className="flex justify-between font-bold text-lg pt-2 border-t">
                       <span>Total:</span>
-                      <span>${calculateTotal().toFixed(2)}</span>
+                      <span>{formatCurrency(calculateTotal(), 'en-GB', getCurrentCurrency())}</span>
                     </div>
                   </div>
                 </CardContent>
