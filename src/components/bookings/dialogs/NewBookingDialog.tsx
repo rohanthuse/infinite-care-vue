@@ -129,8 +129,7 @@ export function NewBookingDialog({
     onCreateBooking(data, carers);
     form.reset();
     onOpenChange(false);
-    toast({
-      title: "Booking submitted",
+    toast("Booking submitted", {
       description: "The booking has been scheduled successfully",
     });
   }

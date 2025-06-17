@@ -129,7 +129,9 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
   const [clientDetailOpen, setClientDetailOpen] = useState<boolean>(false);
-  const itemsPerPage = 5;
+  const [isAddNoteDialogOpen, setIsAddNoteDialogOpen] = useState(false);
+  const [isUploadDocumentDialogOpen, setIsUploadDocumentDialogOpen] = useState(false);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   const { data: clientsData, isLoading: isLoadingClients, error: clientsError } = useBranchClients({
     branchId: id,
@@ -287,13 +289,12 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         onCreateBooking={handleCreateBooking}
       />
       
-      {clientDetailOpen && selectedClient && (
-        <ClientDetail 
+      {selectedClient && (
+        <ClientDetail
           client={selectedClient}
-          onClose={handleCloseClientDetail}
-          onAddNote={handleAddNote}
-          onScheduleAppointment={handleScheduleAppointment}
-          onUploadDocument={handleUploadDocument}
+          onClose={() => setSelectedClient(null)}
+          onAddNote={() => setIsAddNoteDialogOpen(true)}
+          onUploadDocument={() => setIsUploadDocumentDialogOpen(true)}
         />
       )}
       
