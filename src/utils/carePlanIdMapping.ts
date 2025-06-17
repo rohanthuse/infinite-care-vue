@@ -3,34 +3,34 @@
 // This handles the mapping between CP-001 style IDs and actual UUIDs
 
 const carePlanIdMapping: Record<string, string> = {
-  'CP-001': '550e8400-e29b-41d4-a716-446655440000', // John Michael's care plan
-  'CP-002': '550e8400-e29b-41d4-a716-446655440001', // Emma Thompson's care plan
-  'CP-003': '550e8400-e29b-41d4-a716-446655440002', // Wendy Smith's care plan
-  'CP-004': '550e8400-e29b-41d4-a716-446655440003', // Robert Johnson's care plan
-  'CP-005': '550e8400-e29b-41d4-a716-446655440004', // Lisa Rodrigues's care plan
-  'CP-006': '550e8400-e29b-41d4-a716-446655440005', // David Wilson's care plan
-  'CP-007': '550e8400-e29b-41d4-a716-446655440006', // Kate Williams's care plan
-  'CP-008': '550e8400-e29b-41d4-a716-446655440007', // Olivia Parker's care plan
+  'CP-001': '550e8400-e29b-41d4-a716-446655440001', // John Michael's care plan - CORRECTED
+  'CP-002': '550e8400-e29b-41d4-a716-446655440002', // Emma Thompson's care plan - CORRECTED
+  'CP-003': '550e8400-e29b-41d4-a716-446655440003', // Wendy Smith's care plan - CORRECTED
+  'CP-004': '550e8400-e29b-41d4-a716-446655440004', // Robert Johnson's care plan - CORRECTED
+  'CP-005': '550e8400-e29b-41d4-a716-446655440005', // Lisa Rodrigues's care plan - CORRECTED
+  'CP-006': '550e8400-e29b-41d4-a716-446655440006', // David Wilson's care plan - CORRECTED
+  'CP-007': '550e8400-e29b-41d4-a716-446655440007', // Kate Williams's care plan - CORRECTED
+  'CP-008': '550e8400-e29b-41d4-a716-446655440008', // Olivia Parker's care plan - CORRECTED
 };
 
 // Add support for truncated UUIDs - map them back to display IDs
 const truncatedUuidMapping: Record<string, string> = {
-  '550E8400': 'CP-001', // John Michael's care plan
-  '550e8400': 'CP-001', // case insensitive
-  '550E8401': 'CP-002', // Emma Thompson's care plan  
-  '550e8401': 'CP-002',
-  '550E8402': 'CP-003', // Wendy Smith's care plan
-  '550e8402': 'CP-003',
-  '550E8403': 'CP-004', // Robert Johnson's care plan
-  '550e8403': 'CP-004',
-  '550E8404': 'CP-005', // Lisa Rodrigues's care plan
-  '550e8404': 'CP-005',
-  '550E8405': 'CP-006', // David Wilson's care plan
-  '550e8405': 'CP-006',
-  '550E8406': 'CP-007', // Kate Williams's care plan
-  '550e8406': 'CP-007',
-  '550E8407': 'CP-008', // Olivia Parker's care plan
-  '550e8407': 'CP-008',
+  '550E8401': 'CP-001', // John Michael's care plan - CORRECTED
+  '550e8401': 'CP-001', // case insensitive
+  '550E8402': 'CP-002', // Emma Thompson's care plan  
+  '550e8402': 'CP-002',
+  '550E8403': 'CP-003', // Wendy Smith's care plan
+  '550e8403': 'CP-003',
+  '550E8404': 'CP-004', // Robert Johnson's care plan
+  '550e8404': 'CP-004',
+  '550E8405': 'CP-005', // Lisa Rodrigues's care plan
+  '550e8405': 'CP-005',
+  '550E8406': 'CP-006', // David Wilson's care plan
+  '550e8406': 'CP-006',
+  '550E8407': 'CP-007', // Kate Williams's care plan
+  '550e8407': 'CP-007',
+  '550E8408': 'CP-008', // Olivia Parker's care plan
+  '550e8408': 'CP-008',
 };
 
 // Reverse mapping for display purposes
