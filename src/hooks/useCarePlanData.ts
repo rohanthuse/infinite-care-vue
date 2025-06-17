@@ -82,61 +82,18 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData | nul
   console.log('[fetchCarePlanData] Resolved ID:', resolvedId);
   
   try {
-    // First, try to get the current user session for RLS context
-    const { data: { user } } = await supabase.auth.getUser();
-    console.log('[fetchCarePlanData] Current user for RLS:', user?.id);
-    
-    // Fetch care plan data with broader query to bypass potential RLS issues
+    // Fetch care plan data with client data in a single query
     const { data: carePlans, error: carePlanError } = await supabase
       .from('client_care_plans')
-      .select('*')
+      .select(`
+        *,
+        client:clients(*)
+      `)
       .eq('id', resolvedId);
 
     if (carePlanError) {
       console.error('[fetchCarePlanData] Care plan query error:', carePlanError);
-      // If RLS is blocking, try to get all care plans and filter client-side
-      console.log('[fetchCarePlanData] Trying alternative query approach...');
-      
-      const { data: allCarePlans, error: altError } = await supabase
-        .from('client_care_plans')
-        .select('*');
-      
-      if (altError) {
-        console.error('[fetchCarePlanData] Alternative query also failed:', altError);
-        throw carePlanError;
-      }
-      
-      // Filter for the specific care plan
-      const matchingPlan = allCarePlans?.find(plan => plan.id === resolvedId);
-      if (!matchingPlan) {
-        console.log('[fetchCarePlanData] No matching care plan found in alternative query');
-        return null;
-      }
-      
-      console.log('[fetchCarePlanData] Found care plan via alternative query:', matchingPlan);
-      const carePlan = matchingPlan;
-      
-      // Fetch client data separately
-      let client = null;
-      if (carePlan.client_id) {
-        const { data: clientData, error: clientError } = await supabase
-          .from('clients')
-          .select('*')
-          .eq('id', carePlan.client_id)
-          .maybeSingle();
-
-        if (clientError) {
-          console.error('[fetchCarePlanData] Client query error:', clientError);
-        } else {
-          client = clientData;
-          console.log('[fetchCarePlanData] Client data found:', client);
-        }
-      }
-      
-      return {
-        ...carePlan,
-        client: client
-      };
+      throw carePlanError;
     }
     
     const carePlan = carePlans?.[0];
@@ -146,29 +103,11 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData | nul
     }
 
     console.log('[fetchCarePlanData] Care plan found:', carePlan);
-
-    // Fetch client data separately
-    let client = null;
-    if (carePlan.client_id) {
-      const { data: clientData, error: clientError } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('id', carePlan.client_id)
-        .maybeSingle();
-
-      if (clientError) {
-        console.error('[fetchCarePlanData] Client query error:', clientError);
-        // Don't throw error, just log it and continue without client data
-      } else {
-        client = clientData;
-        console.log('[fetchCarePlanData] Client data found:', client);
-      }
-    }
     
-    // Combine care plan and client data
+    // Return the combined data
     const result = {
       ...carePlan,
-      client: client
+      client: carePlan.client
     };
     
     console.log('[fetchCarePlanData] Successfully fetched combined data:', result);

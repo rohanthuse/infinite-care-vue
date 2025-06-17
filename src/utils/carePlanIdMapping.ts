@@ -1,33 +1,40 @@
+// Utility to map display care plan IDs to actual database UUIDs
+// This handles the mapping between CP-001 style IDs and actual UUIDs
 
-// Mapping utility to handle mock care plan IDs to real database UUIDs
-export const carePlanIdMapping: Record<string, string> = {
-  'CP-001': '550e8400-e29b-41d4-a716-446655440001', // John Michael's care plan UUID
-  'CP-002': '550e8400-e29b-41d4-a716-446655440002', // Emma Thompson's care plan UUID (if needed later)
+const carePlanIdMapping: Record<string, string> = {
+  'CP-001': '550e8400-e29b-41d4-a716-446655440000', // John Michael's care plan
+  'CP-002': '550e8400-e29b-41d4-a716-446655440001', // Emma Thompson's care plan
+  'CP-003': '550e8400-e29b-41d4-a716-446655440002', // Wendy Smith's care plan
+  'CP-004': '550e8400-e29b-41d4-a716-446655440003', // Robert Johnson's care plan
+  'CP-005': '550e8400-e29b-41d4-a716-446655440004', // Lisa Rodrigues's care plan
+  'CP-006': '550e8400-e29b-41d4-a716-446655440005', // David Wilson's care plan
+  'CP-007': '550e8400-e29b-41d4-a716-446655440006', // Kate Williams's care plan
+  'CP-008': '550e8400-e29b-41d4-a716-446655440007', // Olivia Parker's care plan
 };
 
-// Function to get the real UUID from mock ID or return the original if it's already a UUID
-export const resolveCarePlanId = (id: string): string => {
-  // Check if it's a mock ID that needs mapping
-  if (carePlanIdMapping[id]) {
-    return carePlanIdMapping[id];
+// Reverse mapping for display purposes
+const uuidToDisplayId: Record<string, string> = Object.fromEntries(
+  Object.entries(carePlanIdMapping).map(([displayId, uuid]) => [uuid, displayId])
+);
+
+export const resolveCarePlanId = (carePlanId: string): string => {
+  // If it's already a UUID, return as is
+  if (carePlanId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+    return carePlanId;
   }
   
-  // If it's already a UUID format, return as is
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  if (uuidRegex.test(id)) {
-    return id;
+  // Otherwise, try to resolve from mapping
+  const resolvedId = carePlanIdMapping[carePlanId];
+  if (resolvedId) {
+    console.log(`[resolveCarePlanId] Mapped ${carePlanId} to ${resolvedId}`);
+    return resolvedId;
   }
   
-  // If it's neither a mock ID nor a UUID, return the original
-  return id;
+  // If no mapping found, return the original ID (might be a new UUID)
+  console.warn(`[resolveCarePlanId] No mapping found for ${carePlanId}, using as-is`);
+  return carePlanId;
 };
 
-// Function to get display ID (for showing in UI - can be mock ID for familiarity)
-export const getDisplayCarePlanId = (id: string): string => {
-  // Find the mock ID that maps to this UUID
-  const mockId = Object.keys(carePlanIdMapping).find(
-    mockKey => carePlanIdMapping[mockKey] === id
-  );
-  
-  return mockId || id;
+export const getDisplayCarePlanId = (uuid: string): string => {
+  return uuidToDisplayId[uuid] || uuid;
 };
