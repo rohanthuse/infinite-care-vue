@@ -397,11 +397,28 @@ const CarePlanView = () => {
                   </TabsContent>
                   
                   <TabsContent value="dietary" className="space-y-4">
-                    <DietaryTab dietaryRequirements={[]} />
+                    <DietaryTab dietaryRequirements={{
+                      mealPlan: 'Standard meal plan to be updated',
+                      restrictions: [],
+                      preferences: [],
+                      supplements: [],
+                      hydrationPlan: 'Regular hydration schedule',
+                      nutritionalNotes: 'No specific nutritional requirements noted'
+                    }} />
                   </TabsContent>
 
                   <TabsContent value="personalcare" className="space-y-4">
-                    <PersonalCareTab personalCare={[]} />
+                    <PersonalCareTab personalCare={{
+                      routines: [],
+                      preferences: [],
+                      mobility: {
+                        status: 'Independent',
+                        transferAbility: 'Independent',
+                        walkingDistance: 'Unlimited',
+                        stairs: 'Independent',
+                        notes: 'No mobility restrictions'
+                      }
+                    }} />
                   </TabsContent>
                   
                   <TabsContent value="risk" className="space-y-4">
@@ -433,31 +450,31 @@ const CarePlanView = () => {
       {/* Dialog Components */}
       <AddNoteDialog 
         open={noteDialogOpen}
-        onClose={() => setNoteDialogOpen(false)}
+        onOpenChange={setNoteDialogOpen}
         onSave={handleSaveNote}
       />
       
       <ScheduleFollowUpDialog 
         open={followUpDialogOpen}
-        onClose={() => setFollowUpDialogOpen(false)}
+        onOpenChange={setFollowUpDialogOpen}
         onSave={handleSaveFollowUp}
       />
       
       <RecordActivityDialog 
         open={activityDialogOpen}
-        onClose={() => setActivityDialogOpen(false)}
+        onOpenChange={setActivityDialogOpen}
         onSave={handleSaveActivity}
       />
       
       <UploadDocumentDialog 
         open={documentDialogOpen}
-        onClose={() => setDocumentDialogOpen(false)}
+        onOpenChange={setDocumentDialogOpen}
         onSave={handleSaveDocument}
       />
       
       <AddEventDialog 
         open={eventDialogOpen}
-        onClose={() => setEventDialogOpen(false)}
+        onOpenChange={setEventDialogOpen}
         onSave={handleSaveEvent}
       />
     </div>
