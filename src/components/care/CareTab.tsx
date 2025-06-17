@@ -51,6 +51,7 @@ import { useToast } from "@/hooks/use-toast";
 import { generateCarePlanPDF } from "@/utils/pdfGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { getNavigationId } from "@/utils/carePlanIdMapping";
 
 const mockCarePlans = [
   {
@@ -186,9 +187,9 @@ const useCarePlans = (branchId: string | undefined) => {
           return mockCarePlans;
         }
 
-        // Transform database data to match expected format
-        const transformedPlans = carePlans.map(plan => ({
-          id: plan.id.substring(0, 8).toUpperCase(), // Use first 8 chars as display ID
+        // Transform database data to match expected format with proper display IDs
+        const transformedPlans = carePlans.map((plan, index) => ({
+          id: `CP-${String(index + 1).padStart(3, '0')}`, // Use proper display ID format
           patientName: plan.client ? `${plan.client.first_name} ${plan.client.last_name}` : "Unknown Patient",
           patientId: plan.client?.other_identifier || `PT-${Math.floor(Math.random() * 9999)}`,
           dateCreated: new Date(plan.created_at),
@@ -198,7 +199,9 @@ const useCarePlans = (branchId: string | undefined) => {
                  plan.status === 'archived' ? 'Archived' : 'Active',
           assignedTo: plan.provider_name || "Care Provider",
           avatar: plan.client?.avatar_initials || 
-                 (plan.client ? `${plan.client.first_name?.[0] || ''}${plan.client.last_name?.[0] || ''}` : 'UK')
+                 (plan.client ? `${plan.client.first_name?.[0] || ''}${plan.client.last_name?.[0] || ''}` : 'UK'),
+          // Store the actual database ID for backend operations
+          _databaseId: plan.id
         }));
 
         console.log('[useCarePlans] Successfully transformed care plans:', transformedPlans);
@@ -291,8 +294,14 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   };
   
   const handleViewCarePlan = (id: string) => {
+    console.log('[CareTab] Navigating to care plan:', id);
+    
+    // Ensure we use the display ID for navigation
+    const navigationId = getNavigationId(id);
+    console.log('[CareTab] Using navigation ID:', navigationId);
+    
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan/${id}`);
+      navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan/${navigationId}`);
     }
   };
   

@@ -83,12 +83,16 @@ const CarePlanView = () => {
   const [documentDialogOpen, setDocumentDialogOpen] = useState(false);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
 
-  // Debug logging
+  // Debug logging with better error handling
   console.log('[CarePlanView] Component mounted with params:', { branchId, branchName, carePlanId });
+  
+  // Resolve the care plan ID properly before making database calls
+  const resolvedCarePlanId = carePlanId ? resolveCarePlanId(carePlanId) : '';
+  console.log('[CarePlanView] Resolved care plan ID:', resolvedCarePlanId);
 
-  // Fetch data from database
-  const { data: carePlanData, isLoading: isCarePlanLoading, error: carePlanError } = useCarePlanData(carePlanId || '');
-  const { data: goalsData, isLoading: isGoalsLoading, error: goalsError } = useCarePlanGoals(carePlanId || '');
+  // Fetch data from database with resolved ID
+  const { data: carePlanData, isLoading: isCarePlanLoading, error: carePlanError } = useCarePlanData(resolvedCarePlanId);
+  const { data: goalsData, isLoading: isGoalsLoading, error: goalsError } = useCarePlanGoals(resolvedCarePlanId);
   const { data: notesData, isLoading: isNotesLoading, error: notesError } = useClientNotes(carePlanData?.client_id || '');
 
   // Debug logging for data fetching
@@ -106,7 +110,7 @@ const CarePlanView = () => {
 
   // Create unified care plan object combining database and mock data
   const carePlan = carePlanData ? {
-    id: carePlanId || '', // Keep original ID for display
+    id: getDisplayCarePlanId(carePlanId || ''), // Use display ID for UI
     patientName: carePlanData.client ? `${carePlanData.client.first_name} ${carePlanData.client.last_name}` : "John Michael",
     patientId: carePlanData.client?.other_identifier || "PT-2356",
     dateCreated: new Date(carePlanData.created_at),
@@ -231,7 +235,7 @@ const CarePlanView = () => {
     onUploadDocument: () => setDocumentDialogOpen(true)
   };
 
-  // Enhanced error handling
+  // Enhanced error handling with better messaging
   if (carePlanError) {
     console.error('[CarePlanView] Care plan error:', carePlanError);
     return (
@@ -246,9 +250,18 @@ const CarePlanView = () => {
           <div className="text-center">
             <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Care Plan</h3>
-            <p className="text-gray-600 mb-4">
-              Failed to load care plan {carePlanId}: {carePlanError.message}
+            <p className="text-gray-600 mb-2">
+              Failed to load care plan "{carePlanId}"
             </p>
+            <p className="text-sm text-gray-500 mb-4">
+              Error: {carePlanError.message}
+            </p>
+            <div className="space-y-2">
+              <p className="text-xs text-gray-400">
+                Original ID: {carePlanId}<br/>
+                Resolved ID: {resolvedCarePlanId}
+              </p>
+            </div>
             <Button onClick={() => navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan`)}>
               Back to Care Plans
             </Button>
