@@ -87,7 +87,8 @@ const fetchEnhancedClientBilling = async (clientId: string): Promise<EnhancedCli
   }
   
   console.log('[fetchEnhancedClientBilling] Fetched enhanced billing:', data);
-  return data || [];
+  // Type assertion to handle status field properly
+  return (data || []) as EnhancedClientBilling[];
 };
 
 // Fetch uninvoiced bookings
@@ -130,7 +131,7 @@ const createEnhancedInvoice = async (invoiceData: {
 }) => {
   console.log('[createEnhancedInvoice] Creating enhanced invoice:', invoiceData);
   
-  // Create the main invoice
+  // Create the main invoice with required amount field
   const { data: invoice, error: invoiceError } = await supabase
     .from('client_billing')
     .insert([{
@@ -139,6 +140,7 @@ const createEnhancedInvoice = async (invoiceData: {
       invoice_number: invoiceData.invoice_number,
       invoice_date: invoiceData.invoice_date,
       due_date: invoiceData.due_date,
+      amount: 0, // Will be calculated by the function
       tax_amount: invoiceData.tax_amount || 0,
       currency: invoiceData.currency || 'USD',
       payment_terms: invoiceData.payment_terms || '30 days',

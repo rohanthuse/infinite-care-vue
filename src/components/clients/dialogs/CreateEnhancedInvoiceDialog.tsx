@@ -131,10 +131,23 @@ export function CreateEnhancedInvoiceDialog({
 
   async function onSubmit(data: FormValues) {
     try {
-      await createInvoiceMutation.mutateAsync({
+      // Explicitly provide all required fields
+      const invoiceData = {
         client_id: clientId,
-        ...data,
-      });
+        description: data.description,
+        invoice_number: data.invoice_number,
+        invoice_date: data.invoice_date,
+        due_date: data.due_date,
+        tax_amount: data.tax_amount,
+        currency: data.currency,
+        payment_terms: data.payment_terms,
+        notes: data.notes,
+        booking_id: data.booking_id,
+        service_provided_date: data.service_provided_date,
+        line_items: data.line_items,
+      };
+      
+      await createInvoiceMutation.mutateAsync(invoiceData);
       form.reset();
       setSelectedBooking(null);
       onOpenChange(false);
