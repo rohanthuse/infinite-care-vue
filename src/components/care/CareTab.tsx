@@ -211,16 +211,8 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   };
   
   const handleViewCarePlan = (id: string) => {
-    console.log('[CareTab] Navigating to care plan:', { branchId, branchName, carePlanId: id });
     if (branchId && branchName) {
       navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan/${id}`);
-    } else {
-      console.error('[CareTab] Missing branch context for navigation:', { branchId, branchName });
-      toast({
-        title: "Navigation Error",
-        description: "Unable to navigate to care plan. Missing branch information.",
-        variant: "destructive",
-      });
     }
   };
   

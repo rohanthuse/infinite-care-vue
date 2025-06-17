@@ -83,31 +83,8 @@ const CarePlanView = () => {
   const [documentDialogOpen, setDocumentDialogOpen] = useState(false);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
 
-  // Debug logging with more context
+  // Debug logging
   console.log('[CarePlanView] Component mounted with params:', { branchId, branchName, carePlanId });
-  console.log('[CarePlanView] Current URL:', window.location.pathname);
-
-  // Enhanced validation for required params
-  if (!branchId || !branchName || !carePlanId) {
-    console.error('[CarePlanView] Missing required route parameters:', { branchId, branchName, carePlanId });
-    return (
-      <div className="flex flex-col min-h-screen">
-        <DashboardHeader />
-        <div className="flex-1 p-6 flex items-center justify-center">
-          <div className="text-center">
-            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Invalid Route</h3>
-            <p className="text-gray-600 mb-4">
-              This care plan must be accessed through a branch dashboard.
-            </p>
-            <Button onClick={() => navigate('/')}>
-              Back to Dashboard
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // Fetch data from database
   const { data: carePlanData, isLoading: isCarePlanLoading, error: carePlanError } = useCarePlanData(carePlanId || '');
@@ -119,7 +96,12 @@ const CarePlanView = () => {
     carePlanData,
     isCarePlanLoading,
     carePlanError,
-    resolvedCarePlanId: carePlanId
+    goalsData,
+    isGoalsLoading,
+    goalsError,
+    notesData,
+    isNotesLoading,
+    notesError
   });
 
   // Create unified care plan object combining database and mock data
