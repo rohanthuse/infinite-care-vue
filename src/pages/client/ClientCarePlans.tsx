@@ -5,89 +5,44 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useClientCarePlansWithDetails } from "@/hooks/useCarePlanData";
 
 const ClientCarePlans = () => {
-  // Mock care plan data
-  const carePlan = {
-    id: 1,
-    title: "Rehabilitation Care Plan",
-    createdAt: "March 15, 2025",
-    updatedAt: "April 25, 2025",
-    reviewDate: "May 25, 2025",
-    provider: "Dr. Emily Smith",
-    goalsProgress: 65,
-    goals: [
-      {
-        id: 1,
-        description: "Improve mobility in left leg",
-        status: "in-progress",
-        progress: 70,
-        notes: "Making good progress with physical therapy exercises"
-      },
-      {
-        id: 2,
-        description: "Complete daily exercises",
-        status: "in-progress",
-        progress: 85,
-        notes: "Consistent with morning exercises, sometimes missing evening routine"
-      },
-      {
-        id: 3,
-        description: "Maintain healthy diet",
-        status: "in-progress",
-        progress: 60,
-        notes: "Following meal plan with occasional deviations"
-      },
-      {
-        id: 4,
-        description: "Reduce pain medication",
-        status: "not-started",
-        progress: 0,
-        notes: "Will begin after consultation with pain specialist"
-      }
-    ],
-    medications: [
-      {
-        id: 1,
-        name: "Ibuprofen",
-        dosage: "400mg",
-        frequency: "Twice daily",
-        startDate: "March 20, 2025",
-        endDate: "Ongoing"
-      },
-      {
-        id: 2,
-        name: "Vitamin D",
-        dosage: "2000 IU",
-        frequency: "Once daily",
-        startDate: "March 15, 2025",
-        endDate: "Ongoing"
-      }
-    ],
-    activities: [
-      {
-        id: 1,
-        name: "Morning Stretches",
-        description: "15 minutes of stretching focusing on lower body",
-        frequency: "Daily",
-        status: "active"
-      },
-      {
-        id: 2,
-        name: "Walking",
-        description: "30 minutes of walking with support",
-        frequency: "3 times per week",
-        status: "active"
-      },
-      {
-        id: 3,
-        name: "Resistance Training",
-        description: "Light resistance exercises for upper body strength",
-        frequency: "2 times per week",
-        status: "active"
-      }
-    ]
-  };
+  const clientId = "76394b1f-d2e3-43f2-b0ae-4605dcb75551"; // John Michael's client ID
+  const { data: carePlans, isLoading, error } = useClientCarePlansWithDetails(clientId);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your care plans...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading care plans</h3>
+        <p className="text-gray-600">{error.message}</p>
+      </div>
+    );
+  }
+
+  if (!carePlans || carePlans.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No care plans found</h3>
+        <p className="text-gray-600">You don't have any care plans at this time.</p>
+      </div>
+    );
+  }
+
+  const carePlan = carePlans[0]; // Get the first (and likely only) care plan
 
   // Function to render goal status badge
   const renderGoalStatus = (status: string) => {
@@ -114,7 +69,7 @@ const ClientCarePlans = () => {
               {carePlan.title}
             </h2>
             <div className="text-sm text-gray-500 mt-2">
-              Last updated: {carePlan.updatedAt} • Care Provider: {carePlan.provider}
+              Last updated: {new Date(carePlan.updated_at).toLocaleDateString()} • Care Provider: {carePlan.provider_name}
             </div>
           </div>
           <div className="flex gap-2">
@@ -125,14 +80,14 @@ const ClientCarePlans = () => {
         <div className="mt-6 flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-blue-600" />
-            <span className="text-sm">Next review: {carePlan.reviewDate}</span>
+            <span className="text-sm">Next review: {carePlan.review_date ? new Date(carePlan.review_date).toLocaleDateString() : 'Not scheduled'}</span>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium">Goals progress:</span>
             <div className="flex-1 md:w-48">
-              <Progress value={carePlan.goalsProgress} className="h-2" />
+              <Progress value={carePlan.goals_progress || 0} className="h-2" />
             </div>
-            <span className="text-sm font-medium">{carePlan.goalsProgress}%</span>
+            <span className="text-sm font-medium">{carePlan.goals_progress || 0}%</span>
           </div>
         </div>
       </div>
@@ -153,64 +108,80 @@ const ClientCarePlans = () => {
           {/* Goals Tab */}
           <TabsContent value="goals" className="p-6">
             <div className="space-y-6">
-              {carePlan.goals.map(goal => (
-                <div key={goal.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium">{goal.description}</h4>
-                        {renderGoalStatus(goal.status)}
-                      </div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="flex-1">
-                          <Progress value={goal.progress} className="h-2" />
+              {carePlan.goals && carePlan.goals.length > 0 ? (
+                carePlan.goals.map(goal => (
+                  <div key={goal.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="font-medium">{goal.description}</h4>
+                          {renderGoalStatus(goal.status)}
                         </div>
-                        <span className="text-sm font-medium">{goal.progress}%</span>
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="flex-1">
+                            <Progress value={goal.progress || 0} className="h-2" />
+                          </div>
+                          <span className="text-sm font-medium">{goal.progress || 0}%</span>
+                        </div>
+                        {goal.notes && (
+                          <p className="text-sm text-gray-600 mt-2">{goal.notes}</p>
+                        )}
                       </div>
-                      <p className="text-sm text-gray-600 mt-2">{goal.notes}</p>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-gray-500 text-center py-8">No goals defined for this care plan.</p>
+              )}
             </div>
           </TabsContent>
           
           {/* Medications Tab */}
           <TabsContent value="medications" className="p-6">
             <div className="space-y-4">
-              {carePlan.medications.map(med => (
-                <div key={med.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                    <div>
-                      <h4 className="font-medium">{med.name}</h4>
-                      <p className="text-sm text-gray-600">{med.dosage}, {med.frequency}</p>
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      Started: {med.startDate} • End: {med.endDate}
+              {carePlan.medications && carePlan.medications.length > 0 ? (
+                carePlan.medications.map(med => (
+                  <div key={med.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                      <div>
+                        <h4 className="font-medium">{med.name}</h4>
+                        <p className="text-sm text-gray-600">{med.dosage}, {med.frequency}</p>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Started: {new Date(med.start_date).toLocaleDateString()} • Status: {med.status}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-gray-500 text-center py-8">No medications defined for this care plan.</p>
+              )}
             </div>
           </TabsContent>
           
           {/* Activities Tab */}
           <TabsContent value="activities" className="p-6">
             <div className="space-y-4">
-              {carePlan.activities.map(activity => (
-                <div key={activity.id} className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-medium">{activity.name}</h4>
-                  <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
-                  <div className="flex items-center mt-2 gap-2">
-                    <span className="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                      {activity.frequency}
-                    </span>
-                    <span className="text-xs font-medium bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                      Active
-                    </span>
+              {carePlan.activities && carePlan.activities.length > 0 ? (
+                carePlan.activities.map(activity => (
+                  <div key={activity.id} className="border border-gray-200 rounded-lg p-4">
+                    <h4 className="font-medium">{activity.name}</h4>
+                    {activity.description && (
+                      <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
+                    )}
+                    <div className="flex items-center mt-2 gap-2">
+                      <span className="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                        {activity.frequency}
+                      </span>
+                      <span className="text-xs font-medium bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                        {activity.status}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-gray-500 text-center py-8">No activities defined for this care plan.</p>
+              )}
             </div>
           </TabsContent>
         </Tabs>

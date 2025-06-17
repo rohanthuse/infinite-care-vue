@@ -8,62 +8,60 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { CarerCarePlanDetail } from "@/components/carer/CarerCarePlanDetail";
-
-// Mock care plans data
-const mockCarePlans = [
-  {
-    id: "CP-1",
-    clientName: "Emma Thompson",
-    dateCreated: new Date("2024-03-15"),
-    lastUpdated: new Date("2024-04-20"),
-    status: "Active",
-    type: "Home Care",
-    alerts: 2,
-    tasks: [
-      { id: "t1", name: "Morning medication", completed: true },
-      { id: "t2", name: "Breakfast assistance", completed: true },
-      { id: "t3", name: "Personal hygiene", completed: false },
-      { id: "t4", name: "Blood pressure check", completed: false }
-    ]
-  },
-  {
-    id: "CP-2",
-    clientName: "James Wilson",
-    dateCreated: new Date("2024-02-10"),
-    lastUpdated: new Date("2024-04-18"),
-    status: "Active",
-    type: "Post-Surgery Recovery",
-    alerts: 0,
-    tasks: [
-      { id: "t5", name: "Wound dressing", completed: true },
-      { id: "t6", name: "Pain management", completed: true },
-      { id: "t7", name: "Mobility exercises", completed: true },
-      { id: "t8", name: "Vital signs monitoring", completed: false }
-    ]
-  },
-  {
-    id: "CP-3",
-    clientName: "Margaret Brown",
-    dateCreated: new Date("2024-04-05"),
-    lastUpdated: new Date("2024-04-21"),
-    status: "Active",
-    type: "Dementia Care",
-    alerts: 1,
-    tasks: [
-      { id: "t9", name: "Medication administration", completed: false },
-      { id: "t10", name: "Meal assistance", completed: false },
-      { id: "t11", name: "Cognitive exercises", completed: false },
-      { id: "t12", name: "Hygiene assistance", completed: false }
-    ]
-  }
-];
+import { useClientCarePlansWithDetails } from "@/hooks/useCarePlanData";
 
 const CarerCarePlans: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCarePlan, setSelectedCarePlan] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("all");
   
-  const filteredCarePlans = mockCarePlans.filter(carePlan => {
+  const clientId = "76394b1f-d2e3-43f2-b0ae-4605dcb75551"; // John Michael's client ID
+  const { data: carePlans, isLoading, error } = useClientCarePlansWithDetails(clientId);
+
+  if (isLoading) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold mb-6">My Care Plans</h1>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading care plans...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold mb-6">My Care Plans</h1>
+        <div className="text-center py-12 bg-white border border-gray-200 rounded-lg">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading care plans</h3>
+          <p className="text-gray-600">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Transform Supabase data to match the expected format
+  const transformedCarePlans = carePlans?.map(plan => ({
+    id: plan.id,
+    clientName: "John Michael", // We know this from the client ID
+    dateCreated: new Date(plan.created_at),
+    lastUpdated: new Date(plan.updated_at),
+    status: plan.status === 'approved' ? 'Active' : plan.status,
+    type: plan.care_plan_type || 'Standard Care',
+    alerts: plan.status === 'rejected' ? 1 : 0, // Show alert if rejected
+    tasks: plan.activities?.map(activity => ({
+      id: activity.id,
+      name: activity.name,
+      completed: activity.status === 'completed'
+    })) || []
+  })) || [];
+
+  const filteredCarePlans = transformedCarePlans.filter(carePlan => {
     const searchMatches = 
       carePlan.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       carePlan.type.toLowerCase().includes(searchQuery.toLowerCase());
@@ -101,9 +99,11 @@ const CarerCarePlans: React.FC = () => {
             <TabsTrigger value="all">All Care Plans</TabsTrigger>
             <TabsTrigger value="alerts" className="relative">
               Requires Attention
-              <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
-                {mockCarePlans.filter(plan => plan.alerts > 0).length}
-              </span>
+              {transformedCarePlans.filter(plan => plan.alerts > 0).length > 0 && (
+                <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
+                  {transformedCarePlans.filter(plan => plan.alerts > 0).length}
+                </span>
+              )}
             </TabsTrigger>
           </TabsList>
         </Tabs>
