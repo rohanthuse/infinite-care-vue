@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -35,6 +34,7 @@ import { ServicePlanTab } from "@/components/care/tabs/ServicePlanTab";
 import { ServiceActionsTab } from "@/components/care/tabs/ServiceActionsTab";
 import { EventsLogsTab } from "@/components/care/tabs/EventsLogsTab";
 import { getStatusBadgeClass, getRiskLevelClass, calculateProgressPercentage } from "@/utils/statusHelpers";
+import { mockPatientData } from "@/data/mockPatientData";
 import { cn } from "@/lib/utils";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -45,17 +45,34 @@ import { RecordActivityDialog } from "@/components/care/dialogs/RecordActivityDi
 import { UploadDocumentDialog } from "@/components/care/dialogs/UploadDocumentDialog";
 import { AddEventDialog } from "@/components/care/dialogs/AddEventDialog";
 
-// Import dynamic data hooks
-import { useClientCarePlansWithDetails } from "@/hooks/useCarePlanData";
-import { useClientProfile } from "@/hooks/useClientProfile";
-import { useClientNotes } from "@/hooks/useClientNotes";
-import { useClientDocuments } from "@/hooks/useClientDocuments";
-import { useClientEvents } from "@/hooks/useClientEvents";
+const mockCarePlans = [
+  {
+    id: "CP-001",
+    patientName: "John Michael",
+    patientId: "PT-2356",
+    dateCreated: new Date("2023-10-15"),
+    lastUpdated: new Date("2023-11-05"),
+    status: "Active",
+    assignedTo: "Dr. Sarah Johnson",
+    avatar: "JM"
+  },
+  {
+    id: "CP-002",
+    patientName: "Emma Thompson",
+    patientId: "PT-1122",
+    dateCreated: new Date("2023-09-22"),
+    lastUpdated: new Date("2023-10-30"),
+    status: "Under Review",
+    assignedTo: "Dr. James Wilson",
+    avatar: "ET"
+  }
+];
 
 const CarePlanView = () => {
   const { id: branchId, branchName, carePlanId } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("personal");
+  const [carePlan, setCarePlan] = useState<typeof mockCarePlans[0] | null>(null);
   
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [followUpDialogOpen, setFollowUpDialogOpen] = useState(false);
@@ -63,84 +80,22 @@ const CarePlanView = () => {
   const [documentDialogOpen, setDocumentDialogOpen] = useState(false);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
 
-  // Use John Michael's client ID for now - this would come from the care plan in real implementation
-  const clientId = "76394b1f-d2e3-43f2-b0ae-4605dcb75551";
-  
-  // Fetch dynamic data
-  const { data: carePlans, isLoading: carePlansLoading, error: carePlansError } = useClientCarePlansWithDetails(clientId);
-  const { data: clientProfile, isLoading: profileLoading, error: profileError } = useClientProfile(clientId);
-  const { data: clientNotes, isLoading: notesLoading } = useClientNotes(clientId);
-  const { data: clientDocuments, isLoading: documentsLoading } = useClientDocuments(clientId);
-  const { data: clientEvents, isLoading: eventsLoading } = useClientEvents(clientId);
-
-  const carePlan = carePlans?.[0]; // Get the first care plan
-
-  const isLoading = carePlansLoading || profileLoading;
-  const hasError = carePlansError || profileError;
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <DashboardHeader />
-        <BranchInfoHeader 
-          branchId={branchId || ""} 
-          branchName={branchName || ""} 
-          onNewBooking={() => {}} 
-        />
-        
-        <div className="flex-1 p-6 space-y-6">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading care plan...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (hasError || !carePlan || !clientProfile) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <DashboardHeader />
-        <BranchInfoHeader 
-          branchId={branchId || ""} 
-          branchName={branchName || ""} 
-          onNewBooking={() => {}} 
-        />
-        
-        <div className="flex-1 p-6 space-y-6">
-          <div className="text-center py-12 bg-white border border-gray-200 rounded-lg">
-            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading care plan</h3>
-            <p className="text-gray-600">
-              {hasError ? 'Failed to load care plan data' : 'Care plan not found'}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const transformedCarePlan = {
-    id: carePlan.id,
-    patientName: `${clientProfile.first_name} ${clientProfile.last_name}`,
-    patientId: clientProfile.id,
-    dateCreated: new Date(carePlan.created_at),
-    lastUpdated: new Date(carePlan.updated_at),
-    status: carePlan.status === 'approved' ? 'Active' : carePlan.status,
-    assignedTo: carePlan.provider_name,
-    avatar: `${clientProfile.first_name[0]}${clientProfile.last_name[0]}`
-  };
+  useEffect(() => {
+    const plan = mockCarePlans.find(p => p.id === carePlanId);
+    if (plan) {
+      setCarePlan(plan);
+    }
+  }, [carePlanId]);
 
   const handlePrintCarePlan = () => {
+    if (!carePlan) return;
+    
     generatePDF({
-      id: transformedCarePlan.id,
-      title: `Care Plan for ${transformedCarePlan.patientName}`,
-      date: format(transformedCarePlan.lastUpdated, 'yyyy-MM-dd'),
-      status: transformedCarePlan.status,
-      signedBy: transformedCarePlan.assignedTo
+      id: carePlan.id,
+      title: `Care Plan for ${carePlan.patientName}`,
+      date: format(carePlan.lastUpdated, 'yyyy-MM-dd'),
+      status: carePlan.status,
+      signedBy: carePlan.assignedTo
     });
   };
 
@@ -153,6 +108,15 @@ const CarePlanView = () => {
 
   const handleSaveNote = (note: { content: string; date: Date }) => {
     console.log("Saving note:", note);
+    
+    const newNote = {
+      date: note.date,
+      author: carePlan?.assignedTo || "Care Provider",
+      content: note.content
+    };
+    
+    mockPatientData.notes.unshift(newNote);
+    
     toast({
       title: "Note added",
       description: "The note has been successfully added to the patient's record."
@@ -161,6 +125,7 @@ const CarePlanView = () => {
 
   const handleSaveFollowUp = (followUp: any) => {
     console.log("Scheduling follow-up:", followUp);
+    
     toast({
       title: "Follow-up scheduled",
       description: `Follow-up "${followUp.title}" scheduled for ${format(followUp.date, 'MMM dd, yyyy')} at ${followUp.time}.`
@@ -169,6 +134,16 @@ const CarePlanView = () => {
 
   const handleSaveActivity = (activity: any) => {
     console.log("Recording activity:", activity);
+    
+    const newActivity = {
+      date: activity.date,
+      action: activity.action,
+      performer: activity.performer,
+      status: activity.status
+    };
+    
+    mockPatientData.activities.unshift(newActivity);
+    
     toast({
       title: "Activity recorded",
       description: `The activity "${activity.action}" has been recorded.`
@@ -177,6 +152,16 @@ const CarePlanView = () => {
 
   const handleSaveDocument = (document: { name: string; date: Date; type: string; author: string; file: File }) => {
     console.log("Uploading document:", document);
+    
+    const newDocument = {
+      name: document.name,
+      date: document.date,
+      type: document.type,
+      author: document.author
+    };
+    
+    mockPatientData.documents.unshift(newDocument);
+    
     toast({
       title: "Document uploaded",
       description: `The document "${document.name}" has been uploaded.`
@@ -185,10 +170,19 @@ const CarePlanView = () => {
 
   const handleSaveEvent = (event: any) => {
     console.log("Creating new event:", event);
+    
     toast({
       title: "Event recorded",
       description: `The event "${event.title}" has been recorded.`
     });
+  };
+
+  const sidebarProps = {
+    carePlan: carePlan!,
+    onAddNote: () => setNoteDialogOpen(true),
+    onScheduleFollowUp: () => setFollowUpDialogOpen(true),
+    onRecordActivity: () => setActivityDialogOpen(true),
+    onUploadDocument: () => setDocumentDialogOpen(true)
   };
 
   return (
@@ -246,241 +240,299 @@ const CarePlanView = () => {
             </div>
           </div>
           
-          <div className="flex flex-col space-y-6">
-            <PatientHeader carePlan={transformedCarePlan} />
-            
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="w-full md:w-1/4">
-                <CarePlanSidebar 
-                  carePlan={transformedCarePlan} 
-                  onAddNote={() => setNoteDialogOpen(true)}
-                  onScheduleFollowUp={() => setFollowUpDialogOpen(true)}
-                  onRecordActivity={() => setActivityDialogOpen(true)}
-                  onUploadDocument={() => setDocumentDialogOpen(true)}
-                />
-              </div>
+          {carePlan && (
+            <div className="flex flex-col space-y-6">
+              <PatientHeader carePlan={carePlan} />
               
-              <div className="w-full md:w-3/4">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <CarePlanTabBar activeTab={activeTab} onChange={setActiveTab} />
-                  
-                  <TabsContent value="personal" className="space-y-6">
-                    <Card className="overflow-hidden border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                      <CardHeader className="pb-3 bg-gradient-to-r from-med-50 to-white border-b border-med-100">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <User className="h-5 w-5 text-med-600" />
-                          <span className="bg-gradient-to-r from-med-700 to-med-500 bg-clip-text text-transparent">Personal Information</span>
-                        </CardTitle>
-                        <CardDescription>Patient demographic and contact details</CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                            <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                              <User className="h-5 w-5 mr-2 text-med-600" />
-                              Basic Information
-                            </h3>
-                            <div className="space-y-3">
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Full Name</p>
-                                <p className="text-sm">{transformedCarePlan.patientName}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Patient ID</p>
-                                <p className="text-sm">{transformedCarePlan.patientId}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Gender</p>
-                                <p className="text-sm">{clientProfile.gender || 'Not specified'}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Date of Birth</p>
-                                <p className="text-sm">
-                                  {clientProfile.date_of_birth 
-                                    ? `${format(new Date(clientProfile.date_of_birth), 'MMM dd, yyyy')} (Age: ${new Date().getFullYear() - new Date(clientProfile.date_of_birth).getFullYear()})`
-                                    : 'Not specified'
-                                  }
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                            <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                              <Phone className="h-5 w-5 mr-2 text-med-600" />
-                              Contact Information
-                            </h3>
-                            <div className="space-y-3">
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Address</p>
-                                <p className="text-sm">{clientProfile.address || 'Not specified'}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Phone</p>
-                                <p className="text-sm">{clientProfile.phone || clientProfile.telephone_number || 'Not specified'}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Email</p>
-                                <p className="text-sm">{clientProfile.email || 'Not specified'}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-500">Mobile</p>
-                                <p className="text-sm">{clientProfile.mobile_number || 'Not specified'}</p>
+              <div className="flex flex-col md:flex-row gap-6">
+                <div className="w-full md:w-1/4">
+                  {carePlan && <CarePlanSidebar 
+                    carePlan={carePlan} 
+                    onAddNote={() => setNoteDialogOpen(true)}
+                    onScheduleFollowUp={() => setFollowUpDialogOpen(true)}
+                    onRecordActivity={() => setActivityDialogOpen(true)}
+                    onUploadDocument={() => setDocumentDialogOpen(true)}
+                  />}
+                </div>
+                
+                <div className="w-full md:w-3/4">
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <CarePlanTabBar activeTab={activeTab} onChange={setActiveTab} />
+                    
+                    <TabsContent value="personal" className="space-y-6">
+                      <Card className="overflow-hidden border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                        <CardHeader className="pb-3 bg-gradient-to-r from-med-50 to-white border-b border-med-100">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <User className="h-5 w-5 text-med-600" />
+                            <span className="bg-gradient-to-r from-med-700 to-med-500 bg-clip-text text-transparent">Personal Information</span>
+                          </CardTitle>
+                          <CardDescription>Patient demographic and contact details</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <InfoCard 
+                              icon={<User className="h-5 w-5 text-med-500" />}
+                              title="Basic Information"
+                              items={[
+                                { label: "Full Name", value: carePlan.patientName },
+                                { label: "Patient ID", value: carePlan.patientId },
+                                { label: "Gender", value: mockPatientData.gender },
+                                { label: "Date of Birth", value: `${format(mockPatientData.dateOfBirth, 'MMM dd, yyyy')} (Age: ${new Date().getFullYear() - mockPatientData.dateOfBirth.getFullYear()})` }
+                              ]}
+                            />
+                            
+                            <InfoCard 
+                              icon={<Phone className="h-5 w-5 text-med-500" />}
+                              title="Contact Information"
+                              items={[
+                                { label: "Address", value: mockPatientData.address },
+                                { label: "Phone", value: mockPatientData.phone },
+                                { label: "Email", value: mockPatientData.email },
+                                { label: "Preferred Language", value: mockPatientData.preferredLanguage }
+                              ]}
+                            />
+                            
+                            <div className="md:col-span-2">
+                              <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                                <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+                                  <Shield className="h-5 w-5 mr-2 text-med-600" />
+                                  Emergency Contact
+                                </h3>
+                                <div className="p-4 rounded-lg bg-med-50 border border-med-100">
+                                  <p className="text-gray-700">{mockPatientData.emergencyContact}</p>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                  
-                  <TabsContent value="aboutme" className="space-y-4">
-                    <AboutMeTab aboutMe={{
-                      interests: clientProfile.additional_information || 'No additional information provided',
-                      preferences: 'Patient preferences to be updated',
-                      background: `Registered on: ${clientProfile.registered_on ? format(new Date(clientProfile.registered_on), 'MMM dd, yyyy') : 'Not specified'}`,
-                      notes: clientProfile.referral_route ? `Referral route: ${clientProfile.referral_route}` : 'No referral information'
-                    }} />
-                  </TabsContent>
-                  
-                  <TabsContent value="goals" className="space-y-4">
-                    <GoalsTab goals={carePlan.goals?.map(goal => ({
-                      title: goal.description,
-                      status: goal.status === 'in-progress' ? 'In Progress' : 
-                             goal.status === 'completed' ? 'Completed' : 'Active',
-                      target: `Progress: ${goal.progress || 0}%`,
-                      notes: goal.notes || 'No notes available'
-                    })) || []} />
-                  </TabsContent>
-                  
-                  <TabsContent value="activities" className="space-y-4">
-                    <ActivitiesTab 
-                      activities={carePlan.activities?.map(activity => ({
-                        date: new Date(activity.created_at),
-                        action: activity.name,
-                        performer: carePlan.provider_name,
-                        status: activity.status === 'active' ? 'Completed' : 'Pending'
-                      })) || []}
-                      onAddActivity={() => setActivityDialogOpen(true)}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="notes" className="space-y-4">
-                    <NotesTab 
-                      notes={clientNotes?.map(note => ({
-                        date: new Date(note.created_at),
-                        author: note.author,
-                        content: note.content
-                      })) || []}
-                      onAddNote={() => setNoteDialogOpen(true)}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="documents" className="space-y-4">
-                    <DocumentsTab 
-                      documents={clientDocuments?.map(doc => ({
-                        name: doc.name,
-                        date: new Date(doc.upload_date),
-                        type: doc.type,
-                        author: doc.uploaded_by
-                      })) || []}
-                      onUploadDocument={() => setDocumentDialogOpen(true)}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="assessments" className="space-y-4">
-                    <AssessmentsTab assessments={[]} />
-                  </TabsContent>
-                  
-                  <TabsContent value="equipment" className="space-y-4">
-                    <EquipmentTab equipment={[]} />
-                  </TabsContent>
-                  
-                  <TabsContent value="dietary" className="space-y-4">
-                    <DietaryTab dietaryRequirements={{
-                      mealPlan: 'Standard meal plan to be updated',
-                      restrictions: [],
-                      preferences: [],
-                      supplements: [],
-                      hydrationPlan: 'Regular hydration schedule',
-                      nutritionalNotes: 'No specific nutritional requirements noted'
-                    }} />
-                  </TabsContent>
-
-                  <TabsContent value="personalcare" className="space-y-4">
-                    <PersonalCareTab personalCare={{
-                      routines: [],
-                      preferences: [],
-                      mobility: {
-                        status: 'Independent',
-                        transferAbility: 'Independent',
-                        walkingDistance: 'Unlimited',
-                        stairs: 'Independent',
-                        notes: 'No mobility restrictions'
-                      }
-                    }} />
-                  </TabsContent>
-                  
-                  <TabsContent value="risk" className="space-y-4">
-                    <RiskTab riskAssessments={[]} />
-                  </TabsContent>
-                  
-                  <TabsContent value="serviceplan" className="space-y-4">
-                    <ServicePlanTab serviceActions={[]} />
-                  </TabsContent>
-                  
-                  <TabsContent value="serviceactions" className="space-y-4">
-                    <ServiceActionsTab serviceActions={[]} />
-                  </TabsContent>
-
-                  <TabsContent value="eventslogs" className="space-y-4">
-                    <EventsLogsTab 
-                      carePlanId={transformedCarePlan.id}
-                      patientName={transformedCarePlan.patientName}
-                      onAddEvent={() => setEventDialogOpen(true)}
-                    />
-                  </TabsContent>
-                </Tabs>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="overflow-hidden border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                        <CardHeader className="pb-3 bg-gradient-to-r from-med-50 to-white border-b border-med-100">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <Heart className="h-5 w-5 text-med-600" />
+                            <span className="bg-gradient-to-r from-med-700 to-med-500 bg-clip-text text-transparent">Medical Information</span>
+                          </CardTitle>
+                          <CardDescription>Allergies, conditions, and current medications</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                          <div className="space-y-6">
+                            <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                              <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+                                <AlertTriangle className="h-5 w-5 mr-2 text-red-500" />
+                                Allergies
+                              </h3>
+                              <div className="flex flex-wrap gap-2">
+                                {mockPatientData.allergies.map((allergy, index) => (
+                                  <Badge key={index} variant="outline" className="bg-red-50 text-red-700 border-red-200 px-3 py-1 hover:bg-red-100 transition-colors">
+                                    {allergy}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                              <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+                                <FileBarChart2 className="h-5 w-5 mr-2 text-med-600" />
+                                Medical Conditions
+                              </h3>
+                              <div className="flex flex-wrap gap-2">
+                                {mockPatientData.medicalConditions.map((condition, index) => (
+                                  <Badge key={index} variant="outline" className="bg-med-50 text-med-700 border-med-200 px-3 py-1 hover:bg-med-100 transition-colors">
+                                    {condition}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                              <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+                                <Activity className="h-5 w-5 mr-2 text-med-600" />
+                                Medications
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {mockPatientData.medications.map((medication, index) => (
+                                  <MedicationCard key={index} medication={medication} />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    <TabsContent value="aboutme" className="space-y-4">
+                      <AboutMeTab aboutMe={mockPatientData.aboutMe} />
+                    </TabsContent>
+                    
+                    <TabsContent value="goals" className="space-y-4">
+                      <GoalsTab goals={mockPatientData.goals} />
+                    </TabsContent>
+                    
+                    <TabsContent value="activities" className="space-y-4">
+                      <ActivitiesTab 
+                        activities={mockPatientData.activities} 
+                        onAddActivity={() => setActivityDialogOpen(true)}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="notes" className="space-y-4">
+                      <NotesTab 
+                        notes={mockPatientData.notes} 
+                        onAddNote={() => setNoteDialogOpen(true)}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="documents" className="space-y-4">
+                      <DocumentsTab 
+                        documents={mockPatientData.documents} 
+                        onUploadDocument={() => setDocumentDialogOpen(true)}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="assessments" className="space-y-4">
+                      <AssessmentsTab assessments={mockPatientData.assessments} />
+                    </TabsContent>
+                    
+                    <TabsContent value="equipment" className="space-y-4">
+                      <EquipmentTab equipment={mockPatientData.equipment} />
+                    </TabsContent>
+                    
+                    <TabsContent value="dietary" className="space-y-4">
+                      <DietaryTab dietaryRequirements={mockPatientData.dietaryRequirements} />
+                    </TabsContent>
+                    
+                    <TabsContent value="personalcare" className="space-y-4">
+                      <PersonalCareTab personalCare={mockPatientData.personalCare} />
+                    </TabsContent>
+                    
+                    <TabsContent value="risk" className="space-y-4">
+                      <RiskTab riskAssessments={mockPatientData.riskAssessments} />
+                    </TabsContent>
+                    
+                    <TabsContent value="serviceplan" className="space-y-4">
+                      <ServicePlanTab serviceActions={mockPatientData.serviceActions} />
+                    </TabsContent>
+                    
+                    <TabsContent value="serviceactions" className="space-y-4">
+                      <ServiceActionsTab serviceActions={mockPatientData.serviceActions} />
+                    </TabsContent>
+                    
+                    <TabsContent value="eventslogs" className="space-y-4">
+                      <EventsLogsTab 
+                        carePlanId={carePlan.id}
+                        patientName={carePlan.patientName}
+                        onAddEvent={() => setEventDialogOpen(true)}
+                      />
+                    </TabsContent>
+                  </Tabs>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
-
-      {/* Dialog Components */}
+      
       <AddNoteDialog 
-        open={noteDialogOpen}
+        open={noteDialogOpen} 
         onOpenChange={setNoteDialogOpen}
         onSave={handleSaveNote}
       />
       
       <ScheduleFollowUpDialog 
-        open={followUpDialogOpen}
+        open={followUpDialogOpen} 
         onOpenChange={setFollowUpDialogOpen}
         onSave={handleSaveFollowUp}
       />
       
       <RecordActivityDialog 
-        open={activityDialogOpen}
+        open={activityDialogOpen} 
         onOpenChange={setActivityDialogOpen}
         onSave={handleSaveActivity}
       />
       
-      <UploadDocumentDialog 
+      <UploadDocumentDialog
         open={documentDialogOpen}
         onOpenChange={setDocumentDialogOpen}
         onSave={handleSaveDocument}
       />
-      
-      <AddEventDialog 
+
+      <AddEventDialog
         open={eventDialogOpen}
         onOpenChange={setEventDialogOpen}
         onSave={handleSaveEvent}
-        carePlanId={transformedCarePlan.id}
-        patientName={transformedCarePlan.patientName}
-        patientId={transformedCarePlan.patientId}
+        carePlanId={carePlan?.id || ""}
+        patientName={carePlan?.patientName || ""}
+        patientId={carePlan?.patientId || ""}
       />
     </div>
+  );
+};
+
+interface InfoCardProps {
+  icon: React.ReactNode;
+  title: string;
+  items: { label: string; value: string }[];
+}
+
+const InfoCard: React.FC<InfoCardProps> = ({ icon, title, items }) => {
+  return (
+    <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+      <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+        {icon}
+        <span className="ml-2">{title}</span>
+      </h3>
+      <div className="space-y-3">
+        {items.map((item, index) => (
+          <div key={index} className="grid grid-cols-2 gap-2">
+            <p className="text-sm font-medium text-gray-500">{item.label}</p>
+            <p className="text-sm text-gray-700">{item.value}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+interface MedicationCardProps {
+  medication: {
+    name: string;
+    dosage: string;
+    frequency: string;
+    purpose: string;
+  };
+}
+
+const MedicationCard: React.FC<MedicationCardProps> = ({ medication }) => {
+  return (
+    <HoverCard>
+      <HoverCardTrigger asChild>
+        <div className="p-4 rounded-lg bg-white border border-med-100 hover:border-med-300 shadow-sm hover:shadow-md transition-all cursor-pointer">
+          <div className="flex justify-between items-start">
+            <div>
+              <h4 className="font-medium text-med-700">{medication.name}</h4>
+              <p className="text-sm text-gray-600">{medication.dosage}</p>
+            </div>
+            <Badge variant="outline" className="bg-med-50 text-med-600 border-med-200">
+              {medication.frequency}
+            </Badge>
+          </div>
+        </div>
+      </HoverCardTrigger>
+      <HoverCardContent className="w-80">
+        <div className="space-y-2">
+          <h4 className="font-semibold text-med-700">{medication.name}</h4>
+          <div className="grid grid-cols-2 gap-y-2 text-sm">
+            <span className="text-gray-500">Dosage:</span>
+            <span>{medication.dosage}</span>
+            <span className="text-gray-500">Frequency:</span>
+            <span>{medication.frequency}</span>
+            <span className="text-gray-500">Purpose:</span>
+            <span>{medication.purpose}</span>
+          </div>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
   );
 };
 
