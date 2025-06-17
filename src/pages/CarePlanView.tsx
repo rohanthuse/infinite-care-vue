@@ -476,6 +476,9 @@ const CarePlanView = () => {
         open={eventDialogOpen}
         onOpenChange={setEventDialogOpen}
         onSave={handleSaveEvent}
+        carePlanId={transformedCarePlan.id}
+        patientName={transformedCarePlan.patientName}
+        patientId={transformedCarePlan.patientId}
       />
     </div>
   );
