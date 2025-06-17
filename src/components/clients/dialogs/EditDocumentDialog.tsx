@@ -1,9 +1,9 @@
 
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Upload, FileText } from "lucide-react";
+import { Edit } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
+import { ClientDocument } from "@/hooks/useClientDocuments";
 
 const formSchema = z.object({
   name: z.string().min(1, "Document name is required"),
@@ -40,20 +40,14 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface UploadDocumentDialogProps {
+interface EditDocumentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (document: FormValues & { file: File }) => Promise<void>;
+  onSave: (document: { id: string; name: string; type: string; uploaded_by: string }) => void;
+  document: ClientDocument | null;
 }
 
-export function UploadDocumentDialog({ 
-  open, 
-  onOpenChange, 
-  onSave 
-}: UploadDocumentDialogProps) {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  
+export function EditDocumentDialog({ open, onOpenChange, onSave, document }: EditDocumentDialogProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -63,82 +57,42 @@ export function UploadDocumentDialog({
     },
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      // Auto-fill document name from filename
-      if (!form.getValues('name')) {
-        form.setValue('name', file.name);
-      }
+  useEffect(() => {
+    if (document && open) {
+      form.setValue("name", document.name);
+      form.setValue("type", document.type);
+      form.setValue("uploaded_by", document.uploaded_by);
     }
-  };
+  }, [document, open, form]);
 
-  async function onSubmit(data: FormValues) {
-    if (!selectedFile) {
-      toast.error("No file selected", {
-        description: "Please select a file to upload"
-      });
-      return;
-    }
-
-    setIsUploading(true);
-    try {
-      await onSave({
-        ...data,
-        file: selectedFile
-      });
-      
-      // Reset form and close dialog on success
-      form.reset();
-      setSelectedFile(null);
-      onOpenChange(false);
-    } catch (error) {
-      console.error('Upload error in dialog:', error);
-      // Error handling is done in the parent component via mutations
-    } finally {
-      setIsUploading(false);
-    }
+  function onSubmit(data: FormValues) {
+    if (!document) return;
+    
+    onSave({
+      id: document.id,
+      name: data.name,
+      type: data.type,
+      uploaded_by: data.uploaded_by
+    });
+    onOpenChange(false);
   }
+
+  if (!document) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-blue-600">
-            <FileText className="h-5 w-5" />
-            Upload Document
+            <Edit className="h-5 w-5" />
+            Edit Document
           </DialogTitle>
           <DialogDescription>
-            Upload a new document for this client
+            Modify the document details below
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Select File</label>
-              <div className="flex items-center justify-center w-full">
-                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <Upload className="w-8 h-8 mb-4 text-gray-500" />
-                    <p className="mb-2 text-sm text-gray-500">
-                      <span className="font-semibold">Click to upload</span> or drag and drop
-                    </p>
-                    <p className="text-xs text-gray-500">PDF, DOC, DOCX, JPG, PNG (MAX. 10MB)</p>
-                  </div>
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    onChange={handleFileChange}
-                  />
-                </label>
-              </div>
-              {selectedFile && (
-                <p className="text-sm text-green-600">Selected: {selectedFile.name}</p>
-              )}
-            </div>
-
             <FormField
               control={form.control}
               name="name"
@@ -159,7 +113,7 @@ export function UploadDocumentDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Document Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select document type" />
@@ -186,7 +140,7 @@ export function UploadDocumentDialog({
                 <FormItem>
                   <FormLabel>Uploaded By</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your name" {...field} />
+                    <Input placeholder="Uploader name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -194,12 +148,10 @@ export function UploadDocumentDialog({
             />
 
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isUploading}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isUploading}>
-                {isUploading ? "Uploading..." : "Upload Document"}
-              </Button>
+              <Button type="submit">Save Changes</Button>
             </DialogFooter>
           </form>
         </Form>
