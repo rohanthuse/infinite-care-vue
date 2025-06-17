@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -215,13 +216,14 @@ const useCarePlans = (branchId: string | undefined) => {
 };
 
 export const CareTab = ({ branchId, branchName }: CareTabProps) => {
+  // Move ALL hooks to the top, before any conditional logic
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Use the new hook to fetch care plans
+  // Use the hook to fetch care plans - MUST be at the top
   const { data: carePlans = [], isLoading, error } = useCarePlans(branchId);
   
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -234,7 +236,13 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const [dateRangeStart, setDateRangeStart] = useState<Date | undefined>(undefined);
   const [dateRangeEnd, setDateRangeEnd] = useState<Date | undefined>(undefined);
   const [isFiltering, setIsFiltering] = useState(false);
+
+  // useEffect hooks MUST also be at the top
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, assignedToFilter, dateRangeStart, dateRangeEnd]);
   
+  // NOW we can do conditional rendering after all hooks are declared
   if (isLoading) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
