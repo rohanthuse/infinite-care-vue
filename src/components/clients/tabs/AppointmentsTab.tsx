@@ -1,11 +1,12 @@
 
 import React, { useState } from "react";
-import { format } from "date-fns";
-import { Calendar, Clock, MapPin, Plus, User } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { Calendar, Clock, MapPin, Plus, User, Edit } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { NewBookingDialog } from "@/components/bookings/dialogs/NewBookingDialog";
+import { EditBookingDialog } from "@/components/bookings/dialogs/EditBookingDialog";
 import { useClientBookings } from "@/hooks/useClientBookings";
 import { useBranchCarers } from "@/data/hooks/useBranchCarers";
 import { useBranchServices } from "@/data/hooks/useBranchServices";
@@ -17,6 +18,9 @@ interface AppointmentsTabProps {
 
 export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) => {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  
   const { data: bookings = [], isLoading } = useClientBookings(clientId);
   const params = useParams();
   const branchId = params.id;
@@ -27,6 +31,11 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
 
   const handleScheduleAppointment = () => {
     setIsScheduleDialogOpen(true);
+  };
+
+  const handleEditAppointment = (booking: any) => {
+    setSelectedBooking(booking);
+    setIsEditDialogOpen(true);
   };
 
   if (isLoading) {
@@ -51,6 +60,26 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
       default:
         return 'bg-blue-100 text-blue-800';
     }
+  };
+
+  const getAppointmentStatus = (booking: any) => {
+    const now = new Date();
+    const startTime = parseISO(booking.start_time);
+    const endTime = parseISO(booking.end_time);
+
+    if (now > endTime) {
+      return 'completed';
+    } else if (now >= startTime) {
+      return 'in-progress';
+    } else {
+      return booking.status || 'confirmed';
+    }
+  };
+
+  const canEditAppointment = (booking: any) => {
+    const now = new Date();
+    const startTime = parseISO(booking.start_time);
+    return now < startTime; // Can only edit if appointment hasn't started
   };
 
   return (
@@ -78,20 +107,34 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
           ) : (
             <div className="space-y-4">
               {bookings.map((booking) => {
-                const startDate = new Date(booking.start_time);
-                const endDate = new Date(booking.end_time);
+                const startDate = parseISO(booking.start_time);
+                const endDate = parseISO(booking.end_time);
+                const currentStatus = getAppointmentStatus(booking);
+                const canEdit = canEditAppointment(booking);
                 
                 return (
-                  <div key={booking.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                  <div 
+                    key={booking.id} 
+                    className={`border rounded-lg p-4 transition-all ${
+                      canEdit ? 'hover:shadow-md cursor-pointer hover:bg-gray-50' : 'hover:shadow-sm'
+                    }`}
+                    onClick={() => canEdit && handleEditAppointment(booking)}
+                  >
                     <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium">{booking.service_name}</h3>
-                          <Badge variant="outline" className={getStatusColor(booking.status)}>
-                            {booking.status}
+                      <div className="space-y-2 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-medium">{booking.service_name || 'Service Not Selected'}</h3>
+                          <Badge variant="outline" className={getStatusColor(currentStatus)}>
+                            {currentStatus === 'in-progress' ? 'In Progress' : 
+                             currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1)}
                           </Badge>
+                          {canEdit && (
+                            <Badge variant="outline" className="text-blue-600 bg-blue-50 border-blue-200">
+                              Click to Edit
+                            </Badge>
+                          )}
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
                           <div className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
                             <span>{format(startDate, 'MMM dd, yyyy')}</span>
@@ -101,10 +144,10 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
                             <span>{format(startDate, 'HH:mm')} - {format(endDate, 'HH:mm')}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
                           <div className="flex items-center gap-1">
                             <User className="h-4 w-4" />
-                            <span>{booking.staff_name}</span>
+                            <span>{booking.staff_name || 'Staff Not Assigned'}</span>
                           </div>
                           {booking.revenue && (
                             <div className="flex items-center gap-1">
@@ -113,6 +156,19 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
                           )}
                         </div>
                       </div>
+                      {canEdit && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="shrink-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditAppointment(booking);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 );
@@ -130,6 +186,14 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
         services={services}
         branchId={branchId}
         preSelectedClientId={clientId}
+      />
+
+      <EditBookingDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        booking={selectedBooking}
+        services={services}
+        branchId={branchId}
       />
     </div>
   );
