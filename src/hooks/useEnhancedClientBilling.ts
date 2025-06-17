@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -91,12 +90,18 @@ const fetchEnhancedClientBilling = async (clientId: string): Promise<EnhancedCli
   return (data || []) as EnhancedClientBilling[];
 };
 
-// Fetch uninvoiced bookings
+// Fetch uninvoiced bookings - only call if branchId is a valid UUID
 const fetchUninvoicedBookings = async (branchId?: string): Promise<UninvoicedBooking[]> => {
   console.log('[fetchUninvoicedBookings] Fetching uninvoiced bookings for branch:', branchId);
   
+  // Validate UUID format before making the call
+  if (!branchId || !isValidUUID(branchId)) {
+    console.log('[fetchUninvoicedBookings] Invalid or missing branch ID, returning empty array');
+    return [];
+  }
+  
   const { data, error } = await supabase.rpc('get_uninvoiced_bookings', {
-    branch_id_param: branchId || null
+    branch_id_param: branchId
   });
 
   if (error) {
@@ -106,6 +111,12 @@ const fetchUninvoicedBookings = async (branchId?: string): Promise<UninvoicedBoo
   
   console.log('[fetchUninvoicedBookings] Fetched uninvoiced bookings:', data);
   return data || [];
+};
+
+// Helper function to validate UUID format
+const isValidUUID = (uuid: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
 };
 
 // Create enhanced invoice with line items
@@ -279,7 +290,7 @@ export const useUninvoicedBookings = (branchId?: string) => {
   return useQuery({
     queryKey: ['uninvoiced-bookings', branchId],
     queryFn: () => fetchUninvoicedBookings(branchId),
-    enabled: Boolean(branchId),
+    enabled: Boolean(branchId) && isValidUUID(branchId || ''),
   });
 };
 

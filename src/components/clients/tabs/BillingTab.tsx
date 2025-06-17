@@ -1,5 +1,6 @@
 
 import React from "react";
+import { useParams } from "react-router-dom";
 import { EnhancedBillingTab } from "./EnhancedBillingTab";
 
 interface BillingTabProps {
@@ -8,9 +9,16 @@ interface BillingTabProps {
 }
 
 export const BillingTab: React.FC<BillingTabProps> = ({ clientId }) => {
-  // For now, we'll use a placeholder branch ID. In a real implementation,
-  // this would come from the client's associated branch or current user context
-  const branchId = "placeholder-branch-id";
+  const { branchId } = useParams();
+  
+  if (!branchId) {
+    console.error('Branch ID not found in route parameters');
+    return (
+      <div className="flex items-center justify-center h-32">
+        <p className="text-red-600">Error: Branch information not available</p>
+      </div>
+    );
+  }
 
   return <EnhancedBillingTab clientId={clientId} branchId={branchId} />;
 };

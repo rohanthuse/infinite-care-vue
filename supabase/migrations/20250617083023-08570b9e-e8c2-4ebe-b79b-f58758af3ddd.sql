@@ -1,5 +1,4 @@
 
-
 -- Drop the incorrect policies that allow any authenticated user to modify invoices
 DROP POLICY IF EXISTS "Users can insert invoices" ON public.client_billing;
 DROP POLICY IF EXISTS "Users can update invoices" ON public.client_billing;
@@ -69,4 +68,3 @@ CREATE POLICY "Clients can view their own invoices" ON public.client_billing
       AND c.email = (SELECT email FROM auth.users WHERE id = auth.uid())
     )
   );
-
