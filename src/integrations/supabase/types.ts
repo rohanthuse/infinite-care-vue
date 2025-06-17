@@ -649,6 +649,57 @@ export type Database = {
           },
         ]
       }
+      client_care_plan_approvals: {
+        Row: {
+          action: string
+          care_plan_id: string
+          comments: string | null
+          created_at: string
+          id: string
+          new_status: string | null
+          performed_at: string
+          performed_by: string
+          previous_status: string | null
+        }
+        Insert: {
+          action: string
+          care_plan_id: string
+          comments?: string | null
+          created_at?: string
+          id?: string
+          new_status?: string | null
+          performed_at?: string
+          performed_by: string
+          previous_status?: string | null
+        }
+        Update: {
+          action?: string
+          care_plan_id?: string
+          comments?: string | null
+          created_at?: string
+          id?: string
+          new_status?: string | null
+          performed_at?: string
+          performed_by?: string
+          previous_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_care_plan_approvals_care_plan_id_fkey"
+            columns: ["care_plan_id"]
+            isOneToOne: false
+            referencedRelation: "client_care_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_care_plan_approvals_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_care_plan_goals: {
         Row: {
           care_plan_id: string
@@ -692,12 +743,19 @@ export type Database = {
       }
       client_care_plans: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
+          care_plan_type: string | null
           client_id: string
           created_at: string
+          created_by_staff_id: string | null
           end_date: string | null
           goals_progress: number | null
           id: string
+          notes: string | null
+          priority: string | null
           provider_name: string
+          rejection_reason: string | null
           review_date: string | null
           start_date: string
           status: string
@@ -705,12 +763,19 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          care_plan_type?: string | null
           client_id: string
           created_at?: string
+          created_by_staff_id?: string | null
           end_date?: string | null
           goals_progress?: number | null
           id?: string
+          notes?: string | null
+          priority?: string | null
           provider_name: string
+          rejection_reason?: string | null
           review_date?: string | null
           start_date: string
           status?: string
@@ -718,12 +783,19 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          care_plan_type?: string | null
           client_id?: string
           created_at?: string
+          created_by_staff_id?: string | null
           end_date?: string | null
           goals_progress?: number | null
           id?: string
+          notes?: string | null
+          priority?: string | null
           provider_name?: string
+          rejection_reason?: string | null
           review_date?: string | null
           start_date?: string
           status?: string
@@ -732,10 +804,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "client_care_plans_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "client_care_plans_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_care_plans_created_by_staff_id_fkey"
+            columns: ["created_by_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
         ]
