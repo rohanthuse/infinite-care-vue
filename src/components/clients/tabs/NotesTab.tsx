@@ -1,13 +1,15 @@
 
 import React, { useState } from "react";
 import { format } from "date-fns";
-import { MessageCircle, Clock, User, Plus } from "lucide-react";
+import { MessageCircle, Clock, Plus, Edit, Trash2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { AddNoteDialog } from "../dialogs/AddNoteDialog";
-import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
+import { EditNoteDialog } from "../dialogs/EditNoteDialog";
+import { DeleteNoteDialog } from "../dialogs/DeleteNoteDialog";
+import { useClientNotes, useCreateClientNote, useUpdateClientNote, useDeleteClientNote, ClientNote } from "@/hooks/useClientNotes";
 
 interface NotesTabProps {
   clientId: string;
@@ -16,8 +18,17 @@ interface NotesTabProps {
 
 export const NotesTab: React.FC<NotesTabProps> = ({ clientId }) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<ClientNote | null>(null);
+  
   const { data: notes = [], isLoading } = useClientNotes(clientId);
   const createNoteMutation = useCreateClientNote();
+  const updateNoteMutation = useUpdateClientNote();
+  const deleteNoteMutation = useDeleteClientNote();
+
+  // For now, assuming all users are super admins - this should be replaced with proper role checking
+  const canManageNotes = true;
 
   const handleAddNote = async (noteData: { title: string; content: string }) => {
     await createNoteMutation.mutateAsync({
@@ -26,6 +37,32 @@ export const NotesTab: React.FC<NotesTabProps> = ({ clientId }) => {
       content: noteData.content,
       author: "Current User", // This should be replaced with actual user info
     });
+  };
+
+  const handleEditNote = (note: ClientNote) => {
+    setSelectedNote(note);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateNote = async (noteData: { id: string; title: string; content: string }) => {
+    await updateNoteMutation.mutateAsync({
+      id: noteData.id,
+      title: noteData.title,
+      content: noteData.content,
+    });
+    setSelectedNote(null);
+  };
+
+  const handleDeleteNote = (note: ClientNote) => {
+    setSelectedNote(note);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (selectedNote) {
+      await deleteNoteMutation.mutateAsync(selectedNote.id);
+      setSelectedNote(null);
+    }
   };
 
   if (isLoading) {
@@ -63,7 +100,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({ clientId }) => {
               notes.map((note) => (
                 <div 
                   key={note.id} 
-                  className="border rounded-lg p-4 hover:shadow-md transition-all duration-300 bg-white"
+                  className="border rounded-lg p-4 hover:shadow-md transition-all duration-300 bg-white group"
                 >
                   <div className="flex items-start gap-3">
                     <Avatar className="h-10 w-10">
@@ -79,10 +116,32 @@ export const NotesTab: React.FC<NotesTabProps> = ({ clientId }) => {
                             {note.author}
                           </Badge>
                         </div>
-                        <span className="text-xs text-gray-500 flex items-center">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {format(new Date(note.created_at), 'MMM dd, yyyy')}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500 flex items-center">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {format(new Date(note.created_at), 'MMM dd, yyyy')}
+                          </span>
+                          {canManageNotes && (
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditNote(note)}
+                                className="h-8 w-8 p-0 hover:bg-blue-50"
+                              >
+                                <Edit className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteNote(note)}
+                                className="h-8 w-8 p-0 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <p className="text-gray-700">{note.content}</p>
                     </div>
@@ -98,6 +157,20 @@ export const NotesTab: React.FC<NotesTabProps> = ({ clientId }) => {
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onSave={handleAddNote}
+      />
+
+      <EditNoteDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onSave={handleUpdateNote}
+        note={selectedNote}
+      />
+
+      <DeleteNoteDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleConfirmDelete}
+        note={selectedNote}
       />
     </div>
   );
