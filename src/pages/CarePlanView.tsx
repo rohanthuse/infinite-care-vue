@@ -48,6 +48,7 @@ import { resolveCarePlanId, getDisplayCarePlanId } from "@/utils/carePlanIdMappi
 import { useCarePlanData } from "@/hooks/useCarePlanData";
 import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
 import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
+import { useAuth } from "@/hooks/useAuth";
 
 const mockCarePlans = [
   {
@@ -76,6 +77,7 @@ const CarePlanView = () => {
   const { id: branchId, branchName, carePlanId } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("personal");
+  const { user } = useAuth();
   
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [followUpDialogOpen, setFollowUpDialogOpen] = useState(false);
@@ -111,6 +113,29 @@ const CarePlanView = () => {
     isNotesLoading,
     notesError
   });
+
+  // Get current user's display name
+  const getCurrentUserName = () => {
+    if (!user) return "Unknown User";
+    
+    // Use user metadata first name and last name if available
+    const firstName = user.user_metadata?.first_name;
+    const lastName = user.user_metadata?.last_name;
+    
+    if (firstName && lastName) {
+      return `${firstName} ${lastName}`;
+    }
+    
+    // Fall back to email if no name is available
+    return user.email || "Unknown User";
+  };
+
+  // Get current user's role and name for author field
+  const getCurrentUserAuthor = () => {
+    const userName = getCurrentUserName();
+    // For now, assume admin role - this could be enhanced with proper role detection
+    return `Admin - ${userName}`;
+  };
 
   // Create unified care plan object combining database and mock data
   const carePlan = carePlanData ? {
@@ -175,7 +200,7 @@ const CarePlanView = () => {
         client_id: clientId,
         title: "Care Note",
         content: note.content,
-        author: carePlan?.assignedTo || "Care Provider",
+        author: getCurrentUserAuthor(), // Use current authenticated user
       });
 
       toast({

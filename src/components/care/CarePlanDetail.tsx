@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { X, FileEdit, Download, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
@@ -7,6 +6,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { useComprehensiveCarePlanData } from "@/hooks/useCarePlanData";
 import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
+import { useAuth } from "@/hooks/useAuth";
 
 import { PatientHeader } from "./PatientHeader";
 import { CarePlanSidebar } from "./CarePlanSidebar";
@@ -55,6 +55,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   onAddEvent
 }) => {
   const [activeTab, setActiveTab] = useState("personal");
+  const { user } = useAuth();
 
   // Fetch comprehensive care plan data
   const {
@@ -86,6 +87,29 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     if (onAddNote) {
       onAddNote();
     }
+  };
+
+  // Get current user's display name
+  const getCurrentUserName = () => {
+    if (!user) return "Unknown User";
+    
+    // Use user metadata first name and last name if available
+    const firstName = user.user_metadata?.first_name;
+    const lastName = user.user_metadata?.last_name;
+    
+    if (firstName && lastName) {
+      return `${firstName} ${lastName}`;
+    }
+    
+    // Fall back to email if no name is available
+    return user.email || "Unknown User";
+  };
+
+  // Get current user's role and name for author field
+  const getCurrentUserAuthor = () => {
+    const userName = getCurrentUserName();
+    // For now, assume admin role - this could be enhanced with proper role detection
+    return `Admin - ${userName}`;
   };
 
   if (isLoading) {
@@ -279,7 +303,10 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="notes">
-                  <NotesTab notes={notesToDisplay} onAddNote={handleAddNoteWithDB} />
+                  <NotesTab 
+                    notes={notesToDisplay} 
+                    onAddNote={handleAddNoteWithDB} 
+                  />
                 </TabsContent>
                 
                 <TabsContent value="documents">

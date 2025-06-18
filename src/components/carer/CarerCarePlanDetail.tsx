@@ -7,6 +7,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { generatePDF, exportCarePlanPDF } from "@/utils/pdfGenerator";
 import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
+import { useAuth } from "@/hooks/useAuth";
 
 import { CarerCarePlanSidebar } from "./CarerCarePlanSidebar";
 import { CarerCarePlanTabBar } from "./CarerCarePlanTabBar";
@@ -66,6 +67,7 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
   const [showAddEventDialog, setShowAddEventDialog] = useState(false);
   const [showUpdateCarePlanDialog, setShowUpdateCarePlanDialog] = useState(false);
   const [patientDataState, setPatientDataState] = useState(mockPatientData);
+  const { user } = useAuth();
 
   // Database hooks for notes
   const { data: dbNotes = [], isLoading: notesLoading } = useClientNotes(carePlan.id);
@@ -78,6 +80,29 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
       note: "",
     },
   });
+
+  // Get current user's display name
+  const getCurrentUserName = () => {
+    if (!user) return "Unknown User";
+    
+    // Use user metadata first name and last name if available
+    const firstName = user.user_metadata?.first_name;
+    const lastName = user.user_metadata?.last_name;
+    
+    if (firstName && lastName) {
+      return `${firstName} ${lastName}`;
+    }
+    
+    // Fall back to email if no name is available
+    return user.email || "Unknown User";
+  };
+
+  // Get current user's role and name for author field
+  const getCurrentUserAuthor = () => {
+    const userName = getCurrentUserName();
+    // For carers, use "Carer" role
+    return `Carer - ${userName}`;
+  };
 
   const handleExportCarePlan = () => {
     // Use the enhanced export function instead of the simple generatePDF
@@ -140,7 +165,7 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
         client_id: carePlan.id,
         title: "Care Note",
         content: values.note,
-        author: "Carer",
+        author: getCurrentUserAuthor(), // Use current authenticated user
       });
       setShowAddNoteDialog(false);
       noteForm.reset();
