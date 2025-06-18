@@ -1,246 +1,249 @@
-
-// Create a separate file for mock data
 export const mockPatientData = {
+  patientName: "John Michael",
+  patientId: "PT-2356",
+  dateOfBirth: new Date("1950-03-15"),
+  age: 73,
   gender: "Male",
-  dateOfBirth: new Date("1956-03-15"),
-  address: "123 Main Street, Cityville, State, 12345",
-  phone: "(555) 123-4567",
-  email: "john.michael@example.com",
-  emergencyContact: "Sarah Michael (Daughter) - (555) 987-6543",
+  address: "123 Oak Street, London, SW1A 1AA",
+  phone: "+44 20 7946 0958",
+  email: "john.michael@email.com",
+  emergencyContact: "Sarah Michael (Daughter) - +44 20 7946 0959",
   preferredLanguage: "English",
-  allergies: ["Penicillin", "Shellfish"],
-  medicalConditions: ["Hypertension", "Type 2 Diabetes", "Arthritis"],
+  allergies: ["Penicillin", "Shellfish", "Latex"],
+  medicalConditions: ["Diabetes Type 2", "Hypertension", "Arthritis"],
   medications: [
-    { name: "Lisinopril", dosage: "10mg", frequency: "Once daily", purpose: "Blood pressure" },
-    { name: "Metformin", dosage: "500mg", frequency: "Twice daily", purpose: "Diabetes management" },
-    { name: "Ibuprofen", dosage: "400mg", frequency: "As needed", purpose: "Pain relief" }
+    {
+      name: "Metformin",
+      dosage: "500mg",
+      frequency: "Twice daily",
+      purpose: "Blood sugar control"
+    },
+    {
+      name: "Lisinopril", 
+      dosage: "10mg",
+      frequency: "Once daily",
+      purpose: "Blood pressure management"
+    },
+    {
+      name: "Ibuprofen",
+      dosage: "400mg", 
+      frequency: "As needed",
+      purpose: "Pain relief"
+    }
   ],
-  aboutMe: {
-    preferences: [
-      "Prefers to be called 'John' rather than 'Mr. Michael'",
-      "Enjoys reading the newspaper in the morning",
-      "Prefers showers in the evening rather than morning",
-      "Enjoys classical music during relaxation time"
-    ],
-    routines: [
-      "Morning walk after breakfast (weather permitting)",
-      "Afternoon nap between 2-3 PM",
-      "Evening television from 7-9 PM",
-      "Bedtime reading for 30 minutes before sleep"
-    ],
-    interests: [
-      "Classical music (particularly Mozart and Beethoven)",
-      "Gardening (maintains a small herb garden)",
-      "Chess (intermediate player)",
-      "History documentaries"
-    ],
-    dislikes: [
-      "Loud environments",
-      "Spicy food",
-      "Being rushed during activities",
-      "Cold room temperatures"
-    ]
-  },
   goals: [
-    { 
-      title: "Improve mobility", 
-      status: "In Progress", 
-      target: "Walk unassisted for 15 minutes", 
-      notes: "Currently at 8 minutes with walking frame" 
+    {
+      title: "Improve Mobility",
+      description: "Increase walking distance to 500 meters without assistance",
+      status: "in-progress",
+      target: "500 meters",
+      progress: 65,
+      notes: "Good progress with physiotherapy sessions"
     },
-    { 
-      title: "Medication adherence", 
-      status: "Active", 
-      target: "100% medication compliance", 
-      notes: "Using pill organizer effectively" 
+    {
+      title: "Medication Compliance",
+      description: "Take all medications as prescribed without reminders",
+      status: "completed",
+      target: "100% compliance",
+      progress: 100,
+      notes: "Successfully using pill organizer system"
     },
-    { 
-      title: "Blood glucose management", 
-      status: "Active", 
-      target: "Maintain levels between 80-130 mg/dL", 
-      notes: "Morning readings occasionally high" 
-    },
+    {
+      title: "Social Engagement",
+      description: "Participate in community activities at least twice per week",
+      status: "not-started",
+      target: "2 activities per week",
+      progress: 0,
+      notes: "Waiting for community center to reopen"
+    }
   ],
   activities: [
-    { 
-      date: new Date("2023-11-10"), 
-      action: "Medication review", 
-      performer: "Dr. Emma Lewis", 
-      status: "Completed" 
+    {
+      date: new Date("2023-11-05"),
+      action: "Physical therapy session completed",
+      performer: "Lead Carer Emma Wilson",
+      status: "completed"
     },
-    { 
-      date: new Date("2023-11-05"), 
-      action: "Physical assessment", 
-      performer: "Nurse David Brown", 
-      status: "Completed" 
+    {
+      date: new Date("2023-11-04"),
+      action: "Medication review and compliance check",
+      performer: "Admin Sarah Johnson",
+      status: "completed"
     },
-    { 
-      date: new Date("2023-10-25"), 
-      action: "Care plan update", 
-      performer: "Dr. Sarah Johnson", 
-      status: "Completed" 
+    {
+      date: new Date("2023-11-03"),
+      action: "Blood pressure monitoring",
+      performer: "Senior Carer James Miller",
+      status: "completed"
     },
+    {
+      date: new Date("2023-11-02"),
+      action: "Weekly care plan review",
+      performer: "Care Team Leader Rachel Adams",
+      status: "completed"
+    }
   ],
   notes: [
-    { 
-      date: new Date("2023-11-08"), 
-      author: "Nurse David Brown", 
-      content: "Patient reported mild discomfort in left knee. Applied cold compress and recommended rest. Will monitor." 
+    {
+      date: new Date("2023-11-05"),
+      author: "Admin",
+      content: "Patient showing excellent progress with mobility exercises. Recommend continuing current physiotherapy regime."
     },
-    { 
-      date: new Date("2023-11-01"), 
-      author: "Dr. Sarah Johnson", 
-      content: "Blood pressure readings have improved with current medication. Continuing current dosage and monitoring." 
+    {
+      date: new Date("2023-11-04"),
+      author: "Carer",
+      content: "Blood sugar levels stable. Patient reports feeling more energetic and positive."
     },
-    { 
-      date: new Date("2023-10-20"), 
-      author: "Dr. Emma Lewis", 
-      content: "Patient has been adhering well to diabetes management plan. Blood glucose levels stable." 
-    },
+    {
+      date: new Date("2023-11-03"),
+      author: "Admin",
+      content: "Family meeting scheduled for next week to discuss care plan updates and progress."
+    }
   ],
   documents: [
-    { 
-      name: "Medical History Summary", 
-      date: new Date("2023-09-15"), 
-      type: "PDF", 
-      author: "Dr. Emma Lewis" 
+    {
+      name: "Care Plan Assessment 2023",
+      type: "Assessment",
+      date: new Date("2023-11-01"),
+      author: "Senior Carer Rachel Adams"
     },
-    { 
-      name: "Diabetes Management Plan", 
-      date: new Date("2023-09-20"), 
-      type: "DOCX", 
-      author: "Dr. Sarah Johnson" 
+    {
+      name: "Medical History Summary",
+      type: "Medical Record",
+      date: new Date("2023-10-15"),
+      author: "Admin Sarah Johnson"
     },
-    { 
-      name: "Physical Therapy Assessment", 
-      date: new Date("2023-10-10"), 
-      type: "PDF", 
-      author: "Nurse David Brown" 
-    },
+    {
+      name: "Medication Chart Update",
+      type: "Medication",
+      date: new Date("2023-10-30"),
+      author: "Lead Carer Emma Wilson"
+    }
   ],
   assessments: [
-    { 
-      name: "Mobility Assessment", 
-      date: new Date("2023-10-15"), 
-      status: "Completed", 
-      performer: "Nurse David Brown",
-      results: "Patient shows limited mobility in left leg. Can walk with frame for 8-10 minutes before requiring rest. Balance is fair but should be monitored."
+    {
+      name: "Mobility Assessment",
+      date: new Date("2023-10-15"),
+      performer: "Senior Carer Rachel Adams",
+      status: "completed",
+      results: "Moderate mobility limitations, requires walking aid"
     },
-    { 
-      name: "Cognitive Assessment", 
-      date: new Date("2023-09-25"), 
-      status: "Completed", 
-      performer: "Dr. Emma Lewis",
-      results: "Patient is alert and oriented. Memory function is good, with slight delay in recall of recent events. No significant cognitive concerns noted."
+    {
+      name: "Cognitive Assessment",
+      date: new Date("2023-10-20"),
+      performer: "Care Team Leader",
+      status: "completed", 
+      results: "Good cognitive function, no significant concerns"
     },
+    {
+      name: "Nutrition Assessment",
+      date: new Date("2023-10-25"),
+      performer: "Lead Carer Emma Wilson",
+      status: "completed",
+      results: "Adequate nutrition, recommend increased protein intake"
+    }
   ],
   equipment: [
-    { 
-      name: "Walking Frame", 
-      type: "Mobility Aid", 
-      status: "In Use", 
-      notes: "Checked monthly", 
-      lastInspection: new Date("2023-10-30") 
+    {
+      name: "Walking Frame",
+      type: "Mobility Aid",
+      status: "active",
+      lastInspection: new Date("2023-10-01"),
+      notes: "Good condition, height adjusted appropriately"
     },
-    { 
-      name: "Shower Chair", 
-      type: "Bathroom Aid", 
-      status: "In Use", 
-      notes: "Stable condition", 
-      lastInspection: new Date("2023-11-05") 
+    {
+      name: "Blood Pressure Monitor",
+      type: "Medical Device",
+      status: "active", 
+      lastInspection: new Date("2023-09-15"),
+      notes: "Calibrated and functioning correctly"
     },
-    { 
-      name: "Hospital Bed", 
-      type: "Bedroom Aid", 
-      status: "In Use", 
-      notes: "Electric controls working properly", 
-      lastInspection: new Date("2023-10-15") 
-    },
-    { 
-      name: "Oxygen Concentrator", 
-      type: "Medical Device", 
-      status: "Available", 
-      notes: "Only used when needed", 
-      lastInspection: new Date("2023-11-10") 
+    {
+      name: "Pill Organizer",
+      type: "Medication Aid",
+      status: "active",
+      lastInspection: new Date("2023-10-30"),
+      notes: "Weekly organizer, helps with compliance"
     }
   ],
   dietaryRequirements: {
-    mealPlan: "Low sodium diabetic diet plan",
     restrictions: [
-      { name: "Low Sodium", reason: "Hypertension management", severity: "Strict" },
-      { name: "Low Sugar", reason: "Diabetes management", severity: "Moderate" },
-      { name: "No Shellfish", reason: "Allergy", severity: "Critical" }
+      { name: "Low Sodium", reason: "Hypertension management" },
+      { name: "Diabetic Diet", reason: "Blood sugar control" }
     ],
-    preferences: [
-      "Prefers meals to be warm, not hot",
-      "Enjoys fruit as dessert",
-      "Prefers small, frequent meals",
-      "Dislikes most dairy products except cheese"
-    ],
+    preferences: ["Vegetarian options", "Soft textures"],
+    mealPlan: "3 main meals, 2 healthy snacks",
+    nutritionalNotes: "Focus on balanced nutrition with controlled carbohydrates",
     supplements: [
-      { name: "Calcium + Vitamin D", dosage: "500mg", frequency: "Daily", purpose: "Bone health" },
-      { name: "Multivitamin", dosage: "1 tablet", frequency: "Morning", purpose: "Nutritional supplement" }
+      { name: "Vitamin D", dosage: "1000 IU daily" },
+      { name: "Calcium", dosage: "500mg twice daily" }
     ],
-    hydrationPlan: "Minimum 8 glasses of water daily, monitored with checklist",
-    nutritionalNotes: "Patient struggles with maintaining adequate hydration. Family has been advised to encourage fluid intake throughout the day."
+    hydrationPlan: "8 glasses of water daily, limit caffeine"
   },
   personalCare: {
     routines: [
-      { activity: "Morning hygiene", frequency: "Daily" },
-      { activity: "Evening bath", frequency: "3 times per week" },
-      { activity: "Hair washing", frequency: "Twice weekly" },
-      { activity: "Nail care", frequency: "Weekly" }
+      { activity: "Morning hygiene", frequency: "Daily", notes: "Requires minimal assistance" },
+      { activity: "Medication administration", frequency: "As prescribed", notes: "Self-administered with supervision" },
+      { activity: "Exercise routine", frequency: "3 times per week", notes: "Chair exercises and walking" }
     ],
-    preferences: [
-      "Prefers warmer water temperature",
-      "Likes to use own toiletries",
-      "Prefers male caregiver for personal care",
-      "Likes to dress in button-up shirts"
-    ],
+    preferences: ["Shower over bath", "Morning care preferred", "Privacy important"],
     mobility: {
-      status: "Limited mobility",
-      transferAbility: "Requires one-person assist",
-      walkingDistance: "Up to 10 meters with frame",
-      stairs: "Unable to manage stairs",
-      notes: "Better mobility in the morning, fatigue increases throughout day"
+      walkingAbility: "With walking frame",
+      transferAbility: "Independent with supervision",
+      notes: "Good upper body strength, some lower limb weakness"
     }
   },
   riskAssessments: [
     {
-      type: "Fall Risk",
-      level: "Moderate",
-      lastAssessed: new Date("2023-10-20"),
-      assessedBy: "Nurse David Brown",
-      mitigationPlan: "Walking frame use, clear pathways, night light",
-      reviewDate: new Date("2023-12-20")
+      type: "Falls Risk",
+      level: "Medium",
+      lastAssessed: new Date("2023-10-01"),
+      assessedBy: "Senior Carer Rachel Adams",
+      reviewDate: new Date("2024-01-01"),
+      mitigationPlan: "Walking frame provided, regular physiotherapy, home environment assessment completed"
     },
     {
-      type: "Pressure Ulcer Risk",
+      type: "Medication Safety",
       level: "Low",
       lastAssessed: new Date("2023-10-15"),
-      assessedBy: "Dr. Emma Lewis",
-      mitigationPlan: "Regular position changes, pressure relieving mattress",
-      reviewDate: new Date("2023-12-15")
+      assessedBy: "Admin Sarah Johnson", 
+      reviewDate: new Date("2024-01-15"),
+      mitigationPlan: "Pill organizer system, weekly medication reviews, family support"
     }
   ],
   serviceActions: [
     {
-      service: "Personal Care",
-      provider: "Home Care Assistant",
+      service: "Personal Care Support",
+      provider: "Lead Carer Emma Wilson",
       frequency: "Daily",
-      duration: "45 minutes",
-      schedule: "Morning and Evening",
-      goals: ["Improve hygiene", "Maintain dignity"],
-      progress: "Meeting needs"
+      duration: "2 hours",
+      schedule: "Morning visit 9-11 AM",
+      goals: ["Maintain independence", "Ensure safety"],
+      progress: "Excellent"
     },
     {
       service: "Medication Management",
-      provider: "Nurse",
+      provider: "Admin Sarah Johnson",
       frequency: "Weekly",
-      duration: "30 minutes",
-      schedule: "Monday mornings",
-      goals: ["Medication compliance", "Health monitoring"],
-      progress: "Stable"
+      duration: "30 minutes", 
+      schedule: "Every Monday 10 AM",
+      goals: ["100% medication compliance", "Monitor side effects"],
+      progress: "Very Good"
+    },
+    {
+      service: "Physiotherapy Support",
+      provider: "Senior Carer Rachel Adams",
+      frequency: "3 times per week",
+      duration: "45 minutes",
+      schedule: "Monday, Wednesday, Friday 2 PM",
+      goals: ["Improve mobility", "Prevent falls"],
+      progress: "Good"
     }
-  ]
+  ],
+  aboutMe: {
+    background: "Retired teacher who loves reading and gardening. Lives independently with support from family and care team.",
+    hobbies: ["Reading mystery novels", "Listening to classical music", "Light gardening"],
+    preferences: ["Quiet environment", "Routine schedule", "Family involvement in care decisions"],
+    socialConnections: ["Weekly family visits", "Church community", "Neighbor support network"]
+  }
 };

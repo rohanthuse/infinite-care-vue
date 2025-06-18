@@ -25,8 +25,6 @@ const extractRoleFromAuthor = (author: string): string => {
   if (author === "Carer") return "Carer";
   if (author.includes("Admin")) return "Admin";
   if (author.includes("Carer")) return "Carer";
-  if (author.includes("Doctor") || author.includes("Dr.")) return "Doctor";
-  if (author.includes("Nurse")) return "Nurse";
   
   // Default fallback
   return "Staff";

@@ -1,108 +1,78 @@
 
 import React from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarIcon, Clock, X } from "lucide-react";
+import { z } from "zod";
+import { CalendarIcon, Clock } from "lucide-react";
 import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/components/ui/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-const formSchema = z.object({
-  title: z.string().min(3, "Title must be at least 3 characters"),
-  date: z.date({
-    required_error: "Date is required",
+const followUpSchema = z.object({
+  title: z.string().min(1, {
+    message: "Follow-up title is required.",
   }),
-  time: z.string().min(1, "Time is required"),
-  assignedTo: z.string().min(1, "Must assign to someone"),
+  date: z.date({
+    required_error: "Follow-up date is required.",
+  }),
+  time: z.string().min(1, {
+    message: "Follow-up time is required.",
+  }),
+  assignedTo: z.string().min(1, {
+    message: "Assignment is required.",
+  }),
+  priority: z.enum(["low", "medium", "high"], {
+    required_error: "Priority is required.",
+  }),
   notes: z.string().optional(),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type FollowUpFormValues = z.infer<typeof followUpSchema>;
 
 interface ScheduleFollowUpDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (followUp: FormValues) => void;
+  onSave: (followUp: FollowUpFormValues) => void;
 }
 
-export function ScheduleFollowUpDialog({ 
-  open, 
-  onOpenChange, 
-  onSave 
-}: ScheduleFollowUpDialogProps) {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+export const ScheduleFollowUpDialog: React.FC<ScheduleFollowUpDialogProps> = ({
+  open,
+  onOpenChange,
+  onSave,
+}) => {
+  const form = useForm<FollowUpFormValues>({
+    resolver: zodResolver(followUpSchema),
     defaultValues: {
       title: "",
-      date: new Date(),
-      time: "09:00",
+      date: undefined,
+      time: "",
       assignedTo: "",
+      priority: "medium",
       notes: "",
     },
   });
 
-  function onSubmit(data: FormValues) {
-    onSave(data);
+  const onSubmit = (values: FollowUpFormValues) => {
+    onSave(values);
     form.reset();
     onOpenChange(false);
-    toast({
-      title: "Follow-up scheduled",
-      description: "Your follow-up has been scheduled successfully",
-    });
-  }
-
-  // Mocked staff list for demo
-  const staffList = [
-    { id: "1", name: "Dr. Sarah Johnson" },
-    { id: "2", name: "Dr. James Wilson" },
-    { id: "3", name: "Nurse Emily Chen" },
-    { id: "4", name: "Therapist Michael Brown" },
-  ];
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-blue-600">
-            <Clock className="h-5 w-5" />
-            Schedule Follow-up
-          </DialogTitle>
+          <DialogTitle>Schedule Follow-up</DialogTitle>
           <DialogDescription>
-            Schedule a follow-up appointment for this patient
+            Schedule a follow-up appointment or task for this patient.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -112,15 +82,18 @@ export function ScheduleFollowUpDialog({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>Follow-up Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="Follow-up appointment" {...field} />
+                    <Input
+                      placeholder="e.g., Medication Review, Care Plan Assessment..."
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
+            
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -141,7 +114,7 @@ export function ScheduleFollowUpDialog({
                             {field.value ? (
                               format(field.value, "PPP")
                             ) : (
-                              <span>Pick a date</span>
+                              <span>Pick date</span>
                             )}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
@@ -154,7 +127,6 @@ export function ScheduleFollowUpDialog({
                           onSelect={field.onChange}
                           disabled={(date) => date < new Date()}
                           initialFocus
-                          className="p-3 pointer-events-auto"
                         />
                       </PopoverContent>
                     </Popover>
@@ -162,7 +134,7 @@ export function ScheduleFollowUpDialog({
                   </FormItem>
                 )}
               />
-
+              
               <FormField
                 control={form.control}
                 name="time"
@@ -170,42 +142,65 @@ export function ScheduleFollowUpDialog({
                   <FormItem>
                     <FormLabel>Time</FormLabel>
                     <FormControl>
-                      <Input type="time" {...field} />
+                      <Input
+                        type="time"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-
+            
             <FormField
               control={form.control}
               name="assignedTo"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Assigned To</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select staff member" />
+                        <SelectValue placeholder="Select care team member" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {staffList.map((staff) => (
-                        <SelectItem key={staff.id} value={staff.name}>
-                          {staff.name}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="Admin Sarah Johnson">Admin Sarah Johnson</SelectItem>
+                      <SelectItem value="Lead Carer Emma Wilson">Lead Carer Emma Wilson</SelectItem>
+                      <SelectItem value="Senior Carer Rachel Adams">Senior Carer Rachel Adams</SelectItem>
+                      <SelectItem value="Carer James Miller">Carer James Miller</SelectItem>
+                      <SelectItem value="Care Team Leader">Care Team Leader</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
+            
+            <FormField
+              control={form.control}
+              name="priority"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Priority</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select priority level" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
             <FormField
               control={form.control}
               name="notes"
@@ -214,7 +209,7 @@ export function ScheduleFollowUpDialog({
                   <FormLabel>Notes (Optional)</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Any additional notes..."
+                      placeholder="Additional notes or instructions..."
                       className="min-h-[80px]"
                       {...field}
                     />
@@ -223,16 +218,16 @@ export function ScheduleFollowUpDialog({
                 </FormItem>
               )}
             />
-
-            <DialogFooter className="gap-2 sm:gap-0">
+            
+            <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit">Schedule</Button>
+              <Button type="submit">Schedule Follow-up</Button>
             </DialogFooter>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
   );
-}
+};
