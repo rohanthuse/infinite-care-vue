@@ -93,6 +93,60 @@ const uploadClientDocument = async (params: {
   }
 };
 
+const viewClientDocument = async (filePath: string) => {
+  console.log('[viewClientDocument] Getting public URL for:', filePath);
+  
+  try {
+    const { data } = supabase.storage
+      .from('client-documents')
+      .getPublicUrl(filePath);
+
+    if (data?.publicUrl) {
+      console.log('[viewClientDocument] Opening document:', data.publicUrl);
+      window.open(data.publicUrl, '_blank');
+    } else {
+      throw new Error('Could not generate public URL for document');
+    }
+  } catch (error) {
+    console.error('[viewClientDocument] Error:', error);
+    throw error;
+  }
+};
+
+const downloadClientDocument = async (filePath: string, fileName: string) => {
+  console.log('[downloadClientDocument] Downloading document:', filePath);
+  
+  try {
+    const { data, error } = await supabase.storage
+      .from('client-documents')
+      .download(filePath);
+
+    if (error) {
+      console.error('[downloadClientDocument] Download error:', error);
+      throw new Error(`Download failed: ${error.message}`);
+    }
+
+    if (data) {
+      // Create a blob URL and trigger download
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      console.log('[downloadClientDocument] Download completed:', fileName);
+    } else {
+      throw new Error('No data received from download');
+    }
+  } catch (error) {
+    console.error('[downloadClientDocument] Error:', error);
+    throw error;
+  }
+};
+
 const updateClientDocument = async ({ id, ...updates }: Partial<ClientDocument> & { id: string }) => {
   console.log('[updateClientDocument] Updating document:', id, updates);
   
@@ -174,6 +228,34 @@ export const useUploadClientDocument = () => {
     onError: (error: any) => {
       console.error('[useUploadClientDocument] Upload failed:', error);
       toast.error('Failed to upload document', {
+        description: error.message || 'Please try again later'
+      });
+    },
+  });
+};
+
+export const useViewClientDocument = () => {
+  return useMutation({
+    mutationFn: ({ filePath }: { filePath: string }) => viewClientDocument(filePath),
+    onError: (error: any) => {
+      console.error('[useViewClientDocument] View failed:', error);
+      toast.error('Failed to view document', {
+        description: error.message || 'Please try again later'
+      });
+    },
+  });
+};
+
+export const useDownloadClientDocument = () => {
+  return useMutation({
+    mutationFn: ({ filePath, fileName }: { filePath: string; fileName: string }) => 
+      downloadClientDocument(filePath, fileName),
+    onSuccess: () => {
+      toast.success('Document downloaded successfully');
+    },
+    onError: (error: any) => {
+      console.error('[useDownloadClientDocument] Download failed:', error);
+      toast.error('Failed to download document', {
         description: error.message || 'Please try again later'
       });
     },

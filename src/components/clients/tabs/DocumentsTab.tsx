@@ -8,7 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { UploadDocumentDialog } from "../dialogs/UploadDocumentDialog";
 import { EditDocumentDialog } from "../dialogs/EditDocumentDialog";
 import { DeleteDocumentDialog } from "../dialogs/DeleteDocumentDialog";
-import { useClientDocuments, useUploadClientDocument, useUpdateClientDocument, useDeleteClientDocument, ClientDocument } from "@/hooks/useClientDocuments";
+import { 
+  useClientDocuments, 
+  useUploadClientDocument, 
+  useUpdateClientDocument, 
+  useDeleteClientDocument,
+  useViewClientDocument,
+  useDownloadClientDocument,
+  ClientDocument 
+} from "@/hooks/useClientDocuments";
 
 interface DocumentsTabProps {
   clientId: string;
@@ -25,6 +33,8 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
   const uploadDocumentMutation = useUploadClientDocument();
   const updateDocumentMutation = useUpdateClientDocument();
   const deleteDocumentMutation = useDeleteClientDocument();
+  const viewDocumentMutation = useViewClientDocument();
+  const downloadDocumentMutation = useDownloadClientDocument();
 
   // For now, assuming all users are super admins - this should be replaced with proper role checking
   const canManageDocuments = true;
@@ -42,6 +52,25 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
     } catch (error) {
       console.error('Upload failed:', error);
       // Error handling is done in the mutation
+    }
+  };
+
+  const handleViewDocument = (document: ClientDocument) => {
+    if (document.file_path) {
+      viewDocumentMutation.mutate({ filePath: document.file_path });
+    } else {
+      console.error('Document has no file path');
+    }
+  };
+
+  const handleDownloadDocument = (document: ClientDocument) => {
+    if (document.file_path) {
+      downloadDocumentMutation.mutate({ 
+        filePath: document.file_path, 
+        fileName: document.name 
+      });
+    } else {
+      console.error('Document has no file path');
     }
   };
 
@@ -152,10 +181,22 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge>{doc.type}</Badge>
-                    <Button variant="outline" size="icon" title="View Document">
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      title="View Document"
+                      onClick={() => handleViewDocument(doc)}
+                      disabled={viewDocumentMutation.isPending}
+                    >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="icon" title="Download Document">
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      title="Download Document"
+                      onClick={() => handleDownloadDocument(doc)}
+                      disabled={downloadDocumentMutation.isPending}
+                    >
                       <Download className="h-4 w-4" />
                     </Button>
                     {canManageDocuments && (

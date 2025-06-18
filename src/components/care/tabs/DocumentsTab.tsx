@@ -6,12 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useViewClientDocument, useDownloadClientDocument } from "@/hooks/useClientDocuments";
 
 interface Document {
   name: string;
   date: Date;
   type: string;
   author: string;
+  file_path?: string;
 }
 
 interface DocumentsTabProps {
@@ -20,6 +22,28 @@ interface DocumentsTabProps {
 }
 
 export const DocumentsTab: React.FC<DocumentsTabProps> = ({ documents, onUploadDocument }) => {
+  const viewDocumentMutation = useViewClientDocument();
+  const downloadDocumentMutation = useDownloadClientDocument();
+
+  const handleViewDocument = (document: Document) => {
+    if (document.file_path) {
+      viewDocumentMutation.mutate({ filePath: document.file_path });
+    } else {
+      console.error('Document has no file path');
+    }
+  };
+
+  const handleDownloadDocument = (document: Document) => {
+    if (document.file_path) {
+      downloadDocumentMutation.mutate({ 
+        filePath: document.file_path, 
+        fileName: document.name 
+      });
+    } else {
+      console.error('Document has no file path');
+    }
+  };
+
   const getDocumentTypeIcon = (type: string) => {
     switch (type) {
       case "PDF":
@@ -100,10 +124,22 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ documents, onUploadD
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 w-8 p-0"
+                          onClick={() => handleViewDocument(doc)}
+                          disabled={viewDocumentMutation.isPending}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 w-8 p-0"
+                          onClick={() => handleDownloadDocument(doc)}
+                          disabled={downloadDocumentMutation.isPending}
+                        >
                           <Download className="h-4 w-4" />
                         </Button>
                       </div>
