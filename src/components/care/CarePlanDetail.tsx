@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { X, FileEdit, Download, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
@@ -6,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { useComprehensiveCarePlanData } from "@/hooks/useCarePlanData";
+import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
 
 import { PatientHeader } from "./PatientHeader";
 import { CarePlanSidebar } from "./CarePlanSidebar";
@@ -62,6 +62,10 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     error
   } = useComprehensiveCarePlanData(carePlan?.patientId || "");
 
+  // Database hooks for notes
+  const { data: dbNotes = [], isLoading: notesLoading } = useClientNotes(carePlan?.patientId || "");
+  const createNoteMutation = useCreateClientNote();
+
   if (!carePlan) return null;
 
   const handlePrintCarePlan = () => {
@@ -72,6 +76,12 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
       status: carePlan.status,
       signedBy: carePlan.assignedTo
     });
+  };
+
+  const handleAddNoteWithDB = async () => {
+    if (onAddNote) {
+      onAddNote();
+    }
   };
 
   if (isLoading) {
@@ -133,13 +143,21 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     progress: action.progress_status
   })) || [];
 
-  // Transform notes to match expected Note interface
-  const transformedNotes = comprehensiveData?.notes?.map(note => ({
+  // Transform database notes to match expected Note interface
+  const transformedNotes = dbNotes.map(note => ({
     id: note.id,
     date: new Date(note.created_at),
     author: note.author,
     content: note.content
-  })) || [];
+  }));
+
+  // Use database notes if available, otherwise fall back to comprehensive data
+  const notesToDisplay = transformedNotes.length > 0 ? transformedNotes : (comprehensiveData?.notes?.map(note => ({
+    id: note.id,
+    date: new Date(note.created_at),
+    author: note.author,
+    content: note.content
+  })) || []);
 
   // Transform documents to match expected Document interface  
   const transformedDocuments = comprehensiveData?.documents?.map(doc => ({
@@ -222,7 +240,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
             <div className="w-full md:w-1/3">
               <CarePlanSidebar 
                 carePlan={carePlan}
-                onAddNote={onAddNote}
+                onAddNote={handleAddNoteWithDB}
                 onScheduleFollowUp={onScheduleFollowUp}
                 onRecordActivity={onRecordActivity}
                 onUploadDocument={onUploadDocument}
@@ -257,7 +275,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="notes">
-                  <NotesTab notes={transformedNotes} onAddNote={onAddNote} />
+                  <NotesTab notes={notesToDisplay} onAddNote={handleAddNoteWithDB} />
                 </TabsContent>
                 
                 <TabsContent value="documents">

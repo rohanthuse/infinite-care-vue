@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { X, FileEdit, Download, PenLine, MessageCircle, Clock, Activity, FileBarChart2 } from "lucide-react";
 import { format } from "date-fns";
@@ -7,6 +6,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { generatePDF, exportCarePlanPDF } from "@/utils/pdfGenerator";
+import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
 
 import { CarerCarePlanSidebar } from "./CarerCarePlanSidebar";
 import { CarerCarePlanTabBar } from "./CarerCarePlanTabBar";
@@ -66,6 +66,10 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
   const [showAddEventDialog, setShowAddEventDialog] = useState(false);
   const [showUpdateCarePlanDialog, setShowUpdateCarePlanDialog] = useState(false);
   const [patientDataState, setPatientDataState] = useState(mockPatientData);
+
+  // Database hooks for notes
+  const { data: dbNotes = [], isLoading: notesLoading } = useClientNotes(carePlan.id);
+  const createNoteMutation = useCreateClientNote();
 
   // Form for adding notes
   const noteForm = useForm<z.infer<typeof noteFormSchema>>({
@@ -130,22 +134,20 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
     toast.success("Care plan updated successfully");
   };
 
-  const handleAddNote = (values: z.infer<typeof noteFormSchema>) => {
-    // In a real app, this would send the note to an API
-    console.log("Adding note:", values.note);
-    
-    // Update the local state by adding the new note
-    const updatedPatientData = { ...patientDataState };
-    updatedPatientData.notes.unshift({
-      date: new Date(),
-      author: "Carer",
-      content: values.note,
-    });
-    
-    setPatientDataState(updatedPatientData);
-    toast.success("Note added successfully");
-    setShowAddNoteDialog(false);
-    noteForm.reset();
+  const handleAddNote = async (values: z.infer<typeof noteFormSchema>) => {
+    try {
+      await createNoteMutation.mutateAsync({
+        client_id: carePlan.id,
+        title: "Care Note",
+        content: values.note,
+        author: "Carer",
+      });
+      setShowAddNoteDialog(false);
+      noteForm.reset();
+    } catch (error) {
+      console.error("Error adding note:", error);
+      toast.error("Failed to add note");
+    }
   };
 
   const handleAddActivity = () => {
@@ -175,6 +177,16 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
     
     setShowAddEventDialog(false);
   };
+
+  // Transform database notes to match component expected format
+  const transformedNotes = dbNotes.map(note => ({
+    date: new Date(note.created_at),
+    author: note.author,
+    content: note.content
+  }));
+
+  // Use database notes if available, otherwise fall back to mock data
+  const notesToDisplay = transformedNotes.length > 0 ? transformedNotes : patientDataState.notes;
 
   // Create mock data for the carer view based on the existing mockPatientData
   const mockNotes = patientDataState.notes;
@@ -339,7 +351,7 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                 
                 <TabsContent value="notes">
                   <NotesTab 
-                    notes={mockNotes} 
+                    notes={notesToDisplay} 
                     onAddNote={() => setShowAddNoteDialog(true)} 
                   />
                 </TabsContent>
@@ -402,7 +414,9 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                 <Button type="button" variant="outline" onClick={() => setShowAddNoteDialog(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">Save Note</Button>
+                <Button type="submit" disabled={createNoteMutation.isPending}>
+                  {createNoteMutation.isPending ? "Saving..." : "Save Note"}
+                </Button>
               </DialogFooter>
             </form>
           </Form>

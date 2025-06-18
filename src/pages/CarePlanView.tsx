@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -48,7 +47,7 @@ import { AddEventDialog } from "@/components/care/dialogs/AddEventDialog";
 import { resolveCarePlanId, getDisplayCarePlanId } from "@/utils/carePlanIdMapping";
 import { useCarePlanData } from "@/hooks/useCarePlanData";
 import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
-import { useClientNotes } from "@/hooks/useClientNotes";
+import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
 
 const mockCarePlans = [
   {
@@ -94,7 +93,11 @@ const CarePlanView = () => {
   // Fetch data from database with resolved ID
   const { data: carePlanData, isLoading: isCarePlanLoading, error: carePlanError } = useCarePlanData(resolvedCarePlanId);
   const { data: goalsData, isLoading: isGoalsLoading, error: goalsError } = useCarePlanGoals(resolvedCarePlanId);
-  const { data: notesData, isLoading: isNotesLoading, error: notesError } = useClientNotes(carePlanData?.client_id || '');
+  
+  // Use the client_id from care plan data for notes
+  const clientId = carePlanData?.client_id || '';
+  const { data: notesData, isLoading: isNotesLoading, error: notesError } = useClientNotes(clientId);
+  const createNoteMutation = useCreateClientNote();
 
   // Debug logging for data fetching
   console.log('[CarePlanView] Data fetching status:', {
@@ -157,21 +160,36 @@ const CarePlanView = () => {
     });
   };
 
-  const handleSaveNote = (note: { content: string; date: Date }) => {
-    console.log("Saving note:", note);
-    
-    const newNote = {
-      date: note.date,
-      author: carePlan?.assignedTo || "Care Provider",
-      content: note.content
-    };
-    
-    mockPatientData.notes.unshift(newNote);
-    
-    toast({
-      title: "Note added",
-      description: "The note has been successfully added to the patient's record."
-    });
+  const handleSaveNote = async (note: { content: string; date: Date }) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot save note.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await createNoteMutation.mutateAsync({
+        client_id: clientId,
+        title: "Care Note",
+        content: note.content,
+        author: carePlan?.assignedTo || "Care Provider",
+      });
+
+      toast({
+        title: "Note added",
+        description: "The note has been successfully added to the patient's record."
+      });
+    } catch (error) {
+      console.error("Error saving note:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save note. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSaveFollowUp = (followUp: any) => {
