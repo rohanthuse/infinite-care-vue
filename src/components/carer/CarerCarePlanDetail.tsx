@@ -303,7 +303,6 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                       gender: patientDataState.gender,
                     }}
                     personalInfo={{
-                      client_id: carePlan.id,
                       emergency_contact_name: patientDataState.emergencyContact,
                       emergency_contact_phone: patientDataState.phone,
                       preferred_communication: patientDataState.preferredLanguage,
@@ -311,7 +310,6 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                       updated_at: new Date().toISOString(),
                     }}
                     medicalInfo={{
-                      client_id: carePlan.id,
                       allergies: patientDataState.allergies,
                       current_medications: patientDataState.medications.map(m => m.name),
                       medical_conditions: patientDataState.medicalConditions,
@@ -325,7 +323,6 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                 <TabsContent value="aboutme">
                   <AboutMeTab 
                     personalInfo={{
-                      client_id: carePlan.id,
                       cultural_preferences: patientDataState.aboutMe.preferences.join(', '),
                       language_preferences: patientDataState.preferredLanguage,
                       created_at: new Date().toISOString(),

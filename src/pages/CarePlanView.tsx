@@ -321,6 +321,118 @@ const CarePlanView = () => {
 
   console.log('[CarePlanView] Rendering care plan view for:', carePlan?.patientName);
 
+  // Transform mock data for assessments
+  const transformedAssessments = mockPatientData.assessments.map(assessment => ({
+    id: `assessment-${Date.now()}-${Math.random()}`,
+    client_id: carePlan?.patientId || 'unknown',
+    assessment_type: 'general',
+    assessment_name: assessment.name,
+    assessment_date: assessment.date.toISOString().split('T')[0],
+    performed_by: assessment.performer,
+    status: assessment.status,
+    results: assessment.results,
+    score: null,
+    recommendations: null,
+    next_review_date: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }));
+
+  // Transform mock data for equipment
+  const transformedEquipment = mockPatientData.equipment.map(equipment => ({
+    id: `equipment-${Date.now()}-${Math.random()}`,
+    client_id: carePlan?.patientId || 'unknown',
+    equipment_name: equipment.name,
+    equipment_type: equipment.type,
+    manufacturer: null,
+    model_number: null,
+    serial_number: null,
+    installation_date: null,
+    maintenance_schedule: null,
+    last_maintenance_date: equipment.lastInspection.toISOString().split('T')[0],
+    next_maintenance_date: null,
+    status: equipment.status,
+    location: null,
+    notes: equipment.notes,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }));
+
+  // Transform dietary requirements
+  const transformedDietaryRequirements = {
+    id: `dietary-${carePlan?.id || 'unknown'}`,
+    client_id: carePlan?.patientId || 'unknown',
+    dietary_restrictions: mockPatientData.dietaryRequirements.restrictions.map(r => r.name),
+    food_allergies: mockPatientData.dietaryRequirements.restrictions.filter(r => r.reason === 'allergy').map(r => r.name),
+    food_preferences: mockPatientData.dietaryRequirements.preferences,
+    meal_schedule: { general: mockPatientData.dietaryRequirements.mealPlan },
+    nutritional_needs: mockPatientData.dietaryRequirements.nutritionalNotes,
+    supplements: mockPatientData.dietaryRequirements.supplements.map(s => s.name),
+    feeding_assistance_required: false,
+    special_equipment_needed: "",
+    texture_modifications: "",
+    fluid_restrictions: mockPatientData.dietaryRequirements.hydrationPlan,
+    weight_monitoring: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  // Transform personal care
+  const transformedPersonalCare = {
+    id: `personalcare-${carePlan?.id || 'unknown'}`,
+    client_id: carePlan?.patientId || 'unknown',
+    personal_hygiene_needs: mockPatientData.personalCare.routines.map(r => `${r.activity}: ${r.frequency}`).join('; '),
+    bathing_preferences: mockPatientData.personalCare.preferences.join(', '),
+    dressing_assistance_level: mockPatientData.personalCare.mobility.transferAbility,
+    toileting_assistance_level: "Independent",
+    continence_status: "Continent",
+    sleep_patterns: "Regular sleep pattern",
+    behavioral_notes: mockPatientData.personalCare.mobility.notes,
+    comfort_measures: mockPatientData.personalCare.preferences.join(', '),
+    pain_management: "As needed",
+    skin_care_needs: "Standard care",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  // Transform risk assessments
+  const transformedRiskAssessments = mockPatientData.riskAssessments.map(risk => ({
+    id: `risk-${Date.now()}-${Math.random()}`,
+    client_id: carePlan?.patientId || 'unknown',
+    risk_type: risk.type,
+    risk_level: risk.level,
+    risk_factors: [],
+    mitigation_strategies: [risk.mitigationPlan],
+    assessment_date: risk.lastAssessed.toISOString().split('T')[0],
+    assessed_by: risk.assessedBy,
+    review_date: risk.reviewDate.toISOString().split('T')[0],
+    status: 'active',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }));
+
+  // Transform service actions
+  const transformedServiceActions = mockPatientData.serviceActions.map(action => ({
+    id: `service-${Date.now()}-${Math.random()}`,
+    client_id: carePlan?.patientId || 'unknown',
+    care_plan_id: carePlan?.id || 'unknown',
+    service_name: action.service,
+    service_category: 'Care Service',
+    provider_name: action.provider,
+    frequency: action.frequency,
+    duration: action.duration,
+    schedule_details: action.schedule,
+    goals: action.goals,
+    progress_status: action.progress,
+    start_date: new Date().toISOString().split('T')[0],
+    end_date: null,
+    last_completed_date: null,
+    next_scheduled_date: null,
+    notes: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }));
+
   return (
     <div className="flex flex-col min-h-screen">
       <DashboardHeader />
@@ -506,7 +618,15 @@ const CarePlanView = () => {
                     </TabsContent>
                     
                     <TabsContent value="aboutme" className="space-y-4">
-                      <AboutMeTab aboutMe={mockPatientData.aboutMe} />
+                      <AboutMeTab 
+                        personalInfo={{
+                          cultural_preferences: mockPatientData.aboutMe.preferences.join(', '),
+                          language_preferences: mockPatientData.preferredLanguage,
+                          created_at: new Date().toISOString(),
+                          updated_at: new Date().toISOString(),
+                        }}
+                        personalCare={transformedPersonalCare}
+                      />
                     </TabsContent>
                     
                     <TabsContent value="goals" className="space-y-4">
@@ -547,23 +667,23 @@ const CarePlanView = () => {
                     </TabsContent>
                     
                     <TabsContent value="assessments" className="space-y-4">
-                      <AssessmentsTab assessments={mockPatientData.assessments} />
+                      <AssessmentsTab assessments={transformedAssessments} />
                     </TabsContent>
                     
                     <TabsContent value="equipment" className="space-y-4">
-                      <EquipmentTab equipment={mockPatientData.equipment} />
+                      <EquipmentTab equipment={transformedEquipment} />
                     </TabsContent>
                     
                     <TabsContent value="dietary" className="space-y-4">
-                      <DietaryTab dietaryRequirements={mockPatientData.dietaryRequirements} />
+                      <DietaryTab dietaryRequirements={transformedDietaryRequirements} />
                     </TabsContent>
                     
                     <TabsContent value="personalcare" className="space-y-4">
-                      <PersonalCareTab personalCare={mockPatientData.personalCare} />
+                      <PersonalCareTab personalCare={transformedPersonalCare} />
                     </TabsContent>
                     
                     <TabsContent value="risk" className="space-y-4">
-                      <RiskTab riskAssessments={mockPatientData.riskAssessments} />
+                      <RiskTab riskAssessments={transformedRiskAssessments} />
                     </TabsContent>
                     
                     <TabsContent value="serviceplan" className="space-y-4">
@@ -571,7 +691,7 @@ const CarePlanView = () => {
                     </TabsContent>
                     
                     <TabsContent value="serviceactions" className="space-y-4">
-                      <ServiceActionsTab serviceActions={mockPatientData.serviceActions} />
+                      <ServiceActionsTab serviceActions={transformedServiceActions} />
                     </TabsContent>
                     
                     <TabsContent value="eventslogs" className="space-y-4">
