@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -622,8 +623,6 @@ const CarePlanView = () => {
                         personalInfo={{
                           cultural_preferences: mockPatientData.aboutMe.preferences.join(', '),
                           language_preferences: mockPatientData.preferredLanguage,
-                          created_at: new Date().toISOString(),
-                          updated_at: new Date().toISOString(),
                         }}
                         personalCare={transformedPersonalCare}
                       />

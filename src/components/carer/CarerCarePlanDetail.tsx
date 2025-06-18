@@ -306,16 +306,12 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                       emergency_contact_name: patientDataState.emergencyContact,
                       emergency_contact_phone: patientDataState.phone,
                       preferred_communication: patientDataState.preferredLanguage,
-                      created_at: new Date().toISOString(),
-                      updated_at: new Date().toISOString(),
                     }}
                     medicalInfo={{
                       allergies: patientDataState.allergies,
                       current_medications: patientDataState.medications.map(m => m.name),
                       medical_conditions: patientDataState.medicalConditions,
                       medical_history: "See medical conditions and medications",
-                      created_at: new Date().toISOString(),
-                      updated_at: new Date().toISOString(),
                     }}
                   />
                 </TabsContent>
@@ -325,8 +321,6 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                     personalInfo={{
                       cultural_preferences: patientDataState.aboutMe.preferences.join(', '),
                       language_preferences: patientDataState.preferredLanguage,
-                      created_at: new Date().toISOString(),
-                      updated_at: new Date().toISOString(),
                     }}
                     personalCare={transformedPersonalCare}
                   />
