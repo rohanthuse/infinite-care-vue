@@ -184,6 +184,7 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
   const mockServiceActions = patientDataState.serviceActions.map(action => ({
     id: `sa-${Date.now()}-${Math.random()}`,
     client_id: carePlan.id,
+    care_plan_id: carePlan.id,
     service_name: action.service,
     service_category: "Care Service",
     provider_name: action.provider,
@@ -193,6 +194,10 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
     goals: action.goals,
     progress_status: action.progress,
     start_date: new Date().toISOString().split('T')[0],
+    end_date: null,
+    last_completed_date: null,
+    next_scheduled_date: null,
+    notes: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }));
@@ -200,6 +205,7 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
   // Transform dietary data to match expected interface
   const transformedDietaryRequirements = {
     id: `dr-${carePlan.id}`,
+    client_id: carePlan.id,
     dietary_restrictions: patientDataState.dietaryRequirements.restrictions.map(r => r.name),
     food_allergies: patientDataState.dietaryRequirements.restrictions.filter(r => r.reason === 'allergy').map(r => r.name),
     food_preferences: patientDataState.dietaryRequirements.preferences,
@@ -211,11 +217,14 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
     texture_modifications: "",
     fluid_restrictions: patientDataState.dietaryRequirements.hydrationPlan,
     weight_monitoring: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
 
   // Transform personal care data to match expected interface
   const transformedPersonalCare = {
     id: `pc-${carePlan.id}`,
+    client_id: carePlan.id,
     personal_hygiene_needs: patientDataState.personalCare.routines.map(r => `${r.activity}: ${r.frequency}`).join('; '),
     bathing_preferences: patientDataState.personalCare.preferences.join(', '),
     dressing_assistance_level: patientDataState.personalCare.mobility.transferAbility,
@@ -226,6 +235,8 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
     comfort_measures: patientDataState.personalCare.preferences.join(', '),
     pain_management: "As needed",
     skin_care_needs: "Standard care",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
 
   return (
@@ -292,17 +303,21 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                       gender: patientDataState.gender,
                     }}
                     personalInfo={{
-                      id: `pi-${carePlan.id}`,
+                      client_id: carePlan.id,
                       emergency_contact_name: patientDataState.emergencyContact,
                       emergency_contact_phone: patientDataState.phone,
                       preferred_communication: patientDataState.preferredLanguage,
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString(),
                     }}
                     medicalInfo={{
-                      id: `mi-${carePlan.id}`,
-                      allergies: patientDataState.medicalInformation.allergies,
-                      current_medications: patientDataState.medicalInformation.currentMedications,
-                      medical_conditions: patientDataState.medicalInformation.medicalConditions,
-                      medical_history: patientDataState.medicalInformation.medicalHistory,
+                      client_id: carePlan.id,
+                      allergies: patientDataState.allergies,
+                      current_medications: patientDataState.medications.map(m => m.name),
+                      medical_conditions: patientDataState.medicalConditions,
+                      medical_history: "See medical conditions and medications",
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString(),
                     }}
                   />
                 </TabsContent>
@@ -310,9 +325,11 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                 <TabsContent value="aboutme">
                   <AboutMeTab 
                     personalInfo={{
-                      id: `pi-${carePlan.id}`,
+                      client_id: carePlan.id,
                       cultural_preferences: patientDataState.aboutMe.preferences.join(', '),
                       language_preferences: patientDataState.preferredLanguage,
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString(),
                     }}
                     personalCare={transformedPersonalCare}
                   />

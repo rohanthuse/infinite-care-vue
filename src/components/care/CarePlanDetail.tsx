@@ -31,7 +31,7 @@ interface CarePlanDetailProps {
     patientName: string;
     patientId: string;
     dateCreated: Date;
-    lastUpdated: Date;
+    lastUpdated: Date;  
     status: string;
     assignedTo: string;
     avatar: string;
@@ -133,6 +133,57 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     progress: action.progress_status
   })) || [];
 
+  // Transform notes to match expected Note interface
+  const transformedNotes = comprehensiveData?.notes?.map(note => ({
+    id: note.id,
+    date: new Date(note.created_at),
+    author: note.author,
+    content: note.content
+  })) || [];
+
+  // Transform documents to match expected Document interface  
+  const transformedDocuments = comprehensiveData?.documents?.map(doc => ({
+    id: doc.id,
+    name: doc.name,
+    type: doc.type,
+    date: new Date(doc.upload_date),
+    author: doc.uploaded_by,
+    file_path: doc.file_path,
+    file_size: doc.file_size
+  })) || [];
+
+  // Transform assessments to match expected interface
+  const transformedAssessments = comprehensiveData?.assessments?.map(assessment => ({
+    ...assessment,
+    client_id: assessment.client_id,
+    created_at: assessment.created_at,
+    updated_at: assessment.updated_at
+  })) || [];
+
+  // Transform equipment to match expected interface
+  const transformedEquipment = comprehensiveData?.equipment?.map(equipment => ({
+    ...equipment,
+    client_id: equipment.client_id,
+    created_at: equipment.created_at,
+    updated_at: equipment.updated_at
+  })) || [];
+
+  // Transform risk assessments to match expected interface
+  const transformedRiskAssessments = comprehensiveData?.riskAssessments?.map(risk => ({
+    ...risk,
+    client_id: risk.client_id,
+    created_at: risk.created_at,
+    updated_at: risk.updated_at
+  })) || [];
+
+  // Transform service actions to match expected interface
+  const transformedServiceActions = comprehensiveData?.serviceActions?.map(action => ({
+    ...action,
+    client_id: action.client_id,
+    created_at: action.created_at,
+    updated_at: action.updated_at
+  })) || [];
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
@@ -206,22 +257,22 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="notes">
-                  <NotesTab notes={comprehensiveData?.notes || []} onAddNote={onAddNote} />
+                  <NotesTab notes={transformedNotes} onAddNote={onAddNote} />
                 </TabsContent>
                 
                 <TabsContent value="documents">
                   <DocumentsTab 
-                    documents={comprehensiveData?.documents || []} 
+                    documents={transformedDocuments} 
                     onUploadDocument={onUploadDocument} 
                   />
                 </TabsContent>
                 
                 <TabsContent value="assessments">
-                  <AssessmentsTab assessments={comprehensiveData?.assessments || []} />
+                  <AssessmentsTab assessments={transformedAssessments} />
                 </TabsContent>
                 
                 <TabsContent value="equipment">
-                  <EquipmentTab equipment={comprehensiveData?.equipment || []} />
+                  <EquipmentTab equipment={transformedEquipment} />
                 </TabsContent>
                 
                 <TabsContent value="dietary">
@@ -233,7 +284,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="risk">
-                  <RiskTab riskAssessments={comprehensiveData?.riskAssessments || []} />
+                  <RiskTab riskAssessments={transformedRiskAssessments} />
                 </TabsContent>
                 
                 <TabsContent value="serviceplan">
@@ -241,7 +292,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="serviceactions">
-                  <ServiceActionsTab serviceActions={comprehensiveData?.serviceActions || []} />
+                  <ServiceActionsTab serviceActions={transformedServiceActions} />
                 </TabsContent>
 
                 <TabsContent value="eventslogs">
