@@ -71,6 +71,7 @@ export interface CarePlanWithDetails extends CarePlanData {
 export interface ComprehensiveCarePlanData extends CarePlanWithDetails {
   personalInfo?: {
     id: string;
+    client_id: string;
     emergency_contact_name?: string;
     emergency_contact_phone?: string;
     emergency_contact_relationship?: string;
@@ -85,9 +86,12 @@ export interface ComprehensiveCarePlanData extends CarePlanWithDetails {
     gp_name?: string;
     gp_practice?: string;
     gp_phone?: string;
+    created_at: string;
+    updated_at: string;
   };
   medicalInfo?: {
     id: string;
+    client_id: string;
     allergies?: string[];
     current_medications?: string[];
     medical_conditions?: string[];
@@ -97,9 +101,12 @@ export interface ComprehensiveCarePlanData extends CarePlanWithDetails {
     communication_needs?: string;
     sensory_impairments?: string[];
     mental_health_status?: string;
+    created_at: string;
+    updated_at: string;
   };
   assessments?: Array<{
     id: string;
+    client_id: string;
     assessment_type: string;
     assessment_name: string;
     assessment_date: string;
@@ -109,9 +116,12 @@ export interface ComprehensiveCarePlanData extends CarePlanWithDetails {
     score?: number;
     recommendations?: string;
     next_review_date?: string;
+    created_at: string;
+    updated_at: string;
   }>;
   equipment?: Array<{
     id: string;
+    client_id: string;
     equipment_name: string;
     equipment_type: string;
     manufacturer?: string;
@@ -124,9 +134,12 @@ export interface ComprehensiveCarePlanData extends CarePlanWithDetails {
     status: string;
     location?: string;
     notes?: string;
+    created_at: string;
+    updated_at: string;
   }>;
   dietaryRequirements?: {
     id: string;
+    client_id: string;
     dietary_restrictions?: string[];
     food_allergies?: string[];
     food_preferences?: string[];
@@ -138,9 +151,12 @@ export interface ComprehensiveCarePlanData extends CarePlanWithDetails {
     texture_modifications?: string;
     fluid_restrictions?: string;
     weight_monitoring?: boolean;
+    created_at: string;
+    updated_at: string;
   };
   personalCare?: {
     id: string;
+    client_id: string;
     personal_hygiene_needs?: string;
     bathing_preferences?: string;
     dressing_assistance_level?: string;
@@ -151,9 +167,13 @@ export interface ComprehensiveCarePlanData extends CarePlanWithDetails {
     comfort_measures?: string;
     pain_management?: string;
     skin_care_needs?: string;
+    created_at: string;
+    updated_at: string;
   };
   serviceActions?: Array<{
     id: string;
+    client_id: string;
+    care_plan_id?: string;
     service_name: string;
     service_category: string;
     provider_name: string;
@@ -167,9 +187,12 @@ export interface ComprehensiveCarePlanData extends CarePlanWithDetails {
     last_completed_date?: string;
     next_scheduled_date?: string;
     notes?: string;
+    created_at: string;
+    updated_at: string;
   }>;
   riskAssessments?: Array<{
     id: string;
+    client_id: string;
     risk_type: string;
     risk_level: string;
     risk_factors?: string[];
@@ -178,6 +201,29 @@ export interface ComprehensiveCarePlanData extends CarePlanWithDetails {
     assessed_by: string;
     review_date?: string;
     status: string;
+    created_at: string;
+    updated_at: string;
+  }>;
+  notes?: Array<{
+    id: string;
+    client_id: string;
+    title: string;
+    content: string;
+    author: string;
+    created_at: string;
+    updated_at: string;
+  }>;
+  documents?: Array<{
+    id: string;
+    client_id: string;
+    name: string;
+    type: string;
+    file_path?: string;
+    file_size?: string;
+    uploaded_by: string;
+    upload_date: string;
+    created_at: string;
+    updated_at: string;
   }>;
 }
 
@@ -412,7 +458,9 @@ const fetchComprehensiveCarePlanData = async (carePlanId: string): Promise<Compr
       dietaryResult,
       personalCareResult,
       serviceActionsResult,
-      riskAssessmentsResult
+      riskAssessmentsResult,
+      notesResult,
+      documentsResult
     ] = await Promise.allSettled([
       // Existing data
       supabase.from('client_care_plan_goals').select('*').eq('care_plan_id', carePlan.id),
@@ -427,7 +475,9 @@ const fetchComprehensiveCarePlanData = async (carePlanId: string): Promise<Compr
       supabase.from('client_dietary_requirements').select('*').eq('client_id', clientId).maybeSingle(),
       supabase.from('client_personal_care').select('*').eq('client_id', clientId).maybeSingle(),
       supabase.from('client_service_actions').select('*').eq('client_id', clientId).order('start_date', { ascending: false }),
-      supabase.from('client_risk_assessments').select('*').eq('client_id', clientId).order('assessment_date', { ascending: false })
+      supabase.from('client_risk_assessments').select('*').eq('client_id', clientId).order('assessment_date', { ascending: false }),
+      supabase.from('client_notes').select('*').eq('client_id', clientId).order('created_at', { ascending: false }),
+      supabase.from('client_documents').select('*').eq('client_id', clientId).order('created_at', { ascending: false })
     ]);
 
     // Process results
@@ -443,6 +493,8 @@ const fetchComprehensiveCarePlanData = async (carePlanId: string): Promise<Compr
     const personalCare = personalCareResult.status === 'fulfilled' && !personalCareResult.value.error ? personalCareResult.value.data : null;
     const serviceActions = serviceActionsResult.status === 'fulfilled' && !serviceActionsResult.value.error ? serviceActionsResult.value.data || [] : [];
     const riskAssessments = riskAssessmentsResult.status === 'fulfilled' && !riskAssessmentsResult.value.error ? riskAssessmentsResult.value.data || [] : [];
+    const notes = notesResult.status === 'fulfilled' && !notesResult.value.error ? notesResult.value.data || [] : [];
+    const documents = documentsResult.status === 'fulfilled' && !documentsResult.value.error ? documentsResult.value.data || [] : [];
 
     // Combine all data
     const result: ComprehensiveCarePlanData = {
@@ -458,7 +510,9 @@ const fetchComprehensiveCarePlanData = async (carePlanId: string): Promise<Compr
       dietaryRequirements: dietaryRequirements,
       personalCare: personalCare,
       serviceActions: serviceActions,
-      riskAssessments: riskAssessments
+      riskAssessments: riskAssessments,
+      notes: notes,
+      documents: documents
     };
     
     console.log('[fetchComprehensiveCarePlanData] Successfully fetched comprehensive data:', result);
