@@ -18,6 +18,20 @@ interface NotesTabProps {
   onAddNote?: () => void;
 }
 
+// Helper function to extract role from author field
+const extractRoleFromAuthor = (author: string): string => {
+  // If author contains "Admin", "Carer", or other role indicators, extract them
+  if (author === "Admin") return "Admin";
+  if (author === "Carer") return "Carer";
+  if (author.includes("Admin")) return "Admin";
+  if (author.includes("Carer")) return "Carer";
+  if (author.includes("Doctor") || author.includes("Dr.")) return "Doctor";
+  if (author.includes("Nurse")) return "Nurse";
+  
+  // Default fallback
+  return "Staff";
+};
+
 export const NotesTab: React.FC<NotesTabProps> = ({ notes, onAddNote }) => {
   return (
     <div className="space-y-4">
@@ -59,7 +73,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({ notes, onAddNote }) => {
                         <div className="flex items-center">
                           <h3 className="font-medium text-gray-900">{note.author}</h3>
                           <Badge variant="outline" className="ml-2 text-xs bg-blue-50 text-blue-700 border-blue-200">
-                            Care Provider
+                            {extractRoleFromAuthor(note.author)}
                           </Badge>
                         </div>
                         <span className="text-xs text-gray-500 flex items-center">

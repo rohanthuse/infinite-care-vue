@@ -81,27 +81,10 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
     },
   });
 
-  // Get current user's display name
-  const getCurrentUserName = () => {
-    if (!user) return "Unknown User";
-    
-    // Use user metadata first name and last name if available
-    const firstName = user.user_metadata?.first_name;
-    const lastName = user.user_metadata?.last_name;
-    
-    if (firstName && lastName) {
-      return `${firstName} ${lastName}`;
-    }
-    
-    // Fall back to email if no name is available
-    return user.email || "Unknown User";
-  };
-
-  // Get current user's role and name for author field
+  // Get current user's role and name for author field - simplified to just show "Carer"
   const getCurrentUserAuthor = () => {
-    const userName = getCurrentUserName();
-    // For carers, use "Carer" role
-    return `Carer - ${userName}`;
+    // For carers, just return "Carer"
+    return "Carer";
   };
 
   const handleExportCarePlan = () => {
@@ -165,7 +148,7 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
         client_id: carePlan.id,
         title: "Care Note",
         content: values.note,
-        author: getCurrentUserAuthor(), // Use current authenticated user
+        author: getCurrentUserAuthor(), // Use simplified author field
       });
       setShowAddNoteDialog(false);
       noteForm.reset();

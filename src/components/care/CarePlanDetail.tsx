@@ -89,27 +89,10 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     }
   };
 
-  // Get current user's display name
-  const getCurrentUserName = () => {
-    if (!user) return "Unknown User";
-    
-    // Use user metadata first name and last name if available
-    const firstName = user.user_metadata?.first_name;
-    const lastName = user.user_metadata?.last_name;
-    
-    if (firstName && lastName) {
-      return `${firstName} ${lastName}`;
-    }
-    
-    // Fall back to email if no name is available
-    return user.email || "Unknown User";
-  };
-
-  // Get current user's role and name for author field
+  // Get current user's role and name for author field - simplified to just show "Admin"
   const getCurrentUserAuthor = () => {
-    const userName = getCurrentUserName();
-    // For now, assume admin role - this could be enhanced with proper role detection
-    return `Admin - ${userName}`;
+    // For admin users, just return "Admin"
+    return "Admin";
   };
 
   if (isLoading) {
