@@ -105,6 +105,34 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     );
   }
 
+  // Transform data to match component expectations
+  const transformedGoals = comprehensiveData?.goals?.map(goal => ({
+    id: goal.id,
+    title: goal.description,
+    description: goal.description,
+    target: "100%", // Default target
+    status: goal.status,
+    progress: goal.progress || 0,
+    notes: goal.notes || ""
+  })) || [];
+
+  const transformedActivities = comprehensiveData?.activities?.map(activity => ({
+    date: new Date(),
+    action: activity.name,
+    performer: "Care Team",
+    status: activity.status
+  })) || [];
+
+  const transformedServicePlan = comprehensiveData?.serviceActions?.map(action => ({
+    service: action.service_name,
+    provider: action.provider_name,
+    frequency: action.frequency,
+    duration: action.duration,
+    schedule: action.schedule_details || "",
+    goals: action.goals || [],
+    progress: action.progress_status
+  })) || [];
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
@@ -170,11 +198,11 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="goals">
-                  <GoalsTab goals={comprehensiveData?.goals || []} />
+                  <GoalsTab goals={transformedGoals} />
                 </TabsContent>
                 
                 <TabsContent value="activities">
-                  <ActivitiesTab activities={comprehensiveData?.activities || []} />
+                  <ActivitiesTab activities={transformedActivities} />
                 </TabsContent>
                 
                 <TabsContent value="notes">
@@ -209,7 +237,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="serviceplan">
-                  <ServicePlanTab serviceActions={comprehensiveData?.serviceActions || []} />
+                  <ServicePlanTab serviceActions={transformedServicePlan} />
                 </TabsContent>
                 
                 <TabsContent value="serviceactions">

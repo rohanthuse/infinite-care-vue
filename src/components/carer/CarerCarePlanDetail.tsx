@@ -179,7 +179,54 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
   // Create mock data for the carer view based on the existing mockPatientData
   const mockNotes = patientDataState.notes;
   const mockActivities = patientDataState.activities;
-  const mockServiceActions = patientDataState.serviceActions;
+
+  // Transform service actions to match expected interface
+  const mockServiceActions = patientDataState.serviceActions.map(action => ({
+    id: `sa-${Date.now()}-${Math.random()}`,
+    client_id: carePlan.id,
+    service_name: action.service,
+    service_category: "Care Service",
+    provider_name: action.provider,
+    frequency: action.frequency,
+    duration: action.duration,
+    schedule_details: action.schedule,
+    goals: action.goals,
+    progress_status: action.progress,
+    start_date: new Date().toISOString().split('T')[0],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }));
+
+  // Transform dietary data to match expected interface
+  const transformedDietaryRequirements = {
+    id: `dr-${carePlan.id}`,
+    dietary_restrictions: patientDataState.dietaryRequirements.restrictions.map(r => r.name),
+    food_allergies: patientDataState.dietaryRequirements.restrictions.filter(r => r.reason === 'allergy').map(r => r.name),
+    food_preferences: patientDataState.dietaryRequirements.preferences,
+    meal_schedule: { general: patientDataState.dietaryRequirements.mealPlan },
+    nutritional_needs: patientDataState.dietaryRequirements.nutritionalNotes,
+    supplements: patientDataState.dietaryRequirements.supplements.map(s => s.name),
+    feeding_assistance_required: false,
+    special_equipment_needed: "",
+    texture_modifications: "",
+    fluid_restrictions: patientDataState.dietaryRequirements.hydrationPlan,
+    weight_monitoring: false,
+  };
+
+  // Transform personal care data to match expected interface
+  const transformedPersonalCare = {
+    id: `pc-${carePlan.id}`,
+    personal_hygiene_needs: patientDataState.personalCare.routines.map(r => `${r.activity}: ${r.frequency}`).join('; '),
+    bathing_preferences: patientDataState.personalCare.preferences.join(', '),
+    dressing_assistance_level: patientDataState.personalCare.mobility.transferAbility,
+    toileting_assistance_level: "Independent",
+    continence_status: "Continent",
+    sleep_patterns: "Regular sleep pattern",
+    behavioral_notes: patientDataState.personalCare.mobility.notes,
+    comfort_measures: patientDataState.personalCare.preferences.join(', '),
+    pain_management: "As needed",
+    skin_care_needs: "Standard care",
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
@@ -233,14 +280,42 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                 <CarerCarePlanTabBar activeTab={activeTab} onChange={setActiveTab} />
                 
                 <TabsContent value="personal">
-                  <PersonalInfoTab carePlan={{
-                    patientName: carePlan.clientName,
-                    patientId: carePlan.id,
-                  }} mockPatientData={patientDataState} />
+                  <PersonalInfoTab 
+                    client={{
+                      id: carePlan.id,
+                      first_name: carePlan.clientName.split(' ')[0],
+                      last_name: carePlan.clientName.split(' ')[1] || '',
+                      email: patientDataState.email,
+                      phone: patientDataState.phone,
+                      date_of_birth: patientDataState.dateOfBirth.toISOString().split('T')[0],
+                      address: patientDataState.address,
+                      gender: patientDataState.gender,
+                    }}
+                    personalInfo={{
+                      id: `pi-${carePlan.id}`,
+                      emergency_contact_name: patientDataState.emergencyContact,
+                      emergency_contact_phone: patientDataState.phone,
+                      preferred_communication: patientDataState.preferredLanguage,
+                    }}
+                    medicalInfo={{
+                      id: `mi-${carePlan.id}`,
+                      allergies: patientDataState.medicalInformation.allergies,
+                      current_medications: patientDataState.medicalInformation.currentMedications,
+                      medical_conditions: patientDataState.medicalInformation.medicalConditions,
+                      medical_history: patientDataState.medicalInformation.medicalHistory,
+                    }}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="aboutme">
-                  <AboutMeTab aboutMe={patientDataState.aboutMe} />
+                  <AboutMeTab 
+                    personalInfo={{
+                      id: `pi-${carePlan.id}`,
+                      cultural_preferences: patientDataState.aboutMe.preferences.join(', '),
+                      language_preferences: patientDataState.preferredLanguage,
+                    }}
+                    personalCare={transformedPersonalCare}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="goals">
@@ -262,15 +337,15 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="dietary">
-                  <DietaryTab dietaryRequirements={patientDataState.dietaryRequirements} />
+                  <DietaryTab dietaryRequirements={transformedDietaryRequirements} />
                 </TabsContent>
                 
                 <TabsContent value="personalcare">
-                  <PersonalCareTab personalCare={patientDataState.personalCare} />
+                  <PersonalCareTab personalCare={transformedPersonalCare} />
                 </TabsContent>
 
                 <TabsContent value="serviceplan">
-                  <ServicePlanTab serviceActions={mockServiceActions} />
+                  <ServicePlanTab serviceActions={patientDataState.serviceActions} />
                 </TabsContent>
                 
                 <TabsContent value="serviceactions">
