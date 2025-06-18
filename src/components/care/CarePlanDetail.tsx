@@ -1,10 +1,11 @@
 
 import React, { useState } from "react";
-import { X, FileEdit, Download } from "lucide-react";
+import { X, FileEdit, Download, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { generatePDF } from "@/utils/pdfGenerator";
+import { useComprehensiveCarePlanData } from "@/hooks/useCarePlanData";
 
 import { PatientHeader } from "./PatientHeader";
 import { CarePlanSidebar } from "./CarePlanSidebar";
@@ -13,9 +14,16 @@ import { PersonalInfoTab } from "./tabs/PersonalInfoTab";
 import { AboutMeTab } from "./tabs/AboutMeTab";
 import { GoalsTab } from "./tabs/GoalsTab";
 import { DietaryTab } from "./tabs/DietaryTab";
-import { EventsLogsTab } from "./tabs/EventsLogsTab"; // Import the new tab
-
-import { mockPatientData } from "@/data/mockPatientData";
+import { PersonalCareTab } from "./tabs/PersonalCareTab";
+import { AssessmentsTab } from "./tabs/AssessmentsTab";
+import { EquipmentTab } from "./tabs/EquipmentTab";
+import { RiskTab } from "./tabs/RiskTab";
+import { ServiceActionsTab } from "./tabs/ServiceActionsTab";
+import { ServicePlanTab } from "./tabs/ServicePlanTab";
+import { ActivitiesTab } from "./tabs/ActivitiesTab";
+import { NotesTab } from "./tabs/NotesTab";
+import { DocumentsTab } from "./tabs/DocumentsTab";
+import { EventsLogsTab } from "./tabs/EventsLogsTab";
 
 interface CarePlanDetailProps {
   carePlan: {
@@ -33,7 +41,7 @@ interface CarePlanDetailProps {
   onScheduleFollowUp?: () => void;
   onRecordActivity?: () => void;
   onUploadDocument?: () => void;
-  onAddEvent?: () => void; // Add new prop for adding events
+  onAddEvent?: () => void;
 }
 
 export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ 
@@ -43,9 +51,16 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   onScheduleFollowUp,
   onRecordActivity,
   onUploadDocument,
-  onAddEvent // Capture new prop
+  onAddEvent
 }) => {
   const [activeTab, setActiveTab] = useState("personal");
+
+  // Fetch comprehensive care plan data
+  const {
+    data: comprehensiveData,
+    isLoading,
+    error
+  } = useComprehensiveCarePlanData(carePlan?.patientId || "");
 
   if (!carePlan) return null;
 
@@ -58,6 +73,37 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
       signedBy: carePlan.assignedTo
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+          <div className="flex items-center justify-center h-96">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading care plan data...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+          <div className="flex items-center justify-center h-96">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading care plan</h3>
+              <p className="text-gray-600">Unable to load care plan data. Please try again.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
@@ -109,55 +155,65 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 <CarePlanTabBar activeTab={activeTab} onChange={setActiveTab} />
                 
                 <TabsContent value="personal">
-                  <PersonalInfoTab carePlan={carePlan} mockPatientData={mockPatientData} />
+                  <PersonalInfoTab 
+                    client={comprehensiveData?.client}
+                    personalInfo={comprehensiveData?.personalInfo}
+                    medicalInfo={comprehensiveData?.medicalInfo}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="aboutme">
-                  <AboutMeTab aboutMe={mockPatientData.aboutMe} />
+                  <AboutMeTab 
+                    personalInfo={comprehensiveData?.personalInfo}
+                    personalCare={comprehensiveData?.personalCare}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="goals">
-                  <GoalsTab goals={mockPatientData.goals} />
+                  <GoalsTab goals={comprehensiveData?.goals || []} />
                 </TabsContent>
                 
                 <TabsContent value="activities">
-                  {/* Activities tab content will be implemented */}
+                  <ActivitiesTab activities={comprehensiveData?.activities || []} />
                 </TabsContent>
                 
                 <TabsContent value="notes">
-                  {/* Notes tab content will be implemented */}
+                  <NotesTab notes={comprehensiveData?.notes || []} onAddNote={onAddNote} />
                 </TabsContent>
                 
                 <TabsContent value="documents">
-                  {/* Documents tab content will be implemented */}
+                  <DocumentsTab 
+                    documents={comprehensiveData?.documents || []} 
+                    onUploadDocument={onUploadDocument} 
+                  />
                 </TabsContent>
                 
                 <TabsContent value="assessments">
-                  {/* Assessments tab content will be implemented */}
+                  <AssessmentsTab assessments={comprehensiveData?.assessments || []} />
                 </TabsContent>
                 
                 <TabsContent value="equipment">
-                  {/* Equipment tab content will be implemented */}
+                  <EquipmentTab equipment={comprehensiveData?.equipment || []} />
                 </TabsContent>
                 
                 <TabsContent value="dietary">
-                  <DietaryTab dietaryRequirements={mockPatientData.dietaryRequirements} />
+                  <DietaryTab dietaryRequirements={comprehensiveData?.dietaryRequirements} />
                 </TabsContent>
 
                 <TabsContent value="personalcare">
-                  {/* Personal Care tab content will be implemented */}
+                  <PersonalCareTab personalCare={comprehensiveData?.personalCare} />
                 </TabsContent>
                 
                 <TabsContent value="risk">
-                  {/* Risk tab content will be implemented */}
+                  <RiskTab riskAssessments={comprehensiveData?.riskAssessments || []} />
                 </TabsContent>
                 
                 <TabsContent value="serviceplan">
-                  {/* Service Plan tab content will be implemented */}
+                  <ServicePlanTab serviceActions={comprehensiveData?.serviceActions || []} />
                 </TabsContent>
                 
                 <TabsContent value="serviceactions">
-                  {/* Service Actions tab content will be implemented */}
+                  <ServiceActionsTab serviceActions={comprehensiveData?.serviceActions || []} />
                 </TabsContent>
 
                 <TabsContent value="eventslogs">

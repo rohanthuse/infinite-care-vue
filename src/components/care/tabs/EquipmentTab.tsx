@@ -6,41 +6,51 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-
-interface Equipment {
-  name: string;
-  type: string;
-  status: string;
-  notes: string;
-  lastInspection: Date;
-}
+import { ClientEquipment } from "@/hooks/useClientEquipment";
 
 interface EquipmentTabProps {
-  equipment: Equipment[];
+  equipment: ClientEquipment[];
 }
 
 export const EquipmentTab: React.FC<EquipmentTabProps> = ({ equipment }) => {
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "In Use": return "bg-green-50 text-green-700 border-green-200";
-      case "Available": return "bg-blue-50 text-blue-700 border-blue-200";
-      case "Maintenance": return "bg-amber-50 text-amber-700 border-amber-200";
-      case "Faulty": return "bg-red-50 text-red-700 border-red-200";
+    switch (status.toLowerCase()) {
+      case "active": return "bg-green-50 text-green-700 border-green-200";
+      case "inactive": return "bg-gray-50 text-gray-700 border-gray-200";
+      case "maintenance": return "bg-amber-50 text-amber-700 border-amber-200";
+      case "faulty": return "bg-red-50 text-red-700 border-red-200";
       default: return "bg-gray-50 text-gray-700 border-gray-200";
     }
   };
 
-  const getNextInspectionDate = (lastInspection: Date) => {
-    const nextInspection = new Date(lastInspection);
-    nextInspection.setMonth(nextInspection.getMonth() + 3); // Assuming inspections every 3 months
-    return nextInspection;
+  const getNextMaintenanceDate = (lastMaintenance?: string, schedule?: string) => {
+    if (!lastMaintenance) return null;
+    
+    const lastDate = new Date(lastMaintenance);
+    // Simple logic: add 3 months for regular maintenance
+    const nextDate = new Date(lastDate);
+    nextDate.setMonth(nextDate.getMonth() + 3);
+    return nextDate;
   };
 
-  const isInspectionSoon = (lastInspection: Date) => {
-    const nextInspection = getNextInspectionDate(lastInspection);
-    const today = new Date();
-    const daysDiff = Math.ceil((nextInspection.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    return daysDiff <= 14; // Warning if inspection is due within 14 days
+  const isMaintenanceSoon = (equipment: ClientEquipment) => {
+    if (equipment.next_maintenance_date) {
+      const nextDate = new Date(equipment.next_maintenance_date);
+      const today = new Date();
+      const daysDiff = Math.ceil((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      return daysDiff <= 14; // Warning if maintenance is due within 14 days
+    }
+    
+    if (equipment.last_maintenance_date) {
+      const nextDate = getNextMaintenanceDate(equipment.last_maintenance_date, equipment.maintenance_schedule);
+      if (nextDate) {
+        const today = new Date();
+        const daysDiff = Math.ceil((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        return daysDiff <= 14;
+      }
+    }
+    
+    return false;
   };
 
   return (
@@ -67,48 +77,89 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({ equipment }) => {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4">
-              {equipment.map((item, index) => (
-                <div key={index} className="border rounded-lg overflow-hidden hover:shadow-md transition-all">
+              {equipment.map((item) => (
+                <div key={item.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-all">
                   <div className="bg-gradient-to-r from-slate-50 to-white px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="mr-3 p-2 rounded-full bg-slate-100">
                         <Wrench className="h-5 w-5 text-slate-600" />
                       </div>
                       <div>
-                        <h3 className="font-medium">{item.name}</h3>
-                        <p className="text-sm text-gray-500">{item.type}</p>
+                        <h3 className="font-medium">{item.equipment_name}</h3>
+                        <p className="text-sm text-gray-500">{item.equipment_type}</p>
+                        {item.manufacturer && (
+                          <p className="text-xs text-gray-400">{item.manufacturer}</p>
+                        )}
                       </div>
                     </div>
-                    <Badge variant="outline" className={getStatusBadge(item.status)}>
-                      {item.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {isMaintenanceSoon(item) && (
+                        <AlertCircle className="h-4 w-4 text-amber-500" />
+                      )}
+                      <Badge variant="outline" className={getStatusBadge(item.status)}>
+                        {item.status}
+                      </Badge>
+                    </div>
                   </div>
                   
                   <div className="p-4 bg-white">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 mb-1">Notes</p>
-                        <p className="text-sm">{item.notes}</p>
+                      {/* Equipment Details */}
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium text-gray-700">Equipment Details</h4>
+                        {item.model_number && (
+                          <p className="text-xs"><span className="font-medium">Model:</span> {item.model_number}</p>
+                        )}
+                        {item.serial_number && (
+                          <p className="text-xs"><span className="font-medium">Serial:</span> {item.serial_number}</p>
+                        )}
+                        {item.location && (
+                          <p className="text-xs"><span className="font-medium">Location:</span> {item.location}</p>
+                        )}
+                        {item.installation_date && (
+                          <p className="text-xs">
+                            <span className="font-medium">Installed:</span> {format(new Date(item.installation_date), 'MMM dd, yyyy')}
+                          </p>
+                        )}
                       </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 mb-1">Inspection Status</p>
-                        <div className="flex items-center gap-2">
-                          {isInspectionSoon(item.lastInspection) ? (
-                            <AlertCircle className="h-4 w-4 text-amber-500" />
-                          ) : (
+
+                      {/* Maintenance Information */}
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium text-gray-700">Maintenance</h4>
+                        {item.last_maintenance_date ? (
+                          <div className="flex items-center gap-2">
                             <CheckCircle2 className="h-4 w-4 text-green-500" />
-                          )}
-                          <div>
-                            <p className="text-sm">Last: {format(item.lastInspection, 'MMM dd, yyyy')}</p>
-                            <p className="text-xs text-gray-500">
-                              Next: {format(getNextInspectionDate(item.lastInspection), 'MMM dd, yyyy')}
-                            </p>
+                            <div>
+                              <p className="text-xs">Last: {format(new Date(item.last_maintenance_date), 'MMM dd, yyyy')}</p>
+                              {item.next_maintenance_date && (
+                                <p className="text-xs text-gray-500">
+                                  Next: {format(new Date(item.next_maintenance_date), 'MMM dd, yyyy')}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4 text-amber-500" />
+                            <p className="text-xs text-amber-600">No maintenance records</p>
+                          </div>
+                        )}
+                        {item.maintenance_schedule && (
+                          <p className="text-xs text-gray-500">Schedule: {item.maintenance_schedule}</p>
+                        )}
                       </div>
                     </div>
-                    <div className="mt-3 pt-3 border-t flex justify-end">
+
+                    {item.notes && (
+                      <div className="mt-4 pt-4 border-t">
+                        <h4 className="text-sm font-medium text-gray-700 mb-1">Notes</h4>
+                        <p className="text-sm text-gray-600">{item.notes}</p>
+                      </div>
+                    )}
+                    
+                    <div className="mt-4 pt-4 border-t flex justify-end gap-2">
                       <Button variant="outline" size="sm">View Details</Button>
+                      <Button variant="outline" size="sm">Schedule Maintenance</Button>
                     </div>
                   </div>
                 </div>
