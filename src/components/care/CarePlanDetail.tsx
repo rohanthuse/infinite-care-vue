@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { X, FileEdit, Download, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
@@ -62,8 +63,11 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     error
   } = useComprehensiveCarePlanData(carePlan?.patientId || "");
 
-  // Database hooks for notes
-  const { data: dbNotes = [], isLoading: notesLoading } = useClientNotes(carePlan?.patientId || "");
+  // Get the actual client UUID from comprehensive data or use a fallback
+  const clientId = comprehensiveData?.client?.id || carePlan?.patientId || "";
+  
+  // Database hooks for notes - now using the correct client UUID
+  const { data: dbNotes = [], isLoading: notesLoading } = useClientNotes(clientId);
   const createNoteMutation = useCreateClientNote();
 
   if (!carePlan) return null;
