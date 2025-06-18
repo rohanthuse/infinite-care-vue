@@ -26,8 +26,8 @@ const extractRoleFromAuthor = (author: string): string => {
   if (author.includes("Admin")) return "Admin";
   if (author.includes("Carer")) return "Carer";
   
-  // Default fallback
-  return "Staff";
+  // Default fallback is Admin since they are the primary administrative role
+  return "Admin";
 };
 
 export const NotesTab: React.FC<NotesTabProps> = ({ notes, onAddNote }) => {
