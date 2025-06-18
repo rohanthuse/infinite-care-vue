@@ -559,6 +559,62 @@ export type Database = {
           },
         ]
       }
+      client_assessments: {
+        Row: {
+          assessment_date: string
+          assessment_name: string
+          assessment_type: string
+          client_id: string
+          created_at: string
+          id: string
+          next_review_date: string | null
+          performed_by: string
+          recommendations: string | null
+          results: string | null
+          score: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assessment_date: string
+          assessment_name: string
+          assessment_type: string
+          client_id: string
+          created_at?: string
+          id?: string
+          next_review_date?: string | null
+          performed_by: string
+          recommendations?: string | null
+          results?: string | null
+          score?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assessment_date?: string
+          assessment_name?: string
+          assessment_type?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          next_review_date?: string | null
+          performed_by?: string
+          recommendations?: string | null
+          results?: string | null
+          score?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_assessments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_billing: {
         Row: {
           amount: number
@@ -826,6 +882,68 @@ export type Database = {
           },
         ]
       }
+      client_dietary_requirements: {
+        Row: {
+          client_id: string
+          created_at: string
+          dietary_restrictions: string[] | null
+          feeding_assistance_required: boolean | null
+          fluid_restrictions: string | null
+          food_allergies: string[] | null
+          food_preferences: string[] | null
+          id: string
+          meal_schedule: Json | null
+          nutritional_needs: string | null
+          special_equipment_needed: string | null
+          supplements: string[] | null
+          texture_modifications: string | null
+          updated_at: string
+          weight_monitoring: boolean | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          dietary_restrictions?: string[] | null
+          feeding_assistance_required?: boolean | null
+          fluid_restrictions?: string | null
+          food_allergies?: string[] | null
+          food_preferences?: string[] | null
+          id?: string
+          meal_schedule?: Json | null
+          nutritional_needs?: string | null
+          special_equipment_needed?: string | null
+          supplements?: string[] | null
+          texture_modifications?: string | null
+          updated_at?: string
+          weight_monitoring?: boolean | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          dietary_restrictions?: string[] | null
+          feeding_assistance_required?: boolean | null
+          fluid_restrictions?: string | null
+          food_allergies?: string[] | null
+          food_preferences?: string[] | null
+          id?: string
+          meal_schedule?: Json | null
+          nutritional_needs?: string | null
+          special_equipment_needed?: string | null
+          supplements?: string[] | null
+          texture_modifications?: string | null
+          updated_at?: string
+          weight_monitoring?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_dietary_requirements_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_documents: {
         Row: {
           client_id: string
@@ -866,6 +984,71 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "client_documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_equipment: {
+        Row: {
+          client_id: string
+          created_at: string
+          equipment_name: string
+          equipment_type: string
+          id: string
+          installation_date: string | null
+          last_maintenance_date: string | null
+          location: string | null
+          maintenance_schedule: string | null
+          manufacturer: string | null
+          model_number: string | null
+          next_maintenance_date: string | null
+          notes: string | null
+          serial_number: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          equipment_name: string
+          equipment_type: string
+          id?: string
+          installation_date?: string | null
+          last_maintenance_date?: string | null
+          location?: string | null
+          maintenance_schedule?: string | null
+          manufacturer?: string | null
+          model_number?: string | null
+          next_maintenance_date?: string | null
+          notes?: string | null
+          serial_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          equipment_name?: string
+          equipment_type?: string
+          id?: string
+          installation_date?: string | null
+          last_maintenance_date?: string | null
+          location?: string | null
+          maintenance_schedule?: string | null
+          manufacturer?: string | null
+          model_number?: string | null
+          next_maintenance_date?: string | null
+          notes?: string | null
+          serial_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_equipment_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
@@ -915,6 +1098,62 @@ export type Database = {
             foreignKeyName: "client_events_logs_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_medical_info: {
+        Row: {
+          allergies: string[] | null
+          client_id: string
+          cognitive_status: string | null
+          communication_needs: string | null
+          created_at: string
+          current_medications: string[] | null
+          id: string
+          medical_conditions: string[] | null
+          medical_history: string | null
+          mental_health_status: string | null
+          mobility_status: string | null
+          sensory_impairments: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          allergies?: string[] | null
+          client_id: string
+          cognitive_status?: string | null
+          communication_needs?: string | null
+          created_at?: string
+          current_medications?: string[] | null
+          id?: string
+          medical_conditions?: string[] | null
+          medical_history?: string | null
+          mental_health_status?: string | null
+          mobility_status?: string | null
+          sensory_impairments?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          allergies?: string[] | null
+          client_id?: string
+          cognitive_status?: string | null
+          communication_needs?: string | null
+          created_at?: string
+          current_medications?: string[] | null
+          id?: string
+          medical_conditions?: string[] | null
+          medical_history?: string | null
+          mental_health_status?: string | null
+          mobility_status?: string | null
+          sensory_impairments?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_medical_info_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -1052,22 +1291,288 @@ export type Database = {
           },
         ]
       }
+      client_personal_care: {
+        Row: {
+          bathing_preferences: string | null
+          behavioral_notes: string | null
+          client_id: string
+          comfort_measures: string | null
+          continence_status: string | null
+          created_at: string
+          dressing_assistance_level: string | null
+          id: string
+          pain_management: string | null
+          personal_hygiene_needs: string | null
+          skin_care_needs: string | null
+          sleep_patterns: string | null
+          toileting_assistance_level: string | null
+          updated_at: string
+        }
+        Insert: {
+          bathing_preferences?: string | null
+          behavioral_notes?: string | null
+          client_id: string
+          comfort_measures?: string | null
+          continence_status?: string | null
+          created_at?: string
+          dressing_assistance_level?: string | null
+          id?: string
+          pain_management?: string | null
+          personal_hygiene_needs?: string | null
+          skin_care_needs?: string | null
+          sleep_patterns?: string | null
+          toileting_assistance_level?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bathing_preferences?: string | null
+          behavioral_notes?: string | null
+          client_id?: string
+          comfort_measures?: string | null
+          continence_status?: string | null
+          created_at?: string
+          dressing_assistance_level?: string | null
+          id?: string
+          pain_management?: string | null
+          personal_hygiene_needs?: string | null
+          skin_care_needs?: string | null
+          sleep_patterns?: string | null
+          toileting_assistance_level?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_personal_care_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_personal_info: {
+        Row: {
+          client_id: string
+          created_at: string
+          cultural_preferences: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relationship: string | null
+          gp_name: string | null
+          gp_phone: string | null
+          gp_practice: string | null
+          id: string
+          language_preferences: string | null
+          marital_status: string | null
+          next_of_kin_name: string | null
+          next_of_kin_phone: string | null
+          next_of_kin_relationship: string | null
+          preferred_communication: string | null
+          religion: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          cultural_preferences?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          gp_name?: string | null
+          gp_phone?: string | null
+          gp_practice?: string | null
+          id?: string
+          language_preferences?: string | null
+          marital_status?: string | null
+          next_of_kin_name?: string | null
+          next_of_kin_phone?: string | null
+          next_of_kin_relationship?: string | null
+          preferred_communication?: string | null
+          religion?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          cultural_preferences?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          gp_name?: string | null
+          gp_phone?: string | null
+          gp_practice?: string | null
+          id?: string
+          language_preferences?: string | null
+          marital_status?: string | null
+          next_of_kin_name?: string | null
+          next_of_kin_phone?: string | null
+          next_of_kin_relationship?: string | null
+          preferred_communication?: string | null
+          religion?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_personal_info_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_risk_assessments: {
+        Row: {
+          assessed_by: string
+          assessment_date: string
+          client_id: string
+          created_at: string
+          id: string
+          mitigation_strategies: string[] | null
+          review_date: string | null
+          risk_factors: string[] | null
+          risk_level: string
+          risk_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assessed_by: string
+          assessment_date: string
+          client_id: string
+          created_at?: string
+          id?: string
+          mitigation_strategies?: string[] | null
+          review_date?: string | null
+          risk_factors?: string[] | null
+          risk_level: string
+          risk_type: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assessed_by?: string
+          assessment_date?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          mitigation_strategies?: string[] | null
+          review_date?: string | null
+          risk_factors?: string[] | null
+          risk_level?: string
+          risk_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_risk_assessments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_service_actions: {
+        Row: {
+          care_plan_id: string | null
+          client_id: string
+          created_at: string
+          duration: string
+          end_date: string | null
+          frequency: string
+          goals: string[] | null
+          id: string
+          last_completed_date: string | null
+          next_scheduled_date: string | null
+          notes: string | null
+          progress_status: string
+          provider_name: string
+          schedule_details: string | null
+          service_category: string
+          service_name: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          care_plan_id?: string | null
+          client_id: string
+          created_at?: string
+          duration: string
+          end_date?: string | null
+          frequency: string
+          goals?: string[] | null
+          id?: string
+          last_completed_date?: string | null
+          next_scheduled_date?: string | null
+          notes?: string | null
+          progress_status?: string
+          provider_name: string
+          schedule_details?: string | null
+          service_category: string
+          service_name: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          care_plan_id?: string | null
+          client_id?: string
+          created_at?: string
+          duration?: string
+          end_date?: string | null
+          frequency?: string
+          goals?: string[] | null
+          id?: string
+          last_completed_date?: string | null
+          next_scheduled_date?: string | null
+          notes?: string | null
+          progress_status?: string
+          provider_name?: string
+          schedule_details?: string | null
+          service_category?: string
+          service_name?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_service_actions_care_plan_id_fkey"
+            columns: ["care_plan_id"]
+            isOneToOne: false
+            referencedRelation: "client_care_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_service_actions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           additional_information: string | null
           address: string | null
           avatar_initials: string | null
           branch_id: string | null
+          communication_preferences: string | null
           country_code: string | null
           created_at: string | null
           date_of_birth: string | null
           email: string | null
+          emergency_contact: string | null
+          emergency_phone: string | null
           first_name: string
           gender: string | null
+          gp_details: string | null
           id: string
           last_name: string
           middle_name: string | null
           mobile_number: string | null
+          mobility_status: string | null
           other_identifier: string | null
           phone: string | null
           preferred_name: string | null
@@ -1084,16 +1589,21 @@ export type Database = {
           address?: string | null
           avatar_initials?: string | null
           branch_id?: string | null
+          communication_preferences?: string | null
           country_code?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
           first_name: string
           gender?: string | null
+          gp_details?: string | null
           id?: string
           last_name: string
           middle_name?: string | null
           mobile_number?: string | null
+          mobility_status?: string | null
           other_identifier?: string | null
           phone?: string | null
           preferred_name?: string | null
@@ -1110,16 +1620,21 @@ export type Database = {
           address?: string | null
           avatar_initials?: string | null
           branch_id?: string | null
+          communication_preferences?: string | null
           country_code?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
+          emergency_contact?: string | null
+          emergency_phone?: string | null
           first_name?: string
           gender?: string | null
+          gp_details?: string | null
           id?: string
           last_name?: string
           middle_name?: string | null
           mobile_number?: string | null
+          mobility_status?: string | null
           other_identifier?: string | null
           phone?: string | null
           preferred_name?: string | null
