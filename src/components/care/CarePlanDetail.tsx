@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { X, FileEdit, Download, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
@@ -8,6 +9,7 @@ import { useComprehensiveCarePlanData } from "@/hooks/useCarePlanData";
 import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
 import { useAuth } from "@/hooks/useAuth";
 import { useCreateClientAssessment } from "@/hooks/useClientAssessments";
+import { toast } from "@/hooks/use-toast";
 
 import { PatientHeader } from "./PatientHeader";
 import { CarePlanSidebar } from "./CarePlanSidebar";
@@ -90,6 +92,46 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const handleAddNoteWithDB = async () => {
     if (onAddNote) {
       onAddNote();
+    }
+  };
+
+  const handleSaveAssessment = async (assessment: any) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot save assessment.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await createAssessmentMutation.mutateAsync({
+        client_id: clientId,
+        assessment_type: assessment.assessment_type,
+        assessment_name: assessment.assessment_name,
+        assessment_date: assessment.assessment_date.toISOString().split('T')[0],
+        performed_by: assessment.performed_by,
+        results: assessment.results || null,
+        score: assessment.score || null,
+        recommendations: assessment.recommendations || null,
+        next_review_date: assessment.next_review_date ? assessment.next_review_date.toISOString().split('T')[0] : null,
+        status: 'completed',
+        performed_by_id: user?.id || null,
+      });
+
+      setAssessmentDialogOpen(false);
+      toast({
+        title: "Assessment created",
+        description: "The assessment has been successfully added to the patient's record."
+      });
+    } catch (error) {
+      console.error("Error saving assessment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save assessment. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 

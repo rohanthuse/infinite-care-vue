@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -44,6 +45,7 @@ import { ScheduleFollowUpDialog } from "@/components/care/dialogs/ScheduleFollow
 import { RecordActivityDialog } from "@/components/care/dialogs/RecordActivityDialog";
 import { UploadDocumentDialog } from "@/components/care/dialogs/UploadDocumentDialog";
 import { AddEventDialog } from "@/components/care/dialogs/AddEventDialog";
+import { AddAssessmentDialog } from "@/components/care/dialogs/AddAssessmentDialog";
 import { resolveCarePlanId, getDisplayCarePlanId } from "@/utils/carePlanIdMapping";
 import { useCarePlanData } from "@/hooks/useCarePlanData";
 import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
