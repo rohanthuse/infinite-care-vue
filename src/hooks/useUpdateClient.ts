@@ -22,6 +22,10 @@ interface UpdateClientParams {
     pronouns?: string;
     other_identifier?: string;
     additional_information?: string;
+    avatar_initials?: string;
+    registered_on?: string;
+    referral_route?: string;
+    status?: string;
   };
 }
 
@@ -49,8 +53,12 @@ export const useUpdateClient = () => {
   return useMutation({
     mutationFn: updateClient,
     onSuccess: (data) => {
+      // Invalidate both admin and comprehensive client queries
       queryClient.invalidateQueries({ queryKey: ['comprehensive-care-plan-data'] });
       queryClient.invalidateQueries({ queryKey: ['client-profile', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-clients'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-client-detail', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
     },
   });
 };
