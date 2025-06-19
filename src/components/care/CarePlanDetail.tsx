@@ -10,9 +10,9 @@ import {
   useClientPersonalCare, 
   useClientAssessments, 
   useClientEquipment, 
-  useClientRiskAssessments, 
   useClientServiceActions,
 } from "@/hooks/useClientData";
+import { useClientRiskAssessments } from "@/hooks/useClientRiskAssessments";
 import { useCarePlanDialogs } from "./hooks/useCarePlanDialogs";
 import { CarePlanHeader } from "./CarePlanHeader";
 import { CarePlanContent } from "./CarePlanContent";
@@ -41,7 +41,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const navigate = useNavigate();
   const params = useParams();
 
-  // Extract parameters from URL with proper decoding
+  // Extract parameters from URL with proper decoding and fallback
   const branchId = params.branchId || '';
   const branchName = params.branchName ? decodeURIComponent(params.branchName) : '';
 

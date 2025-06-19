@@ -58,16 +58,29 @@ export const useCarePlanDialogs = (carePlanId: string, patientId: string, branch
 
   // Navigation handlers
   const handleScheduleFollowUp = () => {
-    if (branchId && branchName) {
+    console.log('Attempting to schedule follow-up with params:', { branchId, branchName, patientId, carePlanId });
+    
+    if (!branchId || !branchName) {
+      console.error('Missing navigation parameters for follow-up:', { branchId, branchName });
+      toast.error("Unable to navigate to booking page. Missing branch information.");
+      return;
+    }
+
+    try {
       const encodedBranchName = encodeURIComponent(branchName);
-      navigate(`/branch-dashboard/${branchId}/${encodedBranchName}/bookings/new`, {
+      const navigationPath = `/branch-dashboard/${branchId}/${encodedBranchName}/bookings/new`;
+      
+      console.log('Navigating to:', navigationPath);
+      
+      navigate(navigationPath, {
         state: { 
           clientId: patientId, 
           clientName: patientId,
           carePlanId: carePlanId 
         }
       });
-    } else {
+    } catch (error) {
+      console.error('Navigation error:', error);
       toast.error("Unable to navigate to booking page. Please try again.");
     }
   };
@@ -75,6 +88,7 @@ export const useCarePlanDialogs = (carePlanId: string, patientId: string, branch
   // Database-connected save handlers
   const handleSaveNote = async (noteData: { title: string; content: string }) => {
     try {
+      console.log('Saving note:', noteData);
       await createNoteMutation.mutateAsync({
         client_id: patientId,
         title: noteData.title,
@@ -90,6 +104,7 @@ export const useCarePlanDialogs = (carePlanId: string, patientId: string, branch
 
   const handleSaveEvent = async (eventData: any) => {
     try {
+      console.log('Saving event:', eventData);
       await createEventMutation.mutateAsync({
         client_id: patientId,
         title: eventData.title,
@@ -108,6 +123,7 @@ export const useCarePlanDialogs = (carePlanId: string, patientId: string, branch
 
   const handleSaveGoal = async (goalData: any) => {
     try {
+      console.log('Saving goal:', goalData);
       await createGoalMutation.mutateAsync({
         care_plan_id: carePlanId,
         description: goalData.description,
@@ -124,6 +140,7 @@ export const useCarePlanDialogs = (carePlanId: string, patientId: string, branch
 
   const handleSaveActivity = async (activityData: any) => {
     try {
+      console.log('Saving activity:', activityData);
       await createActivityMutation.mutateAsync({
         care_plan_id: carePlanId,
         name: activityData.name,
@@ -140,6 +157,7 @@ export const useCarePlanDialogs = (carePlanId: string, patientId: string, branch
 
   const handleSaveAssessment = async (assessmentData: any) => {
     try {
+      console.log('Saving assessment:', assessmentData);
       await createAssessmentMutation.mutateAsync({
         client_id: patientId,
         assessment_name: assessmentData.assessment_name,
@@ -161,7 +179,20 @@ export const useCarePlanDialogs = (carePlanId: string, patientId: string, branch
 
   const handleSaveEquipment = async (equipmentData: any) => {
     try {
-      await createEquipmentMutation.mutateAsync(equipmentData);
+      console.log('Saving equipment:', equipmentData);
+      await createEquipmentMutation.mutateAsync({
+        client_id: patientId,
+        equipment_name: equipmentData.equipment_name,
+        equipment_type: equipmentData.equipment_type,
+        manufacturer: equipmentData.manufacturer,
+        model_number: equipmentData.model_number,
+        serial_number: equipmentData.serial_number,
+        status: equipmentData.status || 'active',
+        location: equipmentData.location,
+        installation_date: equipmentData.installation_date,
+        maintenance_schedule: equipmentData.maintenance_schedule,
+        notes: equipmentData.notes,
+      });
       setAddEquipmentDialogOpen(false);
     } catch (error) {
       console.error("Error saving equipment:", error);
@@ -171,7 +202,18 @@ export const useCarePlanDialogs = (carePlanId: string, patientId: string, branch
 
   const handleSaveRiskAssessment = async (riskData: any) => {
     try {
-      await createRiskAssessmentMutation.mutateAsync(riskData);
+      console.log('Saving risk assessment:', riskData);
+      await createRiskAssessmentMutation.mutateAsync({
+        client_id: patientId,
+        risk_type: riskData.risk_type,
+        risk_level: riskData.risk_level,
+        risk_factors: riskData.risk_factors || [],
+        mitigation_strategies: riskData.mitigation_strategies || [],
+        assessment_date: riskData.assessment_date,
+        assessed_by: riskData.assessed_by,
+        status: riskData.status || 'active',
+        review_date: riskData.review_date,
+      });
       setAddRiskAssessmentDialogOpen(false);
     } catch (error) {
       console.error("Error saving risk assessment:", error);
@@ -181,7 +223,23 @@ export const useCarePlanDialogs = (carePlanId: string, patientId: string, branch
 
   const handleSaveServiceAction = async (serviceActionData: any) => {
     try {
-      await createServiceActionMutation.mutateAsync(serviceActionData);
+      console.log('Saving service action:', serviceActionData);
+      await createServiceActionMutation.mutateAsync({
+        client_id: patientId,
+        care_plan_id: carePlanId,
+        service_name: serviceActionData.service_name,
+        service_category: serviceActionData.service_category,
+        provider_name: serviceActionData.provider_name,
+        frequency: serviceActionData.frequency,
+        duration: serviceActionData.duration,
+        schedule_details: serviceActionData.schedule_details,
+        goals: serviceActionData.goals || [],
+        progress_status: serviceActionData.progress_status || 'active',
+        start_date: serviceActionData.start_date,
+        end_date: serviceActionData.end_date,
+        next_scheduled_date: serviceActionData.next_scheduled_date,
+        notes: serviceActionData.notes,
+      });
       setAddServiceActionDialogOpen(false);
     } catch (error) {
       console.error("Error saving service action:", error);
@@ -189,35 +247,42 @@ export const useCarePlanDialogs = (carePlanId: string, patientId: string, branch
     }
   };
 
-  // Fixed save handler that uses appropriate mutation hooks for different data types
+  // Enhanced save handler for different data types
   const handleSavePersonalInfo = async (data: any) => {
     try {
+      console.log('Saving personal info with data type detection:', data);
+      
       if (data.dietary_restrictions || data.food_allergies || data.food_preferences) {
         // This is dietary data - use dietary requirements mutation
+        console.log('Detected dietary data, using dietary requirements mutation');
         await updateDietaryRequirementsMutation.mutateAsync({
           client_id: patientId,
           ...data
         });
       } else if (data.personal_hygiene_needs || data.bathing_preferences || data.dressing_assistance_level) {
         // This is personal care data - use personal care mutation
+        console.log('Detected personal care data, using personal care mutation');
         await updatePersonalCareMutation.mutateAsync({
           client_id: patientId,
           ...data
         });
       } else if (data.allergies || data.current_medications || data.medical_conditions) {
         // This is medical data - use medical info mutation
+        console.log('Detected medical data, using medical info mutation');
         await updateMedicalInfoMutation.mutateAsync({
           client_id: patientId,
           ...data
         });
       } else if (data.cultural_preferences || data.language_preferences || data.emergency_contact_name) {
         // This is personal info data - use personal info mutation
+        console.log('Detected personal info data, using personal info mutation');
         await updatePersonalInfoMutation.mutateAsync({
           client_id: patientId,
           ...data
         });
       } else {
         // Default to client profile update for basic client data
+        console.log('Using default client profile update');
         await updateClientMutation.mutateAsync({
           clientId: patientId,
           updates: data
