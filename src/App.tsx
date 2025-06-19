@@ -16,6 +16,7 @@ import ClientProfile from "./pages/client/ClientProfile";
 import ClientAppointments from "./pages/client/ClientAppointments";
 import ClientCarePlans from "./pages/client/ClientCarePlans";
 import ClientDocuments from "./pages/client/ClientDocuments";
+import ClientEdit from "./pages/client/ClientEdit";
 import Attendance from "./pages/Attendance";
 import Agreement from "./pages/Agreement";
 import Accounting from "./pages/Accounting";
@@ -53,6 +54,9 @@ const App = () => (
               <Route path="/client-dashboard/appointments" element={<ClientAppointments />} />
               <Route path="/client-dashboard/care-plans" element={<ClientCarePlans />} />
               <Route path="/client-dashboard/documents" element={<ClientDocuments />} />
+              
+              {/* Client Edit Route */}
+              <Route path="/branch-dashboard/:id/:branchName/clients/:clientId/edit" element={<ClientEdit />} />
               
               {/* Standalone Pages */}
               <Route path="/attendance" element={<Attendance />} />
