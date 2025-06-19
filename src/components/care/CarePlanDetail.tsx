@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { X, FileEdit, Download, PenLine, MessageCircle, Clock, Activity, FileBarChart2 } from "lucide-react";
 import { format } from "date-fns";
@@ -407,8 +406,6 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                       comfort_measures: "",
                       pain_management: "",
                       skin_care_needs: "",
-                      created_at: "",
-                      updated_at: "",
                     }}
                     onEditAboutMe={handleEditAboutMe}
                   />

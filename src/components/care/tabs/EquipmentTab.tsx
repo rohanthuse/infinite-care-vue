@@ -1,7 +1,6 @@
-
 import React from "react";
 import { format } from "date-fns";
-import { Wrench, Plus, Calendar, MapPin, Tool } from "lucide-react";
+import { Wrench, Plus, Calendar, MapPin, Settings } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -69,7 +68,7 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
                     </div>
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
-                        <Tool className="h-4 w-4" />
+                        <Settings className="h-4 w-4" />
                         <span>Type: {item.equipment_type}</span>
                       </div>
                       {item.location && (
