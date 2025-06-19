@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { X, FileEdit, Download, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
@@ -255,7 +256,8 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   };
 
   const handleSaveGoal = async (data: any) => {
-    const carePlanId = comprehensiveData?.carePlans?.[0]?.id;
+    // Use the care plan ID from the carePlan prop instead of from comprehensive data
+    const carePlanId = carePlan?.id;
     if (!carePlanId) {
       toast({
         title: "Error",
