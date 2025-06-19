@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { X, FileEdit, Download, PenLine, MessageCircle, Clock, Activity, FileBarChart2 } from "lucide-react";
 import { format } from "date-fns";
@@ -8,6 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { generatePDF, exportCarePlanPDF } from "@/utils/pdfGenerator";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
+
+// Import all the hooks we need
+import { useCreateClientNote } from "@/hooks/useClientNotes";
+import { useCreateClientEvent } from "@/hooks/useClientEvents";
+import { useCreateGoal } from "@/hooks/useCarePlanGoalsMutations";
+import { useCreateClientActivity } from "@/hooks/useClientActivities";
 
 import { CarePlanSidebar } from "./CarePlanSidebar";
 import { CarePlanTabBar } from "./CarePlanTabBar";
@@ -24,6 +31,8 @@ import { ServiceActionsTab } from "./tabs/ServiceActionsTab";
 import { ServicePlanTab } from "./tabs/ServicePlanTab";
 import { AddNoteDialog } from "./dialogs/AddNoteDialog";
 import { AddEventDialog } from "./dialogs/AddEventDialog";
+import { AddGoalDialog } from "./dialogs/AddGoalDialog";
+import { AddActivityDialog } from "./dialogs/AddActivityDialog";
 
 interface CarePlanDetailProps {
   carePlan: {
@@ -51,11 +60,19 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const [activeTab, setActiveTab] = useState("personal");
   const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
   const [addEventDialogOpen, setAddEventDialogOpen] = useState(false);
+  const [addGoalDialogOpen, setAddGoalDialogOpen] = useState(false);
+  const [addActivityDialogOpen, setAddActivityDialogOpen] = useState(false);
   const navigate = useNavigate();
   const params = useParams();
 
   const branchId = params.branchId || '';
   const branchName = params.branchName || '';
+
+  // Initialize all the mutation hooks
+  const createNoteMutation = useCreateClientNote();
+  const createEventMutation = useCreateClientEvent();
+  const createGoalMutation = useCreateGoal();
+  const createActivityMutation = useCreateClientActivity();
 
   const handleClose = () => {
     // Use the onClose prop first, then fallback to navigation
@@ -117,7 +134,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   };
 
   const handleRecordActivity = () => {
-    toast.info("Activity recording functionality coming soon");
+    setAddActivityDialogOpen(true);
   };
 
   const handleUploadDocument = () => {
@@ -128,18 +145,74 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     setAddEventDialogOpen(true);
   };
 
-  const handleSaveNote = (noteData: { title: string; content: string }) => {
-    // This would typically save to database
-    console.log("Saving note:", noteData);
-    toast.success("Note added successfully");
-    setAddNoteDialogOpen(false);
+  const handleAddGoal = () => {
+    setAddGoalDialogOpen(true);
   };
 
-  const handleSaveEvent = (eventData: any) => {
-    // This would typically save to database
-    console.log("Saving event:", eventData);
-    toast.success("Event recorded successfully");
-    setAddEventDialogOpen(false);
+  // Fixed database-connected handlers
+  const handleSaveNote = async (noteData: { title: string; content: string }) => {
+    try {
+      await createNoteMutation.mutateAsync({
+        client_id: carePlan.patientId,
+        title: noteData.title,
+        content: noteData.content,
+        author: "Admin", // This should be the current user
+      });
+      setAddNoteDialogOpen(false);
+    } catch (error) {
+      console.error("Error saving note:", error);
+      toast.error("Failed to save note");
+    }
+  };
+
+  const handleSaveEvent = async (eventData: any) => {
+    try {
+      await createEventMutation.mutateAsync({
+        client_id: carePlan.patientId,
+        title: eventData.title,
+        event_type: eventData.event_type,
+        severity: eventData.severity,
+        description: eventData.description,
+        reporter: eventData.reporter,
+        status: 'open',
+      });
+      setAddEventDialogOpen(false);
+    } catch (error) {
+      console.error("Error saving event:", error);
+      toast.error("Failed to save event");
+    }
+  };
+
+  const handleSaveGoal = async (goalData: any) => {
+    try {
+      await createGoalMutation.mutateAsync({
+        care_plan_id: carePlan.id,
+        description: goalData.description,
+        status: goalData.status,
+        progress: goalData.progress,
+        notes: goalData.notes,
+      });
+      setAddGoalDialogOpen(false);
+    } catch (error) {
+      console.error("Error saving goal:", error);
+      toast.error("Failed to save goal");
+    }
+  };
+
+  const handleSaveActivity = async (activityData: any) => {
+    try {
+      await createActivityMutation.mutateAsync({
+        care_plan_id: carePlan.id,
+        name: activityData.name,
+        description: activityData.description,
+        frequency: activityData.frequency,
+        status: activityData.status,
+      });
+      setAddActivityDialogOpen(false);
+    } catch (error) {
+      console.error("Error saving activity:", error);
+      toast.error("Failed to save activity");
+    }
   };
 
   return (
@@ -246,7 +319,10 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="goals">
-                  <GoalsTab goals={[]} />
+                  <GoalsTab 
+                    goals={[]} 
+                    onAddGoal={handleAddGoal}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="activities">
@@ -325,6 +401,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         open={addNoteDialogOpen}
         onOpenChange={setAddNoteDialogOpen}
         onSave={handleSaveNote}
+        isLoading={createNoteMutation.isPending}
       />
 
       {/* Add Event Dialog */}
@@ -334,6 +411,23 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         onSave={handleSaveEvent}
         carePlanId={carePlan.id}
         patientName={carePlan.patientName}
+        isLoading={createEventMutation.isPending}
+      />
+
+      {/* Add Goal Dialog */}
+      <AddGoalDialog
+        open={addGoalDialogOpen}
+        onOpenChange={setAddGoalDialogOpen}
+        onSave={handleSaveGoal}
+        isLoading={createGoalMutation.isPending}
+      />
+
+      {/* Add Activity Dialog */}
+      <AddActivityDialog
+        open={addActivityDialogOpen}
+        onOpenChange={setAddActivityDialogOpen}
+        onSave={handleSaveActivity}
+        isLoading={createActivityMutation.isPending}
       />
     </div>
   );
