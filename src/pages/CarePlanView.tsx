@@ -49,6 +49,7 @@ import { useCarePlanData } from "@/hooks/useCarePlanData";
 import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
 import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
 import { useClientDocuments, useUploadClientDocument } from "@/hooks/useClientDocuments";
+import { useClientAssessments } from "@/hooks/useClientAssessments";
 import { useAuth } from "@/hooks/useAuth";
 
 const mockCarePlans = [
@@ -97,12 +98,13 @@ const CarePlanView = () => {
   const { data: carePlanData, isLoading: isCarePlanLoading, error: carePlanError } = useCarePlanData(resolvedCarePlanId);
   const { data: goalsData, isLoading: isGoalsLoading, error: goalsError } = useCarePlanGoals(resolvedCarePlanId);
   
-  // Use the client_id from care plan data for notes and documents
+  // Use the client_id from care plan data for notes, documents, and assessments
   const clientId = carePlanData?.client_id || '';
-  console.log('[CarePlanView] Using client ID for documents:', clientId);
+  console.log('[CarePlanView] Using client ID for documents and assessments:', clientId);
   
   const { data: notesData, isLoading: isNotesLoading, error: notesError } = useClientNotes(clientId);
   const { data: documentsData, isLoading: isDocumentsLoading, error: documentsError } = useClientDocuments(clientId);
+  const { data: assessmentsData, isLoading: isAssessmentsLoading, error: assessmentsError } = useClientAssessments(clientId);
   const createNoteMutation = useCreateClientNote();
   const uploadDocumentMutation = useUploadClientDocument();
   
@@ -120,6 +122,9 @@ const CarePlanView = () => {
     documentsData,
     isDocumentsLoading,
     documentsError,
+    assessmentsData,
+    isAssessmentsLoading,
+    assessmentsError,
     clientId: clientId
   });
 
@@ -405,7 +410,7 @@ const CarePlanView = () => {
   console.log('[CarePlanView] Rendering care plan view for:', carePlan?.patientName);
 
   // Transform mock data for assessments
-  const transformedAssessments = mockPatientData.assessments.map(assessment => ({
+  const transformedAssessments = assessmentsData?.length > 0 ? assessmentsData : mockPatientData.assessments.map(assessment => ({
     id: `assessment-${Date.now()}-${Math.random()}`,
     client_id: carePlan?.patientId || 'unknown',
     assessment_type: 'general',
@@ -760,7 +765,18 @@ const CarePlanView = () => {
                     </TabsContent>
                     
                     <TabsContent value="assessments" className="space-y-4">
-                      <AssessmentsTab assessments={transformedAssessments} />
+                      {isAssessmentsLoading ? (
+                        <div className="flex items-center justify-center h-32">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        </div>
+                      ) : assessmentsError ? (
+                        <div className="text-center py-8">
+                          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                          <p className="text-gray-600">Error loading assessments: {assessmentsError.message}</p>
+                        </div>
+                      ) : (
+                        <AssessmentsTab assessments={transformedAssessments} />
+                      )}
                     </TabsContent>
                     
                     <TabsContent value="equipment" className="space-y-4">

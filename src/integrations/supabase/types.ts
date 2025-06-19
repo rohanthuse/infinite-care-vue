@@ -564,11 +564,13 @@ export type Database = {
           assessment_date: string
           assessment_name: string
           assessment_type: string
+          care_plan_id: string | null
           client_id: string
           created_at: string
           id: string
           next_review_date: string | null
           performed_by: string
+          performed_by_id: string | null
           recommendations: string | null
           results: string | null
           score: number | null
@@ -579,11 +581,13 @@ export type Database = {
           assessment_date: string
           assessment_name: string
           assessment_type: string
+          care_plan_id?: string | null
           client_id: string
           created_at?: string
           id?: string
           next_review_date?: string | null
           performed_by: string
+          performed_by_id?: string | null
           recommendations?: string | null
           results?: string | null
           score?: number | null
@@ -594,11 +598,13 @@ export type Database = {
           assessment_date?: string
           assessment_name?: string
           assessment_type?: string
+          care_plan_id?: string | null
           client_id?: string
           created_at?: string
           id?: string
           next_review_date?: string | null
           performed_by?: string
+          performed_by_id?: string | null
           recommendations?: string | null
           results?: string | null
           score?: number | null
@@ -607,10 +613,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "client_assessments_care_plan_id_fkey"
+            columns: ["care_plan_id"]
+            isOneToOne: false
+            referencedRelation: "client_care_plans"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "client_assessments_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_assessments_performed_by_id_fkey"
+            columns: ["performed_by_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

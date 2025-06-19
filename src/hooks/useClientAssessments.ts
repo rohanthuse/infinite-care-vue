@@ -14,6 +14,8 @@ export interface ClientAssessment {
   score?: number;
   recommendations?: string;
   next_review_date?: string;
+  care_plan_id?: string;
+  performed_by_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -23,7 +25,11 @@ const fetchClientAssessments = async (clientId: string): Promise<ClientAssessmen
   
   const { data, error } = await supabase
     .from('client_assessments')
-    .select('*')
+    .select(`
+      *,
+      care_plan:client_care_plans(title),
+      performer:profiles!performed_by_id(first_name, last_name)
+    `)
     .eq('client_id', clientId)
     .order('assessment_date', { ascending: false });
 
@@ -40,7 +46,10 @@ const createClientAssessment = async (assessment: Omit<ClientAssessment, 'id' | 
   
   const { data, error } = await supabase
     .from('client_assessments')
-    .insert(assessment)
+    .insert({
+      ...assessment,
+      performed_by_id: assessment.performed_by_id || (await supabase.auth.getUser()).data.user?.id
+    })
     .select()
     .single();
 

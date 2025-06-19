@@ -1,7 +1,7 @@
 
 import React from "react";
 import { format } from "date-fns";
-import { FileCheck, Calendar, User, ChevronDown, ChevronRight, CheckCircle, AlertCircle, Clock, Plus } from "lucide-react";
+import { FileCheck, Calendar, User, Plus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -81,7 +81,7 @@ export const AssessmentsTab: React.FC<AssessmentsTabProps> = ({ assessments }) =
                         </div>
                       )}
                       
-                      {assessment.score !== null && (
+                      {assessment.score !== null && assessment.score !== undefined && (
                         <div className="bg-blue-50 p-3 rounded-md">
                           <h4 className="font-medium text-sm text-blue-800">Score</h4>
                           <p className="text-lg font-bold text-blue-600">{assessment.score}</p>
@@ -100,6 +100,15 @@ export const AssessmentsTab: React.FC<AssessmentsTabProps> = ({ assessments }) =
                           <h4 className="font-medium text-sm text-amber-800">Next Review Date</h4>
                           <p className="text-sm text-amber-700">
                             {format(new Date(assessment.next_review_date), 'MMM dd, yyyy')}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {assessment.care_plan_id && (
+                        <div className="bg-gray-50 p-3 rounded-md">
+                          <h4 className="font-medium text-sm text-gray-800">Associated Care Plan</h4>
+                          <p className="text-sm text-gray-700">
+                            Care Plan ID: {assessment.care_plan_id}
                           </p>
                         </div>
                       )}
