@@ -24,6 +24,7 @@ interface CarePlanSidebarProps {
   onScheduleFollowUp?: () => void;
   onRecordActivity?: () => void;
   onUploadDocument?: () => void;
+  onAddEvent?: () => void;
 }
 
 export const CarePlanSidebar: React.FC<CarePlanSidebarProps> = ({ 
@@ -31,7 +32,8 @@ export const CarePlanSidebar: React.FC<CarePlanSidebarProps> = ({
   onAddNote,
   onScheduleFollowUp,
   onRecordActivity,
-  onUploadDocument
+  onUploadDocument,
+  onAddEvent
 }) => {
   return (
     <Card>

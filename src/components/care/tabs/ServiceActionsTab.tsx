@@ -1,6 +1,6 @@
 
 import React from "react";
-import { ClipboardCheck, CheckSquare, Clock, Users, Calendar, Plus } from "lucide-react";
+import { ClipboardCheck, CheckSquare, Clock, Users, Calendar, Plus, Edit } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,15 @@ import { format } from "date-fns";
 
 interface ServiceActionsTabProps {
   serviceActions: ClientServiceAction[];
+  onAddServiceAction?: () => void;
+  onEditServiceAction?: (serviceAction: ClientServiceAction) => void;
 }
 
-export const ServiceActionsTab: React.FC<ServiceActionsTabProps> = ({ serviceActions }) => {
+export const ServiceActionsTab: React.FC<ServiceActionsTabProps> = ({ 
+  serviceActions,
+  onAddServiceAction,
+  onEditServiceAction 
+}) => {
   const getProgressBadgeClass = (progress: string) => {
     switch (progress.toLowerCase()) {
       case "active":
@@ -40,10 +46,12 @@ export const ServiceActionsTab: React.FC<ServiceActionsTabProps> = ({ serviceAct
             </CardTitle>
             <CardDescription>Scheduled interventions and progress</CardDescription>
           </div>
-          <Button size="sm" className="gap-1">
-            <Plus className="h-4 w-4" />
-            <span>Add Service</span>
-          </Button>
+          {onAddServiceAction && (
+            <Button size="sm" className="gap-1" onClick={onAddServiceAction}>
+              <Plus className="h-4 w-4" />
+              <span>Add Service</span>
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="pt-4">
@@ -51,7 +59,13 @@ export const ServiceActionsTab: React.FC<ServiceActionsTabProps> = ({ serviceAct
           {serviceActions.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <ClipboardCheck className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-              <p className="text-sm">No service actions available</p>
+              <p className="text-sm mb-4">No service actions available</p>
+              {onAddServiceAction && (
+                <Button variant="outline" onClick={onAddServiceAction}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Service Action
+                </Button>
+              )}
             </div>
           ) : (
             serviceActions.map((action) => (
@@ -75,12 +89,19 @@ export const ServiceActionsTab: React.FC<ServiceActionsTabProps> = ({ serviceAct
                         </div>
                       </div>
                     </div>
-                    <Badge 
-                      variant="outline" 
-                      className={getProgressBadgeClass(action.progress_status)}
-                    >
-                      {action.progress_status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant="outline" 
+                        className={getProgressBadgeClass(action.progress_status)}
+                      >
+                        {action.progress_status}
+                      </Badge>
+                      {onEditServiceAction && (
+                        <Button variant="outline" size="sm" onClick={() => onEditServiceAction(action)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
@@ -159,7 +180,11 @@ export const ServiceActionsTab: React.FC<ServiceActionsTabProps> = ({ serviceAct
                   )}
 
                   <div className="flex justify-end gap-2 mt-4">
-                    <Button variant="outline" size="sm">Edit Service</Button>
+                    {onEditServiceAction && (
+                      <Button variant="outline" size="sm" onClick={() => onEditServiceAction(action)}>
+                        Edit Service
+                      </Button>
+                    )}
                     <Button size="sm">Record Activity</Button>
                   </div>
                 </div>

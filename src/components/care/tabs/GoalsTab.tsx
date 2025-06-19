@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
 
 interface Goal {
   id?: string;
@@ -17,12 +18,29 @@ interface Goal {
 }
 
 interface GoalsTabProps {
-  goals: Goal[];
+  goals?: Goal[];
   onAddGoal?: () => void;
   onEditGoal?: (goal: Goal) => void;
+  carePlanId?: string;
 }
 
-export const GoalsTab: React.FC<GoalsTabProps> = ({ goals, onAddGoal, onEditGoal }) => {
+export const GoalsTab: React.FC<GoalsTabProps> = ({ goals: propGoals, onAddGoal, onEditGoal, carePlanId }) => {
+  // Fetch goals from database if carePlanId is provided
+  const { data: dbGoals = [], isLoading } = useCarePlanGoals(carePlanId || '');
+  
+  // Transform database goals to match expected format
+  const transformedDbGoals = dbGoals.map(goal => ({
+    id: goal.id,
+    title: goal.description,
+    description: goal.description,
+    status: goal.status,
+    progress: goal.progress || 0,
+    notes: goal.notes || "",
+  }));
+
+  // Use database goals if available and carePlanId exists, otherwise use prop goals
+  const goalsToDisplay = carePlanId && transformedDbGoals.length >= 0 ? transformedDbGoals : (propGoals || []);
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
@@ -49,6 +67,14 @@ export const GoalsTab: React.FC<GoalsTabProps> = ({ goals, onAddGoal, onEditGoal
     }
   };
 
+  if (isLoading && carePlanId) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <Card>
@@ -68,7 +94,7 @@ export const GoalsTab: React.FC<GoalsTabProps> = ({ goals, onAddGoal, onEditGoal
           <CardDescription>Track progress towards care objectives</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
-          {goals.length === 0 ? (
+          {goalsToDisplay.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Target className="h-12 w-12 mx-auto mb-3 text-gray-300" />
               <p className="text-sm">No goals set yet</p>
@@ -81,7 +107,7 @@ export const GoalsTab: React.FC<GoalsTabProps> = ({ goals, onAddGoal, onEditGoal
             </div>
           ) : (
             <div className="space-y-4">
-              {goals.map((goal, index) => (
+              {goalsToDisplay.map((goal, index) => (
                 <div
                   key={goal.id || index}
                   className="border rounded-lg p-4 hover:shadow-md transition-shadow"

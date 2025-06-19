@@ -1,298 +1,213 @@
 
-import React, { useState } from "react";
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { CalendarIcon, FileBarChart2 } from "lucide-react";
 import { format } from "date-fns";
-import { CalendarIcon, MapPin } from "lucide-react";
-import { cn } from "@/lib/utils";
+
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { BodyMapSelector } from "@/components/events-logs/BodyMapSelector";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+
+const eventSchema = z.object({
+  title: z.string().min(1, {
+    message: "Event title is required.",
+  }),
+  event_type: z.string().min(1, {
+    message: "Event type is required.",
+  }),
+  severity: z.string().min(1, {
+    message: "Severity is required.",
+  }),
+  description: z.string().min(10, {
+    message: "Description must be at least 10 characters.",
+  }),
+  reporter: z.string().min(1, {
+    message: "Reporter is required.",
+  }),
+});
+
+type EventFormValues = z.infer<typeof eventSchema>;
 
 interface AddEventDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (event: any) => void;
+  onSave: (event: EventFormValues) => void;
   carePlanId: string;
   patientName: string;
-  patientId: string;
+  isLoading?: boolean;
 }
 
-export function AddEventDialog({
+export const AddEventDialog: React.FC<AddEventDialogProps> = ({
   open,
   onOpenChange,
   onSave,
   carePlanId,
   patientName,
-  patientId,
-}: AddEventDialogProps) {
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("");
-  const [location, setLocation] = useState("");
-  const [date, setDate] = useState<Date>(new Date());
-  const [time, setTime] = useState(format(new Date(), "HH:mm"));
-  const [details, setDetails] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState("details");
-  const [injuryOccurred, setInjuryOccurred] = useState("no");
-  const [bodyMapPoints, setBodyMapPoints] = useState<Array<{ id: string; x: number; y: number; type: string; description: string }>>([]);
+  isLoading = false,
+}) => {
+  const form = useForm<EventFormValues>({
+    resolver: zodResolver(eventSchema),
+    defaultValues: {
+      title: "",
+      event_type: "",
+      severity: "",
+      description: "",
+      reporter: "",
+    },
+  });
 
-  const resetForm = () => {
-    setTitle("");
-    setCategory("");
-    setLocation("");
-    setDate(new Date());
-    setTime(format(new Date(), "HH:mm"));
-    setDetails("");
-    setInjuryOccurred("no");
-    setBodyMapPoints([]);
-    setActiveTab("details");
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const newEvent = {
-        title,
-        category,
-        location,
-        date: format(date, "yyyy-MM-dd"),
-        time,
-        details,
-        carePlanId,
-        patientName,
-        patientId,
-        eventType: "client",
-        status: "Draft",
-        injuryOccurred,
-        bodyMapPoints: injuryOccurred === "yes" ? bodyMapPoints : [],
-      };
-
-      onSave(newEvent);
-      resetForm();
-      onOpenChange(false);
-    } finally {
-      setIsSubmitting(false);
-    }
+  const onSubmit = (values: EventFormValues) => {
+    onSave(values);
+    form.reset();
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Add New Event or Log</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <FileBarChart2 className="h-5 w-5 text-blue-600" />
+            Add Event/Log Entry
+          </DialogTitle>
           <DialogDescription>
-            Create a new event or log entry for this care plan
+            Record a new event or incident for {patientName}'s care plan.
           </DialogDescription>
         </DialogHeader>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-2 mb-4">
-            <TabsTrigger value="details">Event Details</TabsTrigger>
-            <TabsTrigger value="injury">Body Map/Injury</TabsTrigger>
-          </TabsList>
-          
-          <form onSubmit={handleSubmit}>
-            <TabsContent value="details" className="space-y-4 mt-2">
-              <div className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="title">Event Title</Label>
-                  <Input
-                    id="title"
-                    placeholder="Enter event title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    required
-                  />
-                </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Event Title</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter event title..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                <div className="grid gap-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select
-                    value={category}
-                    onValueChange={setCategory}
-                    required
-                  >
-                    <SelectTrigger id="category">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="event_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Event Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select event type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="incident">Incident</SelectItem>
+                        <SelectItem value="accident">Accident</SelectItem>
+                        <SelectItem value="medication_error">Medication Error</SelectItem>
+                        <SelectItem value="fall">Fall</SelectItem>
+                        <SelectItem value="safeguarding">Safeguarding</SelectItem>
+                        <SelectItem value="complaint">Complaint</SelectItem>
+                        <SelectItem value="observation">Observation</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="severity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Severity</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select severity" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="critical">Critical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="reporter"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reported By</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select reporter" />
+                      </SelectTrigger>
+                    </FormControl>
                     <SelectContent>
-                      <SelectItem value="accident">Accident</SelectItem>
-                      <SelectItem value="incident">Incident</SelectItem>
-                      <SelectItem value="medication_error">Medication Error</SelectItem>
-                      <SelectItem value="safeguarding">Safeguarding</SelectItem>
-                      <SelectItem value="complaint">Complaint</SelectItem>
-                      <SelectItem value="compliment">Compliment</SelectItem>
-                      <SelectItem value="review">Review</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="Admin">Admin</SelectItem>
+                      <SelectItem value="Lead Carer">Lead Carer</SelectItem>
+                      <SelectItem value="Senior Carer">Senior Carer</SelectItem>
+                      <SelectItem value="Carer">Carer</SelectItem>
+                      <SelectItem value="Care Team Leader">Care Team Leader</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="location">Location</Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="location"
-                      className="pl-10"
-                      placeholder="Enter location"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      required
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Event Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Provide detailed description of the event..."
+                      className="min-h-[100px]"
+                      {...field}
                     />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="date">Date</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          id="date"
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !date && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {date ? format(date, "PPP") : <span>Pick a date</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={date}
-                          onSelect={(date) => date && setDate(date)}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="time">Time</Label>
-                    <Input
-                      id="time"
-                      type="time"
-                      value={time}
-                      onChange={(e) => setTime(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="details">Event Details</Label>
-                  <Textarea
-                    id="details"
-                    placeholder="Provide details about the event"
-                    className="min-h-[80px]"
-                    value={details}
-                    onChange={(e) => setDetails(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Did an injury occur?</Label>
-                  <RadioGroup 
-                    value={injuryOccurred} 
-                    onValueChange={(value) => {
-                      setInjuryOccurred(value);
-                      if (value === "yes") {
-                        setActiveTab("injury");
-                      }
-                    }}
-                    className="flex space-x-4"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="yes" id="injury-yes" />
-                      <Label htmlFor="injury-yes">Yes</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="no" id="injury-no" />
-                      <Label htmlFor="injury-no">No</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Care Plan Information</Label>
-                  <div className="bg-gray-50 p-3 rounded-md text-sm">
-                    <div className="grid grid-cols-2 gap-1">
-                      <span className="text-gray-500">Care Plan ID:</span>
-                      <span>{carePlanId}</span>
-                      <span className="text-gray-500">Patient:</span>
-                      <span>{patientName}</span>
-                      <span className="text-gray-500">Patient ID:</span>
-                      <span>{patientId}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="injury" className="mt-2">
-              <div className="space-y-4">
-                {injuryOccurred === "yes" ? (
-                  <>
-                    <div className="bg-amber-50 p-3 rounded-md border border-amber-200 text-amber-800 mb-4">
-                      <p className="text-sm font-medium">You've indicated an injury occurred. Please document it using the body map below.</p>
-                    </div>
-                    
-                    <BodyMapSelector 
-                      bodyMapPoints={bodyMapPoints} 
-                      setBodyMapPoints={setBodyMapPoints} 
-                    />
-                  </>
-                ) : (
-                  <div className="p-8 text-center bg-gray-50 rounded-lg">
-                    <p className="text-gray-500">
-                      You indicated no injury occurred. If this is incorrect, please go back to the Details tab and change your selection.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-
-            <DialogFooter className="mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save Event"}
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Saving..." : "Save Event"}
               </Button>
             </DialogFooter>
           </form>
-        </Tabs>
+        </Form>
       </DialogContent>
     </Dialog>
   );
-}
+};

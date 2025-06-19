@@ -1,53 +1,38 @@
 
 import React, { useState } from "react";
-import { X, FileEdit, Download, AlertCircle } from "lucide-react";
+import { X, FileEdit, Download, PenLine, MessageCircle, Clock, Activity, FileBarChart2 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { generatePDF } from "@/utils/pdfGenerator";
-import { useComprehensiveCarePlanData } from "@/hooks/useCarePlanData";
-import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
-import { useAuth } from "@/hooks/useAuth";
-import { useCreateClientAssessment } from "@/hooks/useClientAssessments";
-import { useUpdateClient } from "@/hooks/useUpdateClient";
-import { useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
-import { useClientPersonalCare, useUpdateClientPersonalCare } from "@/hooks/useClientPersonalCare";
-import { useUpdateClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
-import { useClientDietaryRequirements, useUpdateClientDietaryRequirements } from "@/hooks/useClientDietaryRequirements";
-import { useClientRiskAssessments, useCreateClientRiskAssessment, useUpdateClientRiskAssessment, ClientRiskAssessment } from "@/hooks/useClientRiskAssessments";
-import { useCreateGoal, useUpdateGoal } from "@/hooks/useCarePlanGoalsMutations";
-import { useClientServiceActions, useCreateClientServiceAction, useUpdateClientServiceAction, ClientServiceAction } from "@/hooks/useClientServiceActions";
-import { toast } from "@/hooks/use-toast";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { generatePDF, exportCarePlanPDF } from "@/utils/pdfGenerator";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 
-import { PatientHeader } from "./PatientHeader";
+// Import all the hooks we need
+import { useCreateClientNote } from "@/hooks/useClientNotes";
+import { useCreateClientEvent } from "@/hooks/useClientEvents";
+import { useCreateGoal } from "@/hooks/useCarePlanGoalsMutations";
+import { useCreateClientActivity } from "@/hooks/useClientActivities";
+
 import { CarePlanSidebar } from "./CarePlanSidebar";
 import { CarePlanTabBar } from "./CarePlanTabBar";
 import { PersonalInfoTab } from "./tabs/PersonalInfoTab";
 import { AboutMeTab } from "./tabs/AboutMeTab";
 import { GoalsTab } from "./tabs/GoalsTab";
-import { DietaryTab } from "./tabs/DietaryTab";
-import { PersonalCareTab } from "./tabs/PersonalCareTab";
-import { AssessmentsTab } from "./tabs/AssessmentsTab";
-import { EquipmentTab } from "./tabs/EquipmentTab";
-import { RiskTab } from "./tabs/RiskTab";
-import { ServiceActionsTab } from "./tabs/ServiceActionsTab";
-import { ServicePlanTab } from "./tabs/ServicePlanTab";
 import { ActivitiesTab } from "./tabs/ActivitiesTab";
+import { DietaryTab } from "./tabs/DietaryTab";
 import { NotesTab } from "./tabs/NotesTab";
 import { DocumentsTab } from "./tabs/DocumentsTab";
+import { PersonalCareTab } from "./tabs/PersonalCareTab";
 import { EventsLogsTab } from "./tabs/EventsLogsTab";
-import { AddAssessmentDialog } from "./dialogs/AddAssessmentDialog";
-import { EditPersonalInfoDialog } from "./dialogs/EditPersonalInfoDialog";
-import { EditAboutMeDialog } from "./dialogs/EditAboutMeDialog";
-import { EditMedicalInfoDialog } from "./dialogs/EditMedicalInfoDialog";
-import { EditDietaryDialog } from "./dialogs/EditDietaryDialog";
-import { EditPersonalCareDialog } from "./dialogs/EditPersonalCareDialog";
+import { ServiceActionsTab } from "./tabs/ServiceActionsTab";
+import { ServicePlanTab } from "./tabs/ServicePlanTab";
+import { AddNoteDialog } from "./dialogs/AddNoteDialog";
+import { AddEventDialog } from "./dialogs/AddEventDialog";
 import { AddGoalDialog } from "./dialogs/AddGoalDialog";
-import { EditGoalDialog } from "./dialogs/EditGoalDialog";
-import { AddRiskAssessmentDialog } from "./dialogs/AddRiskAssessmentDialog";
-import { EditRiskAssessmentDialog } from "./dialogs/EditRiskAssessmentDialog";
-import { AddServicePlanDialog } from "./dialogs/AddServicePlanDialog";
-import { EditServicePlanDialog } from "./dialogs/EditServicePlanDialog";
+import { AddActivityDialog } from "./dialogs/AddActivityDialog";
 
 interface CarePlanDetailProps {
   carePlan: {
@@ -55,11 +40,11 @@ interface CarePlanDetailProps {
     patientName: string;
     patientId: string;
     dateCreated: Date;
-    lastUpdated: Date;  
+    lastUpdated: Date;
     status: string;
     assignedTo: string;
     avatar: string;
-  } | null;
+  };
   onClose: () => void;
   onAddNote?: () => void;
   onScheduleFollowUp?: () => void;
@@ -71,666 +56,195 @@ interface CarePlanDetailProps {
 export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   carePlan,
   onClose,
-  onAddNote,
-  onScheduleFollowUp,
-  onRecordActivity,
-  onUploadDocument,
-  onAddEvent,
 }) => {
   const [activeTab, setActiveTab] = useState("personal");
   const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
-  const [scheduleFollowUpDialogOpen, setScheduleFollowUpDialogOpen] = useState(false);
-  const [recordActivityDialogOpen, setRecordActivityDialogOpen] = useState(false);
-  const [uploadDocumentDialogOpen, setUploadDocumentDialogOpen] = useState(false);
   const [addEventDialogOpen, setAddEventDialogOpen] = useState(false);
-  const [assessmentDialogOpen, setAssessmentDialogOpen] = useState(false);
-  const [personalInfoDialogOpen, setPersonalInfoDialogOpen] = useState(false);
-  const [aboutMeDialogOpen, setAboutMeDialogOpen] = useState(false);
-  const [medicalInfoDialogOpen, setMedicalInfoDialogOpen] = useState(false);
-  const [dietaryDialogOpen, setDietaryDialogOpen] = useState(false);
-  const [personalCareDialogOpen, setPersonalCareDialogOpen] = useState(false);
   const [addGoalDialogOpen, setAddGoalDialogOpen] = useState(false);
-  const [editGoalDialogOpen, setEditGoalDialogOpen] = useState(false);
-  const [addRiskAssessmentDialogOpen, setAddRiskAssessmentDialogOpen] = useState(false);
-  const [editRiskAssessmentDialogOpen, setEditRiskAssessmentDialogOpen] = useState(false);
-  const [addServicePlanDialogOpen, setAddServicePlanDialogOpen] = useState(false);
-  const [editServicePlanDialogOpen, setEditServicePlanDialogOpen] = useState(false);
-  const [selectedRiskAssessment, setSelectedRiskAssessment] = useState<ClientRiskAssessment | undefined>();
-  const [selectedServiceAction, setSelectedServiceAction] = useState<ClientServiceAction | undefined>();
-  const [selectedGoal, setSelectedGoal] = useState<any>();
+  const [addActivityDialogOpen, setAddActivityDialogOpen] = useState(false);
+  const navigate = useNavigate();
+  const params = useParams();
 
-  // Get current user
-  const { user } = useAuth();
+  const branchId = params.branchId || '';
+  const branchName = params.branchName || '';
 
-  // Fetch comprehensive care plan data
-  const {
-    data: comprehensiveData,
-    isLoading,
-    error
-  } = useComprehensiveCarePlanData(carePlan?.patientId || "");
-
-  // Add debugging for comprehensive data
-  console.log('[CarePlanDetail] Comprehensive data loaded:', {
-    hasData: !!comprehensiveData,
-    client: comprehensiveData?.client,
-    medicalInfo: comprehensiveData?.medicalInfo,
-    patientId: carePlan?.patientId
-  });
-
-  // Get the actual client UUID from comprehensive data or use a fallback
-  const clientId = comprehensiveData?.client?.id || carePlan?.patientId || "";
-  
-  console.log('[CarePlanDetail] Client ID resolution:', {
-    fromComprehensiveData: comprehensiveData?.client?.id,
-    fromCarePlan: carePlan?.patientId,
-    finalClientId: clientId
-  });
-  
-  // Database hooks for notes - now using the correct client UUID
-  const { data: dbNotes = [], isLoading: notesLoading } = useClientNotes(clientId);
+  // Initialize all the mutation hooks
   const createNoteMutation = useCreateClientNote();
-  const createAssessmentMutation = useCreateClientAssessment();
-  
-  // Dietary requirements hooks
-  const { data: dietaryRequirements, isLoading: dietaryLoading } = useClientDietaryRequirements(clientId);
-  const updateDietaryMutation = useUpdateClientDietaryRequirements();
-  
-  // Personal care hooks
-  const { data: personalCare, isLoading: personalCareLoading } = useClientPersonalCare(clientId);
-  const updatePersonalCareMutation = useUpdateClientPersonalCare();
-  
-  // Risk assessment hooks
-  const { data: riskAssessments = [], isLoading: riskAssessmentsLoading } = useClientRiskAssessments(clientId);
-  const createRiskAssessmentMutation = useCreateClientRiskAssessment();
-  const updateRiskAssessmentMutation = useUpdateClientRiskAssessment();
-  
-  // Service Actions hooks
-  const { data: serviceActions = [], isLoading: serviceActionsLoading } = useClientServiceActions(clientId);
-  const createServiceActionMutation = useCreateClientServiceAction();
-  const updateServiceActionMutation = useUpdateClientServiceAction();
-  
-  // New mutation hooks for editing functionality
-  const updateClientMutation = useUpdateClient();
-  const updatePersonalInfoMutation = useUpdateClientPersonalInfo();
-  const updateMedicalInfoMutation = useUpdateClientMedicalInfo();
+  const createEventMutation = useCreateClientEvent();
   const createGoalMutation = useCreateGoal();
-  const updateGoalMutation = useUpdateGoal();
+  const createActivityMutation = useCreateClientActivity();
 
-  if (!carePlan) return null;
-
-  const handlePrintCarePlan = () => {
-    generatePDF({
-      id: carePlan.id,
-      title: `Care Plan for ${carePlan.patientName}`,
-      date: format(carePlan.lastUpdated, 'yyyy-MM-dd'),
-      status: carePlan.status,
-      signedBy: carePlan.assignedTo
-    });
-  };
-
-  const handleAddNoteWithDB = async () => {
-    if (onAddNote) {
-      onAddNote();
+  const handleClose = () => {
+    // Use the onClose prop first, then fallback to navigation
+    if (onClose) {
+      onClose();
+    } else {
+      // Navigate back to the main branch dashboard
+      if (branchId && branchName) {
+        navigate(`/branch-dashboard/${branchId}/${branchName}`);
+      } else {
+        // Fallback navigation to main dashboard
+        navigate("/");
+      }
     }
   };
 
-  const handleSaveAssessment = async (assessment: any) => {
-    if (!clientId) {
-      toast({
-        title: "Error",
-        description: "Client ID not found. Cannot save assessment.",
-        variant: "destructive"
+  const handleEdit = () => {
+    // Navigate to client edit page
+    if (branchId && branchName && carePlan.patientId) {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${carePlan.patientId}/edit`);
+    } else {
+      toast.error("Unable to navigate to edit page. Please try again.");
+    }
+  };
+
+  const handleScheduleFollowUp = () => {
+    // Navigate to booking page with client context
+    if (branchId && branchName) {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/bookings/new`, {
+        state: { 
+          clientId: carePlan.patientId, 
+          clientName: carePlan.patientName,
+          carePlanId: carePlan.id 
+        }
       });
-      return;
+    } else {
+      toast.error("Unable to navigate to booking page. Please try again.");
     }
+  };
 
+  const handleExportCarePlan = () => {
     try {
-      await createAssessmentMutation.mutateAsync({
-        client_id: clientId,
-        assessment_type: assessment.assessment_type,
-        assessment_name: assessment.assessment_name,
-        assessment_date: assessment.assessment_date.toISOString().split('T')[0],
-        performed_by: assessment.performed_by,
-        results: assessment.results || null,
-        score: assessment.score || null,
-        recommendations: assessment.recommendations || null,
-        next_review_date: assessment.next_review_date ? assessment.next_review_date.toISOString().split('T')[0] : null,
-        status: 'completed',
-        performed_by_id: user?.id || null,
+      generatePDF({
+        id: carePlan.id,
+        title: `Care Plan for ${carePlan.patientName}`,
+        date: format(carePlan.dateCreated, 'yyyy-MM-dd'),
+        status: carePlan.status,
+        signedBy: "System Generated"
       });
-
-      setAssessmentDialogOpen(false);
-      toast({
-        title: "Assessment created",
-        description: "The assessment has been successfully added to the patient's record."
-      });
+      toast.success("Care plan exported successfully");
     } catch (error) {
-      console.error("Error saving assessment:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save assessment. Please try again.",
-        variant: "destructive"
-      });
+      console.error("Error exporting care plan:", error);
+      toast.error("Failed to export care plan");
     }
   };
 
-  const handleSaveRiskAssessment = async (data: any) => {
-    if (!clientId) {
-      toast({
-        title: "Error",
-        description: "Client ID not found. Cannot save risk assessment.",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleAddNote = () => {
+    setAddNoteDialogOpen(true);
+  };
 
+  const handleRecordActivity = () => {
+    setAddActivityDialogOpen(true);
+  };
+
+  const handleUploadDocument = () => {
+    toast.info("Document upload functionality available in Documents tab");
+  };
+
+  const handleAddEvent = () => {
+    setAddEventDialogOpen(true);
+  };
+
+  const handleAddGoal = () => {
+    setAddGoalDialogOpen(true);
+  };
+
+  // Fixed database-connected handlers
+  const handleSaveNote = async (noteData: { title: string; content: string }) => {
     try {
-      await createRiskAssessmentMutation.mutateAsync(data);
-
-      setAddRiskAssessmentDialogOpen(false);
-      toast({
-        title: "Risk assessment created",
-        description: "The risk assessment has been successfully added."
+      await createNoteMutation.mutateAsync({
+        client_id: carePlan.patientId,
+        title: noteData.title,
+        content: noteData.content,
+        author: "Admin", // This should be the current user
       });
+      setAddNoteDialogOpen(false);
     } catch (error) {
-      console.error("Error saving risk assessment:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save risk assessment. Please try again.",
-        variant: "destructive"
-      });
+      console.error("Error saving note:", error);
+      toast.error("Failed to save note");
     }
   };
 
-  const handleUpdateRiskAssessment = async (data: any) => {
-    if (!selectedRiskAssessment?.id) {
-      toast({
-        title: "Error",
-        description: "Risk assessment ID not found. Cannot update risk assessment.",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleSaveEvent = async (eventData: any) => {
     try {
-      await updateRiskAssessmentMutation.mutateAsync({
-        riskAssessmentId: selectedRiskAssessment.id,
-        updates: data
+      await createEventMutation.mutateAsync({
+        client_id: carePlan.patientId,
+        title: eventData.title,
+        event_type: eventData.event_type,
+        severity: eventData.severity,
+        description: eventData.description,
+        reporter: eventData.reporter,
+        status: 'open',
       });
-
-      setEditRiskAssessmentDialogOpen(false);
-      setSelectedRiskAssessment(undefined);
-      toast({
-        title: "Risk assessment updated",
-        description: "The risk assessment has been successfully updated."
-      });
+      setAddEventDialogOpen(false);
     } catch (error) {
-      console.error("Error updating risk assessment:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update risk assessment. Please try again.",
-        variant: "destructive"
-      });
+      console.error("Error saving event:", error);
+      toast.error("Failed to save event");
     }
   };
 
-  const handleEditRiskAssessment = (riskAssessment: any) => {
-    setSelectedRiskAssessment(riskAssessment);
-    setEditRiskAssessmentDialogOpen(true);
-  };
-
-  const handleSavePersonalInfo = async (data: any) => {
-    if (!clientId) {
-      toast({
-        title: "Error",
-        description: "Client ID not found. Cannot save personal information.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      await updateClientMutation.mutateAsync({
-        clientId,
-        updates: data
-      });
-
-      setPersonalInfoDialogOpen(false);
-      toast({
-        title: "Personal information updated",
-        description: "The personal information has been successfully updated."
-      });
-    } catch (error) {
-      console.error("Error updating personal info:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update personal information. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleSaveAboutMe = async (data: any) => {
-    if (!clientId) {
-      toast({
-        title: "Error",
-        description: "Client ID not found. Cannot save about me information.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      // Split data into personal info and personal care
-      const personalInfoData = {
-        cultural_preferences: data.cultural_preferences,
-        language_preferences: data.language_preferences,
-        religion: data.religion,
-        marital_status: data.marital_status,
-        preferred_communication: data.preferred_communication,
-        emergency_contact_name: data.emergency_contact_name,
-        emergency_contact_phone: data.emergency_contact_phone,
-        emergency_contact_relationship: data.emergency_contact_relationship,
-        next_of_kin_name: data.next_of_kin_name,
-        next_of_kin_phone: data.next_of_kin_phone,
-        next_of_kin_relationship: data.next_of_kin_relationship,
-        gp_name: data.gp_name,
-        gp_practice: data.gp_practice,
-        gp_phone: data.gp_phone,
-      };
-
-      const personalCareData = {
-        personal_hygiene_needs: data.personal_hygiene_needs,
-        bathing_preferences: data.bathing_preferences,
-        dressing_assistance_level: data.dressing_assistance_level,
-        toileting_assistance_level: data.toileting_assistance_level,
-        continence_status: data.continence_status,
-        sleep_patterns: data.sleep_patterns,
-        behavioral_notes: data.behavioral_notes,
-        comfort_measures: data.comfort_measures,
-        pain_management: data.pain_management,
-        skin_care_needs: data.skin_care_needs,
-      };
-
-      // Update both tables
-      await Promise.all([
-        updatePersonalInfoMutation.mutateAsync({
-          client_id: clientId,
-          ...personalInfoData
-        }),
-        updatePersonalCareMutation.mutateAsync({
-          client_id: clientId,
-          ...personalCareData
-        })
-      ]);
-
-      setAboutMeDialogOpen(false);
-      toast({
-        title: "About me information updated",
-        description: "The about me information has been successfully updated."
-      });
-    } catch (error) {
-      console.error("Error updating about me info:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update about me information. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleSaveMedicalInfo = async (data: any) => {
-    console.log('[CarePlanDetail] handleSaveMedicalInfo called with data:', data);
-    console.log('[CarePlanDetail] clientId for medical info save:', clientId);
-    
-    if (!clientId) {
-      console.error('[CarePlanDetail] No client ID found for medical info save');
-      toast({
-        title: "Error",
-        description: "Client ID not found. Cannot save medical information.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      console.log('[CarePlanDetail] Attempting to save medical info...');
-      const result = await updateMedicalInfoMutation.mutateAsync({
-        client_id: clientId,
-        ...data
-      });
-      
-      console.log('[CarePlanDetail] Medical info save successful:', result);
-
-      setMedicalInfoDialogOpen(false);
-      toast({
-        title: "Medical information updated",
-        description: "The medical information has been successfully updated."
-      });
-    } catch (error) {
-      console.error('[CarePlanDetail] Error updating medical info:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update medical information. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleSaveDietaryRequirements = async (data: any) => {
-    if (!clientId) {
-      toast({
-        title: "Error",
-        description: "Client ID not found. Cannot save dietary requirements.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      await updateDietaryMutation.mutateAsync({
-        client_id: clientId,
-        ...data
-      });
-
-      setDietaryDialogOpen(false);
-      toast({
-        title: "Dietary requirements updated",
-        description: "The dietary requirements have been successfully updated."
-      });
-    } catch (error) {
-      console.error("Error updating dietary requirements:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update dietary requirements. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleSavePersonalCare = async (data: any) => {
-    if (!clientId) {
-      toast({
-        title: "Error",
-        description: "Client ID not found. Cannot save personal care information.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      await updatePersonalCareMutation.mutateAsync({
-        client_id: clientId,
-        ...data
-      });
-
-      setPersonalCareDialogOpen(false);
-      toast({
-        title: "Personal care updated",
-        description: "The personal care information has been successfully updated."
-      });
-    } catch (error) {
-      console.error("Error updating personal care:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update personal care information. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleSaveGoal = async (data: any) => {
-    // Use the care plan ID from the carePlan prop instead of from comprehensive data
-    const carePlanId = carePlan?.id;
-    if (!carePlanId) {
-      toast({
-        title: "Error",
-        description: "Care plan ID not found. Cannot save goal.",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleSaveGoal = async (goalData: any) => {
     try {
       await createGoalMutation.mutateAsync({
-        care_plan_id: carePlanId,
-        ...data
+        care_plan_id: carePlan.id,
+        description: goalData.description,
+        status: goalData.status,
+        progress: goalData.progress,
+        notes: goalData.notes,
       });
-
       setAddGoalDialogOpen(false);
-      toast({
-        title: "Goal added",
-        description: "The goal has been successfully added to the care plan."
-      });
     } catch (error) {
       console.error("Error saving goal:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save goal. Please try again.",
-        variant: "destructive"
-      });
+      toast.error("Failed to save goal");
     }
   };
 
-  const handleUpdateGoal = async (data: any) => {
-    if (!selectedGoal?.id) {
-      toast({
-        title: "Error",
-        description: "Goal ID not found. Cannot update goal.",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleSaveActivity = async (activityData: any) => {
     try {
-      await updateGoalMutation.mutateAsync({
-        goalId: selectedGoal.id,
-        updates: data
+      await createActivityMutation.mutateAsync({
+        care_plan_id: carePlan.id,
+        name: activityData.name,
+        description: activityData.description,
+        frequency: activityData.frequency,
+        status: activityData.status,
       });
-
-      setEditGoalDialogOpen(false);
-      setSelectedGoal(null);
-      toast({
-        title: "Goal updated",
-        description: "The goal has been successfully updated."
-      });
+      setAddActivityDialogOpen(false);
     } catch (error) {
-      console.error("Error updating goal:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update goal. Please try again.",
-        variant: "destructive"
-      });
+      console.error("Error saving activity:", error);
+      toast.error("Failed to save activity");
     }
   };
-
-  const handleEditGoal = (goal: any) => {
-    setSelectedGoal(goal);
-    setEditGoalDialogOpen(true);
-  };
-
-  const handleAddServicePlan = () => {
-    setAddServicePlanDialogOpen(true);
-  };
-
-  const handleEditServicePlan = (serviceAction: ClientServiceAction) => {
-    setSelectedServiceAction(serviceAction);
-    setEditServicePlanDialogOpen(true);
-  };
-
-  const handleSaveServicePlan = async (data: any) => {
-    try {
-      await createServiceActionMutation.mutateAsync(data);
-      setAddServicePlanDialogOpen(false);
-    } catch (error) {
-      console.error("Error saving service plan:", error);
-    }
-  };
-
-  const handleUpdateServicePlan = async (data: any) => {
-    if (!selectedServiceAction?.id) {
-      toast({
-        title: "Error",
-        description: "Service action ID not found. Cannot update service plan.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      await updateServiceActionMutation.mutateAsync({
-        serviceActionId: selectedServiceAction.id,
-        updates: data
-      });
-      setEditServicePlanDialogOpen(false);
-      setSelectedServiceAction(undefined);
-    } catch (error) {
-      console.error("Error updating service plan:", error);
-    }
-  };
-
-  // Get current user's role and name for author field - simplified to just show "Admin"
-  const getCurrentUserAuthor = () => {
-    // For admin users, just return "Admin"
-    return "Admin";
-  };
-
-  // Add debugging for medical info dialog state
-  const handleEditMedicalInfo = () => {
-    console.log('[CarePlanDetail] Edit medical info button clicked');
-    console.log('[CarePlanDetail] Current medical info data:', comprehensiveData?.medicalInfo);
-    console.log('[CarePlanDetail] Setting medicalInfoDialogOpen to true');
-    setMedicalInfoDialogOpen(true);
-  };
-
-  if (isLoading || dietaryLoading || personalCareLoading || riskAssessmentsLoading || serviceActionsLoading) {
-    return (
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
-          <div className="flex items-center justify-center h-96">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading care plan data...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
-          <div className="flex items-center justify-center h-96">
-            <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading care plan</h3>
-              <p className="text-gray-600">Unable to load care plan data. Please try again.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Transform data to match component expectations
-  const transformedGoals = comprehensiveData?.goals?.map(goal => ({
-    id: goal.id,
-    title: goal.description,
-    description: goal.description,
-    target: "100%", // Default target
-    status: goal.status,
-    progress: goal.progress || 0,
-    notes: goal.notes || ""
-  })) || [];
-
-  const transformedActivities = comprehensiveData?.activities?.map(activity => ({
-    date: new Date(),
-    action: activity.name,
-    performer: "Care Team",
-    status: activity.status
-  })) || [];
-
-  // Transform database notes to match expected Note interface
-  const transformedNotes = dbNotes.map(note => ({
-    id: note.id,
-    date: new Date(note.created_at),
-    author: note.author,
-    content: note.content
-  }));
-
-  // Use database notes if available, otherwise fall back to comprehensive data
-  const notesToDisplay = transformedNotes.length > 0 ? transformedNotes : (comprehensiveData?.notes?.map(note => ({
-    id: note.id,
-    date: new Date(note.created_at),
-    author: note.author,
-    content: note.content
-  })) || []);
-
-  // Transform documents to match expected Document interface  
-  const transformedDocuments = comprehensiveData?.documents?.map(doc => ({
-    id: doc.id,
-    name: doc.name,
-    type: doc.type,
-    date: new Date(doc.upload_date),
-    author: doc.uploaded_by,
-    file_path: doc.file_path,
-    file_size: doc.file_size
-  })) || [];
-
-  // Transform assessments to match expected interface
-  const transformedAssessments = comprehensiveData?.assessments?.map(assessment => ({
-    ...assessment,
-    client_id: assessment.client_id,
-    created_at: assessment.created_at,
-    updated_at: assessment.updated_at
-  })) || [];
-
-  // Transform equipment to match expected interface
-  const transformedEquipment = comprehensiveData?.equipment?.map(equipment => ({
-    ...equipment,
-    client_id: equipment.client_id,
-    created_at: equipment.created_at,
-    updated_at: equipment.updated_at
-  })) || [];
-
-  // Transform service actions to match expected interface
-  const transformedServiceActions = comprehensiveData?.serviceActions?.map(action => ({
-    ...action,
-    client_id: action.client_id,
-    created_at: action.created_at,
-    updated_at: action.updated_at
-  })) || [];
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
-              {carePlan.avatar}
-            </div>
+            <Avatar className="h-10 w-10">
+              <div className="bg-blue-100 text-blue-600 w-full h-full flex items-center justify-center text-sm font-medium">
+                {carePlan.avatar}
+              </div>
+            </Avatar>
             <div>
               <h2 className="text-xl font-bold">{carePlan.patientName}</h2>
               <div className="flex items-center space-x-2 text-sm text-gray-500">
-                <span>Patient ID: {carePlan.patientId}</span>
-                <span>•</span>
                 <span>Plan ID: {carePlan.id}</span>
+                <span>•</span>
+                <Badge>{carePlan.status}</Badge>
               </div>
             </div>
           </div>
           
           <div className="flex items-center space-x-2">
-            <Button variant="outline" onClick={handlePrintCarePlan} className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleExportCarePlan} className="flex items-center gap-2">
               <Download className="h-4 w-4" />
               <span>Export</span>
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleEdit} className="flex items-center gap-2">
               <FileEdit className="h-4 w-4" />
               <span>Edit</span>
             </Button>
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button variant="ghost" size="icon" onClick={handleClose}>
               <X className="h-5 w-5" />
             </Button>
           </div>
@@ -740,11 +254,12 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
           <div className="flex flex-col md:flex-row md:items-start gap-6">
             <div className="w-full md:w-1/3">
               <CarePlanSidebar 
-                carePlan={carePlan}
-                onAddNote={handleAddNoteWithDB}
-                onScheduleFollowUp={onScheduleFollowUp}
-                onRecordActivity={onRecordActivity}
-                onUploadDocument={onUploadDocument}
+                carePlan={carePlan} 
+                onAddNote={handleAddNote}
+                onScheduleFollowUp={handleScheduleFollowUp}
+                onRecordActivity={handleRecordActivity}
+                onUploadDocument={handleUploadDocument}
+                onAddEvent={handleAddEvent}
               />
             </div>
             
@@ -754,98 +269,125 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 
                 <TabsContent value="personal">
                   <PersonalInfoTab 
-                    client={comprehensiveData?.client}
-                    personalInfo={comprehensiveData?.personalInfo}
-                    medicalInfo={comprehensiveData?.medicalInfo}
-                    onEditPersonalInfo={() => setPersonalInfoDialogOpen(true)}
-                    onEditMedicalInfo={handleEditMedicalInfo}
+                    client={{
+                      id: carePlan.patientId,
+                      first_name: carePlan.patientName.split(' ')[0],
+                      last_name: carePlan.patientName.split(' ')[1] || '',
+                      email: "",
+                      phone: "",
+                      date_of_birth: "",
+                      address: "",
+                      gender: "",
+                    }}
+                    personalInfo={{
+                      emergency_contact_name: "",
+                      emergency_contact_phone: "",
+                      preferred_communication: "",
+                    }}
+                    medicalInfo={{
+                      allergies: [],
+                      current_medications: [],
+                      medical_conditions: [],
+                      medical_history: "",
+                    }}
                   />
                 </TabsContent>
                 
                 <TabsContent value="aboutme">
                   <AboutMeTab 
-                    personalInfo={comprehensiveData?.personalInfo}
-                    personalCare={comprehensiveData?.personalCare}
-                    onEditAboutMe={() => setAboutMeDialogOpen(true)}
+                    personalInfo={{
+                      cultural_preferences: "",
+                      language_preferences: "",
+                    }}
+                    personalCare={{
+                      id: "",
+                      client_id: carePlan.patientId,
+                      personal_hygiene_needs: "",
+                      bathing_preferences: "",
+                      dressing_assistance_level: "",
+                      toileting_assistance_level: "",
+                      continence_status: "",
+                      sleep_patterns: "",
+                      behavioral_notes: "",
+                      comfort_measures: "",
+                      pain_management: "",
+                      skin_care_needs: "",
+                      created_at: "",
+                      updated_at: "",
+                    }}
                   />
                 </TabsContent>
                 
                 <TabsContent value="goals">
                   <GoalsTab 
-                    goals={transformedGoals} 
-                    onAddGoal={() => setAddGoalDialogOpen(true)}
-                    onEditGoal={handleEditGoal}
+                    goals={[]} 
+                    onAddGoal={handleAddGoal}
                   />
                 </TabsContent>
                 
                 <TabsContent value="activities">
-                  <ActivitiesTab activities={transformedActivities} />
+                  <ActivitiesTab 
+                    activities={[]} 
+                    onAddActivity={handleRecordActivity} 
+                  />
                 </TabsContent>
                 
                 <TabsContent value="notes">
                   <NotesTab 
-                    notes={notesToDisplay} 
-                    onAddNote={handleAddNoteWithDB} 
+                    clientId={carePlan.patientId}
+                    onAddNote={handleAddNote} 
                   />
                 </TabsContent>
                 
                 <TabsContent value="documents">
-                  <DocumentsTab 
-                    documents={transformedDocuments} 
-                    onUploadDocument={onUploadDocument} 
-                  />
-                </TabsContent>
-                
-                <TabsContent value="assessments">
-                  <AssessmentsTab 
-                    assessments={transformedAssessments} 
-                    onAddAssessment={() => setAssessmentDialogOpen(true)}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="equipment">
-                  <EquipmentTab equipment={transformedEquipment} />
+                  <DocumentsTab clientId={carePlan.patientId} />
                 </TabsContent>
                 
                 <TabsContent value="dietary">
-                  <DietaryTab 
-                    dietaryRequirements={dietaryRequirements} 
-                    onEditDietaryRequirements={() => setDietaryDialogOpen(true)}
-                  />
+                  <DietaryTab dietaryRequirements={{
+                    dietary_restrictions: [],
+                    food_allergies: [],
+                    food_preferences: [],
+                    meal_schedule: {},
+                    nutritional_needs: "",
+                    supplements: [],
+                    feeding_assistance_required: false,
+                    special_equipment_needed: "",
+                    texture_modifications: "",
+                    fluid_restrictions: "",
+                    weight_monitoring: false,
+                  }} />
+                </TabsContent>
+                
+                <TabsContent value="personalcare">
+                  <PersonalCareTab personalCare={{
+                    personal_hygiene_needs: "",
+                    bathing_preferences: "",
+                    dressing_assistance_level: "",
+                    toileting_assistance_level: "",
+                    continence_status: "",
+                    sleep_patterns: "",
+                    behavioral_notes: "",
+                    comfort_measures: "",
+                    pain_management: "",
+                    skin_care_needs: "",
+                  }} />
                 </TabsContent>
 
-                <TabsContent value="personalcare">
-                  <PersonalCareTab 
-                    personalCare={personalCare} 
-                    onEditPersonalCare={() => setPersonalCareDialogOpen(true)}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="risk">
-                  <RiskTab 
-                    riskAssessments={riskAssessments}
-                    onAddRiskAssessment={() => setAddRiskAssessmentDialogOpen(true)}
-                    onEditRiskAssessment={handleEditRiskAssessment}
-                  />
-                </TabsContent>
-                
                 <TabsContent value="serviceplan">
-                  <ServicePlanTab 
-                    serviceActions={serviceActions}
-                    onAddServicePlan={handleAddServicePlan}
-                    onEditServicePlan={handleEditServicePlan}
-                  />
+                  <ServicePlanTab serviceActions={[]} />
                 </TabsContent>
                 
                 <TabsContent value="serviceactions">
-                  <ServiceActionsTab serviceActions={transformedServiceActions} />
+                  <ServiceActionsTab serviceActions={[]} />
                 </TabsContent>
-
+                
                 <TabsContent value="eventslogs">
                   <EventsLogsTab 
+                    clientId={carePlan.patientId}
                     carePlanId={carePlan.id}
                     patientName={carePlan.patientName}
-                    onAddEvent={onAddEvent}
+                    onAddEvent={handleAddEvent}
                   />
                 </TabsContent>
               </Tabs>
@@ -853,59 +395,26 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
           </div>
         </div>
       </div>
-      
-      <AddAssessmentDialog
-        open={assessmentDialogOpen}
-        onOpenChange={setAssessmentDialogOpen}
-        onSave={handleSaveAssessment}
-        clientId={clientId}
-        isLoading={createAssessmentMutation.isPending}
+
+      {/* Add Note Dialog */}
+      <AddNoteDialog
+        open={addNoteDialogOpen}
+        onOpenChange={setAddNoteDialogOpen}
+        onSave={handleSaveNote}
+        isLoading={createNoteMutation.isPending}
       />
 
-      <EditPersonalInfoDialog
-        open={personalInfoDialogOpen}
-        onOpenChange={setPersonalInfoDialogOpen}
-        onSave={handleSavePersonalInfo}
-        clientData={comprehensiveData?.client}
-        isLoading={updateClientMutation.isPending}
+      {/* Add Event Dialog */}
+      <AddEventDialog
+        open={addEventDialogOpen}
+        onOpenChange={setAddEventDialogOpen}
+        onSave={handleSaveEvent}
+        carePlanId={carePlan.id}
+        patientName={carePlan.patientName}
+        isLoading={createEventMutation.isPending}
       />
 
-      <EditAboutMeDialog
-        open={aboutMeDialogOpen}
-        onOpenChange={setAboutMeDialogOpen}
-        onSave={handleSaveAboutMe}
-        personalInfo={comprehensiveData?.personalInfo}
-        personalCare={comprehensiveData?.personalCare}
-        isLoading={updatePersonalInfoMutation.isPending || updatePersonalCareMutation.isPending}
-      />
-
-      <EditMedicalInfoDialog
-        open={medicalInfoDialogOpen}
-        onOpenChange={(open) => {
-          console.log('[CarePlanDetail] Medical info dialog onOpenChange called with:', open);
-          setMedicalInfoDialogOpen(open);
-        }}
-        onSave={handleSaveMedicalInfo}
-        medicalInfo={comprehensiveData?.medicalInfo}
-        isLoading={updateMedicalInfoMutation.isPending}
-      />
-
-      <EditDietaryDialog
-        open={dietaryDialogOpen}
-        onOpenChange={setDietaryDialogOpen}
-        onSave={handleSaveDietaryRequirements}
-        dietaryRequirements={dietaryRequirements}
-        isLoading={updateDietaryMutation.isPending}
-      />
-
-      <EditPersonalCareDialog
-        open={personalCareDialogOpen}
-        onOpenChange={setPersonalCareDialogOpen}
-        onSave={handleSavePersonalCare}
-        personalCare={personalCare}
-        isLoading={updatePersonalCareMutation.isPending}
-      />
-
+      {/* Add Goal Dialog */}
       <AddGoalDialog
         open={addGoalDialogOpen}
         onOpenChange={setAddGoalDialogOpen}
@@ -913,45 +422,12 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         isLoading={createGoalMutation.isPending}
       />
 
-      <EditGoalDialog
-        open={editGoalDialogOpen}
-        onOpenChange={setEditGoalDialogOpen}
-        onSave={handleUpdateGoal}
-        goal={selectedGoal}
-        isLoading={updateGoalMutation.isPending}
-      />
-
-      <AddRiskAssessmentDialog
-        open={addRiskAssessmentDialogOpen}
-        onOpenChange={setAddRiskAssessmentDialogOpen}
-        onSave={handleSaveRiskAssessment}
-        clientId={clientId}
-        isLoading={createRiskAssessmentMutation.isPending}
-      />
-
-      <EditRiskAssessmentDialog
-        open={editRiskAssessmentDialogOpen}
-        onOpenChange={setEditRiskAssessmentDialogOpen}
-        onSave={handleUpdateRiskAssessment}
-        riskAssessment={selectedRiskAssessment}
-        isLoading={updateRiskAssessmentMutation.isPending}
-      />
-
-      <AddServicePlanDialog
-        open={addServicePlanDialogOpen}
-        onOpenChange={setAddServicePlanDialogOpen}
-        onSave={handleSaveServicePlan}
-        clientId={clientId}
-        carePlanId={carePlan.id}
-        isLoading={createServiceActionMutation.isPending}
-      />
-
-      <EditServicePlanDialog
-        open={editServicePlanDialogOpen}
-        onOpenChange={setEditServicePlanDialogOpen}
-        onSave={handleUpdateServicePlan}
-        serviceAction={selectedServiceAction}
-        isLoading={updateServiceActionMutation.isPending}
+      {/* Add Activity Dialog */}
+      <AddActivityDialog
+        open={addActivityDialogOpen}
+        onOpenChange={setAddActivityDialogOpen}
+        onSave={handleSaveActivity}
+        isLoading={createActivityMutation.isPending}
       />
     </div>
   );
