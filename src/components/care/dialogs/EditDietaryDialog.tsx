@@ -1,0 +1,430 @@
+
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { X, Plus } from "lucide-react";
+
+const formSchema = z.object({
+  dietary_restrictions: z.array(z.string()).optional(),
+  food_allergies: z.array(z.string()).optional(),
+  food_preferences: z.array(z.string()).optional(),
+  nutritional_needs: z.string().optional(),
+  supplements: z.array(z.string()).optional(),
+  feeding_assistance_required: z.boolean().optional(),
+  special_equipment_needed: z.string().optional(),
+  texture_modifications: z.string().optional(),
+  fluid_restrictions: z.string().optional(),
+  weight_monitoring: z.boolean().optional(),
+});
+
+interface EditDietaryDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (data: any) => void;
+  dietaryRequirements?: any;
+  isLoading?: boolean;
+}
+
+export const EditDietaryDialog: React.FC<EditDietaryDialogProps> = ({
+  open,
+  onOpenChange,
+  onSave,
+  dietaryRequirements,
+  isLoading = false,
+}) => {
+  const [newRestriction, setNewRestriction] = React.useState("");
+  const [newAllergy, setNewAllergy] = React.useState("");
+  const [newPreference, setNewPreference] = React.useState("");
+  const [newSupplement, setNewSupplement] = React.useState("");
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      dietary_restrictions: dietaryRequirements?.dietary_restrictions || [],
+      food_allergies: dietaryRequirements?.food_allergies || [],
+      food_preferences: dietaryRequirements?.food_preferences || [],
+      nutritional_needs: dietaryRequirements?.nutritional_needs || "",
+      supplements: dietaryRequirements?.supplements || [],
+      feeding_assistance_required: dietaryRequirements?.feeding_assistance_required || false,
+      special_equipment_needed: dietaryRequirements?.special_equipment_needed || "",
+      texture_modifications: dietaryRequirements?.texture_modifications || "",
+      fluid_restrictions: dietaryRequirements?.fluid_restrictions || "",
+      weight_monitoring: dietaryRequirements?.weight_monitoring || false,
+    },
+  });
+
+  const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    onSave(values);
+    form.reset();
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      form.reset();
+      setNewRestriction("");
+      setNewAllergy("");
+      setNewPreference("");
+      setNewSupplement("");
+    }
+    onOpenChange(newOpen);
+  };
+
+  const addArrayItem = (field: string, value: string, setter: (value: string) => void) => {
+    if (value.trim()) {
+      const currentValues = form.getValues(field as any) || [];
+      form.setValue(field as any, [...currentValues, value.trim()]);
+      setter("");
+    }
+  };
+
+  const removeArrayItem = (field: string, index: number) => {
+    const currentValues = form.getValues(field as any) || [];
+    form.setValue(field as any, currentValues.filter((_: any, i: number) => i !== index));
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Nutrition Plan</DialogTitle>
+          <DialogDescription>
+            Update dietary requirements and nutritional information for this client.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {/* Dietary Restrictions */}
+            <FormField
+              control={form.control}
+              name="dietary_restrictions"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Dietary Restrictions</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Add dietary restriction..."
+                          value={newRestriction}
+                          onChange={(e) => setNewRestriction(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addArrayItem('dietary_restrictions', newRestriction, setNewRestriction);
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => addArrayItem('dietary_restrictions', newRestriction, setNewRestriction)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {(field.value || []).map((item: string, index: number) => (
+                          <Badge key={index} variant="destructive" className="flex items-center gap-1">
+                            {item}
+                            <X
+                              className="h-3 w-3 cursor-pointer"
+                              onClick={() => removeArrayItem('dietary_restrictions', index)}
+                            />
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Food Allergies */}
+            <FormField
+              control={form.control}
+              name="food_allergies"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Food Allergies</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Add food allergy..."
+                          value={newAllergy}
+                          onChange={(e) => setNewAllergy(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addArrayItem('food_allergies', newAllergy, setNewAllergy);
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => addArrayItem('food_allergies', newAllergy, setNewAllergy)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {(field.value || []).map((item: string, index: number) => (
+                          <Badge key={index} variant="destructive" className="flex items-center gap-1">
+                            {item}
+                            <X
+                              className="h-3 w-3 cursor-pointer"
+                              onClick={() => removeArrayItem('food_allergies', index)}
+                            />
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Food Preferences */}
+            <FormField
+              control={form.control}
+              name="food_preferences"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Food Preferences</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Add food preference..."
+                          value={newPreference}
+                          onChange={(e) => setNewPreference(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addArrayItem('food_preferences', newPreference, setNewPreference);
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => addArrayItem('food_preferences', newPreference, setNewPreference)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {(field.value || []).map((item: string, index: number) => (
+                          <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                            {item}
+                            <X
+                              className="h-3 w-3 cursor-pointer"
+                              onClick={() => removeArrayItem('food_preferences', index)}
+                            />
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Nutritional Needs */}
+            <FormField
+              control={form.control}
+              name="nutritional_needs"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nutritional Needs</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Describe specific nutritional needs..."
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Supplements */}
+            <FormField
+              control={form.control}
+              name="supplements"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Supplements</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Add supplement..."
+                          value={newSupplement}
+                          onChange={(e) => setNewSupplement(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addArrayItem('supplements', newSupplement, setNewSupplement);
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => addArrayItem('supplements', newSupplement, setNewSupplement)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {(field.value || []).map((item: string, index: number) => (
+                          <Badge key={index} variant="outline" className="flex items-center gap-1">
+                            {item}
+                            <X
+                              className="h-3 w-3 cursor-pointer"
+                              onClick={() => removeArrayItem('supplements', index)}
+                            />
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Special Equipment */}
+              <FormField
+                control={form.control}
+                name="special_equipment_needed"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Special Equipment Needed</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Feeding tube, Special utensils" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Texture Modifications */}
+              <FormField
+                control={form.control}
+                name="texture_modifications"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Texture Modifications</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Pureed, Minced, Soft" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Fluid Restrictions */}
+            <FormField
+              control={form.control}
+              name="fluid_restrictions"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fluid Restrictions</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Describe any fluid restrictions or hydration requirements..."
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Feeding Assistance */}
+              <FormField
+                control={form.control}
+                name="feeding_assistance_required"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Feeding Assistance Required</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {/* Weight Monitoring */}
+              <FormField
+                control={form.control}
+                name="weight_monitoring"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Weight Monitoring Required</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};

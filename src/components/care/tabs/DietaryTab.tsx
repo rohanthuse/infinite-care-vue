@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Utensils, Pill, ShieldAlert, ThumbsUp, Droplets, Battery, ScrollText, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Utensils, Pill, ShieldAlert, ThumbsUp, Droplets, Battery, ScrollText, CheckCircle2, AlertTriangle, Plus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,10 +18,11 @@ interface DietaryTabProps {
     texture_modifications?: string;
     fluid_restrictions?: string;
     weight_monitoring?: boolean;
-  };
+  } | null;
+  onEditDietaryRequirements?: () => void;
 }
 
-export const DietaryTab: React.FC<DietaryTabProps> = ({ dietaryRequirements }) => {
+export const DietaryTab: React.FC<DietaryTabProps> = ({ dietaryRequirements, onEditDietaryRequirements }) => {
   if (!dietaryRequirements) {
     return (
       <Card>
@@ -34,13 +35,24 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({ dietaryRequirements }) =
               </CardTitle>
               <CardDescription>Dietary requirements and preferences</CardDescription>
             </div>
-            <Button variant="outline" size="sm">Edit</Button>
+            {onEditDietaryRequirements && (
+              <Button variant="outline" size="sm" onClick={onEditDietaryRequirements}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Nutrition Plan
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-64">
           <div className="text-center">
             <Utensils className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-            <p className="text-gray-500">No dietary requirements recorded</p>
+            <p className="text-gray-500 mb-4">No dietary requirements recorded</p>
+            {onEditDietaryRequirements && (
+              <Button variant="outline" onClick={onEditDietaryRequirements}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Nutrition Plan
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -58,7 +70,11 @@ export const DietaryTab: React.FC<DietaryTabProps> = ({ dietaryRequirements }) =
             </CardTitle>
             <CardDescription>Dietary requirements and preferences</CardDescription>
           </div>
-          <Button variant="outline" size="sm">Edit</Button>
+          {onEditDietaryRequirements && (
+            <Button variant="outline" size="sm" onClick={onEditDietaryRequirements}>
+              Edit
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>

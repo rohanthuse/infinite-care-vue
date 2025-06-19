@@ -52,6 +52,7 @@ import { AddGoalDialog } from "@/components/care/dialogs/AddGoalDialog";
 import { EditGoalDialog } from "@/components/care/dialogs/EditGoalDialog";
 import { EditMedicalInfoDialog } from "@/components/care/dialogs/EditMedicalInfoDialog";
 import { AddEquipmentDialog } from "@/components/care/dialogs/AddEquipmentDialog";
+import { EditDietaryDialog } from "@/components/care/dialogs/EditDietaryDialog";
 import { resolveCarePlanId, getDisplayCarePlanId } from "@/utils/carePlanIdMapping";
 import { useCarePlanData } from "@/hooks/useCarePlanData";
 import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
@@ -63,6 +64,7 @@ import { useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
 import { useUpdateClientPersonalCare } from "@/hooks/useClientPersonalCare";
 import { useClientMedicalInfo, useUpdateClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
 import { useClientEquipment, useCreateClientEquipment } from "@/hooks/useClientEquipment";
+import { useClientDietaryRequirements, useUpdateClientDietaryRequirements } from "@/hooks/useClientDietaryRequirements";
 import { useCreateGoal, useUpdateGoal } from "@/hooks/useCarePlanGoalsMutations";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -107,6 +109,7 @@ const CarePlanView = () => {
   const [editGoalDialogOpen, setEditGoalDialogOpen] = useState(false);
   const [medicalInfoDialogOpen, setMedicalInfoDialogOpen] = useState(false);
   const [equipmentDialogOpen, setEquipmentDialogOpen] = useState(false);
+  const [dietaryDialogOpen, setDietaryDialogOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<any>(null);
 
   // Debug logging with better error handling
@@ -129,6 +132,7 @@ const CarePlanView = () => {
   const { data: assessmentsData, isLoading: isAssessmentsLoading, error: assessmentsError } = useClientAssessments(clientId);
   const { data: medicalInfoData, isLoading: isMedicalInfoLoading, error: medicalInfoError } = useClientMedicalInfo(clientId);
   const { data: equipmentData, isLoading: isEquipmentLoading, error: equipmentError } = useClientEquipment(clientId);
+  const { data: dietaryData, isLoading: isDietaryLoading, error: dietaryError } = useClientDietaryRequirements(clientId);
   const createNoteMutation = useCreateClientNote();
   const uploadDocumentMutation = useUploadClientDocument();
   const createAssessmentMutation = useCreateClientAssessment();
@@ -141,6 +145,7 @@ const CarePlanView = () => {
   const createEquipmentMutation = useCreateClientEquipment();
   const createGoalMutation = useCreateGoal();
   const updateGoalMutation = useUpdateGoal();
+  const updateDietaryMutation = useUpdateClientDietaryRequirements();
   
   // Debug logging for data fetching
   console.log('[CarePlanView] Data fetching status:', {
@@ -165,6 +170,9 @@ const CarePlanView = () => {
     equipmentData,
     isEquipmentLoading,
     equipmentError,
+    dietaryData,
+    isDietaryLoading,
+    dietaryError,
     clientId: clientId
   });
 
@@ -620,6 +628,37 @@ const CarePlanView = () => {
     }
   };
 
+  const handleSaveDietaryRequirements = async (data: any) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot save dietary requirements.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await updateDietaryMutation.mutateAsync({
+        client_id: clientId,
+        ...data
+      });
+
+      setDietaryDialogOpen(false);
+      toast({
+        title: "Nutrition plan updated",
+        description: "The nutrition plan has been successfully updated."
+      });
+    } catch (error) {
+      console.error("Error updating dietary requirements:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update nutrition plan. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleEditGoal = (goal: any) => {
     setSelectedGoal(goal);
     setEditGoalDialogOpen(true);
@@ -1001,7 +1040,21 @@ const CarePlanView = () => {
                     </TabsContent>
                     
                     <TabsContent value="dietary" className="space-y-4">
-                      <DietaryTab dietaryRequirements={null} />
+                      {isDietaryLoading ? (
+                        <div className="flex items-center justify-center h-32">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        </div>
+                      ) : dietaryError ? (
+                        <div className="text-center py-8">
+                          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                          <p className="text-gray-600">Error loading dietary requirements: {dietaryError.message}</p>
+                        </div>
+                      ) : (
+                        <DietaryTab 
+                          dietaryRequirements={dietaryData} 
+                          onEditDietaryRequirements={() => setDietaryDialogOpen(true)}
+                        />
+                      )}
                     </TabsContent>
                     
                     <TabsContent value="personalcare" className="space-y-4">
@@ -1122,6 +1175,14 @@ const CarePlanView = () => {
         onSave={handleSaveEquipment}
         clientId={clientId}
         isLoading={createEquipmentMutation.isPending}
+      />
+
+      <EditDietaryDialog
+        open={dietaryDialogOpen}
+        onOpenChange={setDietaryDialogOpen}
+        onSave={handleSaveDietaryRequirements}
+        dietaryRequirements={dietaryData}
+        isLoading={updateDietaryMutation.isPending}
       />
     </div>
   );
