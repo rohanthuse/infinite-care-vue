@@ -10,8 +10,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCreateClientAssessment } from "@/hooks/useClientAssessments";
 import { useUpdateClient } from "@/hooks/useUpdateClient";
 import { useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
-import { useUpdateClientPersonalCare } from "@/hooks/useClientPersonalCare";
+import { useClientPersonalCare, useUpdateClientPersonalCare } from "@/hooks/useClientPersonalCare";
 import { useUpdateClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
+import { useClientDietaryRequirements, useUpdateClientDietaryRequirements } from "@/hooks/useClientDietaryRequirements";
 import { useCreateGoal, useUpdateGoal } from "@/hooks/useCarePlanGoalsMutations";
 import { toast } from "@/hooks/use-toast";
 
@@ -36,6 +37,8 @@ import { AddAssessmentDialog } from "./dialogs/AddAssessmentDialog";
 import { EditPersonalInfoDialog } from "./dialogs/EditPersonalInfoDialog";
 import { EditAboutMeDialog } from "./dialogs/EditAboutMeDialog";
 import { EditMedicalInfoDialog } from "./dialogs/EditMedicalInfoDialog";
+import { EditDietaryDialog } from "./dialogs/EditDietaryDialog";
+import { EditPersonalCareDialog } from "./dialogs/EditPersonalCareDialog";
 import { AddGoalDialog } from "./dialogs/AddGoalDialog";
 import { EditGoalDialog } from "./dialogs/EditGoalDialog";
 
@@ -72,6 +75,8 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const [personalInfoDialogOpen, setPersonalInfoDialogOpen] = useState(false);
   const [aboutMeDialogOpen, setAboutMeDialogOpen] = useState(false);
   const [medicalInfoDialogOpen, setMedicalInfoDialogOpen] = useState(false);
+  const [dietaryDialogOpen, setDietaryDialogOpen] = useState(false);
+  const [personalCareDialogOpen, setPersonalCareDialogOpen] = useState(false);
   const [addGoalDialogOpen, setAddGoalDialogOpen] = useState(false);
   const [editGoalDialogOpen, setEditGoalDialogOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<any>(null);
@@ -106,10 +111,17 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const createNoteMutation = useCreateClientNote();
   const createAssessmentMutation = useCreateClientAssessment();
   
+  // Dietary requirements hooks
+  const { data: dietaryRequirements, isLoading: dietaryLoading } = useClientDietaryRequirements(clientId);
+  const updateDietaryMutation = useUpdateClientDietaryRequirements();
+  
+  // Personal care hooks
+  const { data: personalCare, isLoading: personalCareLoading } = useClientPersonalCare(clientId);
+  const updatePersonalCareMutation = useUpdateClientPersonalCare();
+  
   // New mutation hooks for editing functionality
   const updateClientMutation = useUpdateClient();
   const updatePersonalInfoMutation = useUpdateClientPersonalInfo();
-  const updatePersonalCareMutation = useUpdateClientPersonalCare();
   const updateMedicalInfoMutation = useUpdateClientMedicalInfo();
   const createGoalMutation = useCreateGoal();
   const updateGoalMutation = useUpdateGoal();
@@ -310,6 +322,68 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     }
   };
 
+  const handleSaveDietaryRequirements = async (data: any) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot save dietary requirements.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await updateDietaryMutation.mutateAsync({
+        client_id: clientId,
+        ...data
+      });
+
+      setDietaryDialogOpen(false);
+      toast({
+        title: "Dietary requirements updated",
+        description: "The dietary requirements have been successfully updated."
+      });
+    } catch (error) {
+      console.error("Error updating dietary requirements:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update dietary requirements. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSavePersonalCare = async (data: any) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot save personal care information.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await updatePersonalCareMutation.mutateAsync({
+        client_id: clientId,
+        ...data
+      });
+
+      setPersonalCareDialogOpen(false);
+      toast({
+        title: "Personal care updated",
+        description: "The personal care information has been successfully updated."
+      });
+    } catch (error) {
+      console.error("Error updating personal care:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update personal care information. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleSaveGoal = async (data: any) => {
     // Use the care plan ID from the carePlan prop instead of from comprehensive data
     const carePlanId = carePlan?.id;
@@ -394,7 +468,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     setMedicalInfoDialogOpen(true);
   };
 
-  if (isLoading) {
+  if (isLoading || dietaryLoading || personalCareLoading) {
     return (
       <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
@@ -617,11 +691,17 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="dietary">
-                  <DietaryTab dietaryRequirements={comprehensiveData?.dietaryRequirements} />
+                  <DietaryTab 
+                    dietaryRequirements={dietaryRequirements} 
+                    onEditDietaryRequirements={() => setDietaryDialogOpen(true)}
+                  />
                 </TabsContent>
 
                 <TabsContent value="personalcare">
-                  <PersonalCareTab personalCare={comprehensiveData?.personalCare} />
+                  <PersonalCareTab 
+                    personalCare={personalCare} 
+                    onEditPersonalCare={() => setPersonalCareDialogOpen(true)}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="risk">
@@ -683,6 +763,22 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         onSave={handleSaveMedicalInfo}
         medicalInfo={comprehensiveData?.medicalInfo}
         isLoading={updateMedicalInfoMutation.isPending}
+      />
+
+      <EditDietaryDialog
+        open={dietaryDialogOpen}
+        onOpenChange={setDietaryDialogOpen}
+        onSave={handleSaveDietaryRequirements}
+        dietaryRequirements={dietaryRequirements}
+        isLoading={updateDietaryMutation.isPending}
+      />
+
+      <EditPersonalCareDialog
+        open={personalCareDialogOpen}
+        onOpenChange={setPersonalCareDialogOpen}
+        onSave={handleSavePersonalCare}
+        personalCare={personalCare}
+        isLoading={updatePersonalCareMutation.isPending}
       />
 
       <AddGoalDialog

@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Bath, Calendar, User, CheckCircle2, Clock, Heart, Thermometer, Activity, HelpCircle, FileText } from "lucide-react";
+import { Bath, Calendar, User, CheckCircle2, Clock, Heart, Thermometer, Activity, HelpCircle, FileText, Plus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,10 +18,11 @@ interface PersonalCareTabProps {
     comfort_measures?: string;
     pain_management?: string;
     skin_care_needs?: string;
-  };
+  } | null;
+  onEditPersonalCare?: () => void;
 }
 
-export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({ personalCare }) => {
+export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({ personalCare, onEditPersonalCare }) => {
   if (!personalCare) {
     return (
       <Card className="overflow-hidden border-gray-100 shadow-sm">
@@ -34,16 +35,24 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({ personalCare }
               </CardTitle>
               <CardDescription>Daily care routines and preferences</CardDescription>
             </div>
-            <Button variant="outline" size="sm">
-              <FileText className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
+            {onEditPersonalCare && (
+              <Button variant="outline" size="sm" onClick={onEditPersonalCare}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Personal Care Plan
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-64">
           <div className="text-center">
             <Bath className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-            <p className="text-gray-500">No personal care information recorded</p>
+            <p className="text-gray-500 mb-4">No personal care information recorded</p>
+            {onEditPersonalCare && (
+              <Button variant="outline" onClick={onEditPersonalCare}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Personal Care Plan
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -84,10 +93,12 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({ personalCare }
             </CardTitle>
             <CardDescription>Daily care routines and preferences</CardDescription>
           </div>
-          <Button variant="outline" size="sm">
-            <FileText className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
+          {onEditPersonalCare && (
+            <Button variant="outline" size="sm" onClick={onEditPersonalCare}>
+              <FileText className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="p-6">
