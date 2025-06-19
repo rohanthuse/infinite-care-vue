@@ -1,24 +1,24 @@
 
 // Utility to map display care plan IDs to actual database UUIDs
-// This handles the mapping between CP-001 style IDs and actual UUIDs
+// Updated to use real database UUIDs
 
 const carePlanIdMapping: Record<string, string> = {
-  'CP-001': '550e8400-e29b-41d4-a716-446655440001', // John Michael's care plan - CORRECTED
-  'CP-002': '550e8400-e29b-41d4-a716-446655440002', // Emma Thompson's care plan - CORRECTED
-  'CP-003': '550e8400-e29b-41d4-a716-446655440003', // Wendy Smith's care plan - CORRECTED
-  'CP-004': '550e8400-e29b-41d4-a716-446655440004', // Robert Johnson's care plan - CORRECTED
-  'CP-005': '550e8400-e29b-41d4-a716-446655440005', // Lisa Rodrigues's care plan - CORRECTED
-  'CP-006': '550e8400-e29b-41d4-a716-446655440006', // David Wilson's care plan - CORRECTED
-  'CP-007': '550e8400-e29b-41d4-a716-446655440007', // Kate Williams's care plan - CORRECTED
-  'CP-008': '550e8400-e29b-41d4-a716-446655440008', // Olivia Parker's care plan - CORRECTED
+  'CP-001': '550e8400-e29b-41d4-a716-446655440001', // John Michael's care plan (REAL UUID)
+  'CP-002': 'aba7debb-233d-436c-9f6a-3900f79df14b', // Emily Smith's care plan (REAL UUID)
+  'CP-003': '550e8400-e29b-41d4-a716-446655440003', // Wendy Smith's care plan
+  'CP-004': '550e8400-e29b-41d4-a716-446655440004', // Robert Johnson's care plan
+  'CP-005': '550e8400-e29b-41d4-a716-446655440005', // Lisa Rodrigues's care plan
+  'CP-006': '550e8400-e29b-41d4-a716-446655440006', // David Wilson's care plan
+  'CP-007': '550e8400-e29b-41d4-a716-446655440007', // Kate Williams's care plan
+  'CP-008': '550e8400-e29b-41d4-a716-446655440008', // Olivia Parker's care plan
 };
 
 // Add support for truncated UUIDs - map them back to display IDs
 const truncatedUuidMapping: Record<string, string> = {
-  '550E8401': 'CP-001', // John Michael's care plan - CORRECTED
-  '550e8401': 'CP-001', // case insensitive
-  '550E8402': 'CP-002', // Emma Thompson's care plan  
-  '550e8402': 'CP-002',
+  '550E8400': 'CP-001', // John Michael's care plan (REAL UUID truncated)
+  '550e8400': 'CP-001', // case insensitive
+  'ABA7DEBB': 'CP-002', // Emily Smith's care plan (REAL UUID truncated)
+  'aba7debb': 'CP-002', // case insensitive
   '550E8403': 'CP-003', // Wendy Smith's care plan
   '550e8403': 'CP-003',
   '550E8404': 'CP-004', // Robert Johnson's care plan
