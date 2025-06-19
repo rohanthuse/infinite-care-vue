@@ -85,6 +85,37 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     }
   };
 
+  // Enhanced schedule follow-up handler with better URL parameter handling
+  const handleScheduleFollowUp = () => {
+    console.log('Schedule follow-up called with params:', { branchId, branchName, carePlan });
+    
+    if (!branchId || !branchName) {
+      console.error('Missing branch parameters for follow-up:', { branchId, branchName });
+      toast.error("Unable to navigate to booking page. Missing branch information.");
+      return;
+    }
+
+    try {
+      const encodedBranchName = encodeURIComponent(branchName);
+      const navigationPath = `/branch-dashboard/${branchId}/${encodedBranchName}/bookings/new`;
+      
+      console.log('Navigating to booking page:', navigationPath);
+      
+      navigate(navigationPath, {
+        state: { 
+          clientId: carePlan.patientId, 
+          clientName: carePlan.patientName,
+          carePlanId: carePlan.id 
+        }
+      });
+      
+      toast.success("Navigating to booking page...");
+    } catch (error) {
+      console.error('Navigation error:', error);
+      toast.error("Unable to navigate to booking page. Please try again.");
+    }
+  };
+
   // Action handlers that open dialogs
   const handleUploadDocument = () => {
     toast.info("Document upload functionality available in Documents tab");
@@ -113,7 +144,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
           riskAssessments={riskAssessments}
           serviceActions={serviceActions}
           onAddNote={() => dialogState.setAddNoteDialogOpen(true)}
-          onScheduleFollowUp={dialogState.handleScheduleFollowUp}
+          onScheduleFollowUp={handleScheduleFollowUp}
           onRecordActivity={() => dialogState.setAddActivityDialogOpen(true)}
           onUploadDocument={handleUploadDocument}
           onAddEvent={() => dialogState.setAddEventDialogOpen(true)}

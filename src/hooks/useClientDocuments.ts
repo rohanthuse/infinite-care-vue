@@ -1,239 +1,188 @@
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface ClientDocument {
   id: string;
   client_id: string;
   name: string;
   type: string;
-  upload_date: string;
-  uploaded_by: string;
   file_path?: string;
   file_size?: string;
+  uploaded_by: string;
+  upload_date: string;
   created_at: string;
   updated_at: string;
 }
 
-export const useClientDocuments = (clientId: string) => {
-  return useQuery({
-    queryKey: ["client-documents", clientId],
-    queryFn: async () => {
-      if (!clientId) return [];
-      
-      const { data, error } = await supabase
-        .from("client_documents")
-        .select("*")
-        .eq("client_id", clientId)
-        .order("upload_date", { ascending: false });
+const fetchClientDocuments = async (clientId: string): Promise<ClientDocument[]> => {
+  console.log('[fetchClientDocuments] Fetching for client:', clientId);
+  
+  const { data, error } = await supabase
+    .from('client_documents')
+    .select('*')
+    .eq('client_id', clientId)
+    .order('upload_date', { ascending: false });
 
-      if (error) {
-        console.error("Error fetching client documents:", error);
-        throw error;
-      }
+  if (error) {
+    console.error('[fetchClientDocuments] Error:', error);
+    throw error;
+  }
 
-      return data as ClientDocument[];
-    },
-    enabled: !!clientId,
-  });
+  return data || [];
 };
 
-export const useCreateClientDocument = () => {
-  const queryClient = useQueryClient();
+const uploadClientDocument = async ({ clientId, file, name, type, uploaded_by }: {
+  clientId: string;
+  file: File;
+  name: string;
+  type: string;
+  uploaded_by: string;
+}) => {
+  console.log('[uploadClientDocument] Uploading:', { clientId, name, type });
+  
+  // For now, just create a record without actual file upload
+  // In a real implementation, you'd upload to Supabase Storage first
+  const { data, error } = await supabase
+    .from('client_documents')
+    .insert({
+      client_id: clientId,
+      name,
+      type,
+      uploaded_by,
+      file_size: `${Math.round(file.size / 1024)} KB`,
+      file_path: `/documents/${clientId}/${file.name}`, // Mock path
+    })
+    .select()
+    .single();
 
-  return useMutation({
-    mutationFn: async (documentData: Omit<ClientDocument, "id" | "created_at" | "updated_at">) => {
-      const { data, error } = await supabase
-        .from("client_documents")
-        .insert([documentData])
-        .select()
-        .single();
+  if (error) {
+    console.error('[uploadClientDocument] Error:', error);
+    throw error;
+  }
 
-      if (error) {
-        console.error("Error creating client document:", error);
-        throw error;
-      }
+  return data;
+};
 
-      return data;
-    },
-    onSuccess: (data) => {
-      // Invalidate and refetch client documents
-      queryClient.invalidateQueries({ queryKey: ["client-documents", data.client_id] });
-      
-      toast({
-        title: "Document uploaded",
-        description: "The document has been successfully uploaded.",
-      });
-    },
-    onError: (error) => {
-      console.error("Error creating client document:", error);
-      toast({
-        title: "Error",
-        description: "Failed to upload document. Please try again.",
-        variant: "destructive",
-      });
-    },
+const updateClientDocument = async ({ id, name, type, uploaded_by }: {
+  id: string;
+  name: string;
+  type: string;
+  uploaded_by: string;
+}) => {
+  console.log('[updateClientDocument] Updating:', { id, name, type });
+  
+  const { data, error } = await supabase
+    .from('client_documents')
+    .update({ name, type, uploaded_by })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[updateClientDocument] Error:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+const deleteClientDocument = async (id: string) => {
+  console.log('[deleteClientDocument] Deleting:', id);
+  
+  const { error } = await supabase
+    .from('client_documents')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('[deleteClientDocument] Error:', error);
+    throw error;
+  }
+
+  return { id };
+};
+
+const viewClientDocument = async ({ filePath }: { filePath: string }) => {
+  console.log('[viewClientDocument] Opening:', filePath);
+  // Mock implementation - in real app would open document viewer
+  toast.success("Document viewer would open here");
+  return { success: true };
+};
+
+const downloadClientDocument = async ({ filePath, fileName }: { filePath: string; fileName: string }) => {
+  console.log('[downloadClientDocument] Downloading:', { filePath, fileName });
+  // Mock implementation - in real app would trigger download
+  toast.success(`Download started for ${fileName}`);
+  return { success: true };
+};
+
+export const useClientDocuments = (clientId: string) => {
+  return useQuery({
+    queryKey: ['client-documents', clientId],
+    queryFn: () => fetchClientDocuments(clientId),
+    enabled: Boolean(clientId),
+    staleTime: 5 * 60 * 1000,
   });
 };
 
 export const useUploadClientDocument = () => {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
-    mutationFn: async ({ clientId, file, name, type, uploaded_by }: {
-      clientId: string;
-      file: File;
-      name: string;
-      type: string;
-      uploaded_by: string;
-    }) => {
-      // In a real implementation, this would upload the file to storage
-      // For now, we'll just create a document record
-      const documentData = {
-        client_id: clientId,
-        name,
-        type,
-        uploaded_by,
-        upload_date: new Date().toISOString().split('T')[0],
-        file_size: `${(file.size / 1024).toFixed(2)} KB`,
-        file_path: `/documents/${clientId}/${file.name}`, // Mock path
-      };
-
-      const { data, error } = await supabase
-        .from("client_documents")
-        .insert([documentData])
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error uploading client document:", error);
-        throw error;
-      }
-
-      return data;
-    },
+    mutationFn: uploadClientDocument,
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["client-documents", data.client_id] });
-      
-      toast({
-        title: "Document uploaded",
-        description: "The document has been successfully uploaded.",
-      });
+      queryClient.invalidateQueries({ queryKey: ['client-documents', data.client_id] });
+      toast.success("Document uploaded successfully");
     },
     onError: (error) => {
-      console.error("Error uploading client document:", error);
-      toast({
-        title: "Error",
-        description: "Failed to upload document. Please try again.",
-        variant: "destructive",
-      });
-    },
+      console.error('[useUploadClientDocument] Error:', error);
+      toast.error("Failed to upload document");
+    }
   });
 };
 
 export const useUpdateClientDocument = () => {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
-    mutationFn: async ({ id, name, type, uploaded_by }: {
-      id: string;
-      name: string;
-      type: string;
-      uploaded_by: string;
-    }) => {
-      const { data, error } = await supabase
-        .from("client_documents")
-        .update({ name, type, uploaded_by })
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error updating client document:", error);
-        throw error;
-      }
-
-      return data;
-    },
+    mutationFn: updateClientDocument,
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["client-documents", data.client_id] });
-      
-      toast({
-        title: "Document updated",
-        description: "The document has been successfully updated.",
-      });
+      queryClient.invalidateQueries({ queryKey: ['client-documents', data.client_id] });
+      toast.success("Document updated successfully");
     },
     onError: (error) => {
-      console.error("Error updating client document:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update document. Please try again.",
-        variant: "destructive",
-      });
-    },
+      console.error('[useUpdateClientDocument] Error:', error);
+      toast.error("Failed to update document");
+    }
   });
 };
 
 export const useDeleteClientDocument = () => {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
-    mutationFn: async (documentId: string) => {
-      const { error } = await supabase
-        .from("client_documents")
-        .delete()
-        .eq("id", documentId);
-
-      if (error) {
-        console.error("Error deleting client document:", error);
-        throw error;
-      }
-
-      return documentId;
-    },
+    mutationFn: deleteClientDocument,
     onSuccess: () => {
-      // Invalidate all client documents queries
-      queryClient.invalidateQueries({ queryKey: ["client-documents"] });
-      
-      toast({
-        title: "Document deleted",
-        description: "The document has been successfully deleted.",
-      });
+      queryClient.invalidateQueries({ queryKey: ['client-documents'] });
+      toast.success("Document deleted successfully");
     },
     onError: (error) => {
-      console.error("Error deleting client document:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete document. Please try again.",
-        variant: "destructive",
-      });
-    },
+      console.error('[useDeleteClientDocument] Error:', error);
+      toast.error("Failed to delete document");
+    }
   });
 };
 
 export const useViewClientDocument = () => {
   return useMutation({
-    mutationFn: async ({ filePath }: { filePath: string }) => {
-      // In a real implementation, this would open/view the document
-      // For now, we'll just show a toast
-      toast({
-        title: "Document View",
-        description: "Document viewing functionality would be implemented here.",
-      });
-    },
+    mutationFn: viewClientDocument,
   });
 };
 
 export const useDownloadClientDocument = () => {
   return useMutation({
-    mutationFn: async ({ filePath, fileName }: { filePath: string; fileName: string }) => {
-      // In a real implementation, this would download the document
-      // For now, we'll just show a toast
-      toast({
-        title: "Document Download",
-        description: `Download for ${fileName} would start here.`,
-      });
-    },
+    mutationFn: downloadClientDocument,
   });
 };
