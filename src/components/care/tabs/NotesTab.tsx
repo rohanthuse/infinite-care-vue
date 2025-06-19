@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useClientNotes } from "@/hooks/useClientNotes";
 
 interface Note {
   date: Date;
@@ -14,8 +15,9 @@ interface Note {
 }
 
 interface NotesTabProps {
-  notes: Note[];
+  notes?: Note[];
   onAddNote?: () => void;
+  clientId?: string;
 }
 
 // Helper function to extract role from author field
@@ -30,7 +32,28 @@ const extractRoleFromAuthor = (author: string): string => {
   return "Admin";
 };
 
-export const NotesTab: React.FC<NotesTabProps> = ({ notes, onAddNote }) => {
+export const NotesTab: React.FC<NotesTabProps> = ({ notes: propNotes, onAddNote, clientId }) => {
+  // Use database notes if clientId is provided, otherwise fall back to prop notes
+  const { data: dbNotes = [], isLoading } = useClientNotes(clientId || '');
+  
+  // Transform database notes to match expected format
+  const transformedDbNotes = dbNotes.map(note => ({
+    date: new Date(note.created_at),
+    author: note.author,
+    content: note.content
+  }));
+
+  // Use database notes if available and clientId exists, otherwise use prop notes
+  const notesToDisplay = clientId && transformedDbNotes.length > 0 ? transformedDbNotes : (propNotes || []);
+
+  if (isLoading && clientId) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <Card>
@@ -49,13 +72,13 @@ export const NotesTab: React.FC<NotesTabProps> = ({ notes, onAddNote }) => {
         </CardHeader>
         <CardContent className="pt-4">
           <div className="space-y-4">
-            {notes.length === 0 ? (
+            {notesToDisplay.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <MessageCircle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                 <p className="text-sm">No notes available</p>
               </div>
             ) : (
-              notes.map((note, index) => (
+              notesToDisplay.map((note, index) => (
                 <div 
                   key={index} 
                   className="border rounded-lg p-4 hover:shadow-md transition-all duration-300 bg-white"

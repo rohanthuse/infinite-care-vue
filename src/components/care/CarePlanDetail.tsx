@@ -59,19 +59,24 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const branchName = params.branchName || '';
 
   const handleClose = () => {
-    // Navigate back to the care plans page with proper branch context
-    if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/care`);
+    // Use the onClose prop first, then fallback to navigation
+    if (onClose) {
+      onClose();
     } else {
-      // Fallback navigation
-      navigate("/care");
+      // Navigate back to the care plans page with proper branch context
+      if (branchId && branchName) {
+        navigate(`/branch-dashboard/${branchId}/${branchName}/care`);
+      } else {
+        // Fallback navigation
+        navigate("/care");
+      }
     }
   };
 
   const handleEdit = () => {
-    // Navigate to edit care plan page
-    if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan/${carePlan.id}/edit`);
+    // Navigate to client edit page instead of care plan edit
+    if (branchId && branchName && carePlan.patientId) {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${carePlan.patientId}/edit`);
     } else {
       toast.error("Unable to navigate to edit page. Please try again.");
     }
@@ -254,7 +259,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 
                 <TabsContent value="notes">
                   <NotesTab 
-                    notes={[]} 
+                    clientId={carePlan.patientId}
                     onAddNote={handleAddNote} 
                   />
                 </TabsContent>

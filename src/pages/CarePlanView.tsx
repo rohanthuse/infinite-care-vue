@@ -110,34 +110,9 @@ export default function CarePlanView() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClose}
-                className="mr-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Care Plans
-              </Button>
-              <h1 className="text-xl font-semibold text-gray-900">
-                Care Plan Details
-              </h1>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <CarePlanDetail
-          carePlan={carePlan}
-          onClose={handleClose}
-        />
-      </div>
-    </div>
+    <CarePlanDetail
+      carePlan={carePlan}
+      onClose={handleClose}
+    />
   );
 }
