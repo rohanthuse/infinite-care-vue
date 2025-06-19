@@ -9,6 +9,8 @@ import { CreateCarePlanDialog } from "../dialogs/CreateCarePlanDialog";
 import { useClientCarePlans } from "@/hooks/useClientData";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useBranchStaff } from "@/hooks/useBranchStaff";
+import { useParams } from "react-router-dom";
 
 interface CarePlansTabProps {
   clientId: string;
@@ -18,21 +20,35 @@ interface CarePlansTabProps {
 export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { data: carePlans = [], isLoading } = useClientCarePlans(clientId);
+  const { id: branchId } = useParams();
+  const { data: branchStaff = [] } = useBranchStaff(branchId || '');
   const queryClient = useQueryClient();
 
   const createCarePlanMutation = useMutation({
     mutationFn: async (carePlanData: any) => {
+      // Prepare the data based on provider type
+      const insertData: any = {
+        client_id: clientId,
+        title: carePlanData.title,
+        start_date: carePlanData.start_date.toISOString().split('T')[0],
+        end_date: carePlanData.end_date ? carePlanData.end_date.toISOString().split('T')[0] : null,
+        review_date: carePlanData.review_date ? carePlanData.review_date.toISOString().split('T')[0] : null,
+        status: 'active'
+      };
+
+      if (carePlanData.provider_type === 'staff' && carePlanData.staff_id) {
+        // Find the staff member to get their name
+        const staffMember = branchStaff.find(staff => staff.id === carePlanData.staff_id);
+        insertData.staff_id = carePlanData.staff_id;
+        insertData.provider_name = staffMember ? `${staffMember.first_name} ${staffMember.last_name}` : 'Unknown Staff';
+      } else {
+        // External provider
+        insertData.provider_name = carePlanData.provider_name;
+      }
+
       const { data, error } = await supabase
         .from('client_care_plans')
-        .insert([{
-          client_id: clientId,
-          title: carePlanData.title,
-          provider_name: carePlanData.provider_name,
-          start_date: carePlanData.start_date.toISOString().split('T')[0],
-          end_date: carePlanData.end_date ? carePlanData.end_date.toISOString().split('T')[0] : null,
-          review_date: carePlanData.review_date ? carePlanData.review_date.toISOString().split('T')[0] : null,
-          status: 'active'
-        }])
+        .insert([insertData])
         .select()
         .single();
 
@@ -55,6 +71,17 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
       case 'on-hold': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const getProviderDisplay = (plan: any) => {
+    if (plan.staff && plan.staff_id) {
+      return `${plan.staff.first_name} ${plan.staff.last_name}`;
+    }
+    return plan.provider_name || 'Unknown Provider';
+  };
+
+  const isStaffProvider = (plan: any) => {
+    return !!plan.staff_id;
   };
 
   if (isLoading) {
@@ -102,7 +129,17 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
                       <div className="flex items-center gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
                           <User className="h-4 w-4" />
-                          <span>{plan.provider_name}</span>
+                          <span>{getProviderDisplay(plan)}</span>
+                          {isStaffProvider(plan) && (
+                            <Badge variant="outline" className="text-xs ml-1">
+                              Staff
+                            </Badge>
+                          )}
+                          {!isStaffProvider(plan) && (
+                            <Badge variant="outline" className="text-xs ml-1">
+                              External
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />

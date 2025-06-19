@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { resolveCarePlanId } from '@/utils/carePlanIdMapping';
@@ -7,6 +8,7 @@ export interface CarePlanData {
   client_id: string;
   title: string;
   provider_name: string;
+  staff_id?: string;
   start_date: string;
   end_date?: string;
   status: string;
@@ -17,6 +19,11 @@ export interface CarePlanData {
     first_name: string;
     last_name: string;
     avatar_initials?: string;
+  };
+  staff?: {
+    id: string;
+    first_name: string;
+    last_name: string;
   };
 }
 
@@ -64,6 +71,11 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {
         first_name,
         last_name,
         avatar_initials
+      ),
+      staff:staff(
+        id,
+        first_name,
+        last_name
       )
     `)
     .eq('id', resolvedId)
@@ -86,7 +98,12 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
       *,
       goals:client_care_plan_goals(*),
       activities:client_activities(*),
-      medications:client_medications(*)
+      medications:client_medications(*),
+      staff:staff(
+        id,
+        first_name,
+        last_name
+      )
     `)
     .eq('client_id', clientId)
     .order('created_at', { ascending: false });

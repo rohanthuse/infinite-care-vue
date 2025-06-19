@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,16 +31,38 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useBranchStaff } from "@/hooks/useBranchStaff";
+import { useParams } from "react-router-dom";
 
 const formSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
-  provider_name: z.string().min(1, "Provider name is required"),
+  provider_type: z.enum(["staff", "external"], {
+    required_error: "Please select a provider type",
+  }),
+  staff_id: z.string().optional(),
+  provider_name: z.string().optional(),
   start_date: z.date({
     required_error: "Start date is required",
   }),
   end_date: z.date().optional(),
   review_date: z.date().optional(),
+}).refine((data) => {
+  if (data.provider_type === "staff") {
+    return !!data.staff_id;
+  } else {
+    return !!data.provider_name && data.provider_name.trim().length > 0;
+  }
+}, {
+  message: "Please select a staff member or enter an external provider name",
+  path: ["provider_name"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -57,10 +79,17 @@ export function CreateCarePlanDialog({
   onSave 
 }: CreateCarePlanDialogProps) {
   const { toast } = useToast();
+  const { id: branchId } = useParams();
+  const [providerType, setProviderType] = useState<"staff" | "external">("staff");
+  
+  const { data: branchStaff = [], isLoading: isLoadingStaff } = useBranchStaff(branchId || '');
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
+      provider_type: "staff",
+      staff_id: "",
       provider_name: "",
       start_date: new Date(),
       end_date: undefined,
@@ -108,17 +137,85 @@ export function CreateCarePlanDialog({
 
             <FormField
               control={form.control}
-              name="provider_name"
+              name="provider_type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Provider Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Dr. John Smith" {...field} />
-                  </FormControl>
+                  <FormLabel>Provider Type</FormLabel>
+                  <Select 
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      setProviderType(value as "staff" | "external");
+                      // Clear the other provider field when switching types
+                      if (value === "staff") {
+                        form.setValue("provider_name", "");
+                      } else {
+                        form.setValue("staff_id", "");
+                      }
+                    }} 
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select provider type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="staff">Internal Staff Member</SelectItem>
+                      <SelectItem value="external">External Provider</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {providerType === "staff" && (
+              <FormField
+                control={form.control}
+                name="staff_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assigned Staff Member</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                      disabled={isLoadingStaff}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={isLoadingStaff ? "Loading staff..." : "Select a staff member"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {branchStaff.map((staff) => (
+                          <SelectItem key={staff.id} value={staff.id}>
+                            {staff.first_name} {staff.last_name}
+                            {staff.specialization && ` - ${staff.specialization}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {providerType === "external" && (
+              <FormField
+                control={form.control}
+                name="provider_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>External Provider Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Dr. John Smith" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}

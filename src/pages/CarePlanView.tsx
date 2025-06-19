@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, FileEdit, Download, PenLine } from "lucide-react";
@@ -134,6 +133,24 @@ export default function CarePlanView() {
     );
   }
 
+  // Helper function to get provider display name and type
+  const getProviderInfo = () => {
+    if (carePlanData.staff && carePlanData.staff_id) {
+      return {
+        name: `${carePlanData.staff.first_name} ${carePlanData.staff.last_name}`,
+        type: 'Staff Member',
+        isStaff: true
+      };
+    }
+    return {
+      name: carePlanData.provider_name || 'Unknown Provider',
+      type: 'External Provider',
+      isStaff: false
+    };
+  };
+
+  const providerInfo = getProviderInfo();
+
   // Transform the data to match CarePlanDetail expected interface
   const carePlan = {
     id: carePlanData.id,
@@ -142,7 +159,9 @@ export default function CarePlanView() {
     dateCreated: new Date(carePlanData.created_at),
     lastUpdated: new Date(carePlanData.updated_at),
     status: carePlanData.status,
-    assignedTo: carePlanData.provider_name || 'Unassigned',
+    assignedTo: providerInfo.name,
+    assignedToType: providerInfo.type,
+    isStaffProvider: providerInfo.isStaff,
     avatar: carePlanData.client?.avatar_initials || `${carePlanData.client?.first_name?.[0] || 'U'}${carePlanData.client?.last_name?.[0] || 'P'}`
   };
 
@@ -264,6 +283,11 @@ export default function CarePlanView() {
                     <span>Plan ID: {carePlan.id}</span>
                     <span>•</span>
                     <Badge>{carePlan.status}</Badge>
+                    <span>•</span>
+                    <span>Provider: {carePlan.assignedTo}</span>
+                    <Badge variant={carePlan.isStaffProvider ? "default" : "outline"} className="text-xs">
+                      {carePlan.assignedToType}
+                    </Badge>
                   </div>
                 </div>
               </div>

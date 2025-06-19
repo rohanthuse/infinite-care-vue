@@ -833,6 +833,7 @@ export type Database = {
           provider_name: string
           rejection_reason: string | null
           review_date: string | null
+          staff_id: string | null
           start_date: string
           status: string
           title: string
@@ -853,6 +854,7 @@ export type Database = {
           provider_name: string
           rejection_reason?: string | null
           review_date?: string | null
+          staff_id?: string | null
           start_date: string
           status?: string
           title: string
@@ -873,6 +875,7 @@ export type Database = {
           provider_name?: string
           rejection_reason?: string | null
           review_date?: string | null
+          staff_id?: string | null
           start_date?: string
           status?: string
           title?: string
@@ -896,6 +899,13 @@ export type Database = {
           {
             foreignKeyName: "client_care_plans_created_by_staff_id_fkey"
             columns: ["created_by_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_care_plans_staff_id_fkey"
+            columns: ["staff_id"]
             isOneToOne: false
             referencedRelation: "staff"
             referencedColumns: ["id"]
