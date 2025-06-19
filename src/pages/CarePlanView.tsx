@@ -5,7 +5,6 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CarePlanDetail } from "@/components/care/CarePlanDetail";
 import { useCarePlanData } from "@/hooks/useCarePlanData";
-import { useClientPersonalCare } from "@/hooks/useClientPersonalCare";
 
 export default function CarePlanView() {
   const { id } = useParams();
@@ -17,7 +16,7 @@ export default function CarePlanView() {
   const [addEventDialogOpen, setAddEventDialogOpen] = useState(false);
 
   // Fetch care plan data
-  const { data: carePlan, isLoading, error } = useCarePlanData(id);
+  const { data: carePlanData, isLoading, error } = useCarePlanData(id);
 
   if (isLoading) {
     return (
@@ -30,7 +29,7 @@ export default function CarePlanView() {
     );
   }
 
-  if (error || !carePlan) {
+  if (error || !carePlanData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -44,6 +43,18 @@ export default function CarePlanView() {
       </div>
     );
   }
+
+  // Transform the data to match CarePlanDetail expected interface
+  const carePlan = {
+    id: carePlanData.id,
+    patientName: carePlanData.client ? `${carePlanData.client.first_name} ${carePlanData.client.last_name}` : 'Unknown Patient',
+    patientId: carePlanData.client_id,
+    dateCreated: new Date(carePlanData.created_at),
+    lastUpdated: new Date(carePlanData.updated_at),
+    status: carePlanData.status,
+    assignedTo: carePlanData.provider_name || 'Unassigned',
+    avatar: carePlanData.client?.avatar_initials || `${carePlanData.client?.first_name?.[0] || 'U'}${carePlanData.client?.last_name?.[0] || 'P'}`
+  };
 
   const handleAddNote = () => {
     setAddNoteDialogOpen(true);
