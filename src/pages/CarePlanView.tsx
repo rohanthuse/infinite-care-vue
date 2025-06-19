@@ -7,16 +7,11 @@ import { CarePlanDetail } from "@/components/care/CarePlanDetail";
 import { useCarePlanData } from "@/hooks/useCarePlanData";
 
 export default function CarePlanView() {
-  const { carePlanId } = useParams();
+  const { carePlanId, branchId, branchName } = useParams();
   const navigate = useNavigate();
-  const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
-  const [scheduleFollowUpDialogOpen, setScheduleFollowUpDialogOpen] = useState(false);
-  const [recordActivityDialogOpen, setRecordActivityDialogOpen] = useState(false);
-  const [uploadDocumentDialogOpen, setUploadDocumentDialogOpen] = useState(false);
-  const [addEventDialogOpen, setAddEventDialogOpen] = useState(false);
 
   // Add debugging logs
-  console.log('[CarePlanView] URL params:', { carePlanId });
+  console.log('[CarePlanView] URL params:', { carePlanId, branchId, branchName });
   console.log('[CarePlanView] Full window location:', window.location.pathname);
 
   // Check if we have a care plan ID
@@ -26,7 +21,16 @@ export default function CarePlanView() {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Missing Care Plan ID</h2>
           <p className="text-gray-600 mb-4">No care plan ID was provided in the URL.</p>
-          <Button onClick={() => navigate("/care")} variant="outline">
+          <Button 
+            onClick={() => {
+              if (branchId && branchName) {
+                navigate(`/branch-dashboard/${branchId}/${branchName}/care`);
+              } else {
+                navigate("/care");
+              }
+            }} 
+            variant="outline"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Care Plans
           </Button>
@@ -67,7 +71,16 @@ export default function CarePlanView() {
           {error && (
             <p className="text-sm text-red-600 mb-4">Error: {error.message}</p>
           )}
-          <Button onClick={() => navigate("/care")} variant="outline">
+          <Button 
+            onClick={() => {
+              if (branchId && branchName) {
+                navigate(`/branch-dashboard/${branchId}/${branchName}/care`);
+              } else {
+                navigate("/care");
+              }
+            }} 
+            variant="outline"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Care Plans
           </Button>
@@ -88,28 +101,12 @@ export default function CarePlanView() {
     avatar: carePlanData.client?.avatar_initials || `${carePlanData.client?.first_name?.[0] || 'U'}${carePlanData.client?.last_name?.[0] || 'P'}`
   };
 
-  const handleAddNote = () => {
-    setAddNoteDialogOpen(true);
-  };
-
-  const handleScheduleFollowUp = () => {
-    setScheduleFollowUpDialogOpen(true);
-  };
-
-  const handleRecordActivity = () => {
-    setRecordActivityDialogOpen(true);
-  };
-
-  const handleUploadDocument = () => {
-    setUploadDocumentDialogOpen(true);
-  };
-
-  const handleAddEvent = () => {
-    setAddEventDialogOpen(true);
-  };
-
   const handleClose = () => {
-    navigate("/care");
+    if (branchId && branchName) {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/care`);
+    } else {
+      navigate("/care");
+    }
   };
 
   return (
@@ -139,11 +136,6 @@ export default function CarePlanView() {
         <CarePlanDetail
           carePlan={carePlan}
           onClose={handleClose}
-          onAddNote={handleAddNote}
-          onScheduleFollowUp={handleScheduleFollowUp}
-          onRecordActivity={handleRecordActivity}
-          onUploadDocument={handleUploadDocument}
-          onAddEvent={handleAddEvent}
         />
       </div>
     </div>
