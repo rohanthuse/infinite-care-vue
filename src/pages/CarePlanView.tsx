@@ -21,6 +21,7 @@ import { useClientRiskAssessments } from "@/hooks/useClientRiskAssessments";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { ErrorBoundary } from "@/components/care/ErrorBoundary";
 
 // Import all the tab components
 import { CarePlanTabBar } from "@/components/care/CarePlanTabBar";
@@ -317,109 +318,137 @@ export default function CarePlanView() {
           
           <div className="mt-6">
             <TabsContent value="personal">
-              <PersonalInfoTab 
-                client={clientProfile}
-                personalInfo={personalInfo}
-                medicalInfo={medicalInfo}
-                onEditPersonalInfo={() => dialogState.setEditPersonalInfoOpen(true)}
-                onEditMedicalInfo={() => dialogState.setEditMedicalInfoOpen(true)}
-              />
+              <ErrorBoundary>
+                <PersonalInfoTab 
+                  client={clientProfile}
+                  personalInfo={personalInfo}
+                  medicalInfo={medicalInfo}
+                  onEditPersonalInfo={() => dialogState.setEditPersonalInfoOpen(true)}
+                  onEditMedicalInfo={() => dialogState.setEditMedicalInfoOpen(true)}
+                />
+              </ErrorBoundary>
             </TabsContent>
             
             <TabsContent value="aboutme">
-              <AboutMeTab 
-                personalInfo={personalInfo}
-                personalCare={personalCare}
-                isLoadingPersonalInfo={isLoadingPersonalInfo}
-                isLoadingPersonalCare={isLoadingPersonalCare}
-                onEditAboutMe={() => dialogState.setEditAboutMeOpen(true)}
-              />
+              <ErrorBoundary>
+                <AboutMeTab 
+                  personalInfo={personalInfo}
+                  personalCare={personalCare}
+                  isLoadingPersonalInfo={isLoadingPersonalInfo}
+                  isLoadingPersonalCare={isLoadingPersonalCare}
+                  onEditAboutMe={() => dialogState.setEditAboutMeOpen(true)}
+                />
+              </ErrorBoundary>
             </TabsContent>
             
             <TabsContent value="goals">
-              <GoalsTab 
-                carePlanId={carePlan.id}
-                onAddGoal={() => dialogState.setAddGoalDialogOpen(true)}
-              />
+              <ErrorBoundary>
+                <GoalsTab 
+                  carePlanId={carePlan.id}
+                  onAddGoal={() => dialogState.setAddGoalDialogOpen(true)}
+                />
+              </ErrorBoundary>
             </TabsContent>
             
             <TabsContent value="activities">
-              <ActivitiesTab 
-                carePlanId={carePlan.id}
-                onAddActivity={() => dialogState.setAddActivityDialogOpen(true)} 
-              />
+              <ErrorBoundary>
+                <ActivitiesTab 
+                  carePlanId={carePlan.id}
+                  onAddActivity={() => dialogState.setAddActivityDialogOpen(true)} 
+                />
+              </ErrorBoundary>
             </TabsContent>
             
             <TabsContent value="notes">
-              <NotesTab 
-                clientId={carePlan.patientId}
-                onAddNote={() => dialogState.setAddNoteDialogOpen(true)} 
-              />
+              <ErrorBoundary>
+                <NotesTab 
+                  clientId={carePlan.patientId}
+                  onAddNote={() => dialogState.setAddNoteDialogOpen(true)} 
+                />
+              </ErrorBoundary>
             </TabsContent>
             
             <TabsContent value="documents">
-              <DocumentsTab clientId={carePlan.patientId} />
+              <ErrorBoundary>
+                <DocumentsTab clientId={carePlan.patientId} />
+              </ErrorBoundary>
             </TabsContent>
             
             <TabsContent value="assessments">
-              <AssessmentsTab 
-                clientId={carePlan.patientId}
-                assessments={assessments}
-                onAddAssessment={() => dialogState.setAddAssessmentDialogOpen(true)}
-              />
+              <ErrorBoundary>
+                <AssessmentsTab 
+                  clientId={carePlan.patientId}
+                  assessments={assessments}
+                  onAddAssessment={() => dialogState.setAddAssessmentDialogOpen(true)}
+                />
+              </ErrorBoundary>
             </TabsContent>
             
             <TabsContent value="equipment">
-              <EquipmentTab 
-                clientId={carePlan.patientId}
-                equipment={equipment}
-                onAddEquipment={() => dialogState.setAddEquipmentDialogOpen(true)}
-              />
+              <ErrorBoundary>
+                <EquipmentTab 
+                  clientId={carePlan.patientId}
+                  equipment={equipment}
+                  onAddEquipment={() => dialogState.setAddEquipmentDialogOpen(true)}
+                />
+              </ErrorBoundary>
             </TabsContent>
             
             <TabsContent value="dietary">
-              <DietaryTab 
-                dietaryRequirements={dietaryRequirements}
-                onEditDietaryRequirements={() => dialogState.setEditDietaryOpen(true)}
-              />
+              <ErrorBoundary>
+                <DietaryTab 
+                  dietaryRequirements={dietaryRequirements}
+                  onEditDietaryRequirements={() => dialogState.setEditDietaryOpen(true)}
+                />
+              </ErrorBoundary>
             </TabsContent>
             
             <TabsContent value="personalcare">
-              <PersonalCareTab 
-                personalCare={personalCare}
-                onEditPersonalCare={() => dialogState.setEditPersonalCareOpen(true)}
-              />
+              <ErrorBoundary>
+                <PersonalCareTab 
+                  personalCare={personalCare}
+                  onEditPersonalCare={() => dialogState.setEditPersonalCareOpen(true)}
+                />
+              </ErrorBoundary>
             </TabsContent>
 
             <TabsContent value="risk">
-              <RiskAssessmentsTab 
-                clientId={carePlan.patientId}
-                riskAssessments={riskAssessments}
-                onAddRiskAssessment={() => dialogState.setAddRiskAssessmentDialogOpen(true)}
-              />
+              <ErrorBoundary>
+                <RiskAssessmentsTab 
+                  clientId={carePlan.patientId}
+                  riskAssessments={riskAssessments}
+                  onAddRiskAssessment={() => dialogState.setAddRiskAssessmentDialogOpen(true)}
+                />
+              </ErrorBoundary>
             </TabsContent>
             
             <TabsContent value="serviceplan">
-              <ServicePlanTab 
-                serviceActions={serviceActions}
-                onAddServicePlan={() => dialogState.setAddServicePlanDialogOpen(true)}
-              />
+              <ErrorBoundary>
+                <ServicePlanTab 
+                  serviceActions={serviceActions}
+                  onAddServicePlan={() => dialogState.setAddServicePlanDialogOpen(true)}
+                />
+              </ErrorBoundary>
             </TabsContent>
             
             <TabsContent value="serviceactions">
-              <ServiceActionsTab 
-                serviceActions={serviceActions}
-                onAddServiceAction={() => dialogState.setAddServiceActionDialogOpen(true)}
-              />
+              <ErrorBoundary>
+                <ServiceActionsTab 
+                  serviceActions={serviceActions}
+                  onAddServiceAction={() => dialogState.setAddServiceActionDialogOpen(true)}
+                />
+              </ErrorBoundary>
             </TabsContent>
             
             <TabsContent value="eventslogs">
-              <EventsLogsTab 
-                clientId={carePlan.patientId}
-                carePlanId={carePlan.id}
-                patientName={carePlan.patientName}
-                onAddEvent={() => dialogState.setAddEventDialogOpen(true)}
-              />
+              <ErrorBoundary>
+                <EventsLogsTab 
+                  clientId={carePlan.patientId}
+                  carePlanId={carePlan.id}
+                  patientName={carePlan.patientName}
+                  onAddEvent={() => dialogState.setAddEventDialogOpen(true)}
+                />
+              </ErrorBoundary>
             </TabsContent>
           </div>
         </Tabs>

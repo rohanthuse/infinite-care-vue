@@ -1,11 +1,12 @@
 
 import React from "react";
 import { format } from "date-fns";
-import { Target, Plus, TrendingUp, Clock } from "lucide-react";
+import { Target, Plus, TrendingUp, Clock, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
 
 interface GoalsTabProps {
@@ -14,7 +15,22 @@ interface GoalsTabProps {
 }
 
 export const GoalsTab: React.FC<GoalsTabProps> = ({ carePlanId, onAddGoal }) => {
-  const { data: goals = [], isLoading } = useCarePlanGoals(carePlanId);
+  console.log('[GoalsTab] Rendering with carePlanId:', carePlanId);
+  
+  const { 
+    data: goals = [], 
+    isLoading, 
+    error, 
+    isError 
+  } = useCarePlanGoals(carePlanId);
+
+  console.log('[GoalsTab] Hook state:', { 
+    goalsCount: goals.length, 
+    isLoading, 
+    error, 
+    isError,
+    carePlanId 
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -28,8 +44,31 @@ export const GoalsTab: React.FC<GoalsTabProps> = ({ carePlanId, onAddGoal }) => 
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-32">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="space-y-4">
+        <Card>
+          <CardContent className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-2">Loading goals...</span>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isError && error) {
+    console.error('[GoalsTab] Error loading goals:', error);
+    return (
+      <div className="space-y-4">
+        <Card>
+          <CardContent className="p-6">
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Failed to load goals. Please try refreshing the page.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
       </div>
     );
   }
