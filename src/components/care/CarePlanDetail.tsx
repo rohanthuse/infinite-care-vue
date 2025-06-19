@@ -44,6 +44,8 @@ import { AddGoalDialog } from "./dialogs/AddGoalDialog";
 import { EditGoalDialog } from "./dialogs/EditGoalDialog";
 import { AddRiskAssessmentDialog } from "./dialogs/AddRiskAssessmentDialog";
 import { EditRiskAssessmentDialog } from "./dialogs/EditRiskAssessmentDialog";
+import { AddServicePlanDialog } from "./dialogs/AddServicePlanDialog";
+import { EditServicePlanDialog } from "./dialogs/EditServicePlanDialog";
 
 interface CarePlanDetailProps {
   carePlan: {
@@ -64,29 +66,27 @@ interface CarePlanDetailProps {
   onAddEvent?: () => void;
 }
 
-export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({ 
-  carePlan, 
+export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
+  carePlan,
   onClose,
   onAddNote,
   onScheduleFollowUp,
   onRecordActivity,
   onUploadDocument,
-  onAddEvent
+  onAddEvent,
 }) => {
   const [activeTab, setActiveTab] = useState("personal");
-  const [assessmentDialogOpen, setAssessmentDialogOpen] = useState(false);
-  const [personalInfoDialogOpen, setPersonalInfoDialogOpen] = useState(false);
-  const [aboutMeDialogOpen, setAboutMeDialogOpen] = useState(false);
-  const [medicalInfoDialogOpen, setMedicalInfoDialogOpen] = useState(false);
-  const [dietaryDialogOpen, setDietaryDialogOpen] = useState(false);
-  const [personalCareDialogOpen, setPersonalCareDialogOpen] = useState(false);
-  const [addGoalDialogOpen, setAddGoalDialogOpen] = useState(false);
-  const [editGoalDialogOpen, setEditGoalDialogOpen] = useState(false);
-  const [selectedGoal, setSelectedGoal] = useState<any>(null);
+  const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
+  const [scheduleFollowUpDialogOpen, setScheduleFollowUpDialogOpen] = useState(false);
+  const [recordActivityDialogOpen, setRecordActivityDialogOpen] = useState(false);
+  const [uploadDocumentDialogOpen, setUploadDocumentDialogOpen] = useState(false);
+  const [addEventDialogOpen, setAddEventDialogOpen] = useState(false);
   const [addRiskAssessmentDialogOpen, setAddRiskAssessmentDialogOpen] = useState(false);
   const [editRiskAssessmentDialogOpen, setEditRiskAssessmentDialogOpen] = useState(false);
-  const [selectedRiskAssessment, setSelectedRiskAssessment] = useState<any>(null);
-  const { user } = useAuth();
+  const [addServicePlanDialogOpen, setAddServicePlanDialogOpen] = useState(false);
+  const [editServicePlanDialogOpen, setEditServicePlanDialogOpen] = useState(false);
+  const [selectedRiskAssessment, setSelectedRiskAssessment] = useState<ClientRiskAssessment | undefined>();
+  const [selectedServiceAction, setSelectedServiceAction] = useState<ClientServiceAction | undefined>();
 
   // Fetch comprehensive care plan data
   const {
@@ -136,6 +136,11 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const updateMedicalInfoMutation = useUpdateClientMedicalInfo();
   const createGoalMutation = useCreateGoal();
   const updateGoalMutation = useUpdateGoal();
+
+  // Service Actions hooks
+  const { data: serviceActions = [], isLoading: serviceActionsLoading } = useClientServiceActions(carePlan.patientId);
+  const createServiceActionMutation = useCreateClientServiceAction();
+  const updateServiceActionMutation = useUpdateClientServiceAction();
 
   if (!carePlan) return null;
 
@@ -544,7 +549,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     setMedicalInfoDialogOpen(true);
   };
 
-  if (isLoading || dietaryLoading || personalCareLoading || riskAssessmentsLoading) {
+  if (isLoading || dietaryLoading || personalCareLoading || riskAssessmentsLoading || serviceActionsLoading) {
     return (
       <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
@@ -781,7 +786,11 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="serviceplan">
-                  <ServicePlanTab serviceActions={transformedServicePlan} />
+                  <ServicePlanTab 
+                    serviceActions={serviceActions}
+                    onAddServicePlan={() => setAddServicePlanDialogOpen(true)}
+                    onEditServicePlan={handleEditServicePlan}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="serviceactions">
@@ -882,6 +891,25 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         onSave={handleUpdateRiskAssessment}
         riskAssessment={selectedRiskAssessment}
         isLoading={updateRiskAssessmentMutation.isPending}
+      />
+
+      {/* Add Service Plan Dialog */}
+      <AddServicePlanDialog
+        open={addServicePlanDialogOpen}
+        onOpenChange={setAddServicePlanDialogOpen}
+        onSave={handleAddServicePlan}
+        clientId={carePlan.patientId}
+        carePlanId={carePlan.id}
+        isLoading={createServiceActionMutation.isPending}
+      />
+
+      {/* Edit Service Plan Dialog */}
+      <EditServicePlanDialog
+        open={editServicePlanDialogOpen}
+        onOpenChange={setEditServicePlanDialogOpen}
+        onSave={handleUpdateServicePlan}
+        serviceAction={selectedServiceAction}
+        isLoading={updateServiceActionMutation.isPending}
       />
     </div>
   );
