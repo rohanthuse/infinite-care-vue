@@ -541,3 +541,164 @@ export const useRescheduleAppointment = () => {
 
   return useMutation(config);
 };
+
+// Add the missing create mutation hooks
+export const useCreateClientNote = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { client_id: string; title: string; content: string; author: string }) => {
+      const response = await supabase
+        .from('client_notes')
+        .insert(data)
+        .select()
+        .single();
+
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['client-notes', data.client_id] });
+    },
+  });
+};
+
+export const useCreateClientEvent = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { client_id: string; title: string; event_type: string; severity: string; description: string; reporter: string; status: string }) => {
+      const response = await supabase
+        .from('client_events_logs')
+        .insert(data)
+        .select()
+        .single();
+
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['client-events', data.client_id] });
+    },
+  });
+};
+
+export const useCreateGoal = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { care_plan_id: string; description: string; status: string; progress: number; notes?: string }) => {
+      const response = await supabase
+        .from('client_care_plan_goals')
+        .insert(data)
+        .select()
+        .single();
+
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['care-plan-goals', data.care_plan_id] });
+    },
+  });
+};
+
+export const useCreateClientActivity = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { care_plan_id: string; name: string; description?: string; frequency: string; status: string }) => {
+      const response = await supabase
+        .from('client_activities')
+        .insert(data)
+        .select()
+        .single();
+
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['client-activities', data.care_plan_id] });
+    },
+  });
+};
+
+export const useCreateClientEquipment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: Omit<ClientEquipment, 'id' | 'created_at' | 'updated_at'>) => {
+      const response = await supabase
+        .from('client_equipment')
+        .insert(data)
+        .select()
+        .single();
+
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['client-equipment', data.client_id] });
+    },
+  });
+};
+
+export const useCreateClientAssessment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: Omit<ClientAssessment, 'id' | 'created_at' | 'updated_at'>) => {
+      const response = await supabase
+        .from('client_assessments')
+        .insert(data)
+        .select()
+        .single();
+
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['client-assessments', data.client_id] });
+    },
+  });
+};
+
+export const useCreateClientRiskAssessment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: Omit<ClientRiskAssessment, 'id' | 'created_at' | 'updated_at'>) => {
+      const response = await supabase
+        .from('client_risk_assessments')
+        .insert(data)
+        .select()
+        .single();
+
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['client-risk-assessments', data.client_id] });
+    },
+  });
+};
+
+export const useCreateClientServiceAction = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: Omit<ClientServiceAction, 'id' | 'created_at' | 'updated_at'>) => {
+      const response = await supabase
+        .from('client_service_actions')
+        .insert(data)
+        .select()
+        .single();
+
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['client-service-actions', data.client_id] });
+    },
+  });
+};
