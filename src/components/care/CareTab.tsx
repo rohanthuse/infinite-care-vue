@@ -157,7 +157,7 @@ interface CareTabProps {
   branchName: string | undefined;
 }
 
-// Add a hook to fetch care plans from database with fallback to mock data
+// Updated hook to fetch care plans with proper staff relationships
 const useCarePlans = (branchId: string | undefined) => {
   return useQuery({
     queryKey: ['care-plans', branchId],
@@ -167,12 +167,17 @@ const useCarePlans = (branchId: string | undefined) => {
       try {
         console.log('[useCarePlans] Fetching care plans for branch:', branchId);
         
-        // Try to fetch from database
+        // Updated query to include staff relationship
         const { data: carePlans, error } = await supabase
           .from('client_care_plans')
           .select(`
             *,
-            client:clients(*)
+            client:clients(*),
+            staff!staff_id(
+              id,
+              first_name,
+              last_name
+            )
           `)
           .order('created_at', { ascending: false });
 
@@ -187,22 +192,35 @@ const useCarePlans = (branchId: string | undefined) => {
           return mockCarePlans;
         }
 
-        // Transform database data to match expected format with proper display IDs
-        const transformedPlans = carePlans.map((plan, index) => ({
-          id: `CP-${String(index + 1).padStart(3, '0')}`, // Use proper display ID format
-          patientName: plan.client ? `${plan.client.first_name} ${plan.client.last_name}` : "Unknown Patient",
-          patientId: plan.client?.other_identifier || `PT-${Math.floor(Math.random() * 9999)}`,
-          dateCreated: new Date(plan.created_at),
-          lastUpdated: new Date(plan.updated_at),
-          status: plan.status === 'active' ? 'Active' : 
-                 plan.status === 'under_review' ? 'Under Review' : 
-                 plan.status === 'archived' ? 'Archived' : 'Active',
-          assignedTo: plan.provider_name || "Care Provider",
-          avatar: plan.client?.avatar_initials || 
-                 (plan.client ? `${plan.client.first_name?.[0] || ''}${plan.client.last_name?.[0] || ''}` : 'UK'),
-          // Store the actual database ID for backend operations
-          _databaseId: plan.id
-        }));
+        // Transform database data to match expected format with proper assignedTo logic
+        const transformedPlans = carePlans.map((plan, index) => {
+          // Determine the assigned provider name
+          let assignedTo = "Unknown Provider";
+          
+          if (plan.staff && plan.staff_id) {
+            // If staff relationship exists, use staff member's name
+            assignedTo = `${plan.staff.first_name} ${plan.staff.last_name}`;
+          } else if (plan.provider_name) {
+            // Otherwise, use the provider_name for external providers
+            assignedTo = plan.provider_name;
+          }
+
+          return {
+            id: `CP-${String(index + 1).padStart(3, '0')}`,
+            patientName: plan.client ? `${plan.client.first_name} ${plan.client.last_name}` : "Unknown Patient",
+            patientId: plan.client?.other_identifier || `PT-${Math.floor(Math.random() * 9999)}`,
+            dateCreated: new Date(plan.created_at),
+            lastUpdated: new Date(plan.updated_at),
+            status: plan.status === 'active' ? 'Active' : 
+                   plan.status === 'under_review' ? 'Under Review' : 
+                   plan.status === 'archived' ? 'Archived' : 'Active',
+            assignedTo: assignedTo,
+            avatar: plan.client?.avatar_initials || 
+                   (plan.client ? `${plan.client.first_name?.[0] || ''}${plan.client.last_name?.[0] || ''}` : 'UK'),
+            // Store the actual database ID for backend operations
+            _databaseId: plan.id
+          };
+        });
 
         console.log('[useCarePlans] Successfully transformed care plans:', transformedPlans);
         return transformedPlans;
