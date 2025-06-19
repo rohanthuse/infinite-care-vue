@@ -7,10 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
 interface PersonalInfoTabProps {
-  client: {
+  client?: {
     id: string;
-    first_name: string;
-    last_name: string;
+    first_name?: string;
+    last_name?: string;
     email?: string;
     phone?: string;
     date_of_birth?: string;
@@ -19,7 +19,7 @@ interface PersonalInfoTabProps {
     preferred_name?: string;
     status?: string;
   };
-  personalInfo: {
+  personalInfo?: {
     emergency_contact_name?: string;
     emergency_contact_phone?: string;
     preferred_communication?: string;
@@ -27,7 +27,7 @@ interface PersonalInfoTabProps {
     gp_practice?: string;
     gp_phone?: string;
   };
-  medicalInfo: {
+  medicalInfo?: {
     allergies?: string[];
     current_medications?: string[];
     medical_conditions?: string[];
@@ -44,6 +44,19 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   onEditPersonalInfo,
   onEditMedicalInfo 
 }) => {
+  // Handle loading state if client data is not available
+  if (!client) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Personal Information Section */}
@@ -66,7 +79,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">Full Name</h3>
-                <p className="text-base">{client.first_name} {client.last_name}</p>
+                <p className="text-base">{client.first_name || ''} {client.last_name || ''}</p>
               </div>
               {client.preferred_name && (
                 <div>
@@ -131,13 +144,13 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-1">Contact Name</h3>
-              <p className="text-base">{personalInfo.emergency_contact_name || 'Not provided'}</p>
+              <p className="text-base">{personalInfo?.emergency_contact_name || 'Not provided'}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-1">Contact Phone</h3>
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-gray-400" />
-                <p className="text-base">{personalInfo.emergency_contact_phone || 'Not provided'}</p>
+                <p className="text-base">{personalInfo?.emergency_contact_phone || 'Not provided'}</p>
               </div>
             </div>
           </div>
@@ -163,7 +176,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           <div className="space-y-4">
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-2">Allergies</h3>
-              {medicalInfo.allergies && medicalInfo.allergies.length > 0 ? (
+              {medicalInfo?.allergies && medicalInfo.allergies.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {medicalInfo.allergies.map((allergy, index) => (
                     <Badge key={index} variant="outline" className="bg-red-50 text-red-700 border-red-200">
@@ -178,7 +191,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-2">Current Medications</h3>
-              {medicalInfo.current_medications && medicalInfo.current_medications.length > 0 ? (
+              {medicalInfo?.current_medications && medicalInfo.current_medications.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {medicalInfo.current_medications.map((medication, index) => (
                     <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
@@ -193,7 +206,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-2">Medical Conditions</h3>
-              {medicalInfo.medical_conditions && medicalInfo.medical_conditions.length > 0 ? (
+              {medicalInfo?.medical_conditions && medicalInfo.medical_conditions.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {medicalInfo.medical_conditions.map((condition, index) => (
                     <Badge key={index} variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
@@ -206,7 +219,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               )}
             </div>
             
-            {medicalInfo.medical_history && (
+            {medicalInfo?.medical_history && (
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-2">Medical History</h3>
                 <p className="text-sm text-gray-700">{medicalInfo.medical_history}</p>
@@ -217,7 +230,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
       </Card>
 
       {/* GP Information Section */}
-      {(personalInfo.gp_name || personalInfo.gp_practice || personalInfo.gp_phone) && (
+      {(personalInfo?.gp_name || personalInfo?.gp_practice || personalInfo?.gp_phone) && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">GP Information</CardTitle>
