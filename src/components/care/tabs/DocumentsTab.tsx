@@ -1,50 +1,31 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { format } from "date-fns";
-import { FileText, Download, Eye, FileBox, Calendar, User, Plus, Upload } from "lucide-react";
+import { FileText, Download, Eye, FileBox, Calendar, User, Clock, Plus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useClientDocuments, useViewClientDocument, useDownloadClientDocument, useUploadClientDocument } from "@/hooks/useClientDocuments";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { toast } from "sonner";
+import { useViewClientDocument, useDownloadClientDocument } from "@/hooks/useClientDocuments";
 
-const uploadFormSchema = z.object({
-  name: z.string().min(1, "Document name is required"),
-  type: z.string().min(1, "Document type is required"),
-  uploaded_by: z.string().min(1, "Uploader name is required"),
-  file: z.any().refine((file) => file instanceof File, "Please select a file"),
-});
+interface Document {
+  name: string;
+  date: Date;
+  type: string;
+  author: string;
+  file_path?: string;
+}
 
 interface DocumentsTabProps {
-  clientId: string;
+  documents: Document[];
   onUploadDocument?: () => void;
 }
 
-export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, onUploadDocument }) => {
-  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
-  const { data: documents = [], isLoading } = useClientDocuments(clientId);
+export const DocumentsTab: React.FC<DocumentsTabProps> = ({ documents, onUploadDocument }) => {
   const viewDocumentMutation = useViewClientDocument();
   const downloadDocumentMutation = useDownloadClientDocument();
-  const uploadDocumentMutation = useUploadClientDocument();
 
-  const uploadForm = useForm<z.infer<typeof uploadFormSchema>>({
-    resolver: zodResolver(uploadFormSchema),
-    defaultValues: {
-      name: "",
-      type: "",
-      uploaded_by: "",
-    },
-  });
-
-  const handleViewDocument = (document: any) => {
+  const handleViewDocument = (document: Document) => {
     if (document.file_path) {
       viewDocumentMutation.mutate({ filePath: document.file_path });
     } else {
@@ -52,7 +33,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, onUploadDo
     }
   };
 
-  const handleDownloadDocument = (document: any) => {
+  const handleDownloadDocument = (document: Document) => {
     if (document.file_path) {
       downloadDocumentMutation.mutate({ 
         filePath: document.file_path, 
@@ -63,29 +44,11 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, onUploadDo
     }
   };
 
-  const handleUploadDocument = async (values: z.infer<typeof uploadFormSchema>) => {
-    try {
-      await uploadDocumentMutation.mutateAsync({
-        clientId,
-        file: values.file,
-        name: values.name,
-        type: values.type,
-        uploaded_by: values.uploaded_by,
-      });
-      setIsUploadDialogOpen(false);
-      uploadForm.reset();
-    } catch (error) {
-      console.error('Upload failed:', error);
-    }
-  };
-
   const getDocumentTypeIcon = (type: string) => {
     switch (type) {
       case "PDF":
-      case "Medical Report":
         return <FileText className="h-4 w-4 text-red-500" />;
       case "DOCX":
-      case "Care Plan":
         return <FileText className="h-4 w-4 text-blue-500" />;
       default:
         return <FileBox className="h-4 w-4 text-gray-500" />;
@@ -95,23 +58,13 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, onUploadDo
   const getDocumentTypeBadge = (type: string) => {
     switch (type) {
       case "PDF":
-      case "Medical Report":
         return "bg-red-50 text-red-700 border-red-200";
       case "DOCX":
-      case "Care Plan":
         return "bg-blue-50 text-blue-700 border-blue-200";
       default:
         return "bg-gray-50 text-gray-700 border-gray-200";
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-32">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
@@ -122,7 +75,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, onUploadDo
               <FileText className="h-5 w-5 text-blue-600" />
               <CardTitle className="text-lg">Documents</CardTitle>
             </div>
-            <Button size="sm" className="gap-1" onClick={() => setIsUploadDialogOpen(true)}>
+            <Button size="sm" className="gap-1" onClick={onUploadDocument}>
               <Plus className="h-4 w-4" />
               <span>Upload Document</span>
             </Button>
@@ -146,8 +99,8 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, onUploadDo
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {documents.map((doc) => (
-                  <TableRow key={doc.id} className="hover:bg-gray-50">
+                {documents.map((doc, index) => (
+                  <TableRow key={index} className="hover:bg-gray-50">
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {getDocumentTypeIcon(doc.type)}
@@ -160,13 +113,13 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, onUploadDo
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm text-gray-600">
                         <Calendar className="h-3.5 w-3.5" />
-                        <span>{format(new Date(doc.upload_date), 'MMM dd, yyyy')}</span>
+                        <span>{format(doc.date, 'MMM dd, yyyy')}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm text-gray-600">
                         <User className="h-3.5 w-3.5" />
-                        <span>{doc.uploaded_by}</span>
+                        <span>{doc.author}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
@@ -198,108 +151,6 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId, onUploadDo
           )}
         </CardContent>
       </Card>
-
-      {/* Upload Document Dialog */}
-      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Upload className="h-5 w-5" />
-              Upload Document
-            </DialogTitle>
-          </DialogHeader>
-          <Form {...uploadForm}>
-            <form onSubmit={uploadForm.handleSubmit(handleUploadDocument)} className="space-y-4">
-              <FormField
-                control={uploadForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Document Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter document name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={uploadForm.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Document Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select document type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Medical Report">Medical Report</SelectItem>
-                        <SelectItem value="Care Plan">Care Plan</SelectItem>
-                        <SelectItem value="Assessment">Assessment</SelectItem>
-                        <SelectItem value="Legal Document">Legal Document</SelectItem>
-                        <SelectItem value="Insurance">Insurance</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={uploadForm.control}
-                name="uploaded_by"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Uploaded By</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Your name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={uploadForm.control}
-                name="file"
-                render={({ field: { onChange, value, ...field } }) => (
-                  <FormItem>
-                    <FormLabel>File</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="file"
-                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            onChange(file);
-                          }
-                        }}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={uploadDocumentMutation.isPending}>
-                  {uploadDocumentMutation.isPending ? "Uploading..." : "Upload"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

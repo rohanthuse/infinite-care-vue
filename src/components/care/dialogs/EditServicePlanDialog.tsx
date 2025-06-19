@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -71,20 +71,22 @@ export const EditServicePlanDialog: React.FC<EditServicePlanDialogProps> = ({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      service_name: "",
-      service_category: "",
-      provider_name: "",
-      frequency: "",
-      duration: "",
-      schedule_details: "",
-      goals: "",
-      progress_status: "active",
-      notes: "",
+      service_name: serviceAction?.service_name || "",
+      service_category: serviceAction?.service_category || "",
+      provider_name: serviceAction?.provider_name || "",
+      frequency: serviceAction?.frequency || "",
+      duration: serviceAction?.duration || "",
+      schedule_details: serviceAction?.schedule_details || "",
+      goals: serviceAction?.goals?.join('\n') || "",
+      progress_status: serviceAction?.progress_status || "active",
+      start_date: serviceAction?.start_date ? new Date(serviceAction.start_date) : new Date(),
+      end_date: serviceAction?.end_date ? new Date(serviceAction.end_date) : undefined,
+      next_scheduled_date: serviceAction?.next_scheduled_date ? new Date(serviceAction.next_scheduled_date) : undefined,
+      notes: serviceAction?.notes || "",
     },
   });
 
-  // Update form when serviceAction changes
-  useEffect(() => {
+  React.useEffect(() => {
     if (serviceAction && open) {
       form.reset({
         service_name: serviceAction.service_name,
@@ -93,7 +95,7 @@ export const EditServicePlanDialog: React.FC<EditServicePlanDialogProps> = ({
         frequency: serviceAction.frequency,
         duration: serviceAction.duration,
         schedule_details: serviceAction.schedule_details || "",
-        goals: serviceAction.goals ? serviceAction.goals.join('\n') : "",
+        goals: serviceAction.goals?.join('\n') || "",
         progress_status: serviceAction.progress_status,
         start_date: new Date(serviceAction.start_date),
         end_date: serviceAction.end_date ? new Date(serviceAction.end_date) : undefined,
@@ -105,6 +107,7 @@ export const EditServicePlanDialog: React.FC<EditServicePlanDialogProps> = ({
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     const formattedData = {
+      id: serviceAction?.id,
       service_name: values.service_name,
       service_category: values.service_category,
       provider_name: values.provider_name,
@@ -129,8 +132,6 @@ export const EditServicePlanDialog: React.FC<EditServicePlanDialogProps> = ({
     }
     onOpenChange(newOpen);
   };
-
-  if (!serviceAction) return null;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -165,7 +166,7 @@ export const EditServicePlanDialog: React.FC<EditServicePlanDialogProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Service Category</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select service category" />
@@ -179,9 +180,6 @@ export const EditServicePlanDialog: React.FC<EditServicePlanDialogProps> = ({
                         <SelectItem value="transportation">Transportation</SelectItem>
                         <SelectItem value="therapy">Therapy</SelectItem>
                         <SelectItem value="nutrition">Nutrition</SelectItem>
-                        <SelectItem value="mobility-assistance">Mobility Assistance</SelectItem>
-                        <SelectItem value="medication-management">Medication Management</SelectItem>
-                        <SelectItem value="safety-monitoring">Safety Monitoring</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
@@ -212,7 +210,7 @@ export const EditServicePlanDialog: React.FC<EditServicePlanDialogProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Frequency</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select frequency" />
@@ -248,32 +246,6 @@ export const EditServicePlanDialog: React.FC<EditServicePlanDialogProps> = ({
 
             <FormField
               control={form.control}
-              name="progress_status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Progress Status</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select progress status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="stable">Stable</SelectItem>
-                      <SelectItem value="improving">Improving</SelectItem>
-                      <SelectItem value="needs-review">Needs Review</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="paused">Paused</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="schedule_details"
               render={({ field }) => (
                 <FormItem>
@@ -305,6 +277,32 @@ export const EditServicePlanDialog: React.FC<EditServicePlanDialogProps> = ({
                       {...field}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="progress_status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Progress Status</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select progress status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="improving">Improving</SelectItem>
+                      <SelectItem value="stable">Stable</SelectItem>
+                      <SelectItem value="needs-review">Needs Review</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="paused">Paused</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -454,7 +452,7 @@ export const EditServicePlanDialog: React.FC<EditServicePlanDialogProps> = ({
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Updating..." : "Update Service Plan"}
+                {isLoading ? "Saving..." : "Update Service Plan"}
               </Button>
             </DialogFooter>
           </form>

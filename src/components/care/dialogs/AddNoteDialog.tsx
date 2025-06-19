@@ -1,84 +1,129 @@
 
 import React from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { MessageCircle } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { CalendarIcon, MessageCircle } from "lucide-react";
+import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/use-toast";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
-const noteSchema = z.object({
-  title: z.string().min(1, {
-    message: "Title is required.",
-  }),
-  content: z.string().min(10, {
-    message: "Note content must be at least 10 characters.",
+const formSchema = z.object({
+  content: z.string().min(5, "Note content must be at least 5 characters"),
+  date: z.date({
+    required_error: "Date is required",
   }),
 });
 
-type NoteFormValues = z.infer<typeof noteSchema>;
+type FormValues = z.infer<typeof formSchema>;
 
 interface AddNoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (note: NoteFormValues) => void;
-  isLoading?: boolean;
+  onSave: (note: { content: string; date: Date }) => void;
 }
 
-export const AddNoteDialog: React.FC<AddNoteDialogProps> = ({
-  open,
-  onOpenChange,
-  onSave,
-  isLoading = false,
-}) => {
-  const form = useForm<NoteFormValues>({
-    resolver: zodResolver(noteSchema),
+export function AddNoteDialog({ open, onOpenChange, onSave }: AddNoteDialogProps) {
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      title: "",
       content: "",
+      date: new Date(),
     },
   });
 
-  const onSubmit = (values: NoteFormValues) => {
-    onSave(values);
+  function onSubmit(data: FormValues) {
+    // Here's the fix - we now explicitly pass the expected properties from our validated data
+    onSave({
+      content: data.content,
+      date: data.date
+    });
     form.reset();
-  };
+    onOpenChange(false);
+    toast({
+      title: "Note added",
+      description: "Your note has been added successfully",
+    });
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-blue-600" />
+          <DialogTitle className="flex items-center gap-2 text-blue-600">
+            <MessageCircle className="h-5 w-5" />
             Add Care Note
           </DialogTitle>
           <DialogDescription>
-            Add a new note to the patient's care record.
+            Add a new note to the patient's care plan
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="title"
+              name="date"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Note Title</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter note title..."
-                      {...field}
-                    />
-                  </FormControl>
+                <FormItem className="flex flex-col">
+                  <FormLabel>Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
             <FormField
               control={form.control}
               name="content"
@@ -87,7 +132,7 @@ export const AddNoteDialog: React.FC<AddNoteDialogProps> = ({
                   <FormLabel>Note Content</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Enter your observations, updates, or notes..."
+                      placeholder="Enter note details here..."
                       className="min-h-[120px]"
                       {...field}
                     />
@@ -96,18 +141,15 @@ export const AddNoteDialog: React.FC<AddNoteDialogProps> = ({
                 </FormItem>
               )}
             />
-            
-            <DialogFooter>
+            <DialogFooter className="gap-2 sm:gap-0">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Saving..." : "Save Note"}
-              </Button>
+              <Button type="submit">Save Note</Button>
             </DialogFooter>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
   );
-};
+}

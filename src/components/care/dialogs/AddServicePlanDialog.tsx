@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -159,9 +160,6 @@ export const AddServicePlanDialog: React.FC<AddServicePlanDialogProps> = ({
                         <SelectItem value="transportation">Transportation</SelectItem>
                         <SelectItem value="therapy">Therapy</SelectItem>
                         <SelectItem value="nutrition">Nutrition</SelectItem>
-                        <SelectItem value="mobility-assistance">Mobility Assistance</SelectItem>
-                        <SelectItem value="medication-management">Medication Management</SelectItem>
-                        <SelectItem value="safety-monitoring">Safety Monitoring</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>

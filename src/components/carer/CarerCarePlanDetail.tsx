@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { X, FileEdit, Download, PenLine, MessageCircle, Clock, Activity, FileBarChart2 } from "lucide-react";
 import { format } from "date-fns";
@@ -10,8 +9,6 @@ import { generatePDF, exportCarePlanPDF } from "@/utils/pdfGenerator";
 import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
 import { useAuth } from "@/hooks/useAuth";
 import { ClientServiceAction } from "@/hooks/useClientServiceActions";
-import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "sonner";
 
 import { CarerCarePlanSidebar } from "./CarerCarePlanSidebar";
 import { CarerCarePlanTabBar } from "./CarerCarePlanTabBar";
@@ -21,7 +18,6 @@ import { GoalsTab } from "../care/tabs/GoalsTab";
 import { ActivitiesTab } from "../care/tabs/ActivitiesTab";
 import { DietaryTab } from "../care/tabs/DietaryTab";
 import { NotesTab } from "../care/tabs/NotesTab";
-import { DocumentsTab } from "../care/tabs/DocumentsTab";
 import { PersonalCareTab } from "../care/tabs/PersonalCareTab";
 import { EventsLogsTab } from "../care/tabs/EventsLogsTab";
 import { ServiceActionsTab } from "../care/tabs/ServiceActionsTab";
@@ -33,6 +29,7 @@ import { useForm } from "react-hook-form";
 import { mockPatientData } from "@/data/mockPatientData";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { AddEventDialog } from "@/components/care/dialogs/AddEventDialog";
 import { UpdateCarePlanDialog, CarePlanUpdateData } from "./UpdateCarePlanDialog";
 
@@ -72,11 +69,6 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
   const [showUpdateCarePlanDialog, setShowUpdateCarePlanDialog] = useState(false);
   const [patientDataState, setPatientDataState] = useState(mockPatientData);
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const params = useParams();
-
-  const branchId = params.branchId || '';
-  const branchName = params.branchName || '';
 
   // Database hooks for notes
   const { data: dbNotes = [], isLoading: notesLoading } = useClientNotes(carePlan.id);
@@ -96,25 +88,6 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
     return "Carer";
   };
 
-  const handleClose = () => {
-    // Navigate back to the care plans page with proper branch context
-    if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/care`);
-    } else {
-      // Fallback - call the onClose prop
-      onClose();
-    }
-  };
-
-  const handleEdit = () => {
-    // Navigate to edit care plan page
-    if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan/${carePlan.id}/edit`);
-    } else {
-      toast.error("Unable to navigate to edit page. Please try again.");
-    }
-  };
-
   const handleExportCarePlan = () => {
     // Use the enhanced export function instead of the simple generatePDF
     try {
@@ -127,21 +100,6 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
     } catch (error) {
       console.error("Error exporting care plan:", error);
       toast.error("Failed to export care plan");
-    }
-  };
-
-  const handleScheduleFollowUp = () => {
-    // Navigate to booking page with client context
-    if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/bookings/new`, {
-        state: { 
-          clientId: carePlan.id, 
-          clientName: carePlan.clientName,
-          carePlanId: carePlan.id 
-        }
-      });
-    } else {
-      toast.error("Unable to navigate to booking page. Please try again.");
     }
   };
 
@@ -327,11 +285,11 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
               <Download className="h-4 w-4" />
               <span>Export</span>
             </Button>
-            <Button variant="outline" className="flex items-center gap-2" onClick={handleEdit}>
+            <Button variant="outline" className="flex items-center gap-2" onClick={() => setShowUpdateCarePlanDialog(true)}>
               <PenLine className="h-4 w-4" />
-              <span>Edit</span>
+              <span>Update</span>
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleClose}>
+            <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="h-5 w-5" />
             </Button>
           </div>
@@ -343,7 +301,7 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
               <CarerCarePlanSidebar 
                 carePlan={carePlan} 
                 onAddNote={() => setShowAddNoteDialog(true)}
-                onScheduleFollowUp={handleScheduleFollowUp}
+                onScheduleFollowUp={() => toast.info("Schedule follow-up feature coming soon")}
                 onRecordActivity={() => setShowAddActivityDialog(true)}
                 onAddEvent={() => setShowAddEventDialog(true)}
               />
@@ -407,10 +365,6 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                   />
                 </TabsContent>
                 
-                <TabsContent value="documents">
-                  <DocumentsTab clientId={carePlan.id} />
-                </TabsContent>
-                
                 <TabsContent value="dietary">
                   <DietaryTab dietaryRequirements={transformedDietaryRequirements} />
                 </TabsContent>
@@ -429,7 +383,6 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                 
                 <TabsContent value="eventslogs">
                   <EventsLogsTab 
-                    clientId={carePlan.id}
                     carePlanId={carePlan.id}
                     patientName={carePlan.clientName}
                     onAddEvent={() => setShowAddEventDialog(true)}
@@ -502,6 +455,7 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
         onSave={handleAddEvent}
         carePlanId={carePlan.id}
         patientName={carePlan.clientName}
+        patientId={carePlan.id}
       />
 
       {/* Update Care Plan Dialog */}

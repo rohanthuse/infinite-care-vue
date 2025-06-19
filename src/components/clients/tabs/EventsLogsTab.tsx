@@ -26,7 +26,6 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({ clientId }) => {
       description: eventData.description,
       severity: eventData.severity,
       reporter: eventData.reporter,
-      status: 'open', // Add the missing status property
     });
   };
 
