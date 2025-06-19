@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, FileEdit, Download, PenLine } from "lucide-react";
@@ -40,7 +41,6 @@ import { RiskAssessmentsTab } from "@/components/care/tabs/RiskAssessmentsTab";
 import { ServicePlanTab } from "@/components/care/tabs/ServicePlanTab";
 import { ServiceActionsTab } from "@/components/care/tabs/ServiceActionsTab";
 import { EventsLogsTab } from "@/components/care/tabs/EventsLogsTab";
-import { AutoUpdateCarePlan } from "@/components/care/AutoUpdateCarePlan";
 
 export default function CarePlanView() {
   const { carePlanId, branchId, branchName } = useParams();
@@ -263,8 +263,6 @@ export default function CarePlanView() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AutoUpdateCarePlan />
-      
       {/* Header */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
