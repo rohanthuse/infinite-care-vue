@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -34,6 +33,7 @@ import { RiskTab } from "@/components/care/tabs/RiskTab";
 import { ServicePlanTab } from "@/components/care/tabs/ServicePlanTab";
 import { ServiceActionsTab } from "@/components/care/tabs/ServiceActionsTab";
 import { EventsLogsTab } from "@/components/care/tabs/EventsLogsTab";
+import { PersonalInfoTab } from "@/components/care/tabs/PersonalInfoTab";
 import { getStatusBadgeClass, getRiskLevelClass, calculateProgressPercentage } from "@/utils/statusHelpers";
 import { mockPatientData } from "@/data/mockPatientData";
 import { cn } from "@/lib/utils";
@@ -46,12 +46,20 @@ import { RecordActivityDialog } from "@/components/care/dialogs/RecordActivityDi
 import { UploadDocumentDialog } from "@/components/care/dialogs/UploadDocumentDialog";
 import { AddEventDialog } from "@/components/care/dialogs/AddEventDialog";
 import { AddAssessmentDialog } from "@/components/care/dialogs/AddAssessmentDialog";
+import { EditPersonalInfoDialog } from "@/components/care/dialogs/EditPersonalInfoDialog";
+import { EditAboutMeDialog } from "@/components/care/dialogs/EditAboutMeDialog";
+import { AddGoalDialog } from "@/components/care/dialogs/AddGoalDialog";
+import { EditGoalDialog } from "@/components/care/dialogs/EditGoalDialog";
 import { resolveCarePlanId, getDisplayCarePlanId } from "@/utils/carePlanIdMapping";
 import { useCarePlanData } from "@/hooks/useCarePlanData";
 import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
 import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
 import { useClientDocuments, useUploadClientDocument } from "@/hooks/useClientDocuments";
 import { useClientAssessments, useCreateClientAssessment } from "@/hooks/useClientAssessments";
+import { useUpdateClient } from "@/hooks/useUpdateClient";
+import { useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
+import { useUpdateClientPersonalCare } from "@/hooks/useClientPersonalCare";
+import { useCreateGoal, useUpdateGoal } from "@/hooks/useCarePlanGoalsMutations";
 import { useAuth } from "@/hooks/useAuth";
 
 const mockCarePlans = [
@@ -89,6 +97,11 @@ const CarePlanView = () => {
   const [documentDialogOpen, setDocumentDialogOpen] = useState(false);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
   const [assessmentDialogOpen, setAssessmentDialogOpen] = useState(false);
+  const [personalInfoDialogOpen, setPersonalInfoDialogOpen] = useState(false);
+  const [aboutMeDialogOpen, setAboutMeDialogOpen] = useState(false);
+  const [addGoalDialogOpen, setAddGoalDialogOpen] = useState(false);
+  const [editGoalDialogOpen, setEditGoalDialogOpen] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<any>(null);
 
   // Debug logging with better error handling
   console.log('[CarePlanView] Component mounted with params:', { branchId, branchName, carePlanId });
@@ -111,6 +124,13 @@ const CarePlanView = () => {
   const createNoteMutation = useCreateClientNote();
   const uploadDocumentMutation = useUploadClientDocument();
   const createAssessmentMutation = useCreateClientAssessment();
+  
+  // New mutation hooks for editing functionality
+  const updateClientMutation = useUpdateClient();
+  const updatePersonalInfoMutation = useUpdateClientPersonalInfo();
+  const updatePersonalCareMutation = useUpdateClientPersonalCare();
+  const createGoalMutation = useCreateGoal();
+  const updateGoalMutation = useUpdateGoal();
   
   // Debug logging for data fetching
   console.log('[CarePlanView] Data fetching status:', {
@@ -163,9 +183,12 @@ const CarePlanView = () => {
 
   // Transform database goals to match component expected format
   const transformedGoals = goalsData?.map(goal => ({
+    id: goal.id,
     title: goal.description,
-    status: goal.status,
+    description: goal.description,
     target: `Progress: ${goal.progress || 0}%`,
+    status: goal.status,
+    progress: goal.progress || 0,
     notes: goal.notes || 'No additional notes'
   })) || [];
 
@@ -359,99 +382,173 @@ const CarePlanView = () => {
     }
   };
 
-  const sidebarProps = {
-    carePlan: carePlan!,
-    onAddNote: () => setNoteDialogOpen(true),
-    onScheduleFollowUp: () => setFollowUpDialogOpen(true),
-    onRecordActivity: () => setActivityDialogOpen(true),
-    onUploadDocument: () => setDocumentDialogOpen(true)
+  const handleSavePersonalInfo = async (data: any) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot save personal information.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await updateClientMutation.mutateAsync({
+        clientId,
+        updates: data
+      });
+
+      setPersonalInfoDialogOpen(false);
+      toast({
+        title: "Personal information updated",
+        description: "The personal information has been successfully updated."
+      });
+    } catch (error) {
+      console.error("Error updating personal info:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update personal information. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  // Enhanced error handling with better messaging
-  if (carePlanError) {
-    console.error('[CarePlanView] Care plan error:', carePlanError);
-    return (
-      <div className="flex flex-col min-h-screen">
-        <DashboardHeader />
-        <BranchInfoHeader 
-          branchId={branchId || ""} 
-          branchName={branchName || ""} 
-          onNewBooking={() => {}} 
-        />
-        <div className="flex-1 p-6 flex items-center justify-center">
-          <div className="text-center">
-            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Care Plan</h3>
-            <p className="text-gray-600 mb-2">
-              Failed to load care plan "{carePlanId}"
-            </p>
-            <p className="text-sm text-gray-500 mb-4">
-              Error: {carePlanError.message}
-            </p>
-            <div className="space-y-2">
-              <p className="text-xs text-gray-400">
-                Original ID: {carePlanId}<br/>
-                Resolved ID: {resolvedCarePlanId}
-              </p>
-            </div>
-            <Button onClick={() => navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan`)}>
-              Back to Care Plans
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleSaveAboutMe = async (data: any) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot save about me information.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-  // Enhanced loading state
-  if (isCarePlanLoading) {
-    console.log('[CarePlanView] Loading care plan data...');
-    return (
-      <div className="flex flex-col min-h-screen">
-        <DashboardHeader />
-        <BranchInfoHeader 
-          branchId={branchId || ""} 
-          branchName={branchName || ""} 
-          onNewBooking={() => {}} 
-        />
-        <div className="flex-1 p-6 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading care plan {carePlanId}...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    try {
+      // Split data into personal info and personal care
+      const personalInfoData = {
+        cultural_preferences: data.cultural_preferences,
+        language_preferences: data.language_preferences,
+        religion: data.religion,
+        marital_status: data.marital_status,
+        preferred_communication: data.preferred_communication,
+        emergency_contact_name: data.emergency_contact_name,
+        emergency_contact_phone: data.emergency_contact_phone,
+        emergency_contact_relationship: data.emergency_contact_relationship,
+        next_of_kin_name: data.next_of_kin_name,
+        next_of_kin_phone: data.next_of_kin_phone,
+        next_of_kin_relationship: data.next_of_kin_relationship,
+        gp_name: data.gp_name,
+        gp_practice: data.gp_practice,
+        gp_phone: data.gp_phone,
+      };
 
-  // Handle case where care plan is not found
-  if (!carePlan && !isCarePlanLoading) {
-    console.warn('[CarePlanView] Care plan not found:', carePlanId);
-    return (
-      <div className="flex flex-col min-h-screen">
-        <DashboardHeader />
-        <BranchInfoHeader 
-          branchId={branchId || ""} 
-          branchName={branchName || ""} 
-          onNewBooking={() => {}} 
-        />
-        <div className="flex-1 p-6 flex items-center justify-center">
-          <div className="text-center">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Care Plan Not Found</h3>
-            <p className="text-gray-600 mb-4">
-              The care plan "{carePlanId}" could not be found.
-            </p>
-            <Button onClick={() => navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan`)}>
-              Back to Care Plans
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+      const personalCareData = {
+        personal_hygiene_needs: data.personal_hygiene_needs,
+        bathing_preferences: data.bathing_preferences,
+        dressing_assistance_level: data.dressing_assistance_level,
+        toileting_assistance_level: data.toileting_assistance_level,
+        continence_status: data.continence_status,
+        sleep_patterns: data.sleep_patterns,
+        behavioral_notes: data.behavioral_notes,
+        comfort_measures: data.comfort_measures,
+        pain_management: data.pain_management,
+        skin_care_needs: data.skin_care_needs,
+      };
 
-  console.log('[CarePlanView] Rendering care plan view for:', carePlan?.patientName);
+      // Update both tables
+      await Promise.all([
+        updatePersonalInfoMutation.mutateAsync({
+          client_id: clientId,
+          ...personalInfoData
+        }),
+        updatePersonalCareMutation.mutateAsync({
+          client_id: clientId,
+          ...personalCareData
+        })
+      ]);
+
+      setAboutMeDialogOpen(false);
+      toast({
+        title: "About me information updated",
+        description: "The about me information has been successfully updated."
+      });
+    } catch (error) {
+      console.error("Error updating about me info:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update about me information. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSaveGoal = async (data: any) => {
+    if (!resolvedCarePlanId) {
+      toast({
+        title: "Error",
+        description: "Care plan ID not found. Cannot save goal.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await createGoalMutation.mutateAsync({
+        care_plan_id: resolvedCarePlanId,
+        ...data
+      });
+
+      setAddGoalDialogOpen(false);
+      toast({
+        title: "Goal added",
+        description: "The goal has been successfully added to the care plan."
+      });
+    } catch (error) {
+      console.error("Error saving goal:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save goal. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateGoal = async (data: any) => {
+    if (!selectedGoal?.id) {
+      toast({
+        title: "Error",
+        description: "Goal ID not found. Cannot update goal.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await updateGoalMutation.mutateAsync({
+        goalId: selectedGoal.id,
+        updates: data
+      });
+
+      setEditGoalDialogOpen(false);
+      setSelectedGoal(null);
+      toast({
+        title: "Goal updated",
+        description: "The goal has been successfully updated."
+      });
+    } catch (error) {
+      console.error("Error updating goal:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update goal. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEditGoal = (goal: any) => {
+    setSelectedGoal(goal);
+    setEditGoalDialogOpen(true);
+  };
 
   // Transform mock data for assessments
   const transformedAssessments = assessmentsData?.length > 0 ? assessmentsData : mockPatientData.assessments.map(assessment => ({
@@ -565,6 +662,100 @@ const CarePlanView = () => {
     updated_at: new Date().toISOString(),
   }));
 
+  const sidebarProps = {
+    carePlan: carePlan!,
+    onAddNote: () => setNoteDialogOpen(true),
+    onScheduleFollowUp: () => setFollowUpDialogOpen(true),
+    onRecordActivity: () => setActivityDialogOpen(true),
+    onUploadDocument: () => setDocumentDialogOpen(true)
+  };
+
+  // Enhanced error handling with better messaging
+  if (carePlanError) {
+    console.error('[CarePlanView] Care plan error:', carePlanError);
+    return (
+      <div className="flex flex-col min-h-screen">
+        <DashboardHeader />
+        <BranchInfoHeader 
+          branchId={branchId || ""} 
+          branchName={branchName || ""} 
+          onNewBooking={() => {}} 
+        />
+        <div className="flex-1 p-6 flex items-center justify-center">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Care Plan</h3>
+            <p className="text-gray-600 mb-2">
+              Failed to load care plan "{carePlanId}"
+            </p>
+            <p className="text-sm text-gray-500 mb-4">
+              Error: {carePlanError.message}
+            </p>
+            <div className="space-y-2">
+              <p className="text-xs text-gray-400">
+                Original ID: {carePlanId}<br/>
+                Resolved ID: {resolvedCarePlanId}
+              </p>
+            </div>
+            <Button onClick={() => navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan`)}>
+              Back to Care Plans
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Enhanced loading state
+  if (isCarePlanLoading) {
+    console.log('[CarePlanView] Loading care plan data...');
+    return (
+      <div className="flex flex-col min-h-screen">
+        <DashboardHeader />
+        <BranchInfoHeader 
+          branchId={branchId || ""} 
+          branchName={branchName || ""} 
+          onNewBooking={() => {}} 
+        />
+        <div className="flex-1 p-6 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading care plan {carePlanId}...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle case where care plan is not found
+  if (!carePlan && !isCarePlanLoading) {
+    console.warn('[CarePlanView] Care plan not found:', carePlanId);
+    return (
+      <div className="flex flex-col min-h-screen">
+        <DashboardHeader />
+        <BranchInfoHeader 
+          branchId={branchId || ""} 
+          branchName={branchName || ""} 
+          onNewBooking={() => {}} 
+        />
+        <div className="flex-1 p-6 flex items-center justify-center">
+          <div className="text-center">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Care Plan Not Found</h3>
+            <p className="text-gray-600 mb-4">
+              The care plan "{carePlanId}" could not be found.
+            </p>
+            <Button onClick={() => navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan`)}>
+              Back to Care Plans
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('[CarePlanView] Rendering care plan view for:', carePlan?.patientName);
+
   return (
     <div className="flex flex-col min-h-screen">
       <DashboardHeader />
@@ -645,117 +836,19 @@ const CarePlanView = () => {
                     <CarePlanTabBar activeTab={activeTab} onChange={setActiveTab} />
                     
                     <TabsContent value="personal" className="space-y-6">
-                      <Card className="overflow-hidden border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                        <CardHeader className="pb-3 bg-gradient-to-r from-med-50 to-white border-b border-med-100">
-                          <CardTitle className="text-lg flex items-center gap-2">
-                            <User className="h-5 w-5 text-med-600" />
-                            <span className="bg-gradient-to-r from-med-700 to-med-500 bg-clip-text text-transparent">Personal Information</span>
-                          </CardTitle>
-                          <CardDescription>Patient demographic and contact details</CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <InfoCard 
-                              icon={<User className="h-5 w-5 text-med-500" />}
-                              title="Basic Information"
-                              items={[
-                                { label: "Full Name", value: carePlan.patientName },
-                                { label: "Patient ID", value: carePlan.patientId },
-                                { label: "Gender", value: carePlanData?.client?.gender || mockPatientData.gender },
-                                { label: "Date of Birth", value: carePlanData?.client?.date_of_birth ? 
-                                  `${format(new Date(carePlanData.client.date_of_birth), 'MMM dd, yyyy')} (Age: ${new Date().getFullYear() - new Date(carePlanData.client.date_of_birth).getFullYear()})` : 
-                                  `${format(mockPatientData.dateOfBirth, 'MMM dd, yyyy')} (Age: ${new Date().getFullYear() - mockPatientData.dateOfBirth.getFullYear()})`
-                                }
-                              ]}
-                            />
-                            
-                            <InfoCard 
-                              icon={<Phone className="h-5 w-5 text-med-500" />}
-                              title="Contact Information"
-                              items={[
-                                { label: "Address", value: carePlanData?.client?.address || mockPatientData.address },
-                                { label: "Phone", value: carePlanData?.client?.phone || mockPatientData.phone },
-                                { label: "Email", value: carePlanData?.client?.email || mockPatientData.email },
-                                { label: "Preferred Language", value: mockPatientData.preferredLanguage }
-                              ]}
-                            />
-                            
-                            <div className="md:col-span-2">
-                              <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                                <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                                  <Shield className="h-5 w-5 mr-2 text-med-600" />
-                                  Emergency Contact
-                                </h3>
-                                <div className="p-4 rounded-lg bg-med-50 border border-med-100">
-                                  <p className="text-gray-700">{mockPatientData.emergencyContact}</p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card className="overflow-hidden border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                        <CardHeader className="pb-3 bg-gradient-to-r from-med-50 to-white border-b border-med-100">
-                          <CardTitle className="text-lg flex items-center gap-2">
-                            <Heart className="h-5 w-5 text-med-600" />
-                            <span className="bg-gradient-to-r from-med-700 to-med-500 bg-clip-text text-transparent">Medical Information</span>
-                          </CardTitle>
-                          <CardDescription>Allergies, conditions, and current medications</CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                          <div className="space-y-6">
-                            <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                              <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                                <AlertTriangle className="h-5 w-5 mr-2 text-red-500" />
-                                Allergies
-                              </h3>
-                              <div className="flex flex-wrap gap-2">
-                                {mockPatientData.allergies.map((allergy, index) => (
-                                  <Badge key={index} variant="outline" className="bg-red-50 text-red-700 border-red-200 px-3 py-1 hover:bg-red-100 transition-colors">
-                                    {allergy}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                            
-                            <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                              <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                                <FileBarChart2 className="h-5 w-5 mr-2 text-med-600" />
-                                Medical Conditions
-                              </h3>
-                              <div className="flex flex-wrap gap-2">
-                                {mockPatientData.medicalConditions.map((condition, index) => (
-                                  <Badge key={index} variant="outline" className="bg-med-50 text-med-700 border-med-200 px-3 py-1 hover:bg-med-100 transition-colors">
-                                    {condition}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                            
-                            <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                              <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                                <Activity className="h-5 w-5 mr-2 text-med-600" />
-                                Medications
-                              </h3>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {mockPatientData.medications.map((medication, index) => (
-                                  <MedicationCard key={index} medication={medication} />
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                      <PersonalInfoTab 
+                        client={carePlanData?.client}
+                        personalInfo={null}
+                        medicalInfo={null}
+                        onEditPersonalInfo={() => setPersonalInfoDialogOpen(true)}
+                      />
                     </TabsContent>
                     
                     <TabsContent value="aboutme" className="space-y-4">
                       <AboutMeTab 
-                        personalInfo={{
-                          cultural_preferences: mockPatientData.aboutMe.preferences.join(', '),
-                          language_preferences: mockPatientData.preferredLanguage,
-                        }}
-                        personalCare={transformedPersonalCare}
+                        personalInfo={null}
+                        personalCare={null}
+                        onEditAboutMe={() => setAboutMeDialogOpen(true)}
                       />
                     </TabsContent>
                     
@@ -765,7 +858,11 @@ const CarePlanView = () => {
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                         </div>
                       ) : (
-                        <GoalsTab goals={transformedGoals.length > 0 ? transformedGoals : mockPatientData.goals} />
+                        <GoalsTab 
+                          goals={transformedGoals.length > 0 ? transformedGoals : mockPatientData.goals} 
+                          onAddGoal={() => setAddGoalDialogOpen(true)}
+                          onEditGoal={handleEditGoal}
+                        />
                       )}
                     </TabsContent>
                     
@@ -820,26 +917,26 @@ const CarePlanView = () => {
                         </div>
                       ) : (
                         <AssessmentsTab 
-                          assessments={transformedAssessments} 
+                          assessments={assessmentsData || []} 
                           onAddAssessment={() => setAssessmentDialogOpen(true)}
                         />
                       )}
                     </TabsContent>
                     
                     <TabsContent value="equipment" className="space-y-4">
-                      <EquipmentTab equipment={transformedEquipment} />
+                      <EquipmentTab equipment={[]} />
                     </TabsContent>
                     
                     <TabsContent value="dietary" className="space-y-4">
-                      <DietaryTab dietaryRequirements={transformedDietaryRequirements} />
+                      <DietaryTab dietaryRequirements={null} />
                     </TabsContent>
                     
                     <TabsContent value="personalcare" className="space-y-4">
-                      <PersonalCareTab personalCare={transformedPersonalCare} />
+                      <PersonalCareTab personalCare={null} />
                     </TabsContent>
                     
                     <TabsContent value="risk" className="space-y-4">
-                      <RiskTab riskAssessments={transformedRiskAssessments} />
+                      <RiskTab riskAssessments={[]} />
                     </TabsContent>
                     
                     <TabsContent value="serviceplan" className="space-y-4">
@@ -847,7 +944,7 @@ const CarePlanView = () => {
                     </TabsContent>
                     
                     <TabsContent value="serviceactions" className="space-y-4">
-                      <ServiceActionsTab serviceActions={transformedServiceActions} />
+                      <ServiceActionsTab serviceActions={[]} />
                     </TabsContent>
                     
                     <TabsContent value="eventslogs" className="space-y-4">
@@ -904,6 +1001,38 @@ const CarePlanView = () => {
         onSave={handleSaveAssessment}
         clientId={clientId}
         isLoading={createAssessmentMutation.isPending}
+      />
+
+      <EditPersonalInfoDialog
+        open={personalInfoDialogOpen}
+        onOpenChange={setPersonalInfoDialogOpen}
+        onSave={handleSavePersonalInfo}
+        clientData={carePlanData?.client}
+        isLoading={updateClientMutation.isPending}
+      />
+
+      <EditAboutMeDialog
+        open={aboutMeDialogOpen}
+        onOpenChange={setAboutMeDialogOpen}
+        onSave={handleSaveAboutMe}
+        personalInfo={null}
+        personalCare={null}
+        isLoading={updatePersonalInfoMutation.isPending || updatePersonalCareMutation.isPending}
+      />
+
+      <AddGoalDialog
+        open={addGoalDialogOpen}
+        onOpenChange={setAddGoalDialogOpen}
+        onSave={handleSaveGoal}
+        isLoading={createGoalMutation.isPending}
+      />
+
+      <EditGoalDialog
+        open={editGoalDialogOpen}
+        onOpenChange={setEditGoalDialogOpen}
+        onSave={handleUpdateGoal}
+        goal={selectedGoal}
+        isLoading={updateGoalMutation.isPending}
       />
     </div>
   );

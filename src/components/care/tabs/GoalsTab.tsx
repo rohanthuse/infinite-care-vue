@@ -1,103 +1,148 @@
 
-import React from "react";
-import { Activity, BarChart2, Trophy, BadgeCheck } from "lucide-react";
+import React, { useState } from "react";
+import { Target, Plus, Edit2, CheckCircle, Clock, XCircle, Pause } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getStatusBadgeClass, calculateProgressPercentage } from "@/utils/statusHelpers";
+import { Progress } from "@/components/ui/progress";
 
-interface GoalType {
-  title: string;
+interface Goal {
+  id?: string;
+  title?: string;
+  description?: string;
   status: string;
-  target: string;
-  notes: string;
+  progress?: number;
+  target?: string;
+  notes?: string;
 }
 
 interface GoalsTabProps {
-  goals: GoalType[];
+  goals: Goal[];
+  onAddGoal?: () => void;
+  onEditGoal?: (goal: Goal) => void;
 }
 
-export const GoalsTab: React.FC<GoalsTabProps> = ({ goals }) => {
+export const GoalsTab: React.FC<GoalsTabProps> = ({ goals, onAddGoal, onEditGoal }) => {
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "completed":
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case "in-progress":
+        return <Clock className="h-4 w-4 text-blue-600" />;
+      case "on-hold":
+        return <Pause className="h-4 w-4 text-yellow-600" />;
+      default:
+        return <XCircle className="h-4 w-4 text-gray-400" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "bg-green-50 text-green-700 border-green-200";
+      case "in-progress":
+        return "bg-blue-50 text-blue-700 border-blue-200";
+      case "on-hold":
+        return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      default:
+        return "bg-gray-50 text-gray-700 border-gray-200";
+    }
+  };
+
   return (
-    <Card>
-      <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Activity className="h-5 w-5 text-blue-600" />
-          <span>Care Goals</span>
-        </CardTitle>
-        <CardDescription>Tracking progress toward objectives</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          {goals.map((goal, index) => {
-            const progressPercentage = calculateProgressPercentage(goal.status, goal.notes);
-            
-            return (
-              <div key={index} className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
-                <div className="bg-gradient-to-r from-gray-50 to-white p-4 border-b">
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-2 bg-gradient-to-r from-green-50 to-white">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-green-600" />
+              <CardTitle className="text-lg">Care Plan Goals</CardTitle>
+            </div>
+            {onAddGoal && (
+              <Button size="sm" className="gap-1" onClick={onAddGoal}>
+                <Plus className="h-4 w-4" />
+                <span>Add Goal</span>
+              </Button>
+            )}
+          </div>
+          <CardDescription>Track progress towards care objectives</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          {goals.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Target className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-sm">No goals set yet</p>
+              {onAddGoal && (
+                <Button variant="outline" className="mt-3" onClick={onAddGoal}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Goal
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {goals.map((goal, index) => (
+                <div
+                  key={goal.id || index}
+                  className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center">
-                      {goal.status === "Active" && (
-                        <div className="mr-3 p-2 rounded-full bg-blue-100">
-                          <Activity className="h-5 w-5 text-blue-600" />
-                        </div>
-                      )}
-                      {goal.status === "In Progress" && (
-                        <div className="mr-3 p-2 rounded-full bg-amber-100">
-                          <BarChart2 className="h-5 w-5 text-amber-600" />
-                        </div>
-                      )}
-                      {goal.status === "Completed" && (
-                        <div className="mr-3 p-2 rounded-full bg-green-100">
-                          <Trophy className="h-5 w-5 text-green-600" />
-                        </div>
-                      )}
-                      <div>
-                        <h3 className="font-medium text-lg">{goal.title}</h3>
-                        <div className="flex items-center mt-1">
-                          <Badge variant="outline" className={getStatusBadgeClass(goal.status)}>
-                            {goal.status}
-                          </Badge>
-                        </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        {getStatusIcon(goal.status)}
+                        <h3 className="font-medium">{goal.title || goal.description}</h3>
+                        <Badge 
+                          variant="outline" 
+                          className={getStatusColor(goal.status)}
+                        >
+                          {goal.status.replace('-', ' ')}
+                        </Badge>
                       </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="p-4">
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm font-medium text-gray-700">Target</p>
-                      <p className="text-sm text-gray-500">{progressPercentage}% Complete</p>
+                      
+                      {goal.description && goal.description !== goal.title && (
+                        <p className="text-sm text-gray-600 mb-3">{goal.description}</p>
+                      )}
+                      
+                      {goal.progress !== undefined && (
+                        <div className="mb-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm text-gray-600">Progress</span>
+                            <span className="text-sm font-medium">{goal.progress}%</span>
+                          </div>
+                          <Progress value={goal.progress} className="h-2" />
+                        </div>
+                      )}
+                      
+                      {goal.target && (
+                        <p className="text-sm text-gray-500 mb-2">
+                          <strong>Target:</strong> {goal.target}
+                        </p>
+                      )}
+                      
+                      {goal.notes && (
+                        <p className="text-sm text-gray-600">
+                          <strong>Notes:</strong> {goal.notes}
+                        </p>
+                      )}
                     </div>
                     
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div 
-                        className={`h-2.5 rounded-full ${
-                          goal.status === "Completed" ? "bg-green-600" : 
-                          goal.status === "In Progress" ? "bg-amber-500" : "bg-blue-600"
-                        }`}
-                        style={{ width: `${progressPercentage}%` }}
-                      ></div>
-                    </div>
-                    
-                    <p className="mt-2 text-sm font-medium flex items-center">
-                      <BadgeCheck className="h-4 w-4 mr-1.5 text-blue-600" />
-                      {goal.target}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-1">Notes</p>
-                    <p className="text-sm bg-gray-50 p-2 rounded-md border border-gray-100">
-                      {goal.notes}
-                    </p>
+                    {onEditGoal && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onEditGoal(goal)}
+                        className="ml-2"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };

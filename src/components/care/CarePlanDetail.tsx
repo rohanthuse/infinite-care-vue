@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { X, FileEdit, Download, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
@@ -9,6 +8,10 @@ import { useComprehensiveCarePlanData } from "@/hooks/useCarePlanData";
 import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
 import { useAuth } from "@/hooks/useAuth";
 import { useCreateClientAssessment } from "@/hooks/useClientAssessments";
+import { useUpdateClient } from "@/hooks/useUpdateClient";
+import { useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
+import { useUpdateClientPersonalCare } from "@/hooks/useClientPersonalCare";
+import { useCreateGoal, useUpdateGoal } from "@/hooks/useCarePlanGoalsMutations";
 import { toast } from "@/hooks/use-toast";
 
 import { PatientHeader } from "./PatientHeader";
@@ -29,6 +32,10 @@ import { NotesTab } from "./tabs/NotesTab";
 import { DocumentsTab } from "./tabs/DocumentsTab";
 import { EventsLogsTab } from "./tabs/EventsLogsTab";
 import { AddAssessmentDialog } from "./dialogs/AddAssessmentDialog";
+import { EditPersonalInfoDialog } from "./dialogs/EditPersonalInfoDialog";
+import { EditAboutMeDialog } from "./dialogs/EditAboutMeDialog";
+import { AddGoalDialog } from "./dialogs/AddGoalDialog";
+import { EditGoalDialog } from "./dialogs/EditGoalDialog";
 
 interface CarePlanDetailProps {
   carePlan: {
@@ -60,6 +67,11 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState("personal");
   const [assessmentDialogOpen, setAssessmentDialogOpen] = useState(false);
+  const [personalInfoDialogOpen, setPersonalInfoDialogOpen] = useState(false);
+  const [aboutMeDialogOpen, setAboutMeDialogOpen] = useState(false);
+  const [addGoalDialogOpen, setAddGoalDialogOpen] = useState(false);
+  const [editGoalDialogOpen, setEditGoalDialogOpen] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<any>(null);
   const { user } = useAuth();
 
   // Fetch comprehensive care plan data
@@ -76,6 +88,13 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const { data: dbNotes = [], isLoading: notesLoading } = useClientNotes(clientId);
   const createNoteMutation = useCreateClientNote();
   const createAssessmentMutation = useCreateClientAssessment();
+  
+  // New mutation hooks for editing functionality
+  const updateClientMutation = useUpdateClient();
+  const updatePersonalInfoMutation = useUpdateClientPersonalInfo();
+  const updatePersonalCareMutation = useUpdateClientPersonalCare();
+  const createGoalMutation = useCreateGoal();
+  const updateGoalMutation = useUpdateGoal();
 
   if (!carePlan) return null;
 
@@ -133,6 +152,175 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         variant: "destructive"
       });
     }
+  };
+
+  const handleSavePersonalInfo = async (data: any) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot save personal information.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await updateClientMutation.mutateAsync({
+        clientId,
+        updates: data
+      });
+
+      setPersonalInfoDialogOpen(false);
+      toast({
+        title: "Personal information updated",
+        description: "The personal information has been successfully updated."
+      });
+    } catch (error) {
+      console.error("Error updating personal info:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update personal information. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSaveAboutMe = async (data: any) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot save about me information.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Split data into personal info and personal care
+      const personalInfoData = {
+        cultural_preferences: data.cultural_preferences,
+        language_preferences: data.language_preferences,
+        religion: data.religion,
+        marital_status: data.marital_status,
+        preferred_communication: data.preferred_communication,
+        emergency_contact_name: data.emergency_contact_name,
+        emergency_contact_phone: data.emergency_contact_phone,
+        emergency_contact_relationship: data.emergency_contact_relationship,
+        next_of_kin_name: data.next_of_kin_name,
+        next_of_kin_phone: data.next_of_kin_phone,
+        next_of_kin_relationship: data.next_of_kin_relationship,
+        gp_name: data.gp_name,
+        gp_practice: data.gp_practice,
+        gp_phone: data.gp_phone,
+      };
+
+      const personalCareData = {
+        personal_hygiene_needs: data.personal_hygiene_needs,
+        bathing_preferences: data.bathing_preferences,
+        dressing_assistance_level: data.dressing_assistance_level,
+        toileting_assistance_level: data.toileting_assistance_level,
+        continence_status: data.continence_status,
+        sleep_patterns: data.sleep_patterns,
+        behavioral_notes: data.behavioral_notes,
+        comfort_measures: data.comfort_measures,
+        pain_management: data.pain_management,
+        skin_care_needs: data.skin_care_needs,
+      };
+
+      // Update both tables
+      await Promise.all([
+        updatePersonalInfoMutation.mutateAsync({
+          client_id: clientId,
+          ...personalInfoData
+        }),
+        updatePersonalCareMutation.mutateAsync({
+          client_id: clientId,
+          ...personalCareData
+        })
+      ]);
+
+      setAboutMeDialogOpen(false);
+      toast({
+        title: "About me information updated",
+        description: "The about me information has been successfully updated."
+      });
+    } catch (error) {
+      console.error("Error updating about me info:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update about me information. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSaveGoal = async (data: any) => {
+    const carePlanId = comprehensiveData?.carePlans?.[0]?.id;
+    if (!carePlanId) {
+      toast({
+        title: "Error",
+        description: "Care plan ID not found. Cannot save goal.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await createGoalMutation.mutateAsync({
+        care_plan_id: carePlanId,
+        ...data
+      });
+
+      setAddGoalDialogOpen(false);
+      toast({
+        title: "Goal added",
+        description: "The goal has been successfully added to the care plan."
+      });
+    } catch (error) {
+      console.error("Error saving goal:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save goal. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateGoal = async (data: any) => {
+    if (!selectedGoal?.id) {
+      toast({
+        title: "Error",
+        description: "Goal ID not found. Cannot update goal.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await updateGoalMutation.mutateAsync({
+        goalId: selectedGoal.id,
+        updates: data
+      });
+
+      setEditGoalDialogOpen(false);
+      setSelectedGoal(null);
+      toast({
+        title: "Goal updated",
+        description: "The goal has been successfully updated."
+      });
+    } catch (error) {
+      console.error("Error updating goal:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update goal. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEditGoal = (goal: any) => {
+    setSelectedGoal(goal);
+    setEditGoalDialogOpen(true);
   };
 
   // Get current user's role and name for author field - simplified to just show "Admin"
@@ -313,6 +501,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                     client={comprehensiveData?.client}
                     personalInfo={comprehensiveData?.personalInfo}
                     medicalInfo={comprehensiveData?.medicalInfo}
+                    onEditPersonalInfo={() => setPersonalInfoDialogOpen(true)}
                   />
                 </TabsContent>
                 
@@ -320,11 +509,16 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                   <AboutMeTab 
                     personalInfo={comprehensiveData?.personalInfo}
                     personalCare={comprehensiveData?.personalCare}
+                    onEditAboutMe={() => setAboutMeDialogOpen(true)}
                   />
                 </TabsContent>
                 
                 <TabsContent value="goals">
-                  <GoalsTab goals={transformedGoals} />
+                  <GoalsTab 
+                    goals={transformedGoals} 
+                    onAddGoal={() => setAddGoalDialogOpen(true)}
+                    onEditGoal={handleEditGoal}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="activities">
@@ -395,6 +589,38 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         onSave={handleSaveAssessment}
         clientId={clientId}
         isLoading={createAssessmentMutation.isPending}
+      />
+
+      <EditPersonalInfoDialog
+        open={personalInfoDialogOpen}
+        onOpenChange={setPersonalInfoDialogOpen}
+        onSave={handleSavePersonalInfo}
+        clientData={comprehensiveData?.client}
+        isLoading={updateClientMutation.isPending}
+      />
+
+      <EditAboutMeDialog
+        open={aboutMeDialogOpen}
+        onOpenChange={setAboutMeDialogOpen}
+        onSave={handleSaveAboutMe}
+        personalInfo={comprehensiveData?.personalInfo}
+        personalCare={comprehensiveData?.personalCare}
+        isLoading={updatePersonalInfoMutation.isPending || updatePersonalCareMutation.isPending}
+      />
+
+      <AddGoalDialog
+        open={addGoalDialogOpen}
+        onOpenChange={setAddGoalDialogOpen}
+        onSave={handleSaveGoal}
+        isLoading={createGoalMutation.isPending}
+      />
+
+      <EditGoalDialog
+        open={editGoalDialogOpen}
+        onOpenChange={setEditGoalDialogOpen}
+        onSave={handleUpdateGoal}
+        goal={selectedGoal}
+        isLoading={updateGoalMutation.isPending}
       />
     </div>
   );
