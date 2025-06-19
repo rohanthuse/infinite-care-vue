@@ -50,6 +50,7 @@ import { EditPersonalInfoDialog } from "@/components/care/dialogs/EditPersonalIn
 import { EditAboutMeDialog } from "@/components/care/dialogs/EditAboutMeDialog";
 import { AddGoalDialog } from "@/components/care/dialogs/AddGoalDialog";
 import { EditGoalDialog } from "@/components/care/dialogs/EditGoalDialog";
+import { EditMedicalInfoDialog } from "@/components/care/dialogs/EditMedicalInfoDialog";
 import { resolveCarePlanId, getDisplayCarePlanId } from "@/utils/carePlanIdMapping";
 import { useCarePlanData } from "@/hooks/useCarePlanData";
 import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
@@ -59,6 +60,7 @@ import { useClientAssessments, useCreateClientAssessment } from "@/hooks/useClie
 import { useUpdateClient } from "@/hooks/useUpdateClient";
 import { useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
 import { useUpdateClientPersonalCare } from "@/hooks/useClientPersonalCare";
+import { useClientMedicalInfo, useUpdateClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
 import { useCreateGoal, useUpdateGoal } from "@/hooks/useCarePlanGoalsMutations";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -101,6 +103,7 @@ const CarePlanView = () => {
   const [aboutMeDialogOpen, setAboutMeDialogOpen] = useState(false);
   const [addGoalDialogOpen, setAddGoalDialogOpen] = useState(false);
   const [editGoalDialogOpen, setEditGoalDialogOpen] = useState(false);
+  const [medicalInfoDialogOpen, setMedicalInfoDialogOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<any>(null);
 
   // Debug logging with better error handling
@@ -121,6 +124,7 @@ const CarePlanView = () => {
   const { data: notesData, isLoading: isNotesLoading, error: notesError } = useClientNotes(clientId);
   const { data: documentsData, isLoading: isDocumentsLoading, error: documentsError } = useClientDocuments(clientId);
   const { data: assessmentsData, isLoading: isAssessmentsLoading, error: assessmentsError } = useClientAssessments(clientId);
+  const { data: medicalInfoData, isLoading: isMedicalInfoLoading, error: medicalInfoError } = useClientMedicalInfo(clientId);
   const createNoteMutation = useCreateClientNote();
   const uploadDocumentMutation = useUploadClientDocument();
   const createAssessmentMutation = useCreateClientAssessment();
@@ -129,6 +133,7 @@ const CarePlanView = () => {
   const updateClientMutation = useUpdateClient();
   const updatePersonalInfoMutation = useUpdateClientPersonalInfo();
   const updatePersonalCareMutation = useUpdateClientPersonalCare();
+  const updateMedicalInfoMutation = useUpdateClientMedicalInfo();
   const createGoalMutation = useCreateGoal();
   const updateGoalMutation = useUpdateGoal();
   
@@ -149,6 +154,9 @@ const CarePlanView = () => {
     assessmentsData,
     isAssessmentsLoading,
     assessmentsError,
+    medicalInfoData,
+    isMedicalInfoLoading,
+    medicalInfoError,
     clientId: clientId
   });
 
@@ -545,6 +553,37 @@ const CarePlanView = () => {
     }
   };
 
+  const handleSaveMedicalInfo = async (data: any) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot save medical information.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await updateMedicalInfoMutation.mutateAsync({
+        client_id: clientId,
+        ...data
+      });
+
+      setMedicalInfoDialogOpen(false);
+      toast({
+        title: "Medical information updated",
+        description: "The medical information has been successfully updated."
+      });
+    } catch (error) {
+      console.error("Error updating medical info:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update medical information. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleEditGoal = (goal: any) => {
     setSelectedGoal(goal);
     setEditGoalDialogOpen(true);
@@ -839,8 +878,9 @@ const CarePlanView = () => {
                       <PersonalInfoTab 
                         client={carePlanData?.client}
                         personalInfo={null}
-                        medicalInfo={null}
+                        medicalInfo={medicalInfoData}
                         onEditPersonalInfo={() => setPersonalInfoDialogOpen(true)}
+                        onEditMedicalInfo={() => setMedicalInfoDialogOpen(true)}
                       />
                     </TabsContent>
                     
@@ -1033,6 +1073,14 @@ const CarePlanView = () => {
         onSave={handleUpdateGoal}
         goal={selectedGoal}
         isLoading={updateGoalMutation.isPending}
+      />
+
+      <EditMedicalInfoDialog
+        open={medicalInfoDialogOpen}
+        onOpenChange={setMedicalInfoDialogOpen}
+        onSave={handleSaveMedicalInfo}
+        medicalInfo={medicalInfoData}
+        isLoading={updateMedicalInfoMutation.isPending}
       />
     </div>
   );
