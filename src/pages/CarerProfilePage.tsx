@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, User, Mail, Phone, MapPin, Briefcase, Calendar, CheckCircle, Clock, Users, FileText, BarChart3, Award, Star } from "lucide-react";
@@ -10,6 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCarerProfile } from "@/data/hooks/useBranchCarers";
 import { useCarerBookings } from "@/hooks/useCarerBookings";
 import { useCarerDocuments } from "@/hooks/useCarerDocuments";
+import { useCarerPerformance } from "@/hooks/useCarerPerformance";
+import { CarerScheduleTab } from "@/components/carer-profile/CarerScheduleTab";
+import { CarerPerformanceTab } from "@/components/carer-profile/CarerPerformanceTab";
 
 const CarerProfilePage: React.FC = () => {
   const { id: branchId, branchName, carerId } = useParams();
@@ -18,6 +20,7 @@ const CarerProfilePage: React.FC = () => {
   const { data: carer, isLoading, error } = useCarerProfile(carerId);
   const { data: bookings = [], isLoading: bookingsLoading } = useCarerBookings(carerId || '');
   const { data: documents = [], isLoading: documentsLoading } = useCarerDocuments(carerId || '');
+  const { data: performanceData, isLoading: performanceLoading } = useCarerPerformance(carerId || '');
 
   const handleGoBack = () => {
     navigate(`/branch-dashboard/${branchId}/${branchName}/carers`);
@@ -181,6 +184,18 @@ const CarerProfilePage: React.FC = () => {
                     <div className="text-xl font-bold text-green-600">{Math.round(totalHoursThisMonth)}</div>
                     <div className="text-xs text-green-700">Hours/Month</div>
                   </div>
+                  {performanceData && (
+                    <>
+                      <div className="text-center p-2 bg-yellow-50 rounded-lg">
+                        <div className="text-xl font-bold text-yellow-600">{performanceData.averageRating.toFixed(1)}</div>
+                        <div className="text-xs text-yellow-700">Rating</div>
+                      </div>
+                      <div className="text-center p-2 bg-purple-50 rounded-lg">
+                        <div className="text-xl font-bold text-purple-600">{performanceData.completionRate.toFixed(0)}%</div>
+                        <div className="text-xs text-purple-700">Success</div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -189,7 +204,7 @@ const CarerProfilePage: React.FC = () => {
           {/* Enhanced Main Content */}
           <div className="lg:col-span-3">
             <Tabs defaultValue="details" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 mb-6">
+              <TabsList className="grid w-full grid-cols-6 mb-6">
                 <TabsTrigger value="details" className="flex items-center gap-2">
                   <User className="h-4 w-4" />
                   Details
@@ -205,6 +220,14 @@ const CarerProfilePage: React.FC = () => {
                 <TabsTrigger value="documents" className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
                   Documents
+                </TabsTrigger>
+                <TabsTrigger value="performance" className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  Performance
+                </TabsTrigger>
+                <TabsTrigger value="bookings" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Bookings
                 </TabsTrigger>
               </TabsList>
               
@@ -280,73 +303,7 @@ const CarerProfilePage: React.FC = () => {
               </TabsContent>
               
               <TabsContent value="schedule" className="mt-6">
-                <div className="space-y-6">
-                  <Card className="shadow-md">
-                    <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
-                      <CardTitle className="flex items-center gap-2">
-                        <Clock className="h-5 w-5 text-purple-600" />
-                        Upcoming Appointments
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                      {bookingsLoading ? (
-                        <div className="text-center py-8">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-                          <p className="text-gray-500 mt-2">Loading appointments...</p>
-                        </div>
-                      ) : upcomingBookings.length > 0 ? (
-                        <div className="space-y-4">
-                          {upcomingBookings.map((booking) => (
-                            <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                              <div>
-                                <p className="font-semibold text-gray-900">{booking.client_name}</p>
-                                <p className="text-sm text-gray-600">{booking.service_name}</p>
-                                <p className="text-sm text-gray-500">{formatDateTime(booking.start_time)}</p>
-                              </div>
-                              <Badge className={`${getBookingStatusColor(booking.status)} px-3 py-1`}>
-                                {booking.status}
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-500">No upcoming appointments</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  <Card className="shadow-md">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <BarChart3 className="h-5 w-5 text-blue-600" />
-                        Recent Activity
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                      {recentBookings.length > 0 ? (
-                        <div className="space-y-3">
-                          {recentBookings.map((booking) => (
-                            <div key={booking.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-100">
-                              <div className="flex-1">
-                                <p className="font-medium text-gray-900">{booking.client_name}</p>
-                                <p className="text-sm text-gray-600">{booking.service_name}</p>
-                                <p className="text-xs text-gray-500">{formatDate(booking.start_time)}</p>
-                              </div>
-                              <Badge className={`${getBookingStatusColor(booking.status)} text-xs px-2 py-1`}>
-                                {booking.status}
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-gray-500 text-center py-4">No recent activity</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
+                <CarerScheduleTab carerId={carerId || ''} />
               </TabsContent>
               
               <TabsContent value="assignments" className="mt-6">
@@ -433,6 +390,80 @@ const CarerProfilePage: React.FC = () => {
                     )}
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="performance" className="mt-6">
+                <CarerPerformanceTab carerId={carerId || ''} />
+              </TabsContent>
+
+              <TabsContent value="bookings" className="mt-6">
+                <div className="space-y-6">
+                  <Card className="shadow-md">
+                    <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
+                      <CardTitle className="flex items-center gap-2">
+                        <Clock className="h-5 w-5 text-purple-600" />
+                        Upcoming Appointments
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      {bookingsLoading ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                          <p className="text-gray-500 mt-2">Loading appointments...</p>
+                        </div>
+                      ) : upcomingBookings.length > 0 ? (
+                        <div className="space-y-4">
+                          {upcomingBookings.map((booking) => (
+                            <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                              <div>
+                                <p className="font-semibold text-gray-900">{booking.client_name}</p>
+                                <p className="text-sm text-gray-600">{booking.service_name}</p>
+                                <p className="text-sm text-gray-500">{formatDateTime(booking.start_time)}</p>
+                              </div>
+                              <Badge className={`${getBookingStatusColor(booking.status)} px-3 py-1`}>
+                                {booking.status}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-500">No upcoming appointments</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="shadow-md">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5 text-blue-600" />
+                        Recent Activity
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      {recentBookings.length > 0 ? (
+                        <div className="space-y-3">
+                          {recentBookings.map((booking) => (
+                            <div key={booking.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-100">
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-900">{booking.client_name}</p>
+                                <p className="text-sm text-gray-600">{booking.service_name}</p>
+                                <p className="text-xs text-gray-500">{formatDate(booking.start_time)}</p>
+                              </div>
+                              <Badge className={`${getBookingStatusColor(booking.status)} text-xs px-2 py-1`}>
+                                {booking.status}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-center py-4">No recent activity</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
             </Tabs>
           </div>
