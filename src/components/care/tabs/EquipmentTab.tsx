@@ -1,11 +1,11 @@
 
 import React from "react";
 import { format } from "date-fns";
-import { Wrench, Plus, Calendar, MapPin, AlertTriangle } from "lucide-react";
+import { Wrench, Plus, Calendar, MapPin, Tool } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ClientEquipment } from "@/hooks/useClientEquipment";
+import { ClientEquipment } from "@/hooks/useClientData";
 
 interface EquipmentTabProps {
   clientId: string;
@@ -23,6 +23,7 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
       case 'active': return 'bg-green-100 text-green-800';
       case 'maintenance': return 'bg-yellow-100 text-yellow-800';
       case 'inactive': return 'bg-red-100 text-red-800';
+      case 'retired': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -30,18 +31,18 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-orange-50 to-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Wrench className="h-5 w-5 text-blue-600" />
-              <CardTitle className="text-lg">Equipment</CardTitle>
+              <Wrench className="h-5 w-5 text-orange-600" />
+              <CardTitle className="text-lg">Equipment & Devices</CardTitle>
             </div>
             <Button size="sm" className="gap-1" onClick={onAddEquipment}>
               <Plus className="h-4 w-4" />
               <span>Add Equipment</span>
             </Button>
           </div>
-          <CardDescription>Medical and assistive equipment</CardDescription>
+          <CardDescription>Client equipment and assistive devices</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
           {equipment.length === 0 ? (
@@ -66,43 +67,36 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
                         {item.status}
                       </Badge>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                      <div>
-                        <span className="font-medium">Type:</span> {item.equipment_type}
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <Tool className="h-4 w-4" />
+                        <span>Type: {item.equipment_type}</span>
                       </div>
-                      {item.manufacturer && (
-                        <div>
-                          <span className="font-medium">Manufacturer:</span> {item.manufacturer}
-                        </div>
-                      )}
-                      {item.model_number && (
-                        <div>
-                          <span className="font-medium">Model:</span> {item.model_number}
-                        </div>
-                      )}
-                      {item.serial_number && (
-                        <div>
-                          <span className="font-medium">Serial:</span> {item.serial_number}
+                      {item.location && (
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-4 w-4" />
+                          <span>Location: {item.location}</span>
                         </div>
                       )}
                     </div>
-                    {item.location && (
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <MapPin className="h-4 w-4" />
-                        <span>Location: {item.location}</span>
-                      </div>
+                    {item.manufacturer && (
+                      <p className="text-sm"><span className="font-medium">Manufacturer:</span> {item.manufacturer}</p>
+                    )}
+                    {item.model_number && (
+                      <p className="text-sm"><span className="font-medium">Model:</span> {item.model_number}</p>
+                    )}
+                    {item.serial_number && (
+                      <p className="text-sm"><span className="font-medium">Serial:</span> {item.serial_number}</p>
                     )}
                     {item.installation_date && (
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <Calendar className="h-4 w-4" />
-                        <span>Installed: {format(new Date(item.installation_date), 'MMM dd, yyyy')}</span>
-                      </div>
+                      <p className="text-sm">
+                        <span className="font-medium">Installed:</span> {format(new Date(item.installation_date), 'MMM dd, yyyy')}
+                      </p>
                     )}
                     {item.next_maintenance_date && (
-                      <div className="flex items-center gap-1 text-sm text-orange-600">
-                        <AlertTriangle className="h-4 w-4" />
-                        <span>Next maintenance: {format(new Date(item.next_maintenance_date), 'MMM dd, yyyy')}</span>
-                      </div>
+                      <p className="text-sm">
+                        <span className="font-medium">Next Maintenance:</span> {format(new Date(item.next_maintenance_date), 'MMM dd, yyyy')}
+                      </p>
                     )}
                     {item.notes && (
                       <p className="text-sm text-gray-600">{item.notes}</p>

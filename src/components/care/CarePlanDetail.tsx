@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { X, FileEdit, Download, PenLine, MessageCircle, Clock, Activity, FileBarChart2 } from "lucide-react";
 import { format } from "date-fns";
@@ -6,7 +7,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { generatePDF, exportCarePlanPDF } from "@/utils/pdfGenerator";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 
 // Import all the hooks we need
@@ -23,7 +24,8 @@ import {
   useClientAssessments, 
   useClientEquipment, 
   useClientRiskAssessments, 
-  useClientServiceActions 
+  useClientServiceActions,
+  useUpdateClientProfile
 } from "@/hooks/useClientData";
 
 import { CarePlanSidebar } from "./CarePlanSidebar";
@@ -46,6 +48,11 @@ import { AddNoteDialog } from "./dialogs/AddNoteDialog";
 import { AddEventDialog } from "./dialogs/AddEventDialog";
 import { AddGoalDialog } from "./dialogs/AddGoalDialog";
 import { AddActivityDialog } from "./dialogs/AddActivityDialog";
+import { EditPersonalInfoDialog } from "./dialogs/EditPersonalInfoDialog";
+import { EditMedicalInfoDialog } from "./dialogs/EditMedicalInfoDialog";
+import { EditAboutMeDialog } from "./dialogs/EditAboutMeDialog";
+import { EditDietaryDialog } from "./dialogs/EditDietaryDialog";
+import { EditPersonalCareDialog } from "./dialogs/EditPersonalCareDialog";
 
 interface CarePlanDetailProps {
   carePlan: {
@@ -70,11 +77,21 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const [addEventDialogOpen, setAddEventDialogOpen] = useState(false);
   const [addGoalDialogOpen, setAddGoalDialogOpen] = useState(false);
   const [addActivityDialogOpen, setAddActivityDialogOpen] = useState(false);
+  const [editPersonalInfoOpen, setEditPersonalInfoOpen] = useState(false);
+  const [editMedicalInfoOpen, setEditMedicalInfoOpen] = useState(false);
+  const [editAboutMeOpen, setEditAboutMeOpen] = useState(false);
+  const [editDietaryOpen, setEditDietaryOpen] = useState(false);
+  const [editPersonalCareOpen, setEditPersonalCareOpen] = useState(false);
+  
   const navigate = useNavigate();
   const params = useParams();
+  const location = useLocation();
 
+  // Extract parameters from URL with proper decoding
   const branchId = params.branchId || '';
-  const branchName = params.branchName || '';
+  const branchName = params.branchName ? decodeURIComponent(params.branchName) : '';
+
+  console.log('CarePlanDetail - URL params:', { branchId, branchName, carePlanId: carePlan.id, patientId: carePlan.patientId });
 
   // Fetch all the real data from database
   const { data: clientProfile } = useClientProfile(carePlan.patientId);
@@ -92,13 +109,16 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const createEventMutation = useCreateClientEvent();
   const createGoalMutation = useCreateGoal();
   const createActivityMutation = useCreateClientActivity();
+  const updateClientMutation = useUpdateClientProfile();
 
   const handleClose = () => {
     if (onClose) {
       onClose();
     } else {
+      // Navigate back with proper URL structure
       if (branchId && branchName) {
-        navigate(`/branch-dashboard/${branchId}/${branchName}`);
+        const encodedBranchName = encodeURIComponent(branchName);
+        navigate(`/branch-dashboard/${branchId}/${encodedBranchName}/care`);
       } else {
         navigate("/");
       }
@@ -107,15 +127,18 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
 
   const handleEdit = () => {
     if (branchId && branchName && carePlan.patientId) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${carePlan.patientId}/edit`);
+      const encodedBranchName = encodeURIComponent(branchName);
+      navigate(`/branch-dashboard/${branchId}/${encodedBranchName}/clients/${carePlan.patientId}/edit`);
     } else {
-      toast.error("Unable to navigate to edit page. Please try again.");
+      console.error('Missing navigation parameters:', { branchId, branchName, patientId: carePlan.patientId });
+      toast.error("Unable to navigate to edit page. Missing required parameters.");
     }
   };
 
   const handleScheduleFollowUp = () => {
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/bookings/new`, {
+      const encodedBranchName = encodeURIComponent(branchName);
+      navigate(`/branch-dashboard/${branchId}/${encodedBranchName}/bookings/new`, {
         state: { 
           clientId: carePlan.patientId, 
           clientName: carePlan.patientName,
@@ -143,55 +166,34 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     }
   };
 
-  // Add handlers for Personal Info tab
+  // Edit handlers that open dialogs instead of navigating away
   const handleEditPersonalInfo = () => {
-    if (branchId && branchName && carePlan.patientId) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${carePlan.patientId}/edit`);
-    } else {
-      toast.error("Unable to navigate to edit page. Please try again.");
-    }
+    setEditPersonalInfoOpen(true);
   };
 
   const handleEditMedicalInfo = () => {
-    if (branchId && branchName && carePlan.patientId) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${carePlan.patientId}/edit`);
-    } else {
-      toast.error("Unable to navigate to edit page. Please try again.");
-    }
+    setEditMedicalInfoOpen(true);
   };
 
-  // Add handlers for About Me tab
   const handleEditAboutMe = () => {
-    if (branchId && branchName && carePlan.patientId) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${carePlan.patientId}/edit`);
-    } else {
-      toast.error("Unable to navigate to edit page. Please try again.");
-    }
+    setEditAboutMeOpen(true);
   };
 
-  // Add handlers for other tabs
+  const handleEditDietaryRequirements = () => {
+    setEditDietaryOpen(true);
+  };
+
+  const handleEditPersonalCare = () => {
+    setEditPersonalCareOpen(true);
+  };
+
+  // Add handlers for other functionalities
   const handleAddAssessment = () => {
     toast.info("Assessment functionality will be available soon");
   };
 
   const handleAddEquipment = () => {
     toast.info("Equipment functionality will be available soon");
-  };
-
-  const handleEditDietaryRequirements = () => {
-    if (branchId && branchName && carePlan.patientId) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${carePlan.patientId}/edit`);
-    } else {
-      toast.error("Unable to navigate to edit page. Please try again.");
-    }
-  };
-
-  const handleEditPersonalCare = () => {
-    if (branchId && branchName && carePlan.patientId) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${carePlan.patientId}/edit`);
-    } else {
-      toast.error("Unable to navigate to edit page. Please try again.");
-    }
   };
 
   const handleAddRiskAssessment = () => {
@@ -289,6 +291,20 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     } catch (error) {
       console.error("Error saving activity:", error);
       toast.error("Failed to save activity");
+    }
+  };
+
+  const handleSavePersonalInfo = async (data: any) => {
+    try {
+      await updateClientMutation.mutateAsync({
+        clientId: carePlan.patientId,
+        updates: data
+      });
+      setEditPersonalInfoOpen(false);
+      toast.success("Personal information updated successfully");
+    } catch (error) {
+      console.error("Error updating personal info:", error);
+      toast.error("Failed to update personal information");
     }
   };
 
@@ -541,6 +557,46 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         onOpenChange={setAddActivityDialogOpen}
         onSave={handleSaveActivity}
         isLoading={createActivityMutation.isPending}
+      />
+
+      <EditPersonalInfoDialog
+        open={editPersonalInfoOpen}
+        onOpenChange={setEditPersonalInfoOpen}
+        onSave={handleSavePersonalInfo}
+        clientData={clientProfile}
+        isLoading={updateClientMutation.isPending}
+      />
+
+      <EditMedicalInfoDialog
+        open={editMedicalInfoOpen}
+        onOpenChange={setEditMedicalInfoOpen}
+        onSave={handleSavePersonalInfo}
+        medicalData={medicalInfo}
+        isLoading={updateClientMutation.isPending}
+      />
+
+      <EditAboutMeDialog
+        open={editAboutMeOpen}
+        onOpenChange={setEditAboutMeOpen}
+        onSave={handleSavePersonalInfo}
+        aboutMeData={personalInfo}
+        isLoading={updateClientMutation.isPending}
+      />
+
+      <EditDietaryDialog
+        open={editDietaryOpen}
+        onOpenChange={setEditDietaryOpen}
+        onSave={handleSavePersonalInfo}
+        dietaryData={dietaryRequirements}
+        isLoading={updateClientMutation.isPending}
+      />
+
+      <EditPersonalCareDialog
+        open={editPersonalCareOpen}
+        onOpenChange={setEditPersonalCareOpen}
+        onSave={handleSavePersonalInfo}
+        personalCareData={personalCare}
+        isLoading={updateClientMutation.isPending}
       />
     </div>
   );

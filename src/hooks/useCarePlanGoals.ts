@@ -7,7 +7,7 @@ export interface CarePlanGoal {
   care_plan_id: string;
   description: string;
   status: string;
-  progress: number;
+  progress?: number;
   notes?: string;
   created_at: string;
   updated_at: string;
@@ -20,7 +20,11 @@ const fetchCarePlanGoals = async (carePlanId: string): Promise<CarePlanGoal[]> =
     .eq('care_plan_id', carePlanId)
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching care plan goals:', error);
+    throw error;
+  }
+
   return data || [];
 };
 
