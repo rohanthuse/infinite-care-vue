@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 interface AboutMeTabProps {
-  personalInfo: {
+  personalInfo?: {
     cultural_preferences?: string;
     language_preferences?: string;
     religion?: string;
     marital_status?: string;
-  };
-  personalCare: {
+  } | null;
+  personalCare?: {
     id: string;
     client_id: string;
     personal_hygiene_needs?: string;
@@ -27,7 +27,7 @@ interface AboutMeTabProps {
     skin_care_needs?: string;
     created_at: string;
     updated_at: string;
-  };
+  } | null;
   onEditAboutMe?: () => void;
 }
 
@@ -36,6 +36,19 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
   personalCare,
   onEditAboutMe 
 }) => {
+  // Handle loading state if data is not available
+  if (!personalInfo && !personalCare) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Cultural & Personal Preferences */}
@@ -58,13 +71,13 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">Cultural Preferences</h3>
-                <p className="text-base">{personalInfo.cultural_preferences || 'Not specified'}</p>
+                <p className="text-base">{personalInfo?.cultural_preferences || 'Not specified'}</p>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">Language Preferences</h3>
                 <div className="flex items-center gap-2">
                   <MessageSquare className="h-4 w-4 text-gray-400" />
-                  <p className="text-base">{personalInfo.language_preferences || 'Not specified'}</p>
+                  <p className="text-base">{personalInfo?.language_preferences || 'Not specified'}</p>
                 </div>
               </div>
             </div>
@@ -72,11 +85,11 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">Religion</h3>
-                <p className="text-base">{personalInfo.religion || 'Not specified'}</p>
+                <p className="text-base">{personalInfo?.religion || 'Not specified'}</p>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">Marital Status</h3>
-                <p className="text-base">{personalInfo.marital_status || 'Not specified'}</p>
+                <p className="text-base">{personalInfo?.marital_status || 'Not specified'}</p>
               </div>
             </div>
           </div>
@@ -94,14 +107,14 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
         </CardHeader>
         <CardContent className="pt-4">
           <div className="space-y-4">
-            {personalCare.personal_hygiene_needs && (
+            {personalCare?.personal_hygiene_needs && (
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">Personal Hygiene Needs</h3>
                 <p className="text-base">{personalCare.personal_hygiene_needs}</p>
               </div>
             )}
             
-            {personalCare.bathing_preferences && (
+            {personalCare?.bathing_preferences && (
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">Bathing Preferences</h3>
                 <p className="text-base">{personalCare.bathing_preferences}</p>
@@ -109,7 +122,7 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
             )}
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {personalCare.dressing_assistance_level && (
+              {personalCare?.dressing_assistance_level && (
                 <div>
                   <h3 className="text-sm font-medium text-gray-500 mb-1">Dressing Assistance</h3>
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
@@ -118,7 +131,7 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
                 </div>
               )}
               
-              {personalCare.toileting_assistance_level && (
+              {personalCare?.toileting_assistance_level && (
                 <div>
                   <h3 className="text-sm font-medium text-gray-500 mb-1">Toileting Assistance</h3>
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
@@ -128,24 +141,30 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
               )}
             </div>
             
-            {personalCare.sleep_patterns && (
+            {personalCare?.sleep_patterns && (
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">Sleep Patterns</h3>
                 <p className="text-base">{personalCare.sleep_patterns}</p>
               </div>
             )}
             
-            {personalCare.comfort_measures && (
+            {personalCare?.comfort_measures && (
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">Comfort Measures</h3>
                 <p className="text-base">{personalCare.comfort_measures}</p>
               </div>
             )}
             
-            {personalCare.behavioral_notes && (
+            {personalCare?.behavioral_notes && (
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">Behavioral Notes</h3>
                 <p className="text-base">{personalCare.behavioral_notes}</p>
+              </div>
+            )}
+
+            {!personalCare && (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No personal care information available</p>
               </div>
             )}
           </div>
