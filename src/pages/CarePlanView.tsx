@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft, FileEdit, Download } from "lucide-react";
@@ -17,30 +18,18 @@ export default function CarePlanView() {
   const [activeTab, setActiveTab] = useState("personal");
   const [medicalInfoDialogOpen, setMedicalInfoDialogOpen] = useState(false);
 
-  // Mock care plan data - in a real app, this would come from the API
-  const carePlan = {
-    id: carePlanId || "CP-001",
-    patientName: "Sarah Johnson",
-    patientId: "client-001",
-    dateCreated: new Date("2024-01-15"),
-    lastUpdated: new Date("2024-03-10"),
-    status: "Active",
-    assignedTo: "Dr. Emily Chen",
-    avatar: "SJ"
-  };
-
-  // Fetch comprehensive care plan data
+  // Fetch comprehensive care plan data using the ID from URL params
   const {
     data: comprehensiveData,
     isLoading,
     error
-  } = useComprehensiveCarePlanData(carePlan.patientId);
+  } = useComprehensiveCarePlanData(carePlanId || "");
 
   // Get the actual client UUID from comprehensive data
-  const clientId = comprehensiveData?.client?.id || carePlan.patientId;
+  const clientId = comprehensiveData?.client?.id;
   
   // Fetch medical information
-  const { data: medicalInfo } = useClientMedicalInfo(clientId);
+  const { data: medicalInfo } = useClientMedicalInfo(clientId || "");
   const updateMedicalInfoMutation = useUpdateClientMedicalInfo();
 
   const handleEditMedicalInfo = () => {
@@ -96,15 +85,45 @@ export default function CarePlanView() {
     );
   }
 
-  if (error) {
+  if (error || !comprehensiveData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600">Error loading care plan data</p>
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="text-red-600 mb-4">
+            <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Care Plan Not Found</h3>
+          <p className="text-gray-600 mb-4">
+            The care plan with ID "{carePlanId}" could not be found. It may have been moved or deleted.
+          </p>
+          <div className="space-y-2">
+            <Button onClick={() => window.history.back()} className="w-full">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Go Back
+            </Button>
+            <Button variant="outline" onClick={() => window.location.href = '/branch-dashboard'} className="w-full">
+              Return to Dashboard
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
+
+  // Create care plan object from the fetched data
+  const carePlan = {
+    id: comprehensiveData.id,
+    patientName: `${comprehensiveData.client?.first_name || ''} ${comprehensiveData.client?.last_name || ''}`.trim(),
+    patientId: comprehensiveData.client?.id || '',
+    dateCreated: new Date(comprehensiveData.created_at),
+    lastUpdated: new Date(comprehensiveData.updated_at),
+    status: comprehensiveData.status,
+    assignedTo: comprehensiveData.provider_name,
+    avatar: comprehensiveData.client?.avatar_initials || 
+             `${comprehensiveData.client?.first_name?.[0] || ''}${comprehensiveData.client?.last_name?.[0] || ''}` || 'N/A'
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -118,7 +137,7 @@ export default function CarePlanView() {
               </Button>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Care Plan Details</h1>
-                <p className="text-sm text-gray-500">Plan ID: {carePlan.id}</p>
+                <p className="text-sm text-gray-500">Plan ID: {carePlanId}</p>
               </div>
             </div>
             
