@@ -1,82 +1,53 @@
 
 import React from "react";
 import { format } from "date-fns";
-import { Wrench, Calendar, CheckCircle2, AlertCircle, ShieldAlert, Plus } from "lucide-react";
+import { Wrench, Plus, Calendar, MapPin, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { ClientEquipment } from "@/hooks/useClientEquipment";
 
 interface EquipmentTabProps {
+  clientId: string;
   equipment: ClientEquipment[];
   onAddEquipment?: () => void;
 }
 
-export const EquipmentTab: React.FC<EquipmentTabProps> = ({ equipment, onAddEquipment }) => {
-  const getStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "active": return "bg-green-50 text-green-700 border-green-200";
-      case "inactive": return "bg-gray-50 text-gray-700 border-gray-200";
-      case "maintenance": return "bg-amber-50 text-amber-700 border-amber-200";
-      case "faulty": return "bg-red-50 text-red-700 border-red-200";
-      default: return "bg-gray-50 text-gray-700 border-gray-200";
+export const EquipmentTab: React.FC<EquipmentTabProps> = ({
+  clientId,
+  equipment,
+  onAddEquipment,
+}) => {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'maintenance': return 'bg-yellow-100 text-yellow-800';
+      case 'inactive': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
-  };
-
-  const getNextMaintenanceDate = (lastMaintenance?: string, schedule?: string) => {
-    if (!lastMaintenance) return null;
-    
-    const lastDate = new Date(lastMaintenance);
-    // Simple logic: add 3 months for regular maintenance
-    const nextDate = new Date(lastDate);
-    nextDate.setMonth(nextDate.getMonth() + 3);
-    return nextDate;
-  };
-
-  const isMaintenanceSoon = (equipment: ClientEquipment) => {
-    if (equipment.next_maintenance_date) {
-      const nextDate = new Date(equipment.next_maintenance_date);
-      const today = new Date();
-      const daysDiff = Math.ceil((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      return daysDiff <= 14; // Warning if maintenance is due within 14 days
-    }
-    
-    if (equipment.last_maintenance_date) {
-      const nextDate = getNextMaintenanceDate(equipment.last_maintenance_date, equipment.maintenance_schedule);
-      if (nextDate) {
-        const today = new Date();
-        const daysDiff = Math.ceil((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        return daysDiff <= 14;
-      }
-    }
-    
-    return false;
   };
 
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader className="pb-2 bg-gradient-to-r from-slate-50 to-white">
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Wrench className="h-5 w-5 text-slate-600" />
+              <Wrench className="h-5 w-5 text-blue-600" />
               <CardTitle className="text-lg">Equipment</CardTitle>
             </div>
-            {onAddEquipment && (
-              <Button size="sm" className="gap-1" onClick={onAddEquipment}>
-                <Plus className="h-4 w-4" />
-                <span>Add Equipment</span>
-              </Button>
-            )}
+            <Button size="sm" className="gap-1" onClick={onAddEquipment}>
+              <Plus className="h-4 w-4" />
+              <span>Add Equipment</span>
+            </Button>
           </div>
-          <CardDescription>Medical equipment and assistive devices</CardDescription>
+          <CardDescription>Medical and assistive equipment</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
           {equipment.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Wrench className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-              <p className="text-sm">No equipment recorded</p>
+              <p className="text-sm">No equipment registered</p>
               {onAddEquipment && (
                 <Button variant="outline" className="mt-3" onClick={onAddEquipment}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -85,91 +56,57 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({ equipment, onAddEqui
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-4">
               {equipment.map((item) => (
-                <div key={item.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-all">
-                  <div className="bg-gradient-to-r from-slate-50 to-white px-4 py-3 flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="mr-3 p-2 rounded-full bg-slate-100">
-                        <Wrench className="h-5 w-5 text-slate-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{item.equipment_name}</h3>
-                        <p className="text-sm text-gray-500">{item.equipment_type}</p>
-                        {item.manufacturer && (
-                          <p className="text-xs text-gray-400">{item.manufacturer}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {isMaintenanceSoon(item) && (
-                        <AlertCircle className="h-4 w-4 text-amber-500" />
-                      )}
-                      <Badge variant="outline" className={getStatusBadge(item.status)}>
+                <div key={item.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium">{item.equipment_name}</h3>
+                      <Badge className={getStatusColor(item.status)}>
                         {item.status}
                       </Badge>
                     </div>
-                  </div>
-                  
-                  <div className="p-4 bg-white">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Equipment Details */}
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-gray-700">Equipment Details</h4>
-                        {item.model_number && (
-                          <p className="text-xs"><span className="font-medium">Model:</span> {item.model_number}</p>
-                        )}
-                        {item.serial_number && (
-                          <p className="text-xs"><span className="font-medium">Serial:</span> {item.serial_number}</p>
-                        )}
-                        {item.location && (
-                          <p className="text-xs"><span className="font-medium">Location:</span> {item.location}</p>
-                        )}
-                        {item.installation_date && (
-                          <p className="text-xs">
-                            <span className="font-medium">Installed:</span> {format(new Date(item.installation_date), 'MMM dd, yyyy')}
-                          </p>
-                        )}
+                    <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                      <div>
+                        <span className="font-medium">Type:</span> {item.equipment_type}
                       </div>
-
-                      {/* Maintenance Information */}
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-gray-700">Maintenance</h4>
-                        {item.last_maintenance_date ? (
-                          <div className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            <div>
-                              <p className="text-xs">Last: {format(new Date(item.last_maintenance_date), 'MMM dd, yyyy')}</p>
-                              {item.next_maintenance_date && (
-                                <p className="text-xs text-gray-500">
-                                  Next: {format(new Date(item.next_maintenance_date), 'MMM dd, yyyy')}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <AlertCircle className="h-4 w-4 text-amber-500" />
-                            <p className="text-xs text-amber-600">No maintenance records</p>
-                          </div>
-                        )}
-                        {item.maintenance_schedule && (
-                          <p className="text-xs text-gray-500">Schedule: {item.maintenance_schedule}</p>
-                        )}
-                      </div>
+                      {item.manufacturer && (
+                        <div>
+                          <span className="font-medium">Manufacturer:</span> {item.manufacturer}
+                        </div>
+                      )}
+                      {item.model_number && (
+                        <div>
+                          <span className="font-medium">Model:</span> {item.model_number}
+                        </div>
+                      )}
+                      {item.serial_number && (
+                        <div>
+                          <span className="font-medium">Serial:</span> {item.serial_number}
+                        </div>
+                      )}
                     </div>
-
-                    {item.notes && (
-                      <div className="mt-4 pt-4 border-t">
-                        <h4 className="text-sm font-medium text-gray-700 mb-1">Notes</h4>
-                        <p className="text-sm text-gray-600">{item.notes}</p>
+                    {item.location && (
+                      <div className="flex items-center gap-1 text-sm text-gray-600">
+                        <MapPin className="h-4 w-4" />
+                        <span>Location: {item.location}</span>
                       </div>
                     )}
-                    
-                    <div className="mt-4 pt-4 border-t flex justify-end gap-2">
-                      <Button variant="outline" size="sm">View Details</Button>
-                      <Button variant="outline" size="sm">Schedule Maintenance</Button>
-                    </div>
+                    {item.installation_date && (
+                      <div className="flex items-center gap-1 text-sm text-gray-600">
+                        <Calendar className="h-4 w-4" />
+                        <span>Installed: {format(new Date(item.installation_date), 'MMM dd, yyyy')}</span>
+                      </div>
+                    )}
+                    {item.next_maintenance_date && (
+                      <div className="flex items-center gap-1 text-sm text-orange-600">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span>Next maintenance: {format(new Date(item.next_maintenance_date), 'MMM dd, yyyy')}</span>
+                      </div>
+                    )}
+                    {item.notes && (
+                      <p className="text-sm text-gray-600">{item.notes}</p>
+                    )}
                   </div>
                 </div>
               ))}

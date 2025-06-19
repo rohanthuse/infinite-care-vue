@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { X, FileEdit, Download, PenLine, MessageCircle, Clock, Activity, FileBarChart2 } from "lucide-react";
 import { format } from "date-fns";
@@ -15,6 +14,17 @@ import { useCreateClientNote } from "@/hooks/useClientNotes";
 import { useCreateClientEvent } from "@/hooks/useClientEvents";
 import { useCreateGoal } from "@/hooks/useCarePlanGoalsMutations";
 import { useCreateClientActivity } from "@/hooks/useClientActivities";
+import { 
+  useClientProfile, 
+  useClientPersonalInfo, 
+  useClientMedicalInfo, 
+  useClientDietaryRequirements, 
+  useClientPersonalCare, 
+  useClientAssessments, 
+  useClientEquipment, 
+  useClientRiskAssessments, 
+  useClientServiceActions 
+} from "@/hooks/useClientData";
 
 import { CarePlanSidebar } from "./CarePlanSidebar";
 import { CarePlanTabBar } from "./CarePlanTabBar";
@@ -29,6 +39,9 @@ import { PersonalCareTab } from "./tabs/PersonalCareTab";
 import { EventsLogsTab } from "./tabs/EventsLogsTab";
 import { ServiceActionsTab } from "./tabs/ServiceActionsTab";
 import { ServicePlanTab } from "./tabs/ServicePlanTab";
+import { AssessmentsTab } from "./tabs/AssessmentsTab";
+import { EquipmentTab } from "./tabs/EquipmentTab";
+import { RiskAssessmentsTab } from "./tabs/RiskAssessmentsTab";
 import { AddNoteDialog } from "./dialogs/AddNoteDialog";
 import { AddEventDialog } from "./dialogs/AddEventDialog";
 import { AddGoalDialog } from "./dialogs/AddGoalDialog";
@@ -46,11 +59,6 @@ interface CarePlanDetailProps {
     avatar: string;
   };
   onClose: () => void;
-  onAddNote?: () => void;
-  onScheduleFollowUp?: () => void;
-  onRecordActivity?: () => void;
-  onUploadDocument?: () => void;
-  onAddEvent?: () => void;
 }
 
 export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
@@ -68,6 +76,17 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const branchId = params.branchId || '';
   const branchName = params.branchName || '';
 
+  // Fetch all the real data from database
+  const { data: clientProfile } = useClientProfile(carePlan.patientId);
+  const { data: personalInfo } = useClientPersonalInfo(carePlan.patientId);
+  const { data: medicalInfo } = useClientMedicalInfo(carePlan.patientId);
+  const { data: dietaryRequirements } = useClientDietaryRequirements(carePlan.patientId);
+  const { data: personalCare } = useClientPersonalCare(carePlan.patientId);
+  const { data: assessments = [] } = useClientAssessments(carePlan.patientId);
+  const { data: equipment = [] } = useClientEquipment(carePlan.patientId);
+  const { data: riskAssessments = [] } = useClientRiskAssessments(carePlan.patientId);
+  const { data: serviceActions = [] } = useClientServiceActions(carePlan.patientId);
+
   // Initialize all the mutation hooks
   const createNoteMutation = useCreateClientNote();
   const createEventMutation = useCreateClientEvent();
@@ -75,22 +94,18 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const createActivityMutation = useCreateClientActivity();
 
   const handleClose = () => {
-    // Use the onClose prop first, then fallback to navigation
     if (onClose) {
       onClose();
     } else {
-      // Navigate back to the main branch dashboard
       if (branchId && branchName) {
         navigate(`/branch-dashboard/${branchId}/${branchName}`);
       } else {
-        // Fallback navigation to main dashboard
         navigate("/");
       }
     }
   };
 
   const handleEdit = () => {
-    // Navigate to client edit page
     if (branchId && branchName && carePlan.patientId) {
       navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${carePlan.patientId}/edit`);
     } else {
@@ -99,7 +114,6 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   };
 
   const handleScheduleFollowUp = () => {
-    // Navigate to booking page with client context
     if (branchId && branchName) {
       navigate(`/branch-dashboard/${branchId}/${branchName}/bookings/new`, {
         state: { 
@@ -129,6 +143,69 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     }
   };
 
+  // Add handlers for Personal Info tab
+  const handleEditPersonalInfo = () => {
+    if (branchId && branchName && carePlan.patientId) {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${carePlan.patientId}/edit`);
+    } else {
+      toast.error("Unable to navigate to edit page. Please try again.");
+    }
+  };
+
+  const handleEditMedicalInfo = () => {
+    if (branchId && branchName && carePlan.patientId) {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${carePlan.patientId}/edit`);
+    } else {
+      toast.error("Unable to navigate to edit page. Please try again.");
+    }
+  };
+
+  // Add handlers for About Me tab
+  const handleEditAboutMe = () => {
+    if (branchId && branchName && carePlan.patientId) {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${carePlan.patientId}/edit`);
+    } else {
+      toast.error("Unable to navigate to edit page. Please try again.");
+    }
+  };
+
+  // Add handlers for other tabs
+  const handleAddAssessment = () => {
+    toast.info("Assessment functionality will be available soon");
+  };
+
+  const handleAddEquipment = () => {
+    toast.info("Equipment functionality will be available soon");
+  };
+
+  const handleEditDietaryRequirements = () => {
+    if (branchId && branchName && carePlan.patientId) {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${carePlan.patientId}/edit`);
+    } else {
+      toast.error("Unable to navigate to edit page. Please try again.");
+    }
+  };
+
+  const handleEditPersonalCare = () => {
+    if (branchId && branchName && carePlan.patientId) {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${carePlan.patientId}/edit`);
+    } else {
+      toast.error("Unable to navigate to edit page. Please try again.");
+    }
+  };
+
+  const handleAddRiskAssessment = () => {
+    toast.info("Risk assessment functionality will be available soon");
+  };
+
+  const handleAddServicePlan = () => {
+    toast.info("Service plan functionality will be available soon");
+  };
+
+  const handleAddServiceAction = () => {
+    toast.info("Service action functionality will be available soon");
+  };
+
   const handleAddNote = () => {
     setAddNoteDialogOpen(true);
   };
@@ -149,14 +226,14 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     setAddGoalDialogOpen(true);
   };
 
-  // Fixed database-connected handlers
+  // Database-connected handlers
   const handleSaveNote = async (noteData: { title: string; content: string }) => {
     try {
       await createNoteMutation.mutateAsync({
         client_id: carePlan.patientId,
         title: noteData.title,
         content: noteData.content,
-        author: "Admin", // This should be the current user
+        author: "Admin",
       });
       setAddNoteDialogOpen(false);
     } catch (error) {
@@ -269,7 +346,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 
                 <TabsContent value="personal">
                   <PersonalInfoTab 
-                    client={{
+                    client={clientProfile || {
                       id: carePlan.patientId,
                       first_name: carePlan.patientName.split(' ')[0],
                       last_name: carePlan.patientName.split(' ')[1] || '',
@@ -279,27 +356,29 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                       address: "",
                       gender: "",
                     }}
-                    personalInfo={{
+                    personalInfo={personalInfo || {
                       emergency_contact_name: "",
                       emergency_contact_phone: "",
                       preferred_communication: "",
                     }}
-                    medicalInfo={{
+                    medicalInfo={medicalInfo || {
                       allergies: [],
                       current_medications: [],
                       medical_conditions: [],
                       medical_history: "",
                     }}
+                    onEditPersonalInfo={handleEditPersonalInfo}
+                    onEditMedicalInfo={handleEditMedicalInfo}
                   />
                 </TabsContent>
                 
                 <TabsContent value="aboutme">
                   <AboutMeTab 
-                    personalInfo={{
+                    personalInfo={personalInfo || {
                       cultural_preferences: "",
                       language_preferences: "",
                     }}
-                    personalCare={{
+                    personalCare={personalCare || {
                       id: "",
                       client_id: carePlan.patientId,
                       personal_hygiene_needs: "",
@@ -315,20 +394,37 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                       created_at: "",
                       updated_at: "",
                     }}
+                    onEditAboutMe={handleEditAboutMe}
                   />
                 </TabsContent>
                 
                 <TabsContent value="goals">
                   <GoalsTab 
-                    goals={[]} 
+                    carePlanId={carePlan.id}
                     onAddGoal={handleAddGoal}
                   />
                 </TabsContent>
                 
                 <TabsContent value="activities">
                   <ActivitiesTab 
-                    activities={[]} 
+                    carePlanId={carePlan.id}
                     onAddActivity={handleRecordActivity} 
+                  />
+                </TabsContent>
+                
+                <TabsContent value="assessments">
+                  <AssessmentsTab 
+                    clientId={carePlan.patientId}
+                    assessments={assessments}
+                    onAddAssessment={handleAddAssessment}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="equipment">
+                  <EquipmentTab 
+                    clientId={carePlan.patientId}
+                    equipment={equipment}
+                    onAddEquipment={handleAddEquipment}
                   />
                 </TabsContent>
                 
@@ -344,42 +440,62 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="dietary">
-                  <DietaryTab dietaryRequirements={{
-                    dietary_restrictions: [],
-                    food_allergies: [],
-                    food_preferences: [],
-                    meal_schedule: {},
-                    nutritional_needs: "",
-                    supplements: [],
-                    feeding_assistance_required: false,
-                    special_equipment_needed: "",
-                    texture_modifications: "",
-                    fluid_restrictions: "",
-                    weight_monitoring: false,
-                  }} />
+                  <DietaryTab 
+                    dietaryRequirements={dietaryRequirements || {
+                      dietary_restrictions: [],
+                      food_allergies: [],
+                      food_preferences: [],
+                      meal_schedule: {},
+                      nutritional_needs: "",
+                      supplements: [],
+                      feeding_assistance_required: false,
+                      special_equipment_needed: "",
+                      texture_modifications: "",
+                      fluid_restrictions: "",
+                      weight_monitoring: false,
+                    }}
+                    onEditDietaryRequirements={handleEditDietaryRequirements}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="personalcare">
-                  <PersonalCareTab personalCare={{
-                    personal_hygiene_needs: "",
-                    bathing_preferences: "",
-                    dressing_assistance_level: "",
-                    toileting_assistance_level: "",
-                    continence_status: "",
-                    sleep_patterns: "",
-                    behavioral_notes: "",
-                    comfort_measures: "",
-                    pain_management: "",
-                    skin_care_needs: "",
-                  }} />
+                  <PersonalCareTab 
+                    personalCare={personalCare || {
+                      personal_hygiene_needs: "",
+                      bathing_preferences: "",
+                      dressing_assistance_level: "",
+                      toileting_assistance_level: "",
+                      continence_status: "",
+                      sleep_patterns: "",
+                      behavioral_notes: "",
+                      comfort_measures: "",
+                      pain_management: "",
+                      skin_care_needs: "",
+                    }}
+                    onEditPersonalCare={handleEditPersonalCare}
+                  />
+                </TabsContent>
+
+                <TabsContent value="riskassessments">
+                  <RiskAssessmentsTab 
+                    clientId={carePlan.patientId}
+                    riskAssessments={riskAssessments}
+                    onAddRiskAssessment={handleAddRiskAssessment}
+                  />
                 </TabsContent>
 
                 <TabsContent value="serviceplan">
-                  <ServicePlanTab serviceActions={[]} />
+                  <ServicePlanTab 
+                    serviceActions={serviceActions}
+                    onAddServicePlan={handleAddServicePlan}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="serviceactions">
-                  <ServiceActionsTab serviceActions={[]} />
+                  <ServiceActionsTab 
+                    serviceActions={serviceActions}
+                    onAddServiceAction={handleAddServiceAction}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="eventslogs">
@@ -396,7 +512,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         </div>
       </div>
 
-      {/* Add Note Dialog */}
+      {/* All Dialog Components */}
       <AddNoteDialog
         open={addNoteDialogOpen}
         onOpenChange={setAddNoteDialogOpen}
@@ -404,7 +520,6 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         isLoading={createNoteMutation.isPending}
       />
 
-      {/* Add Event Dialog */}
       <AddEventDialog
         open={addEventDialogOpen}
         onOpenChange={setAddEventDialogOpen}
@@ -414,7 +529,6 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         isLoading={createEventMutation.isPending}
       />
 
-      {/* Add Goal Dialog */}
       <AddGoalDialog
         open={addGoalDialogOpen}
         onOpenChange={setAddGoalDialogOpen}
@@ -422,7 +536,6 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         isLoading={createGoalMutation.isPending}
       />
 
-      {/* Add Activity Dialog */}
       <AddActivityDialog
         open={addActivityDialogOpen}
         onOpenChange={setAddActivityDialogOpen}
