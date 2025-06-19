@@ -23,6 +23,9 @@ import Accounting from "./pages/Accounting";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
 import { AuthProvider } from "./contexts/AuthContext";
 import { TaskProvider } from "./contexts/TaskContext";
+import AdminRoutes from "./routes/AdminRoutes";
+import CarerRoutes from "./routes/CarerRoutes";
+import ClientRoutes from "./routes/ClientRoutes";
 
 const queryClient = new QueryClient();
 
@@ -40,32 +43,25 @@ const App = () => (
               {/* Super Admin Route */}
               <Route path="/super-admin" element={<SuperAdminLogin />} />
               
-              {/* Admin Dashboard Routes */}
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
-              
-              {/* Carer Routes */}
+              {/* Carer Login Route */}
               <Route path="/carer-login" element={<CarerLogin />} />
-              <Route path="/carer-dashboard/*" element={<CarerDashboard />} />
-              <Route path="/carer-dashboard/profile" element={<CarerProfile />} />
               
-              {/* Individual Carer Profile Route */}
-              <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
-              
-              {/* Client Routes */}
+              {/* Client Login Route */}
               <Route path="/client-login" element={<ClientLogin />} />
-              <Route path="/client-dashboard/profile" element={<ClientProfile />} />
-              <Route path="/client-dashboard/appointments" element={<ClientAppointments />} />
-              <Route path="/client-dashboard/care-plans" element={<ClientCarePlans />} />
-              <Route path="/client-dashboard/documents" element={<ClientDocuments />} />
-              
-              {/* Client Edit Route */}
-              <Route path="/branch-dashboard/:id/:branchName/clients/:clientId/edit" element={<ClientEdit />} />
               
               {/* Standalone Pages */}
               <Route path="/attendance" element={<Attendance />} />
               <Route path="/agreement" element={<Agreement />} />
               <Route path="/accounting" element={<Accounting />} />
+              
+              {/* Admin Routes */}
+              {AdminRoutes()}
+              
+              {/* Carer Routes */}
+              {CarerRoutes()}
+              
+              {/* Client Routes */}
+              {ClientRoutes()}
             </Routes>
           </TaskProvider>
         </AuthProvider>
