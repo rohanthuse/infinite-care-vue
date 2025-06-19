@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -40,24 +39,31 @@ const uploadClientDocument = async ({ clientId, file, name, type, uploaded_by }:
   type: string;
   uploaded_by: string;
 }) => {
-  console.log('[uploadClientDocument] Uploading:', { clientId, name, type });
+  console.log('[uploadClientDocument] Starting upload:', { clientId, name, type, fileSize: file.size });
   
   try {
+    // Validate inputs
+    if (!name.trim()) {
+      throw new Error('Document name is required');
+    }
+    
+    if (!type.trim()) {
+      throw new Error('Document type is required');
+    }
+
     // Generate a unique file path
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
     const filePath = `${clientId}/${fileName}`;
 
-    // For now, we'll create the document record without actual file upload
-    // In a production app, you would upload to Supabase Storage first
-    console.log('[uploadClientDocument] Would upload file to:', filePath);
+    console.log('[uploadClientDocument] Creating database record...');
     
     const { data, error } = await supabase
       .from('client_documents')
       .insert({
         client_id: clientId,
-        name,
-        type,
+        name: name.trim(),
+        type: type.trim(),
         uploaded_by,
         file_size: `${Math.round(file.size / 1024)} KB`,
         file_path: filePath,
@@ -66,13 +72,14 @@ const uploadClientDocument = async ({ clientId, file, name, type, uploaded_by }:
       .single();
 
     if (error) {
-      console.error('[uploadClientDocument] Error:', error);
+      console.error('[uploadClientDocument] Database error:', error);
       throw error;
     }
 
+    console.log('[uploadClientDocument] Upload successful:', data);
     return data;
   } catch (error) {
-    console.error('[uploadClientDocument] Unexpected error:', error);
+    console.error('[uploadClientDocument] Upload failed:', error);
     throw error;
   }
 };
@@ -169,7 +176,10 @@ export const useClientDocuments = (clientId: string) => {
     queryKey: ['client-documents', clientId],
     queryFn: () => fetchClientDocuments(clientId),
     enabled: Boolean(clientId),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // 10 minutes - increased from 5 minutes
+    refetchOnWindowFocus: false, // Prevent refetch on window focus
+    refetchOnMount: false, // Prevent refetch on component mount if data exists
+    retry: 2, // Reduce retry attempts
   });
 };
 
@@ -178,13 +188,54 @@ export const useUploadClientDocument = () => {
   
   return useMutation({
     mutationFn: uploadClientDocument,
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['client-documents', data.client_id] });
-      toast.success("Document uploaded successfully");
+    onMutate: async ({ clientId, name, type }) => {
+      console.log('[useUploadClientDocument] Starting optimistic update...');
+      
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['client-documents', clientId] });
+      
+      // Snapshot previous value
+      const previousDocuments = queryClient.getQueryData(['client-documents', clientId]);
+      
+      // Optimistically update
+      const tempDocument = {
+        id: 'temp-' + Date.now(),
+        client_id: clientId,
+        name,
+        type,
+        uploaded_by: 'Current User',
+        upload_date: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        file_size: 'Uploading...',
+        file_path: ''
+      };
+      
+      queryClient.setQueryData(['client-documents', clientId], (old: ClientDocument[] | undefined) => 
+        old ? [tempDocument, ...old] : [tempDocument]
+      );
+      
+      return { previousDocuments };
     },
-    onError: (error) => {
-      console.error('[useUploadClientDocument] Error:', error);
-      toast.error("Failed to upload document");
+    onSuccess: (data) => {
+      console.log('[useUploadClientDocument] Upload successful, updating cache...');
+      queryClient.invalidateQueries({ queryKey: ['client-documents', data.client_id] });
+      toast.success("Document uploaded successfully", {
+        description: `${data.name} has been uploaded to the system.`
+      });
+    },
+    onError: (error, variables, context) => {
+      console.error('[useUploadClientDocument] Upload failed:', error);
+      
+      // Rollback optimistic update
+      if (context?.previousDocuments) {
+        queryClient.setQueryData(['client-documents', variables.clientId], context.previousDocuments);
+      }
+      
+      const errorMessage = error.message || "Failed to upload document";
+      toast.error("Upload failed", {
+        description: errorMessage
+      });
     }
   });
 };

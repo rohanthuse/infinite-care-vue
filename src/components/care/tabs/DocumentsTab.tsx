@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { format } from "date-fns";
 import { File, FileText, FilePlus, Clock, Download, Eye, Edit, Trash2, Upload, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,12 +30,13 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [editingDocument, setEditingDocument] = useState<ClientDocument | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [uploadData, setUploadData] = useState({
     name: '',
-    type: 'General Document'
+    type: ''
   });
   
-  const { data: documents = [], isLoading } = useClientDocuments(clientId);
+  const { data: documents = [], isLoading, error } = useClientDocuments(clientId);
   const uploadDocumentMutation = useUploadClientDocument();
   const updateDocumentMutation = useUpdateClientDocument();
   const deleteDocumentMutation = useDeleteClientDocument();
@@ -55,7 +55,26 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
     'Photo/Image'
   ];
 
-  const handleDrag = (e: React.DragEvent) => {
+  console.log('[DocumentsTab] Render:', { 
+    clientId, 
+    documentsCount: documents.length, 
+    isLoading, 
+    error: error?.message,
+    uploadDialogOpen: isUploadDialogOpen,
+    selectedFileName: selectedFile?.name,
+    uploadDataName: uploadData.name,
+    uploadDataType: uploadData.type
+  });
+
+  const resetUploadState = useCallback(() => {
+    console.log('[DocumentsTab] Resetting upload state');
+    setSelectedFile(null);
+    setUploadData({ name: '', type: '' });
+    setIsUploading(false);
+    setDragActive(false);
+  }, []);
+
+  const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (e.type === "dragenter" || e.type === "dragover") {
@@ -63,55 +82,87 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
     } else if (e.type === "dragleave") {
       setDragActive(false);
     }
-  };
+  }, []);
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
+      console.log('[DocumentsTab] File dropped:', file.name);
       setSelectedFile(file);
       setUploadData({
-        name: file.name,
-        type: 'General Document'
+        name: file.name.replace(/\.[^/.]+$/, ""), // Remove file extension
+        type: documentTypes[0] // Default to first type
       });
       setIsUploadDialogOpen(true);
     }
-  };
+  }, [documentTypes]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      console.log('[DocumentsTab] File selected:', file.name);
       setSelectedFile(file);
       setUploadData({
-        name: file.name,
-        type: 'General Document'
+        name: file.name.replace(/\.[^/.]+$/, ""), // Remove file extension
+        type: documentTypes[0] // Default to first type
       });
       setIsUploadDialogOpen(true);
     }
-  };
+  }, [documentTypes]);
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || isUploading) {
+      console.warn('[DocumentsTab] Cannot upload: missing file or already uploading');
+      return;
+    }
+    
+    // Validate required fields
+    if (!uploadData.name.trim()) {
+      toast.error('Please enter a document name');
+      return;
+    }
+    
+    if (!uploadData.type.trim()) {
+      toast.error('Please select a document type');
+      return;
+    }
+    
+    console.log('[DocumentsTab] Starting upload:', uploadData);
+    setIsUploading(true);
     
     try {
       await uploadDocumentMutation.mutateAsync({
         clientId,
         file: selectedFile,
-        name: uploadData.name,
-        type: uploadData.type,
+        name: uploadData.name.trim(),
+        type: uploadData.type.trim(),
         uploaded_by: user?.email || 'Current User',
       });
+      
+      console.log('[DocumentsTab] Upload completed successfully');
       setIsUploadDialogOpen(false);
-      setSelectedFile(null);
-      setUploadData({ name: '', type: 'General Document' });
+      resetUploadState();
     } catch (error) {
-      console.error('Upload failed:', error);
-      toast.error('Failed to upload document');
+      console.error('[DocumentsTab] Upload failed:', error);
+      // Error is handled by the mutation
+    } finally {
+      setIsUploading(false);
     }
   };
+
+  const handleCloseUploadDialog = useCallback(() => {
+    if (isUploading) {
+      toast.warning('Please wait for the upload to complete');
+      return;
+    }
+    console.log('[DocumentsTab] Closing upload dialog');
+    setIsUploadDialogOpen(false);
+    resetUploadState();
+  }, [isUploading, resetUploadState]);
 
   const handleEdit = (document: ClientDocument) => {
     setEditingDocument(document);
@@ -191,6 +242,21 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
       <Card>
         <CardContent className="flex items-center justify-center h-32">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    console.error('[DocumentsTab] Error loading documents:', error);
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center h-32">
+          <div className="text-center text-red-600">
+            <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+            <p>Failed to load documents</p>
+            <p className="text-sm text-gray-500">{error.message}</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -341,27 +407,43 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
           </div>
         )}
 
-        {/* Upload Dialog */}
-        <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-          <DialogContent>
+        {/* Enhanced Upload Dialog */}
+        <Dialog open={isUploadDialogOpen} onOpenChange={handleCloseUploadDialog}>
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Upload Document</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="filename">Document Name</Label>
+                <Label htmlFor="filename" className="text-sm font-medium">
+                  Document Name <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="filename"
                   value={uploadData.name}
-                  onChange={(e) => setUploadData({...uploadData, name: e.target.value})}
+                  onChange={(e) => {
+                    console.log('[DocumentsTab] Name changed:', e.target.value);
+                    setUploadData(prev => ({ ...prev, name: e.target.value }));
+                  }}
                   placeholder="Enter document name"
+                  className="mt-1"
+                  disabled={isUploading}
                 />
               </div>
               <div>
-                <Label htmlFor="doctype">Document Type</Label>
-                <Select value={uploadData.type} onValueChange={(value) => setUploadData({...uploadData, type: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
+                <Label htmlFor="doctype" className="text-sm font-medium">
+                  Document Type <span className="text-red-500">*</span>
+                </Label>
+                <Select 
+                  value={uploadData.type} 
+                  onValueChange={(value) => {
+                    console.log('[DocumentsTab] Type changed:', value);
+                    setUploadData(prev => ({ ...prev, type: value }));
+                  }}
+                  disabled={isUploading}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select document type" />
                   </SelectTrigger>
                   <SelectContent>
                     {documentTypes.map((type) => (
@@ -382,22 +464,19 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
                 </div>
               )}
             </div>
-            <DialogFooter>
+            <DialogFooter className="gap-2">
               <Button
                 variant="outline"
-                onClick={() => {
-                  setIsUploadDialogOpen(false);
-                  setSelectedFile(null);
-                  setUploadData({ name: '', type: 'General Document' });
-                }}
+                onClick={handleCloseUploadDialog}
+                disabled={isUploading}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleUpload}
-                disabled={uploadDocumentMutation.isPending || !selectedFile || !uploadData.name.trim()}
+                disabled={isUploading || !selectedFile || !uploadData.name.trim() || !uploadData.type.trim()}
               >
-                {uploadDocumentMutation.isPending ? "Uploading..." : "Upload Document"}
+                {isUploading ? "Uploading..." : "Upload Document"}
               </Button>
             </DialogFooter>
           </DialogContent>
