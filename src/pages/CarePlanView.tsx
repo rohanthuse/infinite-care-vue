@@ -7,7 +7,7 @@ import { CarePlanDetail } from "@/components/care/CarePlanDetail";
 import { useCarePlanData } from "@/hooks/useCarePlanData";
 
 export default function CarePlanView() {
-  const { id } = useParams();
+  const { carePlanId } = useParams();
   const navigate = useNavigate();
   const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
   const [scheduleFollowUpDialogOpen, setScheduleFollowUpDialogOpen] = useState(false);
@@ -15,8 +15,35 @@ export default function CarePlanView() {
   const [uploadDocumentDialogOpen, setUploadDocumentDialogOpen] = useState(false);
   const [addEventDialogOpen, setAddEventDialogOpen] = useState(false);
 
+  // Add debugging logs
+  console.log('[CarePlanView] URL params:', { carePlanId });
+  console.log('[CarePlanView] Full window location:', window.location.pathname);
+
+  // Check if we have a care plan ID
+  if (!carePlanId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Missing Care Plan ID</h2>
+          <p className="text-gray-600 mb-4">No care plan ID was provided in the URL.</p>
+          <Button onClick={() => navigate("/care")} variant="outline">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Care Plans
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // Fetch care plan data
-  const { data: carePlanData, isLoading, error } = useCarePlanData(id);
+  const { data: carePlanData, isLoading, error } = useCarePlanData(carePlanId);
+
+  console.log('[CarePlanView] Care plan data state:', { 
+    hasData: !!carePlanData, 
+    isLoading, 
+    error: error?.message,
+    carePlanId 
+  });
 
   if (isLoading) {
     return (
@@ -30,11 +57,16 @@ export default function CarePlanView() {
   }
 
   if (error || !carePlanData) {
+    console.error('[CarePlanView] Error loading care plan:', error);
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Care Plan Not Found</h2>
-          <p className="text-gray-600 mb-4">The requested care plan could not be found.</p>
+          <p className="text-gray-600 mb-2">The requested care plan could not be found.</p>
+          <p className="text-sm text-gray-500 mb-4">Care Plan ID: {carePlanId}</p>
+          {error && (
+            <p className="text-sm text-red-600 mb-4">Error: {error.message}</p>
+          )}
           <Button onClick={() => navigate("/care")} variant="outline">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Care Plans
