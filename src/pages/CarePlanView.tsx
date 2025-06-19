@@ -1,18 +1,52 @@
 
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileEdit, Download, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CarePlanDetail } from "@/components/care/CarePlanDetail";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useCarePlanData } from "@/hooks/useCarePlanData";
+import { useCarePlanDialogs } from "@/components/care/hooks/useCarePlanDialogs";
+import { 
+  useClientProfile, 
+  useClientPersonalInfo, 
+  useClientMedicalInfo, 
+  useClientDietaryRequirements, 
+  useClientPersonalCare, 
+  useClientAssessments, 
+  useClientEquipment, 
+  useClientServiceActions,
+} from "@/hooks/useClientData";
+import { useClientRiskAssessments } from "@/hooks/useClientRiskAssessments";
+import { generatePDF } from "@/utils/pdfGenerator";
+import { toast } from "sonner";
+import { format } from "date-fns";
+
+// Import all the tab components
+import { CarePlanTabBar } from "@/components/care/CarePlanTabBar";
+import { CarePlanDialogs } from "@/components/care/CarePlanDialogs";
+import { PersonalInfoTab } from "@/components/care/tabs/PersonalInfoTab";
+import { AboutMeTab } from "@/components/care/tabs/AboutMeTab";
+import { GoalsTab } from "@/components/care/tabs/GoalsTab";
+import { ActivitiesTab } from "@/components/care/tabs/ActivitiesTab";
+import { NotesTab } from "@/components/care/tabs/NotesTab";
+import { DocumentsTab } from "@/components/care/tabs/DocumentsTab";
+import { AssessmentsTab } from "@/components/care/tabs/AssessmentsTab";
+import { EquipmentTab } from "@/components/care/tabs/EquipmentTab";
+import { DietaryTab } from "@/components/care/tabs/DietaryTab";
+import { PersonalCareTab } from "@/components/care/tabs/PersonalCareTab";
+import { RiskAssessmentsTab } from "@/components/care/tabs/RiskAssessmentsTab";
+import { ServicePlanTab } from "@/components/care/tabs/ServicePlanTab";
+import { ServiceActionsTab } from "@/components/care/tabs/ServiceActionsTab";
+import { EventsLogsTab } from "@/components/care/tabs/EventsLogsTab";
 
 export default function CarePlanView() {
   const { carePlanId, branchId, branchName } = useParams();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("personal");
 
-  // Add debugging logs
   console.log('[CarePlanView] URL params:', { carePlanId, branchId, branchName });
-  console.log('[CarePlanView] Full window location:', window.location.pathname);
 
   // Check if we have a care plan ID
   if (!carePlanId) {
@@ -24,7 +58,8 @@ export default function CarePlanView() {
           <Button 
             onClick={() => {
               if (branchId && branchName) {
-                navigate(`/branch-dashboard/${branchId}/${branchName}`);
+                const decodedBranchName = decodeURIComponent(branchName);
+                navigate(`/branch-dashboard/${branchId}/${decodedBranchName}/care`);
               } else {
                 navigate("/");
               }
@@ -32,7 +67,7 @@ export default function CarePlanView() {
             variant="outline"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
+            Back to Care Plans
           </Button>
         </div>
       </div>
@@ -42,12 +77,20 @@ export default function CarePlanView() {
   // Fetch care plan data
   const { data: carePlanData, isLoading, error } = useCarePlanData(carePlanId);
 
-  console.log('[CarePlanView] Care plan data state:', { 
-    hasData: !!carePlanData, 
-    isLoading, 
-    error: error?.message,
-    carePlanId 
-  });
+  // Fetch all the real data from database
+  const clientId = carePlanData?.client_id || '';
+  const { data: clientProfile } = useClientProfile(clientId);
+  const { data: personalInfo } = useClientPersonalInfo(clientId);
+  const { data: medicalInfo } = useClientMedicalInfo(clientId);
+  const { data: dietaryRequirements } = useClientDietaryRequirements(clientId);
+  const { data: personalCare } = useClientPersonalCare(clientId);
+  const { data: assessments = [] } = useClientAssessments(clientId);
+  const { data: equipment = [] } = useClientEquipment(clientId);
+  const { data: riskAssessments = [] } = useClientRiskAssessments(clientId);
+  const { data: serviceActions = [] } = useClientServiceActions(clientId);
+
+  // Use the custom hook for dialog management
+  const dialogState = useCarePlanDialogs(carePlanId || '', clientId, branchId || '', branchName || '');
 
   if (isLoading) {
     return (
@@ -74,7 +117,8 @@ export default function CarePlanView() {
           <Button 
             onClick={() => {
               if (branchId && branchName) {
-                navigate(`/branch-dashboard/${branchId}/${branchName}`);
+                const decodedBranchName = decodeURIComponent(branchName);
+                navigate(`/branch-dashboard/${branchId}/${decodedBranchName}/care`);
               } else {
                 navigate("/");
               }
@@ -82,7 +126,7 @@ export default function CarePlanView() {
             variant="outline"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
+            Back to Care Plans
           </Button>
         </div>
       </div>
@@ -101,18 +145,289 @@ export default function CarePlanView() {
     avatar: carePlanData.client?.avatar_initials || `${carePlanData.client?.first_name?.[0] || 'U'}${carePlanData.client?.last_name?.[0] || 'P'}`
   };
 
-  const handleClose = () => {
+  const handleBack = () => {
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}`);
+      const decodedBranchName = decodeURIComponent(branchName);
+      navigate(`/branch-dashboard/${branchId}/${decodedBranchName}/care`);
     } else {
       navigate("/");
     }
   };
 
+  const handleEdit = () => {
+    if (branchId && branchName && carePlan.patientId) {
+      const decodedBranchName = decodeURIComponent(branchName);
+      navigate(`/branch-dashboard/${branchId}/${decodedBranchName}/clients/${carePlan.patientId}/edit`);
+    } else {
+      console.error('Missing navigation parameters:', { branchId, branchName, patientId: carePlan.patientId });
+      toast.error("Unable to navigate to edit page. Missing required parameters.");
+    }
+  };
+
+  const handleExportCarePlan = () => {
+    try {
+      generatePDF({
+        id: carePlan.id,
+        title: `Care Plan for ${carePlan.patientName}`,
+        date: format(carePlan.dateCreated, 'yyyy-MM-dd'),
+        status: carePlan.status,
+        signedBy: "System Generated"
+      });
+      toast.success("Care plan exported successfully");
+    } catch (error) {
+      console.error("Error exporting care plan:", error);
+      toast.error("Failed to export care plan");
+    }
+  };
+
+  const handleScheduleFollowUp = () => {
+    console.log('Schedule follow-up called with params:', { branchId, branchName, carePlan });
+    
+    if (!branchId || !branchName) {
+      console.error('Missing branch parameters for follow-up:', { branchId, branchName });
+      toast.error("Unable to navigate to booking page. Missing branch information.");
+      return;
+    }
+
+    try {
+      const decodedBranchName = decodeURIComponent(branchName);
+      const navigationPath = `/branch-dashboard/${branchId}/${decodedBranchName}/bookings/new`;
+      
+      console.log('Navigating to booking page:', navigationPath);
+      
+      navigate(navigationPath, {
+        state: { 
+          clientId: carePlan.patientId, 
+          clientName: carePlan.patientName,
+          carePlanId: carePlan.id 
+        }
+      });
+      
+      toast.success("Navigating to booking page...");
+    } catch (error) {
+      console.error('Navigation error:', error);
+      toast.error("Unable to navigate to booking page. Please try again.");
+    }
+  };
+
+  const handleUploadDocument = () => {
+    toast.info("Document upload functionality available in Documents tab");
+  };
+
   return (
-    <CarePlanDetail
-      carePlan={carePlan}
-      onClose={handleClose}
-    />
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-4">
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" onClick={handleBack} className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Care Plans
+              </Button>
+              <div className="h-6 w-px bg-gray-300" />
+              <div className="flex items-center space-x-3">
+                <Avatar className="h-10 w-10">
+                  <div className="bg-blue-100 text-blue-600 w-full h-full flex items-center justify-center text-sm font-medium">
+                    {carePlan.avatar}
+                  </div>
+                </Avatar>
+                <div>
+                  <h1 className="text-xl font-bold">{carePlan.patientName}</h1>
+                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <span>Plan ID: {carePlan.id}</span>
+                    <span>•</span>
+                    <Badge>{carePlan.status}</Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" onClick={handleExportCarePlan} className="flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                <span>Export</span>
+              </Button>
+              <Button variant="outline" className="flex items-center gap-2" onClick={handleEdit}>
+                <PenLine className="h-4 w-4" />
+                <span>Edit</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <CarePlanTabBar activeTab={activeTab} onChange={setActiveTab} />
+          
+          <div className="mt-6">
+            <TabsContent value="personal">
+              <PersonalInfoTab 
+                client={clientProfile}
+                personalInfo={personalInfo}
+                medicalInfo={medicalInfo}
+                onEditPersonalInfo={() => dialogState.setEditPersonalInfoOpen(true)}
+                onEditMedicalInfo={() => dialogState.setEditMedicalInfoOpen(true)}
+              />
+            </TabsContent>
+            
+            <TabsContent value="aboutme">
+              <AboutMeTab 
+                personalInfo={personalInfo}
+                personalCare={personalCare}
+                onEditAboutMe={() => dialogState.setEditAboutMeOpen(true)}
+              />
+            </TabsContent>
+            
+            <TabsContent value="goals">
+              <GoalsTab 
+                carePlanId={carePlan.id}
+                onAddGoal={() => dialogState.setAddGoalDialogOpen(true)}
+              />
+            </TabsContent>
+            
+            <TabsContent value="activities">
+              <ActivitiesTab 
+                carePlanId={carePlan.id}
+                onAddActivity={() => dialogState.setAddActivityDialogOpen(true)} 
+              />
+            </TabsContent>
+            
+            <TabsContent value="notes">
+              <NotesTab 
+                carePlanId={carePlan.id}
+                onAddNote={() => dialogState.setAddNoteDialogOpen(true)} 
+              />
+            </TabsContent>
+            
+            <TabsContent value="documents">
+              <DocumentsTab clientId={carePlan.patientId} />
+            </TabsContent>
+            
+            <TabsContent value="assessments">
+              <AssessmentsTab 
+                assessments={assessments}
+                onAddAssessment={() => dialogState.setAddAssessmentDialogOpen(true)}
+              />
+            </TabsContent>
+            
+            <TabsContent value="equipment">
+              <EquipmentTab 
+                equipment={equipment}
+                onAddEquipment={() => dialogState.setAddEquipmentDialogOpen(true)}
+              />
+            </TabsContent>
+            
+            <TabsContent value="dietary">
+              <DietaryTab 
+                dietaryRequirements={dietaryRequirements}
+                onEditDietaryRequirements={() => dialogState.setEditDietaryOpen(true)}
+              />
+            </TabsContent>
+            
+            <TabsContent value="personalcare">
+              <PersonalCareTab 
+                personalCare={personalCare}
+                onEditPersonalCare={() => dialogState.setEditPersonalCareOpen(true)}
+              />
+            </TabsContent>
+
+            <TabsContent value="risk">
+              <RiskAssessmentsTab 
+                riskAssessments={riskAssessments}
+                onAddRiskAssessment={() => dialogState.setAddRiskAssessmentDialogOpen(true)}
+              />
+            </TabsContent>
+            
+            <TabsContent value="serviceplan">
+              <ServicePlanTab 
+                serviceActions={serviceActions}
+                onAddServicePlan={() => dialogState.setAddServicePlanDialogOpen(true)}
+              />
+            </TabsContent>
+            
+            <TabsContent value="serviceactions">
+              <ServiceActionsTab 
+                serviceActions={serviceActions}
+                onAddServiceAction={() => dialogState.setAddServiceActionDialogOpen(true)}
+              />
+            </TabsContent>
+            
+            <TabsContent value="eventslogs">
+              <EventsLogsTab 
+                clientId={carePlan.patientId}
+                carePlanId={carePlan.id}
+                patientName={carePlan.patientName}
+                onAddEvent={() => dialogState.setAddEventDialogOpen(true)}
+              />
+            </TabsContent>
+          </div>
+        </Tabs>
+      </div>
+
+      {/* All Dialog Components */}
+      <CarePlanDialogs
+        carePlan={carePlan}
+        clientProfile={clientProfile}
+        personalInfo={personalInfo}
+        medicalInfo={medicalInfo}
+        dietaryRequirements={dietaryRequirements}
+        personalCare={personalCare}
+        dialogs={{
+          addNoteDialogOpen: dialogState.addNoteDialogOpen,
+          setAddNoteDialogOpen: dialogState.setAddNoteDialogOpen,
+          addEventDialogOpen: dialogState.addEventDialogOpen,
+          setAddEventDialogOpen: dialogState.setAddEventDialogOpen,
+          addGoalDialogOpen: dialogState.addGoalDialogOpen,
+          setAddGoalDialogOpen: dialogState.setAddGoalDialogOpen,
+          addActivityDialogOpen: dialogState.addActivityDialogOpen,
+          setAddActivityDialogOpen: dialogState.setAddActivityDialogOpen,
+          addAssessmentDialogOpen: dialogState.addAssessmentDialogOpen,
+          setAddAssessmentDialogOpen: dialogState.setAddAssessmentDialogOpen,
+          addEquipmentDialogOpen: dialogState.addEquipmentDialogOpen,
+          setAddEquipmentDialogOpen: dialogState.setAddEquipmentDialogOpen,
+          addRiskAssessmentDialogOpen: dialogState.addRiskAssessmentDialogOpen,
+          setAddRiskAssessmentDialogOpen: dialogState.setAddRiskAssessmentDialogOpen,
+          addServicePlanDialogOpen: dialogState.addServicePlanDialogOpen,
+          setAddServicePlanDialogOpen: dialogState.setAddServicePlanDialogOpen,
+          addServiceActionDialogOpen: dialogState.addServiceActionDialogOpen,
+          setAddServiceActionDialogOpen: dialogState.setAddServiceActionDialogOpen,
+          editPersonalInfoOpen: dialogState.editPersonalInfoOpen,
+          setEditPersonalInfoOpen: dialogState.setEditPersonalInfoOpen,
+          editMedicalInfoOpen: dialogState.editMedicalInfoOpen,
+          setEditMedicalInfoOpen: dialogState.setEditMedicalInfoOpen,
+          editAboutMeOpen: dialogState.editAboutMeOpen,
+          setEditAboutMeOpen: dialogState.setEditAboutMeOpen,
+          editDietaryOpen: dialogState.editDietaryOpen,
+          setEditDietaryOpen: dialogState.setEditDietaryOpen,
+          editPersonalCareOpen: dialogState.editPersonalCareOpen,
+          setEditPersonalCareOpen: dialogState.setEditPersonalCareOpen,
+        }}
+        mutations={{
+          createNoteMutation: dialogState.createNoteMutation,
+          createEventMutation: dialogState.createEventMutation,
+          createGoalMutation: dialogState.createGoalMutation,
+          createActivityMutation: dialogState.createActivityMutation,
+          createAssessmentMutation: dialogState.createAssessmentMutation,
+          createEquipmentMutation: dialogState.createEquipmentMutation,
+          createRiskAssessmentMutation: dialogState.createRiskAssessmentMutation,
+          createServiceActionMutation: dialogState.createServiceActionMutation,
+          updateClientMutation: dialogState.updateClientMutation,
+        }}
+        handlers={{
+          handleSaveNote: dialogState.handleSaveNote,
+          handleSaveEvent: dialogState.handleSaveEvent,
+          handleSaveGoal: dialogState.handleSaveGoal,
+          handleSaveActivity: dialogState.handleSaveActivity,
+          handleSaveAssessment: dialogState.handleSaveAssessment,
+          handleSaveEquipment: dialogState.handleSaveEquipment,
+          handleSaveRiskAssessment: dialogState.handleSaveRiskAssessment,
+          handleSaveServiceAction: dialogState.handleSaveServiceAction,
+          handleSavePersonalInfo: dialogState.handleSavePersonalInfo,
+        }}
+      />
+    </div>
   );
 }

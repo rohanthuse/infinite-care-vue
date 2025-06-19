@@ -97,9 +97,9 @@ export const CarePlanTabBar: React.FC<CarePlanTabBarProps> = ({ activeTab, onCha
         <span>Personal Care</span>
       </TabsTrigger>
       <TabsTrigger 
-        value="riskassessments" 
-        onClick={() => onChange("riskassessments")}
-        className={`flex items-center gap-1 ${activeTab === "riskassessments" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
+        value="risk" 
+        onClick={() => onChange("risk")}
+        className={`flex items-center gap-1 ${activeTab === "risk" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
       >
         <ShieldAlert className="h-4 w-4" />
         <span>Risk</span>
