@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { X, FileEdit, Download, PenLine, MessageCircle, Clock, Activity, FileBarChart2 } from "lucide-react";
 import { format } from "date-fns";
@@ -63,18 +62,18 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     if (onClose) {
       onClose();
     } else {
-      // Navigate back to the care plans page with proper branch context
+      // Navigate back to the main branch dashboard
       if (branchId && branchName) {
-        navigate(`/branch-dashboard/${branchId}/${branchName}/care`);
+        navigate(`/branch-dashboard/${branchId}/${branchName}`);
       } else {
-        // Fallback navigation
-        navigate("/care");
+        // Fallback navigation to main dashboard
+        navigate("/");
       }
     }
   };
 
   const handleEdit = () => {
-    // Navigate to client edit page instead of care plan edit
+    // Navigate to client edit page
     if (branchId && branchName && carePlan.patientId) {
       navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${carePlan.patientId}/edit`);
     } else {

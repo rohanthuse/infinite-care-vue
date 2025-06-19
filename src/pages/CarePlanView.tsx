@@ -24,15 +24,15 @@ export default function CarePlanView() {
           <Button 
             onClick={() => {
               if (branchId && branchName) {
-                navigate(`/branch-dashboard/${branchId}/${branchName}/care`);
+                navigate(`/branch-dashboard/${branchId}/${branchName}`);
               } else {
-                navigate("/care");
+                navigate("/");
               }
             }} 
             variant="outline"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Care Plans
+            Back to Dashboard
           </Button>
         </div>
       </div>
@@ -74,15 +74,15 @@ export default function CarePlanView() {
           <Button 
             onClick={() => {
               if (branchId && branchName) {
-                navigate(`/branch-dashboard/${branchId}/${branchName}/care`);
+                navigate(`/branch-dashboard/${branchId}/${branchName}`);
               } else {
-                navigate("/care");
+                navigate("/");
               }
             }} 
             variant="outline"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Care Plans
+            Back to Dashboard
           </Button>
         </div>
       </div>
@@ -103,9 +103,9 @@ export default function CarePlanView() {
 
   const handleClose = () => {
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/care`);
+      navigate(`/branch-dashboard/${branchId}/${branchName}`);
     } else {
-      navigate("/care");
+      navigate("/");
     }
   };
 
