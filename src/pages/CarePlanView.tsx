@@ -297,7 +297,7 @@ export default function CarePlanView() {
             
             <TabsContent value="notes">
               <NotesTab 
-                carePlanId={carePlan.id}
+                clientId={carePlan.patientId}
                 onAddNote={() => dialogState.setAddNoteDialogOpen(true)} 
               />
             </TabsContent>
@@ -308,6 +308,7 @@ export default function CarePlanView() {
             
             <TabsContent value="assessments">
               <AssessmentsTab 
+                clientId={carePlan.patientId}
                 assessments={assessments}
                 onAddAssessment={() => dialogState.setAddAssessmentDialogOpen(true)}
               />
@@ -315,6 +316,7 @@ export default function CarePlanView() {
             
             <TabsContent value="equipment">
               <EquipmentTab 
+                clientId={carePlan.patientId}
                 equipment={equipment}
                 onAddEquipment={() => dialogState.setAddEquipmentDialogOpen(true)}
               />
@@ -336,6 +338,7 @@ export default function CarePlanView() {
 
             <TabsContent value="risk">
               <RiskAssessmentsTab 
+                clientId={carePlan.patientId}
                 riskAssessments={riskAssessments}
                 onAddRiskAssessment={() => dialogState.setAddRiskAssessmentDialogOpen(true)}
               />
