@@ -47,6 +47,7 @@ export default function CarePlanView() {
   const [activeTab, setActiveTab] = useState("personal");
 
   console.log('[CarePlanView] URL params:', { carePlanId, branchId, branchName });
+  console.log('[CarePlanView] Current location:', window.location.pathname);
 
   // Check if we have a care plan ID
   if (!carePlanId) {
@@ -146,11 +147,36 @@ export default function CarePlanView() {
   };
 
   const handleBack = () => {
-    if (branchId && branchName) {
-      const decodedBranchName = decodeURIComponent(branchName);
-      navigate(`/branch-dashboard/${branchId}/${decodedBranchName}/care`);
+    console.log('[CarePlanView] handleBack called with params:', { branchId, branchName });
+    console.log('[CarePlanView] Current pathname:', window.location.pathname);
+    
+    // Extract branchId and branchName from current URL if not available in params
+    let finalBranchId = branchId;
+    let finalBranchName = branchName;
+    
+    if (!finalBranchId || !finalBranchName) {
+      // Parse the current pathname to extract branch info
+      const pathSegments = window.location.pathname.split('/');
+      console.log('[CarePlanView] Path segments:', pathSegments);
+      
+      // Expected format: /branch-dashboard/{branchId}/{branchName}/care-plan/{carePlanId}
+      if (pathSegments.length >= 4 && pathSegments[1] === 'branch-dashboard') {
+        finalBranchId = pathSegments[2];
+        finalBranchName = pathSegments[3];
+        console.log('[CarePlanView] Extracted from URL:', { finalBranchId, finalBranchName });
+      }
+    }
+    
+    if (finalBranchId && finalBranchName) {
+      const decodedBranchName = decodeURIComponent(finalBranchName);
+      const carePagePath = `/branch-dashboard/${finalBranchId}/${encodeURIComponent(decodedBranchName)}/care`;
+      console.log('[CarePlanView] Navigating to:', carePagePath);
+      navigate(carePagePath);
     } else {
-      navigate("/");
+      console.error('[CarePlanView] Could not determine branch information for navigation');
+      toast.error("Could not determine the correct care plans page. Please navigate manually.");
+      // As a last resort, go back in browser history
+      window.history.back();
     }
   };
 
