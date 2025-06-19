@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -56,7 +57,19 @@ const uploadClientDocument = async ({ clientId, file, name, type, uploaded_by }:
     const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
     const filePath = `${clientId}/${fileName}`;
 
-    console.log('[uploadClientDocument] Creating database record...');
+    console.log('[uploadClientDocument] Uploading to storage...');
+    
+    // Upload file to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('client-documents')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error('[uploadClientDocument] Storage upload error:', uploadError);
+      throw uploadError;
+    }
+
+    console.log('[uploadClientDocument] Storage upload successful, creating database record...');
     
     const { data, error } = await supabase
       .from('client_documents')
@@ -66,13 +79,17 @@ const uploadClientDocument = async ({ clientId, file, name, type, uploaded_by }:
         type: type.trim(),
         uploaded_by,
         file_size: `${Math.round(file.size / 1024)} KB`,
-        file_path: filePath,
+        file_path: uploadData.path,
       })
       .select()
       .single();
 
     if (error) {
       console.error('[uploadClientDocument] Database error:', error);
+      // If database insert fails, clean up the uploaded file
+      await supabase.storage
+        .from('client-documents')
+        .remove([uploadData.path]);
       throw error;
     }
 
@@ -110,6 +127,31 @@ const updateClientDocument = async ({ id, name, type, uploaded_by }: {
 const deleteClientDocument = async (id: string) => {
   console.log('[deleteClientDocument] Deleting:', id);
   
+  // First get the document to find the file path
+  const { data: doc, error: fetchError } = await supabase
+    .from('client_documents')
+    .select('file_path')
+    .eq('id', id)
+    .single();
+
+  if (fetchError) {
+    console.error('[deleteClientDocument] Fetch error:', fetchError);
+    throw fetchError;
+  }
+
+  // Delete from storage if file path exists
+  if (doc.file_path) {
+    const { error: storageError } = await supabase.storage
+      .from('client-documents')
+      .remove([doc.file_path]);
+    
+    if (storageError) {
+      console.error('[deleteClientDocument] Storage deletion error:', storageError);
+      // Continue with database deletion even if storage deletion fails
+    }
+  }
+
+  // Delete from database
   const { error } = await supabase
     .from('client_documents')
     .delete()
@@ -124,19 +166,26 @@ const deleteClientDocument = async (id: string) => {
 };
 
 const viewClientDocument = async ({ filePath }: { filePath: string }) => {
-  console.log('[viewClientDocument] Opening:', filePath);
-  
-  // In a real implementation, this would:
-  // 1. Get a signed URL from Supabase Storage
-  // 2. Open the document in a new tab or modal viewer
-  // For now, we'll show a mock success message
+  console.log('[viewClientDocument] Getting signed URL for:', filePath);
   
   try {
-    // Mock successful viewing
-    const viewUrl = `https://example.com/documents/${filePath}`;
-    window.open(viewUrl, '_blank');
-    toast.success("Document viewer opened");
-    return { success: true };
+    // Get a signed URL from Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('client-documents')
+      .createSignedUrl(filePath, 3600); // Valid for 1 hour
+
+    if (error) {
+      console.error('[viewClientDocument] Error getting signed URL:', error);
+      throw error;
+    }
+
+    if (data?.signedUrl) {
+      window.open(data.signedUrl, '_blank');
+      toast.success("Document opened in new tab");
+      return { success: true };
+    } else {
+      throw new Error('Failed to generate document URL');
+    }
   } catch (error) {
     console.error('[viewClientDocument] Error:', error);
     toast.error("Unable to open document viewer");
@@ -147,23 +196,30 @@ const viewClientDocument = async ({ filePath }: { filePath: string }) => {
 const downloadClientDocument = async ({ filePath, fileName }: { filePath: string; fileName: string }) => {
   console.log('[downloadClientDocument] Downloading:', { filePath, fileName });
   
-  // In a real implementation, this would:
-  // 1. Get a signed URL from Supabase Storage
-  // 2. Trigger a download
-  // For now, we'll show a mock success message
-  
   try {
-    // Mock successful download
-    const downloadUrl = `https://example.com/documents/${filePath}`;
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast.success(`Download started for ${fileName}`);
-    return { success: true };
+    // Get a signed URL for download
+    const { data, error } = await supabase.storage
+      .from('client-documents')
+      .createSignedUrl(filePath, 3600);
+
+    if (error) {
+      console.error('[downloadClientDocument] Error getting signed URL:', error);
+      throw error;
+    }
+
+    if (data?.signedUrl) {
+      const link = document.createElement('a');
+      link.href = data.signedUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success(`Download started for ${fileName}`);
+      return { success: true };
+    } else {
+      throw new Error('Failed to generate download URL');
+    }
   } catch (error) {
     console.error('[downloadClientDocument] Error:', error);
     toast.error("Download failed");
@@ -176,9 +232,11 @@ export const useClientDocuments = (clientId: string) => {
     queryKey: ['client-documents', clientId],
     queryFn: () => fetchClientDocuments(clientId),
     enabled: Boolean(clientId),
-    staleTime: 10 * 60 * 1000, // 10 minutes - increased from 5 minutes
+    staleTime: 30 * 60 * 1000, // 30 minutes - increased to prevent frequent refetches
     refetchOnWindowFocus: false, // Prevent refetch on window focus
     refetchOnMount: false, // Prevent refetch on component mount if data exists
+    refetchOnReconnect: false, // Prevent refetch when network reconnects
+    refetchInterval: false, // Disable automatic periodic refetches
     retry: 2, // Reduce retry attempts
   });
 };
@@ -218,8 +276,18 @@ export const useUploadClientDocument = () => {
       return { previousDocuments };
     },
     onSuccess: (data) => {
-      console.log('[useUploadClientDocument] Upload successful, updating cache...');
-      queryClient.invalidateQueries({ queryKey: ['client-documents', data.client_id] });
+      console.log('[useUploadClientDocument] Upload successful, updating cache with real data...');
+      
+      // Update the cache with the real document data instead of invalidating
+      queryClient.setQueryData(['client-documents', data.client_id], (old: ClientDocument[] | undefined) => {
+        if (!old) return [data];
+        
+        // Replace the temporary document with the real one
+        return old.map(doc => 
+          doc.id.startsWith('temp-') ? data : doc
+        );
+      });
+      
       toast.success("Document uploaded successfully", {
         description: `${data.name} has been uploaded to the system.`
       });
@@ -246,7 +314,11 @@ export const useUpdateClientDocument = () => {
   return useMutation({
     mutationFn: updateClientDocument,
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['client-documents', data.client_id] });
+      // Update cache directly instead of invalidating
+      queryClient.setQueryData(['client-documents', data.client_id], (old: ClientDocument[] | undefined) => {
+        if (!old) return [data];
+        return old.map(doc => doc.id === data.id ? data : doc);
+      });
       toast.success("Document updated successfully");
     },
     onError: (error) => {
@@ -261,8 +333,23 @@ export const useDeleteClientDocument = () => {
   
   return useMutation({
     mutationFn: deleteClientDocument,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['client-documents'] });
+    onSuccess: (result, variables) => {
+      // Update cache directly by removing the deleted document
+      queryClient.setQueryData(['client-documents'], (old: ClientDocument[] | undefined) => {
+        if (!old) return [];
+        return old.filter(doc => doc.id !== variables);
+      });
+      
+      // Also update specific client cache
+      queryClient.getQueryCache().findAll(['client-documents']).forEach(query => {
+        if (query.queryKey[0] === 'client-documents' && query.queryKey[1]) {
+          queryClient.setQueryData(query.queryKey, (old: ClientDocument[] | undefined) => {
+            if (!old) return [];
+            return old.filter(doc => doc.id !== variables);
+          });
+        }
+      });
+      
       toast.success("Document deleted successfully");
     },
     onError: (error) => {
