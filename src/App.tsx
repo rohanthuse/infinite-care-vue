@@ -1,97 +1,77 @@
 
-import React, { useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import SuperAdminLogin from "./pages/SuperAdminLogin";
-import CarerLogin from "./pages/CarerLogin";
-import ClientLogin from "./pages/ClientLogin";
 import Dashboard from "./pages/Dashboard";
-import Services from "./pages/Services";
-import Settings from "./pages/Settings";
-import Hobbies from "./pages/Hobbies";
-import Skills from "./pages/Skills";
-import MedicalMental from "./pages/MedicalMental";
-import TypeOfWork from "./pages/TypeOfWork";
-import BodyMapPoints from "./pages/BodyMapPoints";
-import Branch from "./pages/Branch";
-import BranchDetails from "./pages/BranchDetails";
 import BranchDashboard from "./pages/BranchDashboard";
-import BranchAdmins from "./pages/BranchAdmins";
-import Agreement from "./pages/Agreement";
+import CarerDashboard from "./pages/CarerDashboard";
+import CarerLogin from "./pages/CarerLogin";
+import CarerProfile from "./pages/carer/CarerProfile";
 import CarerProfilePage from "./pages/CarerProfilePage";
-import ApplicationDetailsPage from "./components/carers/ApplicationDetailsPage";
-import PostJobPage from "./components/carers/PostJobPage";
-import Notifications from "./pages/Notifications";
-import Workflow from "./pages/Workflow";
-import KeyParameters from "./pages/KeyParameters";
-import CarePlanView from "./pages/CarePlanView";
-import TaskMatrix from "./pages/TaskMatrix";
-import TrainingMatrix from "./pages/TrainingMatrix";
-import EventsLogs from "./pages/EventsLogs";
+import ClientPortal from "./pages/ClientPortal";
+import ClientLogin from "./pages/ClientLogin";
+import ClientProfile from "./pages/client/ClientProfile";
+import ClientDashboard from "./pages/client/ClientDashboard";
+import ClientAppointments from "./pages/client/ClientAppointments";
+import ClientCommunications from "./pages/client/ClientCommunications";
+import ClientBilling from "./pages/client/ClientBilling";
+import ClientCarePlans from "./pages/client/ClientCarePlans";
+import ClientDocuments from "./pages/client/ClientDocuments";
 import Attendance from "./pages/Attendance";
-import FormBuilder from "./pages/FormBuilder";
-import Documents from "./pages/Documents";
-import Library from "./pages/Library";
-import ThirdPartyAccess from "./pages/ThirdPartyAccess";
-import Reports from "./pages/Reports";
-import BookingApprovals from "./pages/BookingApprovals";
-
-// Import the CarerRoutes component
-import CarerRoutes from "./routes/CarerRoutes";
-
-// Import the ClientRoutes component
-import ClientRoutes from "./routes/ClientRoutes";
-
-// Import AdminRoutes
-import AdminRoutes from "./routes/AdminRoutes";
-
-// Import AuthProvider
+import Agreement from "./pages/Agreement";
+import Accounting from "./pages/Accounting";
 import { AuthProvider } from "./contexts/AuthContext";
-
-// Import the TaskProvider context
 import { TaskProvider } from "./contexts/TaskContext";
 
-import "./styles/signatures.css"; // Import the signatures styles
+const queryClient = new QueryClient();
 
-function App() {
-  const [queryClient] = useState(() => new QueryClient());
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <TaskProvider>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/super-admin" element={<SuperAdminLogin />} />
-                <Route path="/carer-login" element={<CarerLogin />} />
-                <Route path="/client-login" element={<ClientLogin />} />
-
-                {/* Admin Routes are now protected */}
-                {AdminRoutes()}
-                
-                {/* Use the CarerRoutes */}
-                {CarerRoutes()}
-                
-                {/* Use the ClientRoutes */}
-                {ClientRoutes()}
-                
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </TaskProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-}
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AuthProvider>
+          <TaskProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              
+              {/* Admin Dashboard Routes */}
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
+              
+              {/* Carer Routes */}
+              <Route path="/carer-login" element={<CarerLogin />} />
+              <Route path="/carer-dashboard/*" element={<CarerDashboard />} />
+              <Route path="/carer-dashboard/profile" element={<CarerProfile />} />
+              
+              {/* Individual Carer Profile Route */}
+              <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
+              
+              {/* Client Routes */}
+              <Route path="/client-portal" element={<ClientPortal />} />
+              <Route path="/client-login" element={<ClientLogin />} />
+              <Route path="/client-dashboard/*" element={<ClientDashboard />} />
+              <Route path="/client-dashboard/profile" element={<ClientProfile />} />
+              <Route path="/client-dashboard/appointments" element={<ClientAppointments />} />
+              <Route path="/client-dashboard/communications" element={<ClientCommunications />} />
+              <Route path="/client-dashboard/billing" element={<ClientBilling />} />
+              <Route path="/client-dashboard/care-plans" element={<ClientCarePlans />} />
+              <Route path="/client-dashboard/documents" element={<ClientDocuments />} />
+              
+              {/* Standalone Pages */}
+              <Route path="/attendance" element={<Attendance />} />
+              <Route path="/agreement" element={<Agreement />} />
+              <Route path="/accounting" element={<Accounting />} />
+            </Routes>
+          </TaskProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;

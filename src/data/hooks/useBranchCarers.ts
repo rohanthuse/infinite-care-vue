@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -58,6 +57,24 @@ export async function fetchBranchCarers(branchId?: string) {
   
   console.log('[fetchBranchCarers] Retrieved carers:', data?.length);
   return data || [];
+}
+
+export async function fetchCarerProfile(carerId: string) {
+  console.log('[fetchCarerProfile] Fetching carer profile for:', carerId);
+  
+  const { data, error } = await supabase
+    .from("staff")
+    .select("*")
+    .eq("id", carerId)
+    .single();
+
+  if (error) {
+    console.error('[fetchCarerProfile] Error:', error);
+    throw error;
+  }
+  
+  console.log('[fetchCarerProfile] Retrieved carer profile:', data);
+  return data;
 }
 
 export async function createCarer(carerData: CreateCarerData) {
@@ -138,6 +155,17 @@ export function useBranchCarers(branchId?: string) {
   });
 }
 
+// New hook for fetching individual carer profile
+export function useCarerProfile(carerId?: string) {
+  return useQuery({
+    queryKey: ["carer-profile", carerId],
+    queryFn: () => fetchCarerProfile(carerId!),
+    enabled: !!carerId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+  });
+}
+
 export function useCreateCarer() {
   const queryClient = useQueryClient();
   
@@ -166,6 +194,7 @@ export function useUpdateCarer() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["branch-carers", data.branch_id] });
       queryClient.invalidateQueries({ queryKey: ["staff-profile", data.id] });
+      queryClient.invalidateQueries({ queryKey: ["carer-profile", data.id] });
       toast.success("Carer updated successfully");
     },
     onError: (error) => {

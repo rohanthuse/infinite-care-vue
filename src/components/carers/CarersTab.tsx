@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
@@ -91,7 +90,8 @@ export const CarersTab = ({ branchId, branchName }: CarersTabProps) => {
   };
 
   const handleViewCarer = (carerId: string) => {
-    navigate(`/branch-dashboard/${id}/${branchName}/${carerId}`);
+    // Fixed navigation URL to include /carers/ segment
+    navigate(`/branch-dashboard/${id}/${branchName}/carers/${carerId}`);
   };
 
   const handleDeleteCarer = async (carerId: string, carerName: string) => {
