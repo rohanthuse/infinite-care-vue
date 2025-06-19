@@ -19,9 +19,8 @@ export const AutoUpdateCarePlan: React.FC = () => {
       console.log('Found Jane Smith in staff:', janeSmith);
       
       // Update the care plan that's currently assigned to "Dr. Emily Smith"
-      // We'll use a known care plan ID that needs to be updated
-      // Note: In a real scenario, you'd query for care plans with "Dr. Emily Smith" as provider
-      const carePlanIdToUpdate = 'ccf8a8d3-3d4e-4b7a-9e1c-f2a8d9e6b3c7'; // This should be the actual ID
+      // Using the correct UUID from the database mapping
+      const carePlanIdToUpdate = 'aba7debb-233d-436c-9f6a-3900f79df14b'; // Emily Smith's actual care plan UUID
       
       updateAssignmentMutation.mutate({
         carePlanId: carePlanIdToUpdate,

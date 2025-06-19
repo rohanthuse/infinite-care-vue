@@ -81,10 +81,10 @@ export default function CarePlanView() {
   // Fetch all the real data from database
   const clientId = carePlanData?.client_id || '';
   const { data: clientProfile } = useClientProfile(clientId);
-  const { data: personalInfo } = useClientPersonalInfo(clientId);
+  const { data: personalInfo, isLoading: isLoadingPersonalInfo } = useClientPersonalInfo(clientId);
   const { data: medicalInfo } = useClientMedicalInfo(clientId);
   const { data: dietaryRequirements } = useClientDietaryRequirements(clientId);
-  const { data: personalCare } = useClientPersonalCare(clientId);
+  const { data: personalCare, isLoading: isLoadingPersonalCare } = useClientPersonalCare(clientId);
   const { data: assessments = [] } = useClientAssessments(clientId);
   const { data: equipment = [] } = useClientEquipment(clientId);
   const { data: riskAssessments = [] } = useClientRiskAssessments(clientId);
@@ -330,6 +330,8 @@ export default function CarePlanView() {
               <AboutMeTab 
                 personalInfo={personalInfo}
                 personalCare={personalCare}
+                isLoadingPersonalInfo={isLoadingPersonalInfo}
+                isLoadingPersonalCare={isLoadingPersonalCare}
                 onEditAboutMe={() => dialogState.setEditAboutMeOpen(true)}
               />
             </TabsContent>

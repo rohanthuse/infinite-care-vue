@@ -28,21 +28,26 @@ interface AboutMeTabProps {
     created_at: string;
     updated_at: string;
   } | null;
+  isLoadingPersonalInfo?: boolean;
+  isLoadingPersonalCare?: boolean;
   onEditAboutMe?: () => void;
 }
 
 export const AboutMeTab: React.FC<AboutMeTabProps> = ({ 
   personalInfo, 
   personalCare,
+  isLoadingPersonalInfo = false,
+  isLoadingPersonalCare = false,
   onEditAboutMe 
 }) => {
-  // Handle loading state if data is not available
-  if (!personalInfo && !personalCare) {
+  // Show loading state only when actually loading
+  if (isLoadingPersonalInfo || isLoadingPersonalCare) {
     return (
       <div className="space-y-6">
         <Card>
           <CardContent className="flex items-center justify-center h-32">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-2">Loading information...</span>
           </CardContent>
         </Card>
       </div>
@@ -106,68 +111,76 @@ export const AboutMeTab: React.FC<AboutMeTabProps> = ({
           <CardDescription>Personal care needs and preferences</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
-          <div className="space-y-4">
-            {personalCare?.personal_hygiene_needs && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Personal Hygiene Needs</h3>
-                <p className="text-base">{personalCare.personal_hygiene_needs}</p>
-              </div>
-            )}
-            
-            {personalCare?.bathing_preferences && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Bathing Preferences</h3>
-                <p className="text-base">{personalCare.bathing_preferences}</p>
-              </div>
-            )}
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {personalCare?.dressing_assistance_level && (
+          {personalCare ? (
+            <div className="space-y-4">
+              {personalCare.personal_hygiene_needs && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Dressing Assistance</h3>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    {personalCare.dressing_assistance_level}
-                  </Badge>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">Personal Hygiene Needs</h3>
+                  <p className="text-base">{personalCare.personal_hygiene_needs}</p>
                 </div>
               )}
               
-              {personalCare?.toileting_assistance_level && (
+              {personalCare.bathing_preferences && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Toileting Assistance</h3>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    {personalCare.toileting_assistance_level}
-                  </Badge>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">Bathing Preferences</h3>
+                  <p className="text-base">{personalCare.bathing_preferences}</p>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {personalCare.dressing_assistance_level && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 mb-1">Dressing Assistance</h3>
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                      {personalCare.dressing_assistance_level}
+                    </Badge>
+                  </div>
+                )}
+                
+                {personalCare.toileting_assistance_level && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 mb-1">Toileting Assistance</h3>
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                      {personalCare.toileting_assistance_level}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+              
+              {personalCare.sleep_patterns && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">Sleep Patterns</h3>
+                  <p className="text-base">{personalCare.sleep_patterns}</p>
+                </div>
+              )}
+              
+              {personalCare.comfort_measures && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">Comfort Measures</h3>
+                  <p className="text-base">{personalCare.comfort_measures}</p>
+                </div>
+              )}
+              
+              {personalCare.behavioral_notes && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">Behavioral Notes</h3>
+                  <p className="text-base">{personalCare.behavioral_notes}</p>
                 </div>
               )}
             </div>
-            
-            {personalCare?.sleep_patterns && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Sleep Patterns</h3>
-                <p className="text-base">{personalCare.sleep_patterns}</p>
-              </div>
-            )}
-            
-            {personalCare?.comfort_measures && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Comfort Measures</h3>
-                <p className="text-base">{personalCare.comfort_measures}</p>
-              </div>
-            )}
-            
-            {personalCare?.behavioral_notes && (
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Behavioral Notes</h3>
-                <p className="text-base">{personalCare.behavioral_notes}</p>
-              </div>
-            )}
-
-            {!personalCare && (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No personal care information available</p>
-              </div>
-            )}
-          </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No personal care information available</p>
+              <Button 
+                variant="outline" 
+                className="mt-4" 
+                onClick={onEditAboutMe}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Add Care Information
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
