@@ -48,6 +48,7 @@ import { resolveCarePlanId, getDisplayCarePlanId } from "@/utils/carePlanIdMappi
 import { useCarePlanData } from "@/hooks/useCarePlanData";
 import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
 import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
+import { useClientDocuments, useUploadClientDocument } from "@/hooks/useClientDocuments";
 import { useAuth } from "@/hooks/useAuth";
 
 const mockCarePlans = [
@@ -96,11 +97,13 @@ const CarePlanView = () => {
   const { data: carePlanData, isLoading: isCarePlanLoading, error: carePlanError } = useCarePlanData(resolvedCarePlanId);
   const { data: goalsData, isLoading: isGoalsLoading, error: goalsError } = useCarePlanGoals(resolvedCarePlanId);
   
-  // Use the client_id from care plan data for notes
+  // Use the client_id from care plan data for notes and documents
   const clientId = carePlanData?.client_id || '';
   const { data: notesData, isLoading: isNotesLoading, error: notesError } = useClientNotes(clientId);
+  const { data: documentsData, isLoading: isDocumentsLoading, error: documentsError } = useClientDocuments(clientId);
   const createNoteMutation = useCreateClientNote();
-
+  const uploadDocumentMutation = useUploadClientDocument();
+  
   // Debug logging for data fetching
   console.log('[CarePlanView] Data fetching status:', {
     carePlanData,
@@ -111,7 +114,10 @@ const CarePlanView = () => {
     goalsError,
     notesData,
     isNotesLoading,
-    notesError
+    notesError,
+    documentsData,
+    isDocumentsLoading,
+    documentsError
   });
 
   // Get current user's role and name for author field - simplified to just show "Admin"
@@ -147,6 +153,15 @@ const CarePlanView = () => {
     date: new Date(note.created_at),
     author: note.author,
     content: note.content
+  })) || [];
+
+  // Transform database documents to match component expected format
+  const transformedDocuments = documentsData?.map(doc => ({
+    name: doc.name,
+    date: new Date(doc.upload_date),
+    type: doc.type,
+    author: doc.uploaded_by,
+    file_path: doc.file_path // This is crucial for view/download functionality
   })) || [];
 
   const handlePrintCarePlan = () => {
@@ -227,22 +242,37 @@ const CarePlanView = () => {
     });
   };
 
-  const handleSaveDocument = (document: { name: string; date: Date; type: string; author: string; file: File }) => {
-    console.log("Uploading document:", document);
-    
-    const newDocument = {
-      name: document.name,
-      date: document.date,
-      type: document.type,
-      author: document.author
-    };
-    
-    mockPatientData.documents.unshift(newDocument);
-    
-    toast({
-      title: "Document uploaded",
-      description: `The document "${document.name}" has been uploaded.`
-    });
+  const handleSaveDocument = async (document: { name: string; date: Date; type: string; author: string; file: File }) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot upload document.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await uploadDocumentMutation.mutateAsync({
+        clientId,
+        file: document.file,
+        name: document.name,
+        type: document.type,
+        uploaded_by: getCurrentUserAuthor(),
+      });
+
+      toast({
+        title: "Document uploaded",
+        description: `The document "${document.name}" has been uploaded successfully.`
+      });
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload document. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSaveEvent = (event: any) => {
@@ -685,10 +715,16 @@ const CarePlanView = () => {
                     </TabsContent>
                     
                     <TabsContent value="documents" className="space-y-4">
-                      <DocumentsTab 
-                        documents={mockPatientData.documents} 
-                        onUploadDocument={() => setDocumentDialogOpen(true)}
-                      />
+                      {isDocumentsLoading ? (
+                        <div className="flex items-center justify-center h-32">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        </div>
+                      ) : (
+                        <DocumentsTab 
+                          documents={transformedDocuments} 
+                          onUploadDocument={() => setDocumentDialogOpen(true)}
+                        />
+                      )}
                     </TabsContent>
                     
                     <TabsContent value="assessments" className="space-y-4">
