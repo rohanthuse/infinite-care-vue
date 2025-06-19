@@ -1,6 +1,6 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { resolveCarePlanId } from '@/utils/carePlanIdMapping';
 
 export interface CarePlanData {
   id: string;
@@ -49,6 +49,12 @@ export interface CarePlanWithDetails extends CarePlanData {
 }
 
 const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {
+  console.log(`[fetchCarePlanData] Input care plan ID: ${carePlanId}`);
+  
+  // Resolve the care plan ID to get the actual UUID
+  const resolvedId = resolveCarePlanId(carePlanId);
+  console.log(`[fetchCarePlanData] Resolved care plan ID: ${resolvedId}`);
+
   const { data, error } = await supabase
     .from('client_care_plans')
     .select(`
@@ -60,7 +66,7 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {
         avatar_initials
       )
     `)
-    .eq('id', carePlanId)
+    .eq('id', resolvedId)
     .single();
 
   if (error) {
@@ -72,6 +78,8 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {
 };
 
 const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePlanWithDetails[]> => {
+  console.log(`[fetchClientCarePlansWithDetails] Input client ID: ${clientId}`);
+
   const { data, error } = await supabase
     .from('client_care_plans')
     .select(`
