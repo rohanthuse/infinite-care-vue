@@ -24,7 +24,7 @@ export interface CarePlanData {
     id: string;
     first_name: string;
     last_name: string;
-  };
+  } | null;
 }
 
 export interface CarePlanWithDetails extends CarePlanData {
@@ -86,7 +86,13 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {
     throw error;
   }
 
-  return data;
+  // Handle the case where staff might be null or undefined
+  const transformedData: CarePlanData = {
+    ...data,
+    staff: data.staff || null
+  };
+
+  return transformedData;
 };
 
 const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePlanWithDetails[]> => {
@@ -113,7 +119,13 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
     throw error;
   }
 
-  return data || [];
+  // Transform the data to handle potential null staff relations
+  const transformedData: CarePlanWithDetails[] = (data || []).map(item => ({
+    ...item,
+    staff: item.staff || null
+  }));
+
+  return transformedData;
 };
 
 export const useCarePlanData = (carePlanId: string) => {
