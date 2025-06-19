@@ -1,6 +1,5 @@
-
 import React from "react";
-import { User, Phone, Heart, Edit2 } from "lucide-react";
+import { User, Phone, Heart, Edit2, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,8 +20,22 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   onEditPersonalInfo,
   onEditMedicalInfo
 }) => {
+  // Check if medical info exists and has any data
+  const hasMedicalInfo = medicalInfo && (
+    (medicalInfo.allergies && medicalInfo.allergies.length > 0) ||
+    (medicalInfo.medical_conditions && medicalInfo.medical_conditions.length > 0) ||
+    (medicalInfo.current_medications && medicalInfo.current_medications.length > 0) ||
+    medicalInfo.medical_history ||
+    medicalInfo.mobility_status ||
+    medicalInfo.cognitive_status ||
+    medicalInfo.communication_needs ||
+    (medicalInfo.sensory_impairments && medicalInfo.sensory_impairments.length > 0) ||
+    medicalInfo.mental_health_status
+  );
+
   return (
     <div className="space-y-4">
+      {/* Personal Information Card - Keep existing code */}
       <Card className="overflow-hidden border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
         <CardHeader className="pb-3 bg-gradient-to-r from-med-50 to-white border-b border-med-100">
           <div className="flex items-center justify-between">
@@ -87,6 +100,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         </CardContent>
       </Card>
       
+      {/* Medical Information Card - Updated to handle empty state */}
       <Card className="overflow-hidden border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
         <CardHeader className="pb-3 bg-gradient-to-r from-med-50 to-white border-b border-med-100">
           <div className="flex items-center justify-between">
@@ -96,134 +110,161 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             </div>
             {onEditMedicalInfo && (
               <Button variant="outline" size="sm" onClick={onEditMedicalInfo}>
-                <Edit2 className="h-4 w-4 mr-2" />
-                Edit
+                {hasMedicalInfo ? (
+                  <>
+                    <Edit2 className="h-4 w-4 mr-2" />
+                    Edit
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Medical Information
+                  </>
+                )}
               </Button>
             )}
           </div>
           <CardDescription>Allergies, conditions, and current medications</CardDescription>
         </CardHeader>
         <CardContent className="p-6">
-          <div className="space-y-6">
-            {medicalInfo?.allergies && medicalInfo.allergies.length > 0 && (
-              <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                  <Heart className="h-5 w-5 mr-2 text-red-500" />
-                  Allergies
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {medicalInfo.allergies.map((allergy: string, index: number) => (
-                    <Badge key={index} variant="outline" className="bg-red-50 text-red-700 border-red-200 px-3 py-1 hover:bg-red-100 transition-colors">
-                      {allergy}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {medicalInfo?.medical_conditions && medicalInfo.medical_conditions.length > 0 && (
-              <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                  <Heart className="h-5 w-5 mr-2 text-med-600" />
-                  Medical Conditions
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {medicalInfo.medical_conditions.map((condition: string, index: number) => (
-                    <Badge key={index} variant="outline" className="bg-med-50 text-med-700 border-med-200 px-3 py-1 hover:bg-med-100 transition-colors">
-                      {condition}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {medicalInfo?.current_medications && medicalInfo.current_medications.length > 0 && (
-              <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                  <Heart className="h-5 w-5 mr-2 text-med-600" />
-                  Current Medications
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {medicalInfo.current_medications.map((medication: string, index: number) => (
-                    <div key={index} className="p-4 rounded-lg bg-white border border-med-100 hover:border-med-300 shadow-sm hover:shadow-md transition-all">
-                      <p className="font-medium text-med-700">{medication}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {medicalInfo?.medical_history && (
-              <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                  <Heart className="h-5 w-5 mr-2 text-med-600" />
-                  Medical History
-                </h3>
-                <div className="p-4 rounded-lg bg-med-50 border border-med-100">
-                  <p className="text-gray-700">{medicalInfo.medical_history}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Additional medical info fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {medicalInfo?.mobility_status && (
-                <InfoCard 
-                  icon={<Heart className="h-5 w-5 text-med-500" />}
-                  title="Mobility Status"
-                  items={[
-                    { label: "Status", value: medicalInfo.mobility_status }
-                  ]}
-                />
-              )}
-              
-              {medicalInfo?.cognitive_status && (
-                <InfoCard 
-                  icon={<Heart className="h-5 w-5 text-med-500" />}
-                  title="Cognitive Status"
-                  items={[
-                    { label: "Status", value: medicalInfo.cognitive_status }
-                  ]}
-                />
-              )}
-              
-              {medicalInfo?.communication_needs && (
-                <InfoCard 
-                  icon={<Heart className="h-5 w-5 text-med-500" />}
-                  title="Communication Needs"
-                  items={[
-                    { label: "Needs", value: medicalInfo.communication_needs }
-                  ]}
-                />
-              )}
-              
-              {medicalInfo?.mental_health_status && (
-                <InfoCard 
-                  icon={<Heart className="h-5 w-5 text-med-500" />}
-                  title="Mental Health"
-                  items={[
-                    { label: "Status", value: medicalInfo.mental_health_status }
-                  ]}
-                />
+          {!hasMedicalInfo ? (
+            // Empty state
+            <div className="text-center py-8">
+              <Heart className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-600 mb-2">No Medical Information Available</h3>
+              <p className="text-gray-500 mb-4">
+                Add medical information including allergies, conditions, medications, and health status.
+              </p>
+              {onEditMedicalInfo && (
+                <Button onClick={onEditMedicalInfo} className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Medical Information
+                </Button>
               )}
             </div>
-
-            {medicalInfo?.sensory_impairments && medicalInfo.sensory_impairments.length > 0 && (
-              <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                  <Heart className="h-5 w-5 mr-2 text-med-600" />
-                  Sensory Impairments
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {medicalInfo.sensory_impairments.map((impairment: string, index: number) => (
-                    <Badge key={index} variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 px-3 py-1 hover:bg-purple-100 transition-colors">
-                      {impairment}
-                    </Badge>
-                  ))}
+          ) : (
+            // Existing medical information display
+            <div className="space-y-6">
+              {medicalInfo?.allergies && medicalInfo.allergies.length > 0 && (
+                <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                  <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+                    <Heart className="h-5 w-5 mr-2 text-red-500" />
+                    Allergies
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {medicalInfo.allergies.map((allergy: string, index: number) => (
+                      <Badge key={index} variant="outline" className="bg-red-50 text-red-700 border-red-200 px-3 py-1 hover:bg-red-100 transition-colors">
+                        {allergy}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
+              )}
+              
+              {medicalInfo?.medical_conditions && medicalInfo.medical_conditions.length > 0 && (
+                <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                  <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+                    <Heart className="h-5 w-5 mr-2 text-med-600" />
+                    Medical Conditions
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {medicalInfo.medical_conditions.map((condition: string, index: number) => (
+                      <Badge key={index} variant="outline" className="bg-med-50 text-med-700 border-med-200 px-3 py-1 hover:bg-med-100 transition-colors">
+                        {condition}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {medicalInfo?.current_medications && medicalInfo.current_medications.length > 0 && (
+                <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                  <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+                    <Heart className="h-5 w-5 mr-2 text-med-600" />
+                    Current Medications
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {medicalInfo.current_medications.map((medication: string, index: number) => (
+                      <div key={index} className="p-4 rounded-lg bg-white border border-med-100 hover:border-med-300 shadow-sm hover:shadow-md transition-all">
+                        <p className="font-medium text-med-700">{medication}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {medicalInfo?.medical_history && (
+                <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                  <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+                    <Heart className="h-5 w-5 mr-2 text-med-600" />
+                    Medical History
+                  </h3>
+                  <div className="p-4 rounded-lg bg-med-50 border border-med-100">
+                    <p className="text-gray-700">{medicalInfo.medical_history}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Additional medical info fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {medicalInfo?.mobility_status && (
+                  <InfoCard 
+                    icon={<Heart className="h-5 w-5 text-med-500" />}
+                    title="Mobility Status"
+                    items={[
+                      { label: "Status", value: medicalInfo.mobility_status }
+                    ]}
+                  />
+                )}
+                
+                {medicalInfo?.cognitive_status && (
+                  <InfoCard 
+                    icon={<Heart className="h-5 w-5 text-med-500" />}
+                    title="Cognitive Status"
+                    items={[
+                      { label: "Status", value: medicalInfo.cognitive_status }
+                    ]}
+                  />
+                )}
+                
+                {medicalInfo?.communication_needs && (
+                  <InfoCard 
+                    icon={<Heart className="h-5 w-5 text-med-500" />}
+                    title="Communication Needs"
+                    items={[
+                      { label: "Needs", value: medicalInfo.communication_needs }
+                    ]}
+                  />
+                )}
+                
+                {medicalInfo?.mental_health_status && (
+                  <InfoCard 
+                    icon={<Heart className="h-5 w-5 text-med-500" />}
+                    title="Mental Health"
+                    items={[
+                      { label: "Status", value: medicalInfo.mental_health_status }
+                    ]}
+                  />
+                )}
               </div>
-            )}
-          </div>
+
+              {medicalInfo?.sensory_impairments && medicalInfo.sensory_impairments.length > 0 && (
+                <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
+                  <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
+                    <Heart className="h-5 w-5 mr-2 text-med-600" />
+                    Sensory Impairments
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {medicalInfo.sensory_impairments.map((impairment: string, index: number) => (
+                      <Badge key={index} variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 px-3 py-1 hover:bg-purple-100 transition-colors">
+                        {impairment}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
