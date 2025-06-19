@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { X, FileEdit, Download, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
@@ -589,6 +588,16 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     }
   };
 
+  // Handlers for Service Actions tab (reuse the same dialogs as Service Plan)
+  const handleAddServiceAction = () => {
+    setAddServicePlanDialogOpen(true);
+  };
+
+  const handleEditServiceAction = (serviceAction: ClientServiceAction) => {
+    setSelectedServiceAction(serviceAction);
+    setEditServicePlanDialogOpen(true);
+  };
+
   // Get current user's role and name for author field - simplified to just show "Admin"
   const getCurrentUserAuthor = () => {
     // For admin users, just return "Admin"
@@ -695,13 +704,8 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     updated_at: equipment.updated_at
   })) || [];
 
-  // Transform service actions to match expected interface
-  const transformedServiceActions = comprehensiveData?.serviceActions?.map(action => ({
-    ...action,
-    client_id: action.client_id,
-    created_at: action.created_at,
-    updated_at: action.updated_at
-  })) || [];
+  // Transform service actions to match expected interface - use real database data
+  const transformedServiceActions = serviceActions || [];
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
@@ -838,7 +842,11 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="serviceactions">
-                  <ServiceActionsTab serviceActions={transformedServiceActions} />
+                  <ServiceActionsTab 
+                    serviceActions={serviceActions}
+                    onAddServiceAction={handleAddServiceAction}
+                    onEditServiceAction={handleEditServiceAction}
+                  />
                 </TabsContent>
 
                 <TabsContent value="eventslogs">
