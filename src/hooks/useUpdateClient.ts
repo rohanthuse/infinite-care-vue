@@ -53,12 +53,14 @@ export const useUpdateClient = () => {
   return useMutation({
     mutationFn: updateClient,
     onSuccess: (data) => {
-      // Invalidate both admin and comprehensive client queries
+      // Invalidate all relevant queries to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['comprehensive-care-plan-data'] });
       queryClient.invalidateQueries({ queryKey: ['client-profile', data.id] });
       queryClient.invalidateQueries({ queryKey: ['admin-clients'] });
       queryClient.invalidateQueries({ queryKey: ['admin-client-detail', data.id] });
       queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
+      queryClient.invalidateQueries({ queryKey: ['branch-dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['branch-statistics'] });
     },
   });
 };

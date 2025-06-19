@@ -48,6 +48,7 @@ import { ReviewItem, ReviewItemSkeleton } from "@/components/dashboard/ReviewIte
 import { ActionItem } from "@/components/dashboard/ActionItem";
 import { useServices } from "@/data/hooks/useServices";
 import { useBookingData } from "@/components/bookings/hooks/useBookingData";
+import { getStatusBadgeClass } from "@/utils/statusHelpers";
 
 interface BranchDashboardProps {
   tab?: string;
@@ -257,6 +258,12 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const handleUploadDocument = () => {
     console.log("Upload document for client:", selectedClient?.id);
     // Implement document upload functionality
+  };
+
+  const handleEditClient = (client: any) => {
+    if (id && branchName) {
+      navigate(`/branch-dashboard/${id}/${branchName}/clients/${client.id}/edit`);
+    }
   };
 
   const totalClientsForDist = chartData?.clientDistribution.reduce((acc, cur) => acc + cur.value, 0) || 0;
@@ -491,82 +498,6 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                       <div className="h-3 w-3 rounded-full bg-indigo-300"></div>
                       <span className="text-xs md:text-sm">New ({newPercentage}%)</span>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base md:text-lg font-semibold">Revenue Trend</CardTitle>
-                  <CardDescription>Monthly revenue in {new Date().getFullYear()}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[180px] md:h-[220px] w-full">
-                    {isLoadingChartData ? (
-                      <div className="flex items-center justify-center h-full">
-                        <Skeleton className="h-full w-full" />
-                      </div>
-                    ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData?.monthlyRevenue} margin={{
-                        top: 10,
-                        right: 30,
-                        left: 0,
-                        bottom: 0
-                      }}>
-                        <defs>
-                          <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-                            <stop offset="95%" stopColor="#8884d8" stopOpacity={0.1} />
-                          </linearGradient>
-                        </defs>
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <Tooltip formatter={(value: number) => [`£${value.toLocaleString()}`, "Revenue"]} contentStyle={{
-                          backgroundColor: "white",
-                          border: "1px solid #f0f0f0",
-                          borderRadius: "8px",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
-                        }} />
-                        <Area type="monotone" dataKey="revenue" stroke="#8884d8" fillOpacity={1} fill="url(#colorRevenue)" />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base md:text-lg font-semibold">Popular Services</CardTitle>
-                  <CardDescription>Most requested services</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 md:space-y-4">
-                    {isLoadingChartData ? (
-                      Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="flex items-center gap-4">
-                           <Skeleton className="h-4 w-24" />
-                           <Skeleton className="h-2 flex-1" />
-                           <Skeleton className="h-4 w-8" />
-                        </div>
-                      ))
-                    ) : (
-                      chartData?.serviceUsage.map((service, index) => <div key={index} className="flex items-center">
-                        <div className="w-24 md:w-32 font-medium text-xs md:text-sm">{service.name}</div>
-                        <div className="flex-1">
-                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-600 rounded-full" style={{
-                          width: `${service.usage}%`
-                        }}></div>
-                          </div>
-                        </div>
-                        <div className="ml-3 text-xs md:text-sm font-medium">{service.usage}%</div>
-                      </div>)
-                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -908,13 +839,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                         <TableCell>
                           <Badge 
                             variant="outline" 
-                            className={
-                              client.status === "Active" ? "text-green-600 bg-green-50 border-green-200" :
-                              client.status === "New Enquiries" ? "text-blue-600 bg-blue-50 border-blue-200" :
-                              client.status === "Actively Assessing" ? "text-amber-600 bg-amber-50 border-amber-200" :
-                              client.status === "Closed Enquiries" ? "text-gray-600 bg-gray-50 border-gray-200" :
-                              "text-red-600 bg-red-50 border-red-200"
-                            }
+                            className={getStatusBadgeClass(client.status)}
                           >
                             {client.status}
                           </Badge>
@@ -932,7 +857,12 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => handleEditClient(client)}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                           </div>
