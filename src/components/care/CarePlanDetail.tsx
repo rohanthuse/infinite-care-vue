@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { X, FileEdit, Download, PenLine, MessageCircle, Clock, Activity, FileBarChart2 } from "lucide-react";
 import { format } from "date-fns";
@@ -275,8 +276,6 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                     texture_modifications: "",
                     fluid_restrictions: "",
                     weight_monitoring: false,
-                    created_at: "",
-                    updated_at: "",
                   }} />
                 </TabsContent>
                 
@@ -292,8 +291,6 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                     comfort_measures: "",
                     pain_management: "",
                     skin_care_needs: "",
-                    created_at: "",
-                    updated_at: "",
                   }} />
                 </TabsContent>
 
