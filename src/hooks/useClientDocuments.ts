@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -335,13 +334,10 @@ export const useDeleteClientDocument = () => {
     mutationFn: deleteClientDocument,
     onSuccess: (result, variables) => {
       // Update cache directly by removing the deleted document
-      queryClient.setQueryData(['client-documents'], (old: ClientDocument[] | undefined) => {
-        if (!old) return [];
-        return old.filter(doc => doc.id !== variables);
-      });
+      // Find all client-documents queries and remove the document from each
+      const allQueries = queryClient.getQueryCache().getAll();
       
-      // Also update specific client cache
-      queryClient.getQueryCache().findAll(['client-documents']).forEach(query => {
+      allQueries.forEach(query => {
         if (query.queryKey[0] === 'client-documents' && query.queryKey[1]) {
           queryClient.setQueryData(query.queryKey, (old: ClientDocument[] | undefined) => {
             if (!old) return [];
