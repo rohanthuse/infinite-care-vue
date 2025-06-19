@@ -84,8 +84,22 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     error
   } = useComprehensiveCarePlanData(carePlan?.patientId || "");
 
+  // Add debugging for comprehensive data
+  console.log('[CarePlanDetail] Comprehensive data loaded:', {
+    hasData: !!comprehensiveData,
+    client: comprehensiveData?.client,
+    medicalInfo: comprehensiveData?.medicalInfo,
+    patientId: carePlan?.patientId
+  });
+
   // Get the actual client UUID from comprehensive data or use a fallback
   const clientId = comprehensiveData?.client?.id || carePlan?.patientId || "";
+  
+  console.log('[CarePlanDetail] Client ID resolution:', {
+    fromComprehensiveData: comprehensiveData?.client?.id,
+    fromCarePlan: carePlan?.patientId,
+    finalClientId: clientId
+  });
   
   // Database hooks for notes - now using the correct client UUID
   const { data: dbNotes = [], isLoading: notesLoading } = useClientNotes(clientId);
@@ -259,7 +273,11 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   };
 
   const handleSaveMedicalInfo = async (data: any) => {
+    console.log('[CarePlanDetail] handleSaveMedicalInfo called with data:', data);
+    console.log('[CarePlanDetail] clientId for medical info save:', clientId);
+    
     if (!clientId) {
+      console.error('[CarePlanDetail] No client ID found for medical info save');
       toast({
         title: "Error",
         description: "Client ID not found. Cannot save medical information.",
@@ -269,10 +287,13 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     }
 
     try {
-      await updateMedicalInfoMutation.mutateAsync({
+      console.log('[CarePlanDetail] Attempting to save medical info...');
+      const result = await updateMedicalInfoMutation.mutateAsync({
         client_id: clientId,
         ...data
       });
+      
+      console.log('[CarePlanDetail] Medical info save successful:', result);
 
       setMedicalInfoDialogOpen(false);
       toast({
@@ -280,7 +301,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         description: "The medical information has been successfully updated."
       });
     } catch (error) {
-      console.error("Error updating medical info:", error);
+      console.error('[CarePlanDetail] Error updating medical info:', error);
       toast({
         title: "Error",
         description: "Failed to update medical information. Please try again.",
@@ -363,6 +384,14 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const getCurrentUserAuthor = () => {
     // For admin users, just return "Admin"
     return "Admin";
+  };
+
+  // Add debugging for medical info dialog state
+  const handleEditMedicalInfo = () => {
+    console.log('[CarePlanDetail] Edit medical info button clicked');
+    console.log('[CarePlanDetail] Current medical info data:', comprehensiveData?.medicalInfo);
+    console.log('[CarePlanDetail] Setting medicalInfoDialogOpen to true');
+    setMedicalInfoDialogOpen(true);
   };
 
   if (isLoading) {
@@ -538,7 +567,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                     personalInfo={comprehensiveData?.personalInfo}
                     medicalInfo={comprehensiveData?.medicalInfo}
                     onEditPersonalInfo={() => setPersonalInfoDialogOpen(true)}
-                    onEditMedicalInfo={() => setMedicalInfoDialogOpen(true)}
+                    onEditMedicalInfo={handleEditMedicalInfo}
                   />
                 </TabsContent>
                 
@@ -647,7 +676,10 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
 
       <EditMedicalInfoDialog
         open={medicalInfoDialogOpen}
-        onOpenChange={setMedicalInfoDialogOpen}
+        onOpenChange={(open) => {
+          console.log('[CarePlanDetail] Medical info dialog onOpenChange called with:', open);
+          setMedicalInfoDialogOpen(open);
+        }}
         onSave={handleSaveMedicalInfo}
         medicalInfo={comprehensiveData?.medicalInfo}
         isLoading={updateMedicalInfoMutation.isPending}

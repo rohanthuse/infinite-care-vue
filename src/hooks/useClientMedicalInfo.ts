@@ -32,6 +32,7 @@ const fetchClientMedicalInfo = async (clientId: string): Promise<ClientMedicalIn
     throw error;
   }
 
+  console.log('[fetchClientMedicalInfo] Result:', data);
   return data;
 };
 
@@ -49,6 +50,7 @@ const upsertClientMedicalInfo = async (medicalInfo: Partial<ClientMedicalInfo> &
     throw error;
   }
 
+  console.log('[upsertClientMedicalInfo] Result:', data);
   return data;
 };
 
@@ -67,7 +69,12 @@ export const useUpdateClientMedicalInfo = () => {
   return useMutation({
     mutationFn: upsertClientMedicalInfo,
     onSuccess: (data) => {
+      console.log('[useUpdateClientMedicalInfo] Mutation successful, invalidating queries for client:', data.client_id);
       queryClient.invalidateQueries({ queryKey: ['client-medical-info', data.client_id] });
+      queryClient.invalidateQueries({ queryKey: ['comprehensive-care-plan-data'] });
     },
+    onError: (error) => {
+      console.error('[useUpdateClientMedicalInfo] Mutation error:', error);
+    }
   });
 };

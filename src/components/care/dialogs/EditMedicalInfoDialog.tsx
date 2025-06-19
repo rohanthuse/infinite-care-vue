@@ -22,6 +22,12 @@ export const EditMedicalInfoDialog: React.FC<EditMedicalInfoDialogProps> = ({
   medicalInfo,
   isLoading = false,
 }) => {
+  console.log('[EditMedicalInfoDialog] Component rendered with props:', {
+    open,
+    medicalInfo,
+    isLoading
+  });
+
   const [formData, setFormData] = useState({
     allergies: [] as string[],
     medical_conditions: [] as string[],
@@ -40,8 +46,9 @@ export const EditMedicalInfoDialog: React.FC<EditMedicalInfoDialogProps> = ({
   const [newImpairment, setNewImpairment] = useState("");
 
   useEffect(() => {
+    console.log('[EditMedicalInfoDialog] useEffect triggered with medicalInfo:', medicalInfo);
     if (medicalInfo) {
-      setFormData({
+      const newFormData = {
         allergies: medicalInfo.allergies || [],
         medical_conditions: medicalInfo.medical_conditions || [],
         current_medications: medicalInfo.current_medications || [],
@@ -51,16 +58,22 @@ export const EditMedicalInfoDialog: React.FC<EditMedicalInfoDialogProps> = ({
         communication_needs: medicalInfo.communication_needs || "",
         sensory_impairments: medicalInfo.sensory_impairments || [],
         mental_health_status: medicalInfo.mental_health_status || "",
-      });
+      };
+      console.log('[EditMedicalInfoDialog] Setting form data to:', newFormData);
+      setFormData(newFormData);
+    } else {
+      console.log('[EditMedicalInfoDialog] No medical info provided, using default form data');
     }
   }, [medicalInfo]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('[EditMedicalInfoDialog] Form submitted with data:', formData);
     onSave(formData);
   };
 
   const addToArray = (field: string, value: string, setter: (value: string) => void) => {
+    console.log('[EditMedicalInfoDialog] Adding to array:', { field, value });
     if (value.trim()) {
       setFormData(prev => ({
         ...prev,
@@ -71,11 +84,14 @@ export const EditMedicalInfoDialog: React.FC<EditMedicalInfoDialogProps> = ({
   };
 
   const removeFromArray = (field: string, index: number) => {
+    console.log('[EditMedicalInfoDialog] Removing from array:', { field, index });
     setFormData(prev => ({
       ...prev,
       [field]: (prev[field as keyof typeof prev] as string[]).filter((_, i) => i !== index)
     }));
   };
+
+  console.log('[EditMedicalInfoDialog] Current open state:', open);
 
   if (!open) return null;
 
@@ -84,7 +100,10 @@ export const EditMedicalInfoDialog: React.FC<EditMedicalInfoDialogProps> = ({
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-auto">
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold">Edit Medical Information</h2>
-          <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+          <Button variant="ghost" size="icon" onClick={() => {
+            console.log('[EditMedicalInfoDialog] Close button clicked');
+            onOpenChange(false);
+          }}>
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -257,7 +276,10 @@ export const EditMedicalInfoDialog: React.FC<EditMedicalInfoDialogProps> = ({
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => {
+              console.log('[EditMedicalInfoDialog] Cancel button clicked');
+              onOpenChange(false);
+            }}>
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
