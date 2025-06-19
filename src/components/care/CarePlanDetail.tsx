@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { X, FileEdit, Download, PenLine, MessageCircle, Clock, Activity, FileBarChart2 } from "lucide-react";
 import { format } from "date-fns";
@@ -8,12 +9,17 @@ import { Badge } from "@/components/ui/badge";
 import { generatePDF, exportCarePlanPDF } from "@/utils/pdfGenerator";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 // Import all the hooks we need
 import { useCreateClientNote } from "@/hooks/useClientNotes";
 import { useCreateClientEvent } from "@/hooks/useClientEvents";
 import { useCreateGoal } from "@/hooks/useCarePlanGoalsMutations";
 import { useCreateClientActivity } from "@/hooks/useClientActivities";
+import { useCreateClientEquipment } from "@/hooks/useClientEquipmentMutations";
+import { useCreateClientAssessment } from "@/hooks/useClientAssessmentMutations";
+import { useCreateClientRiskAssessment } from "@/hooks/useClientRiskAssessmentMutations";
+import { useCreateClientServiceAction } from "@/hooks/useClientServiceActionMutations";
 import { 
   useClientProfile, 
   useClientPersonalInfo, 
@@ -47,6 +53,11 @@ import { AddNoteDialog } from "./dialogs/AddNoteDialog";
 import { AddEventDialog } from "./dialogs/AddEventDialog";
 import { AddGoalDialog } from "./dialogs/AddGoalDialog";
 import { AddActivityDialog } from "./dialogs/AddActivityDialog";
+import { AddEquipmentDialog } from "./dialogs/AddEquipmentDialog";
+import { AddAssessmentDialog } from "./dialogs/AddAssessmentDialog";
+import { AddRiskAssessmentDialog } from "./dialogs/AddRiskAssessmentDialog";
+import { AddServicePlanDialog } from "./dialogs/AddServicePlanDialog";
+import { AddServiceActionDialog } from "./dialogs/AddServiceActionDialog";
 import { EditPersonalInfoDialog } from "./dialogs/EditPersonalInfoDialog";
 import { EditMedicalInfoDialog } from "./dialogs/EditMedicalInfoDialog";
 import { EditAboutMeDialog } from "./dialogs/EditAboutMeDialog";
