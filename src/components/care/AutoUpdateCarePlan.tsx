@@ -14,6 +14,12 @@ export const AutoUpdateCarePlan: React.FC = () => {
     console.log('[AutoUpdateCarePlan] Staff loading state:', { isLoading, error });
     console.log('[AutoUpdateCarePlan] Branch staff data:', branchStaff);
 
+    // Skip automatic update since we've manually updated CP-002 via database
+    console.log('[AutoUpdateCarePlan] Skipping automatic update - CP-002 already updated to Jane Smith');
+    return;
+
+    // The rest of the code is kept for potential future use but commented out
+    /*
     // Only proceed if we have staff data and no errors
     if (isLoading || error || !branchStaff.length) {
       console.log('[AutoUpdateCarePlan] Not ready to update - loading:', isLoading, 'error:', error, 'staff count:', branchStaff.length);
@@ -53,6 +59,7 @@ export const AutoUpdateCarePlan: React.FC = () => {
         name: `${s.first_name} ${s.last_name}`
       })));
     }
+    */
   }, [branchStaff, updateAssignmentMutation, isLoading, error, branchId]);
 
   // Show loading/error state for debugging
