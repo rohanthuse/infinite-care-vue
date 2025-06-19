@@ -1,19 +1,23 @@
 
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, User, Mail, Phone, MapPin, Briefcase, Calendar, CheckCircle } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, MapPin, Briefcase, Calendar, CheckCircle, Clock, Users, FileText, BarChart3, Award, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCarerProfile } from "@/data/hooks/useBranchCarers";
+import { useCarerBookings } from "@/hooks/useCarerBookings";
+import { useCarerDocuments } from "@/hooks/useCarerDocuments";
 
 const CarerProfilePage: React.FC = () => {
   const { id: branchId, branchName, carerId } = useParams();
   const navigate = useNavigate();
   
   const { data: carer, isLoading, error } = useCarerProfile(carerId);
+  const { data: bookings = [], isLoading: bookingsLoading } = useCarerBookings(carerId || '');
+  const { data: documents = [], isLoading: documentsLoading } = useCarerDocuments(carerId || '');
 
   const handleGoBack = () => {
     navigate(`/branch-dashboard/${branchId}/${branchName}/carers`);
@@ -28,6 +32,63 @@ const CarerProfilePage: React.FC = () => {
     if (!dateString) return "Not specified";
     return new Date(dateString).toLocaleDateString();
   };
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return "bg-green-50 text-green-700 border-green-200";
+      case 'inactive':
+        return "bg-red-50 text-red-700 border-red-200";
+      case 'on leave':
+        return "bg-amber-50 text-amber-700 border-amber-200";
+      case 'training':
+        return "bg-purple-50 text-purple-700 border-purple-200";
+      default:
+        return "bg-gray-50 text-gray-700 border-gray-200";
+    }
+  };
+
+  const getBookingStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return "bg-green-100 text-green-800";
+      case 'assigned':
+        return "bg-blue-100 text-blue-800";
+      case 'in-progress':
+        return "bg-yellow-100 text-yellow-800";
+      case 'cancelled':
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const upcomingBookings = bookings.filter(booking => 
+    new Date(booking.start_time) > new Date()
+  ).slice(0, 5);
+
+  const recentBookings = bookings.filter(booking => 
+    new Date(booking.start_time) <= new Date()
+  ).slice(0, 10);
+
+  const totalHoursThisMonth = bookings
+    .filter(booking => {
+      const bookingDate = new Date(booking.start_time);
+      const now = new Date();
+      return bookingDate.getMonth() === now.getMonth() && 
+             bookingDate.getFullYear() === now.getFullYear();
+    })
+    .reduce((total, booking) => {
+      const start = new Date(booking.start_time);
+      const end = new Date(booking.end_time);
+      return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    }, 0);
+
+  const uniqueClients = new Set(bookings.map(b => b.client_id)).size;
 
   if (isLoading) {
     return (
@@ -60,131 +121,158 @@ const CarerProfilePage: React.FC = () => {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Carer Profile</h1>
-            <p className="text-gray-500">View and manage carer information</p>
+            <h1 className="text-3xl font-bold text-gray-900">Carer Profile</h1>
+            <p className="text-gray-600">View and manage carer information</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Profile Summary Card */}
-          <Card className="lg:col-span-1">
-            <CardHeader className="text-center">
-              <Avatar className="w-24 h-24 mx-auto mb-4">
-                <AvatarFallback className="bg-blue-100 text-blue-600 text-2xl font-bold">
+          {/* Enhanced Profile Summary Card */}
+          <Card className="lg:col-span-1 shadow-lg">
+            <CardHeader className="text-center pb-4">
+              <Avatar className="w-28 h-28 mx-auto mb-4 shadow-lg">
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-3xl font-bold">
                   {getAvatarInitials(carer.first_name, carer.last_name)}
                 </AvatarFallback>
               </Avatar>
-              <CardTitle className="text-xl">{carer.first_name} {carer.last_name}</CardTitle>
-              <p className="text-gray-500">{carer.specialization || "General Care"}</p>
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                {carer.first_name} {carer.last_name}
+              </CardTitle>
+              <p className="text-gray-600 font-medium">{carer.specialization || "General Care"}</p>
               <Badge 
                 variant="outline" 
-                className={`mt-2 ${
-                  carer.status === "Active" ? "bg-green-50 text-green-700 border-green-200" : 
-                  carer.status === "Inactive" ? "bg-red-50 text-red-700 border-red-200" : 
-                  "bg-gray-50 text-gray-700 border-gray-200"
-                }`}
+                className={`mt-3 px-4 py-1 ${getStatusColor(carer.status)}`}
               >
                 <CheckCircle className="h-3 w-3 mr-1" />
                 {carer.status}
               </Badge>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center gap-2 text-sm">
-                <Mail className="h-4 w-4 text-gray-500" />
-                <span>{carer.email || "Not provided"}</span>
+              <div className="flex items-center gap-3 text-sm">
+                <Mail className="h-4 w-4 text-blue-500" />
+                <span className="text-gray-700">{carer.email || "Not provided"}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Phone className="h-4 w-4 text-gray-500" />
-                <span>{carer.phone || "Not provided"}</span>
+              <div className="flex items-center gap-3 text-sm">
+                <Phone className="h-4 w-4 text-green-500" />
+                <span className="text-gray-700">{carer.phone || "Not provided"}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <MapPin className="h-4 w-4 text-gray-500" />
-                <span>{carer.address || "Not provided"}</span>
+              <div className="flex items-center gap-3 text-sm">
+                <MapPin className="h-4 w-4 text-red-500" />
+                <span className="text-gray-700">{carer.address || "Not provided"}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Briefcase className="h-4 w-4 text-gray-500" />
-                <span>{carer.experience || "Not specified"}</span>
+              <div className="flex items-center gap-3 text-sm">
+                <Briefcase className="h-4 w-4 text-purple-500" />
+                <span className="text-gray-700">{carer.experience || "Not specified"}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="h-4 w-4 text-gray-500" />
-                <span>Hired: {formatDate(carer.hire_date)}</span>
+              <div className="flex items-center gap-3 text-sm">
+                <Calendar className="h-4 w-4 text-orange-500" />
+                <span className="text-gray-700">Hired: {formatDate(carer.hire_date)}</span>
+              </div>
+              
+              {/* Quick Stats */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <h4 className="font-semibold text-gray-900 mb-3">Quick Stats</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center p-2 bg-blue-50 rounded-lg">
+                    <div className="text-xl font-bold text-blue-600">{uniqueClients}</div>
+                    <div className="text-xs text-blue-700">Clients</div>
+                  </div>
+                  <div className="text-center p-2 bg-green-50 rounded-lg">
+                    <div className="text-xl font-bold text-green-600">{Math.round(totalHoursThisMonth)}</div>
+                    <div className="text-xs text-green-700">Hours/Month</div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Detailed Information */}
+          {/* Enhanced Main Content */}
           <div className="lg:col-span-3">
             <Tabs defaultValue="details" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="details">Details</TabsTrigger>
-                <TabsTrigger value="schedule">Schedule</TabsTrigger>
-                <TabsTrigger value="assignments">Assignments</TabsTrigger>
-                <TabsTrigger value="documents">Documents</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-4 mb-6">
+                <TabsTrigger value="details" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Details
+                </TabsTrigger>
+                <TabsTrigger value="schedule" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Schedule
+                </TabsTrigger>
+                <TabsTrigger value="assignments" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Assignments
+                </TabsTrigger>
+                <TabsTrigger value="documents" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Documents
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="details" className="mt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Personal Information</CardTitle>
+                  <Card className="shadow-md">
+                    <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <User className="h-5 w-5 text-blue-600" />
+                        Personal Information
+                      </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="p-6 space-y-4">
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Full Name</label>
-                        <p className="text-sm font-medium">{carer.first_name} {carer.last_name}</p>
+                        <label className="text-sm font-semibold text-gray-600">Full Name</label>
+                        <p className="text-base font-medium text-gray-900">{carer.first_name} {carer.last_name}</p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Email</label>
-                        <p className="text-sm">{carer.email || "Not provided"}</p>
+                        <label className="text-sm font-semibold text-gray-600">Email</label>
+                        <p className="text-base text-gray-700">{carer.email || "Not provided"}</p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Phone</label>
-                        <p className="text-sm">{carer.phone || "Not provided"}</p>
+                        <label className="text-sm font-semibold text-gray-600">Phone</label>
+                        <p className="text-base text-gray-700">{carer.phone || "Not provided"}</p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Address</label>
-                        <p className="text-sm">{carer.address || "Not provided"}</p>
+                        <label className="text-sm font-semibold text-gray-600">Address</label>
+                        <p className="text-base text-gray-700">{carer.address || "Not provided"}</p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Date of Birth</label>
-                        <p className="text-sm">{formatDate(carer.date_of_birth)}</p>
+                        <label className="text-sm font-semibold text-gray-600">Date of Birth</label>
+                        <p className="text-base text-gray-700">{formatDate(carer.date_of_birth)}</p>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Professional Information</CardTitle>
+                  <Card className="shadow-md">
+                    <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Briefcase className="h-5 w-5 text-green-600" />
+                        Professional Information
+                      </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="p-6 space-y-4">
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Specialization</label>
-                        <p className="text-sm">{carer.specialization || "General Care"}</p>
+                        <label className="text-sm font-semibold text-gray-600">Specialization</label>
+                        <p className="text-base text-gray-700">{carer.specialization || "General Care"}</p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Experience</label>
-                        <p className="text-sm">{carer.experience || "Not specified"}</p>
+                        <label className="text-sm font-semibold text-gray-600">Experience</label>
+                        <p className="text-base text-gray-700">{carer.experience || "Not specified"}</p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Availability</label>
-                        <p className="text-sm">{carer.availability}</p>
+                        <label className="text-sm font-semibold text-gray-600">Availability</label>
+                        <p className="text-base text-gray-700">{carer.availability}</p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Status</label>
+                        <label className="text-sm font-semibold text-gray-600">Status</label>
                         <Badge 
                           variant="outline" 
-                          className={`${
-                            carer.status === "Active" ? "bg-green-50 text-green-700 border-green-200" : 
-                            carer.status === "Inactive" ? "bg-red-50 text-red-700 border-red-200" : 
-                            "bg-gray-50 text-gray-700 border-gray-200"
-                          }`}
+                          className={`${getStatusColor(carer.status)} px-3 py-1`}
                         >
                           {carer.status}
                         </Badge>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Hire Date</label>
-                        <p className="text-sm">{formatDate(carer.hire_date)}</p>
+                        <label className="text-sm font-semibold text-gray-600">Hire Date</label>
+                        <p className="text-base text-gray-700">{formatDate(carer.hire_date)}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -192,34 +280,157 @@ const CarerProfilePage: React.FC = () => {
               </TabsContent>
               
               <TabsContent value="schedule" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Schedule & Availability</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-500">Schedule management functionality coming soon...</p>
-                  </CardContent>
-                </Card>
+                <div className="space-y-6">
+                  <Card className="shadow-md">
+                    <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
+                      <CardTitle className="flex items-center gap-2">
+                        <Clock className="h-5 w-5 text-purple-600" />
+                        Upcoming Appointments
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      {bookingsLoading ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                          <p className="text-gray-500 mt-2">Loading appointments...</p>
+                        </div>
+                      ) : upcomingBookings.length > 0 ? (
+                        <div className="space-y-4">
+                          {upcomingBookings.map((booking) => (
+                            <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                              <div>
+                                <p className="font-semibold text-gray-900">{booking.client_name}</p>
+                                <p className="text-sm text-gray-600">{booking.service_name}</p>
+                                <p className="text-sm text-gray-500">{formatDateTime(booking.start_time)}</p>
+                              </div>
+                              <Badge className={`${getBookingStatusColor(booking.status)} px-3 py-1`}>
+                                {booking.status}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-500">No upcoming appointments</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="shadow-md">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5 text-blue-600" />
+                        Recent Activity
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      {recentBookings.length > 0 ? (
+                        <div className="space-y-3">
+                          {recentBookings.map((booking) => (
+                            <div key={booking.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-100">
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-900">{booking.client_name}</p>
+                                <p className="text-sm text-gray-600">{booking.service_name}</p>
+                                <p className="text-xs text-gray-500">{formatDate(booking.start_time)}</p>
+                              </div>
+                              <Badge className={`${getBookingStatusColor(booking.status)} text-xs px-2 py-1`}>
+                                {booking.status}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-center py-4">No recent activity</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
               
               <TabsContent value="assignments" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Client Assignments</CardTitle>
+                <Card className="shadow-md">
+                  <CardHeader className="bg-gradient-to-r from-orange-50 to-yellow-50">
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5 text-orange-600" />
+                      Client Assignments
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-500">Assignment management functionality coming soon...</p>
+                  <CardContent className="p-6">
+                    {bookingsLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
+                        <p className="text-gray-500 mt-2">Loading assignments...</p>
+                      </div>
+                    ) : uniqueClients > 0 ? (
+                      <div>
+                        <p className="text-lg font-semibold text-gray-900 mb-4">
+                          Currently serving {uniqueClients} client{uniqueClients !== 1 ? 's' : ''}
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {Array.from(new Set(bookings.map(b => b.client_id))).map((clientId) => {
+                            const clientBookings = bookings.filter(b => b.client_id === clientId);
+                            const latestBooking = clientBookings[0];
+                            return (
+                              <div key={clientId} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <h4 className="font-semibold text-gray-900">{latestBooking.client_name}</h4>
+                                <p className="text-sm text-gray-600">{clientBookings.length} appointment{clientBookings.length !== 1 ? 's' : ''}</p>
+                                <p className="text-xs text-gray-500">Last visit: {formatDate(latestBooking.start_time)}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500">No client assignments</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
               
               <TabsContent value="documents" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Documents & Certifications</CardTitle>
+                <Card className="shadow-md">
+                  <CardHeader className="bg-gradient-to-r from-teal-50 to-cyan-50">
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-teal-600" />
+                      Documents & Certifications
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-500">Document management functionality coming soon...</p>
+                  <CardContent className="p-6">
+                    {documentsLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto"></div>
+                        <p className="text-gray-500 mt-2">Loading documents...</p>
+                      </div>
+                    ) : documents.length > 0 ? (
+                      <div className="space-y-4">
+                        {documents.map((doc) => (
+                          <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div>
+                              <p className="font-semibold text-gray-900">{doc.document_type}</p>
+                              <p className="text-sm text-gray-600">
+                                {doc.expiry_date ? `Expires: ${formatDate(doc.expiry_date)}` : 'No expiry date'}
+                              </p>
+                            </div>
+                            <Badge 
+                              variant="outline" 
+                              className={doc.status === 'valid' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}
+                            >
+                              {doc.status}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500">No documents on file</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
