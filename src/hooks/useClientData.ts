@@ -178,21 +178,6 @@ export interface ClientEquipment {
   updated_at: string;
 }
 
-export interface ClientRiskAssessment {
-  id: string;
-  client_id: string;
-  risk_type: string;
-  risk_level: string;
-  assessment_date: string;
-  assessed_by: string;
-  status: string;
-  risk_factors?: string[];
-  mitigation_strategies?: string[];
-  review_date?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface ClientServiceAction {
   id: string;
   client_id: string;
@@ -659,46 +644,6 @@ export const useCreateClientAssessment = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['client-assessments', data.client_id] });
-    },
-  });
-};
-
-export const useCreateClientRiskAssessment = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: Omit<ClientRiskAssessment, 'id' | 'created_at' | 'updated_at'>) => {
-      const response = await supabase
-        .from('client_risk_assessments')
-        .insert(data)
-        .select()
-        .single();
-
-      if (response.error) throw response.error;
-      return response.data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['client-risk-assessments', data.client_id] });
-    },
-  });
-};
-
-export const useCreateClientServiceAction = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: Omit<ClientServiceAction, 'id' | 'created_at' | 'updated_at'>) => {
-      const response = await supabase
-        .from('client_service_actions')
-        .insert(data)
-        .select()
-        .single();
-
-      if (response.error) throw response.error;
-      return response.data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['client-service-actions', data.client_id] });
     },
   });
 };

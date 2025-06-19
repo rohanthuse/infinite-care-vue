@@ -25,9 +25,9 @@ import {
   ClientPersonalCare,
   ClientAssessment,
   ClientEquipment,
-  ClientRiskAssessment,
   ClientServiceAction,
 } from "@/hooks/useClientData";
+import { ClientRiskAssessment } from "@/hooks/useClientRiskAssessments";
 
 interface CarePlanContentProps {
   carePlan: {

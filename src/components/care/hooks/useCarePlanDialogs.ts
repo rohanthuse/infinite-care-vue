@@ -9,10 +9,10 @@ import {
   useCreateClientActivity,
   useCreateClientEquipment,
   useCreateClientAssessment,
-  useCreateClientRiskAssessment,
-  useCreateClientServiceAction,
   useUpdateClientProfile
 } from '@/hooks/useClientData';
+import { useCreateClientRiskAssessment } from '@/hooks/useClientRiskAssessments';
+import { useCreateClientServiceAction } from '@/hooks/useClientServiceActionMutations';
 import { useUpdateClientPersonalInfo } from '@/hooks/useClientPersonalInfo';
 import { useUpdateClientMedicalInfo } from '@/hooks/useClientMedicalInfo';
 import { useUpdateClientDietaryRequirements } from '@/hooks/useClientDietaryRequirements';
