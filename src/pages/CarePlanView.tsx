@@ -99,6 +99,8 @@ const CarePlanView = () => {
   
   // Use the client_id from care plan data for notes and documents
   const clientId = carePlanData?.client_id || '';
+  console.log('[CarePlanView] Using client ID for documents:', clientId);
+  
   const { data: notesData, isLoading: isNotesLoading, error: notesError } = useClientNotes(clientId);
   const { data: documentsData, isLoading: isDocumentsLoading, error: documentsError } = useClientDocuments(clientId);
   const createNoteMutation = useCreateClientNote();
@@ -117,7 +119,17 @@ const CarePlanView = () => {
     notesError,
     documentsData,
     isDocumentsLoading,
-    documentsError
+    documentsError,
+    clientId: clientId
+  });
+
+  // Enhanced debugging for documents
+  console.log('[CarePlanView] Documents data details:', {
+    documentsCount: documentsData?.length || 0,
+    documentsData: documentsData,
+    clientId: clientId,
+    carePlanId: carePlanId,
+    resolvedCarePlanId: resolvedCarePlanId
   });
 
   // Get current user's role and name for author field - simplified to just show "Admin"
@@ -163,6 +175,8 @@ const CarePlanView = () => {
     author: doc.uploaded_by,
     file_path: doc.file_path // This is crucial for view/download functionality
   })) || [];
+
+  console.log('[CarePlanView] Transformed documents:', transformedDocuments);
 
   const handlePrintCarePlan = () => {
     if (!carePlan) return;
@@ -243,7 +257,15 @@ const CarePlanView = () => {
   };
 
   const handleSaveDocument = async (document: { name: string; date: Date; type: string; author: string; file: File }) => {
+    console.log('[CarePlanView] handleSaveDocument called with:', {
+      documentName: document.name,
+      clientId: clientId,
+      carePlanId: carePlanId,
+      resolvedCarePlanId: resolvedCarePlanId
+    });
+
     if (!clientId) {
+      console.error('[CarePlanView] No client ID available for document upload');
       toast({
         title: "Error",
         description: "Client ID not found. Cannot upload document.",
@@ -253,7 +275,9 @@ const CarePlanView = () => {
     }
 
     try {
-      await uploadDocumentMutation.mutateAsync({
+      console.log('[CarePlanView] Attempting to upload document to client:', clientId);
+      
+      const result = await uploadDocumentMutation.mutateAsync({
         clientId,
         file: document.file,
         name: document.name,
@@ -261,12 +285,14 @@ const CarePlanView = () => {
         uploaded_by: getCurrentUserAuthor(),
       });
 
+      console.log('[CarePlanView] Document upload successful:', result);
+
       toast({
         title: "Document uploaded",
         description: `The document "${document.name}" has been uploaded successfully.`
       });
     } catch (error) {
-      console.error("Error uploading document:", error);
+      console.error("[CarePlanView] Error uploading document:", error);
       toast({
         title: "Error",
         description: "Failed to upload document. Please try again.",
@@ -718,10 +744,16 @@ const CarePlanView = () => {
                       {isDocumentsLoading ? (
                         <div className="flex items-center justify-center h-32">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                          <p className="ml-3 text-gray-600">Loading documents...</p>
+                        </div>
+                      ) : documentsError ? (
+                        <div className="text-center py-8">
+                          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                          <p className="text-gray-600">Error loading documents: {documentsError.message}</p>
                         </div>
                       ) : (
                         <DocumentsTab 
-                          documents={transformedDocuments} 
+                          documents={transformedDocuments.length > 0 ? transformedDocuments : []} 
                           onUploadDocument={() => setDocumentDialogOpen(true)}
                         />
                       )}
