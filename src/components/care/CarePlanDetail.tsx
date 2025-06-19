@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { X, FileEdit, Download, PenLine, MessageCircle, Clock, Activity, FileBarChart2 } from "lucide-react";
 import { format } from "date-fns";
@@ -83,10 +82,19 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   onClose,
 }) => {
   const [activeTab, setActiveTab] = useState("personal");
+  
+  // Dialog states for all functionalities
   const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
   const [addEventDialogOpen, setAddEventDialogOpen] = useState(false);
   const [addGoalDialogOpen, setAddGoalDialogOpen] = useState(false);
   const [addActivityDialogOpen, setAddActivityDialogOpen] = useState(false);
+  const [addAssessmentDialogOpen, setAddAssessmentDialogOpen] = useState(false);
+  const [addEquipmentDialogOpen, setAddEquipmentDialogOpen] = useState(false);
+  const [addRiskAssessmentDialogOpen, setAddRiskAssessmentDialogOpen] = useState(false);
+  const [addServicePlanDialogOpen, setAddServicePlanDialogOpen] = useState(false);
+  const [addServiceActionDialogOpen, setAddServiceActionDialogOpen] = useState(false);
+  
+  // Edit dialog states
   const [editPersonalInfoOpen, setEditPersonalInfoOpen] = useState(false);
   const [editMedicalInfoOpen, setEditMedicalInfoOpen] = useState(false);
   const [editAboutMeOpen, setEditAboutMeOpen] = useState(false);
@@ -119,6 +127,10 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const createEventMutation = useCreateClientEvent();
   const createGoalMutation = useCreateGoal();
   const createActivityMutation = useCreateClientActivity();
+  const createAssessmentMutation = useCreateClientAssessment();
+  const createEquipmentMutation = useCreateClientEquipment();
+  const createRiskAssessmentMutation = useCreateClientRiskAssessment();
+  const createServiceActionMutation = useCreateClientServiceAction();
   const updateClientMutation = useUpdateClientProfile();
 
   const handleClose = () => {
@@ -197,25 +209,25 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     setEditPersonalCareOpen(true);
   };
 
-  // Add handlers for other functionalities
+  // Functional handlers that open dialogs
   const handleAddAssessment = () => {
-    toast.info("Assessment functionality will be available soon");
+    setAddAssessmentDialogOpen(true);
   };
 
   const handleAddEquipment = () => {
-    toast.info("Equipment functionality will be available soon");
+    setAddEquipmentDialogOpen(true);
   };
 
   const handleAddRiskAssessment = () => {
-    toast.info("Risk assessment functionality will be available soon");
+    setAddRiskAssessmentDialogOpen(true);
   };
 
   const handleAddServicePlan = () => {
-    toast.info("Service plan functionality will be available soon");
+    setAddServicePlanDialogOpen(true);
   };
 
   const handleAddServiceAction = () => {
-    toast.info("Service action functionality will be available soon");
+    setAddServiceActionDialogOpen(true);
   };
 
   const handleAddNote = () => {
@@ -238,7 +250,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     setAddGoalDialogOpen(true);
   };
 
-  // Database-connected handlers
+  // Database-connected save handlers
   const handleSaveNote = async (noteData: { title: string; content: string }) => {
     try {
       await createNoteMutation.mutateAsync({
@@ -304,17 +316,101 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     }
   };
 
+  const handleSaveAssessment = async (assessmentData: any) => {
+    try {
+      await createAssessmentMutation.mutateAsync({
+        client_id: carePlan.patientId,
+        assessment_name: assessmentData.assessment_name,
+        assessment_type: assessmentData.assessment_type,
+        assessment_date: assessmentData.assessment_date,
+        performed_by: assessmentData.performed_by,
+        status: 'completed',
+        score: assessmentData.score,
+        results: assessmentData.results,
+        recommendations: assessmentData.recommendations,
+        next_review_date: assessmentData.next_review_date,
+      });
+      setAddAssessmentDialogOpen(false);
+    } catch (error) {
+      console.error("Error saving assessment:", error);
+      toast.error("Failed to save assessment");
+    }
+  };
+
+  const handleSaveEquipment = async (equipmentData: any) => {
+    try {
+      await createEquipmentMutation.mutateAsync(equipmentData);
+      setAddEquipmentDialogOpen(false);
+    } catch (error) {
+      console.error("Error saving equipment:", error);
+      toast.error("Failed to save equipment");
+    }
+  };
+
+  const handleSaveRiskAssessment = async (riskData: any) => {
+    try {
+      await createRiskAssessmentMutation.mutateAsync(riskData);
+      setAddRiskAssessmentDialogOpen(false);
+    } catch (error) {
+      console.error("Error saving risk assessment:", error);
+      toast.error("Failed to save risk assessment");
+    }
+  };
+
+  const handleSaveServiceAction = async (serviceActionData: any) => {
+    try {
+      await createServiceActionMutation.mutateAsync(serviceActionData);
+      setAddServiceActionDialogOpen(false);
+    } catch (error) {
+      console.error("Error saving service action:", error);
+      toast.error("Failed to save service action");
+    }
+  };
+
   const handleSavePersonalInfo = async (data: any) => {
     try {
-      await updateClientMutation.mutateAsync({
-        clientId: carePlan.patientId,
-        updates: data
-      });
+      // Handle different data types based on what's being saved
+      if (data.dietary_restrictions || data.food_allergies || data.food_preferences) {
+        // This is dietary data - save to dietary requirements
+        await updateClientMutation.mutateAsync({
+          clientId: carePlan.patientId,
+          updates: { dietary_requirements: data }
+        });
+      } else if (data.personal_hygiene_needs || data.bathing_preferences || data.dressing_assistance_level) {
+        // This is personal care data
+        await updateClientMutation.mutateAsync({
+          clientId: carePlan.patientId,
+          updates: { personal_care: data }
+        });
+      } else if (data.allergies || data.current_medications || data.medical_conditions) {
+        // This is medical data
+        await updateClientMutation.mutateAsync({
+          clientId: carePlan.patientId,
+          updates: { medical_info: data }
+        });
+      } else if (data.cultural_preferences || data.language_preferences) {
+        // This is personal info data
+        await updateClientMutation.mutateAsync({
+          clientId: carePlan.patientId,
+          updates: { personal_info: data }
+        });
+      } else {
+        // Default to client profile update
+        await updateClientMutation.mutateAsync({
+          clientId: carePlan.patientId,
+          updates: data
+        });
+      }
+      
       setEditPersonalInfoOpen(false);
-      toast.success("Personal information updated successfully");
+      setEditMedicalInfoOpen(false);
+      setEditAboutMeOpen(false);
+      setEditDietaryOpen(false);
+      setEditPersonalCareOpen(false);
+      toast.success("Information updated successfully");
     } catch (error) {
-      console.error("Error updating personal info:", error);
-      toast.error("Failed to update personal information");
+      console.error("Error updating information:", error);
+      toast.error("Failed to update information");
     }
   };
 
@@ -567,6 +663,48 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         onOpenChange={setAddActivityDialogOpen}
         onSave={handleSaveActivity}
         isLoading={createActivityMutation.isPending}
+      />
+
+      <AddAssessmentDialog
+        open={addAssessmentDialogOpen}
+        onOpenChange={setAddAssessmentDialogOpen}
+        onSave={handleSaveAssessment}
+        clientId={carePlan.patientId}
+        isLoading={createAssessmentMutation.isPending}
+      />
+
+      <AddEquipmentDialog
+        open={addEquipmentDialogOpen}
+        onOpenChange={setAddEquipmentDialogOpen}
+        onSave={handleSaveEquipment}
+        clientId={carePlan.patientId}
+        isLoading={createEquipmentMutation.isPending}
+      />
+
+      <AddRiskAssessmentDialog
+        open={addRiskAssessmentDialogOpen}
+        onOpenChange={setAddRiskAssessmentDialogOpen}
+        onSave={handleSaveRiskAssessment}
+        clientId={carePlan.patientId}
+        isLoading={createRiskAssessmentMutation.isPending}
+      />
+
+      <AddServicePlanDialog
+        open={addServicePlanDialogOpen}
+        onOpenChange={setAddServicePlanDialogOpen}
+        onSave={handleSaveServiceAction}
+        clientId={carePlan.patientId}
+        carePlanId={carePlan.id}
+        isLoading={createServiceActionMutation.isPending}
+      />
+
+      <AddServiceActionDialog
+        open={addServiceActionDialogOpen}
+        onOpenChange={setAddServiceActionDialogOpen}
+        onSave={handleSaveServiceAction}
+        clientId={carePlan.patientId}
+        carePlanId={carePlan.id}
+        isLoading={createServiceActionMutation.isPending}
       />
 
       <EditPersonalInfoDialog
