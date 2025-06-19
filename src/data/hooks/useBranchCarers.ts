@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -155,7 +156,7 @@ export function useBranchCarers(branchId?: string) {
   });
 }
 
-// New hook for fetching individual carer profile
+// Hook for fetching individual carer profile
 export function useCarerProfile(carerId?: string) {
   return useQuery({
     queryKey: ["carer-profile", carerId],
@@ -232,22 +233,5 @@ export function useDeleteCarer() {
         description: error.message || "An error occurred while deleting the carer."
       });
     }
-  });
-}
-
-// Hook for carers to get their own profile
-export function useCarerProfile(carerId?: string) {
-  return useQuery({
-    queryKey: ["staff-profile", carerId],
-    queryFn: async () => {
-      if (!carerId) throw new Error('No carer ID provided');
-      
-      const { data, error } = await supabase
-        .rpc('get_staff_profile', { staff_user_id: carerId });
-      
-      if (error) throw error;
-      return data?.[0] || null;
-    },
-    enabled: !!carerId,
   });
 }

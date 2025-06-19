@@ -11,13 +11,9 @@ import CarerDashboard from "./pages/CarerDashboard";
 import CarerLogin from "./pages/CarerLogin";
 import CarerProfile from "./pages/carer/CarerProfile";
 import CarerProfilePage from "./pages/CarerProfilePage";
-import ClientPortal from "./pages/ClientPortal";
 import ClientLogin from "./pages/ClientLogin";
 import ClientProfile from "./pages/client/ClientProfile";
-import ClientDashboard from "./pages/client/ClientDashboard";
 import ClientAppointments from "./pages/client/ClientAppointments";
-import ClientCommunications from "./pages/client/ClientCommunications";
-import ClientBilling from "./pages/client/ClientBilling";
 import ClientCarePlans from "./pages/client/ClientCarePlans";
 import ClientDocuments from "./pages/client/ClientDocuments";
 import Attendance from "./pages/Attendance";
@@ -52,13 +48,9 @@ const App = () => (
               <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
               
               {/* Client Routes */}
-              <Route path="/client-portal" element={<ClientPortal />} />
               <Route path="/client-login" element={<ClientLogin />} />
-              <Route path="/client-dashboard/*" element={<ClientDashboard />} />
               <Route path="/client-dashboard/profile" element={<ClientProfile />} />
               <Route path="/client-dashboard/appointments" element={<ClientAppointments />} />
-              <Route path="/client-dashboard/communications" element={<ClientCommunications />} />
-              <Route path="/client-dashboard/billing" element={<ClientBilling />} />
               <Route path="/client-dashboard/care-plans" element={<ClientCarePlans />} />
               <Route path="/client-dashboard/documents" element={<ClientDocuments />} />
               
