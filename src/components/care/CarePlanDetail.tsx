@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { X, FileEdit, Download, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
@@ -12,6 +11,7 @@ import { useCreateClientAssessment } from "@/hooks/useClientAssessments";
 import { useUpdateClient } from "@/hooks/useUpdateClient";
 import { useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
 import { useUpdateClientPersonalCare } from "@/hooks/useClientPersonalCare";
+import { useUpdateClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
 import { useCreateGoal, useUpdateGoal } from "@/hooks/useCarePlanGoalsMutations";
 import { toast } from "@/hooks/use-toast";
 
@@ -35,6 +35,7 @@ import { EventsLogsTab } from "./tabs/EventsLogsTab";
 import { AddAssessmentDialog } from "./dialogs/AddAssessmentDialog";
 import { EditPersonalInfoDialog } from "./dialogs/EditPersonalInfoDialog";
 import { EditAboutMeDialog } from "./dialogs/EditAboutMeDialog";
+import { EditMedicalInfoDialog } from "./dialogs/EditMedicalInfoDialog";
 import { AddGoalDialog } from "./dialogs/AddGoalDialog";
 import { EditGoalDialog } from "./dialogs/EditGoalDialog";
 
@@ -70,6 +71,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const [assessmentDialogOpen, setAssessmentDialogOpen] = useState(false);
   const [personalInfoDialogOpen, setPersonalInfoDialogOpen] = useState(false);
   const [aboutMeDialogOpen, setAboutMeDialogOpen] = useState(false);
+  const [medicalInfoDialogOpen, setMedicalInfoDialogOpen] = useState(false);
   const [addGoalDialogOpen, setAddGoalDialogOpen] = useState(false);
   const [editGoalDialogOpen, setEditGoalDialogOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<any>(null);
@@ -94,6 +96,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const updateClientMutation = useUpdateClient();
   const updatePersonalInfoMutation = useUpdateClientPersonalInfo();
   const updatePersonalCareMutation = useUpdateClientPersonalCare();
+  const updateMedicalInfoMutation = useUpdateClientMedicalInfo();
   const createGoalMutation = useCreateGoal();
   const updateGoalMutation = useUpdateGoal();
 
@@ -250,6 +253,37 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
       toast({
         title: "Error",
         description: "Failed to update about me information. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSaveMedicalInfo = async (data: any) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot save medical information.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await updateMedicalInfoMutation.mutateAsync({
+        client_id: clientId,
+        ...data
+      });
+
+      setMedicalInfoDialogOpen(false);
+      toast({
+        title: "Medical information updated",
+        description: "The medical information has been successfully updated."
+      });
+    } catch (error) {
+      console.error("Error updating medical info:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update medical information. Please try again.",
         variant: "destructive"
       });
     }
@@ -504,6 +538,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                     personalInfo={comprehensiveData?.personalInfo}
                     medicalInfo={comprehensiveData?.medicalInfo}
                     onEditPersonalInfo={() => setPersonalInfoDialogOpen(true)}
+                    onEditMedicalInfo={() => setMedicalInfoDialogOpen(true)}
                   />
                 </TabsContent>
                 
@@ -608,6 +643,14 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         personalInfo={comprehensiveData?.personalInfo}
         personalCare={comprehensiveData?.personalCare}
         isLoading={updatePersonalInfoMutation.isPending || updatePersonalCareMutation.isPending}
+      />
+
+      <EditMedicalInfoDialog
+        open={medicalInfoDialogOpen}
+        onOpenChange={setMedicalInfoDialogOpen}
+        onSave={handleSaveMedicalInfo}
+        medicalInfo={comprehensiveData?.medicalInfo}
+        isLoading={updateMedicalInfoMutation.isPending}
       />
 
       <AddGoalDialog
