@@ -7,16 +7,30 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { useClientEvents } from "@/hooks/useClientEvents";
+
+interface EventOrLog {
+  id: string;
+  title: string;
+  eventType: string;
+  clientName?: string;
+  staffName?: string;
+  location: string;
+  date: string;
+  time: string;
+  category: string;
+  status: string;
+  details: string;
+  carePlanId?: string;
+}
 
 interface EventsLogsTabProps {
-  clientId: string;
+  carePlanId: string;
   patientName: string;
   onAddEvent?: () => void;
 }
 
 export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({ 
-  clientId, 
+  carePlanId, 
   patientName, 
   onAddEvent 
 }) => {
@@ -24,16 +38,56 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
 
-  // Use real database data
-  const { data: events = [], isLoading, error } = useClientEvents(clientId);
+  // Mock events data related to the current care plan
+  const mockEvents: EventOrLog[] = [
+    {
+      id: 'EV001-CP',
+      title: 'Medication Error',
+      eventType: 'client',
+      clientName: patientName,
+      location: 'Client\'s Home',
+      date: '2025-04-10',
+      time: '09:30',
+      category: 'medication_error',
+      status: 'Pending Review',
+      details: 'Client was given the wrong medication dose.',
+      carePlanId: carePlanId
+    },
+    {
+      id: 'EV002-CP',
+      title: 'Fall Incident',
+      eventType: 'client',
+      clientName: patientName,
+      location: 'Bathroom',
+      date: '2025-04-09',
+      time: '14:15',
+      category: 'accident',
+      status: 'In Progress',
+      details: 'Client slipped in the bathroom, no serious injuries.',
+      carePlanId: carePlanId
+    },
+    {
+      id: 'EV003-CP',
+      title: 'Care Plan Review',
+      eventType: 'client',
+      clientName: patientName,
+      location: 'Med-Infinite Office',
+      date: '2025-04-08',
+      time: '11:00',
+      category: 'review',
+      status: 'Completed',
+      details: 'Quarterly care plan review completed with client and family.',
+      carePlanId: carePlanId
+    }
+  ];
 
-  const filteredEvents = events.filter(event => {
+  const filteredEvents = mockEvents.filter(event => {
     const matchesSearch = 
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (event.description && event.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      event.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.id.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesCategory = filterCategory === 'all' || event.event_type === filterCategory;
+    const matchesCategory = filterCategory === 'all' || event.category === filterCategory;
     const matchesStatus = filterStatus === 'all' || event.status === filterStatus;
     
     return matchesSearch && matchesCategory && matchesStatus;
@@ -41,18 +95,22 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
 
   const getCategoryBadge = (category: string) => {
     switch (category) {
+      case 'accident':
+        return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Accident</Badge>;
       case 'incident':
         return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">Incident</Badge>;
-      case 'medical':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Medical Event</Badge>;
-      case 'behavioral':
-        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Behavioral</Badge>;
-      case 'safety':
-        return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Safety Concern</Badge>;
-      case 'medication':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Medication</Badge>;
-      case 'fall':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Fall</Badge>;
+      case 'near_miss':
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Near Miss</Badge>;
+      case 'medication_error':
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Medication Error</Badge>;
+      case 'safeguarding':
+        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Safeguarding</Badge>;
+      case 'complaint':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Complaint</Badge>;
+      case 'compliment':
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Compliment</Badge>;
+      case 'review':
+        return <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200">Review</Badge>;
       default:
         return <Badge variant="outline">Other</Badge>;
     }
@@ -60,44 +118,21 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'open':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Open</Badge>;
-      case 'in_progress':
+      case 'Draft':
+        return <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">Draft</Badge>;
+      case 'Pending Review':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Pending Review</Badge>;
+      case 'In Progress':
         return <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">In Progress</Badge>;
-      case 'resolved':
-        return <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">Resolved</Badge>;
-      case 'closed':
+      case 'Resolved':
+      case 'Completed':
+        return <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">{status}</Badge>;
+      case 'Closed':
         return <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">Closed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
   };
-
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'critical': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-32">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-8 text-red-500">
-        <p className="text-sm">Error loading events: {error.message}</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -118,7 +153,7 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
               <span>New Event</span>
             </Button>
           </div>
-          <CardDescription>Records of incidents, events, and logs for {patientName}</CardDescription>
+          <CardDescription>Records of incidents, events, and logs for this care plan</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
           <div className="flex flex-col md:flex-row gap-4 items-end pb-4">
@@ -141,12 +176,11 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="accident">Accident</SelectItem>
                   <SelectItem value="incident">Incident</SelectItem>
-                  <SelectItem value="medical">Medical Event</SelectItem>
-                  <SelectItem value="behavioral">Behavioral</SelectItem>
-                  <SelectItem value="safety">Safety Concern</SelectItem>
-                  <SelectItem value="medication">Medication</SelectItem>
-                  <SelectItem value="fall">Fall</SelectItem>
+                  <SelectItem value="medication_error">Medication Error</SelectItem>
+                  <SelectItem value="safeguarding">Safeguarding</SelectItem>
+                  <SelectItem value="review">Review</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
@@ -159,10 +193,12 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
+                  <SelectItem value="Draft">Draft</SelectItem>
+                  <SelectItem value="Pending Review">Pending Review</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Resolved">Resolved</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="Closed">Closed</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -177,13 +213,7 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
           {filteredEvents.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <FileBarChart2 className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-              <p className="text-sm">No events or logs found for this client</p>
-              {onAddEvent && (
-                <Button variant="outline" onClick={onAddEvent} className="mt-4">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add First Event
-                </Button>
-              )}
+              <p className="text-sm">No events or logs found for this care plan</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -196,10 +226,7 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-medium">{event.title}</h3>
-                        {getCategoryBadge(event.event_type)}
-                        <Badge className={getSeverityColor(event.severity)}>
-                          {event.severity}
-                        </Badge>
+                        {getCategoryBadge(event.category)}
                       </div>
                       <p className="text-sm text-gray-500">Reference: {event.id}</p>
                     </div>
@@ -213,33 +240,43 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
                     </div>
                   </div>
                   
-                  <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 text-gray-400 mr-2" />
                       <div>
                         <div className="text-xs text-gray-500">Date & Time</div>
                         <div className="text-sm">
-                          {format(new Date(event.created_at), 'MMM dd, yyyy HH:mm')}
+                          {event.date} at {event.time}
                         </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <MapPin className="h-4 w-4 text-gray-400 mr-2" />
+                      <div>
+                        <div className="text-xs text-gray-500">Location</div>
+                        <div className="text-sm">{event.location}</div>
                       </div>
                     </div>
                     
                     <div className="flex items-center">
                       <User className="h-4 w-4 text-gray-400 mr-2" />
                       <div>
-                        <div className="text-xs text-gray-500">Reported By</div>
-                        <div className="text-sm">{event.reporter}</div>
+                        <div className="text-xs text-gray-500">
+                          {event.eventType === 'client' ? 'Client' : 'Staff Member'}
+                        </div>
+                        <div className="text-sm">
+                          {event.eventType === 'client' ? event.clientName : event.staffName}
+                        </div>
                       </div>
                     </div>
                   </div>
                   
-                  {event.description && (
-                    <div className="px-4 pb-4">
-                      <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
-                        {event.description}
-                      </div>
+                  <div className="px-4 pb-4">
+                    <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                      {event.details}
                     </div>
-                  )}
+                  </div>
                 </div>
               ))}
             </div>
