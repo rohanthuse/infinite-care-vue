@@ -1,7 +1,7 @@
 
 import React from "react";
 import { format } from "date-fns";
-import { ShieldAlert, Calendar, User, AlertTriangle, Clock } from "lucide-react";
+import { ShieldAlert, Calendar, User, AlertTriangle, Clock, Plus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,15 @@ import { ClientRiskAssessment } from "@/hooks/useClientRiskAssessments";
 
 interface RiskTabProps {
   riskAssessments: ClientRiskAssessment[];
+  onAddRiskAssessment?: () => void;
+  onEditRiskAssessment?: (riskAssessment: ClientRiskAssessment) => void;
 }
 
-export const RiskTab: React.FC<RiskTabProps> = ({ riskAssessments }) => {
+export const RiskTab: React.FC<RiskTabProps> = ({ 
+  riskAssessments, 
+  onAddRiskAssessment,
+  onEditRiskAssessment 
+}) => {
   const getRiskLevelClass = (level: string) => {
     switch (level.toLowerCase()) {
       case "high":
@@ -37,7 +43,12 @@ export const RiskTab: React.FC<RiskTabProps> = ({ riskAssessments }) => {
             </CardTitle>
             <CardDescription>Safety risks and mitigation plans</CardDescription>
           </div>
-          <Button variant="outline" size="sm">Add Risk Assessment</Button>
+          {onAddRiskAssessment && (
+            <Button variant="outline" size="sm" onClick={onAddRiskAssessment}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Risk Assessment
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="pt-4">
@@ -45,7 +56,13 @@ export const RiskTab: React.FC<RiskTabProps> = ({ riskAssessments }) => {
           {riskAssessments.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <ShieldAlert className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-              <p className="text-sm">No risk assessments available</p>
+              <p className="text-sm mb-4">No risk assessments available</p>
+              {onAddRiskAssessment && (
+                <Button variant="outline" onClick={onAddRiskAssessment}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Risk Assessment
+                </Button>
+              )}
             </div>
           ) : (
             riskAssessments.map((risk) => (
@@ -134,7 +151,11 @@ export const RiskTab: React.FC<RiskTabProps> = ({ riskAssessments }) => {
                   )}
 
                   <div className="flex justify-end gap-2 mt-4">
-                    <Button variant="outline" size="sm">Update Assessment</Button>
+                    {onEditRiskAssessment && (
+                      <Button variant="outline" size="sm" onClick={() => onEditRiskAssessment(risk)}>
+                        Update Assessment
+                      </Button>
+                    )}
                     <Button size="sm">Schedule Review</Button>
                   </div>
                 </div>

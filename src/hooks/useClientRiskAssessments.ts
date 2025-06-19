@@ -7,8 +7,8 @@ export interface ClientRiskAssessment {
   client_id: string;
   risk_type: string;
   risk_level: string;
-  risk_factors?: string[];
-  mitigation_strategies?: string[];
+  risk_factors: string[];
+  mitigation_strategies: string[];
   assessment_date: string;
   assessed_by: string;
   review_date?: string;
@@ -51,13 +51,13 @@ const createClientRiskAssessment = async (riskAssessment: Omit<ClientRiskAssessm
   return data;
 };
 
-const updateClientRiskAssessment = async (id: string, riskAssessment: Partial<ClientRiskAssessment>) => {
-  console.log('[updateClientRiskAssessment] Updating:', id, riskAssessment);
+const updateClientRiskAssessment = async ({ riskAssessmentId, updates }: { riskAssessmentId: string; updates: Partial<ClientRiskAssessment> }) => {
+  console.log('[updateClientRiskAssessment] Updating:', { riskAssessmentId, updates });
   
   const { data, error } = await supabase
     .from('client_risk_assessments')
-    .update(riskAssessment)
-    .eq('id', id)
+    .update(updates)
+    .eq('id', riskAssessmentId)
     .select()
     .single();
 
@@ -93,8 +93,7 @@ export const useUpdateClientRiskAssessment = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ id, ...riskAssessment }: { id: string } & Partial<ClientRiskAssessment>) => 
-      updateClientRiskAssessment(id, riskAssessment),
+    mutationFn: updateClientRiskAssessment,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['client-risk-assessments', data.client_id] });
     },

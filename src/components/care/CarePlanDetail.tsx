@@ -13,6 +13,7 @@ import { useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
 import { useClientPersonalCare, useUpdateClientPersonalCare } from "@/hooks/useClientPersonalCare";
 import { useUpdateClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
 import { useClientDietaryRequirements, useUpdateClientDietaryRequirements } from "@/hooks/useClientDietaryRequirements";
+import { useClientRiskAssessments, useCreateClientRiskAssessment, useUpdateClientRiskAssessment } from "@/hooks/useClientRiskAssessments";
 import { useCreateGoal, useUpdateGoal } from "@/hooks/useCarePlanGoalsMutations";
 import { toast } from "@/hooks/use-toast";
 
@@ -41,6 +42,8 @@ import { EditDietaryDialog } from "./dialogs/EditDietaryDialog";
 import { EditPersonalCareDialog } from "./dialogs/EditPersonalCareDialog";
 import { AddGoalDialog } from "./dialogs/AddGoalDialog";
 import { EditGoalDialog } from "./dialogs/EditGoalDialog";
+import { AddRiskAssessmentDialog } from "./dialogs/AddRiskAssessmentDialog";
+import { EditRiskAssessmentDialog } from "./dialogs/EditRiskAssessmentDialog";
 
 interface CarePlanDetailProps {
   carePlan: {
@@ -80,6 +83,9 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const [addGoalDialogOpen, setAddGoalDialogOpen] = useState(false);
   const [editGoalDialogOpen, setEditGoalDialogOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<any>(null);
+  const [addRiskAssessmentDialogOpen, setAddRiskAssessmentDialogOpen] = useState(false);
+  const [editRiskAssessmentDialogOpen, setEditRiskAssessmentDialogOpen] = useState(false);
+  const [selectedRiskAssessment, setSelectedRiskAssessment] = useState<any>(null);
   const { user } = useAuth();
 
   // Fetch comprehensive care plan data
@@ -118,6 +124,11 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   // Personal care hooks
   const { data: personalCare, isLoading: personalCareLoading } = useClientPersonalCare(clientId);
   const updatePersonalCareMutation = useUpdateClientPersonalCare();
+  
+  // Risk assessment hooks
+  const { data: riskAssessments = [], isLoading: riskAssessmentsLoading } = useClientRiskAssessments(clientId);
+  const createRiskAssessmentMutation = useCreateClientRiskAssessment();
+  const updateRiskAssessmentMutation = useUpdateClientRiskAssessment();
   
   // New mutation hooks for editing functionality
   const updateClientMutation = useUpdateClient();
@@ -182,6 +193,71 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         variant: "destructive"
       });
     }
+  };
+
+  const handleSaveRiskAssessment = async (data: any) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot save risk assessment.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await createRiskAssessmentMutation.mutateAsync(data);
+
+      setAddRiskAssessmentDialogOpen(false);
+      toast({
+        title: "Risk assessment created",
+        description: "The risk assessment has been successfully added."
+      });
+    } catch (error) {
+      console.error("Error saving risk assessment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save risk assessment. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateRiskAssessment = async (data: any) => {
+    if (!selectedRiskAssessment?.id) {
+      toast({
+        title: "Error",
+        description: "Risk assessment ID not found. Cannot update risk assessment.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await updateRiskAssessmentMutation.mutateAsync({
+        riskAssessmentId: selectedRiskAssessment.id,
+        updates: data
+      });
+
+      setEditRiskAssessmentDialogOpen(false);
+      setSelectedRiskAssessment(null);
+      toast({
+        title: "Risk assessment updated",
+        description: "The risk assessment has been successfully updated."
+      });
+    } catch (error) {
+      console.error("Error updating risk assessment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update risk assessment. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEditRiskAssessment = (riskAssessment: any) => {
+    setSelectedRiskAssessment(riskAssessment);
+    setEditRiskAssessmentDialogOpen(true);
   };
 
   const handleSavePersonalInfo = async (data: any) => {
@@ -468,7 +544,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     setMedicalInfoDialogOpen(true);
   };
 
-  if (isLoading || dietaryLoading || personalCareLoading) {
+  if (isLoading || dietaryLoading || personalCareLoading || riskAssessmentsLoading) {
     return (
       <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
@@ -568,14 +644,6 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     client_id: equipment.client_id,
     created_at: equipment.created_at,
     updated_at: equipment.updated_at
-  })) || [];
-
-  // Transform risk assessments to match expected interface
-  const transformedRiskAssessments = comprehensiveData?.riskAssessments?.map(risk => ({
-    ...risk,
-    client_id: risk.client_id,
-    created_at: risk.created_at,
-    updated_at: risk.updated_at
   })) || [];
 
   // Transform service actions to match expected interface
@@ -705,7 +773,11 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="risk">
-                  <RiskTab riskAssessments={transformedRiskAssessments} />
+                  <RiskTab 
+                    riskAssessments={riskAssessments}
+                    onAddRiskAssessment={() => setAddRiskAssessmentDialogOpen(true)}
+                    onEditRiskAssessment={handleEditRiskAssessment}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="serviceplan">
@@ -794,6 +866,22 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         onSave={handleUpdateGoal}
         goal={selectedGoal}
         isLoading={updateGoalMutation.isPending}
+      />
+
+      <AddRiskAssessmentDialog
+        open={addRiskAssessmentDialogOpen}
+        onOpenChange={setAddRiskAssessmentDialogOpen}
+        onSave={handleSaveRiskAssessment}
+        clientId={clientId}
+        isLoading={createRiskAssessmentMutation.isPending}
+      />
+
+      <EditRiskAssessmentDialog
+        open={editRiskAssessmentDialogOpen}
+        onOpenChange={setEditRiskAssessmentDialogOpen}
+        onSave={handleUpdateRiskAssessment}
+        riskAssessment={selectedRiskAssessment}
+        isLoading={updateRiskAssessmentMutation.isPending}
       />
     </div>
   );
