@@ -1,8 +1,7 @@
 import React from "react";
-import { User, Phone, Heart, Edit2, Plus } from "lucide-react";
+import { Edit2, Plus } from "lucide-react";
 import { format } from "date-fns";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 interface PersonalInfoTabProps {
@@ -33,265 +32,244 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     medicalInfo.mental_health_status
   );
 
-  return (
-    <div className="space-y-4">
-      {/* Personal Information Card - Keep existing code */}
-      <Card className="overflow-hidden border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-        <CardHeader className="pb-3 bg-gradient-to-r from-med-50 to-white border-b border-med-100">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <User className="h-5 w-5 text-med-600" />
-              <CardTitle className="text-lg">Personal Information</CardTitle>
-            </div>
-            {onEditPersonalInfo && (
-              <Button variant="outline" size="sm" onClick={onEditPersonalInfo}>
-                <Edit2 className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-            )}
-          </div>
-          <CardDescription>Patient demographic and contact details</CardDescription>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <InfoCard 
-              icon={<User className="h-5 w-5 text-med-500" />}
-              title="Basic Information"
-              items={[
-                { label: "Full Name", value: `${client?.first_name || ''} ${client?.last_name || ''}`.trim() || "Not specified" },
-                { label: "Preferred Name", value: client?.preferred_name || "Not specified" },
-                { label: "Title", value: client?.title || "Not specified" },
-                { label: "Gender", value: client?.gender || "Not specified" },
-                { label: "Pronouns", value: client?.pronouns || "Not specified" },
-                { label: "Date of Birth", value: client?.date_of_birth ? 
-                  `${format(new Date(client.date_of_birth), 'MMM dd, yyyy')} (Age: ${new Date().getFullYear() - new Date(client.date_of_birth).getFullYear()})` : 
-                  "Not specified"
-                }
-              ]}
-            />
-            
-            <InfoCard 
-              icon={<Phone className="h-5 w-5 text-med-500" />}
-              title="Contact Information"
-              items={[
-                { label: "Address", value: client?.address || "Not specified" },
-                { label: "Phone", value: client?.phone || "Not specified" },
-                { label: "Mobile", value: client?.mobile_number || "Not specified" },
-                { label: "Email", value: client?.email || "Not specified" },
-                { label: "Region", value: client?.region || "Not specified" },
-                { label: "Other ID", value: client?.other_identifier || "Not specified" }
-              ]}
-            />
-          </div>
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Not specified';
+    try {
+      return format(new Date(dateString), 'PPP');
+    } catch {
+      return dateString;
+    }
+  };
 
-          {client?.additional_information && (
-            <div className="mt-6">
-              <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                  <User className="h-5 w-5 mr-2 text-med-600" />
-                  Additional Information
-                </h3>
-                <div className="p-4 rounded-lg bg-med-50 border border-med-100">
-                  <p className="text-gray-700">{client.additional_information}</p>
-                </div>
-              </div>
-            </div>
+  return (
+    <div className="space-y-6">
+      {/* Personal Information Card */}
+      <Card className="p-4 border border-gray-200 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium">Personal Information</h3>
+          {onEditPersonalInfo && (
+            <Button variant="outline" size="sm" onClick={onEditPersonalInfo}>
+              <Edit2 className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
           )}
-        </CardContent>
-      </Card>
-      
-      {/* Medical Information Card - Updated to handle empty state */}
-      <Card className="overflow-hidden border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-        <CardHeader className="pb-3 bg-gradient-to-r from-med-50 to-white border-b border-med-100">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Heart className="h-5 w-5 text-med-600" />
-              <CardTitle className="text-lg">Medical Information</CardTitle>
-            </div>
-            {onEditMedicalInfo && (
-              <Button variant="outline" size="sm" onClick={onEditMedicalInfo}>
-                {hasMedicalInfo ? (
-                  <>
-                    <Edit2 className="h-4 w-4 mr-2" />
-                    Edit
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Medical Information
-                  </>
-                )}
-              </Button>
-            )}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <h4 className="text-sm font-medium text-gray-500">Title</h4>
+            <p className="mt-1">{client?.title || 'Not specified'}</p>
           </div>
-          <CardDescription>Allergies, conditions, and current medications</CardDescription>
-        </CardHeader>
-        <CardContent className="p-6">
-          {!hasMedicalInfo ? (
-            // Empty state
-            <div className="text-center py-8">
-              <Heart className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-600 mb-2">No Medical Information Available</h3>
-              <p className="text-gray-500 mb-4">
-                Add medical information including allergies, conditions, medications, and health status.
-              </p>
-              {onEditMedicalInfo && (
-                <Button onClick={onEditMedicalInfo} className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
+          <div>
+            <h4 className="text-sm font-medium text-gray-500">First Name</h4>
+            <p className="mt-1">{client?.first_name || 'Not specified'}</p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-gray-500">Middle Name</h4>
+            <p className="mt-1">{client?.middle_name || 'Not specified'}</p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-gray-500">Last Name</h4>
+            <p className="mt-1">{client?.last_name || 'Not specified'}</p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-gray-500">Preferred Name</h4>
+            <p className="mt-1">{client?.preferred_name || 'Not specified'}</p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-gray-500">Pronouns</h4>
+            <p className="mt-1">{client?.pronouns || 'Not specified'}</p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-gray-500">Date of Birth</h4>
+            <p className="mt-1">{client?.date_of_birth ? 
+              `${format(new Date(client.date_of_birth), 'PPP')} (Age: ${new Date().getFullYear() - new Date(client.date_of_birth).getFullYear()})` : 
+              'Not specified'
+            }</p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-gray-500">Gender</h4>
+            <p className="mt-1">{client?.gender || 'Not specified'}</p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-gray-500">Client ID</h4>
+            <p className="mt-1">{client?.id}</p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-gray-500">Other Identifier</h4>
+            <p className="mt-1">{client?.other_identifier || 'Not specified'}</p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Contact Information Card */}
+      <Card className="p-4 border border-gray-200 shadow-sm">
+        <h3 className="text-lg font-medium mb-4">Contact Information</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <h4 className="text-sm font-medium text-gray-500">Email</h4>
+            <p className="mt-1">{client?.email || 'Not specified'}</p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-gray-500">Phone</h4>
+            <p className="mt-1">{client?.phone || 'Not specified'}</p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-gray-500">Mobile Number</h4>
+            <p className="mt-1">{client?.mobile_number || 'Not specified'}</p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-gray-500">Address</h4>
+            <p className="mt-1">{client?.address || 'Not specified'}</p>
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-gray-500">Region</h4>
+            <p className="mt-1">{client?.region || 'Not specified'}</p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Additional Information Card */}
+      {client?.additional_information && (
+        <Card className="p-4 border border-gray-200 shadow-sm">
+          <h3 className="text-lg font-medium mb-4">Additional Information</h3>
+          <p className="whitespace-pre-wrap">{client.additional_information}</p>
+        </Card>
+      )}
+
+      {/* Medical Information Card */}
+      <Card className="p-4 border border-gray-200 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium">Medical Information</h3>
+          {onEditMedicalInfo && (
+            <Button variant="outline" size="sm" onClick={onEditMedicalInfo}>
+              {hasMedicalInfo ? (
+                <>
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  Edit
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
                   Add Medical Information
-                </Button>
+                </>
               )}
-            </div>
-          ) : (
-            // Existing medical information display
-            <div className="space-y-6">
-              {medicalInfo?.allergies && medicalInfo.allergies.length > 0 && (
-                <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                  <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                    <Heart className="h-5 w-5 mr-2 text-red-500" />
-                    Allergies
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {medicalInfo.allergies.map((allergy: string, index: number) => (
-                      <Badge key={index} variant="outline" className="bg-red-50 text-red-700 border-red-200 px-3 py-1 hover:bg-red-100 transition-colors">
-                        {allergy}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {medicalInfo?.medical_conditions && medicalInfo.medical_conditions.length > 0 && (
-                <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                  <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                    <Heart className="h-5 w-5 mr-2 text-med-600" />
-                    Medical Conditions
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {medicalInfo.medical_conditions.map((condition: string, index: number) => (
-                      <Badge key={index} variant="outline" className="bg-med-50 text-med-700 border-med-200 px-3 py-1 hover:bg-med-100 transition-colors">
-                        {condition}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {medicalInfo?.current_medications && medicalInfo.current_medications.length > 0 && (
-                <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                  <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                    <Heart className="h-5 w-5 mr-2 text-med-600" />
-                    Current Medications
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {medicalInfo.current_medications.map((medication: string, index: number) => (
-                      <div key={index} className="p-4 rounded-lg bg-white border border-med-100 hover:border-med-300 shadow-sm hover:shadow-md transition-all">
-                        <p className="font-medium text-med-700">{medication}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {medicalInfo?.medical_history && (
-                <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                  <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                    <Heart className="h-5 w-5 mr-2 text-med-600" />
-                    Medical History
-                  </h3>
-                  <div className="p-4 rounded-lg bg-med-50 border border-med-100">
-                    <p className="text-gray-700">{medicalInfo.medical_history}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Additional medical info fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {medicalInfo?.mobility_status && (
-                  <InfoCard 
-                    icon={<Heart className="h-5 w-5 text-med-500" />}
-                    title="Mobility Status"
-                    items={[
-                      { label: "Status", value: medicalInfo.mobility_status }
-                    ]}
-                  />
-                )}
-                
-                {medicalInfo?.cognitive_status && (
-                  <InfoCard 
-                    icon={<Heart className="h-5 w-5 text-med-500" />}
-                    title="Cognitive Status"
-                    items={[
-                      { label: "Status", value: medicalInfo.cognitive_status }
-                    ]}
-                  />
-                )}
-                
-                {medicalInfo?.communication_needs && (
-                  <InfoCard 
-                    icon={<Heart className="h-5 w-5 text-med-500" />}
-                    title="Communication Needs"
-                    items={[
-                      { label: "Needs", value: medicalInfo.communication_needs }
-                    ]}
-                  />
-                )}
-                
-                {medicalInfo?.mental_health_status && (
-                  <InfoCard 
-                    icon={<Heart className="h-5 w-5 text-med-500" />}
-                    title="Mental Health"
-                    items={[
-                      { label: "Status", value: medicalInfo.mental_health_status }
-                    ]}
-                  />
-                )}
-              </div>
-
-              {medicalInfo?.sensory_impairments && medicalInfo.sensory_impairments.length > 0 && (
-                <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-                  <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-                    <Heart className="h-5 w-5 mr-2 text-med-600" />
-                    Sensory Impairments
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {medicalInfo.sensory_impairments.map((impairment: string, index: number) => (
-                      <Badge key={index} variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 px-3 py-1 hover:bg-purple-100 transition-colors">
-                        {impairment}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            </Button>
           )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
+        </div>
 
-interface InfoCardProps {
-  icon: React.ReactNode;
-  title: string;
-  items: { label: string; value: string }[];
-}
-
-const InfoCard: React.FC<InfoCardProps> = ({ icon, title, items }) => {
-  return (
-    <div className="bg-white rounded-lg p-5 border border-med-100 shadow-sm hover:shadow-md transition-all duration-300">
-      <h3 className="text-md font-medium mb-4 flex items-center text-med-700">
-        {icon}
-        <span className="ml-2">{title}</span>
-      </h3>
-      <div className="space-y-3">
-        {items.map((item, index) => (
-          <div key={index} className="grid grid-cols-2 gap-2">
-            <p className="text-sm font-medium text-gray-500">{item.label}</p>
-            <p className="text-sm text-gray-700">{item.value}</p>
+        {!hasMedicalInfo ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500 mb-4">
+              No medical information available. Add medical information including allergies, conditions, medications, and health status.
+            </p>
+            {onEditMedicalInfo && (
+              <Button onClick={onEditMedicalInfo} variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Medical Information
+              </Button>
+            )}
           </div>
-        ))}
-      </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Allergies */}
+            {medicalInfo?.allergies && medicalInfo.allergies.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">Allergies</h4>
+                <div className="flex flex-wrap gap-2">
+                  {medicalInfo.allergies.map((allergy: string, index: number) => (
+                    <span key={index} className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm">
+                      {allergy}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Medical Conditions */}
+            {medicalInfo?.medical_conditions && medicalInfo.medical_conditions.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">Medical Conditions</h4>
+                <div className="flex flex-wrap gap-2">
+                  {medicalInfo.medical_conditions.map((condition: string, index: number) => (
+                    <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
+                      {condition}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Current Medications */}
+            {medicalInfo?.current_medications && medicalInfo.current_medications.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">Current Medications</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {medicalInfo.current_medications.map((medication: string, index: number) => (
+                    <div key={index} className="p-2 border border-gray-200 rounded">
+                      <p className="text-sm">{medication}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Medical History */}
+            {medicalInfo?.medical_history && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">Medical History</h4>
+                <div className="p-3 bg-gray-50 rounded border">
+                  <p className="text-sm">{medicalInfo.medical_history}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Other Medical Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {medicalInfo?.mobility_status && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Mobility Status</h4>
+                  <p className="mt-1">{medicalInfo.mobility_status}</p>
+                </div>
+              )}
+              
+              {medicalInfo?.cognitive_status && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Cognitive Status</h4>
+                  <p className="mt-1">{medicalInfo.cognitive_status}</p>
+                </div>
+              )}
+              
+              {medicalInfo?.communication_needs && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Communication Needs</h4>
+                  <p className="mt-1">{medicalInfo.communication_needs}</p>
+                </div>
+              )}
+              
+              {medicalInfo?.mental_health_status && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500">Mental Health Status</h4>
+                  <p className="mt-1">{medicalInfo.mental_health_status}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Sensory Impairments */}
+            {medicalInfo?.sensory_impairments && medicalInfo.sensory_impairments.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">Sensory Impairments</h4>
+                <div className="flex flex-wrap gap-2">
+                  {medicalInfo.sensory_impairments.map((impairment: string, index: number) => (
+                    <span key={index} className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-sm">
+                      {impairment}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
     </div>
   );
 };
