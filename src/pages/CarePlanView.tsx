@@ -49,7 +49,7 @@ import { useCarePlanData } from "@/hooks/useCarePlanData";
 import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
 import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
 import { useClientDocuments, useUploadClientDocument } from "@/hooks/useClientDocuments";
-import { useClientAssessments } from "@/hooks/useClientAssessments";
+import { useClientAssessments, useCreateClientAssessment } from "@/hooks/useClientAssessments";
 import { useAuth } from "@/hooks/useAuth";
 
 const mockCarePlans = [
@@ -86,6 +86,7 @@ const CarePlanView = () => {
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [documentDialogOpen, setDocumentDialogOpen] = useState(false);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [assessmentDialogOpen, setAssessmentDialogOpen] = useState(false);
 
   // Debug logging with better error handling
   console.log('[CarePlanView] Component mounted with params:', { branchId, branchName, carePlanId });
@@ -107,6 +108,7 @@ const CarePlanView = () => {
   const { data: assessmentsData, isLoading: isAssessmentsLoading, error: assessmentsError } = useClientAssessments(clientId);
   const createNoteMutation = useCreateClientNote();
   const uploadDocumentMutation = useUploadClientDocument();
+  const createAssessmentMutation = useCreateClientAssessment();
   
   // Debug logging for data fetching
   console.log('[CarePlanView] Data fetching status:', {
@@ -313,6 +315,46 @@ const CarePlanView = () => {
       title: "Event recorded",
       description: `The event "${event.title}" has been recorded.`
     });
+  };
+
+  const handleSaveAssessment = async (assessment: any) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot save assessment.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await createAssessmentMutation.mutateAsync({
+        client_id: clientId,
+        assessment_type: assessment.assessment_type,
+        assessment_name: assessment.assessment_name,
+        assessment_date: assessment.assessment_date.toISOString().split('T')[0],
+        performed_by: assessment.performed_by,
+        results: assessment.results || null,
+        score: assessment.score || null,
+        recommendations: assessment.recommendations || null,
+        next_review_date: assessment.next_review_date ? assessment.next_review_date.toISOString().split('T')[0] : null,
+        status: 'completed',
+        performed_by_id: user?.id || null,
+      });
+
+      setAssessmentDialogOpen(false);
+      toast({
+        title: "Assessment created",
+        description: "The assessment has been successfully added to the patient's record."
+      });
+    } catch (error) {
+      console.error("Error saving assessment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save assessment. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const sidebarProps = {
@@ -775,7 +817,10 @@ const CarePlanView = () => {
                           <p className="text-gray-600">Error loading assessments: {assessmentsError.message}</p>
                         </div>
                       ) : (
-                        <AssessmentsTab assessments={transformedAssessments} />
+                        <AssessmentsTab 
+                          assessments={transformedAssessments} 
+                          onAddAssessment={() => setAssessmentDialogOpen(true)}
+                        />
                       )}
                     </TabsContent>
                     
@@ -849,6 +894,14 @@ const CarePlanView = () => {
         carePlanId={carePlan?.id || ""}
         patientName={carePlan?.patientName || ""}
         patientId={carePlan?.patientId || ""}
+      />
+      
+      <AddAssessmentDialog
+        open={assessmentDialogOpen}
+        onOpenChange={setAssessmentDialogOpen}
+        onSave={handleSaveAssessment}
+        clientId={clientId}
+        isLoading={createAssessmentMutation.isPending}
       />
     </div>
   );

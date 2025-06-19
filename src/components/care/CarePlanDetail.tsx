@@ -7,6 +7,7 @@ import { generatePDF } from "@/utils/pdfGenerator";
 import { useComprehensiveCarePlanData } from "@/hooks/useCarePlanData";
 import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
 import { useAuth } from "@/hooks/useAuth";
+import { useCreateClientAssessment } from "@/hooks/useClientAssessments";
 
 import { PatientHeader } from "./PatientHeader";
 import { CarePlanSidebar } from "./CarePlanSidebar";
@@ -25,6 +26,7 @@ import { ActivitiesTab } from "./tabs/ActivitiesTab";
 import { NotesTab } from "./tabs/NotesTab";
 import { DocumentsTab } from "./tabs/DocumentsTab";
 import { EventsLogsTab } from "./tabs/EventsLogsTab";
+import { AddAssessmentDialog } from "./dialogs/AddAssessmentDialog";
 
 interface CarePlanDetailProps {
   carePlan: {
@@ -55,6 +57,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   onAddEvent
 }) => {
   const [activeTab, setActiveTab] = useState("personal");
+  const [assessmentDialogOpen, setAssessmentDialogOpen] = useState(false);
   const { user } = useAuth();
 
   // Fetch comprehensive care plan data
@@ -70,6 +73,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   // Database hooks for notes - now using the correct client UUID
   const { data: dbNotes = [], isLoading: notesLoading } = useClientNotes(clientId);
   const createNoteMutation = useCreateClientNote();
+  const createAssessmentMutation = useCreateClientAssessment();
 
   if (!carePlan) return null;
 
@@ -300,7 +304,10 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="assessments">
-                  <AssessmentsTab assessments={transformedAssessments} />
+                  <AssessmentsTab 
+                    assessments={transformedAssessments} 
+                    onAddAssessment={() => setAssessmentDialogOpen(true)}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="equipment">
@@ -339,6 +346,14 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
           </div>
         </div>
       </div>
+      
+      <AddAssessmentDialog
+        open={assessmentDialogOpen}
+        onOpenChange={setAssessmentDialogOpen}
+        onSave={handleSaveAssessment}
+        clientId={clientId}
+        isLoading={createAssessmentMutation.isPending}
+      />
     </div>
   );
 };

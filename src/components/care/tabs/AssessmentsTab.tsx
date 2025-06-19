@@ -10,9 +10,10 @@ import { ClientAssessment } from "@/hooks/useClientAssessments";
 
 interface AssessmentsTabProps {
   assessments: ClientAssessment[];
+  onAddAssessment?: () => void;
 }
 
-export const AssessmentsTab: React.FC<AssessmentsTabProps> = ({ assessments }) => {
+export const AssessmentsTab: React.FC<AssessmentsTabProps> = ({ assessments, onAddAssessment }) => {
   return (
     <div className="space-y-4">
       <Card>
@@ -22,10 +23,12 @@ export const AssessmentsTab: React.FC<AssessmentsTabProps> = ({ assessments }) =
               <FileCheck className="h-5 w-5 text-blue-600" />
               <CardTitle className="text-lg">Assessments</CardTitle>
             </div>
-            <Button size="sm" className="gap-1">
-              <Plus className="h-4 w-4" />
-              <span>Add Assessment</span>
-            </Button>
+            {onAddAssessment && (
+              <Button size="sm" className="gap-1" onClick={onAddAssessment}>
+                <Plus className="h-4 w-4" />
+                <span>Add Assessment</span>
+              </Button>
+            )}
           </div>
           <CardDescription>Evaluation records and findings</CardDescription>
         </CardHeader>
