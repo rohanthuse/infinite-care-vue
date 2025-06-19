@@ -32,6 +32,12 @@ import {
   useUpdateClientProfile
 } from "@/hooks/useClientData";
 
+// Import individual mutation hooks for proper data updates
+import { useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
+import { useUpdateClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
+import { useUpdateClientDietaryRequirements } from "@/hooks/useClientDietaryRequirements";
+import { useUpdateClientPersonalCare } from "@/hooks/useClientPersonalCare";
+
 import { CarePlanSidebar } from "./CarePlanSidebar";
 import { CarePlanTabBar } from "./CarePlanTabBar";
 import { PersonalInfoTab } from "./tabs/PersonalInfoTab";
@@ -131,7 +137,13 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const createEquipmentMutation = useCreateClientEquipment();
   const createRiskAssessmentMutation = useCreateClientRiskAssessment();
   const createServiceActionMutation = useCreateClientServiceAction();
+  
+  // Initialize update mutations for different data types
   const updateClientMutation = useUpdateClientProfile();
+  const updatePersonalInfoMutation = useUpdateClientPersonalInfo();
+  const updateMedicalInfoMutation = useUpdateClientMedicalInfo();
+  const updateDietaryRequirementsMutation = useUpdateClientDietaryRequirements();
+  const updatePersonalCareMutation = useUpdateClientPersonalCare();
 
   const handleClose = () => {
     if (onClose) {
@@ -367,35 +379,35 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     }
   };
 
+  // Fixed save handler that uses appropriate mutation hooks for different data types
   const handleSavePersonalInfo = async (data: any) => {
     try {
-      // Handle different data types based on what's being saved
       if (data.dietary_restrictions || data.food_allergies || data.food_preferences) {
-        // This is dietary data - save to dietary requirements
-        await updateClientMutation.mutateAsync({
-          clientId: carePlan.patientId,
-          updates: { dietary_requirements: data }
+        // This is dietary data - use dietary requirements mutation
+        await updateDietaryRequirementsMutation.mutateAsync({
+          client_id: carePlan.patientId,
+          ...data
         });
       } else if (data.personal_hygiene_needs || data.bathing_preferences || data.dressing_assistance_level) {
-        // This is personal care data
-        await updateClientMutation.mutateAsync({
-          clientId: carePlan.patientId,
-          updates: { personal_care: data }
+        // This is personal care data - use personal care mutation
+        await updatePersonalCareMutation.mutateAsync({
+          client_id: carePlan.patientId,
+          ...data
         });
       } else if (data.allergies || data.current_medications || data.medical_conditions) {
-        // This is medical data
-        await updateClientMutation.mutateAsync({
-          clientId: carePlan.patientId,
-          updates: { medical_info: data }
+        // This is medical data - use medical info mutation
+        await updateMedicalInfoMutation.mutateAsync({
+          client_id: carePlan.patientId,
+          ...data
         });
-      } else if (data.cultural_preferences || data.language_preferences) {
-        // This is personal info data
-        await updateClientMutation.mutateAsync({
-          clientId: carePlan.patientId,
-          updates: { personal_info: data }
+      } else if (data.cultural_preferences || data.language_preferences || data.emergency_contact_name) {
+        // This is personal info data - use personal info mutation
+        await updatePersonalInfoMutation.mutateAsync({
+          client_id: carePlan.patientId,
+          ...data
         });
       } else {
-        // Default to client profile update
+        // Default to client profile update for basic client data
         await updateClientMutation.mutateAsync({
           clientId: carePlan.patientId,
           updates: data
