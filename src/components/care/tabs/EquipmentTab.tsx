@@ -10,9 +10,10 @@ import { ClientEquipment } from "@/hooks/useClientEquipment";
 
 interface EquipmentTabProps {
   equipment: ClientEquipment[];
+  onAddEquipment?: () => void;
 }
 
-export const EquipmentTab: React.FC<EquipmentTabProps> = ({ equipment }) => {
+export const EquipmentTab: React.FC<EquipmentTabProps> = ({ equipment, onAddEquipment }) => {
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case "active": return "bg-green-50 text-green-700 border-green-200";
@@ -62,10 +63,12 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({ equipment }) => {
               <Wrench className="h-5 w-5 text-slate-600" />
               <CardTitle className="text-lg">Equipment</CardTitle>
             </div>
-            <Button size="sm" className="gap-1">
-              <Plus className="h-4 w-4" />
-              <span>Add Equipment</span>
-            </Button>
+            {onAddEquipment && (
+              <Button size="sm" className="gap-1" onClick={onAddEquipment}>
+                <Plus className="h-4 w-4" />
+                <span>Add Equipment</span>
+              </Button>
+            )}
           </div>
           <CardDescription>Medical equipment and assistive devices</CardDescription>
         </CardHeader>
@@ -74,6 +77,12 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({ equipment }) => {
             <div className="text-center py-8 text-gray-500">
               <Wrench className="h-12 w-12 mx-auto mb-3 text-gray-300" />
               <p className="text-sm">No equipment recorded</p>
+              {onAddEquipment && (
+                <Button variant="outline" className="mt-3" onClick={onAddEquipment}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Equipment
+                </Button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4">

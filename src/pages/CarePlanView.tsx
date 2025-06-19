@@ -51,6 +51,7 @@ import { EditAboutMeDialog } from "@/components/care/dialogs/EditAboutMeDialog";
 import { AddGoalDialog } from "@/components/care/dialogs/AddGoalDialog";
 import { EditGoalDialog } from "@/components/care/dialogs/EditGoalDialog";
 import { EditMedicalInfoDialog } from "@/components/care/dialogs/EditMedicalInfoDialog";
+import { AddEquipmentDialog } from "@/components/care/dialogs/AddEquipmentDialog";
 import { resolveCarePlanId, getDisplayCarePlanId } from "@/utils/carePlanIdMapping";
 import { useCarePlanData } from "@/hooks/useCarePlanData";
 import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
@@ -61,6 +62,7 @@ import { useUpdateClient } from "@/hooks/useUpdateClient";
 import { useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
 import { useUpdateClientPersonalCare } from "@/hooks/useClientPersonalCare";
 import { useClientMedicalInfo, useUpdateClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
+import { useClientEquipment, useCreateClientEquipment } from "@/hooks/useClientEquipment";
 import { useCreateGoal, useUpdateGoal } from "@/hooks/useCarePlanGoalsMutations";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -104,6 +106,7 @@ const CarePlanView = () => {
   const [addGoalDialogOpen, setAddGoalDialogOpen] = useState(false);
   const [editGoalDialogOpen, setEditGoalDialogOpen] = useState(false);
   const [medicalInfoDialogOpen, setMedicalInfoDialogOpen] = useState(false);
+  const [equipmentDialogOpen, setEquipmentDialogOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<any>(null);
 
   // Debug logging with better error handling
@@ -125,6 +128,7 @@ const CarePlanView = () => {
   const { data: documentsData, isLoading: isDocumentsLoading, error: documentsError } = useClientDocuments(clientId);
   const { data: assessmentsData, isLoading: isAssessmentsLoading, error: assessmentsError } = useClientAssessments(clientId);
   const { data: medicalInfoData, isLoading: isMedicalInfoLoading, error: medicalInfoError } = useClientMedicalInfo(clientId);
+  const { data: equipmentData, isLoading: isEquipmentLoading, error: equipmentError } = useClientEquipment(clientId);
   const createNoteMutation = useCreateClientNote();
   const uploadDocumentMutation = useUploadClientDocument();
   const createAssessmentMutation = useCreateClientAssessment();
@@ -134,6 +138,7 @@ const CarePlanView = () => {
   const updatePersonalInfoMutation = useUpdateClientPersonalInfo();
   const updatePersonalCareMutation = useUpdateClientPersonalCare();
   const updateMedicalInfoMutation = useUpdateClientMedicalInfo();
+  const createEquipmentMutation = useCreateClientEquipment();
   const createGoalMutation = useCreateGoal();
   const updateGoalMutation = useUpdateGoal();
   
@@ -157,6 +162,9 @@ const CarePlanView = () => {
     medicalInfoData,
     isMedicalInfoLoading,
     medicalInfoError,
+    equipmentData,
+    isEquipmentLoading,
+    equipmentError,
     clientId: clientId
   });
 
@@ -584,6 +592,34 @@ const CarePlanView = () => {
     }
   };
 
+  const handleSaveEquipment = async (data: any) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot save equipment.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await createEquipmentMutation.mutateAsync(data);
+
+      setEquipmentDialogOpen(false);
+      toast({
+        title: "Equipment added",
+        description: "The equipment has been successfully added to the client's record."
+      });
+    } catch (error) {
+      console.error("Error saving equipment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save equipment. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleEditGoal = (goal: any) => {
     setSelectedGoal(goal);
     setEditGoalDialogOpen(true);
@@ -607,24 +643,7 @@ const CarePlanView = () => {
   }));
 
   // Transform mock data for equipment
-  const transformedEquipment = mockPatientData.equipment.map(equipment => ({
-    id: `equipment-${Date.now()}-${Math.random()}`,
-    client_id: carePlan?.patientId || 'unknown',
-    equipment_name: equipment.name,
-    equipment_type: equipment.type,
-    manufacturer: null,
-    model_number: null,
-    serial_number: null,
-    installation_date: null,
-    maintenance_schedule: null,
-    last_maintenance_date: equipment.lastInspection.toISOString().split('T')[0],
-    next_maintenance_date: null,
-    status: equipment.status,
-    location: null,
-    notes: equipment.notes,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }));
+  const transformedEquipment = equipmentData || [];
 
   // Transform dietary requirements
   const transformedDietaryRequirements = {
@@ -964,7 +983,21 @@ const CarePlanView = () => {
                     </TabsContent>
                     
                     <TabsContent value="equipment" className="space-y-4">
-                      <EquipmentTab equipment={[]} />
+                      {isEquipmentLoading ? (
+                        <div className="flex items-center justify-center h-32">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        </div>
+                      ) : equipmentError ? (
+                        <div className="text-center py-8">
+                          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                          <p className="text-gray-600">Error loading equipment: {equipmentError.message}</p>
+                        </div>
+                      ) : (
+                        <EquipmentTab 
+                          equipment={transformedEquipment} 
+                          onAddEquipment={() => setEquipmentDialogOpen(true)}
+                        />
+                      )}
                     </TabsContent>
                     
                     <TabsContent value="dietary" className="space-y-4">
@@ -1081,6 +1114,14 @@ const CarePlanView = () => {
         onSave={handleSaveMedicalInfo}
         medicalInfo={medicalInfoData}
         isLoading={updateMedicalInfoMutation.isPending}
+      />
+
+      <AddEquipmentDialog
+        open={equipmentDialogOpen}
+        onOpenChange={setEquipmentDialogOpen}
+        onSave={handleSaveEquipment}
+        clientId={clientId}
+        isLoading={createEquipmentMutation.isPending}
       />
     </div>
   );
