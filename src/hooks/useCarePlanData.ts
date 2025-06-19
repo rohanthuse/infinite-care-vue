@@ -72,7 +72,7 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {
         last_name,
         avatar_initials
       ),
-      staff:staff(
+      staff:staff!staff_id(
         id,
         first_name,
         last_name
@@ -105,7 +105,7 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
       goals:client_care_plan_goals(*),
       activities:client_activities(*),
       medications:client_medications(*),
-      staff:staff(
+      staff:staff!staff_id(
         id,
         first_name,
         last_name
