@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { generatePDF, exportCarePlanPDF } from "@/utils/pdfGenerator";
 import { useClientNotes, useCreateClientNote } from "@/hooks/useClientNotes";
 import { useAuth } from "@/hooks/useAuth";
+import { ClientServiceAction } from "@/hooks/useClientServiceActions";
 
 import { CarerCarePlanSidebar } from "./CarerCarePlanSidebar";
 import { CarerCarePlanTabBar } from "./CarerCarePlanTabBar";
@@ -200,9 +201,9 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
   const mockNotes = patientDataState.notes;
   const mockActivities = patientDataState.activities;
 
-  // Transform service actions to match expected interface
-  const mockServiceActions = patientDataState.serviceActions.map(action => ({
-    id: `sa-${Date.now()}-${Math.random()}`,
+  // Transform service actions to match expected ClientServiceAction interface
+  const mockServiceActions: ClientServiceAction[] = patientDataState.serviceActions.map((action, index) => ({
+    id: `sa-${Date.now()}-${index}`,
     client_id: carePlan.id,
     care_plan_id: carePlan.id,
     service_name: action.service,
@@ -373,7 +374,7 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                 </TabsContent>
 
                 <TabsContent value="serviceplan">
-                  <ServicePlanTab serviceActions={patientDataState.serviceActions} />
+                  <ServicePlanTab serviceActions={mockServiceActions} />
                 </TabsContent>
                 
                 <TabsContent value="serviceactions">

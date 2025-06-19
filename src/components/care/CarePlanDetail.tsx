@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { X, FileEdit, Download, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
@@ -13,8 +14,9 @@ import { useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
 import { useClientPersonalCare, useUpdateClientPersonalCare } from "@/hooks/useClientPersonalCare";
 import { useUpdateClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
 import { useClientDietaryRequirements, useUpdateClientDietaryRequirements } from "@/hooks/useClientDietaryRequirements";
-import { useClientRiskAssessments, useCreateClientRiskAssessment, useUpdateClientRiskAssessment } from "@/hooks/useClientRiskAssessments";
+import { useClientRiskAssessments, useCreateClientRiskAssessment, useUpdateClientRiskAssessment, ClientRiskAssessment } from "@/hooks/useClientRiskAssessments";
 import { useCreateGoal, useUpdateGoal } from "@/hooks/useCarePlanGoalsMutations";
+import { useClientServiceActions, useCreateClientServiceAction, useUpdateClientServiceAction, ClientServiceAction } from "@/hooks/useClientServiceActions";
 import { toast } from "@/hooks/use-toast";
 
 import { PatientHeader } from "./PatientHeader";
@@ -81,12 +83,24 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const [recordActivityDialogOpen, setRecordActivityDialogOpen] = useState(false);
   const [uploadDocumentDialogOpen, setUploadDocumentDialogOpen] = useState(false);
   const [addEventDialogOpen, setAddEventDialogOpen] = useState(false);
+  const [assessmentDialogOpen, setAssessmentDialogOpen] = useState(false);
+  const [personalInfoDialogOpen, setPersonalInfoDialogOpen] = useState(false);
+  const [aboutMeDialogOpen, setAboutMeDialogOpen] = useState(false);
+  const [medicalInfoDialogOpen, setMedicalInfoDialogOpen] = useState(false);
+  const [dietaryDialogOpen, setDietaryDialogOpen] = useState(false);
+  const [personalCareDialogOpen, setPersonalCareDialogOpen] = useState(false);
+  const [addGoalDialogOpen, setAddGoalDialogOpen] = useState(false);
+  const [editGoalDialogOpen, setEditGoalDialogOpen] = useState(false);
   const [addRiskAssessmentDialogOpen, setAddRiskAssessmentDialogOpen] = useState(false);
   const [editRiskAssessmentDialogOpen, setEditRiskAssessmentDialogOpen] = useState(false);
   const [addServicePlanDialogOpen, setAddServicePlanDialogOpen] = useState(false);
   const [editServicePlanDialogOpen, setEditServicePlanDialogOpen] = useState(false);
   const [selectedRiskAssessment, setSelectedRiskAssessment] = useState<ClientRiskAssessment | undefined>();
   const [selectedServiceAction, setSelectedServiceAction] = useState<ClientServiceAction | undefined>();
+  const [selectedGoal, setSelectedGoal] = useState<any>();
+
+  // Get current user
+  const { user } = useAuth();
 
   // Fetch comprehensive care plan data
   const {
@@ -130,17 +144,17 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const createRiskAssessmentMutation = useCreateClientRiskAssessment();
   const updateRiskAssessmentMutation = useUpdateClientRiskAssessment();
   
+  // Service Actions hooks
+  const { data: serviceActions = [], isLoading: serviceActionsLoading } = useClientServiceActions(clientId);
+  const createServiceActionMutation = useCreateClientServiceAction();
+  const updateServiceActionMutation = useUpdateClientServiceAction();
+  
   // New mutation hooks for editing functionality
   const updateClientMutation = useUpdateClient();
   const updatePersonalInfoMutation = useUpdateClientPersonalInfo();
   const updateMedicalInfoMutation = useUpdateClientMedicalInfo();
   const createGoalMutation = useCreateGoal();
   const updateGoalMutation = useUpdateGoal();
-
-  // Service Actions hooks
-  const { data: serviceActions = [], isLoading: serviceActionsLoading } = useClientServiceActions(carePlan.patientId);
-  const createServiceActionMutation = useCreateClientServiceAction();
-  const updateServiceActionMutation = useUpdateClientServiceAction();
 
   if (!carePlan) return null;
 
@@ -245,7 +259,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
       });
 
       setEditRiskAssessmentDialogOpen(false);
-      setSelectedRiskAssessment(null);
+      setSelectedRiskAssessment(undefined);
       toast({
         title: "Risk assessment updated",
         description: "The risk assessment has been successfully updated."
@@ -535,6 +549,46 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     setEditGoalDialogOpen(true);
   };
 
+  const handleAddServicePlan = () => {
+    setAddServicePlanDialogOpen(true);
+  };
+
+  const handleEditServicePlan = (serviceAction: ClientServiceAction) => {
+    setSelectedServiceAction(serviceAction);
+    setEditServicePlanDialogOpen(true);
+  };
+
+  const handleSaveServicePlan = async (data: any) => {
+    try {
+      await createServiceActionMutation.mutateAsync(data);
+      setAddServicePlanDialogOpen(false);
+    } catch (error) {
+      console.error("Error saving service plan:", error);
+    }
+  };
+
+  const handleUpdateServicePlan = async (data: any) => {
+    if (!selectedServiceAction?.id) {
+      toast({
+        title: "Error",
+        description: "Service action ID not found. Cannot update service plan.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await updateServiceActionMutation.mutateAsync({
+        serviceActionId: selectedServiceAction.id,
+        updates: data
+      });
+      setEditServicePlanDialogOpen(false);
+      setSelectedServiceAction(undefined);
+    } catch (error) {
+      console.error("Error updating service plan:", error);
+    }
+  };
+
   // Get current user's role and name for author field - simplified to just show "Admin"
   const getCurrentUserAuthor = () => {
     // For admin users, just return "Admin"
@@ -596,16 +650,6 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     action: activity.name,
     performer: "Care Team",
     status: activity.status
-  })) || [];
-
-  const transformedServicePlan = comprehensiveData?.serviceActions?.map(action => ({
-    service: action.service_name,
-    provider: action.provider_name,
-    frequency: action.frequency,
-    duration: action.duration,
-    schedule: action.schedule_details || "",
-    goals: action.goals || [],
-    progress: action.progress_status
   })) || [];
 
   // Transform database notes to match expected Note interface
@@ -788,7 +832,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 <TabsContent value="serviceplan">
                   <ServicePlanTab 
                     serviceActions={serviceActions}
-                    onAddServicePlan={() => setAddServicePlanDialogOpen(true)}
+                    onAddServicePlan={handleAddServicePlan}
                     onEditServicePlan={handleEditServicePlan}
                   />
                 </TabsContent>
@@ -893,17 +937,15 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         isLoading={updateRiskAssessmentMutation.isPending}
       />
 
-      {/* Add Service Plan Dialog */}
       <AddServicePlanDialog
         open={addServicePlanDialogOpen}
         onOpenChange={setAddServicePlanDialogOpen}
-        onSave={handleAddServicePlan}
-        clientId={carePlan.patientId}
+        onSave={handleSaveServicePlan}
+        clientId={clientId}
         carePlanId={carePlan.id}
         isLoading={createServiceActionMutation.isPending}
       />
 
-      {/* Edit Service Plan Dialog */}
       <EditServicePlanDialog
         open={editServicePlanDialogOpen}
         onOpenChange={setEditServicePlanDialogOpen}
