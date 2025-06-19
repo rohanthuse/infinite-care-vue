@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -70,6 +69,151 @@ export interface ClientAppointment {
   updated_at: string;
 }
 
+export interface ClientPersonalInfo {
+  id: string;
+  client_id: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_relationship?: string;
+  next_of_kin_name?: string;
+  next_of_kin_phone?: string;
+  next_of_kin_relationship?: string;
+  gp_name?: string;
+  gp_practice?: string;
+  gp_phone?: string;
+  preferred_communication?: string;
+  cultural_preferences?: string;
+  language_preferences?: string;
+  religion?: string;
+  marital_status?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientMedicalInfo {
+  id: string;
+  client_id: string;
+  allergies?: string[];
+  medical_conditions?: string[];
+  current_medications?: string[];
+  medical_history?: string;
+  mobility_status?: string;
+  cognitive_status?: string;
+  mental_health_status?: string;
+  communication_needs?: string;
+  sensory_impairments?: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientDietaryRequirements {
+  id: string;
+  client_id: string;
+  dietary_restrictions?: string[];
+  food_allergies?: string[];
+  food_preferences?: string[];
+  meal_schedule?: any;
+  nutritional_needs?: string;
+  supplements?: string[];
+  feeding_assistance_required?: boolean;
+  special_equipment_needed?: string;
+  texture_modifications?: string;
+  fluid_restrictions?: string;
+  weight_monitoring?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientPersonalCare {
+  id: string;
+  client_id: string;
+  personal_hygiene_needs?: string;
+  bathing_preferences?: string;
+  dressing_assistance_level?: string;
+  toileting_assistance_level?: string;
+  continence_status?: string;
+  sleep_patterns?: string;
+  behavioral_notes?: string;
+  comfort_measures?: string;
+  pain_management?: string;
+  skin_care_needs?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientAssessment {
+  id: string;
+  client_id: string;
+  assessment_name: string;
+  assessment_type: string;
+  assessment_date: string;
+  performed_by: string;
+  performed_by_id?: string;
+  status: string;
+  score?: number;
+  results?: string;
+  recommendations?: string;
+  care_plan_id?: string;
+  next_review_date?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientEquipment {
+  id: string;
+  client_id: string;
+  equipment_name: string;
+  equipment_type: string;
+  manufacturer?: string;
+  model_number?: string;
+  serial_number?: string;
+  status: string;
+  location?: string;
+  installation_date?: string;
+  last_maintenance_date?: string;
+  next_maintenance_date?: string;
+  maintenance_schedule?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientRiskAssessment {
+  id: string;
+  client_id: string;
+  risk_type: string;
+  risk_level: string;
+  assessment_date: string;
+  assessed_by: string;
+  status: string;
+  risk_factors?: string[];
+  mitigation_strategies?: string[];
+  review_date?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientServiceAction {
+  id: string;
+  client_id: string;
+  care_plan_id?: string;
+  service_name: string;
+  service_category: string;
+  provider_name: string;
+  frequency: string;
+  duration: string;
+  schedule_details?: string;
+  goals?: string[];
+  progress_status: string;
+  start_date: string;
+  end_date?: string;
+  last_completed_date?: string;
+  next_scheduled_date?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Simple fetcher functions with basic return types
 const fetchClientProfile = async (clientId: string) => {
   const response = await supabase
@@ -115,6 +259,94 @@ const fetchClientAppointments = async (clientId: string) => {
   return response.data || [];
 };
 
+const fetchClientPersonalInfo = async (clientId: string) => {
+  const response = await supabase
+    .from('client_personal_info')
+    .select('*')
+    .eq('client_id', clientId)
+    .maybeSingle();
+
+  if (response.error) throw response.error;
+  return response.data;
+};
+
+const fetchClientMedicalInfo = async (clientId: string) => {
+  const response = await supabase
+    .from('client_medical_info')
+    .select('*')
+    .eq('client_id', clientId)
+    .maybeSingle();
+
+  if (response.error) throw response.error;
+  return response.data;
+};
+
+const fetchClientDietaryRequirements = async (clientId: string) => {
+  const response = await supabase
+    .from('client_dietary_requirements')
+    .select('*')
+    .eq('client_id', clientId)
+    .maybeSingle();
+
+  if (response.error) throw response.error;
+  return response.data;
+};
+
+const fetchClientPersonalCare = async (clientId: string) => {
+  const response = await supabase
+    .from('client_personal_care')
+    .select('*')
+    .eq('client_id', clientId)
+    .maybeSingle();
+
+  if (response.error) throw response.error;
+  return response.data;
+};
+
+const fetchClientAssessments = async (clientId: string) => {
+  const response = await supabase
+    .from('client_assessments')
+    .select('*')
+    .eq('client_id', clientId)
+    .order('assessment_date', { ascending: false });
+
+  if (response.error) throw response.error;
+  return response.data || [];
+};
+
+const fetchClientEquipment = async (clientId: string) => {
+  const response = await supabase
+    .from('client_equipment')
+    .select('*')
+    .eq('client_id', clientId)
+    .order('created_at', { ascending: false });
+
+  if (response.error) throw response.error;
+  return response.data || [];
+};
+
+const fetchClientRiskAssessments = async (clientId: string) => {
+  const response = await supabase
+    .from('client_risk_assessments')
+    .select('*')
+    .eq('client_id', clientId)
+    .order('assessment_date', { ascending: false });
+
+  if (response.error) throw response.error;
+  return response.data || [];
+};
+
+const fetchClientServiceActions = async (clientId: string) => {
+  const response = await supabase
+    .from('client_service_actions')
+    .select('*')
+    .eq('client_id', clientId)
+    .order('created_at', { ascending: false });
+
+  if (response.error) throw response.error;
+  return response.data || [];
+};
+
 // Basic hooks with explicit query configuration
 export const useClientProfile = (clientId: string) => {
   const config = {
@@ -150,6 +382,86 @@ export const useClientAppointments = (clientId: string) => {
   const config = {
     queryKey: ['client-appointments', clientId] as const,
     queryFn: () => fetchClientAppointments(clientId),
+    enabled: Boolean(clientId),
+  };
+  
+  return useQuery(config);
+};
+
+export const useClientPersonalInfo = (clientId: string) => {
+  const config = {
+    queryKey: ['client-personal-info', clientId] as const,
+    queryFn: () => fetchClientPersonalInfo(clientId),
+    enabled: Boolean(clientId),
+  };
+  
+  return useQuery(config);
+};
+
+export const useClientMedicalInfo = (clientId: string) => {
+  const config = {
+    queryKey: ['client-medical-info', clientId] as const,
+    queryFn: () => fetchClientMedicalInfo(clientId),
+    enabled: Boolean(clientId),
+  };
+  
+  return useQuery(config);
+};
+
+export const useClientDietaryRequirements = (clientId: string) => {
+  const config = {
+    queryKey: ['client-dietary-requirements', clientId] as const,
+    queryFn: () => fetchClientDietaryRequirements(clientId),
+    enabled: Boolean(clientId),
+  };
+  
+  return useQuery(config);
+};
+
+export const useClientPersonalCare = (clientId: string) => {
+  const config = {
+    queryKey: ['client-personal-care', clientId] as const,
+    queryFn: () => fetchClientPersonalCare(clientId),
+    enabled: Boolean(clientId),
+  };
+  
+  return useQuery(config);
+};
+
+export const useClientAssessments = (clientId: string) => {
+  const config = {
+    queryKey: ['client-assessments', clientId] as const,
+    queryFn: () => fetchClientAssessments(clientId),
+    enabled: Boolean(clientId),
+  };
+  
+  return useQuery(config);
+};
+
+export const useClientEquipment = (clientId: string) => {
+  const config = {
+    queryKey: ['client-equipment', clientId] as const,
+    queryFn: () => fetchClientEquipment(clientId),
+    enabled: Boolean(clientId),
+  };
+  
+  return useQuery(config);
+};
+
+export const useClientRiskAssessments = (clientId: string) => {
+  const config = {
+    queryKey: ['client-risk-assessments', clientId] as const,
+    queryFn: () => fetchClientRiskAssessments(clientId),
+    enabled: Boolean(clientId),
+  };
+  
+  return useQuery(config);
+};
+
+export const useClientServiceActions = (clientId: string) => {
+  const config = {
+    queryKey: ['client-service-actions', clientId] as const,
+    queryFn: () => fetchClientServiceActions(clientId),
     enabled: Boolean(clientId),
   };
   

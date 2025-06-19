@@ -390,12 +390,15 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="goals">
-                  <GoalsTab goals={patientDataState.goals} />
+                  <GoalsTab 
+                    carePlanId={carePlan.id}
+                    onAddGoal={() => setShowUpdateCarePlanDialog(true)}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="activities">
                   <ActivitiesTab 
-                    activities={mockActivities} 
+                    carePlanId={carePlan.id}
                     onAddActivity={() => setShowAddActivityDialog(true)} 
                   />
                 </TabsContent>
