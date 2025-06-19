@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { X, FileEdit, Download, PenLine, MessageCircle, Clock, Activity, FileBarChart2 } from "lucide-react";
 import { format } from "date-fns";
@@ -265,7 +264,6 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 
                 <TabsContent value="dietary">
                   <DietaryTab dietaryRequirements={{
-                    id: "",
                     client_id: carePlan.patientId,
                     dietary_restrictions: [],
                     food_allergies: [],
@@ -285,7 +283,6 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 
                 <TabsContent value="personalcare">
                   <PersonalCareTab personalCare={{
-                    id: "",
                     client_id: carePlan.patientId,
                     personal_hygiene_needs: "",
                     bathing_preferences: "",
@@ -313,6 +310,8 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 <TabsContent value="eventslogs">
                   <EventsLogsTab 
                     clientId={carePlan.patientId}
+                    carePlanId={carePlan.id}
+                    patientName={carePlan.patientName}
                     onAddEvent={handleAddEvent}
                   />
                 </TabsContent>
