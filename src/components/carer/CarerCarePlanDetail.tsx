@@ -383,6 +383,7 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                 
                 <TabsContent value="eventslogs">
                   <EventsLogsTab 
+                    clientId={carePlan.id}
                     carePlanId={carePlan.id}
                     patientName={carePlan.clientName}
                     onAddEvent={() => setShowAddEventDialog(true)}
@@ -455,7 +456,6 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
         onSave={handleAddEvent}
         carePlanId={carePlan.id}
         patientName={carePlan.clientName}
-        patientId={carePlan.id}
       />
 
       {/* Update Care Plan Dialog */}

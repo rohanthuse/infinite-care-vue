@@ -77,6 +77,141 @@ export const useCreateClientDocument = () => {
   });
 };
 
+export const useUploadClientDocument = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ clientId, file, name, type, uploaded_by }: {
+      clientId: string;
+      file: File;
+      name: string;
+      type: string;
+      uploaded_by: string;
+    }) => {
+      // In a real implementation, this would upload the file to storage
+      // For now, we'll just create a document record
+      const documentData = {
+        client_id: clientId,
+        name,
+        type,
+        uploaded_by,
+        upload_date: new Date().toISOString().split('T')[0],
+        file_size: `${(file.size / 1024).toFixed(2)} KB`,
+        file_path: `/documents/${clientId}/${file.name}`, // Mock path
+      };
+
+      const { data, error } = await supabase
+        .from("client_documents")
+        .insert([documentData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error uploading client document:", error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["client-documents", data.client_id] });
+      
+      toast({
+        title: "Document uploaded",
+        description: "The document has been successfully uploaded.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error uploading client document:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload document. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useUpdateClientDocument = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, name, type, uploaded_by }: {
+      id: string;
+      name: string;
+      type: string;
+      uploaded_by: string;
+    }) => {
+      const { data, error } = await supabase
+        .from("client_documents")
+        .update({ name, type, uploaded_by })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error updating client document:", error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["client-documents", data.client_id] });
+      
+      toast({
+        title: "Document updated",
+        description: "The document has been successfully updated.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error updating client document:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update document. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useDeleteClientDocument = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (documentId: string) => {
+      const { error } = await supabase
+        .from("client_documents")
+        .delete()
+        .eq("id", documentId);
+
+      if (error) {
+        console.error("Error deleting client document:", error);
+        throw error;
+      }
+
+      return documentId;
+    },
+    onSuccess: () => {
+      // Invalidate all client documents queries
+      queryClient.invalidateQueries({ queryKey: ["client-documents"] });
+      
+      toast({
+        title: "Document deleted",
+        description: "The document has been successfully deleted.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error deleting client document:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete document. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
 export const useViewClientDocument = () => {
   return useMutation({
     mutationFn: async ({ filePath }: { filePath: string }) => {
