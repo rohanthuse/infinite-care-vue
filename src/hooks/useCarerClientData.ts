@@ -122,9 +122,8 @@ export const useCarerUpdateClient = () => {
         throw new Error('Access denied: You are not assigned to this client');
       }
 
-      // Allow only limited updates (e.g., communication preferences, notes)
+      // Allow only limited updates (e.g., preferences, notes)
       const allowedUpdates = {
-        communication_preferences: updates.communication_preferences,
         additional_information: updates.additional_information,
       };
 
