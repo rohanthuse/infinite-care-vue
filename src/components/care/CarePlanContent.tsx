@@ -1,0 +1,287 @@
+
+import React from "react";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { CarePlanSidebar } from "./CarePlanSidebar";
+import { CarePlanTabBar } from "./CarePlanTabBar";
+import { PersonalInfoTab } from "./tabs/PersonalInfoTab";
+import { AboutMeTab } from "./tabs/AboutMeTab";
+import { GoalsTab } from "./tabs/GoalsTab";
+import { ActivitiesTab } from "./tabs/ActivitiesTab";
+import { DietaryTab } from "./tabs/DietaryTab";
+import { NotesTab } from "./tabs/NotesTab";
+import { DocumentsTab } from "./tabs/DocumentsTab";
+import { PersonalCareTab } from "./tabs/PersonalCareTab";
+import { EventsLogsTab } from "./tabs/EventsLogsTab";
+import { ServiceActionsTab } from "./tabs/ServiceActionsTab";
+import { ServicePlanTab } from "./tabs/ServicePlanTab";
+import { AssessmentsTab } from "./tabs/AssessmentsTab";
+import { EquipmentTab } from "./tabs/EquipmentTab";
+import { RiskAssessmentsTab } from "./tabs/RiskAssessmentsTab";
+import {
+  ClientProfile,
+  ClientPersonalInfo,
+  ClientMedicalInfo,
+  ClientDietaryRequirements,
+  ClientPersonalCare,
+  ClientAssessment,
+  ClientEquipment,
+  ClientRiskAssessment,
+  ClientServiceAction,
+} from "@/hooks/useClientData";
+
+interface CarePlanContentProps {
+  carePlan: {
+    id: string;
+    patientName: string;
+    patientId: string;
+    dateCreated: Date;
+    lastUpdated: Date;
+    status: string;
+    assignedTo: string;
+    avatar: string;
+  };
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  clientProfile?: ClientProfile;
+  personalInfo?: ClientPersonalInfo;
+  medicalInfo?: ClientMedicalInfo;
+  dietaryRequirements?: ClientDietaryRequirements;
+  personalCare?: ClientPersonalCare;
+  assessments: ClientAssessment[];
+  equipment: ClientEquipment[];
+  riskAssessments: ClientRiskAssessment[];
+  serviceActions: ClientServiceAction[];
+  onAddNote: () => void;
+  onScheduleFollowUp: () => void;
+  onRecordActivity: () => void;
+  onUploadDocument: () => void;
+  onAddEvent: () => void;
+  onAddGoal: () => void;
+  onAddAssessment: () => void;
+  onAddEquipment: () => void;
+  onAddRiskAssessment: () => void;
+  onAddServicePlan: () => void;
+  onAddServiceAction: () => void;
+  onEditPersonalInfo: () => void;
+  onEditMedicalInfo: () => void;
+  onEditAboutMe: () => void;
+  onEditDietaryRequirements: () => void;
+  onEditPersonalCare: () => void;
+}
+
+export const CarePlanContent: React.FC<CarePlanContentProps> = ({
+  carePlan,
+  activeTab,
+  setActiveTab,
+  clientProfile,
+  personalInfo,
+  medicalInfo,
+  dietaryRequirements,
+  personalCare,
+  assessments,
+  equipment,
+  riskAssessments,
+  serviceActions,
+  onAddNote,
+  onScheduleFollowUp,
+  onRecordActivity,
+  onUploadDocument,
+  onAddEvent,
+  onAddGoal,
+  onAddAssessment,
+  onAddEquipment,
+  onAddRiskAssessment,
+  onAddServicePlan,
+  onAddServiceAction,
+  onEditPersonalInfo,
+  onEditMedicalInfo,
+  onEditAboutMe,
+  onEditDietaryRequirements,
+  onEditPersonalCare,
+}) => {
+  return (
+    <div className="flex-1 overflow-auto p-6">
+      <div className="flex flex-col md:flex-row md:items-start gap-6">
+        <div className="w-full md:w-1/3">
+          <CarePlanSidebar 
+            carePlan={carePlan} 
+            onAddNote={onAddNote}
+            onScheduleFollowUp={onScheduleFollowUp}
+            onRecordActivity={onRecordActivity}
+            onUploadDocument={onUploadDocument}
+            onAddEvent={onAddEvent}
+          />
+        </div>
+        
+        <div className="w-full md:w-2/3">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <CarePlanTabBar activeTab={activeTab} onChange={setActiveTab} />
+            
+            <TabsContent value="personal">
+              <PersonalInfoTab 
+                client={clientProfile || {
+                  id: carePlan.patientId,
+                  first_name: carePlan.patientName.split(' ')[0],
+                  last_name: carePlan.patientName.split(' ')[1] || '',
+                  email: "",
+                  phone: "",
+                  date_of_birth: "",
+                  address: "",
+                  gender: "",
+                }}
+                personalInfo={personalInfo || {
+                  emergency_contact_name: "",
+                  emergency_contact_phone: "",
+                  preferred_communication: "",
+                }}
+                medicalInfo={medicalInfo || {
+                  allergies: [],
+                  current_medications: [],
+                  medical_conditions: [],
+                  medical_history: "",
+                }}
+                onEditPersonalInfo={onEditPersonalInfo}
+                onEditMedicalInfo={onEditMedicalInfo}
+              />
+            </TabsContent>
+            
+            <TabsContent value="aboutme">
+              <AboutMeTab 
+                personalInfo={personalInfo || {
+                  cultural_preferences: "",
+                  language_preferences: "",
+                }}
+                personalCare={personalCare || {
+                  id: "",
+                  client_id: carePlan.patientId,
+                  personal_hygiene_needs: "",
+                  bathing_preferences: "",
+                  dressing_assistance_level: "",
+                  toileting_assistance_level: "",
+                  continence_status: "",
+                  sleep_patterns: "",
+                  behavioral_notes: "",
+                  comfort_measures: "",
+                  pain_management: "",
+                  skin_care_needs: "",
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                }}
+                onEditAboutMe={onEditAboutMe}
+              />
+            </TabsContent>
+            
+            <TabsContent value="goals">
+              <GoalsTab 
+                carePlanId={carePlan.id}
+                onAddGoal={onAddGoal}
+              />
+            </TabsContent>
+            
+            <TabsContent value="activities">
+              <ActivitiesTab 
+                carePlanId={carePlan.id}
+                onAddActivity={onRecordActivity} 
+              />
+            </TabsContent>
+            
+            <TabsContent value="assessments">
+              <AssessmentsTab 
+                clientId={carePlan.patientId}
+                assessments={assessments}
+                onAddAssessment={onAddAssessment}
+              />
+            </TabsContent>
+            
+            <TabsContent value="equipment">
+              <EquipmentTab 
+                clientId={carePlan.patientId}
+                equipment={equipment}
+                onAddEquipment={onAddEquipment}
+              />
+            </TabsContent>
+            
+            <TabsContent value="notes">
+              <NotesTab 
+                clientId={carePlan.patientId}
+                onAddNote={onAddNote} 
+              />
+            </TabsContent>
+            
+            <TabsContent value="documents">
+              <DocumentsTab clientId={carePlan.patientId} />
+            </TabsContent>
+            
+            <TabsContent value="dietary">
+              <DietaryTab 
+                dietaryRequirements={dietaryRequirements || {
+                  dietary_restrictions: [],
+                  food_allergies: [],
+                  food_preferences: [],
+                  meal_schedule: {},
+                  nutritional_needs: "",
+                  supplements: [],
+                  feeding_assistance_required: false,
+                  special_equipment_needed: "",
+                  texture_modifications: "",
+                  fluid_restrictions: "",
+                  weight_monitoring: false,
+                }}
+                onEditDietaryRequirements={onEditDietaryRequirements}
+              />
+            </TabsContent>
+            
+            <TabsContent value="personalcare">
+              <PersonalCareTab 
+                personalCare={personalCare || {
+                  personal_hygiene_needs: "",
+                  bathing_preferences: "",
+                  dressing_assistance_level: "",
+                  toileting_assistance_level: "",
+                  continence_status: "",
+                  sleep_patterns: "",
+                  behavioral_notes: "",
+                  comfort_measures: "",
+                  pain_management: "",
+                  skin_care_needs: "",
+                }}
+                onEditPersonalCare={onEditPersonalCare}
+              />
+            </TabsContent>
+
+            <TabsContent value="riskassessments">
+              <RiskAssessmentsTab 
+                clientId={carePlan.patientId}
+                riskAssessments={riskAssessments}
+                onAddRiskAssessment={onAddRiskAssessment}
+              />
+            </TabsContent>
+
+            <TabsContent value="serviceplan">
+              <ServicePlanTab 
+                serviceActions={serviceActions}
+                onAddServicePlan={onAddServicePlan}
+              />
+            </TabsContent>
+            
+            <TabsContent value="serviceactions">
+              <ServiceActionsTab 
+                serviceActions={serviceActions}
+                onAddServiceAction={onAddServiceAction}
+              />
+            </TabsContent>
+            
+            <TabsContent value="eventslogs">
+              <EventsLogsTab 
+                clientId={carePlan.patientId}
+                carePlanId={carePlan.id}
+                patientName={carePlan.patientName}
+                onAddEvent={onAddEvent}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    </div>
+  );
+};
