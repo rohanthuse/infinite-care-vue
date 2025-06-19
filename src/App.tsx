@@ -20,6 +20,7 @@ import ClientEdit from "./pages/client/ClientEdit";
 import Attendance from "./pages/Attendance";
 import Agreement from "./pages/Agreement";
 import Accounting from "./pages/Accounting";
+import SuperAdminLogin from "./pages/SuperAdminLogin";
 import { AuthProvider } from "./contexts/AuthContext";
 import { TaskProvider } from "./contexts/TaskContext";
 
@@ -35,6 +36,9 @@ const App = () => (
           <TaskProvider>
             <Routes>
               <Route path="/" element={<Index />} />
+              
+              {/* Super Admin Route */}
+              <Route path="/super-admin" element={<SuperAdminLogin />} />
               
               {/* Admin Dashboard Routes */}
               <Route path="/dashboard" element={<Dashboard />} />
