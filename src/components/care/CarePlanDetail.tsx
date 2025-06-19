@@ -264,7 +264,6 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 
                 <TabsContent value="dietary">
                   <DietaryTab dietaryRequirements={{
-                    client_id: carePlan.patientId,
                     dietary_restrictions: [],
                     food_allergies: [],
                     food_preferences: [],
@@ -283,7 +282,6 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 
                 <TabsContent value="personalcare">
                   <PersonalCareTab personalCare={{
-                    client_id: carePlan.patientId,
                     personal_hygiene_needs: "",
                     bathing_preferences: "",
                     dressing_assistance_level: "",
