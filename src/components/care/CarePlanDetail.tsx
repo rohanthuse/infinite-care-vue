@@ -16,6 +16,8 @@ import { useClientDietaryRequirements, useUpdateClientDietaryRequirements } from
 import { useClientRiskAssessments, useCreateClientRiskAssessment, useUpdateClientRiskAssessment, ClientRiskAssessment } from "@/hooks/useClientRiskAssessments";
 import { useCreateGoal, useUpdateGoal } from "@/hooks/useCarePlanGoalsMutations";
 import { useClientServiceActions, useCreateClientServiceAction, useUpdateClientServiceAction, ClientServiceAction } from "@/hooks/useClientServiceActions";
+import { useClientEvents, useCreateClientEvent } from "@/hooks/useClientEvents";
+import { useCreateClientDocument } from "@/hooks/useClientDocuments";
 import { toast } from "@/hooks/use-toast";
 
 import { PatientHeader } from "./PatientHeader";
@@ -47,6 +49,9 @@ import { AddRiskAssessmentDialog } from "./dialogs/AddRiskAssessmentDialog";
 import { EditRiskAssessmentDialog } from "./dialogs/EditRiskAssessmentDialog";
 import { AddServicePlanDialog } from "./dialogs/AddServicePlanDialog";
 import { EditServicePlanDialog } from "./dialogs/EditServicePlanDialog";
+import { AddNoteDialog } from "./dialogs/AddNoteDialog";
+import { AddEventDialog } from "./dialogs/AddEventDialog";
+import { UploadDocumentDialog } from "./dialogs/UploadDocumentDialog";
 
 interface CarePlanDetailProps {
   carePlan: {
@@ -77,6 +82,8 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   onAddEvent,
 }) => {
   const [activeTab, setActiveTab] = useState("personal");
+  
+  // Dialog states
   const [addNoteDialogOpen, setAddNoteDialogOpen] = useState(false);
   const [scheduleFollowUpDialogOpen, setScheduleFollowUpDialogOpen] = useState(false);
   const [recordActivityDialogOpen, setRecordActivityDialogOpen] = useState(false);
@@ -108,27 +115,20 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     error
   } = useComprehensiveCarePlanData(carePlan?.patientId || "");
 
-  // Add debugging for comprehensive data
-  console.log('[CarePlanDetail] Comprehensive data loaded:', {
-    hasData: !!comprehensiveData,
-    client: comprehensiveData?.client,
-    medicalInfo: comprehensiveData?.medicalInfo,
-    patientId: carePlan?.patientId
-  });
-
   // Get the actual client UUID from comprehensive data or use a fallback
   const clientId = comprehensiveData?.client?.id || carePlan?.patientId || "";
-  
-  console.log('[CarePlanDetail] Client ID resolution:', {
-    fromComprehensiveData: comprehensiveData?.client?.id,
-    fromCarePlan: carePlan?.patientId,
-    finalClientId: clientId
-  });
   
   // Database hooks for notes - now using the correct client UUID
   const { data: dbNotes = [], isLoading: notesLoading } = useClientNotes(clientId);
   const createNoteMutation = useCreateClientNote();
   const createAssessmentMutation = useCreateClientAssessment();
+  
+  // Events hooks
+  const { data: dbEvents = [], isLoading: eventsLoading } = useClientEvents(clientId);
+  const createEventMutation = useCreateClientEvent();
+  
+  // Document hooks
+  const createDocumentMutation = useCreateClientDocument();
   
   // Dietary requirements hooks
   const { data: dietaryRequirements, isLoading: dietaryLoading } = useClientDietaryRequirements(clientId);
@@ -168,8 +168,119 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   };
 
   const handleAddNoteWithDB = async () => {
-    if (onAddNote) {
-      onAddNote();
+    setAddNoteDialogOpen(true);
+  };
+
+  const handleSaveNote = async (noteData: { title: string; content: string }) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot save note.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await createNoteMutation.mutateAsync({
+        client_id: clientId,
+        title: noteData.title,
+        content: noteData.content,
+        author: user?.email || "Admin",
+      });
+
+      setAddNoteDialogOpen(false);
+      toast({
+        title: "Note created",
+        description: "The note has been successfully added to the patient's record."
+      });
+    } catch (error) {
+      console.error("Error saving note:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save note. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAddEventWithDB = async () => {
+    setAddEventDialogOpen(true);
+  };
+
+  const handleSaveEvent = async (eventData: any) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot save event.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await createEventMutation.mutateAsync({
+        client_id: clientId,
+        title: eventData.title,
+        event_type: eventData.event_type,
+        severity: eventData.severity,
+        description: eventData.description,
+        reporter: eventData.reporter,
+        status: 'open',
+      });
+
+      setAddEventDialogOpen(false);
+      toast({
+        title: "Event created",
+        description: "The event has been successfully recorded."
+      });
+    } catch (error) {
+      console.error("Error saving event:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save event. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUploadDocumentWithDB = async () => {
+    setUploadDocumentDialogOpen(true);
+  };
+
+  const handleSaveDocument = async (documentData: any) => {
+    if (!clientId) {
+      toast({
+        title: "Error",
+        description: "Client ID not found. Cannot save document.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await createDocumentMutation.mutateAsync({
+        client_id: clientId,
+        name: documentData.name,
+        type: documentData.type,
+        upload_date: documentData.date.toISOString().split('T')[0],
+        uploaded_by: documentData.author,
+        file_path: null, // In a real implementation, this would be the uploaded file path
+        file_size: documentData.file?.size?.toString() || null,
+      });
+
+      setUploadDocumentDialogOpen(false);
+      toast({
+        title: "Document uploaded",
+        description: "The document has been successfully uploaded."
+      });
+    } catch (error) {
+      console.error("Error saving document:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload document. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -612,7 +723,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     setMedicalInfoDialogOpen(true);
   };
 
-  if (isLoading || dietaryLoading || personalCareLoading || riskAssessmentsLoading || serviceActionsLoading) {
+  if (isLoading || dietaryLoading || personalCareLoading || riskAssessmentsLoading || serviceActionsLoading || notesLoading || eventsLoading) {
     return (
       <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
@@ -748,7 +859,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 onAddNote={handleAddNoteWithDB}
                 onScheduleFollowUp={onScheduleFollowUp}
                 onRecordActivity={onRecordActivity}
-                onUploadDocument={onUploadDocument}
+                onUploadDocument={handleUploadDocumentWithDB}
               />
             </div>
             
@@ -762,7 +873,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                     personalInfo={comprehensiveData?.personalInfo}
                     medicalInfo={comprehensiveData?.medicalInfo}
                     onEditPersonalInfo={() => setPersonalInfoDialogOpen(true)}
-                    onEditMedicalInfo={handleEditMedicalInfo}
+                    onEditMedicalInfo={() => setMedicalInfoDialogOpen(true)}
                   />
                 </TabsContent>
                 
@@ -778,7 +889,10 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                   <GoalsTab 
                     goals={transformedGoals} 
                     onAddGoal={() => setAddGoalDialogOpen(true)}
-                    onEditGoal={handleEditGoal}
+                    onEditGoal={(goal) => {
+                      setSelectedGoal(goal);
+                      setEditGoalDialogOpen(true);
+                    }}
                   />
                 </TabsContent>
                 
@@ -796,7 +910,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                 <TabsContent value="documents">
                   <DocumentsTab 
                     documents={transformedDocuments} 
-                    onUploadDocument={onUploadDocument} 
+                    onUploadDocument={handleUploadDocumentWithDB} 
                   />
                 </TabsContent>
                 
@@ -829,31 +943,41 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                   <RiskTab 
                     riskAssessments={riskAssessments}
                     onAddRiskAssessment={() => setAddRiskAssessmentDialogOpen(true)}
-                    onEditRiskAssessment={handleEditRiskAssessment}
+                    onEditRiskAssessment={(riskAssessment) => {
+                      setSelectedRiskAssessment(riskAssessment);
+                      setEditRiskAssessmentDialogOpen(true);
+                    }}
                   />
                 </TabsContent>
                 
                 <TabsContent value="serviceplan">
                   <ServicePlanTab 
                     serviceActions={serviceActions}
-                    onAddServicePlan={handleAddServicePlan}
-                    onEditServicePlan={handleEditServicePlan}
+                    onAddServicePlan={() => setAddServicePlanDialogOpen(true)}
+                    onEditServicePlan={(serviceAction) => {
+                      setSelectedServiceAction(serviceAction);
+                      setEditServicePlanDialogOpen(true);
+                    }}
                   />
                 </TabsContent>
                 
                 <TabsContent value="serviceactions">
                   <ServiceActionsTab 
                     serviceActions={serviceActions}
-                    onAddServiceAction={handleAddServiceAction}
-                    onEditServiceAction={handleEditServiceAction}
+                    onAddServiceAction={() => setAddServicePlanDialogOpen(true)}
+                    onEditServiceAction={(serviceAction) => {
+                      setSelectedServiceAction(serviceAction);
+                      setEditServicePlanDialogOpen(true);
+                    }}
                   />
                 </TabsContent>
 
                 <TabsContent value="eventslogs">
                   <EventsLogsTab 
+                    clientId={clientId}
                     carePlanId={carePlan.id}
                     patientName={carePlan.patientName}
-                    onAddEvent={onAddEvent}
+                    onAddEvent={handleAddEventWithDB}
                   />
                 </TabsContent>
               </Tabs>
@@ -862,6 +986,29 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         </div>
       </div>
       
+      {/* Dialog Components */}
+      <AddNoteDialog
+        open={addNoteDialogOpen}
+        onOpenChange={setAddNoteDialogOpen}
+        onSave={handleSaveNote}
+        isLoading={createNoteMutation.isPending}
+      />
+
+      <AddEventDialog
+        open={addEventDialogOpen}
+        onOpenChange={setAddEventDialogOpen}
+        onSave={handleSaveEvent}
+        carePlanId={carePlan.id}
+        patientName={carePlan.patientName}
+        isLoading={createEventMutation.isPending}
+      />
+
+      <UploadDocumentDialog
+        open={uploadDocumentDialogOpen}
+        onOpenChange={setUploadDocumentDialogOpen}
+        onSave={handleSaveDocument}
+      />
+
       <AddAssessmentDialog
         open={assessmentDialogOpen}
         onOpenChange={setAssessmentDialogOpen}
