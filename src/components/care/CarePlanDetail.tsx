@@ -406,6 +406,8 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
                       comfort_measures: "",
                       pain_management: "",
                       skin_care_needs: "",
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString(),
                     }}
                     onEditAboutMe={handleEditAboutMe}
                   />
@@ -576,7 +578,8 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         open={editAboutMeOpen}
         onOpenChange={setEditAboutMeOpen}
         onSave={handleSavePersonalInfo}
-        aboutMeData={personalInfo}
+        personalInfo={personalInfo}
+        personalCare={personalCare}
         isLoading={updateClientMutation.isPending}
       />
 
@@ -584,7 +587,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         open={editDietaryOpen}
         onOpenChange={setEditDietaryOpen}
         onSave={handleSavePersonalInfo}
-        dietaryData={dietaryRequirements}
+        dietaryRequirements={dietaryRequirements}
         isLoading={updateClientMutation.isPending}
       />
 
@@ -592,7 +595,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
         open={editPersonalCareOpen}
         onOpenChange={setEditPersonalCareOpen}
         onSave={handleSavePersonalInfo}
-        personalCareData={personalCare}
+        personalCare={personalCare}
         isLoading={updateClientMutation.isPending}
       />
     </div>
