@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams, Routes, Route, useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { 
   SearchIcon, Filter, UserCheck, Download, RefreshCw, 
   Edit, EyeIcon, HelpCircle, CheckCircle, 
-  ChevronLeft, ChevronRight 
+  ChevronLeft, ChevronRight, Trash2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,105 +17,7 @@ import { CarerFilters } from "./CarerFilters";
 import { AddCarerDialog } from "./AddCarerDialog";
 import RecruitmentSection from "./RecruitmentSection";
 import { useToast } from "@/hooks/use-toast";
-
-const mockCarers = [
-  {
-    id: "CR-001",
-    name: "Charuma, Charmaine",
-    email: "charmaine.c@med-infinite.com",
-    phone: "+44 20 7946 3344",
-    location: "Milton Keynes, MK9 3NZ",
-    status: "Active",
-    avatar: "CC",
-    experience: "3 years",
-    specialization: "Home Care",
-    availability: "Full-time"
-  },
-  {
-    id: "CR-002",
-    name: "Warren, Susan",
-    email: "susan.w@med-infinite.com",
-    phone: "+44 20 7946 5566",
-    location: "Milton Keynes, MK9 3NZ",
-    status: "Active",
-    avatar: "SW",
-    experience: "5 years",
-    specialization: "Elderly Care",
-    availability: "Part-time"
-  },
-  {
-    id: "CR-003",
-    name: "Ayo-Famure, Opeyemi",
-    email: "opeyemi.af@med-infinite.com",
-    phone: "+44 20 7946 7788",
-    location: "London, SW1A 1AA",
-    status: "On Leave",
-    avatar: "AF",
-    experience: "2 years",
-    specialization: "Nurse",
-    availability: "Part-time"
-  },
-  {
-    id: "CR-004",
-    name: "Smith, John",
-    email: "john.s@med-infinite.com",
-    phone: "+44 20 7946 9900",
-    location: "Cambridge, CB2 1TN",
-    status: "Active",
-    avatar: "SJ",
-    experience: "7 years",
-    specialization: "Physiotherapy",
-    availability: "Full-time"
-  },
-  {
-    id: "CR-005",
-    name: "Williams, Mary",
-    email: "mary.w@med-infinite.com",
-    phone: "+44 20 7946 1122",
-    location: "Bristol, BS1 5TR",
-    status: "Training",
-    avatar: "WM",
-    experience: "1 year",
-    specialization: "Home Care",
-    availability: "Full-time"
-  },
-  {
-    id: "CR-006",
-    name: "Chen, Lisa",
-    email: "lisa.c@med-infinite.com",
-    phone: "+44 20 7946 3344",
-    location: "Milton Keynes, MK9 3NZ",
-    status: "Active",
-    avatar: "LC",
-    experience: "4 years",
-    specialization: "Mental Health",
-    availability: "Full-time"
-  },
-  {
-    id: "CR-007",
-    name: "Patel, Raj",
-    email: "raj.p@med-infinite.com",
-    phone: "+44 20 7946 5566",
-    location: "London, SW1A 1AA",
-    status: "Inactive",
-    avatar: "RP",
-    experience: "6 years",
-    specialization: "Elderly Care",
-    availability: "Part-time"
-  },
-  {
-    id: "CR-008",
-    name: "Murphy, Siobhan",
-    email: "siobhan.m@med-infinite.com",
-    phone: "+44 20 7946 7788",
-    location: "Manchester, M1 1AE",
-    status: "Active",
-    avatar: "MS",
-    experience: "2 years",
-    specialization: "Disability Support",
-    availability: "Full-time"
-  }
-];
+import { useBranchCarers, useDeleteCarer, CarerDB } from "@/data/hooks/useBranchCarers";
 
 export interface CarersTabProps {
   branchId?: string;
@@ -124,27 +27,42 @@ export interface CarersTabProps {
 export const CarersTab = ({ branchId, branchName }: CarersTabProps) => {
   const { id, branchName: paramBranchName } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
+  
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [specializationFilter, setSpecializationFilter] = useState("all");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [carers, setCarers] = useState(mockCarers);
   const [activeView, setActiveView] = useState("carers");
   const itemsPerPage = 5;
 
-  useEffect(() => {
-    if (location.state && location.state.carersSubTab === 'recruitment') {
-      setActiveView('recruitment');
-    }
-  }, [location.state]);
+  // Use the actual branch ID from params or props
+  const currentBranchId = branchId || id;
+  
+  // Fetch carers data from Supabase
+  const { data: carers = [], isLoading, error, refetch } = useBranchCarers(currentBranchId);
+  const deleteCarerMutation = useDeleteCarer();
 
-  const filteredCarers = carers.filter(carer => {
+  console.log('[CarersTab] Branch ID:', currentBranchId);
+  console.log('[CarersTab] Carers data:', carers);
+
+  useEffect(() => {
+    if (error) {
+      console.error('[CarersTab] Error loading carers:', error);
+      toast({
+        title: "Error loading carers",
+        description: "Failed to load carers data. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
+
+  const filteredCarers = carers.filter((carer: CarerDB) => {
+    const fullName = `${carer.first_name} ${carer.last_name}`.toLowerCase();
     const matchesSearch = 
-      carer.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-      carer.email.toLowerCase().includes(searchValue.toLowerCase()) ||
+      fullName.includes(searchValue.toLowerCase()) ||
+      (carer.email && carer.email.toLowerCase().includes(searchValue.toLowerCase())) ||
       carer.id.toLowerCase().includes(searchValue.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || carer.status === statusFilter;
@@ -176,34 +94,43 @@ export const CarersTab = ({ branchId, branchName }: CarersTabProps) => {
     navigate(`/branch-dashboard/${id}/${branchName}/${carerId}`);
   };
 
-  const handleAddCarer = (data: any) => {
-    const newCarerId = `CR-${String(carers.length + 1).padStart(3, '0')}`;
-    
-    const newCarer = {
-      id: newCarerId,
-      name: `${data.lastName}, ${data.firstName}`,
-      email: data.email,
-      phone: data.phone,
-      location: data.location,
-      status: "Active",
-      avatar: `${data.firstName.charAt(0)}${data.lastName.charAt(0)}`,
-      experience: data.experience || "New hire",
-      specialization: data.specialization,
-      availability: data.availability
-    };
-    
-    setCarers([...carers, newCarer]);
-    
-    toast({
-      title: "Carer Added Successfully",
-      description: `${data.firstName} ${data.lastName} has been added to your carers list.`,
-      variant: "default",
-    });
+  const handleDeleteCarer = async (carerId: string, carerName: string) => {
+    if (window.confirm(`Are you sure you want to delete ${carerName}? This action cannot be undone.`)) {
+      try {
+        await deleteCarerMutation.mutateAsync(carerId);
+      } catch (error) {
+        console.error('[CarersTab] Delete error:', error);
+      }
+    }
+  };
+
+  const handleRefresh = () => {
+    console.log('[CarersTab] Refreshing carers data');
+    refetch();
+  };
+
+  const getAvatarInitials = (firstName: string, lastName: string) => {
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
 
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, specializationFilter, availabilityFilter, searchValue]);
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+              <p className="text-muted-foreground">Loading carers...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
@@ -215,12 +142,23 @@ export const CarersTab = ({ branchId, branchName }: CarersTabProps) => {
               Manage carers and care staff, view their details, and track assignments
             </p>
           </div>
-          <AddCarerDialog onAddCarer={handleAddCarer} />
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isLoading}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <AddCarerDialog branchId={currentBranchId} />
+          </div>
         </div>
         
         <Tabs defaultValue="carers" value={activeView} onValueChange={setActiveView}>
           <TabsList className="mb-4">
-            <TabsTrigger value="carers">Active Carers</TabsTrigger>
+            <TabsTrigger value="carers">Active Carers ({carers.length})</TabsTrigger>
             <TabsTrigger value="recruitment">Recruitment</TabsTrigger>
           </TabsList>
           
@@ -256,25 +194,25 @@ export const CarersTab = ({ branchId, branchName }: CarersTabProps) => {
                   <TableHead className="text-gray-600 font-medium">Experience</TableHead>
                   <TableHead className="text-gray-600 font-medium">Availability</TableHead>
                   <TableHead className="text-gray-600 font-medium">Status</TableHead>
-                  <TableHead className="text-right"></TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedCarers.length > 0 ? (
                   paginatedCarers.map((carer) => (
                     <TableRow key={carer.id} className="hover:bg-gray-50 border-t border-gray-100">
-                      <TableCell className="font-medium">{carer.id}</TableCell>
+                      <TableCell className="font-medium">{carer.id.slice(0, 8)}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm">
-                            {carer.avatar}
+                            {getAvatarInitials(carer.first_name, carer.last_name)}
                           </div>
-                          <span>{carer.name}</span>
+                          <span>{carer.last_name}, {carer.first_name}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{carer.email}</TableCell>
-                      <TableCell>{carer.specialization}</TableCell>
-                      <TableCell>{carer.experience}</TableCell>
+                      <TableCell>{carer.email || 'Not provided'}</TableCell>
+                      <TableCell>{carer.specialization || 'General Care'}</TableCell>
+                      <TableCell>{carer.experience || 'Not specified'}</TableCell>
                       <TableCell>{carer.availability}</TableCell>
                       <TableCell>
                         <Badge 
@@ -303,8 +241,14 @@ export const CarersTab = ({ branchId, branchName }: CarersTabProps) => {
                           <Button variant="ghost" size="icon" className="h-8 w-8">
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <HelpCircle className="h-4 w-4" />
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleDeleteCarer(carer.id, `${carer.first_name} ${carer.last_name}`)}
+                            disabled={deleteCarerMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -313,7 +257,7 @@ export const CarersTab = ({ branchId, branchName }: CarersTabProps) => {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-6 text-gray-500">
-                      No carers found matching your search criteria.
+                      {isLoading ? "Loading carers..." : "No carers found matching your search criteria."}
                     </TableCell>
                   </TableRow>
                 )}

@@ -18,10 +18,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useCarerAuth } from "@/hooks/useCarerAuth";
 
 const CarerDashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const { user, isAuthenticated, loading } = useCarerAuth();
 
   // Menu items for mobile view
   const menuItems = [
@@ -82,13 +84,30 @@ const CarerDashboard: React.FC = () => {
     }
   ];
 
-  // Check if user is authorized as a carer
+  // Check authentication status
   useEffect(() => {
-    const userType = localStorage.getItem("userType");
-    if (userType !== "carer") {
+    if (!loading && !isAuthenticated) {
+      console.log('[CarerDashboard] User not authenticated, redirecting to login');
       navigate("/carer-login");
     }
-  }, [navigate]);
+  }, [isAuthenticated, loading, navigate]);
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">

@@ -7,56 +7,58 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useCarerAuth } from "@/hooks/useCarerAuth";
 
 const CarerLogin = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn, loading } = useCarerAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     
-    if (!username || !password) {
-      setError("Please enter both username and password.");
+    if (!email || !password) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter both email and password.",
+        variant: "destructive",
+      });
       return;
     }
 
-    setIsLoading(true);
+    console.log('[CarerLogin] Attempting login with:', email);
     
     try {
-      // This is where you would normally integrate with your authentication system
-      // For now, we'll simulate a login with a timeout
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const result = await signIn(email, password);
       
-      // Check against hardcoded carer credentials - this is for testing purposes only
-      console.log("Attempting login with:", username, password);
-      
-      if (username === "carerShashank" && password === "Shariwaa$3690") {
-        // Set user type in local storage for role-based access
-        localStorage.setItem("userType", "carer");
-        localStorage.setItem("carerName", "Shashank");
+      if (result?.success && result.user && result.staff) {
+        console.log('[CarerLogin] Login successful for carer:', result.staff);
         
         toast({
           title: "Login successful",
-          description: "Welcome back, Shashank!",
+          description: `Welcome back, ${result.staff.first_name}!`,
         });
         
         // Navigate to the carer dashboard after successful login
         navigate("/carer-dashboard");
-      } else {
-        setError("Invalid credentials. Please try again.");
+      } else if (result?.error) {
+        toast({
+          title: "Login failed",
+          description: result.error,
+          variant: "destructive",
+        });
       }
-    } catch (err) {
-      setError("An error occurred during login. Please try again.");
-      console.error(err);
-    } finally {
-      setIsLoading(false);
+    } catch (error: any) {
+      console.error('[CarerLogin] Login error:', error);
+      toast({
+        title: "Login failed",
+        description: error.message || "An error occurred during login. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -105,28 +107,22 @@ const CarerLogin = () => {
             <h3 className="text-xl font-semibold text-gray-800 mb-2">Carer Sign In</h3>
             <p className="text-gray-600">Access your schedule and care plans</p>
           </div>
-
-          {error && (
-            <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start">
-              <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
           
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="email">Email Address</Label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <User className="h-5 w-5 text-gray-400" />
                 </div>
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder="Enter your username"
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email address"
                   className="pl-10"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
               </div>
             </div>
@@ -149,6 +145,7 @@ const CarerLogin = () => {
                   className="pl-10 pr-10"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
                 />
                 <button
                   type="button"
@@ -183,11 +180,11 @@ const CarerLogin = () => {
                 type="submit"
                 className={cn(
                   "w-full bg-blue-600 hover:bg-blue-700 transition-all",
-                  isLoading && "opacity-70 cursor-not-allowed"
+                  loading && "opacity-70 cursor-not-allowed"
                 )}
-                disabled={isLoading}
+                disabled={loading}
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                {loading ? "Signing in..." : "Sign In"}
               </CustomButton>
             </div>
           </form>

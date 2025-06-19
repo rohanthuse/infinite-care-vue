@@ -2136,25 +2136,55 @@ export type Database = {
       }
       staff: {
         Row: {
+          address: string | null
+          availability: string | null
           branch_id: string | null
           created_at: string | null
+          date_of_birth: string | null
+          email: string | null
+          experience: string | null
           first_name: string
+          hire_date: string | null
           id: string
           last_name: string
+          phone: string | null
+          specialization: string | null
+          status: string | null
+          updated_at: string | null
         }
         Insert: {
+          address?: string | null
+          availability?: string | null
           branch_id?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          experience?: string | null
           first_name: string
+          hire_date?: string | null
           id?: string
           last_name: string
+          phone?: string | null
+          specialization?: string | null
+          status?: string | null
+          updated_at?: string | null
         }
         Update: {
+          address?: string | null
+          availability?: string | null
           branch_id?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          experience?: string | null
           first_name?: string
+          hire_date?: string | null
           id?: string
           last_name?: string
+          phone?: string | null
+          specialization?: string | null
+          status?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -2255,6 +2285,24 @@ export type Database = {
       get_branch_chart_data: {
         Args: { p_branch_id: string }
         Returns: Json
+      }
+      get_staff_profile: {
+        Args: { staff_user_id: string }
+        Returns: {
+          id: string
+          first_name: string
+          last_name: string
+          email: string
+          phone: string
+          address: string
+          status: string
+          experience: string
+          specialization: string
+          availability: string
+          date_of_birth: string
+          hire_date: string
+          branch_id: string
+        }[]
       }
       get_uninvoiced_bookings: {
         Args: { branch_id_param?: string }
