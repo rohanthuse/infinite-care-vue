@@ -61,6 +61,46 @@ export interface ExpenseType {
   updated_at: string;
 }
 
+// Insert types (required fields only)
+export interface ReportTypeInsert {
+  title: string;
+  status?: "Active" | "Inactive";
+}
+
+export interface FileCategoryInsert {
+  title: string;
+  status?: "Active" | "Inactive";
+}
+
+export interface BankHolidayInsert {
+  title: string;
+  status?: "Active" | "Inactive";
+  registered_by: string;
+  registered_on: string;
+}
+
+export interface TravelRateInsert {
+  title: string;
+  status?: "Active" | "Inactive";
+  from_date: string;
+  rate_per_mile: number;
+  rate_per_hour: number;
+  user_type: string;
+}
+
+export interface CommunicationTypeInsert {
+  title: string;
+  status?: "Active" | "Inactive";
+}
+
+export interface ExpenseTypeInsert {
+  title: string;
+  status?: "Active" | "Inactive";
+  type: "Increment" | "Decrement";
+  amount: number;
+  tax?: number;
+}
+
 // Report Types hook
 export function useReportTypes() {
   const queryClient = useQueryClient();
@@ -89,7 +129,7 @@ export function useReportTypes() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (newItem: Partial<ReportType>) => {
+    mutationFn: async (newItem: ReportTypeInsert) => {
       console.log('Creating report_types:', newItem);
       const { data, error } = await supabase
         .from('report_types')
@@ -230,7 +270,7 @@ export function useFileCategories() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (newItem: Partial<FileCategory>) => {
+    mutationFn: async (newItem: FileCategoryInsert) => {
       console.log('Creating file_categories:', newItem);
       const { data, error } = await supabase
         .from('file_categories')
@@ -371,7 +411,7 @@ export function useBankHolidays() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (newItem: Partial<BankHoliday>) => {
+    mutationFn: async (newItem: BankHolidayInsert) => {
       console.log('Creating bank_holidays:', newItem);
       const { data, error } = await supabase
         .from('bank_holidays')
@@ -512,7 +552,7 @@ export function useTravelRates() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (newItem: Partial<TravelRate>) => {
+    mutationFn: async (newItem: TravelRateInsert) => {
       console.log('Creating travel_rates:', newItem);
       const { data, error } = await supabase
         .from('travel_rates')
@@ -653,7 +693,7 @@ export function useCommunicationTypes() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (newItem: Partial<CommunicationType>) => {
+    mutationFn: async (newItem: CommunicationTypeInsert) => {
       console.log('Creating communication_types:', newItem);
       const { data, error } = await supabase
         .from('communication_types')
@@ -794,7 +834,7 @@ export function useExpenseTypes() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (newItem: Partial<ExpenseType>) => {
+    mutationFn: async (newItem: ExpenseTypeInsert) => {
       console.log('Creating expense_types:', newItem);
       const { data, error } = await supabase
         .from('expense_types')
