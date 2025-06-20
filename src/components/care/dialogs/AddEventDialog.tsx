@@ -1,99 +1,117 @@
 
-import React from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { CalendarIcon, FileBarChart2 } from "lucide-react";
-import { format } from "date-fns";
-
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
-
-const eventSchema = z.object({
-  title: z.string().min(1, {
-    message: "Event title is required.",
-  }),
-  event_type: z.string().min(1, {
-    message: "Event type is required.",
-  }),
-  severity: z.string().min(1, {
-    message: "Severity is required.",
-  }),
-  description: z.string().min(10, {
-    message: "Description must be at least 10 characters.",
-  }),
-  reporter: z.string().min(1, {
-    message: "Reporter is required.",
-  }),
-});
-
-type EventFormValues = z.infer<typeof eventSchema>;
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useReportTypeOptions } from '@/hooks/useParameterOptions';
 
 interface AddEventDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSave: (event: EventFormValues) => void;
-  carePlanId: string;
-  patientName: string;
-  isLoading?: boolean;
+  isOpen: boolean;
+  onClose: () => void;
+  onAdd: (event: any) => void;
 }
 
 export const AddEventDialog: React.FC<AddEventDialogProps> = ({
-  open,
-  onOpenChange,
-  onSave,
-  carePlanId,
-  patientName,
-  isLoading = false,
+  isOpen,
+  onClose,
+  onAdd,
 }) => {
-  const form = useForm<EventFormValues>({
-    resolver: zodResolver(eventSchema),
+  const { options: reportTypeOptions, isLoading: reportTypesLoading } = useReportTypeOptions();
+  
+  const form = useForm({
     defaultValues: {
-      title: "",
-      event_type: "",
-      severity: "",
-      description: "",
-      reporter: "",
+      event_type: '',
+      title: '',
+      description: '',
+      severity: 'low',
+      reporter: '',
+      status: 'open',
     },
   });
 
-  const onSubmit = (values: EventFormValues) => {
-    onSave(values);
+  const handleSubmit = (data: any) => {
+    onAdd(data);
     form.reset();
+    onClose();
   };
 
+  const severityOptions = [
+    { value: 'low', label: 'Low' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'high', label: 'High' },
+    { value: 'critical', label: 'Critical' },
+  ];
+
+  const statusOptions = [
+    { value: 'open', label: 'Open' },
+    { value: 'in-progress', label: 'In Progress' },
+    { value: 'resolved', label: 'Resolved' },
+    { value: 'closed', label: 'Closed' },
+  ];
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileBarChart2 className="h-5 w-5 text-blue-600" />
-            Add Event/Log Entry
-          </DialogTitle>
+          <DialogTitle>Add New Event</DialogTitle>
           <DialogDescription>
-            Record a new event or incident for {patientName}'s care plan.
+            Record a new event or incident for this client.
           </DialogDescription>
         </DialogHeader>
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="event_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Event Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={reportTypesLoading}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={reportTypesLoading ? "Loading..." : "Select event type"} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {reportTypeOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Event Title</FormLabel>
+                  <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Enter event title..."
-                      {...field}
-                    />
+                    <Input placeholder="Event title" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe the event..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -101,34 +119,6 @@ export const AddEventDialog: React.FC<AddEventDialogProps> = ({
             />
 
             <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="event_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Event Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select event type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="incident">Incident</SelectItem>
-                        <SelectItem value="accident">Accident</SelectItem>
-                        <SelectItem value="medication_error">Medication Error</SelectItem>
-                        <SelectItem value="fall">Fall</SelectItem>
-                        <SelectItem value="safeguarding">Safeguarding</SelectItem>
-                        <SelectItem value="complaint">Complaint</SelectItem>
-                        <SelectItem value="observation">Observation</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <FormField
                 control={form.control}
                 name="severity"
@@ -142,10 +132,36 @@ export const AddEventDialog: React.FC<AddEventDialogProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="critical">Critical</SelectItem>
+                        {severityOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {statusOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -159,51 +175,20 @@ export const AddEventDialog: React.FC<AddEventDialogProps> = ({
               name="reporter"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Reported By</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select reporter" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Admin">Admin</SelectItem>
-                      <SelectItem value="Lead Carer">Lead Carer</SelectItem>
-                      <SelectItem value="Senior Carer">Senior Carer</SelectItem>
-                      <SelectItem value="Carer">Carer</SelectItem>
-                      <SelectItem value="Care Team Leader">Care Team Leader</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Event Description</FormLabel>
+                  <FormLabel>Reporter</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Provide detailed description of the event..."
-                      className="min-h-[100px]"
-                      {...field}
-                    />
+                    <Input placeholder="Who reported this event?" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Saving..." : "Save Event"}
-              </Button>
+              <Button type="submit">Add Event</Button>
             </DialogFooter>
           </form>
         </Form>
