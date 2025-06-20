@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -15,151 +16,96 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { useBranchReviews, type BranchReview } from "@/hooks/useBranchReviews";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export interface ReviewsTabProps {
   branchId?: string;
   branchName?: string;
 }
 
-// All the mock reviews combined into one array
-const allReviews = [
-  {
-    id: "REV-001",
-    clientName: "Pender, Eva",
-    clientInitials: "EP",
-    carerName: "Warren, Susan",
-    carerInitials: "WS",
-    rating: 5,
-    comment: "Excellent care and attention to detail. Susan was very professional and caring.",
-    date: "26/01/2023",
-  },
-  {
-    id: "REV-002",
-    clientName: "Pender, Eva",
-    clientInitials: "EP",
-    carerName: "Charuma, Charmaine",
-    carerInitials: "CC",
-    rating: 5,
-    comment: "Very professional and friendly service. Would highly recommend.",
-    date: "26/01/2023",
-  },
-  {
-    id: "REV-003",
-    clientName: "Fulcher, Patricia",
-    clientInitials: "FP",
-    carerName: "Ayo-Famure, Opeyemi",
-    carerInitials: "AF",
-    rating: 4,
-    comment: "Good service but arrived a bit late. Otherwise very satisfied with the care provided.",
-    date: "22/01/2023",
-  },
-  {
-    id: "REV-004",
-    clientName: "Baulch, Ursula",
-    clientInitials: "BU",
-    carerName: "Smith, John",
-    carerInitials: "SJ",
-    rating: 3,
-    comment: "Average service. Could improve on timeliness and communication.",
-    date: "18/01/2023",
-  },
-  {
-    id: "REV-005",
-    clientName: "Ren, Victoria",
-    clientInitials: "RV",
-    carerName: "Williams, Mary",
-    carerInitials: "WM",
-    rating: 5,
-    comment: "Exceptional service. Mary was attentive and professional throughout.",
-    date: "15/01/2023",
-  },
-  {
-    id: "REV-006",
-    clientName: "Iyaniwura, Ifeoluwa",
-    clientInitials: "II",
-    carerName: "Warren, Susan",
-    carerInitials: "WS",
-    rating: 2,
-    comment: "Disappointed with the service. Carer was late and seemed rushed.",
-    date: "10/01/2023",
-  },
-  {
-    id: "REV-007",
-    clientName: "Johnson, Andrew",
-    clientInitials: "JA",
-    carerName: "Charuma, Charmaine",
-    carerInitials: "CC",
-    rating: 5,
-    comment: "Charmaine is an excellent carer. Very attentive and professional.",
-    date: "05/01/2023",
-  },
-  {
-    id: "REV-008",
-    clientName: "Mistry, Sanjay",
-    clientInitials: "MS",
-    carerName: "Ayo-Famure, Opeyemi",
-    carerInitials: "AF",
-    rating: 4,
-    comment: "Good service overall. Would use again.",
-    date: "02/01/2023",
-  },
-  {
-    id: "REV-009",
-    clientName: "Johnson, Andrew",
-    clientInitials: "JA",
-    carerName: "Warren, Susan",
-    carerInitials: "WS",
-    rating: 3,
-    comment: "The service was okay, but the carer was 15 minutes late. Otherwise professional care was provided.",
-    date: "01/05/2025",
-  },
-  {
-    id: "REV-010",
-    clientName: "Pender, Eva",
-    clientInitials: "EP",
-    carerName: "Smith, John",
-    carerInitials: "SJ",
-    rating: 2,
-    comment: "I was not satisfied with the care provided. The carer seemed distracted and didn't follow my care plan properly.",
-    date: "30/04/2025",
-  }
-];
-
 const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [ratingFilter, setRatingFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedReview, setSelectedReview] = useState<any>(null);
+  const [selectedReview, setSelectedReview] = useState<BranchReview | null>(null);
   const [isViewingReview, setIsViewingReview] = useState(false);
   
+  const queryClient = useQueryClient();
   const itemsPerPage = 5;
 
-  // Filter reviews based on active tab
-  const tabFilteredReviews = allReviews.filter(review => {
-    if (activeTab === "all") return true;
-    if (activeTab === "negative") return review.rating <= 3;
-    if (activeTab === "positive") return review.rating >= 4;
-    return true;
+  // Determine rating filter based on active tab
+  const getEffectiveRatingFilter = useCallback(() => {
+    if (activeTab === "positive") return "4-5"; // We'll handle this in the hook
+    if (activeTab === "negative") return "1-3"; // We'll handle this in the hook
+    return ratingFilter;
+  }, [activeTab, ratingFilter]);
+
+  // Fetch reviews data
+  const { 
+    data: reviewsData, 
+    isLoading, 
+    error,
+    refetch 
+  } = useBranchReviews({
+    branchId: branchId || '',
+    searchQuery,
+    ratingFilter: getEffectiveRatingFilter(),
+    page: currentPage,
+    limit: itemsPerPage
   });
 
-  // Apply search and filters
-  const filteredReviews = tabFilteredReviews.filter(review => {
-    const matchesSearch = 
-      review.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.carerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.comment.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesRating = ratingFilter === "all" || review.rating === parseInt(ratingFilter);
-    
-    return matchesSearch && matchesRating;
-  });
+  const reviews = reviewsData?.data || [];
+  const totalPages = reviewsData?.totalPages || 0;
+  const totalCount = reviewsData?.totalCount || 0;
 
-  const totalPages = Math.ceil(filteredReviews.length / itemsPerPage);
-  const paginatedReviews = filteredReviews.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Filter reviews based on active tab (since we need to handle this client-side for complex filters)
+  const filteredReviews = React.useMemo(() => {
+    if (activeTab === "all") return reviews;
+    if (activeTab === "positive") return reviews.filter(review => review.rating >= 4);
+    if (activeTab === "negative") return reviews.filter(review => review.rating <= 3);
+    return reviews;
+  }, [reviews, activeTab]);
+
+  const handleRefresh = async () => {
+    try {
+      await refetch();
+      queryClient.invalidateQueries({ queryKey: ['branch-reviews', branchId] });
+      toast.success("Reviews refreshed successfully");
+    } catch (error) {
+      console.error('Error refreshing reviews:', error);
+      toast.error("Failed to refresh reviews");
+    }
+  };
+
+  const handleExport = () => {
+    // Generate CSV export of current reviews
+    const csvContent = [
+      ['Feedback ID', 'Client', 'Carer', 'Rating', 'Comment', 'Date'].join(','),
+      ...filteredReviews.map(review => [
+        review.id,
+        `"${review.clientName}"`,
+        `"${review.carerName}"`,
+        review.rating,
+        `"${review.comment || ''}"`,
+        review.date
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `reviews-${branchName}-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    toast.success("Reviews exported successfully");
+  };
 
   const handlePreviousPage = () => {
     if (currentPage > 1) {
@@ -182,10 +128,30 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
     ));
   };
 
-  const handleViewReview = (review: any) => {
+  const handleViewReview = (review: BranchReview) => {
     setSelectedReview(review);
     setIsViewingReview(true);
   };
+
+  // Reset page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, ratingFilter]);
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Error Loading Reviews</h2>
+          <p className="text-red-600 mb-4">Failed to load reviews: {error.message}</p>
+          <Button onClick={handleRefresh} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
@@ -198,11 +164,11 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="h-9">
-              <RefreshCw className="h-4 w-4 mr-2" />
+            <Button variant="outline" size="sm" className="h-9" onClick={handleRefresh} disabled={isLoading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <Button variant="outline" size="sm" className="h-9">
+            <Button variant="outline" size="sm" className="h-9" onClick={handleExport} disabled={filteredReviews.length === 0}>
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
@@ -224,10 +190,11 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
                 className="pl-10 pr-4" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <div className="flex gap-3">
-              <Select value={ratingFilter} onValueChange={setRatingFilter}>
+              <Select value={ratingFilter} onValueChange={setRatingFilter} disabled={isLoading}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filter by rating" />
                 </SelectTrigger>
@@ -246,84 +213,91 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
       </div>
       
       <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-white hover:bg-gray-50/90">
-              <TableHead className="text-gray-600 font-medium w-[100px]">Feedback ID</TableHead>
-              <TableHead className="text-gray-600 font-medium">Client</TableHead>
-              <TableHead className="text-gray-600 font-medium">Carer</TableHead>
-              <TableHead className="text-gray-600 font-medium">Rating</TableHead>
-              <TableHead className="text-gray-600 font-medium">Comment</TableHead>
-              <TableHead className="text-gray-600 font-medium">Date</TableHead>
-              <TableHead className="text-gray-600 font-medium text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedReviews.length > 0 ? (
-              paginatedReviews.map((review) => (
-                <TableRow key={review.id} className="hover:bg-gray-50 border-t border-gray-100">
-                  <TableCell className="font-medium">
-                    <Button variant="ghost" className="p-0 h-auto font-medium underline-offset-4 hover:underline" onClick={() => handleViewReview(review)}>
-                      {review.id}
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-8 w-8 bg-blue-100 text-blue-600">
-                        <AvatarFallback>{review.clientInitials}</AvatarFallback>
-                      </Avatar>
-                      <span>{review.clientName}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-8 w-8 bg-purple-100 text-purple-600">
-                        <AvatarFallback>{review.carerInitials}</AvatarFallback>
-                      </Avatar>
-                      <span>{review.carerName}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex">
-                      {renderStars(review.rating)}
-                    </div>
-                  </TableCell>
-                  <TableCell className="max-w-xs truncate">{review.comment}</TableCell>
-                  <TableCell>{review.date}</TableCell>
-                  <TableCell className="text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8 px-2"
-                      onClick={() => handleViewReview(review)}
-                    >
-                      View
-                    </Button>
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-2 text-gray-600">Loading reviews...</span>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-white hover:bg-gray-50/90">
+                <TableHead className="text-gray-600 font-medium w-[100px]">Feedback ID</TableHead>
+                <TableHead className="text-gray-600 font-medium">Client</TableHead>
+                <TableHead className="text-gray-600 font-medium">Carer</TableHead>
+                <TableHead className="text-gray-600 font-medium">Rating</TableHead>
+                <TableHead className="text-gray-600 font-medium">Comment</TableHead>
+                <TableHead className="text-gray-600 font-medium">Date</TableHead>
+                <TableHead className="text-gray-600 font-medium text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredReviews.length > 0 ? (
+                filteredReviews.map((review) => (
+                  <TableRow key={review.id} className="hover:bg-gray-50 border-t border-gray-100">
+                    <TableCell className="font-medium">
+                      <Button variant="ghost" className="p-0 h-auto font-medium underline-offset-4 hover:underline" onClick={() => handleViewReview(review)}>
+                        {review.id.slice(0, 8)}...
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8 bg-blue-100 text-blue-600">
+                          <AvatarFallback>{review.clientInitials}</AvatarFallback>
+                        </Avatar>
+                        <span>{review.clientName}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8 bg-purple-100 text-purple-600">
+                          <AvatarFallback>{review.carerInitials}</AvatarFallback>
+                        </Avatar>
+                        <span>{review.carerName}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex">
+                        {renderStars(review.rating)}
+                      </div>
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate">{review.comment}</TableCell>
+                    <TableCell>{review.date}</TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 px-2"
+                        onClick={() => handleViewReview(review)}
+                      >
+                        View
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                    {isLoading ? 'Loading reviews...' : 'No feedback found matching your search criteria.'}
                   </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-6 text-gray-500">
-                  No feedback found matching your search criteria.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              )}
+            </TableBody>
+          </Table>
+        )}
       </div>
       
-      {paginatedReviews.length > 0 && (
+      {filteredReviews.length > 0 && totalPages > 1 && (
         <div className="flex items-center justify-between p-4 border-t border-gray-100">
           <div className="text-sm text-gray-500">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredReviews.length)} of {filteredReviews.length} feedback entries
+            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount} feedback entries
           </div>
           <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
               size="sm" 
               onClick={handlePreviousPage}
-              disabled={currentPage === 1}
+              disabled={currentPage === 1 || isLoading}
               className="h-8"
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
@@ -333,7 +307,7 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
               variant="outline" 
               size="sm" 
               onClick={handleNextPage}
-              disabled={currentPage === totalPages}
+              disabled={currentPage === totalPages || isLoading}
               className="h-8"
             >
               Next
@@ -379,7 +353,7 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
               <div>
                 <p className="text-sm font-medium text-gray-500">Comment</p>
                 <div className="text-sm mt-1 p-3 bg-gray-50 rounded border border-gray-100">
-                  {selectedReview.comment}
+                  {selectedReview.comment || 'No comment provided'}
                 </div>
               </div>
 
