@@ -5,7 +5,7 @@ import { X, FileEdit, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { generatePDF } from "@/utils/pdfGenerator";
+import { generateCarePlanDetailPDF } from "@/services/enhancedPdfGenerator";
 import { toast } from "sonner";
 
 interface CarePlanHeaderProps {
@@ -17,26 +17,35 @@ interface CarePlanHeaderProps {
     lastUpdated: Date;
     status: string;
     assignedTo: string;
+    assignedToType?: string;
     avatar: string;
   };
+  clientData?: {
+    clientProfile?: any;
+    personalInfo?: any;
+    medicalInfo?: any;
+    dietaryRequirements?: any;
+    personalCare?: any;
+    assessments?: any[];
+    equipment?: any[];
+    riskAssessments?: any[];
+    serviceActions?: any[];
+  };
+  branchName?: string;
   onClose: () => void;
   onEdit: () => void;
 }
 
 export const CarePlanHeader: React.FC<CarePlanHeaderProps> = ({
   carePlan,
+  clientData,
+  branchName = "Med-Infinite",
   onClose,
   onEdit,
 }) => {
   const handleExportCarePlan = () => {
     try {
-      generatePDF({
-        id: carePlan.id,
-        title: `Care Plan for ${carePlan.patientName}`,
-        date: format(carePlan.dateCreated, 'yyyy-MM-dd'),
-        status: carePlan.status,
-        signedBy: "System Generated"
-      });
+      generateCarePlanDetailPDF(carePlan, clientData || {}, branchName);
       toast.success("Care plan exported successfully");
     } catch (error) {
       console.error("Error exporting care plan:", error);

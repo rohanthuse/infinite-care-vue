@@ -1,4 +1,3 @@
-
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
@@ -318,6 +317,295 @@ export class EnhancedPdfGenerator {
     this.doc.save(`Med-Infinite_Staff_Report_${dateStr}.pdf`);
   }
 
+  // Generate comprehensive care plan PDF
+  generateCarePlanDetailPDF(carePlan: any, clientData: any, options: PdfOptions): void {
+    this.currentY = this.addHeader(options);
+
+    if (options.includeWatermark) {
+      this.addWatermark();
+    }
+
+    // Patient Information Section
+    this.addSection("Patient Information", [
+      ["Full Name", `${clientData.clientProfile?.first_name || ''} ${clientData.clientProfile?.last_name || ''}`],
+      ["Date of Birth", clientData.clientProfile?.date_of_birth ? format(new Date(clientData.clientProfile.date_of_birth), "dd MMM yyyy") : 'N/A'],
+      ["Address", clientData.clientProfile?.address || 'N/A'],
+      ["Phone", clientData.clientProfile?.phone || 'N/A'],
+      ["Email", clientData.clientProfile?.email || 'N/A']
+    ]);
+
+    // Care Plan Details Section
+    this.addSection("Care Plan Details", [
+      ["Plan Title", carePlan.title || 'N/A'],
+      ["Provider", carePlan.assignedTo || 'N/A'],
+      ["Provider Type", carePlan.assignedToType || 'N/A'],
+      ["Status", carePlan.status || 'N/A'],
+      ["Start Date", format(carePlan.dateCreated, "dd MMM yyyy")],
+      ["Last Updated", format(carePlan.lastUpdated, "dd MMM yyyy")]
+    ]);
+
+    // Medical Information Section
+    if (clientData.medicalInfo) {
+      const medicalData = [
+        ["Allergies", clientData.medicalInfo.allergies?.join(', ') || 'None recorded'],
+        ["Medical Conditions", clientData.medicalInfo.medical_conditions?.join(', ') || 'None recorded'],
+        ["Current Medications", clientData.medicalInfo.current_medications?.join(', ') || 'None recorded'],
+        ["Mobility Status", clientData.medicalInfo.mobility_status || 'N/A'],
+        ["Communication Needs", clientData.medicalInfo.communication_needs || 'N/A']
+      ];
+      this.addSection("Medical Information", medicalData);
+    }
+
+    // Personal Care Information
+    if (clientData.personalCare) {
+      const personalCareData = [
+        ["Personal Hygiene Needs", clientData.personalCare.personal_hygiene_needs || 'N/A'],
+        ["Bathing Preferences", clientData.personalCare.bathing_preferences || 'N/A'],
+        ["Dressing Assistance", clientData.personalCare.dressing_assistance_level || 'N/A'],
+        ["Toileting Assistance", clientData.personalCare.toileting_assistance_level || 'N/A'],
+        ["Sleep Patterns", clientData.personalCare.sleep_patterns || 'N/A']
+      ];
+      this.addSection("Personal Care Requirements", personalCareData);
+    }
+
+    // Dietary Requirements
+    if (clientData.dietaryRequirements) {
+      const dietaryData = [
+        ["Dietary Restrictions", clientData.dietaryRequirements.dietary_restrictions?.join(', ') || 'None'],
+        ["Food Allergies", clientData.dietaryRequirements.food_allergies?.join(', ') || 'None'],
+        ["Food Preferences", clientData.dietaryRequirements.food_preferences?.join(', ') || 'None'],
+        ["Nutritional Needs", clientData.dietaryRequirements.nutritional_needs || 'N/A'],
+        ["Supplements", clientData.dietaryRequirements.supplements?.join(', ') || 'None']
+      ];
+      this.addSection("Dietary Requirements", dietaryData);
+    }
+
+    // Risk Assessments
+    if (clientData.riskAssessments && clientData.riskAssessments.length > 0) {
+      this.addRiskAssessmentsSection(clientData.riskAssessments);
+    }
+
+    // Equipment
+    if (clientData.equipment && clientData.equipment.length > 0) {
+      this.addEquipmentSection(clientData.equipment);
+    }
+
+    // Service Actions
+    if (clientData.serviceActions && clientData.serviceActions.length > 0) {
+      this.addServiceActionsSection(clientData.serviceActions);
+    }
+
+    // Assessments
+    if (clientData.assessments && clientData.assessments.length > 0) {
+      this.addAssessmentsSection(clientData.assessments);
+    }
+
+    // Add pagination
+    const totalPages = this.doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      this.doc.setPage(i);
+      this.addFooter(i, totalPages, options.confidential !== false);
+    }
+
+    // Save with proper filename
+    const dateStr = format(new Date(), "yyyy-MM-dd");
+    const patientName = `${clientData.clientProfile?.first_name || 'Unknown'}_${clientData.clientProfile?.last_name || 'Patient'}`;
+    this.doc.save(`Med-Infinite_Care_Plan_${patientName}_${dateStr}.pdf`);
+  }
+
+  // Helper method to add a section with key-value pairs
+  private addSection(title: string, data: [string, string][]): void {
+    // Check if we need a new page
+    if (this.currentY > this.pageHeight - 60) {
+      this.doc.addPage();
+      this.currentY = 20;
+    }
+
+    this.doc.setFontSize(14);
+    this.doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+    this.doc.text(title, 20, this.currentY);
+    this.currentY += 15;
+
+    // Add data as a table
+    autoTable(this.doc, {
+      head: [["Field", "Value"]],
+      body: data,
+      startY: this.currentY,
+      theme: 'grid',
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+      },
+      headStyles: {
+        fillColor: BRAND_COLORS.primary,
+        textColor: BRAND_COLORS.white,
+        fontStyle: 'bold',
+      },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 60 },
+        1: { cellWidth: 'auto' }
+      }
+    });
+
+    this.currentY = (this.doc as any).lastAutoTable.finalY + 15;
+  }
+
+  // Helper method for risk assessments
+  private addRiskAssessmentsSection(riskAssessments: any[]): void {
+    if (this.currentY > this.pageHeight - 80) {
+      this.doc.addPage();
+      this.currentY = 20;
+    }
+
+    this.doc.setFontSize(14);
+    this.doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+    this.doc.text("Risk Assessments", 20, this.currentY);
+    this.currentY += 15;
+
+    const riskData = riskAssessments.map(risk => [
+      risk.risk_type || 'N/A',
+      risk.risk_level || 'N/A',
+      risk.risk_factors?.join(', ') || 'None',
+      risk.assessed_by || 'N/A',
+      risk.assessment_date ? format(new Date(risk.assessment_date), "dd MMM yyyy") : 'N/A'
+    ]);
+
+    autoTable(this.doc, {
+      head: [["Risk Type", "Level", "Risk Factors", "Assessed By", "Date"]],
+      body: riskData,
+      startY: this.currentY,
+      theme: 'grid',
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: BRAND_COLORS.primary,
+        textColor: BRAND_COLORS.white,
+        fontStyle: 'bold',
+      }
+    });
+
+    this.currentY = (this.doc as any).lastAutoTable.finalY + 15;
+  }
+
+  // Helper method for equipment
+  private addEquipmentSection(equipment: any[]): void {
+    if (this.currentY > this.pageHeight - 80) {
+      this.doc.addPage();
+      this.currentY = 20;
+    }
+
+    this.doc.setFontSize(14);
+    this.doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+    this.doc.text("Equipment", 20, this.currentY);
+    this.currentY += 15;
+
+    const equipmentData = equipment.map(item => [
+      item.equipment_name || 'N/A',
+      item.equipment_type || 'N/A',
+      item.manufacturer || 'N/A',
+      item.status || 'N/A',
+      item.location || 'N/A'
+    ]);
+
+    autoTable(this.doc, {
+      head: [["Equipment Name", "Type", "Manufacturer", "Status", "Location"]],
+      body: equipmentData,
+      startY: this.currentY,
+      theme: 'grid',
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: BRAND_COLORS.primary,
+        textColor: BRAND_COLORS.white,
+        fontStyle: 'bold',
+      }
+    });
+
+    this.currentY = (this.doc as any).lastAutoTable.finalY + 15;
+  }
+
+  // Helper method for service actions
+  private addServiceActionsSection(serviceActions: any[]): void {
+    if (this.currentY > this.pageHeight - 80) {
+      this.doc.addPage();
+      this.currentY = 20;
+    }
+
+    this.doc.setFontSize(14);
+    this.doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+    this.doc.text("Service Actions", 20, this.currentY);
+    this.currentY += 15;
+
+    const serviceData = serviceActions.map(service => [
+      service.service_name || 'N/A',
+      service.service_category || 'N/A',
+      service.provider_name || 'N/A',
+      service.frequency || 'N/A',
+      service.progress_status || 'N/A'
+    ]);
+
+    autoTable(this.doc, {
+      head: [["Service", "Category", "Provider", "Frequency", "Status"]],
+      body: serviceData,
+      startY: this.currentY,
+      theme: 'grid',
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: BRAND_COLORS.primary,
+        textColor: BRAND_COLORS.white,
+        fontStyle: 'bold',
+      }
+    });
+
+    this.currentY = (this.doc as any).lastAutoTable.finalY + 15;
+  }
+
+  // Helper method for assessments
+  private addAssessmentsSection(assessments: any[]): void {
+    if (this.currentY > this.pageHeight - 80) {
+      this.doc.addPage();
+      this.currentY = 20;
+    }
+
+    this.doc.setFontSize(14);
+    this.doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+    this.doc.text("Clinical Assessments", 20, this.currentY);
+    this.currentY += 15;
+
+    const assessmentData = assessments.map(assessment => [
+      assessment.assessment_name || 'N/A',
+      assessment.assessment_type || 'N/A',
+      assessment.performed_by || 'N/A',
+      assessment.assessment_date ? format(new Date(assessment.assessment_date), "dd MMM yyyy") : 'N/A',
+      assessment.status || 'N/A'
+    ]);
+
+    autoTable(this.doc, {
+      head: [["Assessment", "Type", "Performed By", "Date", "Status"]],
+      body: assessmentData,
+      startY: this.currentY,
+      theme: 'grid',
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: BRAND_COLORS.primary,
+        textColor: BRAND_COLORS.white,
+        fontStyle: 'bold',
+      }
+    });
+
+    this.currentY = (this.doc as any).lastAutoTable.finalY + 15;
+  }
+
   // Helper method to calculate duration
   private calculateDuration(startTime: string, endTime: string): number {
     if (!startTime || !endTime) return 0;
@@ -369,6 +657,22 @@ export const generateStaffReportPDF = (
     title: "Staff Report",
     branchName,    
     reportType: "Staff Analytics",
+    includeWatermark: true,
+    confidential: true
+  });
+};
+
+// Export convenience function for care plan detail
+export const generateCarePlanDetailPDF = (
+  carePlan: any,
+  clientData: any,
+  branchName: string
+) => {
+  const generator = new EnhancedPdfGenerator();
+  generator.generateCarePlanDetailPDF(carePlan, clientData, {
+    title: `Care Plan - ${carePlan.patientName}`,
+    branchName,
+    reportType: "Comprehensive Care Plan",
     includeWatermark: true,
     confidential: true
   });

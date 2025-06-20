@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -121,11 +120,26 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
     toast.info("Document upload functionality available in Documents tab");
   };
 
+  // Prepare client data for PDF export
+  const clientDataForPDF = {
+    clientProfile,
+    personalInfo,
+    medicalInfo,
+    dietaryRequirements,
+    personalCare,
+    assessments,
+    equipment,
+    riskAssessments,
+    serviceActions,
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
         <CarePlanHeader 
           carePlan={carePlan}
+          clientData={clientDataForPDF}
+          branchName={branchName}
           onClose={handleClose}
           onEdit={handleEdit}
         />
