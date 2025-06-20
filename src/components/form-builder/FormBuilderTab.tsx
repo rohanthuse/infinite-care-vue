@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -96,7 +95,8 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
   };
 
   const handleDuplicateForm = (formId: string) => {
-    duplicateForm(formId);
+    // For now, we'll use a placeholder user ID. In a real implementation, this would come from auth context
+    duplicateForm({ formId, userId: 'current-user-id' });
   };
 
   const handleConfirmDelete = (formId: string) => {

@@ -47,12 +47,22 @@ export const useFormSubmissions = (branchId: string, formId?: string) => {
 
   // Create submission mutation
   const createSubmissionMutation = useMutation({
-    mutationFn: async (submissionData: Partial<FormSubmission>) => {
+    mutationFn: async (submissionData: {
+      form_id: string;
+      submitted_by: string;
+      submitted_by_type: 'client' | 'staff' | 'carer';
+      submission_data: Record<string, any>;
+      status?: 'draft' | 'completed' | 'under_review' | 'approved' | 'rejected';
+    }) => {
       const { data, error } = await supabase
         .from('form_submissions')
         .insert([{
-          ...submissionData,
+          form_id: submissionData.form_id,
           branch_id: branchId,
+          submitted_by: submissionData.submitted_by,
+          submitted_by_type: submissionData.submitted_by_type,
+          submission_data: submissionData.submission_data,
+          status: submissionData.status || 'completed',
         }])
         .select()
         .single();

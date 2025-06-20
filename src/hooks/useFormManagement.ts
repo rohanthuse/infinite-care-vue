@@ -117,12 +117,24 @@ export const useFormManagement = (branchId: string) => {
 
   // Create form mutation
   const createFormMutation = useMutation({
-    mutationFn: async (formData: Partial<DatabaseForm>) => {
+    mutationFn: async (formData: Partial<DatabaseForm> & { title: string; created_by: string }) => {
       const { data, error } = await supabase
         .from('forms')
         .insert([{
-          ...formData,
+          title: formData.title,
+          description: formData.description || '',
           branch_id: branchId,
+          created_by: formData.created_by,
+          published: formData.published || false,
+          requires_review: formData.requires_review || false,
+          settings: formData.settings || {
+            showProgressBar: false,
+            allowSaveAsDraft: false,
+            autoSaveEnabled: false,
+            autoSaveInterval: 60,
+            redirectAfterSubmit: false,
+            submitButtonText: 'Submit'
+          }
         }])
         .select()
         .single();
@@ -203,7 +215,7 @@ export const useFormManagement = (branchId: string) => {
 
   // Duplicate form mutation
   const duplicateFormMutation = useMutation({
-    mutationFn: async (formId: string) => {
+    mutationFn: async ({ formId, userId }: { formId: string; userId: string }) => {
       // First get the original form
       const { data: originalForm, error: formError } = await supabase
         .from('forms')
@@ -218,8 +230,9 @@ export const useFormManagement = (branchId: string) => {
         .from('forms')
         .insert([{
           title: `${originalForm.title} (Copy)`,
-          description: originalForm.description,
+          description: originalForm.description || '',
           branch_id: originalForm.branch_id,
+          created_by: userId,
           published: false,
           requires_review: originalForm.requires_review,
           settings: originalForm.settings,
