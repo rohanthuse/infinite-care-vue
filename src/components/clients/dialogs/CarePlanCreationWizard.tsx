@@ -322,6 +322,7 @@ export function CarePlanCreationWizard({
         .from('client_care_plans')
         .insert({
           client_id: clientId,
+          display_id: '', // Empty string so trigger generates the ID
           title: "Untitled Care Plan",
           provider_name: "",
           start_date: new Date().toISOString().split('T')[0],
@@ -511,6 +512,7 @@ export function CarePlanCreationWizard({
           .from('client_care_plans')
           .insert({
             client_id: clientId,
+            display_id: '', // Empty string so trigger generates the ID
             title: formData.title || "Untitled Care Plan",
             provider_name: formData.provider_name || "",
             staff_id: cleanStaffId,
