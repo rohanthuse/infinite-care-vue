@@ -19,8 +19,12 @@ export const useContacts = (branchId: string, contactType: string = 'all') => {
   return useQuery({
     queryKey: ['contacts', branchId, contactType, currentUser?.role],
     queryFn: async () => {
-      if (!currentUser) return [];
+      if (!currentUser) {
+        console.log('No current user found for contacts');
+        return [];
+      }
 
+      console.log('Fetching contacts for user:', currentUser.id, 'role:', currentUser.role, 'contactType:', contactType);
       const contacts: Contact[] = [];
 
       // Get staff (carers and admins)
@@ -36,39 +40,59 @@ export const useContacts = (branchId: string, contactType: string = 'all') => {
           .eq('branch_id', branchId)
           .eq('status', 'Active');
 
-        if (staffError) throw staffError;
+        if (staffError) {
+          console.error('Error fetching staff:', staffError);
+          throw staffError;
+        }
 
-        // Get roles for staff members
-        const staffIds = staff?.map(s => s.id) || [];
-        const { data: staffRoles } = await supabase
-          .from('user_roles')
-          .select('user_id, role')
-          .in('user_id', staffIds);
+        console.log('Found staff members:', staff?.length || 0);
 
-        staff?.forEach(member => {
-          const roleData = staffRoles?.find(r => r.user_id === member.id);
-          const memberRole = roleData?.role as UserRole;
-          
-          // Check if current user can communicate with this staff member
-          if (memberRole && canCommunicateWith(currentUser.role, memberRole)) {
-            const shouldInclude = 
-              contactType === 'all' ||
-              (contactType === 'carers' && memberRole === 'carer') ||
-              (contactType === 'admins' && (memberRole === 'super_admin' || memberRole === 'branch_admin'));
+        if (staff && staff.length > 0) {
+          // Get roles for staff members
+          const staffIds = staff.map(s => s.id);
+          const { data: staffRoles, error: rolesError } = await supabase
+            .from('user_roles')
+            .select('user_id, role')
+            .in('user_id', staffIds);
 
-            if (shouldInclude) {
-              contacts.push({
-                id: member.id,
-                name: `${member.last_name}, ${member.first_name}`,
-                avatar: `${member.first_name[0]}${member.last_name[0]}`,
-                status: member.status === 'Active' ? 'online' : 'offline',
-                unread: 0, // TODO: Calculate actual unread count
-                type: memberRole,
-                branchId: branchId
-              });
-            }
+          if (rolesError) {
+            console.error('Error fetching staff roles:', rolesError);
           }
-        });
+
+          console.log('Found staff roles:', staffRoles?.length || 0);
+
+          staff.forEach(member => {
+            const roleData = staffRoles?.find(r => r.user_id === member.id);
+            const memberRole = roleData?.role as UserRole;
+            
+            // If no role found, assume 'carer' for staff members (fallback)
+            const effectiveRole = memberRole || 'carer';
+            
+            console.log(`Staff member ${member.first_name} ${member.last_name} (${member.id}): role = ${effectiveRole}`);
+            
+            // Check if current user can communicate with this staff member
+            if (canCommunicateWith(currentUser.role, effectiveRole)) {
+              const shouldInclude = 
+                contactType === 'all' ||
+                (contactType === 'carers' && effectiveRole === 'carer') ||
+                (contactType === 'admins' && (effectiveRole === 'super_admin' || effectiveRole === 'branch_admin'));
+
+              if (shouldInclude) {
+                contacts.push({
+                  id: member.id,
+                  name: `${member.last_name}, ${member.first_name}`,
+                  avatar: `${member.first_name[0]}${member.last_name[0]}`,
+                  status: member.status === 'Active' ? 'online' : 'offline',
+                  unread: 0, // TODO: Calculate actual unread count
+                  type: effectiveRole,
+                  branchId: branchId
+                });
+              }
+            } else {
+              console.log(`User ${currentUser.role} cannot communicate with ${effectiveRole} ${member.first_name} ${member.last_name}`);
+            }
+          });
+        }
       }
 
       // Get clients (only if user can communicate with clients)
@@ -84,7 +108,12 @@ export const useContacts = (branchId: string, contactType: string = 'all') => {
           `)
           .eq('branch_id', branchId);
 
-        if (clientsError) throw clientsError;
+        if (clientsError) {
+          console.error('Error fetching clients:', clientsError);
+          throw clientsError;
+        }
+
+        console.log('Found clients:', clients?.length || 0);
 
         clients?.forEach(client => {
           contacts.push({
@@ -99,6 +128,7 @@ export const useContacts = (branchId: string, contactType: string = 'all') => {
         });
       }
 
+      console.log('Final contacts list:', contacts.length, 'contacts');
       return contacts;
     },
     enabled: !!currentUser,

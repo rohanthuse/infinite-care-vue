@@ -31,8 +31,13 @@ export const ContactSidebar = ({
   onSearchChange 
 }: ContactSidebarProps) => {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const { data: currentUser } = useUserRole();
-  const { data: contacts = [], isLoading } = useContacts(branchId, contactType);
+  const { data: currentUser, isLoading: userLoading } = useUserRole();
+  const { data: contacts = [], isLoading: contactsLoading, error: contactsError } = useContacts(branchId, contactType);
+  
+  console.log('ContactSidebar - Current user:', currentUser);
+  console.log('ContactSidebar - Contacts:', contacts);
+  console.log('ContactSidebar - Loading states:', { userLoading, contactsLoading });
+  console.log('ContactSidebar - Error:', contactsError);
   
   const handleStatusFilterChange = (status: string) => {
     setStatusFilter(prev => 
@@ -155,10 +160,16 @@ export const ContactSidebar = ({
             You can only message administrators directly.
           </div>
         )}
+
+        {contactsError && (
+          <div className="mt-2 p-2 bg-red-50 rounded-md text-xs text-red-700">
+            Error loading contacts: {contactsError.message}
+          </div>
+        )}
       </div>
       
       <div className="flex-1 overflow-y-auto">
-        {isLoading ? (
+        {userLoading || contactsLoading ? (
           <div className="p-4 text-center text-gray-500">
             Loading contacts...
           </div>
@@ -196,9 +207,14 @@ export const ContactSidebar = ({
               </div>
             ))}
             
-            {filteredContacts.length === 0 && (
+            {filteredContacts.length === 0 && !contactsLoading && (
               <div className="p-4 text-center text-gray-500">
-                No contacts found
+                {contactsError ? 'Failed to load contacts' : 'No contacts found'}
+                {currentUser && (
+                  <div className="mt-2 text-xs">
+                    User role: {currentUser.role} | Contact type: {contactType}
+                  </div>
+                )}
               </div>
             )}
           </div>

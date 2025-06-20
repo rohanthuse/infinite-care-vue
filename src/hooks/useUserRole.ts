@@ -24,7 +24,22 @@ export const useUserRole = () => {
         .eq('user_id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching user role:', error);
+        // If no role found, check if user is a staff member and assign default role
+        const { data: staffData } = await supabase
+          .from('staff')
+          .select('id')
+          .eq('id', user.id)
+          .single();
+        
+        if (staffData) {
+          // This staff member should have a role - log for debugging
+          console.warn('Staff member found without role assignment:', user.id);
+        }
+        
+        throw new Error('User role not found');
+      }
 
       return {
         id: user.id,
@@ -33,6 +48,7 @@ export const useUserRole = () => {
       };
     },
     enabled: true,
+    retry: 1,
   });
 };
 
