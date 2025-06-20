@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, FileEdit, Download, PenLine } from "lucide-react";
@@ -19,7 +18,7 @@ import {
   useClientServiceActions,
 } from "@/hooks/useClientData";
 import { useClientRiskAssessments } from "@/hooks/useClientRiskAssessments";
-import { generatePDF } from "@/utils/pdfGenerator";
+import { generateCarePlanDetailPDF } from "@/services/enhancedPdfGenerator";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ErrorBoundary } from "@/components/care/ErrorBoundary";
@@ -213,13 +212,23 @@ export default function CarePlanView() {
 
   const handleExportCarePlan = () => {
     try {
-      generatePDF({
-        id: carePlan.id,
-        title: `Care Plan for ${carePlan.patientName}`,
-        date: format(carePlan.dateCreated, 'yyyy-MM-dd'),
-        status: carePlan.status,
-        signedBy: "System Generated"
-      });
+      // Prepare client data for PDF export
+      const clientDataForPDF = {
+        clientProfile,
+        personalInfo,
+        medicalInfo,
+        dietaryRequirements,
+        personalCare,
+        assessments,
+        equipment,
+        riskAssessments,
+        serviceActions,
+      };
+
+      // Get the decoded branch name for the PDF
+      const decodedBranchName = branchName ? decodeURIComponent(branchName) : 'Med-Infinite';
+
+      generateCarePlanDetailPDF(carePlan, clientDataForPDF, decodedBranchName);
       toast.success("Care plan exported successfully");
     } catch (error) {
       console.error("Error exporting care plan:", error);
