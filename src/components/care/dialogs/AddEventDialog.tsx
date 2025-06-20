@@ -10,15 +10,21 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useReportTypeOptions } from '@/hooks/useParameterOptions';
 
 interface AddEventDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onAdd: (event: any) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (event: any) => void;
+  carePlanId?: string;
+  patientName?: string;
+  isLoading?: boolean;
 }
 
 export const AddEventDialog: React.FC<AddEventDialogProps> = ({
-  isOpen,
-  onClose,
-  onAdd,
+  open,
+  onOpenChange,
+  onSave,
+  carePlanId,
+  patientName,
+  isLoading = false,
 }) => {
   const { options: reportTypeOptions, isLoading: reportTypesLoading } = useReportTypeOptions();
   
@@ -34,9 +40,9 @@ export const AddEventDialog: React.FC<AddEventDialogProps> = ({
   });
 
   const handleSubmit = (data: any) => {
-    onAdd(data);
+    onSave(data);
     form.reset();
-    onClose();
+    onOpenChange(false);
   };
 
   const severityOptions = [
@@ -54,7 +60,7 @@ export const AddEventDialog: React.FC<AddEventDialogProps> = ({
   ];
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Add New Event</DialogTitle>
@@ -185,10 +191,12 @@ export const AddEventDialog: React.FC<AddEventDialogProps> = ({
             />
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit">Add Event</Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Adding..." : "Add Event"}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

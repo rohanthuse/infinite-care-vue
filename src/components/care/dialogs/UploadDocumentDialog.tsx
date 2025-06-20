@@ -10,15 +10,15 @@ import { Upload } from 'lucide-react';
 import { useFileCategoryOptions } from '@/hooks/useParameterOptions';
 
 interface UploadDocumentDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onUpload: (document: any) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (document: any) => void;
 }
 
 export const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
-  isOpen,
-  onClose,
-  onUpload,
+  open,
+  onOpenChange,
+  onSave,
 }) => {
   const { options: fileCategoryOptions, isLoading: categoriesLoading } = useFileCategoryOptions();
   
@@ -38,13 +38,13 @@ export const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
       file_size: data.file ? `${(data.file.size / 1024).toFixed(2)} KB` : '0 KB',
     };
     
-    onUpload(documentData);
+    onSave(documentData);
     form.reset();
-    onClose();
+    onOpenChange(false);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Upload Document</DialogTitle>
@@ -130,7 +130,7 @@ export const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
             />
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit">Upload Document</Button>
