@@ -316,6 +316,36 @@ export type Database = {
           },
         ]
       }
+      bank_holidays: {
+        Row: {
+          created_at: string
+          id: string
+          registered_by: string
+          registered_on: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          registered_by: string
+          registered_on: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          registered_by?: string
+          registered_on?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       body_map_points: {
         Row: {
           color: string
@@ -1742,6 +1772,30 @@ export type Database = {
           },
         ]
       }
+      communication_types: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       company_settings: {
         Row: {
           address: string | null
@@ -1787,6 +1841,63 @@ export type Database = {
           telephone?: string | null
           updated_at?: string
           website?: string | null
+        }
+        Relationships: []
+      }
+      expense_types: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          status: string
+          tax: number
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          status?: string
+          tax?: number
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          status?: string
+          tax?: number
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      file_categories: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -2371,6 +2482,30 @@ export type Database = {
         }
         Relationships: []
       }
+      report_types: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           branch_id: string | null
@@ -2868,6 +3003,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      travel_rates: {
+        Row: {
+          created_at: string
+          from_date: string
+          id: string
+          rate_per_hour: number
+          rate_per_mile: number
+          status: string
+          title: string
+          updated_at: string
+          user_type: string
+        }
+        Insert: {
+          created_at?: string
+          from_date: string
+          id?: string
+          rate_per_hour: number
+          rate_per_mile: number
+          status?: string
+          title: string
+          updated_at?: string
+          user_type: string
+        }
+        Update: {
+          created_at?: string
+          from_date?: string
+          id?: string
+          rate_per_hour?: number
+          rate_per_mile?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          user_type?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
