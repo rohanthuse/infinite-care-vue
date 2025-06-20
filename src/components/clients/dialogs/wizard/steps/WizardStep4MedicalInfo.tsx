@@ -1,21 +1,337 @@
 
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
+import { Plus, X } from "lucide-react";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface WizardStep4MedicalInfoProps {
   form: UseFormReturn<any>;
 }
 
 export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
+  const addMedicalCondition = () => {
+    const current = form.getValues("medical_info.medical_conditions") || [];
+    form.setValue("medical_info.medical_conditions", [...current, ""]);
+  };
+
+  const removeMedicalCondition = (index: number) => {
+    const current = form.getValues("medical_info.medical_conditions") || [];
+    form.setValue("medical_info.medical_conditions", current.filter((_, i) => i !== index));
+  };
+
+  const addMedication = () => {
+    const current = form.getValues("medical_info.current_medications") || [];
+    form.setValue("medical_info.current_medications", [...current, ""]);
+  };
+
+  const removeMedication = (index: number) => {
+    const current = form.getValues("medical_info.current_medications") || [];
+    form.setValue("medical_info.current_medications", current.filter((_, i) => i !== index));
+  };
+
+  const addAllergy = () => {
+    const current = form.getValues("medical_info.allergies") || [];
+    form.setValue("medical_info.allergies", [...current, ""]);
+  };
+
+  const removeAllergy = (index: number) => {
+    const current = form.getValues("medical_info.allergies") || [];
+    form.setValue("medical_info.allergies", current.filter((_, i) => i !== index));
+  };
+
+  const addSensoryImpairment = () => {
+    const current = form.getValues("medical_info.sensory_impairments") || [];
+    form.setValue("medical_info.sensory_impairments", [...current, ""]);
+  };
+
+  const removeSensoryImpairment = (index: number) => {
+    const current = form.getValues("medical_info.sensory_impairments") || [];
+    form.setValue("medical_info.sensory_impairments", current.filter((_, i) => i !== index));
+  };
+
+  const medicalConditions = form.watch("medical_info.medical_conditions") || [];
+  const medications = form.watch("medical_info.current_medications") || [];
+  const allergies = form.watch("medical_info.allergies") || [];
+  const sensoryImpairments = form.watch("medical_info.sensory_impairments") || [];
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold text-gray-900 mb-2">Medical Information</h2>
-        <p className="text-gray-600">Medical conditions, medications, and health status.</p>
+        <p className="text-gray-600">
+          Complete medical history, conditions, medications, and health status.
+        </p>
       </div>
-      <div className="text-center py-8 text-gray-500">
-        <p>Medical information form coming soon...</p>
-      </div>
+
+      <Form {...form}>
+        <div className="space-y-8">
+          {/* Medical Conditions */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <FormLabel className="text-base font-medium">Medical Conditions</FormLabel>
+              <Button type="button" onClick={addMedicalCondition} size="sm" variant="outline">
+                <Plus className="h-4 w-4 mr-1" />
+                Add Condition
+              </Button>
+            </div>
+            {medicalConditions.map((_, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <FormField
+                  control={form.control}
+                  name={`medical_info.medical_conditions.${index}`}
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormControl>
+                        <Input placeholder="Enter medical condition" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="button"
+                  onClick={() => removeMedicalCondition(index)}
+                  size="sm"
+                  variant="outline"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          {/* Current Medications */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <FormLabel className="text-base font-medium">Current Medications</FormLabel>
+              <Button type="button" onClick={addMedication} size="sm" variant="outline">
+                <Plus className="h-4 w-4 mr-1" />
+                Add Medication
+              </Button>
+            </div>
+            {medications.map((_, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <FormField
+                  control={form.control}
+                  name={`medical_info.current_medications.${index}`}
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormControl>
+                        <Input placeholder="Enter medication name and dosage" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="button"
+                  onClick={() => removeMedication(index)}
+                  size="sm"
+                  variant="outline"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          {/* Allergies */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <FormLabel className="text-base font-medium">Allergies</FormLabel>
+              <Button type="button" onClick={addAllergy} size="sm" variant="outline">
+                <Plus className="h-4 w-4 mr-1" />
+                Add Allergy
+              </Button>
+            </div>
+            {allergies.map((_, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <FormField
+                  control={form.control}
+                  name={`medical_info.allergies.${index}`}
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormControl>
+                        <Input placeholder="Enter allergy" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="button"
+                  onClick={() => removeAllergy(index)}
+                  size="sm"
+                  variant="outline"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          {/* Medical History */}
+          <FormField
+            control={form.control}
+            name="medical_info.medical_history"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Medical History</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Describe relevant medical history..."
+                    className="min-h-[100px]"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Mobility Status */}
+            <FormField
+              control={form.control}
+              name="medical_info.mobility_status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mobility Status</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select mobility status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="independent">Independent</SelectItem>
+                      <SelectItem value="assistance_required">Assistance Required</SelectItem>
+                      <SelectItem value="wheelchair_bound">Wheelchair Bound</SelectItem>
+                      <SelectItem value="bed_bound">Bed Bound</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Cognitive Status */}
+            <FormField
+              control={form.control}
+              name="medical_info.cognitive_status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cognitive Status</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select cognitive status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="mild_impairment">Mild Impairment</SelectItem>
+                      <SelectItem value="moderate_impairment">Moderate Impairment</SelectItem>
+                      <SelectItem value="severe_impairment">Severe Impairment</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Communication Needs */}
+          <FormField
+            control={form.control}
+            name="medical_info.communication_needs"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Communication Needs</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Describe any special communication requirements..."
+                    className="min-h-[80px]"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Sensory Impairments */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <FormLabel className="text-base font-medium">Sensory Impairments</FormLabel>
+              <Button type="button" onClick={addSensoryImpairment} size="sm" variant="outline">
+                <Plus className="h-4 w-4 mr-1" />
+                Add Impairment
+              </Button>
+            </div>
+            {sensoryImpairments.map((_, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <FormField
+                  control={form.control}
+                  name={`medical_info.sensory_impairments.${index}`}
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormControl>
+                        <Input placeholder="Enter sensory impairment" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="button"
+                  onClick={() => removeSensoryImpairment(index)}
+                  size="sm"
+                  variant="outline"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          {/* Mental Health Status */}
+          <FormField
+            control={form.control}
+            name="medical_info.mental_health_status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Mental Health Status</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Describe mental health status and any relevant conditions..."
+                    className="min-h-[80px]"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </Form>
     </div>
   );
 }
