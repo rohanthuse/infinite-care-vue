@@ -12,6 +12,8 @@ import { FormAdvancedTab } from '@/components/form-builder/FormAdvancedTab';
 import { TabNavigation as FormTabNavigation } from '@/components/form-builder/TabNavigation';
 import { TabNavigation } from '@/components/TabNavigation';
 import { Form, FormElement, FormSettings, FormPermissions } from '@/types/form-builder';
+import { useFormManagement, DatabaseForm } from '@/hooks/useFormManagement';
+import { useAuthSafe } from '@/hooks/useAuthSafe';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -19,8 +21,19 @@ const FormBuilder = () => {
   const { id: branchId, branchName, formId } = useParams<{ id: string; branchName: string; formId?: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuthSafe();
   const [activeTab, setActiveTab] = useState<string>('design');
   const [isFormDirty, setIsFormDirty] = useState<boolean>(false);
+  const [isLoadingForm, setIsLoadingForm] = useState<boolean>(!!formId);
+  
+  const { 
+    forms, 
+    createForm, 
+    updateForm, 
+    isCreating, 
+    isUpdating 
+  } = useFormManagement(branchId || '');
+
   const [form, setForm] = useState<Form>({
     id: formId || uuidv4(),
     title: 'Untitled Form',
@@ -29,7 +42,7 @@ const FormBuilder = () => {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     createdBy: {
-      id: '1',
+      id: user?.id || 'temp-user',
       name: 'Admin',
     },
     published: false,
@@ -52,34 +65,63 @@ const FormBuilder = () => {
     }
   });
 
-  useEffect(() => {
-    if (formId) {
-      const mockLoadForm = async () => {
-        try {
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          setForm(prev => ({
-            ...prev,
-            title: `Form ${formId}`,
-            description: 'This is a sample form description',
-          }));
-          
-          toast({
-            title: 'Form Loaded',
-            description: 'The form has been loaded successfully',
-          });
-        } catch (error) {
-          toast({
-            title: 'Error Loading Form',
-            description: 'There was an error loading the form',
-            variant: 'destructive',
-          });
-        }
-      };
+  // Helper function to convert DatabaseForm to Form
+  const convertDatabaseFormToForm = (dbForm: DatabaseForm): Form => {
+    return {
+      id: dbForm.id,
+      title: dbForm.title,
+      description: dbForm.description || '',
+      elements: [], // Elements will be loaded separately if needed
+      createdAt: dbForm.created_at,
+      updatedAt: dbForm.updated_at,
+      createdBy: {
+        id: dbForm.created_by,
+        name: 'User', // We'd need to fetch user details separately
+      },
+      published: dbForm.published,
+      requiresReview: dbForm.requires_review,
+      version: dbForm.version,
+      assignees: [], // Assignees will be loaded separately if needed
+      permissions: {
+        viewAccess: ['admin', 'branch-manager'],
+        editAccess: ['admin'],
+        submitAccess: ['client', 'staff', 'carer'],
+        manageAccess: ['admin']
+      },
+      settings: dbForm.settings || {
+        showProgressBar: false,
+        allowSaveAsDraft: false,
+        autoSaveEnabled: false,
+        autoSaveInterval: 60,
+        redirectAfterSubmit: false,
+        submitButtonText: 'Submit'
+      }
+    };
+  };
 
-      mockLoadForm();
+  // Load existing form if editing
+  useEffect(() => {
+    if (formId && forms.length > 0) {
+      const existingForm = forms.find(f => f.id === formId);
+      if (existingForm) {
+        setForm(convertDatabaseFormToForm(existingForm));
+        setIsLoadingForm(false);
+        toast({
+          title: 'Form Loaded',
+          description: 'The form has been loaded successfully',
+        });
+      } else {
+        toast({
+          title: 'Form Not Found',
+          description: 'The requested form could not be found',
+          variant: 'destructive',
+        });
+        navigate(`/branch-dashboard/${branchId}/${branchName}`);
+      }
+    } else if (formId) {
+      setIsLoadingForm(false);
     }
-  }, [formId, toast]);
+  }, [formId, forms, branchId, branchName, navigate, toast]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -91,32 +133,63 @@ const FormBuilder = () => {
   };
 
   const handleSaveForm = async () => {
+    const userId = user?.id || 'temp-user-id';
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setForm(prev => ({
-        ...prev,
-        updatedAt: new Date().toISOString(),
-      }));
+      if (formId) {
+        // Update existing form
+        updateForm({
+          formId: form.id,
+          updates: {
+            title: form.title,
+            description: form.description,
+            published: form.published,
+            requires_review: form.requiresReview,
+            settings: form.settings
+          }
+        });
+      } else {
+        // Create new form
+        createForm({
+          title: form.title,
+          description: form.description,
+          created_by: userId,
+          published: form.published,
+          requires_review: form.requiresReview,
+          settings: form.settings
+        });
+      }
       
       setIsFormDirty(false);
-      
-      toast({
-        title: 'Form Saved',
-        description: 'Your form has been saved successfully',
-      });
     } catch (error) {
-      toast({
-        title: 'Error Saving Form',
-        description: 'There was an error saving your form',
-        variant: 'destructive',
-      });
+      console.error('Error saving form:', error);
     }
   };
 
   const handlePublishForm = async (requiresReview: boolean, assignees: any[]) => {
+    const userId = user?.id || 'temp-user-id';
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (formId) {
+        // Update existing form to published
+        updateForm({
+          formId: form.id,
+          updates: {
+            published: true,
+            requires_review: requiresReview
+          }
+        });
+      } else {
+        // Create and publish new form
+        createForm({
+          title: form.title,
+          description: form.description,
+          created_by: userId,
+          published: true,
+          requires_review: requiresReview,
+          settings: form.settings
+        });
+      }
       
       setForm(prev => ({
         ...prev,
@@ -128,18 +201,9 @@ const FormBuilder = () => {
       
       setIsFormDirty(false);
       
-      toast({
-        title: 'Form Published',
-        description: 'Your form has been published successfully',
-      });
-      
       navigate(`/branch-dashboard/${branchId}/${branchName}`);
     } catch (error) {
-      toast({
-        title: 'Error Publishing Form',
-        description: 'There was an error publishing your form',
-        variant: 'destructive',
-      });
+      console.error('Error publishing form:', error);
     }
   };
 
@@ -222,6 +286,20 @@ const FormBuilder = () => {
     }
   };
 
+  if (isLoadingForm) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+            <p>Loading form...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -252,6 +330,7 @@ const FormBuilder = () => {
             setIsFormDirty(true);
           }}
           isFormDirty={isFormDirty}
+          isSaving={isCreating || isUpdating}
         />
         
         <FormTabNavigation 

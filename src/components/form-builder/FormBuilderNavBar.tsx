@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, ChevronLeft, Home } from 'lucide-react';
+import { Save, ChevronLeft, Home, Loader2 } from 'lucide-react';
 import { Form } from '@/types/form-builder';
 
 interface FormBuilderNavBarProps {
@@ -12,6 +12,7 @@ interface FormBuilderNavBarProps {
   onSave: () => void;
   onFormChange: (title: string, description: string) => void;
   isFormDirty: boolean;
+  isSaving?: boolean;
 }
 
 export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
@@ -19,6 +20,7 @@ export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
   onSave,
   onFormChange,
   isFormDirty,
+  isSaving = false,
 }) => {
   const navigate = useNavigate();
   const { id: branchId, branchName } = useParams<{ id: string; branchName: string }>();
@@ -49,6 +51,12 @@ export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
     onFormChange(title, description);
   };
 
+  // Update local state when form prop changes
+  React.useEffect(() => {
+    setTitle(form.title);
+    setDescription(form.description || '');
+  }, [form.title, form.description]);
+
   return (
     <div className="flex flex-col space-y-4 bg-white p-4 rounded-lg shadow-sm border">
       <div className="flex items-center justify-between">
@@ -63,10 +71,18 @@ export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
         <div>
           <Button 
             onClick={onSave} 
-            disabled={!isFormDirty}
+            disabled={!isFormDirty || isSaving}
             variant={isFormDirty ? "default" : "outline"}
           >
-            <Save className="h-4 w-4 mr-1" /> Save
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-1" /> Save
+              </>
+            )}
           </Button>
         </div>
       </div>
