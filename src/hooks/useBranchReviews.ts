@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -53,8 +52,15 @@ export const useBranchReviews = ({
         .eq('branch_id', branchId)
         .order('created_at', { ascending: false });
 
-      // Apply rating filter
-      if (ratingFilter !== 'all') {
+      // Apply rating filter with proper range handling
+      if (ratingFilter === '4-5') {
+        // Positive reviews: 4 stars and above
+        query = query.gte('rating', 4);
+      } else if (ratingFilter === '1-3') {
+        // Negative reviews: 3 stars and below
+        query = query.lte('rating', 3);
+      } else if (ratingFilter !== 'all') {
+        // Specific rating (1, 2, 3, 4, or 5)
         query = query.eq('rating', parseInt(ratingFilter));
       }
 

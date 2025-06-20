@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,8 +37,8 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
 
   // Determine rating filter based on active tab
   const getEffectiveRatingFilter = useCallback(() => {
-    if (activeTab === "positive") return "4-5"; // We'll handle this in the hook
-    if (activeTab === "negative") return "1-3"; // We'll handle this in the hook
+    if (activeTab === "positive") return "4-5";
+    if (activeTab === "negative") return "1-3";
     return ratingFilter;
   }, [activeTab, ratingFilter]);
 
@@ -84,7 +83,7 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
     // Generate CSV export of current reviews
     const csvContent = [
       ['Feedback ID', 'Client', 'Carer', 'Rating', 'Comment', 'Date'].join(','),
-      ...filteredReviews.map(review => [
+      ...reviews.map(review => [
         review.id,
         `"${review.clientName}"`,
         `"${review.carerName}"`,
@@ -168,7 +167,7 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <Button variant="outline" size="sm" className="h-9" onClick={handleExport} disabled={filteredReviews.length === 0}>
+            <Button variant="outline" size="sm" className="h-9" onClick={handleExport} disabled={reviews.length === 0}>
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
@@ -232,8 +231,8 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredReviews.length > 0 ? (
-                filteredReviews.map((review) => (
+              {reviews.length > 0 ? (
+                reviews.map((review) => (
                   <TableRow key={review.id} className="hover:bg-gray-50 border-t border-gray-100">
                     <TableCell className="font-medium">
                       <Button variant="ghost" className="p-0 h-auto font-medium underline-offset-4 hover:underline" onClick={() => handleViewReview(review)}>
@@ -287,7 +286,7 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
         )}
       </div>
       
-      {filteredReviews.length > 0 && totalPages > 1 && (
+      {reviews.length > 0 && totalPages > 1 && (
         <div className="flex items-center justify-between p-4 border-t border-gray-100">
           <div className="text-sm text-gray-500">
             Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount} feedback entries
