@@ -468,6 +468,50 @@ export type Database = {
         }
         Relationships: []
       }
+      care_plan_wizard_steps: {
+        Row: {
+          care_plan_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          is_completed: boolean | null
+          step_data: Json | null
+          step_name: string
+          step_number: number
+          updated_at: string
+        }
+        Insert: {
+          care_plan_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean | null
+          step_data?: Json | null
+          step_name: string
+          step_number: number
+          updated_at?: string
+        }
+        Update: {
+          care_plan_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean | null
+          step_data?: Json | null
+          step_name?: string
+          step_number?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_plan_wizard_steps_care_plan_id_fkey"
+            columns: ["care_plan_id"]
+            isOneToOne: false
+            referencedRelation: "client_care_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_activities: {
         Row: {
           care_plan_id: string
@@ -821,13 +865,16 @@ export type Database = {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          auto_save_data: Json | null
           care_plan_type: string | null
           client_id: string
+          completion_percentage: number | null
           created_at: string
           created_by_staff_id: string | null
           end_date: string | null
           goals_progress: number | null
           id: string
+          last_step_completed: number | null
           notes: string | null
           priority: string | null
           provider_name: string
@@ -842,13 +889,16 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          auto_save_data?: Json | null
           care_plan_type?: string | null
           client_id: string
+          completion_percentage?: number | null
           created_at?: string
           created_by_staff_id?: string | null
           end_date?: string | null
           goals_progress?: number | null
           id?: string
+          last_step_completed?: number | null
           notes?: string | null
           priority?: string | null
           provider_name: string
@@ -863,13 +913,16 @@ export type Database = {
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          auto_save_data?: Json | null
           care_plan_type?: string | null
           client_id?: string
+          completion_percentage?: number | null
           created_at?: string
           created_by_staff_id?: string | null
           end_date?: string | null
           goals_progress?: number | null
           id?: string
+          last_step_completed?: number | null
           notes?: string | null
           priority?: string | null
           provider_name?: string

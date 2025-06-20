@@ -14,7 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Search, Plus, FileText, Download, 
   Filter, ChevronDown, Eye, Edit, Trash2, 
-  MoreHorizontal, ClipboardCheck, Calendar
+  MoreHorizontal, ClipboardCheck, Calendar,
+  Draft
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -53,7 +54,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { getNavigationId } from "@/utils/carePlanIdMapping";
 import { ClientSelector } from "./ClientSelector";
-import { CreateCarePlanDialog } from "@/components/clients/dialogs/CreateCarePlanDialog";
+import { CarePlanCreationWizard } from "@/components/clients/dialogs/CarePlanCreationWizard";
 
 const mockCarePlans = [
   {
@@ -143,7 +144,8 @@ const statusOptions = [
   { value: "Under Review", label: "Under Review", color: "text-amber-600 bg-amber-50 border-amber-200" },
   { value: "Archived", label: "Archived", color: "text-gray-600 bg-gray-50 border-gray-200" },
   { value: "On Hold", label: "On Hold", color: "text-blue-600 bg-blue-50 border-blue-200" },
-  { value: "Completed", label: "Completed", color: "text-purple-600 bg-purple-50 border-purple-200" }
+  { value: "Completed", label: "Completed", color: "text-purple-600 bg-purple-50 border-purple-200" },
+  { value: "Draft", label: "Draft", color: "text-orange-600 bg-orange-50 border-orange-200" }
 ];
 
 const assignedToOptions = [
@@ -215,12 +217,14 @@ const useCarePlans = (branchId: string | undefined) => {
             lastUpdated: new Date(plan.updated_at),
             status: plan.status === 'active' ? 'Active' : 
                    plan.status === 'under_review' ? 'Under Review' : 
-                   plan.status === 'archived' ? 'Archived' : 'Active',
+                   plan.status === 'archived' ? 'Archived' :
+                   plan.status === 'draft' ? 'Draft' : 'Active',
             assignedTo: assignedTo,
             avatar: plan.client?.avatar_initials || 
                    (plan.client ? `${plan.client.first_name?.[0] || ''}${plan.client.last_name?.[0] || ''}` : 'UK'),
             // Store the actual database ID for backend operations
-            _databaseId: plan.id
+            _databaseId: plan.id,
+            completionPercentage: plan.completion_percentage || 0
           };
         });
 
@@ -261,7 +265,8 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
 
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedClientName, setSelectedClientName] = useState<string>("");
-  const [isCreateCarePlanDialogOpen, setIsCreateCarePlanDialogOpen] = useState(false);
+  const [isCreateCarePlanWizardOpen, setIsCreateCarePlanWizardOpen] = useState(false);
+  const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
 
   // useEffect hooks MUST also be at the top - ONLY ONE useEffect with these dependencies
   useEffect(() => {
@@ -312,6 +317,10 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
     (currentPage - 1) * itemsPerPage, 
     currentPage * itemsPerPage
   );
+
+  // Separate drafts and active care plans
+  const draftCarePlans = filteredCarePlans.filter(plan => plan.status === 'Draft');
+  const activeCarePlans = filteredCarePlans.filter(plan => plan.status !== 'Draft');
   
   const handleAddCarePlan = () => {
     if (!selectedClientId) {
@@ -322,7 +331,13 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
       });
       return;
     }
-    setIsCreateCarePlanDialogOpen(true);
+    setEditingDraftId(null);
+    setIsCreateCarePlanWizardOpen(true);
+  };
+
+  const handleEditDraft = (draftId: string) => {
+    setEditingDraftId(draftId);
+    setIsCreateCarePlanWizardOpen(true);
   };
 
   const handleClientSelect = (clientId: string, clientName: string) => {
@@ -330,14 +345,14 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
     setSelectedClientName(clientName);
   };
 
-  const handleCarePlanCreated = (carePlanData: any) => {
+  const handleCarePlanCreated = () => {
     toast({
-      title: "Care plan created",
-      description: `Care plan created successfully for ${selectedClientName}`,
+      title: "Care plan saved",
+      description: `Care plan saved successfully for ${selectedClientName}`,
       variant: "default",
     });
-    // Optionally redirect to the new care plan or refresh the list
-    setIsCreateCarePlanDialogOpen(false);
+    setIsCreateCarePlanWizardOpen(false);
+    setEditingDraftId(null);
   };
 
   const handleViewCarePlan = (id: string) => {
@@ -601,6 +616,63 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
         </div>
       </div>
 
+      {/* Draft Care Plans Section */}
+      {draftCarePlans.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Draft className="h-5 w-5 text-orange-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Draft Care Plans</h3>
+            <Badge variant="outline" className="text-orange-600 bg-orange-50 border-orange-200">
+              {draftCarePlans.length}
+            </Badge>
+          </div>
+          
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+            <div className="space-y-3">
+              {draftCarePlans.map((draft) => (
+                <div key={draft.id} className="flex items-center justify-between bg-white p-3 rounded-md border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-medium">
+                      {draft.avatar}
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">{draft.patientName}</div>
+                      <div className="text-sm text-gray-500">
+                        {draft.completionPercentage || 0}% completed • Last updated {format(draft.lastUpdated, 'MMM dd, yyyy')}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditDraft(draft._databaseId || draft.id)}
+                    >
+                      Continue Editing
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleViewCarePlan(draft.id)}>
+                          <Eye className="mr-2 h-4 w-4" /> Preview
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeleteCarePlan(draft.id)} className="text-red-600">
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete Draft
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {isFiltering && (
         <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
           <span className="font-medium">Active filters:</span>
@@ -682,6 +754,7 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
                         plan.status === "Archived" ? "text-gray-600 bg-gray-50 border-gray-200" :
                         plan.status === "On Hold" ? "text-blue-600 bg-blue-50 border-blue-200" :
                         plan.status === "Completed" ? "text-purple-600 bg-purple-50 border-purple-200" :
+                        plan.status === "Draft" ? "text-orange-600 bg-orange-50 border-orange-200" :
                         "text-gray-600 bg-gray-50 border-gray-200"
                       )}
                     >
@@ -831,13 +904,14 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
         </DialogContent>
       </Dialog>
 
-      {/* Create Care Plan Dialog */}
+      {/* Create Care Plan Wizard */}
       {selectedClientId && (
-        <CreateCarePlanDialog
-          open={isCreateCarePlanDialogOpen}
-          onOpenChange={setIsCreateCarePlanDialogOpen}
-          onSave={handleCarePlanCreated}
+        <CarePlanCreationWizard
+          open={isCreateCarePlanWizardOpen}
+          onOpenChange={setIsCreateCarePlanWizardOpen}
           clientId={selectedClientId}
+          onComplete={handleCarePlanCreated}
+          draftCarePlanId={editingDraftId || undefined}
         />
       )}
     </div>
