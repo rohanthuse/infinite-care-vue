@@ -2500,6 +2500,10 @@ export type Database = {
         Args: { invoice_id: string }
         Returns: number
       }
+      can_access_thread: {
+        Args: { thread_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
       get_branch_chart_data: {
         Args: { p_branch_id: string }
         Returns: Json
@@ -2540,6 +2544,10 @@ export type Database = {
           _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
         }
+        Returns: boolean
+      }
+      is_thread_participant: {
+        Args: { thread_id_param: string; user_id_param: string }
         Returns: boolean
       }
     }
