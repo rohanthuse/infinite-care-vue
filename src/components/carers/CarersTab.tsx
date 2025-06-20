@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CarerFilters } from "./CarerFilters";
 import { AddCarerDialog } from "./AddCarerDialog";
+import { EditCarerDialog } from "./EditCarerDialog";
 import RecruitmentSection from "./RecruitmentSection";
 import { useToast } from "@/hooks/use-toast";
 import { useBranchCarers, useDeleteCarer, CarerDB } from "@/data/hooks/useBranchCarers";
@@ -238,9 +239,7 @@ export const CarersTab = ({ branchId, branchName }: CarersTabProps) => {
                           >
                             <EyeIcon className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          <EditCarerDialog carer={carer} />
                           <Button 
                             variant="ghost" 
                             size="icon" 
