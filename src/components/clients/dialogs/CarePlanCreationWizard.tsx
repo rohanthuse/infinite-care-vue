@@ -203,6 +203,56 @@ const WIZARD_STEPS = [
   { id: 14, name: "Review & Finalize", description: "Summary and completion" },
 ];
 
+// Helper function to recursively serialize dates in any object
+const serializeForJSON = (obj: any): any => {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  
+  if (obj instanceof Date) {
+    return obj.toISOString();
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(serializeForJSON);
+  }
+  
+  if (typeof obj === 'object') {
+    const serialized: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      serialized[key] = serializeForJSON(value);
+    }
+    return serialized;
+  }
+  
+  return obj;
+};
+
+// Helper function to deserialize dates from JSON
+const deserializeFromJSON = (obj: any): any => {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(deserializeFromJSON);
+  }
+  
+  if (typeof obj === 'object') {
+    const deserialized: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (typeof value === 'string' && key.includes('date') && value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)) {
+        deserialized[key] = new Date(value);
+      } else {
+        deserialized[key] = deserializeFromJSON(value);
+      }
+    }
+    return deserialized;
+  }
+  
+  return obj;
+};
+
 interface CarePlanCreationWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -259,13 +309,8 @@ export function CarePlanCreationWizard({
     const autoSaveInterval = setInterval(async () => {
       const formData = form.getValues();
       try {
-        // Serialize form data for JSON storage
-        const serializedFormData = {
-          ...formData,
-          start_date: formData.start_date?.toISOString(),
-          end_date: formData.end_date?.toISOString(),
-          review_date: formData.review_date?.toISOString(),
-        };
+        // Serialize form data for JSON storage with proper date handling
+        const serializedFormData = serializeForJSON(formData);
 
         await supabase
           .from('client_care_plans')
@@ -302,13 +347,8 @@ export function CarePlanCreationWizard({
 
       if (data.auto_save_data) {
         const autoSaveData = data.auto_save_data as any;
-        // Deserialize dates
-        const deserializedData = {
-          ...autoSaveData,
-          start_date: autoSaveData.start_date ? new Date(autoSaveData.start_date) : undefined,
-          end_date: autoSaveData.end_date ? new Date(autoSaveData.end_date) : undefined,
-          review_date: autoSaveData.review_date ? new Date(autoSaveData.review_date) : undefined,
-        };
+        // Deserialize dates properly
+        const deserializedData = deserializeFromJSON(autoSaveData);
         form.reset(deserializedData as CarePlanFormData);
       }
 
@@ -335,13 +375,8 @@ export function CarePlanCreationWizard({
     mutationFn: async (data: { formData: CarePlanFormData; saveAsDraft: boolean }) => {
       const { formData, saveAsDraft } = data;
 
-      // Serialize form data for JSON storage
-      const serializedFormData = {
-        ...formData,
-        start_date: formData.start_date?.toISOString(),
-        end_date: formData.end_date?.toISOString(),
-        review_date: formData.review_date?.toISOString(),
-      };
+      // Serialize form data for JSON storage with proper date handling
+      const serializedFormData = serializeForJSON(formData);
 
       let carePlan;
       if (carePlanId) {
@@ -570,13 +605,8 @@ export function CarePlanCreationWizard({
 
     try {
       const formData = form.getValues();
-      // Serialize form data for JSON storage
-      const serializedStepData = {
-        ...formData,
-        start_date: formData.start_date?.toISOString(),
-        end_date: formData.end_date?.toISOString(),
-        review_date: formData.review_date?.toISOString(),
-      };
+      // Serialize form data for JSON storage with proper date handling
+      const serializedStepData = serializeForJSON(formData);
 
       await supabase
         .from('care_plan_wizard_steps')

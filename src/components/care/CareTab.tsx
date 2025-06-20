@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -65,7 +66,9 @@ const mockCarePlans = [
     lastUpdated: new Date("2023-11-05"),
     status: "Active",
     assignedTo: "Dr. Sarah Johnson",
-    avatar: "JM"
+    avatar: "JM",
+    completionPercentage: 75,
+    _databaseId: "mock-001"
   },
   {
     id: "CP-002",
@@ -75,7 +78,9 @@ const mockCarePlans = [
     lastUpdated: new Date("2023-10-30"),
     status: "Under Review",
     assignedTo: "Dr. James Wilson",
-    avatar: "ET"
+    avatar: "ET",
+    completionPercentage: 90,
+    _databaseId: "mock-002"
   },
   {
     id: "CP-003",
@@ -85,7 +90,9 @@ const mockCarePlans = [
     lastUpdated: new Date("2023-11-10"),
     status: "Active",
     assignedTo: "Nurse David Brown",
-    avatar: "WS"
+    avatar: "WS",
+    completionPercentage: 60,
+    _databaseId: "mock-003"
   },
   {
     id: "CP-004",
@@ -95,7 +102,9 @@ const mockCarePlans = [
     lastUpdated: new Date("2023-09-20"),
     status: "Archived",
     assignedTo: "Dr. Emma Lewis",
-    avatar: "RJ"
+    avatar: "RJ",
+    completionPercentage: 100,
+    _databaseId: "mock-004"
   },
   {
     id: "CP-005",
@@ -105,7 +114,9 @@ const mockCarePlans = [
     lastUpdated: new Date("2023-11-01"),
     status: "Active",
     assignedTo: "Dr. Sarah Johnson",
-    avatar: "LR"
+    avatar: "LR",
+    completionPercentage: 45,
+    _databaseId: "mock-005"
   },
   {
     id: "CP-006",
@@ -115,7 +126,9 @@ const mockCarePlans = [
     lastUpdated: new Date("2023-10-25"),
     status: "Under Review",
     assignedTo: "Nurse Michael Scott",
-    avatar: "DW"
+    avatar: "DW",
+    completionPercentage: 80,
+    _databaseId: "mock-006"
   },
   {
     id: "CP-007",
@@ -125,7 +138,9 @@ const mockCarePlans = [
     lastUpdated: new Date("2023-10-15"),
     status: "Active",
     assignedTo: "Dr. James Wilson",
-    avatar: "KW"
+    avatar: "KW",
+    completionPercentage: 55,
+    _databaseId: "mock-007"
   },
   {
     id: "CP-008",
@@ -135,7 +150,9 @@ const mockCarePlans = [
     lastUpdated: new Date("2023-08-10"),
     status: "Archived",
     assignedTo: "Dr. Emma Lewis",
-    avatar: "OP"
+    avatar: "OP",
+    completionPercentage: 100,
+    _databaseId: "mock-008"
   }
 ];
 
