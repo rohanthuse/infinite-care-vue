@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -789,8 +790,8 @@ export function CarePlanCreationWizard({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl h-[90vh] p-0 overflow-hidden">
-        <DialogHeader className="px-6 py-4 border-b">
+      <DialogContent className="max-w-7xl max-h-[95vh] p-0 flex flex-col">
+        <DialogHeader className="px-6 py-4 border-b shrink-0">
           <DialogTitle className="text-xl font-semibold text-blue-600 flex items-center justify-between">
             <span>
               {draftCarePlanId ? "Edit Care Plan" : "Create Care Plan"} - Step {currentStep} of {WIZARD_STEPS.length}
@@ -811,7 +812,7 @@ export function CarePlanCreationWizard({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="flex h-full">
+        <div className="flex flex-1 min-h-0">
           <CarePlanWizardSidebar
             steps={WIZARD_STEPS}
             currentStep={currentStep}
@@ -820,7 +821,7 @@ export function CarePlanCreationWizard({
             completionPercentage={calculateCompletionPercentage()}
           />
           
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col min-h-0">
             <div className="flex-1 overflow-y-auto p-6">
               <CarePlanWizardSteps
                 currentStep={currentStep}
@@ -829,16 +830,18 @@ export function CarePlanCreationWizard({
               />
             </div>
             
-            <CarePlanWizardFooter
-              currentStep={currentStep}
-              totalSteps={WIZARD_STEPS.length}
-              onPrevious={handlePreviousStep}
-              onNext={handleNextStep}
-              onSaveDraft={handleSaveDraft}
-              onFinalize={handleFinalize}
-              isLoading={createOrUpdateCarePlan.isPending}
-              isDraft={isDraft}
-            />
+            <div className="shrink-0">
+              <CarePlanWizardFooter
+                currentStep={currentStep}
+                totalSteps={WIZARD_STEPS.length}
+                onPrevious={handlePreviousStep}
+                onNext={handleNextStep}
+                onSaveDraft={handleSaveDraft}
+                onFinalize={handleFinalize}
+                isLoading={createOrUpdateCarePlan.isPending}
+                isDraft={isDraft}
+              />
+            </div>
           </div>
         </div>
       </DialogContent>
