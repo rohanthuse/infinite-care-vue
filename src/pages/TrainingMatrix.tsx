@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { TrainingCategory, TrainingStatus, StaffMember } from "@/types/training";
@@ -23,6 +22,7 @@ import AddTrainingDialog from "@/components/training/AddTrainingDialog";
 import { useTrainingCourses } from "@/hooks/useTrainingCourses";
 import { useStaffTrainingRecords } from "@/hooks/useStaffTrainingRecords";
 import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
+import { useTrainingManagement } from "@/hooks/useTrainingManagement";
 
 export interface TrainingMatrixProps {
   branchId?: string;
@@ -58,6 +58,7 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
   const { data: trainingCourses = [], isLoading: isLoadingCourses } = useTrainingCourses(branchId);
   const { records: trainingRecords = [], isLoading: isLoadingRecords } = useStaffTrainingRecords(branchId);
   const { staff = [], isLoading: isLoadingStaff } = useBranchStaffAndClients(branchId);
+  const { createCourse, isCreating } = useTrainingManagement(branchId);
 
   const isLoading = isLoadingCourses || isLoadingRecords || isLoadingStaff;
 
@@ -224,12 +225,21 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
   };
   
   const handleAddTraining = (trainingData: any) => {
-    // This would use the training management hook to create a new course
-    console.log('Add training:', trainingData);
-    toast({
-      title: "Training Added",
-      description: `${trainingData.title} has been added successfully.`,
-    });
+    // Transform the data to match the database schema
+    const courseData = {
+      title: trainingData.title,
+      description: trainingData.description || null,
+      category: trainingData.category as 'core' | 'mandatory' | 'specialized' | 'optional',
+      valid_for_months: trainingData.validFor || 12,
+      required_score: 70,
+      max_score: 100,
+      is_mandatory: trainingData.category === 'core' || trainingData.category === 'mandatory',
+      certificate_template: null,
+      status: 'active' as 'active' | 'inactive' | 'archived'
+    };
+
+    createCourse(courseData);
+    setAddTrainingOpen(false);
   };
   
   const handleApplyFilters = (filters: {
@@ -311,9 +321,10 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
               variant="default" 
               className="gap-2 whitespace-nowrap bg-blue-600 hover:bg-blue-700"
               onClick={() => setAddTrainingOpen(true)}
+              disabled={isCreating}
             >
               <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Add Training</span>
+              <span className="hidden sm:inline">{isCreating ? 'Adding...' : 'Add Training'}</span>
             </Button>
             
             <AddTrainingDialog 
