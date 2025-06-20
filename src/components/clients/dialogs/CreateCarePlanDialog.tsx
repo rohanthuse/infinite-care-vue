@@ -5,6 +5,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarIcon, FileText } from "lucide-react";
 import { format } from "date-fns";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -71,16 +73,19 @@ interface CreateCarePlanDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (carePlan: FormValues) => void;
+  clientId?: string; // Make clientId optional for backward compatibility
 }
 
 export function CreateCarePlanDialog({ 
   open, 
   onOpenChange, 
-  onSave 
+  onSave,
+  clientId 
 }: CreateCarePlanDialogProps) {
   const { toast } = useToast();
   const { id: branchId } = useParams();
   const [providerType, setProviderType] = useState<"staff" | "external">("staff");
+  const queryClient = useQueryClient();
   
   const { data: branchStaff = [], isLoading: isLoadingStaff } = useBranchStaff(branchId || '');
 
@@ -97,14 +102,68 @@ export function CreateCarePlanDialog({
     },
   });
 
+  const createCarePlanMutation = useMutation({
+    mutationFn: async (carePlanData: FormValues) => {
+      // Use clientId from props if available, otherwise this should be called from client context
+      const targetClientId = clientId;
+      
+      if (!targetClientId) {
+        throw new Error("Client ID is required to create a care plan");
+      }
+
+      // Prepare the data based on provider type
+      const insertData: any = {
+        client_id: targetClientId,
+        title: carePlanData.title,
+        start_date: carePlanData.start_date.toISOString().split('T')[0],
+        end_date: carePlanData.end_date ? carePlanData.end_date.toISOString().split('T')[0] : null,
+        review_date: carePlanData.review_date ? carePlanData.review_date.toISOString().split('T')[0] : null,
+        status: 'active'
+      };
+
+      if (carePlanData.provider_type === 'staff' && carePlanData.staff_id) {
+        // Find the staff member to get their name
+        const staffMember = branchStaff.find(staff => staff.id === carePlanData.staff_id);
+        insertData.staff_id = carePlanData.staff_id;
+        insertData.provider_name = staffMember ? `${staffMember.first_name} ${staffMember.last_name}` : 'Unknown Staff';
+      } else {
+        // External provider
+        insertData.provider_name = carePlanData.provider_name;
+      }
+
+      const { data, error } = await supabase
+        .from('client_care_plans')
+        .insert([insertData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['care-plans'] });
+      if (clientId) {
+        queryClient.invalidateQueries({ queryKey: ['client-care-plans', clientId] });
+      }
+      toast({
+        title: "Care plan created",
+        description: "The care plan has been created successfully",
+      });
+      form.reset();
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      console.error('Error creating care plan:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create care plan. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
   function onSubmit(data: FormValues) {
-    onSave(data);
-    form.reset();
-    onOpenChange(false);
-    toast({
-      title: "Care plan created",
-      description: "The care plan has been created successfully",
-    });
+    createCarePlanMutation.mutate(data);
   }
 
   return (
@@ -116,7 +175,7 @@ export function CreateCarePlanDialog({
             Create Care Plan
           </DialogTitle>
           <DialogDescription>
-            Create a new care plan for this client
+            Create a new care plan for the selected client
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -342,7 +401,9 @@ export function CreateCarePlanDialog({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit">Create Care Plan</Button>
+              <Button type="submit" disabled={createCarePlanMutation.isPending}>
+                {createCarePlanMutation.isPending ? "Creating..." : "Create Care Plan"}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

@@ -52,6 +52,8 @@ import { generateCarePlanPDF } from "@/utils/pdfGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { getNavigationId } from "@/utils/carePlanIdMapping";
+import { ClientSelector } from "./ClientSelector";
+import { CreateCarePlanDialog } from "@/components/clients/dialogs/CreateCarePlanDialog";
 
 const mockCarePlans = [
   {
@@ -257,6 +259,10 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const [dateRangeEnd, setDateRangeEnd] = useState<Date | undefined>(undefined);
   const [isFiltering, setIsFiltering] = useState(false);
 
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedClientName, setSelectedClientName] = useState<string>("");
+  const [isCreateCarePlanDialogOpen, setIsCreateCarePlanDialogOpen] = useState(false);
+
   // useEffect hooks MUST also be at the top - ONLY ONE useEffect with these dependencies
   useEffect(() => {
     setCurrentPage(1);
@@ -308,9 +314,32 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   );
   
   const handleAddCarePlan = () => {
-    console.log("Add care plan");
+    if (!selectedClientId) {
+      toast({
+        title: "Client Required",
+        description: "Please select a client first to create a care plan.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsCreateCarePlanDialogOpen(true);
   };
-  
+
+  const handleClientSelect = (clientId: string, clientName: string) => {
+    setSelectedClientId(clientId);
+    setSelectedClientName(clientName);
+  };
+
+  const handleCarePlanCreated = (carePlanData: any) => {
+    toast({
+      title: "Care plan created",
+      description: `Care plan created successfully for ${selectedClientName}`,
+      variant: "default",
+    });
+    // Optionally redirect to the new care plan or refresh the list
+    setIsCreateCarePlanDialogOpen(false);
+  };
+
   const handleViewCarePlan = (id: string) => {
     console.log('[CareTab] Navigating to care plan:', id);
     
@@ -384,7 +413,12 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <h2 className="text-2xl font-bold">Care Plans</h2>
+        <div>
+          <h2 className="text-2xl font-bold">Care Plans</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Manage care plans for clients in this branch
+          </p>
+        </div>
         
         <div className="flex flex-col md:flex-row gap-3">
           <div className="relative">
@@ -541,6 +575,29 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
               Add Care Plan
             </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Client Selection Section */}
+      <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">
+              Select Client for Care Plan Creation
+            </h3>
+            {branchId && (
+              <ClientSelector
+                branchId={branchId}
+                selectedClientId={selectedClientId}
+                onClientSelect={handleClientSelect}
+              />
+            )}
+          </div>
+          {selectedClientId && (
+            <div className="text-sm text-green-600 bg-green-50 px-3 py-2 rounded-md">
+              Selected: {selectedClientName}
+            </div>
+          )}
         </div>
       </div>
 
@@ -773,6 +830,16 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Care Plan Dialog */}
+      {selectedClientId && (
+        <CreateCarePlanDialog
+          open={isCreateCarePlanDialogOpen}
+          onOpenChange={setIsCreateCarePlanDialogOpen}
+          onSave={handleCarePlanCreated}
+          clientId={selectedClientId}
+        />
+      )}
     </div>
   );
 };
