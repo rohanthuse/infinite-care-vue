@@ -22,6 +22,7 @@ export const useBranchDashboardNavigation = () => {
     if (path.startsWith("reviews")) return "reviews";
     if (path.startsWith("care-plan")) return "care-plan";
     if (path.startsWith("agreements")) return "agreements";
+    if (path.startsWith("forms")) return "forms";
     if (path.startsWith("form-builder")) return "forms";
     return "dashboard";
   };
@@ -58,7 +59,7 @@ export const useBranchDashboardNavigation = () => {
       } else if (tab === "training-matrix") {
         navigate(`/branch-dashboard/${id}/${branchName}/training-matrix`);
       } else if (tab === "forms") {
-        navigate(`/branch-dashboard/${id}/${branchName}/form-builder`);
+        navigate(`/branch-dashboard/${id}/${branchName}/forms`);
       } else if (tab === "care-plan") {
         navigate(`/branch-dashboard/${id}/${branchName}/care-plan`);
       } else if (tab === "communication") {
