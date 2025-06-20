@@ -15,7 +15,7 @@ import {
   Search, Plus, FileText, Download, 
   Filter, ChevronDown, Eye, Edit, Trash2, 
   MoreHorizontal, ClipboardCheck, Calendar,
-  Draft
+  FileX
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -620,7 +620,7 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
       {draftCarePlans.length > 0 && (
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-4">
-            <Draft className="h-5 w-5 text-orange-600" />
+            <FileX className="h-5 w-5 text-orange-600" />
             <h3 className="text-lg font-semibold text-gray-900">Draft Care Plans</h3>
             <Badge variant="outline" className="text-orange-600 bg-orange-50 border-orange-200">
               {draftCarePlans.length}

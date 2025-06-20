@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -260,10 +259,18 @@ export function CarePlanCreationWizard({
     const autoSaveInterval = setInterval(async () => {
       const formData = form.getValues();
       try {
+        // Serialize form data for JSON storage
+        const serializedFormData = {
+          ...formData,
+          start_date: formData.start_date?.toISOString(),
+          end_date: formData.end_date?.toISOString(),
+          review_date: formData.review_date?.toISOString(),
+        };
+
         await supabase
           .from('client_care_plans')
           .update({
-            auto_save_data: formData,
+            auto_save_data: serializedFormData,
             last_step_completed: currentStep,
             updated_at: new Date().toISOString(),
           })
@@ -294,7 +301,15 @@ export function CarePlanCreationWizard({
       if (error) throw error;
 
       if (data.auto_save_data) {
-        form.reset(data.auto_save_data as CarePlanFormData);
+        const autoSaveData = data.auto_save_data as any;
+        // Deserialize dates
+        const deserializedData = {
+          ...autoSaveData,
+          start_date: autoSaveData.start_date ? new Date(autoSaveData.start_date) : undefined,
+          end_date: autoSaveData.end_date ? new Date(autoSaveData.end_date) : undefined,
+          review_date: autoSaveData.review_date ? new Date(autoSaveData.review_date) : undefined,
+        };
+        form.reset(deserializedData as CarePlanFormData);
       }
 
       setCurrentStep(data.last_step_completed || 1);
@@ -320,6 +335,14 @@ export function CarePlanCreationWizard({
     mutationFn: async (data: { formData: CarePlanFormData; saveAsDraft: boolean }) => {
       const { formData, saveAsDraft } = data;
 
+      // Serialize form data for JSON storage
+      const serializedFormData = {
+        ...formData,
+        start_date: formData.start_date?.toISOString(),
+        end_date: formData.end_date?.toISOString(),
+        review_date: formData.review_date?.toISOString(),
+      };
+
       let carePlan;
       if (carePlanId) {
         // Update existing care plan
@@ -336,7 +359,7 @@ export function CarePlanCreationWizard({
             priority: formData.priority,
             care_plan_type: formData.care_plan_type,
             notes: formData.notes,
-            auto_save_data: formData,
+            auto_save_data: serializedFormData,
             last_step_completed: currentStep,
             completion_percentage: calculateCompletionPercentage(),
             updated_at: new Date().toISOString(),
@@ -363,7 +386,7 @@ export function CarePlanCreationWizard({
             priority: formData.priority,
             care_plan_type: formData.care_plan_type,
             notes: formData.notes,
-            auto_save_data: formData,
+            auto_save_data: serializedFormData,
             last_step_completed: currentStep,
             completion_percentage: calculateCompletionPercentage(),
           })
@@ -546,6 +569,15 @@ export function CarePlanCreationWizard({
     if (!carePlanId) return;
 
     try {
+      const formData = form.getValues();
+      // Serialize form data for JSON storage
+      const serializedStepData = {
+        ...formData,
+        start_date: formData.start_date?.toISOString(),
+        end_date: formData.end_date?.toISOString(),
+        review_date: formData.review_date?.toISOString(),
+      };
+
       await supabase
         .from('care_plan_wizard_steps')
         .upsert({
@@ -554,7 +586,7 @@ export function CarePlanCreationWizard({
           step_name: WIZARD_STEPS[stepNumber - 1].name,
           is_completed: true,
           completed_at: new Date().toISOString(),
-          step_data: form.getValues(),
+          step_data: serializedStepData,
         }, { onConflict: 'care_plan_id,step_number' });
 
       setCompletedSteps(prev => [...new Set([...prev, stepNumber])]);
