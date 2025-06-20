@@ -18,6 +18,14 @@ export interface Task {
   clientName?: string;
   staffId?: string;
   staffName?: string;
+  // Additional fields from database
+  category?: string;
+  notes?: string;
+  completion_percentage?: number;
+  branch_id?: string;
+  assignee_id?: string;
+  client_id?: string;
+  created_by?: string;
 }
 
 export interface TaskColumn {

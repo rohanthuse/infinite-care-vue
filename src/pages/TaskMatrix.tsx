@@ -1,18 +1,19 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getTaskColumns, filterTasksByView } from "@/data/mockTaskData";
-import { Task, TaskColumn as TaskColumnType, TaskStatus, TaskView } from "@/types/task";
+import { TaskStatus, TaskView } from "@/types/task";
 import TaskColumn from "@/components/tasks/TaskColumn";
 import AddTaskDialog from "@/components/tasks/AddTaskDialog";
 import { Button } from "@/components/ui/button";
 import { 
   Search, Filter, Plus, Users, UserRound, 
-  SlidersHorizontal, Download
+  SlidersHorizontal
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
+import { useTasks, DatabaseTask } from "@/hooks/useTasks";
+import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
 
 interface DragItem {
   taskId: string;
@@ -27,42 +28,90 @@ export interface TaskMatrixProps {
 const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
   const navigate = useNavigate();
   const params = useParams<{id: string, branchName: string}>();
-  // Use props if provided, otherwise fall back to URL params
+  
   const branchId = props.branchId || params.id;
   const branchName = props.branchName || params.branchName;
   
+  if (!branchId) {
+    return <div>Branch ID is required</div>;
+  }
+  
   const [taskView, setTaskView] = useState<TaskView>("staff");
-  const [columns, setColumns] = useState<TaskColumnType[]>(getTaskColumns());
   const [searchTerm, setSearchTerm] = useState("");
   const [currentDraggedItem, setCurrentDraggedItem] = useState<DragItem | null>(null);
   const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
   const [addToColumn, setAddToColumn] = useState<TaskStatus>("todo");
   
-  // Filter columns based on search and view
-  useEffect(() => {
-    const allColumns = getTaskColumns();
+  const { tasks, isLoading, updateTask } = useTasks(branchId);
+  const { staff, clients } = useBranchStaffAndClients(branchId);
+  
+  // Transform database tasks to match UI requirements
+  const transformedTasks = tasks.map(task => ({
+    id: task.id,
+    title: task.title,
+    description: task.description || '',
+    status: task.status,
+    priority: task.priority,
+    assignee: task.assignee ? `${task.assignee.first_name} ${task.assignee.last_name}` : undefined,
+    assigneeAvatar: "/placeholder.svg",
+    dueDate: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : undefined,
+    createdAt: new Date(task.created_at).toISOString().split('T')[0],
+    tags: task.tags,
+    clientId: task.client?.id,
+    clientName: task.client ? `${task.client.first_name} ${task.client.last_name}` : undefined,
+    staffId: task.assignee?.id,
+    staffName: task.assignee ? `${task.assignee.first_name} ${task.assignee.last_name}` : undefined,
+  }));
+  
+  // Filter tasks based on search and view
+  const filteredTasks = transformedTasks.filter(task => {
+    const matchesSearch = searchTerm.trim() === "" || 
+      task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.assignee?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    if (searchTerm.trim() !== "") {
-      const filteredColumns = allColumns.map(column => ({
-        ...column,
-        tasks: column.tasks.filter(task => 
-          task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          task.assignee?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          task.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          task.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-        )
-      }));
-      setColumns(filteredColumns);
-    } else {
-      // Apply view filter without search
-      const viewFilteredColumns = allColumns.map(column => ({
-        ...column,
-        tasks: filterTasksByView(column.tasks, taskView)
-      }));
-      setColumns(viewFilteredColumns);
+    const matchesView = taskView === "staff" ? 
+      (task.staffId || !task.clientId) : 
+      !!task.clientId;
+    
+    return matchesSearch && matchesView;
+  });
+  
+  // Group tasks by status
+  const columns = [
+    {
+      id: "backlog" as TaskStatus,
+      title: "Backlog",
+      tasks: filteredTasks.filter(task => task.status === "backlog"),
+      color: "bg-gray-100"
+    },
+    {
+      id: "todo" as TaskStatus,
+      title: "To Do",
+      tasks: filteredTasks.filter(task => task.status === "todo"),
+      color: "bg-blue-100"
+    },
+    {
+      id: "in-progress" as TaskStatus,
+      title: "In Progress",
+      tasks: filteredTasks.filter(task => task.status === "in-progress"),
+      color: "bg-amber-100"
+    },
+    {
+      id: "review" as TaskStatus,
+      title: "Review",
+      tasks: filteredTasks.filter(task => task.status === "review"),
+      color: "bg-purple-100"
+    },
+    {
+      id: "done" as TaskStatus,
+      title: "Done",
+      tasks: filteredTasks.filter(task => task.status === "done"),
+      color: "bg-green-100"
     }
-  }, [searchTerm, taskView]);
+  ];
   
   const handleDragStart = (e: React.DragEvent, taskId: string, sourceColumn: string) => {
     setCurrentDraggedItem({ taskId, sourceColumn });
@@ -83,35 +132,11 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
     
     if (sourceColumn === targetColumn) return;
     
-    // Find the task in the source column
-    const sourceColumnObj = columns.find(col => col.id === sourceColumn);
-    if (!sourceColumnObj) return;
-    
-    const taskToMove = sourceColumnObj.tasks.find(task => task.id === taskId);
-    if (!taskToMove) return;
-    
-    // Update columns state
-    const updatedColumns = columns.map(column => {
-      // Remove from source column
-      if (column.id === sourceColumn) {
-        return {
-          ...column,
-          tasks: column.tasks.filter(task => task.id !== taskId)
-        };
-      }
-      
-      // Add to target column
-      if (column.id === targetColumn) {
-        return {
-          ...column,
-          tasks: [...column.tasks, { ...taskToMove, status: targetColumn as TaskStatus }]
-        };
-      }
-      
-      return column;
+    // Update task status in database
+    updateTask({
+      id: taskId,
+      status: targetColumn as TaskStatus
     });
-    
-    setColumns(updatedColumns);
     
     toast({
       title: "Task moved",
@@ -126,44 +151,15 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
     setIsAddTaskDialogOpen(true);
   };
   
-  const addNewTask = (taskData: {
-    title: string;
-    description: string;
-    priority: any;
-    status: TaskStatus;
-    assignee?: string;
-  }) => {
-    const newTask: Task = {
-      id: `task-${Date.now()}`,
-      title: taskData.title,
-      description: taskData.description,
-      status: taskData.status,
-      priority: taskData.priority,
-      assignee: taskData.assignee,
-      assigneeAvatar: "/placeholder.svg",
-      createdAt: new Date().toISOString().split('T')[0],
-      tags: [],
-      ...(taskView === 'client' ? { clientId: 'client-new', clientName: "New Client" } : { staffId: 'staff-new', staffName: "Staff Member" })
-    };
-    
-    // Add the new task to the appropriate column
-    const updatedColumns = columns.map(column => {
-      if (column.id === taskData.status) {
-        return {
-          ...column,
-          tasks: [...column.tasks, newTask]
-        };
-      }
-      return column;
-    });
-    
-    setColumns(updatedColumns);
-    
-    toast({
-      title: "Task added",
-      description: `New task "${taskData.title}" added to ${taskData.status.replace('-', ' ')}`,
-    });
-  };
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-500">Loading tasks...</div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -241,8 +237,13 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
       <AddTaskDialog
         isOpen={isAddTaskDialogOpen}
         onClose={() => setIsAddTaskDialogOpen(false)}
-        onAddTask={addNewTask}
+        onAddTask={(taskData) => {
+          // This will be handled by the updated AddTaskDialog component
+          console.log('Add task:', taskData);
+        }}
         initialStatus={addToColumn}
+        clients={clients?.map(c => `${c.first_name} ${c.last_name}`) || []}
+        categories={['Medical', 'Administrative', 'Training', 'Maintenance', 'Social', 'Safety', 'Nutrition', 'Therapy']}
       />
     </div>
   );
