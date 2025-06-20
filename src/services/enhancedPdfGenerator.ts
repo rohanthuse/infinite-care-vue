@@ -346,7 +346,7 @@ export class EnhancedPdfGenerator {
 
     // Medical Information Section
     if (clientData.medicalInfo) {
-      const medicalData = [
+      const medicalData: [string, string][] = [
         ["Allergies", clientData.medicalInfo.allergies?.join(', ') || 'None recorded'],
         ["Medical Conditions", clientData.medicalInfo.medical_conditions?.join(', ') || 'None recorded'],
         ["Current Medications", clientData.medicalInfo.current_medications?.join(', ') || 'None recorded'],
@@ -358,7 +358,7 @@ export class EnhancedPdfGenerator {
 
     // Personal Care Information
     if (clientData.personalCare) {
-      const personalCareData = [
+      const personalCareData: [string, string][] = [
         ["Personal Hygiene Needs", clientData.personalCare.personal_hygiene_needs || 'N/A'],
         ["Bathing Preferences", clientData.personalCare.bathing_preferences || 'N/A'],
         ["Dressing Assistance", clientData.personalCare.dressing_assistance_level || 'N/A'],
@@ -370,7 +370,7 @@ export class EnhancedPdfGenerator {
 
     // Dietary Requirements
     if (clientData.dietaryRequirements) {
-      const dietaryData = [
+      const dietaryData: [string, string][] = [
         ["Dietary Restrictions", clientData.dietaryRequirements.dietary_restrictions?.join(', ') || 'None'],
         ["Food Allergies", clientData.dietaryRequirements.food_allergies?.join(', ') || 'None'],
         ["Food Preferences", clientData.dietaryRequirements.food_preferences?.join(', ') || 'None'],
