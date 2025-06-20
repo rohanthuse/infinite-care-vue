@@ -7,13 +7,19 @@ import { MessageComposer } from "./MessageComposer";
 import { MessageFilters } from "./MessageFilters";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export interface CommunicationsTabProps {
   branchId?: string;
   branchName?: string;
 }
 
-export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({ branchId = "1", branchName = "Med-Infinite" }) => {
+export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({ 
+  branchId = "1", 
+  branchName = "Med-Infinite" 
+}) => {
+  const { data: currentUser, isLoading: userLoading } = useUserRole();
+  
   // State management
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
@@ -60,6 +66,36 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({ branchId =
     setShowComposer(true);
   };
 
+  if (userLoading) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden items-center justify-center">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden items-center justify-center">
+        <div className="text-center">
+          <div className="text-gray-400 text-lg mb-2">Authentication Required</div>
+          <p className="text-sm text-gray-500">
+            Please log in to access the messaging system.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Adjust available filter types based on user role
+  const getAvailableFilterTypes = () => {
+    if (currentUser.role === 'super_admin' || currentUser.role === 'branch_admin') {
+      return ['all', 'carers', 'clients'];
+    } else {
+      return ['all', 'admins']; // Carers and clients can only see admins
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
       {/* Left column - Contacts */}
@@ -68,7 +104,12 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({ branchId =
           branchId={branchId || "1"}
           onContactSelect={handleContactSelect}
           contactType={filterType}
-          onContactTypeChange={(type) => setFilterType(type)}
+          onContactTypeChange={(type) => {
+            const availableTypes = getAvailableFilterTypes();
+            if (availableTypes.includes(type)) {
+              setFilterType(type);
+            }
+          }}
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
         />
@@ -80,7 +121,12 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({ branchId =
           <h3 className="text-lg font-semibold mb-4">Messages</h3>
           <MessageFilters 
             selectedFilter={filterType}
-            onFilterChange={(filter) => setFilterType(filter as "all" | "carers" | "clients" | "groups")}
+            onFilterChange={(filter) => {
+              const availableTypes = getAvailableFilterTypes();
+              if (availableTypes.includes(filter)) {
+                setFilterType(filter as "all" | "carers" | "clients" | "groups");
+              }
+            }}
             priorityFilter={priorityFilter}
             readFilter={readFilter}
             dateFilter={dateFilter}

@@ -10,28 +10,8 @@ import {
   DropdownMenuCheckboxItem
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-
-// Mocked data - would come from an API
-const mockCarers = [
-  { id: "carer-1", name: "Charuma, Charmaine", avatar: "CC", status: "online", unread: 2 },
-  { id: "carer-2", name: "Warren, Susan", avatar: "WS", status: "offline", unread: 0 },
-  { id: "carer-3", name: "Ayo-Famure, Opeyemi", avatar: "AF", status: "away", unread: 1 },
-  { id: "carer-4", name: "Smith, John", avatar: "SJ", status: "online", unread: 0 },
-];
-
-const mockClients = [
-  { id: "client-1", name: "Pender, Eva", avatar: "EP", status: "online", unread: 3 },
-  { id: "client-2", name: "Fulcher, Patricia", avatar: "FP", status: "offline", unread: 0 },
-  { id: "client-3", name: "Baulch, Ursula", avatar: "BU", status: "online", unread: 0 },
-  { id: "client-4", name: "Ren, Victoria", avatar: "RV", status: "away", unread: 2 },
-];
-
-// Adding mock groups
-const mockGroups = [
-  { id: "group-1", name: "All Carers", avatar: "AC", status: "online", unread: 1 },
-  { id: "group-2", name: "All Clients", avatar: "AC", status: "online", unread: 0 },
-  { id: "group-3", name: "Team Alpha", avatar: "TA", status: "online", unread: 3 },
-];
+import { useContacts } from "@/hooks/useContacts";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface ContactSidebarProps {
   branchId: string;
@@ -51,6 +31,8 @@ export const ContactSidebar = ({
   onSearchChange 
 }: ContactSidebarProps) => {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const { data: currentUser } = useUserRole();
+  const { data: contacts = [], isLoading } = useContacts(branchId, contactType);
   
   const handleStatusFilterChange = (status: string) => {
     setStatusFilter(prev => 
@@ -60,31 +42,53 @@ export const ContactSidebar = ({
     );
   };
   
-  // Filter contacts based on search term and filters
-  const filteredCarers = mockCarers.filter(carer => {
-    const matchesSearch = carer.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter.length === 0 || statusFilter.includes(carer.status);
+  // Filter contacts based on search term and status filters
+  const filteredContacts = contacts.filter(contact => {
+    const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter.length === 0 || statusFilter.includes(contact.status);
     return matchesSearch && matchesStatus;
   });
-  
-  const filteredClients = mockClients.filter(client => {
-    const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter.length === 0 || statusFilter.includes(client.status);
-    return matchesSearch && matchesStatus;
-  });
-  
-  const filteredGroups = mockGroups.filter(group => {
-    const matchesSearch = group.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter.length === 0 || statusFilter.includes(group.status);
-    return matchesSearch && matchesStatus;
-  });
-  
-  // Get contacts based on selected type
-  const displayContacts = 
-    contactType === "all" ? [...filteredCarers, ...filteredClients, ...filteredGroups] : 
-    contactType === "carers" ? filteredCarers : 
-    contactType === "clients" ? filteredClients :
-    filteredGroups;
+
+  // Show available contact types based on user role
+  const availableContactTypes = () => {
+    if (!currentUser) return ['all'];
+    
+    if (currentUser.role === 'super_admin' || currentUser.role === 'branch_admin') {
+      return ['all', 'carers', 'clients'];
+    } else {
+      return ['all', 'admins']; // Carers and clients can only message admins
+    }
+  };
+
+  const getContactTypeBadge = (contactRole: string) => {
+    switch (contactRole) {
+      case 'client':
+        return (
+          <Badge variant="outline" className="px-1.5 py-0 text-xs bg-green-50 text-green-700 border-green-200">
+            Client
+          </Badge>
+        );
+      case 'carer':
+        return (
+          <Badge variant="outline" className="px-1.5 py-0 text-xs bg-blue-50 text-blue-700 border-blue-200">
+            Carer
+          </Badge>
+        );
+      case 'super_admin':
+      case 'branch_admin':
+        return (
+          <Badge variant="outline" className="px-1.5 py-0 text-xs bg-purple-50 text-purple-700 border-purple-200">
+            Admin
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="px-1.5 py-0 text-xs bg-gray-50 text-gray-700 border-gray-200">
+            Contact
+          </Badge>
+        );
+    }
+  };
   
   return (
     <>
@@ -103,30 +107,18 @@ export const ContactSidebar = ({
         
         <div className="flex items-center justify-between mb-2">
           <div className="w-full flex overflow-hidden bg-gray-100 rounded-md">
-            <button 
-              className={`flex-1 text-sm py-2 px-4 ${contactType === 'all' ? 'bg-white rounded-md shadow-sm' : ''}`}
-              onClick={() => onContactTypeChange('all')}
-            >
-              All
-            </button>
-            <button 
-              className={`flex-1 text-sm py-2 px-4 ${contactType === 'carers' ? 'bg-white rounded-md shadow-sm' : ''}`}
-              onClick={() => onContactTypeChange('carers')}
-            >
-              Carers
-            </button>
-            <button 
-              className={`flex-1 text-sm py-2 px-4 ${contactType === 'clients' ? 'bg-white rounded-md shadow-sm' : ''}`}
-              onClick={() => onContactTypeChange('clients')}
-            >
-              Clients
-            </button>
-            <button 
-              className={`flex-1 text-sm py-2 px-4 ${contactType === 'groups' ? 'bg-white rounded-md shadow-sm' : ''}`}
-              onClick={() => onContactTypeChange('groups')}
-            >
-              Groups
-            </button>
+            {availableContactTypes().map((type) => (
+              <button 
+                key={type}
+                className={`flex-1 text-sm py-2 px-4 ${contactType === type ? 'bg-white rounded-md shadow-sm' : ''}`}
+                onClick={() => onContactTypeChange(type as any)}
+              >
+                {type === 'all' ? 'All' : 
+                 type === 'carers' ? 'Carers' : 
+                 type === 'clients' ? 'Clients' : 
+                 type === 'admins' ? 'Admins' : 'Groups'}
+              </button>
+            ))}
           </div>
           
           <DropdownMenu>
@@ -157,16 +149,22 @@ export const ContactSidebar = ({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        {(currentUser?.role === 'carer' || currentUser?.role === 'client') && (
+          <div className="mt-2 p-2 bg-blue-50 rounded-md text-xs text-blue-700">
+            You can only message administrators directly.
+          </div>
+        )}
       </div>
       
       <div className="flex-1 overflow-y-auto">
-        <div className="divide-y divide-gray-100">
-          {displayContacts.map((contact) => {
-            const isClient = mockClients.some(client => client.id === contact.id);
-            const isCarer = mockCarers.some(carer => carer.id === contact.id);
-            const isGroup = mockGroups.some(group => group.id === contact.id);
-            
-            return (
+        {isLoading ? (
+          <div className="p-4 text-center text-gray-500">
+            Loading contacts...
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {filteredContacts.map((contact) => (
               <div
                 key={contact.id}
                 className="flex items-center p-3 hover:bg-gray-50 cursor-pointer"
@@ -192,33 +190,19 @@ export const ContactSidebar = ({
                     )}
                   </div>
                   <div className="text-xs text-gray-500 flex items-center mt-0.5">
-                    {isClient ? (
-                      <Badge variant="outline" className="px-1.5 py-0 text-xs bg-green-50 text-green-700 border-green-200">
-                        Client
-                      </Badge>
-                    ) : isCarer ? (
-                      <Badge variant="outline" className="px-1.5 py-0 text-xs bg-blue-50 text-blue-700 border-blue-200">
-                        Carer
-                      </Badge>
-                    ) : isGroup ? (
-                      <Badge variant="outline" className="px-1.5 py-0 text-xs bg-purple-50 text-purple-700 border-purple-200">
-                        Group
-                      </Badge>
-                    ) : (
-                      <span>Contact</span>
-                    )}
+                    {getContactTypeBadge(contact.type)}
                   </div>
                 </div>
               </div>
-            );
-          })}
-          
-          {displayContacts.length === 0 && (
-            <div className="p-4 text-center text-gray-500">
-              No contacts found
-            </div>
-          )}
-        </div>
+            ))}
+            
+            {filteredContacts.length === 0 && (
+              <div className="p-4 text-center text-gray-500">
+                No contacts found
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </>
   );

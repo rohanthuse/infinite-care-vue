@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { format } from "date-fns";
 import { 
@@ -5,90 +6,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-
-// Mocked data - would come from an API
-const mockMessages = [
-  {
-    id: "msg-1",
-    sender: { id: "carer-1", name: "Charuma, Charmaine", avatar: "CC", type: "carer" },
-    recipients: [{ id: "admin", name: "Branch Admin", type: "admin" }],
-    subject: "Scheduling question for next week",
-    content: "Hello, I wanted to ask about the schedule for next week...",
-    timestamp: new Date("2023-05-15T10:30:00"),
-    isRead: false,
-    hasAttachments: false,
-    priority: "medium",
-    labels: ["schedule"]
-  },
-  {
-    id: "msg-2",
-    sender: { id: "client-1", name: "Pender, Eva", avatar: "EP", type: "client" },
-    recipients: [{ id: "admin", name: "Branch Admin", type: "admin" }],
-    subject: "Medication updates",
-    content: "Please note that my medication has been updated by my doctor...",
-    timestamp: new Date("2023-05-14T15:45:00"),
-    isRead: true,
-    hasAttachments: true,
-    priority: "high",
-    labels: ["medication", "important"]
-  },
-  {
-    id: "msg-3",
-    sender: { id: "carer-2", name: "Warren, Susan", avatar: "WS", type: "carer" },
-    recipients: [{ id: "admin", name: "Branch Admin", type: "admin" }],
-    subject: "Training completion certificate",
-    content: "Attached is my completed training certificate as requested...",
-    timestamp: new Date("2023-05-13T09:20:00"),
-    isRead: true,
-    hasAttachments: true,
-    priority: "low",
-    labels: ["training"]
-  },
-  {
-    id: "msg-4",
-    sender: { id: "client-2", name: "Fulcher, Patricia", avatar: "FP", type: "client" },
-    recipients: [{ id: "admin", name: "Branch Admin", type: "admin" }],
-    subject: "Feedback on recent visit",
-    content: "I wanted to share some feedback about the carer who visited yesterday...",
-    timestamp: new Date("2023-05-12T17:10:00"),
-    isRead: false,
-    hasAttachments: false,
-    priority: "medium",
-    labels: ["feedback"]
-  },
-  {
-    id: "msg-5",
-    sender: { id: "admin", name: "Branch Admin", avatar: "B", type: "admin" },
-    recipients: [
-      { id: "carer-1", name: "Charuma, Charmaine", type: "carer" },
-      { id: "carer-2", name: "Warren, Susan", type: "carer" },
-      { id: "carer-3", name: "Ayo-Famure, Opeyemi", type: "carer" }
-    ],
-    subject: "New policies announcement",
-    content: "Please review the updated company policies attached...",
-    timestamp: new Date("2023-05-11T11:00:00"),
-    isRead: true,
-    hasAttachments: true,
-    priority: "high",
-    labels: ["policy", "important"]
-  },
-  {
-    id: "msg-6",
-    sender: { id: "admin", name: "Branch Admin", avatar: "B", type: "admin" },
-    recipients: [
-      { id: "client-1", name: "Pender, Eva", type: "client" },
-      { id: "client-2", name: "Fulcher, Patricia", type: "client" },
-      { id: "client-3", name: "Baulch, Ursula", type: "client" }
-    ],
-    subject: "Holiday schedule changes",
-    content: "Due to the upcoming holiday, there will be some changes to the schedule...",
-    timestamp: new Date("2023-05-10T14:20:00"),
-    isRead: true,
-    hasAttachments: false,
-    priority: "medium",
-    labels: ["schedule"]
-  }
-];
+import { useMessageThreads } from "@/hooks/useMessages";
 
 interface MessageListProps {
   branchId: string;
@@ -111,40 +29,34 @@ export const MessageList = ({
   readFilter,
   dateFilter
 }: MessageListProps) => {
-  // Filter messages based on selected filter and search term
-  const filteredMessages = mockMessages.filter(message => {
+  const { data: threads = [], isLoading } = useMessageThreads(branchId);
+  
+  // Filter threads based on selected filter and search term
+  const filteredThreads = threads.filter(thread => {
     // Apply type filter
     const matchesType = 
       selectedFilter === "all" ? true :
-      selectedFilter === "carers" ? message.sender.type === "carer" || 
-                                   message.recipients.some(r => r.type === "carer") :
-      selectedFilter === "clients" ? message.sender.type === "client" || 
-                                    message.recipients.some(r => r.type === "client") :
-      selectedFilter === "groups" ? message.recipients.length > 1 : true;
+      selectedFilter === "carers" ? thread.participants.some(p => p.type === "carer") :
+      selectedFilter === "clients" ? thread.participants.some(p => p.type === "client") :
+      selectedFilter === "groups" ? thread.participants.length > 2 : true;
     
     // Apply search filter
     const matchesSearch = 
-      message.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      message.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      message.sender.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      message.recipients.some(r => r.name.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    // Apply priority filter if provided
-    const matchesPriority = 
-      !priorityFilter || priorityFilter === "all" ? true : 
-      message.priority === priorityFilter.toLowerCase();
+      thread.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (thread.lastMessage?.content.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      thread.participants.some(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     // Apply read/unread filter if provided
     const matchesReadStatus = 
       !readFilter || readFilter === "all" ? true :
-      readFilter === "read" ? message.isRead :
-      readFilter === "unread" ? !message.isRead : true;
+      readFilter === "read" ? thread.unreadCount === 0 :
+      readFilter === "unread" ? thread.unreadCount > 0 : true;
 
     // Apply date filter if provided
     let matchesDate = true;
-    if (dateFilter && dateFilter !== "all") {
+    if (dateFilter && dateFilter !== "all" && thread.lastMessage) {
       const now = new Date();
-      const messageDate = new Date(message.timestamp);
+      const messageDate = new Date(thread.lastMessage.createdAt);
       
       if (dateFilter === "today") {
         matchesDate = messageDate.toDateString() === now.toDateString();
@@ -159,49 +71,75 @@ export const MessageList = ({
       }
     }
     
-    return matchesType && matchesSearch && matchesPriority && matchesReadStatus && matchesDate;
+    return matchesType && matchesSearch && matchesReadStatus && matchesDate;
   });
   
-  const formatMessageDate = (date: Date) => {
+  const formatMessageDate = (date: string) => {
+    const messageDate = new Date(date);
     const now = new Date();
-    const isToday = date.getDate() === now.getDate() &&
-                   date.getMonth() === now.getMonth() &&
-                   date.getFullYear() === now.getFullYear();
+    const isToday = messageDate.getDate() === now.getDate() &&
+                   messageDate.getMonth() === now.getMonth() &&
+                   messageDate.getFullYear() === now.getFullYear();
     
     if (isToday) {
-      return format(date, "HH:mm");
+      return format(messageDate, "HH:mm");
     } else {
-      return format(date, "dd MMM");
+      return format(messageDate, "dd MMM");
     }
   };
 
-  // Check if selected message is in filtered results
-  const selectedMessageExists = selectedMessageId && mockMessages.some(msg => msg.id === selectedMessageId);
-  
-  // Effect to auto-select first message if current selection doesn't exist
+  // Auto-select first thread if none selected
   useEffect(() => {
-    // If no message is selected and we have messages, select the first one
-    if ((!selectedMessageId || !selectedMessageExists) && mockMessages.length > 0) {
-      onMessageSelect(mockMessages[0].id);
+    if ((!selectedMessageId) && filteredThreads.length > 0) {
+      onMessageSelect(filteredThreads[0].id);
     }
-  }, [mockMessages, selectedMessageId, selectedMessageExists, onMessageSelect]);
+  }, [filteredThreads, selectedMessageId, onMessageSelect]);
+
+  const getParticipantBadge = (participants: Array<{type: string}>) => {
+    const hasClient = participants.some(p => p.type === 'client');
+    const hasCarer = participants.some(p => p.type === 'carer');
+    const hasAdmin = participants.some(p => p.type === 'super_admin' || p.type === 'branch_admin');
+
+    if (hasClient && hasAdmin) {
+      return (
+        <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-green-50 text-green-700 border-green-200">
+          Client
+        </Badge>
+      );
+    } else if (hasCarer && hasAdmin) {
+      return (
+        <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-blue-50 text-blue-700 border-blue-200">
+          Carer
+        </Badge>
+      );
+    }
+    return null;
+  };
   
+  if (isLoading) {
+    return (
+      <div className="p-6 text-center text-gray-500">
+        Loading messages...
+      </div>
+    );
+  }
+
   return (
     <div>
-      {mockMessages.length > 0 ? (
-        mockMessages.map((message) => (
+      {filteredThreads.length > 0 ? (
+        filteredThreads.map((thread) => (
           <div 
-            key={message.id}
+            key={thread.id}
             className={cn(
               "p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100",
-              selectedMessageId === message.id ? "bg-blue-50 hover:bg-blue-50" : "",
-              !message.isRead ? "bg-gray-50" : ""
+              selectedMessageId === thread.id ? "bg-blue-50 hover:bg-blue-50" : "",
+              thread.unreadCount > 0 ? "bg-gray-50" : ""
             )}
-            onClick={() => onMessageSelect(message.id)}
+            onClick={() => onMessageSelect(thread.id)}
           >
             <div className="flex items-start">
               <div className="h-9 w-9 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium shrink-0">
-                {message.sender.avatar}
+                {thread.participants[0]?.name?.charAt(0) || 'U'}
               </div>
               
               <div className="ml-3 flex-1 min-w-0">
@@ -209,46 +147,38 @@ export const MessageList = ({
                   <div className="flex items-center">
                     <span className={cn(
                       "font-medium text-sm truncate max-w-[150px]",
-                      !message.isRead ? "font-semibold" : ""
+                      thread.unreadCount > 0 ? "font-semibold" : ""
                     )}>
-                      {message.sender.name}
+                      {thread.participants.map(p => p.name).join(", ")}
                     </span>
                     
-                    {message.sender.type === "carer" && (
-                      <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-blue-50 text-blue-700 border-blue-200">
-                        Carer
-                      </Badge>
-                    )}
+                    {getParticipantBadge(thread.participants)}
                     
-                    {message.sender.type === "client" && (
-                      <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-green-50 text-green-700 border-green-200">
-                        Client
-                      </Badge>
-                    )}
-                    
-                    {message.priority === "high" && (
-                      <AlertCircle className="h-3 w-3 text-red-500 ml-1" />
+                    {thread.unreadCount > 0 && (
+                      <div className="ml-2 bg-blue-600 text-white text-xs rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                        {thread.unreadCount}
+                      </div>
                     )}
                   </div>
                   
                   <span className="text-xs text-gray-500">
-                    {formatMessageDate(message.timestamp)}
+                    {thread.lastMessage ? formatMessageDate(thread.lastMessage.createdAt) : ''}
                   </span>
                 </div>
                 
                 <div className={cn(
                   "text-sm truncate",
-                  !message.isRead ? "font-medium" : "text-gray-700"
+                  thread.unreadCount > 0 ? "font-medium" : "text-gray-700"
                 )}>
-                  {message.subject}
+                  {thread.subject}
                 </div>
                 
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-gray-500 truncate mt-1">
-                    {message.content}
+                    {thread.lastMessage?.content || 'No messages yet'}
                   </p>
                   
-                  {message.hasAttachments && (
+                  {thread.lastMessage?.hasAttachments && (
                     <FileText className="h-3 w-3 text-gray-400 ml-1 shrink-0" />
                   )}
                 </div>
