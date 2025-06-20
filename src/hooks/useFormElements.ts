@@ -28,13 +28,19 @@ export const useFormElements = (formId: string) => {
   } = useQuery({
     queryKey: ['form-elements', formId],
     queryFn: async () => {
+      console.log('Fetching form elements for form:', formId);
       const { data, error } = await supabase
         .from('form_elements')
         .select('*')
         .eq('form_id', formId)
         .order('order_index', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching form elements:', error);
+        throw error;
+      }
+      
+      console.log('Fetched form elements:', data);
       return data as DatabaseFormElement[];
     },
     enabled: !!formId,
@@ -60,13 +66,18 @@ export const useFormElements = (formId: string) => {
   // Save form elements mutation
   const saveElementsMutation = useMutation({
     mutationFn: async ({ formId, elements }: { formId: string; elements: UIFormElement[] }) => {
+      console.log('Saving form elements:', { formId, elements });
+      
       // First, delete existing elements for this form
       const { error: deleteError } = await supabase
         .from('form_elements')
         .delete()
         .eq('form_id', formId);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error('Error deleting existing elements:', deleteError);
+        throw deleteError;
+      }
 
       // Then insert the new elements
       if (elements.length > 0) {
@@ -100,21 +111,28 @@ export const useFormElements = (formId: string) => {
           },
         }));
 
+        console.log('Inserting elements to database:', dbElements);
+
         const { error: insertError } = await supabase
           .from('form_elements')
           .insert(dbElements);
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error('Error inserting form elements:', insertError);
+          throw insertError;
+        }
+        
+        console.log('Form elements saved successfully');
+      } else {
+        console.log('No elements to save');
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['form-elements', formId] });
-      toast({
-        title: "Success",
-        description: "Form elements saved successfully",
-      });
+      console.log('Form elements save completed successfully');
     },
     onError: (error) => {
+      console.error('Form elements save failed:', error);
       toast({
         title: "Error",
         description: "Failed to save form elements: " + error.message,

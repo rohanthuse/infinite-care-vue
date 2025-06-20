@@ -153,6 +153,26 @@ const FormBuilder = () => {
     setIsFormDirty(true);
   };
 
+  // Auto-save elements when form elements change
+  const saveFormElements = useCallback(async (elements: FormElement[]) => {
+    if (formId && elements.length >= 0) {
+      try {
+        console.log('Auto-saving form elements:', elements);
+        saveElements({
+          formId: formId,
+          elements: elements
+        });
+      } catch (error) {
+        console.error('Failed to auto-save elements:', error);
+        toast({
+          title: 'Auto-save Failed',
+          description: 'Failed to save form elements automatically',
+          variant: 'destructive',
+        });
+      }
+    }
+  }, [formId, saveElements, toast]);
+
   const handleSaveForm = async () => {
     const userId = user?.id || 'temp-user-id';
 
@@ -197,8 +217,17 @@ const FormBuilder = () => {
       }
       
       setIsFormDirty(false);
+      toast({
+        title: 'Form Saved',
+        description: 'Form and elements have been saved successfully',
+      });
     } catch (error) {
       console.error('Error saving form:', error);
+      toast({
+        title: 'Save Failed',
+        description: 'Failed to save form. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -294,29 +323,52 @@ const FormBuilder = () => {
   };
 
   const addElement = (element: FormElement) => {
+    const updatedElements = [...form.elements, element];
     setForm(prev => ({
       ...prev,
-      elements: [...prev.elements, element],
+      elements: updatedElements,
     }));
     setIsFormDirty(true);
+    
+    // Auto-save elements immediately
+    saveFormElements(updatedElements);
+    
+    toast({
+      title: 'Element Added',
+      description: `${element.type} field has been added to the form`,
+    });
   };
 
   const updateElement = (elementId: string, updatedElement: Partial<FormElement>) => {
+    const updatedElements = form.elements.map(el => 
+      el.id === elementId ? { ...el, ...updatedElement } as FormElement : el
+    );
+    
     setForm(prev => ({
       ...prev,
-      elements: prev.elements.map(el => 
-        el.id === elementId ? { ...el, ...updatedElement } as FormElement : el
-      ),
+      elements: updatedElements,
     }));
     setIsFormDirty(true);
+    
+    // Auto-save elements immediately
+    saveFormElements(updatedElements);
   };
 
   const removeElement = (elementId: string) => {
+    const updatedElements = form.elements.filter(el => el.id !== elementId);
     setForm(prev => ({
       ...prev,
-      elements: prev.elements.filter(el => el.id !== elementId),
+      elements: updatedElements,
     }));
     setIsFormDirty(true);
+    
+    // Auto-save elements immediately
+    saveFormElements(updatedElements);
+    
+    toast({
+      title: 'Element Removed',
+      description: 'Form element has been removed',
+    });
   };
 
   const reorderElements = (elements: FormElement[]) => {
@@ -325,6 +377,9 @@ const FormBuilder = () => {
       elements,
     }));
     setIsFormDirty(true);
+    
+    // Auto-save elements immediately
+    saveFormElements(elements);
   };
 
   const decodedBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
