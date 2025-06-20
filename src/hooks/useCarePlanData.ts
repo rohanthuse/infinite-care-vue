@@ -5,6 +5,7 @@ import { resolveCarePlanId } from '@/utils/carePlanIdMapping';
 
 export interface CarePlanData {
   id: string;
+  display_id: string;
   client_id: string;
   title: string;
   provider_name: string;

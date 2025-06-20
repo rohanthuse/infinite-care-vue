@@ -1,6 +1,6 @@
 
 // Utility to map display care plan IDs to actual database UUIDs
-// Updated to use real database UUIDs
+// Updated to use real database UUIDs and rely on database display_id
 
 const carePlanIdMapping: Record<string, string> = {
   'CP-001': '550e8400-e29b-41d4-a716-446655440001', // John Michael's care plan (REAL UUID)
@@ -11,26 +11,6 @@ const carePlanIdMapping: Record<string, string> = {
   'CP-006': '550e8400-e29b-41d4-a716-446655440006', // David Wilson's care plan
   'CP-007': '550e8400-e29b-41d4-a716-446655440007', // Kate Williams's care plan
   'CP-008': '550e8400-e29b-41d4-a716-446655440008', // Olivia Parker's care plan
-};
-
-// Add support for truncated UUIDs - map them back to display IDs
-const truncatedUuidMapping: Record<string, string> = {
-  '550E8400': 'CP-001', // John Michael's care plan (REAL UUID truncated)
-  '550e8400': 'CP-001', // case insensitive
-  'ABA7DEBB': 'CP-002', // Emily Smith's care plan (REAL UUID truncated)
-  'aba7debb': 'CP-002', // case insensitive
-  '550E8403': 'CP-003', // Wendy Smith's care plan
-  '550e8403': 'CP-003',
-  '550E8404': 'CP-004', // Robert Johnson's care plan
-  '550e8404': 'CP-004',
-  '550E8405': 'CP-005', // Lisa Rodrigues's care plan
-  '550e8405': 'CP-005',
-  '550E8406': 'CP-006', // David Wilson's care plan
-  '550e8406': 'CP-006',
-  '550E8407': 'CP-007', // Kate Williams's care plan
-  '550e8407': 'CP-007',
-  '550E8408': 'CP-008', // Olivia Parker's care plan
-  '550e8408': 'CP-008',
 };
 
 // Reverse mapping for display purposes
@@ -47,18 +27,7 @@ export const resolveCarePlanId = (carePlanId: string): string => {
     return carePlanId;
   }
   
-  // Check if it's a truncated UUID and convert to display ID first
-  if (truncatedUuidMapping[carePlanId]) {
-    const displayId = truncatedUuidMapping[carePlanId];
-    console.log(`[resolveCarePlanId] Truncated UUID ${carePlanId} mapped to display ID: ${displayId}`);
-    const resolvedUuid = carePlanIdMapping[displayId];
-    if (resolvedUuid) {
-      console.log(`[resolveCarePlanId] Display ID ${displayId} resolved to UUID: ${resolvedUuid}`);
-      return resolvedUuid;
-    }
-  }
-  
-  // Check if it's a display ID (CP-001 format)
+  // Check if it's a display ID (CP-001 format) - use mapping for backward compatibility
   if (carePlanIdMapping[carePlanId]) {
     const resolvedId = carePlanIdMapping[carePlanId];
     console.log(`[resolveCarePlanId] Display ID ${carePlanId} mapped to UUID: ${resolvedId}`);
@@ -71,14 +40,9 @@ export const resolveCarePlanId = (carePlanId: string): string => {
 };
 
 export const getDisplayCarePlanId = (uuid: string): string => {
-  // First check direct UUID mapping
+  // First check direct UUID mapping for backward compatibility
   if (uuidToDisplayId[uuid]) {
     return uuidToDisplayId[uuid];
-  }
-  
-  // Check if it's a truncated UUID
-  if (truncatedUuidMapping[uuid]) {
-    return truncatedUuidMapping[uuid];
   }
   
   // If it's already a display ID, return as is
@@ -86,11 +50,11 @@ export const getDisplayCarePlanId = (uuid: string): string => {
     return uuid;
   }
   
-  // Default: return the UUID or truncated version
+  // Default: return the UUID (should not happen with new system)
   return uuid;
 };
 
-// Helper function to convert database UUIDs or truncated IDs to display IDs for navigation
+// Helper function to convert database UUIDs to display IDs for navigation
 export const getNavigationId = (id: string): string => {
   console.log(`[getNavigationId] Converting ID for navigation: ${id}`);
   
@@ -100,28 +64,11 @@ export const getNavigationId = (id: string): string => {
     return id;
   }
   
-  // Check if it's a truncated UUID
-  if (truncatedUuidMapping[id]) {
-    const displayId = truncatedUuidMapping[id];
-    console.log(`[getNavigationId] Truncated UUID ${id} converted to display ID: ${displayId}`);
-    return displayId;
-  }
-  
-  // Check if it's a full UUID
+  // Check if it's a full UUID and we have a mapping
   if (uuidToDisplayId[id]) {
     const displayId = uuidToDisplayId[id];
     console.log(`[getNavigationId] Full UUID ${id} converted to display ID: ${displayId}`);
     return displayId;
-  }
-  
-  // If it looks like a truncated UUID (8 chars, alphanumeric), try to find it
-  if (id.length === 8 && /^[0-9a-f]+$/i.test(id)) {
-    const upperCaseId = id.toUpperCase();
-    if (truncatedUuidMapping[upperCaseId]) {
-      const displayId = truncatedUuidMapping[upperCaseId];
-      console.log(`[getNavigationId] Normalized truncated UUID ${id} -> ${upperCaseId} -> ${displayId}`);
-      return displayId;
-    }
   }
   
   console.warn(`[getNavigationId] Could not convert ID ${id}, using as-is`);
