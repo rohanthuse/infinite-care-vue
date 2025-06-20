@@ -13,6 +13,7 @@ import { TabNavigation as FormTabNavigation } from '@/components/form-builder/Ta
 import { TabNavigation } from '@/components/TabNavigation';
 import { Form, FormElement, FormSettings, FormPermissions } from '@/types/form-builder';
 import { useFormManagement, DatabaseForm } from '@/hooks/useFormManagement';
+import { useFormElements } from '@/hooks/useFormElements';
 import { useAuthSafe } from '@/hooks/useAuthSafe';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/components/ui/use-toast';
@@ -33,6 +34,13 @@ const FormBuilder = () => {
     isCreating, 
     isUpdating 
   } = useFormManagement(branchId || '');
+
+  const { 
+    uiElements, 
+    isLoading: isLoadingElements, 
+    saveElements,
+    isSaving: isSavingElements 
+  } = useFormElements(formId || '');
 
   const [form, setForm] = useState<Form>({
     id: formId || uuidv4(),
@@ -66,22 +74,22 @@ const FormBuilder = () => {
   });
 
   // Helper function to convert DatabaseForm to Form
-  const convertDatabaseFormToForm = (dbForm: DatabaseForm): Form => {
+  const convertDatabaseFormToForm = (dbForm: DatabaseForm, elements: FormElement[] = []): Form => {
     return {
       id: dbForm.id,
       title: dbForm.title,
       description: dbForm.description || '',
-      elements: [], // Elements will be loaded separately if needed
+      elements: elements,
       createdAt: dbForm.created_at,
       updatedAt: dbForm.updated_at,
       createdBy: {
         id: dbForm.created_by,
-        name: 'User', // We'd need to fetch user details separately
+        name: 'User',
       },
       published: dbForm.published,
       requiresReview: dbForm.requires_review,
       version: dbForm.version,
-      assignees: [], // Assignees will be loaded separately if needed
+      assignees: [],
       permissions: {
         viewAccess: ['admin', 'branch-manager'],
         editAccess: ['admin'],
@@ -101,10 +109,11 @@ const FormBuilder = () => {
 
   // Load existing form if editing
   useEffect(() => {
-    if (formId && forms.length > 0) {
+    if (formId && forms.length > 0 && !isLoadingElements) {
       const existingForm = forms.find(f => f.id === formId);
       if (existingForm) {
-        setForm(convertDatabaseFormToForm(existingForm));
+        const convertedForm = convertDatabaseFormToForm(existingForm, uiElements);
+        setForm(convertedForm);
         setIsLoadingForm(false);
         toast({
           title: 'Form Loaded',
@@ -121,7 +130,7 @@ const FormBuilder = () => {
     } else if (formId) {
       setIsLoadingForm(false);
     }
-  }, [formId, forms, branchId, branchName, navigate, toast]);
+  }, [formId, forms, uiElements, isLoadingElements, branchId, branchName, navigate, toast]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -148,6 +157,12 @@ const FormBuilder = () => {
             settings: form.settings
           }
         });
+
+        // Save form elements
+        saveElements({
+          formId: form.id,
+          elements: form.elements
+        });
       } else {
         // Create new form
         createForm({
@@ -158,6 +173,15 @@ const FormBuilder = () => {
           requires_review: form.requiresReview,
           settings: form.settings
         });
+
+        // Note: For new forms, we'll need to save elements after the form is created
+        // This could be improved by handling the creation response
+        if (form.elements.length > 0) {
+          saveElements({
+            formId: form.id,
+            elements: form.elements
+          });
+        }
       }
       
       setIsFormDirty(false);
@@ -179,6 +203,12 @@ const FormBuilder = () => {
             requires_review: requiresReview
           }
         });
+
+        // Save form elements
+        saveElements({
+          formId: form.id,
+          elements: form.elements
+        });
       } else {
         // Create and publish new form
         createForm({
@@ -189,6 +219,13 @@ const FormBuilder = () => {
           requires_review: requiresReview,
           settings: form.settings
         });
+
+        if (form.elements.length > 0) {
+          saveElements({
+            formId: form.id,
+            elements: form.elements
+          });
+        }
       }
       
       setForm(prev => ({
@@ -286,7 +323,7 @@ const FormBuilder = () => {
     }
   };
 
-  if (isLoadingForm) {
+  if (isLoadingForm || (formId && isLoadingElements)) {
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
         <DashboardHeader />
@@ -330,7 +367,7 @@ const FormBuilder = () => {
             setIsFormDirty(true);
           }}
           isFormDirty={isFormDirty}
-          isSaving={isCreating || isUpdating}
+          isSaving={isCreating || isUpdating || isSavingElements}
         />
         
         <FormTabNavigation 
