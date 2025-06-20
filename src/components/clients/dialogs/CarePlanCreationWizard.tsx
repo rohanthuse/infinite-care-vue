@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,20 +17,20 @@ import { CarePlanWizardSidebar } from "./wizard/CarePlanWizardSidebar";
 import { CarePlanWizardSteps } from "./wizard/CarePlanWizardSteps";
 import { CarePlanWizardFooter } from "./wizard/CarePlanWizardFooter";
 
-// Comprehensive schema for all care plan data
-const carePlanSchema = z.object({
-  // Step 1: Basic Information
-  title: z.string().min(3, "Title must be at least 3 characters"),
-  provider_type: z.enum(["staff", "external"]),
+// Flexible schema for draft mode - all fields optional
+const carePlanDraftSchema = z.object({
+  // Step 1: Basic Information - all optional for drafts
+  title: z.string().optional(),
+  provider_type: z.enum(["staff", "external"]).optional(),
   staff_id: z.string().optional(),
   provider_name: z.string().optional(),
-  start_date: z.date(),
+  start_date: z.date().optional(),
   end_date: z.date().optional(),
   review_date: z.date().optional(),
   priority: z.enum(["low", "medium", "high"]).default("medium"),
   care_plan_type: z.string().default("standard"),
   
-  // Step 2: Personal Information
+  // All other steps - completely optional
   personal_info: z.object({
     emergency_contact_name: z.string().optional(),
     emergency_contact_phone: z.string().optional(),
@@ -48,7 +48,6 @@ const carePlanSchema = z.object({
     marital_status: z.string().optional(),
   }).optional(),
 
-  // Step 3: About Me
   about_me: z.object({
     life_history: z.string().optional(),
     interests_hobbies: z.array(z.string()).optional(),
@@ -58,7 +57,6 @@ const carePlanSchema = z.object({
     meaningful_activities: z.string().optional(),
   }).optional(),
 
-  // Step 4: Medical Information
   medical_info: z.object({
     medical_conditions: z.array(z.string()).optional(),
     current_medications: z.array(z.string()).optional(),
@@ -71,24 +69,21 @@ const carePlanSchema = z.object({
     mental_health_status: z.string().optional(),
   }).optional(),
 
-  // Step 5: Goals
   goals: z.array(z.object({
-    description: z.string(),
+    description: z.string().optional(),
     target_date: z.date().optional(),
     priority: z.enum(["low", "medium", "high"]).default("medium"),
     measurable_outcome: z.string().optional(),
   })).optional(),
 
-  // Step 6: Activities
   activities: z.array(z.object({
-    name: z.string(),
+    name: z.string().optional(),
     description: z.string().optional(),
-    frequency: z.string(),
+    frequency: z.string().optional(),
     duration: z.string().optional(),
     time_of_day: z.string().optional(),
   })).optional(),
 
-  // Step 7: Personal Care
   personal_care: z.object({
     bathing_preferences: z.string().optional(),
     dressing_assistance_level: z.string().optional(),
@@ -102,7 +97,6 @@ const carePlanSchema = z.object({
     behavioral_notes: z.string().optional(),
   }).optional(),
 
-  // Step 8: Dietary Requirements
   dietary: z.object({
     dietary_restrictions: z.array(z.string()).optional(),
     food_allergies: z.array(z.string()).optional(),
@@ -117,20 +111,18 @@ const carePlanSchema = z.object({
     meal_schedule: z.record(z.string()).optional(),
   }).optional(),
 
-  // Step 9: Risk Assessments
   risk_assessments: z.array(z.object({
-    risk_type: z.string(),
-    risk_level: z.enum(["low", "medium", "high"]),
+    risk_type: z.string().optional(),
+    risk_level: z.enum(["low", "medium", "high"]).optional(),
     risk_factors: z.array(z.string()).optional(),
     mitigation_strategies: z.array(z.string()).optional(),
     review_date: z.date().optional(),
-    assessed_by: z.string(),
+    assessed_by: z.string().optional(),
   })).optional(),
 
-  // Step 10: Equipment
   equipment: z.array(z.object({
-    equipment_name: z.string(),
-    equipment_type: z.string(),
+    equipment_name: z.string().optional(),
+    equipment_type: z.string().optional(),
     manufacturer: z.string().optional(),
     model_number: z.string().optional(),
     serial_number: z.string().optional(),
@@ -142,49 +134,59 @@ const carePlanSchema = z.object({
     notes: z.string().optional(),
   })).optional(),
 
-  // Step 11: Service Plans
   service_plans: z.array(z.object({
-    service_name: z.string(),
-    service_category: z.string(),
-    provider_name: z.string(),
-    start_date: z.date(),
+    service_name: z.string().optional(),
+    service_category: z.string().optional(),
+    provider_name: z.string().optional(),
+    start_date: z.date().optional(),
     end_date: z.date().optional(),
-    frequency: z.string(),
-    duration: z.string(),
+    frequency: z.string().optional(),
+    duration: z.string().optional(),
     goals: z.array(z.string()).optional(),
     notes: z.string().optional(),
   })).optional(),
 
-  // Step 12: Service Actions
   service_actions: z.array(z.object({
-    service_name: z.string(),
-    service_category: z.string(),
-    provider_name: z.string(),
-    start_date: z.date(),
+    service_name: z.string().optional(),
+    service_category: z.string().optional(),
+    provider_name: z.string().optional(),
+    start_date: z.date().optional(),
     end_date: z.date().optional(),
-    frequency: z.string(),
-    duration: z.string(),
+    frequency: z.string().optional(),
+    duration: z.string().optional(),
     schedule_details: z.string().optional(),
     goals: z.array(z.string()).optional(),
     notes: z.string().optional(),
   })).optional(),
 
-  // Step 13: Documents
   documents: z.array(z.object({
-    name: z.string(),
-    type: z.string(),
-    upload_date: z.date(),
-    uploaded_by: z.string(),
+    name: z.string().optional(),
+    type: z.string().optional(),
+    upload_date: z.date().optional(),
+    uploaded_by: z.string().optional(),
     file_path: z.string().optional(),
     file_size: z.string().optional(),
   })).optional(),
 
-  // Step 14: Review & Notes
   notes: z.string().optional(),
   additional_notes: z.string().optional(),
 });
 
-type CarePlanFormData = z.infer<typeof carePlanSchema>;
+// Strict schema for final submission
+const carePlanFinalSchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters"),
+  provider_type: z.enum(["staff", "external"]),
+  staff_id: z.string().optional(),
+  provider_name: z.string().optional(),
+  start_date: z.date(),
+  end_date: z.date().optional(),
+  review_date: z.date().optional(),
+  priority: z.enum(["low", "medium", "high"]).default("medium"),
+  care_plan_type: z.string().default("standard"),
+  // ... other required fields for final submission
+}).and(carePlanDraftSchema);
+
+type CarePlanFormData = z.infer<typeof carePlanDraftSchema>;
 
 const WIZARD_STEPS = [
   { id: 1, name: "Basic Information", description: "Title, provider, and dates" },
@@ -203,7 +205,7 @@ const WIZARD_STEPS = [
   { id: 14, name: "Review & Finalize", description: "Summary and completion" },
 ];
 
-// Helper function to recursively serialize dates in any object
+// Enhanced serialization functions
 const serializeForJSON = (obj: any): any => {
   if (obj === null || obj === undefined) {
     return obj;
@@ -228,7 +230,6 @@ const serializeForJSON = (obj: any): any => {
   return obj;
 };
 
-// Helper function to deserialize dates from JSON
 const deserializeFromJSON = (obj: any): any => {
   if (obj === null || obj === undefined) {
     return obj;
@@ -271,13 +272,15 @@ export function CarePlanCreationWizard({
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [carePlanId, setCarePlanId] = useState<string | null>(draftCarePlanId || null);
-  const [isDraft, setIsDraft] = useState(false);
+  const [isDraft, setIsDraft] = useState(true);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
   const { toast } = useToast();
   const { id: branchId } = useParams();
   const queryClient = useQueryClient();
 
   const form = useForm<CarePlanFormData>({
-    resolver: zodResolver(carePlanSchema),
+    resolver: zodResolver(carePlanDraftSchema),
     defaultValues: {
       title: "",
       provider_type: "staff",
@@ -302,31 +305,98 @@ export function CarePlanCreationWizard({
     },
   });
 
-  // Auto-save functionality
+  // Create draft immediately when wizard opens
+  const createInitialDraft = useCallback(async () => {
+    if (carePlanId || !clientId) return;
+
+    try {
+      const { data: draft, error } = await supabase
+        .from('client_care_plans')
+        .insert({
+          client_id: clientId,
+          title: "Untitled Care Plan",
+          provider_name: "",
+          start_date: new Date().toISOString().split('T')[0],
+          status: 'draft',
+          priority: 'medium',
+          care_plan_type: 'standard',
+          auto_save_data: serializeForJSON(form.getValues()),
+          last_step_completed: 1,
+          completion_percentage: 0,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCarePlanId(draft.id);
+      setLastSaved(new Date());
+      console.log('Initial draft created:', draft.id);
+    } catch (error) {
+      console.error('Error creating initial draft:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create draft. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [clientId, carePlanId, form, toast]);
+
+  // Auto-save functionality with debouncing
+  const performAutoSave = useCallback(async () => {
+    if (!carePlanId || !open || isAutoSaving) return;
+
+    setIsAutoSaving(true);
+    try {
+      const formData = form.getValues();
+      const serializedFormData = serializeForJSON(formData);
+
+      await supabase
+        .from('client_care_plans')
+        .update({
+          auto_save_data: serializedFormData,
+          last_step_completed: currentStep,
+          completion_percentage: calculateCompletionPercentage(),
+          updated_at: new Date().toISOString(),
+          title: formData.title || "Untitled Care Plan",
+        })
+        .eq('id', carePlanId);
+
+      setLastSaved(new Date());
+      console.log('Auto-saved successfully');
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+    } finally {
+      setIsAutoSaving(false);
+    }
+  }, [carePlanId, currentStep, form, open, isAutoSaving]);
+
+  // Auto-save on form changes
   useEffect(() => {
     if (!carePlanId || !open) return;
 
-    const autoSaveInterval = setInterval(async () => {
-      const formData = form.getValues();
-      try {
-        // Serialize form data for JSON storage with proper date handling
-        const serializedFormData = serializeForJSON(formData);
+    const subscription = form.watch(() => {
+      const timeoutId = setTimeout(performAutoSave, 2000); // Auto-save after 2 seconds of inactivity
+      return () => clearTimeout(timeoutId);
+    });
 
-        await supabase
-          .from('client_care_plans')
-          .update({
-            auto_save_data: serializedFormData,
-            last_step_completed: currentStep,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', carePlanId);
-      } catch (error) {
-        console.error('Auto-save failed:', error);
-      }
-    }, 180000); // Auto-save every 3 minutes
+    return () => subscription.unsubscribe();
+  }, [carePlanId, open, form, performAutoSave]);
 
+  // Periodic auto-save
+  useEffect(() => {
+    if (!carePlanId || !open) return;
+
+    const autoSaveInterval = setInterval(performAutoSave, 30000); // Auto-save every 30 seconds
     return () => clearInterval(autoSaveInterval);
-  }, [carePlanId, currentStep, form, open]);
+  }, [carePlanId, open, performAutoSave]);
+
+  // Create initial draft when wizard opens
+  useEffect(() => {
+    if (open && !draftCarePlanId) {
+      createInitialDraft();
+    }
+  }, [open, draftCarePlanId, createInitialDraft]);
 
   // Load draft data if editing existing draft
   useEffect(() => {
@@ -347,7 +417,6 @@ export function CarePlanCreationWizard({
 
       if (data.auto_save_data) {
         const autoSaveData = data.auto_save_data as any;
-        // Deserialize dates properly
         const deserializedData = deserializeFromJSON(autoSaveData);
         form.reset(deserializedData as CarePlanFormData);
       }
@@ -361,6 +430,7 @@ export function CarePlanCreationWizard({
       setCompletedSteps(completedStepNumbers);
       setCarePlanId(draftId);
       setIsDraft(data.status === 'draft');
+      setLastSaved(new Date(data.updated_at));
     } catch (error) {
       console.error('Error loading draft:', error);
       toast({
@@ -375,30 +445,42 @@ export function CarePlanCreationWizard({
     mutationFn: async (data: { formData: CarePlanFormData; saveAsDraft: boolean }) => {
       const { formData, saveAsDraft } = data;
 
-      // Serialize form data for JSON storage with proper date handling
+      // Use strict validation only for final submission
+      if (!saveAsDraft) {
+        const validationResult = carePlanFinalSchema.safeParse(formData);
+        if (!validationResult.success) {
+          throw new Error("Please complete all required fields before finalizing");
+        }
+      }
+
       const serializedFormData = serializeForJSON(formData);
 
       let carePlan;
       if (carePlanId) {
         // Update existing care plan
+        const updateData: any = {
+          auto_save_data: serializedFormData,
+          last_step_completed: currentStep,
+          completion_percentage: calculateCompletionPercentage(),
+          updated_at: new Date().toISOString(),
+        };
+
+        // Only update core fields if they exist
+        if (formData.title) updateData.title = formData.title;
+        if (formData.provider_name) updateData.provider_name = formData.provider_name;
+        if (formData.staff_id) updateData.staff_id = formData.staff_id;
+        if (formData.start_date) updateData.start_date = formData.start_date.toISOString().split('T')[0];
+        if (formData.end_date) updateData.end_date = formData.end_date.toISOString().split('T')[0];
+        if (formData.review_date) updateData.review_date = formData.review_date.toISOString().split('T')[0];
+        if (formData.priority) updateData.priority = formData.priority;
+        if (formData.care_plan_type) updateData.care_plan_type = formData.care_plan_type;
+        if (formData.notes) updateData.notes = formData.notes;
+
+        updateData.status = saveAsDraft ? 'draft' : 'active';
+
         const { data: updated, error } = await supabase
           .from('client_care_plans')
-          .update({
-            title: formData.title,
-            provider_name: formData.provider_name,
-            staff_id: formData.staff_id,
-            start_date: formData.start_date.toISOString().split('T')[0],
-            end_date: formData.end_date ? formData.end_date.toISOString().split('T')[0] : null,
-            review_date: formData.review_date ? formData.review_date.toISOString().split('T')[0] : null,
-            status: saveAsDraft ? 'draft' : 'active',
-            priority: formData.priority,
-            care_plan_type: formData.care_plan_type,
-            notes: formData.notes,
-            auto_save_data: serializedFormData,
-            last_step_completed: currentStep,
-            completion_percentage: calculateCompletionPercentage(),
-            updated_at: new Date().toISOString(),
-          })
+          .update(updateData)
           .eq('id', carePlanId)
           .select()
           .single();
@@ -406,20 +488,20 @@ export function CarePlanCreationWizard({
         if (error) throw error;
         carePlan = updated;
       } else {
-        // Create new care plan
+        // Create new care plan (should not happen with immediate draft creation)
         const { data: created, error } = await supabase
           .from('client_care_plans')
           .insert({
             client_id: clientId,
-            title: formData.title,
-            provider_name: formData.provider_name,
+            title: formData.title || "Untitled Care Plan",
+            provider_name: formData.provider_name || "",
             staff_id: formData.staff_id,
-            start_date: formData.start_date.toISOString().split('T')[0],
+            start_date: formData.start_date ? formData.start_date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             end_date: formData.end_date ? formData.end_date.toISOString().split('T')[0] : null,
             review_date: formData.review_date ? formData.review_date.toISOString().split('T')[0] : null,
             status: saveAsDraft ? 'draft' : 'active',
-            priority: formData.priority,
-            care_plan_type: formData.care_plan_type,
+            priority: formData.priority || 'medium',
+            care_plan_type: formData.care_plan_type || 'standard',
             notes: formData.notes,
             auto_save_data: serializedFormData,
             last_step_completed: currentStep,
@@ -433,14 +515,19 @@ export function CarePlanCreationWizard({
         setCarePlanId(carePlan.id);
       }
 
-      // Save related data based on form data
-      await saveRelatedData(carePlan.id, formData);
+      // Save related data for finalized care plans
+      if (!saveAsDraft) {
+        await saveRelatedData(carePlan.id, formData);
+      }
 
       return carePlan;
     },
     onSuccess: (carePlan, { saveAsDraft }) => {
       queryClient.invalidateQueries({ queryKey: ['care-plans'] });
       queryClient.invalidateQueries({ queryKey: ['client-care-plans', clientId] });
+      
+      setLastSaved(new Date());
+      setIsDraft(saveAsDraft);
       
       toast({
         title: saveAsDraft ? "Draft saved" : "Care plan created",
@@ -458,12 +545,13 @@ export function CarePlanCreationWizard({
       console.error('Error saving care plan:', error);
       toast({
         title: "Error",
-        description: "Failed to save care plan. Please try again.",
+        description: error.message || "Failed to save care plan. Please try again.",
         variant: "destructive",
       });
     }
   });
 
+  // ... keep existing code (saveRelatedData function)
   const saveRelatedData = async (carePlanId: string, formData: CarePlanFormData) => {
     // Save personal information
     if (formData.personal_info && Object.keys(formData.personal_info).length > 0) {
@@ -508,96 +596,142 @@ export function CarePlanCreationWizard({
     // Save goals
     if (formData.goals && formData.goals.length > 0) {
       for (const goal of formData.goals) {
-        await supabase
-          .from('client_care_plan_goals')
-          .insert({
-            care_plan_id: carePlanId,
-            description: goal.description,
-            status: 'not-started',
-          });
+        if (goal.description) {
+          await supabase
+            .from('client_care_plan_goals')
+            .insert({
+              care_plan_id: carePlanId,
+              description: goal.description,
+              status: 'not-started',
+            });
+        }
       }
     }
 
     // Save activities
     if (formData.activities && formData.activities.length > 0) {
       for (const activity of formData.activities) {
-        await supabase
-          .from('client_activities')
-          .insert({
-            care_plan_id: carePlanId,
-            name: activity.name,
-            description: activity.description,
-            frequency: activity.frequency,
-            status: 'active',
-          });
+        if (activity.name) {
+          await supabase
+            .from('client_activities')
+            .insert({
+              care_plan_id: carePlanId,
+              name: activity.name,
+              description: activity.description,
+              frequency: activity.frequency || 'daily',
+              status: 'active',
+            });
+        }
       }
     }
 
     // Save risk assessments
     if (formData.risk_assessments && formData.risk_assessments.length > 0) {
       for (const risk of formData.risk_assessments) {
-        await supabase
-          .from('client_risk_assessments')
-          .insert({
-            client_id: clientId,
-            risk_type: risk.risk_type,
-            risk_level: risk.risk_level,
-            risk_factors: risk.risk_factors,
-            mitigation_strategies: risk.mitigation_strategies,
-            assessment_date: new Date().toISOString().split('T')[0],
-            assessed_by: risk.assessed_by,
-            review_date: risk.review_date ? risk.review_date.toISOString().split('T')[0] : null,
-          });
+        if (risk.risk_type) {
+          await supabase
+            .from('client_risk_assessments')
+            .insert({
+              client_id: clientId,
+              risk_type: risk.risk_type,
+              risk_level: risk.risk_level || 'low',
+              risk_factors: risk.risk_factors,
+              mitigation_strategies: risk.mitigation_strategies,
+              assessment_date: new Date().toISOString().split('T')[0],
+              assessed_by: risk.assessed_by || 'System',
+              review_date: risk.review_date ? risk.review_date.toISOString().split('T')[0] : null,
+            });
+        }
       }
     }
 
     // Save equipment
     if (formData.equipment && formData.equipment.length > 0) {
       for (const equip of formData.equipment) {
-        await supabase
-          .from('client_equipment')
-          .insert({
-            client_id: clientId,
-            equipment_name: equip.equipment_name,
-            equipment_type: equip.equipment_type,
-            manufacturer: equip.manufacturer,
-            model_number: equip.model_number,
-            serial_number: equip.serial_number,
-            installation_date: equip.installation_date ? equip.installation_date.toISOString().split('T')[0] : null,
-            last_maintenance_date: equip.last_maintenance_date ? equip.last_maintenance_date.toISOString().split('T')[0] : null,
-            next_maintenance_date: equip.next_maintenance_date ? equip.next_maintenance_date.toISOString().split('T')[0] : null,
-            maintenance_schedule: equip.maintenance_schedule,
-            location: equip.location,
-            notes: equip.notes,
-          });
+        if (equip.equipment_name) {
+          await supabase
+            .from('client_equipment')
+            .insert({
+              client_id: clientId,
+              equipment_name: equip.equipment_name,
+              equipment_type: equip.equipment_type || 'Other',
+              manufacturer: equip.manufacturer,
+              model_number: equip.model_number,
+              serial_number: equip.serial_number,
+              installation_date: equip.installation_date ? equip.installation_date.toISOString().split('T')[0] : null,
+              last_maintenance_date: equip.last_maintenance_date ? equip.last_maintenance_date.toISOString().split('T')[0] : null,
+              next_maintenance_date: equip.next_maintenance_date ? equip.next_maintenance_date.toISOString().split('T')[0] : null,
+              maintenance_schedule: equip.maintenance_schedule,
+              location: equip.location,
+              notes: equip.notes,
+            });
+        }
       }
     }
 
     // Save service actions
     if (formData.service_actions && formData.service_actions.length > 0) {
       for (const action of formData.service_actions) {
-        await supabase
-          .from('client_service_actions')
-          .insert({
-            client_id: clientId,
-            care_plan_id: carePlanId,
-            service_name: action.service_name,
-            service_category: action.service_category,
-            provider_name: action.provider_name,
-            start_date: action.start_date.toISOString().split('T')[0],
-            end_date: action.end_date ? action.end_date.toISOString().split('T')[0] : null,
-            frequency: action.frequency,
-            duration: action.duration,
-            schedule_details: action.schedule_details,
-            goals: action.goals,
-            notes: action.notes,
-          });
+        if (action.service_name && action.start_date) {
+          await supabase
+            .from('client_service_actions')
+            .insert({
+              client_id: clientId,
+              care_plan_id: carePlanId,
+              service_name: action.service_name,
+              service_category: action.service_category || 'General',
+              provider_name: action.provider_name || 'TBD',
+              start_date: action.start_date.toISOString().split('T')[0],
+              end_date: action.end_date ? action.end_date.toISOString().split('T')[0] : null,
+              frequency: action.frequency || 'daily',
+              duration: action.duration || '1 hour',
+              schedule_details: action.schedule_details,
+              goals: action.goals,
+              notes: action.notes,
+            });
+        }
       }
     }
   };
 
   const calculateCompletionPercentage = () => {
-    return Math.round((completedSteps.length / WIZARD_STEPS.length) * 100);
+    const formData = form.getValues();
+    let completedFields = 0;
+    let totalFields = 0;
+
+    // Count basic info fields
+    totalFields += 3; // title, provider_type, start_date
+    if (formData.title) completedFields++;
+    if (formData.provider_type) completedFields++;
+    if (formData.start_date) completedFields++;
+
+    // Count other sections
+    if (formData.personal_info && Object.values(formData.personal_info).some(v => v)) {
+      completedFields++;
+    }
+    totalFields++;
+
+    if (formData.about_me && Object.values(formData.about_me).some(v => v)) {
+      completedFields++;
+    }
+    totalFields++;
+
+    if (formData.medical_info && Object.values(formData.medical_info).some(v => v)) {
+      completedFields++;
+    }
+    totalFields++;
+
+    if (formData.goals && formData.goals.length > 0) {
+      completedFields++;
+    }
+    totalFields++;
+
+    if (formData.activities && formData.activities.length > 0) {
+      completedFields++;
+    }
+    totalFields++;
+
+    return Math.round((completedFields / totalFields) * 100);
   };
 
   const markStepCompleted = async (stepNumber: number) => {
@@ -605,7 +739,6 @@ export function CarePlanCreationWizard({
 
     try {
       const formData = form.getValues();
-      // Serialize form data for JSON storage with proper date handling
       const serializedStepData = serializeForJSON(formData);
 
       await supabase
@@ -626,6 +759,7 @@ export function CarePlanCreationWizard({
   };
 
   const handleNextStep = () => {
+    // Always allow navigation, no validation required for drafts
     markStepCompleted(currentStep);
     if (currentStep < WIZARD_STEPS.length) {
       setCurrentStep(currentStep + 1);
@@ -641,7 +775,6 @@ export function CarePlanCreationWizard({
   const handleSaveDraft = () => {
     const formData = form.getValues();
     createOrUpdateCarePlan.mutate({ formData, saveAsDraft: true });
-    setIsDraft(true);
   };
 
   const handleFinalize = () => {
@@ -650,6 +783,7 @@ export function CarePlanCreationWizard({
   };
 
   const handleStepClick = (stepNumber: number) => {
+    // Always allow free navigation between steps
     setCurrentStep(stepNumber);
   };
 
@@ -657,8 +791,23 @@ export function CarePlanCreationWizard({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-7xl h-[90vh] p-0 overflow-hidden">
         <DialogHeader className="px-6 py-4 border-b">
-          <DialogTitle className="text-xl font-semibold text-blue-600">
-            {draftCarePlanId ? "Edit Care Plan" : "Create Care Plan"} - Step {currentStep} of {WIZARD_STEPS.length}
+          <DialogTitle className="text-xl font-semibold text-blue-600 flex items-center justify-between">
+            <span>
+              {draftCarePlanId ? "Edit Care Plan" : "Create Care Plan"} - Step {currentStep} of {WIZARD_STEPS.length}
+            </span>
+            <div className="flex items-center gap-4 text-sm font-normal">
+              {isDraft && (
+                <span className="text-amber-600 flex items-center gap-1">
+                  <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                  Draft
+                </span>
+              )}
+              {lastSaved && (
+                <span className="text-gray-500">
+                  {isAutoSaving ? "Saving..." : `Saved ${lastSaved.toLocaleTimeString()}`}
+                </span>
+              )}
+            </div>
           </DialogTitle>
         </DialogHeader>
         

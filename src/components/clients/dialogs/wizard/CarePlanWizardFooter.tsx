@@ -47,7 +47,7 @@ export function CarePlanWizardFooter({
             variant="outline"
             onClick={onSaveDraft}
             disabled={isLoading}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
           >
             <Save className="h-4 w-4" />
             <span>{isDraft ? "Update Draft" : "Save as Draft"}</span>
@@ -77,9 +77,9 @@ export function CarePlanWizardFooter({
 
       <div className="mt-3 text-center">
         <p className="text-sm text-gray-500">
-          Step {currentStep} of {totalSteps} - 
-          {isDraft && <span className="text-amber-600 ml-1">(Draft)</span>}
-          {isLastStep && <span className="text-green-600 ml-1">Ready to finalize</span>}
+          Step {currentStep} of {totalSteps}
+          {isDraft && <span className="text-amber-600 ml-2">(Draft Mode - All changes are automatically saved)</span>}
+          {isLastStep && !isDraft && <span className="text-green-600 ml-2">Ready to finalize</span>}
         </p>
       </div>
     </div>
