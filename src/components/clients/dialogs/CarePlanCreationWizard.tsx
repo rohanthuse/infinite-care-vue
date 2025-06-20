@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -320,11 +318,9 @@ export function CarePlanCreationWizard({
     if (carePlanId || !clientId) return;
 
     try {
-      // Use empty string for display_id so the trigger can auto-generate it
       const { data: draft, error } = await supabase
         .from('client_care_plans')
         .insert({
-          display_id: "", // Empty string will be replaced by trigger
           client_id: clientId,
           title: "Untitled Care Plan",
           provider_name: "",
@@ -511,11 +507,9 @@ export function CarePlanCreationWizard({
         // Create new care plan (should not happen with immediate draft creation)
         const cleanStaffId = cleanUuidField(formData.staff_id);
         
-        // Use empty string for display_id so the trigger can auto-generate it
         const { data: created, error } = await supabase
           .from('client_care_plans')
           .insert({
-            display_id: "", // Empty string will be replaced by trigger
             client_id: clientId,
             title: formData.title || "Untitled Care Plan",
             provider_name: formData.provider_name || "",
@@ -871,4 +865,3 @@ export function CarePlanCreationWizard({
     </Dialog>
   );
 }
-

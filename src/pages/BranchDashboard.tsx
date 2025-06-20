@@ -207,7 +207,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         {activeTab === "communication" && <CommunicationsTab branchId={id} branchName={branchName} />}
         {activeTab === "medication" && <MedicationTab branchId={id} branchName={branchName} />}
         {activeTab === "accounting" && <AccountingTab branchId={id} branchName={displayBranchName} />}
-        {activeTab === "care-plan" && <CareTab />}
+        {activeTab === "care-plan" && <CareTab branchId={id} branchName={branchName} />}
         {activeTab === "agreements" && <BranchAgreementsTab branchId={id || ""} branchName={displayBranchName} />}
         {activeTab === "forms" && <FormBuilderTab branchId={id || ""} branchName={displayBranchName} />}
         
