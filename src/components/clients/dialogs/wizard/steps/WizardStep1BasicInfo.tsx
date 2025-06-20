@@ -47,7 +47,7 @@ export function WizardStep1BasicInfo({ form }: WizardStep1BasicInfoProps) {
         if (value.provider_type === "staff") {
           form.setValue("provider_name", "");
         } else {
-          form.setValue("staff_id", "");
+          form.setValue("staff_id", null);
         }
       }
     });
@@ -112,8 +112,8 @@ export function WizardStep1BasicInfo({ form }: WizardStep1BasicInfoProps) {
                 <FormItem>
                   <FormLabel>Assigned Staff Member *</FormLabel>
                   <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
+                    onValueChange={(value) => field.onChange(value || null)}
+                    value={field.value || ""}
                     disabled={isLoadingStaff}
                   >
                     <FormControl>

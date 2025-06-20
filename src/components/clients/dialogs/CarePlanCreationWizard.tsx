@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -18,12 +17,20 @@ import { CarePlanWizardSidebar } from "./wizard/CarePlanWizardSidebar";
 import { CarePlanWizardSteps } from "./wizard/CarePlanWizardSteps";
 import { CarePlanWizardFooter } from "./wizard/CarePlanWizardFooter";
 
+// Helper function to validate and clean UUID fields
+const cleanUuidField = (value: string | undefined | null): string | null => {
+  if (!value || value.trim() === "") {
+    return null;
+  }
+  return value.trim();
+};
+
 // Flexible schema for draft mode - all fields optional
 const carePlanDraftSchema = z.object({
   // Step 1: Basic Information - all optional for drafts
   title: z.string().optional(),
   provider_type: z.enum(["staff", "external"]).optional(),
-  staff_id: z.string().optional(),
+  staff_id: z.string().optional().nullable().transform(cleanUuidField),
   provider_name: z.string().optional(),
   start_date: z.date().optional(),
   end_date: z.date().optional(),
@@ -177,7 +184,7 @@ const carePlanDraftSchema = z.object({
 const carePlanFinalSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   provider_type: z.enum(["staff", "external"]),
-  staff_id: z.string().optional(),
+  staff_id: z.string().optional().nullable().transform(cleanUuidField),
   provider_name: z.string().optional(),
   start_date: z.date(),
   end_date: z.date().optional(),
@@ -285,7 +292,7 @@ export function CarePlanCreationWizard({
     defaultValues: {
       title: "",
       provider_type: "staff",
-      staff_id: "",
+      staff_id: null,
       provider_name: "",
       start_date: new Date(),
       priority: "medium",
@@ -466,10 +473,18 @@ export function CarePlanCreationWizard({
           updated_at: new Date().toISOString(),
         };
 
-        // Only update core fields if they exist
+        // Only update core fields if they exist and are not empty
         if (formData.title) updateData.title = formData.title;
         if (formData.provider_name) updateData.provider_name = formData.provider_name;
-        if (formData.staff_id) updateData.staff_id = formData.staff_id;
+        
+        // Handle staff_id with proper null checking
+        const cleanStaffId = cleanUuidField(formData.staff_id);
+        if (cleanStaffId !== null) {
+          updateData.staff_id = cleanStaffId;
+        } else {
+          updateData.staff_id = null;
+        }
+        
         if (formData.start_date) updateData.start_date = formData.start_date.toISOString().split('T')[0];
         if (formData.end_date) updateData.end_date = formData.end_date.toISOString().split('T')[0];
         if (formData.review_date) updateData.review_date = formData.review_date.toISOString().split('T')[0];
@@ -490,13 +505,15 @@ export function CarePlanCreationWizard({
         carePlan = updated;
       } else {
         // Create new care plan (should not happen with immediate draft creation)
+        const cleanStaffId = cleanUuidField(formData.staff_id);
+        
         const { data: created, error } = await supabase
           .from('client_care_plans')
           .insert({
             client_id: clientId,
             title: formData.title || "Untitled Care Plan",
             provider_name: formData.provider_name || "",
-            staff_id: formData.staff_id,
+            staff_id: cleanStaffId,
             start_date: formData.start_date ? formData.start_date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             end_date: formData.end_date ? formData.end_date.toISOString().split('T')[0] : null,
             review_date: formData.review_date ? formData.review_date.toISOString().split('T')[0] : null,
@@ -552,7 +569,7 @@ export function CarePlanCreationWizard({
     }
   });
 
-  // ... keep existing code (saveRelatedData function)
+  // Save related data for finalized care plans
   const saveRelatedData = async (carePlanId: string, formData: CarePlanFormData) => {
     // Save personal information
     if (formData.personal_info && Object.keys(formData.personal_info).length > 0) {
