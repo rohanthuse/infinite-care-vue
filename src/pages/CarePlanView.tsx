@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, FileEdit, Download, PenLine } from "lucide-react";
@@ -201,11 +202,22 @@ export default function CarePlanView() {
   };
 
   const handleEdit = () => {
-    if (branchId && branchName && carePlan.patientId) {
+    console.log('[CarePlanView] Edit button clicked');
+    console.log('[CarePlanView] Care plan data:', carePlanData);
+    console.log('[CarePlanView] Branch params:', { branchId, branchName });
+    
+    if (branchId && branchName && carePlanData?.client_id) {
       const decodedBranchName = decodeURIComponent(branchName);
-      navigate(`/branch-dashboard/${branchId}/${decodedBranchName}/clients/${carePlan.patientId}/edit`);
+      const clientEditPath = `/branch-dashboard/${branchId}/${encodeURIComponent(decodedBranchName)}/clients/${carePlanData.client_id}/edit`;
+      console.log('[CarePlanView] Navigating to client edit:', clientEditPath);
+      navigate(clientEditPath);
     } else {
-      console.error('Missing navigation parameters:', { branchId, branchName, patientId: carePlan.patientId });
+      console.error('[CarePlanView] Missing navigation parameters:', { 
+        branchId, 
+        branchName, 
+        clientId: carePlanData?.client_id,
+        carePlanData: !!carePlanData
+      });
       toast.error("Unable to navigate to edit page. Missing required parameters.");
     }
   };

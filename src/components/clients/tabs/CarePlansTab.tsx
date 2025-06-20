@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { format } from "date-fns";
 import { FileText, Clock, Plus, User, Calendar, MoreVertical, Trash2 } from "lucide-react";
@@ -78,12 +77,14 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
   };
 
   const handleDeleteCarePlan = (carePlan: any) => {
+    console.log('[CarePlansTab] Preparing to delete care plan:', carePlan);
     setCarePlanToDelete(carePlan);
     setDeleteDialogOpen(true);
   };
 
   const confirmDeleteCarePlan = () => {
     if (carePlanToDelete) {
+      console.log('[CarePlansTab] Confirming deletion of care plan:', carePlanToDelete.id);
       deleteCarePlanMutation.mutate(carePlanToDelete.id);
       setDeleteDialogOpen(false);
       setCarePlanToDelete(null);

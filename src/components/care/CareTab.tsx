@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -56,6 +55,8 @@ import { useQuery } from "@tanstack/react-query";
 import { getNavigationId } from "@/utils/carePlanIdMapping";
 import { ClientSelector } from "./ClientSelector";
 import { CarePlanCreationWizard } from "@/components/clients/dialogs/CarePlanCreationWizard";
+import { DeleteCarePlanDialog } from "@/components/clients/dialogs/DeleteCarePlanDialog";
+import { useDeleteCarePlan } from "@/hooks/useDeleteCarePlan";
 
 const mockCarePlans = [
   {
@@ -285,6 +286,11 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const [isCreateCarePlanWizardOpen, setIsCreateCarePlanWizardOpen] = useState(false);
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
 
+  // Delete functionality
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [carePlanToDelete, setCarePlanToDelete] = useState<any>(null);
+  const deleteCarePlanMutation = useDeleteCarePlan();
+
   // useEffect hooks MUST also be at the top - ONLY ONE useEffect with these dependencies
   useEffect(() => {
     setCurrentPage(1);
@@ -352,9 +358,51 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
     setIsCreateCarePlanWizardOpen(true);
   };
 
-  const handleEditDraft = (draftId: string) => {
-    setEditingDraftId(draftId);
-    setIsCreateCarePlanWizardOpen(true);
+  const handleEditDraft = async (draftId: string) => {
+    try {
+      console.log('[CareTab] Loading draft care plan for editing:', draftId);
+      
+      // Find the draft plan to get client info
+      const draftPlan = carePlans.find(plan => plan._databaseId === draftId || plan.id === draftId);
+      if (!draftPlan) {
+        toast({
+          title: "Draft Not Found",
+          description: "Could not find the draft care plan to edit.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Set the client if we have that information
+      if (draftPlan.patientId) {
+        // We need to extract the actual client ID from the plan
+        const { data: planData, error } = await supabase
+          .from('client_care_plans')
+          .select('client_id, client:clients(id, first_name, last_name)')
+          .eq('id', draftPlan._databaseId || draftId)
+          .single();
+
+        if (planData && planData.client) {
+          setSelectedClientId(planData.client_id);
+          setSelectedClientName(`${planData.client.first_name} ${planData.client.last_name}`);
+        }
+      }
+
+      setEditingDraftId(draftPlan._databaseId || draftId);
+      setIsCreateCarePlanWizardOpen(true);
+      
+      toast({
+        title: "Loading Draft",
+        description: "Opening draft care plan for editing...",
+      });
+    } catch (error) {
+      console.error('[CareTab] Error loading draft:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load the draft care plan. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleClientSelect = (clientId: string, clientName: string) => {
@@ -385,11 +433,63 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   };
   
   const handleEditCarePlan = (id: string) => {
-    console.log(`Edit care plan: ${id}`);
+    console.log('[CareTab] Navigating to edit care plan:', id);
+    
+    // Find the care plan to get client information
+    const plan = carePlans.find(p => p.id === id || p._databaseId === id);
+    if (!plan) {
+      toast({
+        title: "Error",
+        description: "Could not find care plan to edit.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // For active care plans, navigate to the client edit page
+    if (plan.status !== 'Draft' && branchId && branchName) {
+      // We need to get the actual client ID
+      supabase
+        .from('client_care_plans')
+        .select('client_id')
+        .eq('id', plan._databaseId || id)
+        .single()
+        .then(({ data, error }) => {
+          if (error || !data) {
+            toast({
+              title: "Error",
+              description: "Could not find client information for this care plan.",
+              variant: "destructive",
+            });
+            return;
+          }
+          
+          const clientEditPath = `/branch-dashboard/${branchId}/${branchName}/clients/${data.client_id}/edit`;
+          navigate(clientEditPath);
+        });
+    } else if (plan.status === 'Draft') {
+      // For drafts, use the draft editing functionality
+      handleEditDraft(plan._databaseId || id);
+    }
   };
   
-  const handleDeleteCarePlan = (id: string) => {
-    console.log(`Delete care plan: ${id}`);
+  const handleDeleteCarePlan = (plan: any) => {
+    console.log('[CareTab] Preparing to delete care plan:', plan);
+    setCarePlanToDelete(plan);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteCarePlan = () => {
+    if (carePlanToDelete) {
+      console.log('[CareTab] Confirming deletion of care plan:', carePlanToDelete._databaseId || carePlanToDelete.id);
+      
+      // Use the actual database ID for deletion
+      const carePlanId = carePlanToDelete._databaseId || carePlanToDelete.id;
+      deleteCarePlanMutation.mutate(carePlanId);
+      
+      setDeleteDialogOpen(false);
+      setCarePlanToDelete(null);
+    }
   };
 
   const openStatusChangeDialog = (id: string) => {
@@ -796,7 +896,7 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
                           <ClipboardCheck className="mr-2 h-4 w-4" /> Change Status
                         </DropdownMenuItem>
                         <DropdownMenuItem 
-                          onClick={() => handleDeleteCarePlan(plan.id)}
+                          onClick={() => handleDeleteCarePlan(plan)}
                           className="text-red-600 focus:text-red-600"
                         >
                           <Trash2 className="mr-2 h-4 w-4" /> Delete
@@ -931,6 +1031,15 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
           draftCarePlanId={editingDraftId || undefined}
         />
       )}
+
+      {/* Delete Care Plan Dialog */}
+      <DeleteCarePlanDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDeleteCarePlan}
+        carePlanTitle={carePlanToDelete?.patientName ? `${carePlanToDelete.patientName}'s Care Plan` : "Care Plan"}
+        isLoading={deleteCarePlanMutation.isPending}
+      />
     </div>
   );
 };
