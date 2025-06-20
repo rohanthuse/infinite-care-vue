@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,12 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { FilePlus, Search, Filter, MoreHorizontal, Eye, Edit, Trash, Copy, AlertCircle, ChevronDown, FileText, Clock, Calendar, LayoutGrid } from 'lucide-react';
-import { Form } from '@/types/form-builder';
-import { v4 as uuidv4 } from 'uuid';
+import { FilePlus, Search, MoreHorizontal, Eye, Edit, Trash, Copy, AlertCircle, ChevronDown, FileText, Clock, Calendar, LayoutGrid, Loader2 } from 'lucide-react';
+import { useFormManagement } from '@/hooks/useFormManagement';
+import { useFormSubmissions } from '@/hooks/useFormSubmissions';
 
 interface FormBuilderTabProps {
   branchId: string;
@@ -30,104 +30,53 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<boolean>(false);
   const [formToDelete, setFormToDelete] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<'list' | 'grid'>('list');
+  const [activeTab, setActiveTab] = useState<string>('all');
 
-  // Mock form data - in a real app, this would be fetched from your API
-  const mockForms: Form[] = [
-    {
-      id: '1',
-      title: 'Client Assessment Form',
-      description: 'Initial assessment form for new clients',
-      elements: [],
-      createdAt: '2025-04-01T10:00:00Z',
-      updatedAt: '2025-04-05T15:30:00Z',
-      createdBy: { id: '1', name: 'Admin User' },
-      published: true,
-      requiresReview: true,
-      version: 1,
-      assignees: [
-        { type: 'client', id: 'c1', name: 'John Smith' },
-        { type: 'staff', id: 's1', name: 'Dr. Emma Wilson' },
-      ],
-    },
-    {
-      id: '2',
-      title: 'Daily Care Log',
-      description: 'Form for carers to log daily care activities',
-      elements: [],
-      createdAt: '2025-04-02T09:15:00Z',
-      updatedAt: '2025-04-02T09:15:00Z',
-      createdBy: { id: '1', name: 'Admin User' },
-      published: true,
-      requiresReview: false,
-      version: 1,
-      assignees: [
-        { type: 'carer', id: 'ca1', name: 'George Thompson' },
-        { type: 'carer', id: 'ca2', name: 'Mary Wilson' },
-      ],
-    },
-    {
-      id: '3',
-      title: 'Medication Administration Record',
-      description: 'Form to record medication administration',
-      elements: [],
-      createdAt: '2025-04-03T14:20:00Z',
-      updatedAt: '2025-04-10T11:45:00Z',
-      createdBy: { id: '1', name: 'Admin User' },
-      published: false,
-      requiresReview: true,
-      version: 2,
-      assignees: [],
-    },
-    {
-      id: '4',
-      title: 'Health and Safety Checklist',
-      description: 'Monthly health and safety inspection form',
-      elements: [],
-      createdAt: '2025-03-15T08:30:00Z',
-      updatedAt: '2025-04-12T16:20:00Z',
-      createdBy: { id: '2', name: 'Manager' },
-      published: true,
-      requiresReview: true,
-      version: 3,
-      assignees: [
-        { type: 'branch', id: 'b1', name: 'Main Branch' },
-      ],
-    },
-    {
-      id: '5',
-      title: 'Client Feedback Survey',
-      description: 'Form to collect client feedback on services',
-      elements: [],
-      createdAt: '2025-04-08T11:00:00Z',
-      updatedAt: '2025-04-08T11:00:00Z',
-      createdBy: { id: '1', name: 'Admin User' },
-      published: true,
-      requiresReview: false,
-      version: 1,
-      assignees: [
-        { type: 'client', id: 'c1', name: 'John Smith' },
-        { type: 'client', id: 'c2', name: 'Jane Doe' },
-        { type: 'client', id: 'c3', name: 'Robert Johnson' },
-      ],
-    },
-  ];
-  
-  const filteredForms = mockForms.filter(form => {
-    const matchesSearch = form.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         (form.description && form.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesStatus = statusFilter === 'all' || 
-                         (statusFilter === 'published' && form.published) || 
-                         (statusFilter === 'draft' && !form.published);
-    
-    const matchesAssignee = assigneeFilter === 'all' ||
-                           (assigneeFilter === 'unassigned' && form.assignees.length === 0) ||
-                           (assigneeFilter === 'clients' && form.assignees.some(a => a.type === 'client')) ||
-                           (assigneeFilter === 'staff' && form.assignees.some(a => a.type === 'staff')) ||
-                           (assigneeFilter === 'carers' && form.assignees.some(a => a.type === 'carer')) ||
-                           (assigneeFilter === 'branches' && form.assignees.some(a => a.type === 'branch'));
-    
-    return matchesSearch && matchesStatus && matchesAssignee;
-  });
+  // Use the new hooks
+  const { 
+    forms, 
+    formAssignees, 
+    isLoading, 
+    createForm, 
+    updateForm, 
+    deleteForm, 
+    duplicateForm,
+    isCreating,
+    isDeleting,
+    isDuplicating
+  } = useFormManagement(branchId);
+
+  const { submissions } = useFormSubmissions(branchId);
+
+  // Transform database forms to match the UI format and apply filters
+  const filteredForms = useMemo(() => {
+    let filtered = forms.filter(form => {
+      const matchesSearch = form.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           (form.description && form.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      let matchesStatus = true;
+      if (activeTab === 'published') {
+        matchesStatus = form.published;
+      } else if (activeTab === 'drafts') {
+        matchesStatus = !form.published;
+      } else if (statusFilter !== 'all') {
+        matchesStatus = (statusFilter === 'published' && form.published) || 
+                      (statusFilter === 'draft' && !form.published);
+      }
+      
+      const formAssigneesList = formAssignees.filter(a => a.form_id === form.id);
+      const matchesAssignee = assigneeFilter === 'all' ||
+                             (assigneeFilter === 'unassigned' && formAssigneesList.length === 0) ||
+                             (assigneeFilter === 'clients' && formAssigneesList.some(a => a.assignee_type === 'client')) ||
+                             (assigneeFilter === 'staff' && formAssigneesList.some(a => a.assignee_type === 'staff')) ||
+                             (assigneeFilter === 'carers' && formAssigneesList.some(a => a.assignee_type === 'carer')) ||
+                             (assigneeFilter === 'branches' && formAssigneesList.some(a => a.assignee_type === 'branch'));
+      
+      return matchesSearch && matchesStatus && matchesAssignee;
+    });
+
+    return filtered;
+  }, [forms, formAssignees, searchQuery, statusFilter, assigneeFilter, activeTab]);
 
   // Pagination
   const itemsPerPage = 10;
@@ -146,9 +95,8 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
     navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-builder/${formId}`);
   };
 
-  const handleDuplicateForm = (form: Form) => {
-    console.log('Duplicating form:', form.id);
-    // In a real app, you would call an API to duplicate the form
+  const handleDuplicateForm = (formId: string) => {
+    duplicateForm(formId);
   };
 
   const handleConfirmDelete = (formId: string) => {
@@ -157,10 +105,11 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
   };
 
   const handleDeleteForm = () => {
-    console.log('Deleting form:', formToDelete);
-    // In a real app, you would call an API to delete the form
-    setConfirmDeleteOpen(false);
-    setFormToDelete(null);
+    if (formToDelete) {
+      deleteForm(formToDelete);
+      setConfirmDeleteOpen(false);
+      setFormToDelete(null);
+    }
   };
 
   const getStatusBadge = (published: boolean) => {
@@ -171,9 +120,18 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
     );
   };
 
-  const getAssigneeCount = (form: Form) => {
-    if (form.assignees.length === 0) return 'Not assigned';
-    return `${form.assignees.length} ${form.assignees.length === 1 ? 'assignee' : 'assignees'}`;
+  const getAssigneeCount = (formId: string) => {
+    const assignees = formAssignees.filter(a => a.form_id === formId);
+    if (assignees.length === 0) return 'Not assigned';
+    return `${assignees.length} ${assignees.length === 1 ? 'assignee' : 'assignees'}`;
+  };
+
+  const getFormAssignees = (formId: string) => {
+    return formAssignees.filter(a => a.form_id === formId);
+  };
+
+  const getSubmissionCount = (formId: string) => {
+    return submissions.filter(s => s.form_id === formId).length;
   };
 
   const formatDate = (dateString: string) => {
@@ -184,6 +142,15 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
     });
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading forms...</span>
+      </div>
+    );
+  }
+
   const renderListView = () => {
     return (
       <div className="rounded-md border">
@@ -193,6 +160,7 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
               <TableHead className="w-[300px]">Form</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Assignees</TableHead>
+              <TableHead>Submissions</TableHead>
               <TableHead>Review Required</TableHead>
               <TableHead>Last Updated</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -201,92 +169,112 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
           <TableBody>
             {paginatedForms.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   <p className="text-gray-500">No forms found</p>
+                  {searchQuery && (
+                    <p className="text-sm text-gray-400 mt-1">Try adjusting your search criteria</p>
+                  )}
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedForms.map((form) => (
-                <TableRow key={form.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{form.title}</div>
-                      {form.description && (
-                        <div className="text-xs text-gray-500">{form.description}</div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(form.published)}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      {form.assignees.length > 0 ? (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 text-sm">
-                              {getAssigneeCount(form)}
-                              <ChevronDown className="ml-1 h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start">
-                            <DropdownMenuLabel>Assigned to</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            {form.assignees.map((assignee) => (
-                              <DropdownMenuItem key={assignee.id}>
-                                {assignee.name} ({assignee.type})
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      ) : (
-                        <span className="text-sm text-gray-500">Not assigned</span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {form.requiresReview ? (
+              paginatedForms.map((form) => {
+                const assignees = getFormAssignees(form.id);
+                const submissionCount = getSubmissionCount(form.id);
+                
+                return (
+                  <TableRow key={form.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{form.title}</div>
+                        {form.description && (
+                          <div className="text-xs text-gray-500 line-clamp-2">{form.description}</div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(form.published)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        {assignees.length > 0 ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 text-sm">
+                                {getAssigneeCount(form.id)}
+                                <ChevronDown className="ml-1 h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                              <DropdownMenuLabel>Assigned to</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              {assignees.map((assignee) => (
+                                <DropdownMenuItem key={assignee.id}>
+                                  {assignee.assignee_name} ({assignee.assignee_type})
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          <span className="text-sm text-gray-500">Not assigned</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
-                        Required
+                        {submissionCount}
                       </Badge>
-                    ) : (
-                      <span className="text-sm text-gray-500">Not required</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <Clock className="mr-2 h-4 w-4 text-gray-400" />
-                      <span>{formatDate(form.updatedAt)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleViewForm(form.id)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleEditForm(form.id)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDuplicateForm(form)}>
-                          <Copy className="mr-2 h-4 w-4" />
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600" onClick={() => handleConfirmDelete(form.id)}>
-                          <Trash className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
+                    </TableCell>
+                    <TableCell>
+                      {form.requires_review ? (
+                        <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
+                          Required
+                        </Badge>
+                      ) : (
+                        <span className="text-sm text-gray-500">Not required</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <Clock className="mr-2 h-4 w-4 text-gray-400" />
+                        <span>{formatDate(form.updated_at)}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleViewForm(form.id)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditForm(form.id)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDuplicateForm(form.id)}
+                            disabled={isDuplicating}
+                          >
+                            <Copy className="mr-2 h-4 w-4" />
+                            {isDuplicating ? 'Duplicating...' : 'Duplicate'}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            className="text-red-600" 
+                            onClick={() => handleConfirmDelete(form.id)}
+                            disabled={isDeleting}
+                          >
+                            <Trash className="mr-2 h-4 w-4" />
+                            {isDeleting ? 'Deleting...' : 'Delete'}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -300,70 +288,89 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
         {paginatedForms.length === 0 ? (
           <div className="col-span-full text-center py-16">
             <p className="text-gray-500">No forms found</p>
+            {searchQuery && (
+              <p className="text-sm text-gray-400 mt-1">Try adjusting your search criteria</p>
+            )}
           </div>
         ) : (
-          paginatedForms.map((form) => (
-            <Card key={form.id} className="overflow-hidden">
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-base">{form.title}</CardTitle>
-                    {form.description && (
-                      <CardDescription className="line-clamp-2">{form.description}</CardDescription>
-                    )}
+          paginatedForms.map((form) => {
+            const assignees = getFormAssignees(form.id);
+            const submissionCount = getSubmissionCount(form.id);
+            
+            return (
+              <Card key={form.id} className="overflow-hidden">
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="text-base">{form.title}</CardTitle>
+                      {form.description && (
+                        <CardDescription className="line-clamp-2">{form.description}</CardDescription>
+                      )}
+                    </div>
+                    {getStatusBadge(form.published)}
                   </div>
-                  {getStatusBadge(form.published)}
-                </div>
-              </CardHeader>
-              <CardContent className="pb-2">
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <div className="text-gray-500">Assignees:</div>
-                    <div className="font-medium">{getAssigneeCount(form)}</div>
-                  </div>
-                  <div className="flex justify-between">
-                    <div className="text-gray-500">Review Required:</div>
-                    <div className="font-medium">{form.requiresReview ? 'Yes' : 'No'}</div>
-                  </div>
-                  <div className="flex justify-between">
-                    <div className="text-gray-500">Last Updated:</div>
-                    <div className="font-medium flex items-center">
-                      <Calendar className="mr-1 h-3 w-3 text-gray-400" />
-                      {formatDate(form.updatedAt)}
+                </CardHeader>
+                <CardContent className="pb-2">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <div className="text-gray-500">Assignees:</div>
+                      <div className="font-medium">{getAssigneeCount(form.id)}</div>
+                    </div>
+                    <div className="flex justify-between">
+                      <div className="text-gray-500">Submissions:</div>
+                      <div className="font-medium">{submissionCount}</div>
+                    </div>
+                    <div className="flex justify-between">
+                      <div className="text-gray-500">Review Required:</div>
+                      <div className="font-medium">{form.requires_review ? 'Yes' : 'No'}</div>
+                    </div>
+                    <div className="flex justify-between">
+                      <div className="text-gray-500">Last Updated:</div>
+                      <div className="font-medium flex items-center">
+                        <Calendar className="mr-1 h-3 w-3 text-gray-400" />
+                        {formatDate(form.updated_at)}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-              <CardFooter className="pt-2">
-                <div className="flex justify-between w-full">
-                  <Button variant="outline" size="sm" onClick={() => handleViewForm(form.id)}>
-                    <Eye className="mr-1 h-3.5 w-3.5" /> View
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleEditForm(form.id)}>
-                    <Edit className="mr-1 h-3.5 w-3.5" /> Edit
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <MoreHorizontal className="h-3.5 w-3.5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleDuplicateForm(form)}>
-                        <Copy className="mr-2 h-4 w-4" />
-                        Duplicate
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-red-600" onClick={() => handleConfirmDelete(form.id)}>
-                        <Trash className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardFooter>
-            </Card>
-          ))
+                </CardContent>
+                <CardFooter className="pt-2">
+                  <div className="flex justify-between w-full">
+                    <Button variant="outline" size="sm" onClick={() => handleViewForm(form.id)}>
+                      <Eye className="mr-1 h-3.5 w-3.5" /> View
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleEditForm(form.id)}>
+                      <Edit className="mr-1 h-3.5 w-3.5" /> Edit
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <MoreHorizontal className="h-3.5 w-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem 
+                          onClick={() => handleDuplicateForm(form.id)}
+                          disabled={isDuplicating}
+                        >
+                          <Copy className="mr-2 h-4 w-4" />
+                          {isDuplicating ? 'Duplicating...' : 'Duplicate'}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          className="text-red-600" 
+                          onClick={() => handleConfirmDelete(form.id)}
+                          disabled={isDeleting}
+                        >
+                          <Trash className="mr-2 h-4 w-4" />
+                          {isDeleting ? 'Deleting...' : 'Delete'}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </CardFooter>
+              </Card>
+            );
+          })
         )}
       </div>
     );
@@ -373,18 +380,18 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Form Builder</h1>
-        <Button onClick={handleCreateForm}>
+        <Button onClick={handleCreateForm} disabled={isCreating}>
           <FilePlus className="mr-2 h-4 w-4" />
-          Create Form
+          {isCreating ? 'Creating...' : 'Create Form'}
         </Button>
       </div>
 
-      <Tabs defaultValue="all" className="mb-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <TabsList>
-            <TabsTrigger value="all">All Forms</TabsTrigger>
-            <TabsTrigger value="published">Published</TabsTrigger>
-            <TabsTrigger value="drafts">Drafts</TabsTrigger>
+            <TabsTrigger value="all">All Forms ({forms.length})</TabsTrigger>
+            <TabsTrigger value="published">Published ({forms.filter(f => f.published).length})</TabsTrigger>
+            <TabsTrigger value="drafts">Drafts ({forms.filter(f => !f.published).length})</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
           </TabsList>
           
@@ -439,31 +446,18 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
         </TabsContent>
         
         <TabsContent value="published" className="mt-6">
-          {/* This will be filtered by published status */}
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              This tab will display only published forms.
-            </AlertDescription>
-          </Alert>
+          {activeView === 'list' ? renderListView() : renderGridView()}
         </TabsContent>
         
         <TabsContent value="drafts" className="mt-6">
-          {/* This will be filtered by draft status */}
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              This tab will display only draft forms.
-            </AlertDescription>
-          </Alert>
+          {activeView === 'list' ? renderListView() : renderGridView()}
         </TabsContent>
         
         <TabsContent value="templates" className="mt-6">
-          {/* This will display form templates */}
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              This tab will display form templates that can be used to create new forms.
+              Form templates feature is coming soon. You can duplicate existing forms to use as templates.
             </AlertDescription>
           </Alert>
         </TabsContent>
@@ -521,15 +515,15 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
           <DialogHeader>
             <DialogTitle>Delete Form</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this form? This action cannot be undone.
+              Are you sure you want to delete this form? This action cannot be undone and will also delete all associated submissions.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteForm}>
-              Delete
+            <Button variant="destructive" onClick={handleDeleteForm} disabled={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>

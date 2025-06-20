@@ -1790,6 +1790,218 @@ export type Database = {
         }
         Relationships: []
       }
+      form_assignees: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          assignee_id: string
+          assignee_name: string
+          assignee_type: string
+          form_id: string
+          id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          assignee_id: string
+          assignee_name: string
+          assignee_type: string
+          form_id: string
+          id?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          assignee_id?: string
+          assignee_name?: string
+          assignee_type?: string
+          form_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_assignees_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_elements: {
+        Row: {
+          created_at: string
+          element_type: string
+          form_id: string
+          id: string
+          label: string
+          order_index: number
+          properties: Json | null
+          required: boolean
+          updated_at: string
+          validation_rules: Json | null
+        }
+        Insert: {
+          created_at?: string
+          element_type: string
+          form_id: string
+          id?: string
+          label: string
+          order_index: number
+          properties?: Json | null
+          required?: boolean
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Update: {
+          created_at?: string
+          element_type?: string
+          form_id?: string
+          id?: string
+          label?: string
+          order_index?: number
+          properties?: Json | null
+          required?: boolean
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_elements_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_permissions: {
+        Row: {
+          created_at: string
+          form_id: string
+          id: string
+          permission_type: string
+          role_type: string
+        }
+        Insert: {
+          created_at?: string
+          form_id: string
+          id?: string
+          permission_type: string
+          role_type: string
+        }
+        Update: {
+          created_at?: string
+          form_id?: string
+          id?: string
+          permission_type?: string
+          role_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_permissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_submissions: {
+        Row: {
+          branch_id: string
+          form_id: string
+          id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submission_data: Json
+          submitted_at: string
+          submitted_by: string
+          submitted_by_type: string
+        }
+        Insert: {
+          branch_id: string
+          form_id: string
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submission_data?: Json
+          submitted_at?: string
+          submitted_by: string
+          submitted_by_type: string
+        }
+        Update: {
+          branch_id?: string
+          form_id?: string
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submission_data?: Json
+          submitted_at?: string
+          submitted_by?: string
+          submitted_by_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forms: {
+        Row: {
+          branch_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          published: boolean
+          requires_review: boolean
+          settings: Json | null
+          status: string
+          title: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          published?: boolean
+          requires_review?: boolean
+          settings?: Json | null
+          status?: string
+          title: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          published?: boolean
+          requires_review?: boolean
+          settings?: Json | null
+          status?: string
+          title?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       hobbies: {
         Row: {
           created_at: string
