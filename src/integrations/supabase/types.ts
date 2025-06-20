@@ -2449,6 +2449,79 @@ export type Database = {
           },
         ]
       }
+      staff_training_records: {
+        Row: {
+          assigned_by: string | null
+          assigned_date: string | null
+          branch_id: string
+          certificate_url: string | null
+          completion_date: string | null
+          created_at: string
+          expiry_date: string | null
+          id: string
+          notes: string | null
+          score: number | null
+          staff_id: string
+          status: string
+          training_course_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          assigned_date?: string | null
+          branch_id: string
+          certificate_url?: string | null
+          completion_date?: string | null
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          score?: number | null
+          staff_id: string
+          status?: string
+          training_course_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string | null
+          assigned_date?: string | null
+          branch_id?: string
+          certificate_url?: string | null
+          completion_date?: string | null
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          score?: number | null
+          staff_id?: string
+          status?: string
+          training_course_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_training_records_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_training_records_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_training_records_training_course_id_fkey"
+            columns: ["training_course_id"]
+            isOneToOne: false
+            referencedRelation: "training_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assignee_id: string | null
@@ -2524,6 +2597,62 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_courses: {
+        Row: {
+          branch_id: string | null
+          category: string
+          certificate_template: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_mandatory: boolean | null
+          max_score: number | null
+          required_score: number | null
+          status: string
+          title: string
+          updated_at: string
+          valid_for_months: number | null
+        }
+        Insert: {
+          branch_id?: string | null
+          category?: string
+          certificate_template?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_mandatory?: boolean | null
+          max_score?: number | null
+          required_score?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+          valid_for_months?: number | null
+        }
+        Update: {
+          branch_id?: string | null
+          category?: string
+          certificate_template?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_mandatory?: boolean | null
+          max_score?: number | null
+          required_score?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+          valid_for_months?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_courses_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
             referencedColumns: ["id"]
           },
         ]

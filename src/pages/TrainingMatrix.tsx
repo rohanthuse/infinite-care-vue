@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { getTrainingMatrix, getTrainingCategories } from "@/data/mockTrainingData";
-import { Training, TrainingMatrix as TrainingMatrixType, TrainingCategory, TrainingStatus, StaffMember } from "@/types/training";
+import { TrainingCategory, TrainingStatus, StaffMember } from "@/types/training";
 import { 
   Search, Plus, Users, CheckCircle2, Clock, XCircle, CircleDashed
 } from "lucide-react";
@@ -21,6 +20,9 @@ import TrainingFilter from "@/components/training/TrainingFilter";
 import TrainingSort, { SortOption } from "@/components/training/TrainingSort";
 import TrainingExport from "@/components/training/TrainingExport";
 import AddTrainingDialog from "@/components/training/AddTrainingDialog";
+import { useTrainingCourses } from "@/hooks/useTrainingCourses";
+import { useStaffTrainingRecords } from "@/hooks/useStaffTrainingRecords";
+import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
 
 export interface TrainingMatrixProps {
   branchId?: string;
@@ -29,18 +31,17 @@ export interface TrainingMatrixProps {
 
 const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
   const params = useParams<{id: string, branchName: string}>();
-  // Use props if provided, otherwise fall back to URL params
   const branchId = props.branchId || params.id;
   const branchName = props.branchName || params.branchName;
 
+  if (!branchId) {
+    return <div>Branch ID is required</div>;
+  }
+
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<TrainingCategory | 'all'>('all');
-  const [matrixData, setMatrixData] = useState<TrainingMatrixType>(getTrainingMatrix());
-  const [filteredStaff, setFilteredStaff] = useState<StaffMember[]>(matrixData.staffMembers);
-  const [filteredTrainings, setFilteredTrainings] = useState<Training[]>(matrixData.trainings);
   const [addTrainingOpen, setAddTrainingOpen] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>({ field: "name", direction: "asc" });
-  const categories = getTrainingCategories();
   
   // Advanced filter state
   const [advancedFilters, setAdvancedFilters] = useState<{
@@ -52,40 +53,94 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
     statuses: [],
     expiryRange: "all"
   });
+
+  // Fetch data from Supabase
+  const { data: trainingCourses = [], isLoading: isLoadingCourses } = useTrainingCourses(branchId);
+  const { records: trainingRecords = [], isLoading: isLoadingRecords } = useStaffTrainingRecords(branchId);
+  const { staff = [], isLoading: isLoadingStaff } = useBranchStaffAndClients(branchId);
+
+  const isLoading = isLoadingCourses || isLoadingRecords || isLoadingStaff;
+
+  // Transform data to match the UI format
+  const [filteredStaff, setFilteredStaff] = useState<StaffMember[]>([]);
+  const [filteredTrainings, setFilteredTrainings] = useState<any[]>([]);
+
+  // Create training matrix data structure
+  const matrixData = React.useMemo(() => {
+    const data: Record<string, Record<string, any>> = {};
+    
+    // Initialize data structure
+    staff.forEach(staffMember => {
+      data[staffMember.id] = {};
+      trainingCourses.forEach(course => {
+        data[staffMember.id][course.id] = {
+          status: 'not-started' as TrainingStatus
+        };
+      });
+    });
+
+    // Populate with actual training records
+    trainingRecords.forEach(record => {
+      if (data[record.staff_id] && data[record.staff_id][record.training_course_id]) {
+        data[record.staff_id][record.training_course_id] = {
+          status: record.status as TrainingStatus,
+          completionDate: record.completion_date,
+          expiryDate: record.expiry_date,
+          score: record.score,
+          maxScore: record.training_course.max_score
+        };
+      }
+    });
+
+    return data;
+  }, [staff, trainingCourses, trainingRecords]);
+
+  // Calculate category counts
+  const categories = React.useMemo(() => {
+    const counts = trainingCourses.reduce((acc, course) => {
+      acc[course.category] = (acc[course.category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return [
+      { category: 'core' as TrainingCategory, count: counts.core || 0 },
+      { category: 'mandatory' as TrainingCategory, count: counts.mandatory || 0 },
+      { category: 'specialized' as TrainingCategory, count: counts.specialized || 0 },
+      { category: 'optional' as TrainingCategory, count: counts.optional || 0 },
+    ];
+  }, [trainingCourses]);
   
   // Apply all filters and sorting to the data
   useEffect(() => {
-    let staffMatches = matrixData.staffMembers.filter(staff => 
-      staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      staff.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      staff.department.toLowerCase().includes(searchTerm.toLowerCase())
+    let staffMatches = staff.filter(staffMember => 
+      staffMember.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      staffMember.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      staffMember.specialization?.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
-    let trainingsMatches = matrixData.trainings.filter(training => 
-      training.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      training.description.toLowerCase().includes(searchTerm.toLowerCase())
+    let trainingsMatches = trainingCourses.filter(course => 
+      course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      course.description?.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
     // Apply advanced category filters if any are selected
     if (advancedFilters.categories.length > 0) {
-      trainingsMatches = trainingsMatches.filter(training => 
-        advancedFilters.categories.includes(training.category)
+      trainingsMatches = trainingsMatches.filter(course => 
+        advancedFilters.categories.includes(course.category as TrainingCategory)
       );
     } 
     // Otherwise apply the tab filter
     else if (categoryFilter !== 'all') {
-      trainingsMatches = trainingsMatches.filter(training => 
-        training.category === categoryFilter
+      trainingsMatches = trainingsMatches.filter(course => 
+        course.category === categoryFilter
       );
     }
     
     // Apply status filters if any are selected
     if (advancedFilters.statuses.length > 0) {
-      // This is more complex as we need to check the status for each staff member
-      // We'll keep staff members who have at least one training with the selected status
-      staffMatches = staffMatches.filter(staff => {
-        return trainingsMatches.some(training => {
-          const cell = matrixData.data[staff.id]?.[training.id];
+      staffMatches = staffMatches.filter(staffMember => {
+        return trainingsMatches.some(course => {
+          const cell = matrixData[staffMember.id]?.[course.id];
           return cell && advancedFilters.statuses.includes(cell.status);
         });
       });
@@ -95,24 +150,21 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
     if (advancedFilters.expiryRange !== "all") {
       const today = new Date();
       
-      // If filtering for expired trainings
       if (advancedFilters.expiryRange === "expired") {
-        staffMatches = staffMatches.filter(staff => {
-          return trainingsMatches.some(training => {
-            const cell = matrixData.data[staff.id]?.[training.id];
+        staffMatches = staffMatches.filter(staffMember => {
+          return trainingsMatches.some(course => {
+            const cell = matrixData[staffMember.id]?.[course.id];
             return cell && cell.expiryDate && new Date(cell.expiryDate) < today;
           });
         });
-      } 
-      // If filtering for trainings expiring in X days
-      else {
+      } else {
         const days = parseInt(advancedFilters.expiryRange.replace("days", ""));
         const futureDate = new Date(today);
         futureDate.setDate(today.getDate() + days);
         
-        staffMatches = staffMatches.filter(staff => {
-          return trainingsMatches.some(training => {
-            const cell = matrixData.data[staff.id]?.[training.id];
+        staffMatches = staffMatches.filter(staffMember => {
+          return trainingsMatches.some(course => {
+            const cell = matrixData[staffMember.id]?.[course.id];
             if (cell && cell.expiryDate) {
               const expiryDate = new Date(cell.expiryDate);
               return expiryDate >= today && expiryDate <= futureDate;
@@ -126,9 +178,11 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
     // Apply sorting
     const sortedStaff = [...staffMatches].sort((a, b) => {
       if (sortOption.field === "name") {
+        const nameA = `${a.first_name} ${a.last_name}`;
+        const nameB = `${b.first_name} ${b.last_name}`;
         return sortOption.direction === "asc" 
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name);
+          ? nameA.localeCompare(nameB)
+          : nameB.localeCompare(nameA);
       } else if (sortOption.field === "completion") {
         const completionA = calculateCompletionPercentage(a.id);
         const completionB = calculateCompletionPercentage(b.id);
@@ -139,48 +193,39 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
       return 0;
     });
     
-    setFilteredStaff(sortedStaff);
-    setFilteredTrainings(trainingsMatches);
-  }, [searchTerm, categoryFilter, matrixData, advancedFilters, sortOption]);
+    setFilteredStaff(sortedStaff.map(s => ({
+      id: s.id,
+      name: `${s.first_name} ${s.last_name}`,
+      role: s.specialization || 'Care Assistant',
+      department: 'Care Services',
+      avatar: "/placeholder.svg",
+      trainingCompleted: 0, // Will be calculated
+      trainingTotal: trainingsMatches.length
+    })));
+    
+    setFilteredTrainings(trainingsMatches.map(c => ({
+      id: c.id,
+      title: c.title,
+      category: c.category as TrainingCategory,
+      description: c.description || '',
+      status: 'not-started' as TrainingStatus,
+      maxScore: c.max_score
+    })));
+  }, [searchTerm, categoryFilter, trainingCourses, staff, advancedFilters, sortOption, matrixData]);
   
   const handleCellClick = (staffId: string, trainingId: string) => {
+    const staff = filteredStaff.find(s => s.id === staffId);
+    const training = filteredTrainings.find(t => t.id === trainingId);
+    
     toast({
       title: "Training Details",
-      description: `Viewing details for ${
-        matrixData.trainings.find(t => t.id === trainingId)?.title
-      } for ${
-        matrixData.staffMembers.find(s => s.id === staffId)?.name
-      }`,
+      description: `Viewing details for ${training?.title} for ${staff?.name}`,
     });
   };
   
   const handleAddTraining = (trainingData: any) => {
-    // Add the new training to the mock data
-    const updatedTrainings = [...matrixData.trainings, trainingData];
-    
-    // Update the matrix data with the new training
-    const updatedMatrixData = {
-      ...matrixData,
-      trainings: updatedTrainings,
-      // Initialize the new training with "not-started" status for all staff
-      data: {
-        ...matrixData.data,
-        ...Object.fromEntries(
-          matrixData.staffMembers.map(staff => [
-            staff.id,
-            {
-              ...matrixData.data[staff.id],
-              [trainingData.id]: {
-                status: "not-started" as const
-              }
-            }
-          ])
-        )
-      }
-    };
-    
-    setMatrixData(updatedMatrixData);
-    
+    // This would use the training management hook to create a new course
+    console.log('Add training:', trainingData);
     toast({
       title: "Training Added",
       description: `${trainingData.title} has been added successfully.`,
@@ -196,8 +241,8 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
   };
   
   const calculateCompletionPercentage = (staffId: string): number => {
-    const staffTrainings = matrixData.trainings.map(training => 
-      matrixData.data[staffId]?.[training.id]?.status === 'completed' ? 1 : 0
+    const staffTrainings = filteredTrainings.map(training => 
+      matrixData[staffId]?.[training.id]?.status === 'completed' ? 1 : 0
     );
     
     const completed = staffTrainings.reduce((sum, val) => sum + val, 0);
@@ -205,6 +250,16 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
     
     return total > 0 ? Math.round((completed / total) * 100) : 0;
   };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-500">Loading training data...</div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -250,7 +305,7 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
               currentSort={sortOption}
             />
             
-            <TrainingExport matrixData={matrixData} />
+            <TrainingExport matrixData={{ staffMembers: filteredStaff, trainings: filteredTrainings, data: matrixData }} />
             
             <Button 
               variant="default" 
@@ -345,35 +400,35 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredStaff.map((staff) => (
-                <TableRow key={staff.id}>
+              filteredStaff.map((staffMember) => (
+                <TableRow key={staffMember.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={staff.avatar || "/placeholder.svg"} alt={staff.name} />
-                        <AvatarFallback>{staff.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                        <AvatarImage src={staffMember.avatar || "/placeholder.svg"} alt={staffMember.name} />
+                        <AvatarFallback>{staffMember.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium text-sm">{staff.name}</div>
-                        <div className="text-xs text-gray-500">{staff.role}</div>
+                        <div className="font-medium text-sm">{staffMember.name}</div>
+                        <div className="text-xs text-gray-500">{staffMember.role}</div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col items-center gap-1">
-                      <Progress value={calculateCompletionPercentage(staff.id)} className="h-2 w-full" />
+                      <Progress value={calculateCompletionPercentage(staffMember.id)} className="h-2 w-full" />
                       <span className="text-xs text-gray-500">
-                        {calculateCompletionPercentage(staff.id)}%
+                        {calculateCompletionPercentage(staffMember.id)}%
                       </span>
                     </div>
                   </TableCell>
                   {filteredTrainings.map((training) => (
-                    <TableCell key={`${staff.id}-${training.id}`} className="p-1 text-center">
-                      {matrixData.data[staff.id]?.[training.id] ? (
+                    <TableCell key={`${staffMember.id}-${training.id}`} className="p-1 text-center">
+                      {matrixData[staffMember.id]?.[training.id] ? (
                         <TrainingStatusCell 
-                          data={matrixData.data[staff.id][training.id]} 
+                          data={matrixData[staffMember.id][training.id]} 
                           title={training.title}
-                          onClick={() => handleCellClick(staff.id, training.id)}
+                          onClick={() => handleCellClick(staffMember.id, training.id)}
                         />
                       ) : (
                         <div className="p-2 border rounded-md bg-gray-100 flex flex-col items-center justify-center min-h-[70px] min-w-[70px]">
