@@ -57,7 +57,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const { data: riskAssessments = [] } = useClientRiskAssessments(carePlan.patientId);
   const { data: serviceActions = [] } = useClientServiceActions(carePlan.patientId);
 
-  // Use the custom hook for dialog management
+  // Use the custom hook for dialog management - carePlan.id is now the display_id
   const dialogState = useCarePlanDialogs(carePlan.id, carePlan.patientId, branchId, branchName);
 
   const handleClose = () => {

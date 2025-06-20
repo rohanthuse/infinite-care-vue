@@ -1,10 +1,9 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { resolveCarePlanId } from '@/utils/carePlanIdMapping';
 
 export interface CarePlanData {
   id: string;
+  display_id: string;
   client_id: string;
   title: string;
   provider_name: string;
@@ -57,12 +56,9 @@ export interface CarePlanWithDetails extends CarePlanData {
 
 const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {
   console.log(`[fetchCarePlanData] Input care plan ID: ${carePlanId}`);
-  
-  // Resolve the care plan ID to get the actual UUID
-  const resolvedId = resolveCarePlanId(carePlanId);
-  console.log(`[fetchCarePlanData] Resolved care plan ID: ${resolvedId}`);
 
-  const { data, error } = await supabase
+  // Try to fetch by display_id first (e.g., "CP-001"), then by UUID if that fails
+  let query = supabase
     .from('client_care_plans')
     .select(`
       *,
@@ -77,9 +73,17 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {
         first_name,
         last_name
       )
-    `)
-    .eq('id', resolvedId)
-    .single();
+    `);
+
+  // If the carePlanId looks like a display ID (CP-XXX), search by display_id
+  if (carePlanId.match(/^CP-\d+$/i)) {
+    query = query.eq('display_id', carePlanId);
+  } else {
+    // Otherwise, assume it's a UUID and search by id
+    query = query.eq('id', carePlanId);
+  }
+
+  const { data, error } = await query.single();
 
   if (error) {
     console.error('Error fetching care plan:', error);
