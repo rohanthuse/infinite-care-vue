@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { BranchInfoHeader } from '@/components/BranchInfoHeader';
@@ -73,8 +74,8 @@ const FormBuilder = () => {
     }
   });
 
-  // Helper function to convert DatabaseForm to Form
-  const convertDatabaseFormToForm = (dbForm: DatabaseForm, elements: FormElement[] = []): Form => {
+  // Memoize the conversion function to prevent recreating on every render
+  const convertDatabaseFormToForm = useCallback((dbForm: DatabaseForm, elements: FormElement[] = []): Form => {
     return {
       id: dbForm.id,
       title: dbForm.title,
@@ -105,9 +106,9 @@ const FormBuilder = () => {
         submitButtonText: 'Submit'
       }
     };
-  };
+  }, []);
 
-  // Load existing form if editing
+  // Load existing form if editing - split into focused effects
   useEffect(() => {
     if (formId && forms.length > 0 && !isLoadingElements) {
       const existingForm = forms.find(f => f.id === formId);
@@ -115,22 +116,33 @@ const FormBuilder = () => {
         const convertedForm = convertDatabaseFormToForm(existingForm, uiElements);
         setForm(convertedForm);
         setIsLoadingForm(false);
-        toast({
-          title: 'Form Loaded',
-          description: 'The form has been loaded successfully',
-        });
       } else {
+        setIsLoadingForm(false);
+      }
+    } else if (!formId) {
+      setIsLoadingForm(false);
+    }
+  }, [formId, forms, uiElements, isLoadingElements, convertDatabaseFormToForm]);
+
+  // Handle form not found separately to avoid dependency issues
+  useEffect(() => {
+    if (formId && forms.length > 0 && !isLoadingElements) {
+      const existingForm = forms.find(f => f.id === formId);
+      if (!existingForm && !isLoadingForm) {
         toast({
           title: 'Form Not Found',
           description: 'The requested form could not be found',
           variant: 'destructive',
         });
         navigate(`/branch-dashboard/${branchId}/${branchName}`);
+      } else if (existingForm && !isLoadingForm) {
+        toast({
+          title: 'Form Loaded',
+          description: 'The form has been loaded successfully',
+        });
       }
-    } else if (formId) {
-      setIsLoadingForm(false);
     }
-  }, [formId, forms, uiElements, isLoadingElements, branchId, branchName, navigate, toast]);
+  }, [formId, forms.length, isLoadingElements, isLoadingForm, branchId, branchName]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
