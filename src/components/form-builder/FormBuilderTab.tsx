@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { FilePlus, Search, MoreHorizontal, Eye, Edit, Trash, Copy, AlertCircle, ChevronDown, FileText, Clock, Calendar, LayoutGrid, Loader2 } from 'lucide-react';
 import { useFormManagement } from '@/hooks/useFormManagement';
 import { useFormSubmissions } from '@/hooks/useFormSubmissions';
+import { FormTemplatesContent } from './FormTemplatesContent';
 
 interface FormBuilderTabProps {
   branchId: string;
@@ -454,12 +455,7 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
         </TabsContent>
         
         <TabsContent value="templates" className="mt-6">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Form templates feature is coming soon. You can duplicate existing forms to use as templates.
-            </AlertDescription>
-          </Alert>
+          <FormTemplatesContent branchId={branchId} branchName={branchName} />
         </TabsContent>
       </Tabs>
 
