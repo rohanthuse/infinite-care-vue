@@ -235,7 +235,8 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
       max_score: 100,
       is_mandatory: trainingData.category === 'core' || trainingData.category === 'mandatory',
       certificate_template: null,
-      status: 'active' as 'active' | 'inactive' | 'archived'
+      status: 'active' as 'active' | 'inactive' | 'archived',
+      branch_id: branchId
     };
 
     createCourse(courseData);
