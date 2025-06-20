@@ -871,7 +871,6 @@ export type Database = {
           completion_percentage: number | null
           created_at: string
           created_by_staff_id: string | null
-          display_id: string
           end_date: string | null
           goals_progress: number | null
           id: string
@@ -896,7 +895,6 @@ export type Database = {
           completion_percentage?: number | null
           created_at?: string
           created_by_staff_id?: string | null
-          display_id: string
           end_date?: string | null
           goals_progress?: number | null
           id?: string
@@ -921,7 +919,6 @@ export type Database = {
           completion_percentage?: number | null
           created_at?: string
           created_by_staff_id?: string | null
-          display_id?: string
           end_date?: string | null
           goals_progress?: number | null
           id?: string

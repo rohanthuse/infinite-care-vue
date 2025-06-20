@@ -91,7 +91,7 @@ export default function CarePlanView() {
   const { data: serviceActions = [] } = useClientServiceActions(clientId);
 
   // Use the custom hook for dialog management
-  const dialogState = useCarePlanDialogs(carePlanData?.display_id || '', clientId, branchId || '', branchName || '');
+  const dialogState = useCarePlanDialogs(carePlanId || '', clientId, branchId || '', branchName || '');
 
   if (isLoading) {
     return (
@@ -154,7 +154,7 @@ export default function CarePlanView() {
 
   // Transform the data to match CarePlanDetail expected interface
   const carePlan = {
-    id: carePlanData.display_id, // Use display_id for UI
+    id: carePlanData.id,
     patientName: carePlanData.client ? `${carePlanData.client.first_name} ${carePlanData.client.last_name}` : 'Unknown Patient',
     patientId: carePlanData.client_id,
     dateCreated: new Date(carePlanData.created_at),
