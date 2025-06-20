@@ -7,6 +7,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useMessageThreads } from "@/hooks/useMessages";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface MessageListProps {
   branchId: string;
@@ -29,7 +30,10 @@ export const MessageList = ({
   readFilter,
   dateFilter
 }: MessageListProps) => {
-  const { data: threads = [], isLoading } = useMessageThreads(branchId);
+  const { data: currentUser, isLoading: userLoading } = useUserRole();
+  const { data: threads = [], isLoading: threadsLoading, error: threadsError } = useMessageThreads(branchId);
+  
+  console.log('MessageList - User loading:', userLoading, 'Threads loading:', threadsLoading, 'Threads:', threads?.length);
   
   // Filter threads based on selected filter and search term
   const filteredThreads = threads.filter(thread => {
@@ -116,6 +120,9 @@ export const MessageList = ({
     return null;
   };
   
+  // Show loading only when user or threads are actually loading
+  const isLoading = userLoading || threadsLoading;
+  
   if (isLoading) {
     return (
       <div className="p-6 text-center text-gray-500">
@@ -124,73 +131,85 @@ export const MessageList = ({
     );
   }
 
+  // Show error if there's an error
+  if (threadsError) {
+    return (
+      <div className="p-6 text-center text-red-500">
+        Error loading messages: {threadsError.message}
+      </div>
+    );
+  }
+
+  // Show no messages found
+  if (filteredThreads.length === 0) {
+    return (
+      <div className="p-6 text-center text-gray-500">
+        {threads.length === 0 ? 'No messages yet' : 'No messages found'}
+      </div>
+    );
+  }
+
   return (
     <div>
-      {filteredThreads.length > 0 ? (
-        filteredThreads.map((thread) => (
-          <div 
-            key={thread.id}
-            className={cn(
-              "p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100",
-              selectedMessageId === thread.id ? "bg-blue-50 hover:bg-blue-50" : "",
-              thread.unreadCount > 0 ? "bg-gray-50" : ""
-            )}
-            onClick={() => onMessageSelect(thread.id)}
-          >
-            <div className="flex items-start">
-              <div className="h-9 w-9 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium shrink-0">
-                {thread.participants[0]?.name?.charAt(0) || 'U'}
-              </div>
-              
-              <div className="ml-3 flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center">
-                    <span className={cn(
-                      "font-medium text-sm truncate max-w-[150px]",
-                      thread.unreadCount > 0 ? "font-semibold" : ""
-                    )}>
-                      {thread.participants.map(p => p.name).join(", ")}
-                    </span>
-                    
-                    {getParticipantBadge(thread.participants)}
-                    
-                    {thread.unreadCount > 0 && (
-                      <div className="ml-2 bg-blue-600 text-white text-xs rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
-                        {thread.unreadCount}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <span className="text-xs text-gray-500">
-                    {thread.lastMessage ? formatMessageDate(thread.lastMessage.createdAt) : ''}
+      {filteredThreads.map((thread) => (
+        <div 
+          key={thread.id}
+          className={cn(
+            "p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100",
+            selectedMessageId === thread.id ? "bg-blue-50 hover:bg-blue-50" : "",
+            thread.unreadCount > 0 ? "bg-gray-50" : ""
+          )}
+          onClick={() => onMessageSelect(thread.id)}
+        >
+          <div className="flex items-start">
+            <div className="h-9 w-9 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium shrink-0">
+              {thread.participants[0]?.name?.charAt(0) || 'U'}
+            </div>
+            
+            <div className="ml-3 flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center">
+                  <span className={cn(
+                    "font-medium text-sm truncate max-w-[150px]",
+                    thread.unreadCount > 0 ? "font-semibold" : ""
+                  )}>
+                    {thread.participants.map(p => p.name).join(", ")}
                   </span>
-                </div>
-                
-                <div className={cn(
-                  "text-sm truncate",
-                  thread.unreadCount > 0 ? "font-medium" : "text-gray-700"
-                )}>
-                  {thread.subject}
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-gray-500 truncate mt-1">
-                    {thread.lastMessage?.content || 'No messages yet'}
-                  </p>
                   
-                  {thread.lastMessage?.hasAttachments && (
-                    <FileText className="h-3 w-3 text-gray-400 ml-1 shrink-0" />
+                  {getParticipantBadge(thread.participants)}
+                  
+                  {thread.unreadCount > 0 && (
+                    <div className="ml-2 bg-blue-600 text-white text-xs rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                      {thread.unreadCount}
+                    </div>
                   )}
                 </div>
+                
+                <span className="text-xs text-gray-500">
+                  {thread.lastMessage ? formatMessageDate(thread.lastMessage.createdAt) : ''}
+                </span>
+              </div>
+              
+              <div className={cn(
+                "text-sm truncate",
+                thread.unreadCount > 0 ? "font-medium" : "text-gray-700"
+              )}>
+                {thread.subject}
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500 truncate mt-1">
+                  {thread.lastMessage?.content || 'No messages yet'}
+                </p>
+                
+                {thread.lastMessage?.hasAttachments && (
+                  <FileText className="h-3 w-3 text-gray-400 ml-1 shrink-0" />
+                )}
               </div>
             </div>
           </div>
-        ))
-      ) : (
-        <div className="p-6 text-center text-gray-500">
-          No messages found
         </div>
-      )}
+      ))}
     </div>
   );
 };

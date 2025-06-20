@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole, type UserRole } from './useUserRole';
@@ -31,12 +30,17 @@ export interface MessageThread {
 }
 
 export const useMessageThreads = (branchId: string) => {
-  const { data: currentUser } = useUserRole();
+  const { data: currentUser, isLoading: userLoading } = useUserRole();
 
   return useQuery({
     queryKey: ['messageThreads', branchId, currentUser?.id],
     queryFn: async () => {
-      if (!currentUser) return [];
+      console.log('Fetching message threads for user:', currentUser?.id, 'branch:', branchId);
+      
+      if (!currentUser) {
+        console.log('No current user, returning empty array');
+        return [];
+      }
 
       const { data: threads, error } = await supabase
         .from('message_threads')
@@ -55,10 +59,20 @@ export const useMessageThreads = (branchId: string) => {
         .eq('branch_id', branchId)
         .order('last_message_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching message threads:', error);
+        throw error;
+      }
+
+      console.log('Found threads:', threads?.length || 0);
+
+      if (!threads || threads.length === 0) {
+        console.log('No threads found, returning empty array');
+        return [];
+      }
 
       const threadsWithMessages = await Promise.all(
-        (threads || []).map(async (thread) => {
+        threads.map(async (thread) => {
           // Get latest message
           const { data: latestMessage } = await supabase
             .from('messages')
@@ -126,9 +140,12 @@ export const useMessageThreads = (branchId: string) => {
         })
       );
 
+      console.log('Processed threads with messages:', threadsWithMessages.length);
       return threadsWithMessages;
     },
-    enabled: !!currentUser,
+    enabled: !!currentUser && !userLoading && !!branchId,
+    retry: 1,
+    staleTime: 30000, // 30 seconds
   });
 };
 
