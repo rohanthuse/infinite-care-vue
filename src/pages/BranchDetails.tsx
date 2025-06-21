@@ -1,3 +1,4 @@
+
 import React from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
@@ -28,41 +29,11 @@ const BranchDetails = () => {
   const navigate = useNavigate();
   
   console.log("BranchDetails - received id parameter:", id);
+  console.log("Current URL:", window.location.href);
   
-  // Validate the id parameter
-  if (!id || !isValidUUID(id)) {
-    console.error("Invalid or missing branch ID:", id);
-    return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
-        <DashboardHeader />
-        <DashboardNavbar />
-        
-        <motion.main 
-          className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <div className="flex flex-col items-center justify-center h-[50vh] bg-red-50 text-red-700 rounded-lg p-8">
-            <AlertCircle className="h-12 w-12 mb-4" />
-            <h2 className="text-xl font-bold mb-2">Invalid Branch ID</h2>
-            <p>The branch ID provided is not valid. Please check the URL and try again.</p>
-            <Button 
-              variant="outline" 
-              className="mt-6"
-              onClick={() => navigate('/admin/branch')}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Branches
-            </Button>
-          </div>
-        </motion.main>
-      </div>
-    );
-  }
-  
-  const { data: branchData, isLoading, error } = useBranch(id);
-  const { data: stats, isLoading: isLoadingStats, error: errorStats } = useBranchStatistics(id);
+  // Call all hooks at the top - before any conditional logic
+  const { data: branchData, isLoading, error } = useBranch(id && isValidUUID(id) ? id : undefined);
+  const { data: stats, isLoading: isLoadingStats, error: errorStats } = useBranchStatistics(id && isValidUUID(id) ? id : undefined);
 
   const handleNavigateToBranchAdmins = () => {
     toast.success("Navigating to Branch Admins dashboard");
@@ -99,6 +70,9 @@ const BranchDetails = () => {
     { title: "Total Reviews", value: stats?.reviewsCount ?? 0, icon: FileText, color: "bg-yellow-500" },
   ];
 
+  // Now handle validation and conditional rendering without violating hooks rules
+  const isValidId = id && isValidUUID(id);
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -110,7 +84,22 @@ const BranchDetails = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        {isLoading ? (
+        {!isValidId ? (
+          <div className="flex flex-col items-center justify-center h-[50vh] bg-red-50 text-red-700 rounded-lg p-8">
+            <AlertCircle className="h-12 w-12 mb-4" />
+            <h2 className="text-xl font-bold mb-2">Invalid Branch ID</h2>
+            <p>The branch ID provided is not valid. Please check the URL and try again.</p>
+            <p className="text-sm text-gray-600 mt-2">Received ID: {id}</p>
+            <Button 
+              variant="outline" 
+              className="mt-6"
+              onClick={() => navigate('/admin/branch')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Branches
+            </Button>
+          </div>
+        ) : isLoading ? (
           <div className="flex justify-center items-center h-[50vh]">
             <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
           </div>
