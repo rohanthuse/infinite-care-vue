@@ -180,8 +180,11 @@ export function UnifiedUploadDialog({
     }
 
     try {
-      uploadDocument({
-        ...data,
+      await uploadDocument({
+        name: data.name,
+        type: data.type,
+        category: data.category,
+        description: data.description || "",
         file: selectedFile,
       });
       
