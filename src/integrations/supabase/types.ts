@@ -4012,6 +4012,250 @@ export type Database = {
           },
         ]
       }
+      third_party_access_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          resource_id: string | null
+          resource_type: string | null
+          session_id: string | null
+          third_party_user_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type?: string | null
+          session_id?: string | null
+          third_party_user_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type?: string | null
+          session_id?: string | null
+          third_party_user_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "third_party_access_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "third_party_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "third_party_access_logs_third_party_user_id_fkey"
+            columns: ["third_party_user_id"]
+            isOneToOne: false
+            referencedRelation: "third_party_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      third_party_access_requests: {
+        Row: {
+          access_from: string
+          access_until: string | null
+          approved_at: string | null
+          approved_by: string | null
+          branch_id: string
+          client_consent_required: boolean
+          created_at: string
+          created_by: string
+          email: string
+          first_name: string
+          id: string
+          invite_sent_at: string | null
+          invite_token: string | null
+          organisation: string | null
+          reason_for_access: string
+          rejection_reason: string | null
+          request_for: Database["public"]["Enums"]["third_party_access_type"]
+          role: string | null
+          status: Database["public"]["Enums"]["third_party_request_status"]
+          surname: string
+          updated_at: string
+        }
+        Insert: {
+          access_from: string
+          access_until?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          branch_id: string
+          client_consent_required?: boolean
+          created_at?: string
+          created_by: string
+          email: string
+          first_name: string
+          id?: string
+          invite_sent_at?: string | null
+          invite_token?: string | null
+          organisation?: string | null
+          reason_for_access: string
+          rejection_reason?: string | null
+          request_for?: Database["public"]["Enums"]["third_party_access_type"]
+          role?: string | null
+          status?: Database["public"]["Enums"]["third_party_request_status"]
+          surname: string
+          updated_at?: string
+        }
+        Update: {
+          access_from?: string
+          access_until?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          branch_id?: string
+          client_consent_required?: boolean
+          created_at?: string
+          created_by?: string
+          email?: string
+          first_name?: string
+          id?: string
+          invite_sent_at?: string | null
+          invite_token?: string | null
+          organisation?: string | null
+          reason_for_access?: string
+          rejection_reason?: string | null
+          request_for?: Database["public"]["Enums"]["third_party_access_type"]
+          role?: string | null
+          status?: Database["public"]["Enums"]["third_party_request_status"]
+          surname?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "third_party_access_requests_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      third_party_sessions: {
+        Row: {
+          ended_at: string | null
+          id: string
+          ip_address: unknown | null
+          is_active: boolean
+          last_activity_at: string
+          session_token: string
+          started_at: string
+          third_party_user_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          ended_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean
+          last_activity_at?: string
+          session_token: string
+          started_at?: string
+          third_party_user_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          ended_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean
+          last_activity_at?: string
+          session_token?: string
+          started_at?: string
+          third_party_user_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "third_party_sessions_third_party_user_id_fkey"
+            columns: ["third_party_user_id"]
+            isOneToOne: false
+            referencedRelation: "third_party_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      third_party_users: {
+        Row: {
+          access_expires_at: string
+          access_type: Database["public"]["Enums"]["third_party_access_type"]
+          branch_id: string
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          is_active: boolean
+          last_login_at: string | null
+          login_count: number
+          organisation: string | null
+          request_id: string
+          role: string | null
+          surname: string
+          updated_at: string
+        }
+        Insert: {
+          access_expires_at: string
+          access_type: Database["public"]["Enums"]["third_party_access_type"]
+          branch_id: string
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          is_active?: boolean
+          last_login_at?: string | null
+          login_count?: number
+          organisation?: string | null
+          request_id: string
+          role?: string | null
+          surname: string
+          updated_at?: string
+        }
+        Update: {
+          access_expires_at?: string
+          access_type?: Database["public"]["Enums"]["third_party_access_type"]
+          branch_id?: string
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          is_active?: boolean
+          last_login_at?: string | null
+          login_count?: number
+          organisation?: string | null
+          request_id?: string
+          role?: string | null
+          surname?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "third_party_users_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "third_party_users_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "third_party_access_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training_courses: {
         Row: {
           branch_id: string | null
@@ -4274,6 +4518,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      expire_third_party_access: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      generate_invite_token: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_branch_chart_data: {
         Args: { p_branch_id: string }
         Returns: Json
@@ -4366,6 +4618,13 @@ export type Database = {
         | "Under Review"
         | "Completed"
         | "Cancelled"
+      third_party_access_type: "client" | "staff" | "both"
+      third_party_request_status:
+        | "pending"
+        | "approved"
+        | "rejected"
+        | "expired"
+        | "revoked"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4490,6 +4749,14 @@ export const Constants = {
         "Under Review",
         "Completed",
         "Cancelled",
+      ],
+      third_party_access_type: ["client", "staff", "both"],
+      third_party_request_status: [
+        "pending",
+        "approved",
+        "rejected",
+        "expired",
+        "revoked",
       ],
     },
   },
