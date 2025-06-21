@@ -82,7 +82,7 @@ const Branch = () => {
   });
 
   const handleViewBranchDetails = (branchId: string) => {
-    navigate(`/admin/branch-details/${branchId}`);
+    navigate(`/branch-details/${branchId}`);
   };
 
   const handleEdit = (branch: Branch) => {

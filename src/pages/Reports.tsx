@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
-import { useParams, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 import { TabNavigation } from "@/components/TabNavigation";
 import { ReportsContent } from "@/components/reports/ReportsContent";
-import { ReportsHeader } from "@/components/reports/ReportsHeader";
+import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const Reports = () => {
   const { id, branchName } = useParams();
@@ -14,24 +13,29 @@ const Reports = () => {
   const [activeNavTab, setActiveNavTab] = useState("reports");
   const decodedBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
 
-  useEffect(() => {
+  // Set page title
+  React.useEffect(() => {
     document.title = `Reports | ${decodedBranchName}`;
   }, [decodedBranchName]);
   
   const handleNavTabChange = (value: string) => {
     setActiveNavTab(value);
     
+    // Navigate to the appropriate route based on the selected tab
     if (value !== "reports") {
-      if (id && branchName) {
-        navigate(`/admin/branch-dashboard/${id}/${encodeURIComponent(decodedBranchName)}/${value}`);
-      } else {
-        navigate(`/admin/${value}`);
-      }
+      navigate(`/branch-dashboard/${id}/${encodeURIComponent(decodedBranchName)}/${value}`);
     }
   };
-  
+
+  // Handler for the "New Booking" button
   const handleNewBooking = () => {
-    toast.info("New booking functionality will be implemented soon");
+    // Navigate to the bookings page with a query parameter to open the new booking dialog
+    navigate(`/branch-dashboard/${id}/${encodeURIComponent(decodedBranchName)}/bookings?new=true`);
+    
+    // Show a success toast notification
+    toast.success("Redirecting to create a new booking", {
+      description: "You'll be able to create a new booking on the bookings page",
+    });
   };
 
   return (
@@ -53,8 +57,9 @@ const Reports = () => {
           />
         </div>
         
-        <ReportsHeader />
-        <ReportsContent branchId={id || ""} branchName={decodedBranchName} />
+        <div className="mt-6">
+          <ReportsContent branchId={id || ""} branchName={decodedBranchName} />
+        </div>
       </main>
     </div>
   );

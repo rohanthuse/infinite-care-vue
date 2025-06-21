@@ -30,11 +30,7 @@ const Attendance = () => {
     
     // Navigate to the appropriate route based on the selected tab
     if (value !== "attendance") {
-      if (id && branchName) {
-        navigate(`/admin/branch-dashboard/${id}/${encodeURIComponent(decodedBranchName)}/${value}`);
-      } else {
-        navigate(`/admin/${value}`);
-      }
+      navigate(`/branch-dashboard/${id}/${encodeURIComponent(decodedBranchName)}/${value}`);
     }
   };
   

@@ -2716,164 +2716,6 @@ export type Database = {
           },
         ]
       }
-      library_categories: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          id: string
-          name: string
-          status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          name: string
-          status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          name?: string
-          status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      library_resource_access_logs: {
-        Row: {
-          access_type: string
-          accessed_at: string | null
-          branch_id: string | null
-          id: string
-          resource_id: string | null
-          user_id: string | null
-        }
-        Insert: {
-          access_type: string
-          accessed_at?: string | null
-          branch_id?: string | null
-          id?: string
-          resource_id?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          access_type?: string
-          accessed_at?: string | null
-          branch_id?: string | null
-          id?: string
-          resource_id?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "library_resource_access_logs_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "library_resource_access_logs_resource_id_fkey"
-            columns: ["resource_id"]
-            isOneToOne: false
-            referencedRelation: "library_resources"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      library_resources: {
-        Row: {
-          access_roles: string[] | null
-          author: string | null
-          branch_id: string | null
-          category: string
-          created_at: string | null
-          description: string | null
-          downloads_count: number | null
-          expires_at: string | null
-          file_path: string | null
-          file_size: number | null
-          file_type: string | null
-          id: string
-          is_private: boolean | null
-          rating: number | null
-          resource_type: string
-          status: string | null
-          tags: string[] | null
-          title: string
-          updated_at: string | null
-          uploaded_by: string | null
-          uploaded_by_name: string | null
-          url: string | null
-          version: string | null
-          views_count: number | null
-        }
-        Insert: {
-          access_roles?: string[] | null
-          author?: string | null
-          branch_id?: string | null
-          category?: string
-          created_at?: string | null
-          description?: string | null
-          downloads_count?: number | null
-          expires_at?: string | null
-          file_path?: string | null
-          file_size?: number | null
-          file_type?: string | null
-          id?: string
-          is_private?: boolean | null
-          rating?: number | null
-          resource_type: string
-          status?: string | null
-          tags?: string[] | null
-          title: string
-          updated_at?: string | null
-          uploaded_by?: string | null
-          uploaded_by_name?: string | null
-          url?: string | null
-          version?: string | null
-          views_count?: number | null
-        }
-        Update: {
-          access_roles?: string[] | null
-          author?: string | null
-          branch_id?: string | null
-          category?: string
-          created_at?: string | null
-          description?: string | null
-          downloads_count?: number | null
-          expires_at?: string | null
-          file_path?: string | null
-          file_size?: number | null
-          file_type?: string | null
-          id?: string
-          is_private?: boolean | null
-          rating?: number | null
-          resource_type?: string
-          status?: string | null
-          tags?: string[] | null
-          title?: string
-          updated_at?: string | null
-          uploaded_by?: string | null
-          uploaded_by_name?: string | null
-          url?: string | null
-          version?: string | null
-          views_count?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "library_resources_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       medical_categories: {
         Row: {
           created_at: string
@@ -4012,294 +3854,6 @@ export type Database = {
           },
         ]
       }
-      third_party_access_logs: {
-        Row: {
-          action: string
-          created_at: string
-          id: string
-          ip_address: unknown | null
-          resource_id: string | null
-          resource_type: string | null
-          session_id: string | null
-          third_party_user_id: string
-          user_agent: string | null
-        }
-        Insert: {
-          action: string
-          created_at?: string
-          id?: string
-          ip_address?: unknown | null
-          resource_id?: string | null
-          resource_type?: string | null
-          session_id?: string | null
-          third_party_user_id: string
-          user_agent?: string | null
-        }
-        Update: {
-          action?: string
-          created_at?: string
-          id?: string
-          ip_address?: unknown | null
-          resource_id?: string | null
-          resource_type?: string | null
-          session_id?: string | null
-          third_party_user_id?: string
-          user_agent?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "third_party_access_logs_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "third_party_sessions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "third_party_access_logs_third_party_user_id_fkey"
-            columns: ["third_party_user_id"]
-            isOneToOne: false
-            referencedRelation: "third_party_users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      third_party_access_requests: {
-        Row: {
-          access_from: string
-          access_until: string | null
-          approved_at: string | null
-          approved_by: string | null
-          branch_id: string
-          client_consent_required: boolean
-          created_at: string
-          created_by: string
-          email: string
-          first_name: string
-          id: string
-          invite_sent_at: string | null
-          invite_token: string | null
-          organisation: string | null
-          reason_for_access: string
-          rejection_reason: string | null
-          request_for: Database["public"]["Enums"]["third_party_access_type"]
-          role: string | null
-          status: Database["public"]["Enums"]["third_party_request_status"]
-          surname: string
-          updated_at: string
-        }
-        Insert: {
-          access_from: string
-          access_until?: string | null
-          approved_at?: string | null
-          approved_by?: string | null
-          branch_id: string
-          client_consent_required?: boolean
-          created_at?: string
-          created_by: string
-          email: string
-          first_name: string
-          id?: string
-          invite_sent_at?: string | null
-          invite_token?: string | null
-          organisation?: string | null
-          reason_for_access: string
-          rejection_reason?: string | null
-          request_for?: Database["public"]["Enums"]["third_party_access_type"]
-          role?: string | null
-          status?: Database["public"]["Enums"]["third_party_request_status"]
-          surname: string
-          updated_at?: string
-        }
-        Update: {
-          access_from?: string
-          access_until?: string | null
-          approved_at?: string | null
-          approved_by?: string | null
-          branch_id?: string
-          client_consent_required?: boolean
-          created_at?: string
-          created_by?: string
-          email?: string
-          first_name?: string
-          id?: string
-          invite_sent_at?: string | null
-          invite_token?: string | null
-          organisation?: string | null
-          reason_for_access?: string
-          rejection_reason?: string | null
-          request_for?: Database["public"]["Enums"]["third_party_access_type"]
-          role?: string | null
-          status?: Database["public"]["Enums"]["third_party_request_status"]
-          surname?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "third_party_access_requests_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      third_party_login_sessions: {
-        Row: {
-          created_at: string
-          expires_at: string
-          id: string
-          ip_address: unknown | null
-          is_active: boolean
-          last_accessed_at: string
-          third_party_user_id: string
-          token: string
-          user_agent: string | null
-        }
-        Insert: {
-          created_at?: string
-          expires_at: string
-          id?: string
-          ip_address?: unknown | null
-          is_active?: boolean
-          last_accessed_at?: string
-          third_party_user_id: string
-          token: string
-          user_agent?: string | null
-        }
-        Update: {
-          created_at?: string
-          expires_at?: string
-          id?: string
-          ip_address?: unknown | null
-          is_active?: boolean
-          last_accessed_at?: string
-          third_party_user_id?: string
-          token?: string
-          user_agent?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "third_party_login_sessions_third_party_user_id_fkey"
-            columns: ["third_party_user_id"]
-            isOneToOne: false
-            referencedRelation: "third_party_users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      third_party_sessions: {
-        Row: {
-          ended_at: string | null
-          id: string
-          ip_address: unknown | null
-          is_active: boolean
-          last_activity_at: string
-          session_token: string
-          started_at: string
-          third_party_user_id: string
-          user_agent: string | null
-        }
-        Insert: {
-          ended_at?: string | null
-          id?: string
-          ip_address?: unknown | null
-          is_active?: boolean
-          last_activity_at?: string
-          session_token: string
-          started_at?: string
-          third_party_user_id: string
-          user_agent?: string | null
-        }
-        Update: {
-          ended_at?: string | null
-          id?: string
-          ip_address?: unknown | null
-          is_active?: boolean
-          last_activity_at?: string
-          session_token?: string
-          started_at?: string
-          third_party_user_id?: string
-          user_agent?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "third_party_sessions_third_party_user_id_fkey"
-            columns: ["third_party_user_id"]
-            isOneToOne: false
-            referencedRelation: "third_party_users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      third_party_users: {
-        Row: {
-          access_expires_at: string
-          access_type: Database["public"]["Enums"]["third_party_access_type"]
-          branch_id: string
-          created_at: string
-          email: string
-          first_name: string
-          id: string
-          is_active: boolean
-          last_login_at: string | null
-          login_count: number
-          organisation: string | null
-          request_id: string
-          role: string | null
-          surname: string
-          updated_at: string
-        }
-        Insert: {
-          access_expires_at: string
-          access_type: Database["public"]["Enums"]["third_party_access_type"]
-          branch_id: string
-          created_at?: string
-          email: string
-          first_name: string
-          id?: string
-          is_active?: boolean
-          last_login_at?: string | null
-          login_count?: number
-          organisation?: string | null
-          request_id: string
-          role?: string | null
-          surname: string
-          updated_at?: string
-        }
-        Update: {
-          access_expires_at?: string
-          access_type?: Database["public"]["Enums"]["third_party_access_type"]
-          branch_id?: string
-          created_at?: string
-          email?: string
-          first_name?: string
-          id?: string
-          is_active?: boolean
-          last_login_at?: string | null
-          login_count?: number
-          organisation?: string | null
-          request_id?: string
-          role?: string | null
-          surname?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "third_party_users_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "third_party_users_request_id_fkey"
-            columns: ["request_id"]
-            isOneToOne: false
-            referencedRelation: "third_party_access_requests"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       training_courses: {
         Row: {
           branch_id: string | null
@@ -4562,27 +4116,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      create_third_party_login_session: {
-        Args: {
-          token_param: string
-          user_id_param: string
-          ip_address_param?: unknown
-          user_agent_param?: string
-        }
-        Returns: string
-      }
-      create_third_party_user_account: {
-        Args: { request_id_param: string }
-        Returns: string
-      }
-      expire_third_party_access: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      generate_invite_token: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
       get_branch_chart_data: {
         Args: { p_branch_id: string }
         Returns: Json
@@ -4609,22 +4142,6 @@ export type Database = {
           related_entity: string
         }[]
       }
-      get_client_reports_data: {
-        Args: {
-          p_branch_id: string
-          p_start_date?: string
-          p_end_date?: string
-        }
-        Returns: Json
-      }
-      get_financial_reports_data: {
-        Args: {
-          p_branch_id: string
-          p_start_date?: string
-          p_end_date?: string
-        }
-        Returns: Json
-      }
       get_notification_stats: {
         Args: { p_user_id: string; p_branch_id?: string }
         Returns: {
@@ -4633,14 +4150,6 @@ export type Database = {
           high_priority_count: number
           by_type: Json
         }[]
-      }
-      get_operational_reports_data: {
-        Args: {
-          p_branch_id: string
-          p_start_date?: string
-          p_end_date?: string
-        }
-        Returns: Json
       }
       get_staff_profile: {
         Args: { staff_user_id: string }
@@ -4658,29 +4167,6 @@ export type Database = {
           date_of_birth: string
           hire_date: string
           branch_id: string
-        }[]
-      }
-      get_staff_reports_data: {
-        Args: {
-          p_branch_id: string
-          p_start_date?: string
-          p_end_date?: string
-        }
-        Returns: Json
-      }
-      get_third_party_user_by_token: {
-        Args: { token_param: string }
-        Returns: {
-          user_id: string
-          email: string
-          first_name: string
-          surname: string
-          organisation: string
-          role: string
-          branch_id: string
-          access_type: Database["public"]["Enums"]["third_party_access_type"]
-          access_expires_at: string
-          is_active: boolean
         }[]
       }
       get_uninvoiced_bookings: {
@@ -4707,10 +4193,6 @@ export type Database = {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: boolean
       }
-      update_resource_stats: {
-        Args: { resource_id: string; stat_type: string }
-        Returns: undefined
-      }
     }
     Enums: {
       agreement_party: "client" | "staff" | "other"
@@ -4722,13 +4204,6 @@ export type Database = {
         | "Under Review"
         | "Completed"
         | "Cancelled"
-      third_party_access_type: "client" | "staff" | "both"
-      third_party_request_status:
-        | "pending"
-        | "approved"
-        | "rejected"
-        | "expired"
-        | "revoked"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4853,14 +4328,6 @@ export const Constants = {
         "Under Review",
         "Completed",
         "Cancelled",
-      ],
-      third_party_access_type: ["client", "staff", "both"],
-      third_party_request_status: [
-        "pending",
-        "approved",
-        "rejected",
-        "expired",
-        "revoked",
       ],
     },
   },

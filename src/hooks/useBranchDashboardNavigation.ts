@@ -37,13 +37,13 @@ export const useBranchDashboardNavigation = () => {
 
   const handleTabChange = (tab: string) => {
     if (id && branchName) {
-      navigate(`/admin/branch-dashboard/${id}/${branchName}/${tab}`);
+      navigate(`/branch-dashboard/${id}/${branchName}/${tab}`);
     }
   };
 
   const handleWorkflowNavigation = (section: string) => {
     if (id && branchName) {
-      navigate(`/admin/branch-dashboard/${id}/${branchName}/workflow/${section}`);
+      navigate(`/branch-dashboard/${id}/${branchName}/workflow/${section}`);
     }
   };
 
