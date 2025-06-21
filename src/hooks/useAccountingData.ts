@@ -416,6 +416,8 @@ export type CreateExtraTimeRecord = {
   approved_at?: string | null;
   invoiced: boolean;
   invoice_id?: string | null;
+  created_by?: string | null;
+  creator_role?: string | null;
 };
 
 // Mutation hooks for creating records
