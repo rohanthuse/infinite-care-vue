@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
@@ -25,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
+import { useAuth } from "@/hooks/use-auth";
 
 // Define a comprehensive Branch type to work around outdated generated types
 export type Branch = {
@@ -60,10 +60,12 @@ const Branch = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
+  const { session, loading: authLoading, error: authError } = useAuth();
 
   const { data: branches, isLoading, error } = useQuery({
       queryKey: ['branches', searchQuery],
       queryFn: () => fetchBranches(searchQuery),
+      enabled: !!session, // Only run query when user is authenticated
   });
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -215,9 +217,59 @@ const Branch = () => {
 
   // Add console logs to debug the issue
   console.log('Branch component rendering...');
+  console.log('Auth loading:', authLoading);
+  console.log('Auth error:', authError);
+  console.log('Session:', session?.user?.email || 'No session');
   console.log('IsLoading:', isLoading);
-  console.log('Error:', error);
+  console.log('Query Error:', error);
   console.log('Branches data:', branches);
+
+  // Handle authentication loading
+  if (authLoading) {
+    console.log('Showing auth loading state');
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        <DashboardNavbar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+            <p className="text-gray-600">Checking authentication...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Handle authentication error
+  if (authError) {
+    console.log('Showing auth error state:', authError);
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        <DashboardNavbar />
+        <main className="flex-1 flex items-center justify-center bg-red-50">
+          <div className="text-center p-8">
+            <h2 className="text-xl font-semibold text-red-700 mb-2">Authentication Error</h2>
+            <p className="text-red-600 mb-4">{authError}</p>
+            <button 
+              onClick={() => navigate('/super-admin-login')}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Go to Login
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Handle no session
+  if (!session) {
+    console.log('No session, redirecting to login');
+    navigate('/super-admin-login');
+    return null;
+  }
 
   if (isLoading && !branches) {
     console.log('Showing loading state');
@@ -238,8 +290,30 @@ const Branch = () => {
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
         <DashboardHeader />
         <DashboardNavbar />
-        <main className="flex-1 flex items-center justify-center bg-red-50 text-red-700">
-          Error loading data: {error.message}
+        <main className="flex-1 flex items-center justify-center bg-red-50">
+          <div className="text-center p-8">
+            <h2 className="text-xl font-semibold text-red-700 mb-2">Error Loading Branches</h2>
+            <p className="text-red-600 mb-4">{error.message}</p>
+            {error.message.includes('JWT') && (
+              <p className="text-sm text-red-500 mb-4">
+                This appears to be an authentication issue. Please try logging in again.
+              </p>
+            )}
+            <div className="space-x-2">
+              <button 
+                onClick={() => queryClient.invalidateQueries({ queryKey: ['branches'] })}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Retry
+              </button>
+              <button 
+                onClick={() => navigate('/super-admin-login')}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              >
+                Login Again
+              </button>
+            </div>
+          </div>
         </main>
       </div>
     );

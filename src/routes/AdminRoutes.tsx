@@ -1,5 +1,4 @@
-
-import { Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { Routes, Route, Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/Dashboard";
 import Services from "@/pages/Services";
@@ -32,22 +31,14 @@ import ThirdPartyAccess from "@/pages/ThirdPartyAccess";
 import Reports from "@/pages/Reports";
 import BookingApprovals from "@/pages/BookingApprovals";
 import ClientEdit from "@/pages/client/ClientEdit";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 
 const RequireAdminAuth = () => {
-  const { session, loading } = useAuth();
-
-  if (loading) {
-    // You can replace this with a beautiful spinner
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
-
-  if (!session) {
-    // Redirect to login page if not authenticated
-    return <Navigate to="/super-admin-login" replace />;
-  }
-
-  // Render child routes if authenticated
-  return <Outlet />;
+  return (
+    <AuthGuard redirectTo="/super-admin-login">
+      <Outlet />
+    </AuthGuard>
+  );
 };
 
 const AdminRoutes = () => {
