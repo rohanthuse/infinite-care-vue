@@ -1,11 +1,13 @@
+
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, File, X, Download } from 'lucide-react';
+import { Upload, File, X, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { useFileUpload, type FileCategory, type UploadOptions } from '@/hooks/useFileUpload';
+import { useFileUpload, type FileCategory } from '@/hooks/useFileUpload';
 import { useAgreementFiles } from '@/hooks/useAgreementFiles';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface FileUploadDropzoneProps {
   agreementId?: string;
@@ -15,7 +17,9 @@ interface FileUploadDropzoneProps {
   maxFiles?: number;
   acceptedFileTypes?: string[];
   onUploadComplete?: (files: any[]) => void;
+  onFilesSelected?: (files: File[]) => void;
   className?: string;
+  disabled?: boolean;
 }
 
 export const FileUploadDropzone: React.FC<FileUploadDropzoneProps> = ({
@@ -26,9 +30,12 @@ export const FileUploadDropzone: React.FC<FileUploadDropzoneProps> = ({
   maxFiles = 5,
   acceptedFileTypes,
   onUploadComplete,
-  className
+  onFilesSelected,
+  className,
+  disabled = false
 }) => {
   const { uploadFile, deleteFile, getFileUrl, uploading, progress } = useFileUpload();
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadQueue, setUploadQueue] = useState<File[]>([]);
   
   const { data: existingFiles, refetch } = useAgreementFiles({
@@ -39,37 +46,53 @@ export const FileUploadDropzone: React.FC<FileUploadDropzoneProps> = ({
   });
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    const totalFiles = (existingFiles?.length || 0) + acceptedFiles.length;
+    if (disabled) return;
+    
+    const totalFiles = (existingFiles?.length || 0) + acceptedFiles.length + selectedFiles.length;
     if (totalFiles > maxFiles) {
-      alert(`Maximum ${maxFiles} files allowed`);
+      toast.error(`Maximum ${maxFiles} files allowed`);
       return;
     }
 
-    setUploadQueue(acceptedFiles);
-    
-    try {
-      const uploadOptions: UploadOptions = {
-        agreementId,
-        templateId,
-        scheduledAgreementId,
-        category,
-        allowedTypes: acceptedFileTypes
-      };
-
-      const uploadedFiles = [];
-      for (const file of acceptedFiles) {
-        const result = await uploadFile(file, uploadOptions);
-        uploadedFiles.push(result);
-      }
+    // If we have an agreement ID, upload immediately
+    if (agreementId || templateId || scheduledAgreementId) {
+      setUploadQueue(acceptedFiles);
       
-      await refetch();
-      onUploadComplete?.(uploadedFiles);
-    } catch (error) {
-      console.error('Upload failed:', error);
-    } finally {
-      setUploadQueue([]);
+      try {
+        const uploadOptions = {
+          agreementId,
+          templateId,
+          scheduledAgreementId,
+          category,
+          allowedTypes: acceptedFileTypes
+        };
+
+        const uploadedFiles = [];
+        for (const file of acceptedFiles) {
+          const result = await uploadFile(file, uploadOptions);
+          uploadedFiles.push(result);
+        }
+        
+        await refetch();
+        onUploadComplete?.(uploadedFiles);
+        toast.success(`${uploadedFiles.length} file(s) uploaded successfully`);
+      } catch (error) {
+        console.error('Upload failed:', error);
+        toast.error('Upload failed');
+      } finally {
+        setUploadQueue([]);
+      }
+    } else {
+      // Store files temporarily for later upload
+      setSelectedFiles(prev => [...prev, ...acceptedFiles]);
+      onFilesSelected?.(acceptedFiles);
+      toast.success(`${acceptedFiles.length} file(s) selected for upload`);
     }
-  }, [uploadFile, agreementId, templateId, scheduledAgreementId, category, existingFiles, maxFiles, acceptedFileTypes, onUploadComplete, refetch]);
+  }, [
+    disabled, agreementId, templateId, scheduledAgreementId, category, 
+    existingFiles, selectedFiles, maxFiles, acceptedFileTypes, 
+    uploadFile, refetch, onUploadComplete, onFilesSelected
+  ]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -80,16 +103,22 @@ export const FileUploadDropzone: React.FC<FileUploadDropzoneProps> = ({
       'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.webp']
     },
     multiple: maxFiles > 1,
-    disabled: uploading
+    disabled: disabled || uploading
   });
 
   const handleDeleteFile = async (fileId: string) => {
     try {
       await deleteFile(fileId);
       await refetch();
+      toast.success('File deleted successfully');
     } catch (error) {
       console.error('Delete failed:', error);
+      toast.error('Delete failed');
     }
+  };
+
+  const removeSelectedFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const formatFileSize = (bytes: number) => {
@@ -100,6 +129,8 @@ export const FileUploadDropzone: React.FC<FileUploadDropzoneProps> = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const totalFiles = (existingFiles?.length || 0) + selectedFiles.length;
+
   return (
     <div className={cn("space-y-4", className)}>
       {/* Dropzone */}
@@ -108,7 +139,7 @@ export const FileUploadDropzone: React.FC<FileUploadDropzoneProps> = ({
         className={cn(
           "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
           isDragActive ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:border-gray-400",
-          uploading && "cursor-not-allowed opacity-50"
+          (uploading || disabled) && "cursor-not-allowed opacity-50"
         )}
       >
         <input {...getInputProps()} />
@@ -123,6 +154,9 @@ export const FileUploadDropzone: React.FC<FileUploadDropzoneProps> = ({
             <p className="text-sm text-gray-400 mt-1">
               PDF, DOC, DOCX, Images (max {maxFiles} files, 50MB each)
             </p>
+            <p className="text-xs text-gray-500 mt-1">
+              {totalFiles}/{maxFiles} files selected
+            </p>
           </div>
         )}
       </div>
@@ -131,17 +165,45 @@ export const FileUploadDropzone: React.FC<FileUploadDropzoneProps> = ({
       {uploading && uploadQueue.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <div className="h-2 bg-gray-200 rounded-full flex-1">
-              <div 
-                className="h-2 bg-blue-600 rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
+            <Progress value={progress} className="flex-1" />
             <span className="text-sm text-gray-600">{progress}%</span>
           </div>
-          <p className="text-sm text-gray-600">
-            Uploading {uploadQueue.length} file(s)...
-          </p>
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <p className="text-sm text-gray-600">
+              Uploading {uploadQueue.length} file(s)...
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Selected Files (not yet uploaded) */}
+      {selectedFiles.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-gray-700">Selected Files (pending upload)</h4>
+          <div className="space-y-2">
+            {selectedFiles.map((file, index) => (
+              <div key={index} className="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                <File className="h-5 w-5 text-yellow-600" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {file.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {formatFileSize(file.size)} • Selected for upload
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 hover:bg-yellow-100 hover:text-yellow-700"
+                  onClick={() => removeSelectedFile(index)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -151,8 +213,8 @@ export const FileUploadDropzone: React.FC<FileUploadDropzoneProps> = ({
           <h4 className="text-sm font-medium text-gray-700">Uploaded Files</h4>
           <div className="space-y-2">
             {existingFiles.map((file) => (
-              <div key={file.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <File className="h-5 w-5 text-gray-400" />
+              <div key={file.id} className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                <File className="h-5 w-5 text-green-600" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
                     {file.file_name}
@@ -165,7 +227,7 @@ export const FileUploadDropzone: React.FC<FileUploadDropzoneProps> = ({
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-8 w-8 p-0"
+                    className="h-8 w-8 p-0 hover:bg-green-100"
                     onClick={() => window.open(getFileUrl(file.storage_path), '_blank')}
                   >
                     <Download className="h-4 w-4" />

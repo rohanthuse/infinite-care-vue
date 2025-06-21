@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar as CalendarIcon, Users, Tag, FileText, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAgreementTypes, useAgreementTemplates, useClients, useStaff, useCreateAgreement } from "@/data/hooks/agreements";
 import { FileUploadDropzone } from "./FileUploadDropzone";
 import { EnhancedSignatureCanvas } from "./EnhancedSignatureCanvas";
+import { useAgreementWorkflow } from "@/hooks/useAgreementWorkflow";
+import { toast } from "sonner";
 
 interface SignAgreementDialogProps {
   open: boolean;
@@ -49,6 +51,7 @@ export function SignAgreementDialog({
   const [digitalSignature, setDigitalSignature] = useState("");
   const [content, setContent] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
+  const [createdAgreementId, setCreatedAgreementId] = useState<string | null>(null);
   
   // Fetch data
   const { data: agreementTypes, isLoading: typesLoading } = useAgreementTypes();
@@ -61,14 +64,17 @@ export function SignAgreementDialog({
   const { data: staff, isLoading: staffLoading } = useStaff(branchId);
   
   const createAgreementMutation = useCreateAgreement();
+  const { workflowState, handleFileUpload, setSignature, resetWorkflow } = useAgreementWorkflow();
   
   const handleSignAgreement = async () => {
     if (!title || !selectedType || !signerName || !signedDate) {
+      toast.error("Please fill in all required fields");
       return;
     }
     
     try {
-      await createAgreementMutation.mutateAsync({
+      // Create the agreement first
+      const agreementData = {
         title,
         content: content || null,
         template_id: selectedTemplate || null,
@@ -83,12 +89,24 @@ export function SignAgreementDialog({
         primary_document_id: null,
         signature_file_id: null,
         branch_id: branchId !== "global" ? branchId : null,
-      });
+      };
+
+      // Create agreement and get the ID
+      const { data: newAgreement } = await createAgreementMutation.mutateAsync(agreementData);
       
-      resetForm();
-      onOpenChange(false);
+      if (newAgreement?.id) {
+        setCreatedAgreementId(newAgreement.id);
+        toast.success("Agreement created successfully!");
+        
+        // Close dialog after successful creation
+        setTimeout(() => {
+          resetForm();
+          onOpenChange(false);
+        }, 1000);
+      }
     } catch (error) {
       console.error('Error creating agreement:', error);
+      toast.error('Failed to create agreement');
     }
   };
   
@@ -104,7 +122,26 @@ export function SignAgreementDialog({
     setDigitalSignature("");
     setContent("");
     setCurrentStep(1);
+    setCreatedAgreementId(null);
+    resetWorkflow();
   };
+
+  // Auto-populate signer name when client or staff is selected
+  React.useEffect(() => {
+    if (signingParty === "client" && selectedClient && clients) {
+      const client = clients.find(c => c.id === selectedClient);
+      if (client) {
+        setSignerName(`${client.first_name} ${client.last_name}`);
+      }
+    } else if (signingParty === "staff" && selectedStaff && staff) {
+      const staffMember = staff.find(s => s.id === selectedStaff);
+      if (staffMember) {
+        setSignerName(`${staffMember.first_name} ${staffMember.last_name}`);
+      }
+    } else if (signingParty === "other") {
+      setSignerName("");
+    }
+  }, [signingParty, selectedClient, selectedStaff, clients, staff]);
 
   const isLoading = typesLoading || templatesLoading || clientsLoading || staffLoading;
 
@@ -295,10 +332,16 @@ export function SignAgreementDialog({
                     Upload the main agreement document and any supporting files
                   </p>
                   <FileUploadDropzone
-                    agreementId="temp" // Will be replaced after agreement creation
+                    agreementId={createdAgreementId || undefined}
                     category="document"
                     maxFiles={5}
+                    disabled={!createdAgreementId}
                   />
+                  {!createdAgreementId && (
+                    <p className="text-xs text-yellow-600 mt-2">
+                      Files will be available for upload after creating the agreement
+                    </p>
+                  )}
                 </div>
               </div>
             </TabsContent>
@@ -312,8 +355,9 @@ export function SignAgreementDialog({
                   </p>
                   <EnhancedSignatureCanvas
                     onSignatureSave={setDigitalSignature}
-                    agreementId="temp" // Will be replaced after agreement creation
+                    agreementId={createdAgreementId || undefined}
                     initialSignature={digitalSignature}
+                    disabled={false}
                   />
                 </div>
               </div>
