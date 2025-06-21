@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw } from "lucide-react";
@@ -13,7 +14,7 @@ import { DateNavigation } from "./DateNavigation";
 import { BookingFilters } from "./BookingFilters";
 import { useBookingData } from "./hooks/useBookingData";
 import { useBookingHandlers } from "./hooks/useBookingHandlers";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthSafe } from "@/hooks/useAuthSafe";
 import { useServices } from "@/data/hooks/useServices";
 import { toast } from "sonner";
 import { useRealTimeBookingSync } from "./hooks/useRealTimeBookingSync";
@@ -24,7 +25,7 @@ interface BookingsTabProps {
 }
 
 export function BookingsTab({ branchId }: BookingsTabProps) {
-  const { user } = useAuth();
+  const { user } = useAuthSafe();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewType, setViewType] = useState<"daily" | "weekly">("daily");
   const [statusFilter, setStatusFilter] = useState<string>("all");
