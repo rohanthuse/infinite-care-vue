@@ -140,9 +140,13 @@ export function UnifiedUploadDialog({
     setIsUploading(true);
     try {
       const uploadData: UploadDocumentData = {
-        ...data,
+        name: data.name,
+        type: data.type,
+        category: data.category,
+        description: data.description,
         file: selectedFile,
         tags,
+        access_level: data.access_level,
       };
 
       // Add related entity if selected

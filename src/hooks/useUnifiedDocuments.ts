@@ -193,9 +193,9 @@ export const useUnifiedDocuments = (branchId: string) => {
     },
   });
 
-  // Download document mutation
-  const downloadDocumentMutation = useMutation({
-    mutationFn: async ({ filePath, fileName }: { filePath: string; fileName: string }) => {
+  // Download document function - corrected signature
+  const downloadDocument = async (filePath: string, fileName: string) => {
+    try {
       const { data, error } = await supabase.storage
         .from('documents')
         .download(filePath);
@@ -211,19 +211,18 @@ export const useUnifiedDocuments = (branchId: string) => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    },
-    onError: (error) => {
+    } catch (error: any) {
       toast({
         title: "Error",
         description: "Failed to download document: " + error.message,
         variant: "destructive",
       });
-    },
-  });
+    }
+  };
 
-  // View document mutation
-  const viewDocumentMutation = useMutation({
-    mutationFn: async (filePath: string) => {
+  // View document function - corrected signature
+  const viewDocument = async (filePath: string) => {
+    try {
       const { data, error } = await supabase.storage
         .from('documents')
         .createSignedUrl(filePath, 3600); // 1 hour expiry
@@ -232,15 +231,14 @@ export const useUnifiedDocuments = (branchId: string) => {
 
       // Open in new tab
       window.open(data.signedUrl, '_blank');
-    },
-    onError: (error) => {
+    } catch (error: any) {
       toast({
         title: "Error",
         description: "Failed to view document: " + error.message,
         variant: "destructive",
       });
-    },
-  });
+    }
+  };
 
   return {
     documents,
@@ -249,12 +247,10 @@ export const useUnifiedDocuments = (branchId: string) => {
     uploadDocument: uploadDocumentMutation.mutate,
     updateDocument: updateDocumentMutation.mutate,
     deleteDocument: deleteDocumentMutation.mutate,
-    downloadDocument: downloadDocumentMutation.mutate,
-    viewDocument: viewDocumentMutation.mutate,
+    downloadDocument,
+    viewDocument,
     isUploading: uploadDocumentMutation.isPending,
     isUpdating: updateDocumentMutation.isPending,
     isDeleting: deleteDocumentMutation.isPending,
-    isDownloading: downloadDocumentMutation.isPending,
-    isViewing: viewDocumentMutation.isPending,
   };
 };
