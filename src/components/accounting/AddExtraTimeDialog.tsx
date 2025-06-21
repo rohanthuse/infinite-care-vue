@@ -72,7 +72,7 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
     resolver: zodResolver(extraTimeSchema),
     defaultValues: initialData ? {
       staff_id: initialData.staff_id,
-      client_id: initialData.client_id || "",
+      client_id: initialData.client_id || "no-client",
       work_date: initialData.work_date,
       scheduled_start_time: initialData.scheduled_start_time,
       scheduled_end_time: initialData.scheduled_end_time,
@@ -85,6 +85,7 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
     } : {
       hourly_rate: 15.00,
       extra_time_rate: 22.50,
+      client_id: "no-client",
     },
   });
 
@@ -135,7 +136,7 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
 
       const extraTimeData: Partial<ExtraTimeRecord> = {
         staff_id: data.staff_id,
-        client_id: data.client_id || null,
+        client_id: data.client_id === "no-client" ? null : data.client_id || null,
         work_date: data.work_date,
         scheduled_start_time: data.scheduled_start_time,
         scheduled_end_time: data.scheduled_end_time,
@@ -204,7 +205,7 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
             <div className="space-y-2">
               <Label htmlFor="client_id">Client (Optional)</Label>
               <Select
-                value={watchedValues.client_id || ""}
+                value={watchedValues.client_id || "no-client"}
                 onValueChange={(value) => setValue("client_id", value)}
                 disabled={clientsLoading}
               >
@@ -212,7 +213,7 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
                   <SelectValue placeholder="Select client" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No specific client</SelectItem>
+                  <SelectItem value="no-client">No specific client</SelectItem>
                   {clientsList.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
                       {client.first_name} {client.last_name}
