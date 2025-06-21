@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -7,14 +7,24 @@ import { toast } from "sonner";
 export function useRealTimeBookingSync(branchId?: string) {
   const [isConnected, setIsConnected] = useState(false);
   const queryClient = useQueryClient();
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     if (!branchId) return;
 
     console.log("[useRealTimeBookingSync] Setting up real-time subscription for branch:", branchId);
 
+    // Clean up any existing channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    // Create a unique channel name to avoid conflicts
+    const channelName = `booking-changes-${branchId}-${Date.now()}`;
+
     const channel = supabase
-      .channel('booking-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -59,9 +69,14 @@ export function useRealTimeBookingSync(branchId?: string) {
         }
       });
 
+    channelRef.current = channel;
+
     return () => {
       console.log("[useRealTimeBookingSync] Cleaning up real-time subscription");
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
       setIsConnected(false);
     };
   }, [branchId, queryClient]);

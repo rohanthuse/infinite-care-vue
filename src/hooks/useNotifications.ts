@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "@/hooks/use-toast";
 
 export interface Notification {
@@ -29,6 +29,7 @@ export interface NotificationStats {
 
 export const useNotifications = (branchId?: string) => {
   const queryClient = useQueryClient();
+  const channelRef = useRef<any>(null);
 
   // Fetch notifications with real-time updates
   const {
@@ -128,10 +129,19 @@ export const useNotifications = (branchId?: string) => {
     },
   });
 
-  // Real-time subscription
+  // Real-time subscription with proper cleanup
   useEffect(() => {
+    // Create a unique channel name to avoid conflicts
+    const channelName = `notifications-${branchId || 'global'}-${Date.now()}`;
+    
+    // Clean up any existing channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
     const channel = supabase
-      .channel('notifications-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -146,10 +156,15 @@ export const useNotifications = (branchId?: string) => {
       )
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [queryClient]);
+  }, [queryClient, branchId]);
 
   return {
     notifications,
