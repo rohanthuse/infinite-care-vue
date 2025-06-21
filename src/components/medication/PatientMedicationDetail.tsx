@@ -18,7 +18,7 @@ import {
 import { toast } from "sonner";
 import MedChartData from "./MedChartData";
 import { useMedicationsByClient } from "@/hooks/useMedications";
-import { useMARByClient, useRecordMedicationAdministration } from "@/hooks/useMedicationAdministration";
+import { useMARByClient, useRecordMedicationAdministration, MedicationAdministrationRecord } from "@/hooks/useMedicationAdministration";
 
 interface PatientMedicationDetailProps {
   patientId: string;

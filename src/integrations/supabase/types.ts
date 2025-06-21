@@ -2253,6 +2253,47 @@ export type Database = {
           },
         ]
       }
+      medication_administration_records: {
+        Row: {
+          administered_at: string
+          administered_by: string
+          created_at: string
+          id: string
+          medication_id: string
+          notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          administered_at: string
+          administered_by: string
+          created_at?: string
+          id?: string
+          medication_id: string
+          notes?: string | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          administered_at?: string
+          administered_by?: string
+          created_at?: string
+          id?: string
+          medication_id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_administration_records_medication_id_fkey"
+            columns: ["medication_id"]
+            isOneToOne: false
+            referencedRelation: "client_medications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_participants: {
         Row: {
           id: string

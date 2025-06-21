@@ -67,6 +67,8 @@ const formSchema = z.object({
   status: z.string().default("active"),
 });
 
+type FormData = z.infer<typeof formSchema>;
+
 export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogProps) => {
   const createMedication = useCreateMedication();
 
@@ -94,7 +96,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
     },
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
@@ -104,13 +106,20 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: FormData) => {
     try {
-      await createMedication.mutateAsync({
-        ...values,
+      // Ensure care_plan_id is always present
+      const medicationData = {
+        care_plan_id: values.care_plan_id,
+        name: values.name,
+        dosage: values.dosage,
+        frequency: values.frequency,
         start_date: values.start_date.toISOString().split('T')[0],
         end_date: values.end_date?.toISOString().split('T')[0],
-      });
+        status: values.status || "active",
+      };
+      
+      await createMedication.mutateAsync(medicationData);
       
       form.reset();
       onOpenChange(false);

@@ -11,6 +11,11 @@ export interface MedicationAdministrationRecord {
   status: 'given' | 'refused' | 'not_given' | 'not_applicable';
   notes?: string;
   created_at: string;
+  updated_at: string;
+  client_medications?: {
+    name: string;
+    dosage: string;
+  };
 }
 
 export interface MARFormData {
@@ -74,7 +79,7 @@ export function useMARByClient(clientId: string, dateRange?: { start: string; en
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return data as MedicationAdministrationRecord[];
     },
     enabled: !!clientId,
   });
@@ -140,7 +145,7 @@ export function usePendingMedications(branchId?: string) {
 
       // Filter medications that haven't been administered today
       const medicationsWithStatus = await Promise.all(
-        data.map(async (medication) => {
+        (data || []).map(async (medication) => {
           const { data: marData } = await supabase
             .from('medication_administration_records')
             .select('status')
