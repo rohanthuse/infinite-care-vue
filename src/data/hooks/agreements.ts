@@ -79,8 +79,9 @@ export const useSignedAgreements = ({ searchQuery, typeFilter, dateFilter, branc
 };
 
 const createAgreement = async (agreementData: Omit<Agreement, 'id' | 'created_at' | 'updated_at' | 'agreement_types'>) => {
-  const { error } = await supabase.from('agreements').insert(agreementData);
+  const { data, error } = await supabase.from('agreements').insert(agreementData).select().single();
   if (error) throw new Error(error.message);
+  return data;
 };
 
 export const useCreateAgreement = () => {
