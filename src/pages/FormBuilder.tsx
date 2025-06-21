@@ -54,7 +54,7 @@ const FormBuilder = () => {
         
         <FormBuilderTab 
           branchId={id || ""} 
-          selectedFormId={formId}
+          branchName={decodedBranchName}
         />
       </main>
     </div>

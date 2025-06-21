@@ -70,14 +70,13 @@ const Documents = () => {
           </div>
           
           <div className="p-6">
-            <UnifiedDocumentsList branchId={id || ""} />
+            <UnifiedDocumentsList />
           </div>
         </div>
         
         <UnifiedUploadDialog
           open={uploadDialogOpen}
           onOpenChange={setUploadDialogOpen}
-          branchId={id || ""}
         />
       </main>
     </div>

@@ -37,6 +37,10 @@ const Library = () => {
     toast.info("New booking functionality will be implemented soon");
   };
 
+  const handleResourceAdded = () => {
+    setShowCreateForm(false);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -72,8 +76,7 @@ const Library = () => {
             {showCreateForm ? (
               <LibraryResourceForm 
                 branchId={id || ""} 
-                onSuccess={() => setShowCreateForm(false)}
-                onCancel={() => setShowCreateForm(false)}
+                onResourceAdded={handleResourceAdded}
               />
             ) : (
               <LibraryResourcesList branchId={id || ""} />
