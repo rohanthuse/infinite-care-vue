@@ -26,10 +26,13 @@ interface PayrollTabProps {
   branchName?: string;
 }
 
-// Define filter types to match our database schema
+// Define payment status type to match FilterPayrollDialog
+type PaymentStatus = 'pending' | 'processed' | 'failed' | 'cancelled';
+
+// Define filter types to match FilterPayrollDialog
 interface PayrollFilter {
   dateRange: { from?: Date; to?: Date };
-  paymentStatuses: string[];
+  paymentStatuses: PaymentStatus[];
   minGrossPay?: number;
   maxGrossPay?: number;
 }
@@ -86,7 +89,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
     // Apply status filters
     if (activeFilters.paymentStatuses.length > 0) {
       results = results.filter(record => 
-        activeFilters.paymentStatuses.includes(record.payment_status)
+        activeFilters.paymentStatuses.includes(record.payment_status as PaymentStatus)
       );
     }
     

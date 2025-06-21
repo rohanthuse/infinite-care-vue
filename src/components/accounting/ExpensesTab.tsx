@@ -25,11 +25,15 @@ interface ExpensesTabProps {
   branchName?: string;
 }
 
-// Define filter types to match our database schema
+// Define expense category and status types to match FilterExpensesDialog
+type ExpenseCategory = 'office_supplies' | 'travel' | 'meals' | 'equipment' | 'utilities' | 'rent' | 'software' | 'training' | 'medical_supplies' | 'other';
+type ExpenseStatus = 'pending' | 'approved' | 'rejected' | 'reimbursed';
+
+// Define filter types to match FilterExpensesDialog
 interface ExpenseFilter {
-  categories: string[];
+  categories: ExpenseCategory[];
   dateRange: { from?: Date; to?: Date };
-  status: string[];
+  status: ExpenseStatus[];
   minAmount?: number;
   maxAmount?: number;
 }
@@ -81,14 +85,14 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
     // Apply category filters
     if (filters.categories.length > 0) {
       result = result.filter((expense) =>
-        filters.categories.includes(expense.category)
+        filters.categories.includes(expense.category as ExpenseCategory)
       );
     }
     
     // Apply status filters
     if (filters.status.length > 0) {
       result = result.filter((expense) =>
-        filters.status.includes(expense.status)
+        filters.status.includes(expense.status as ExpenseStatus)
       );
     }
     
