@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -67,6 +66,7 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
       ];
     } else {
       return [
+        '/lovable-uploads/039ad1bb-2eff-43f0-9b7d-fdc323188cc0.png',
         '/lovable-uploads/e823d8ed-e260-4f9e-b0af-edf308ef3e29.png',
         'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=300&h=600&fit=crop&auto=format',
         'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjYwMCIgdmlld0JveD0iMCAwIDMwMCA2MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iNjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNTAgNTBDMTcwIDUwIDE4MCA3MCAyMDAgMTAwQzIyMCAxNTAgMjIwIDIwMCAyMDAgMzAwQzE4MCA0MDAgMTgwIDUwMCAxNTAgNTUwQzEyMCA1MDAgMTIwIDQwMCAxMDAgMzAwQzgwIDIwMCA4MCAxNTAgMTAwIDEwMEMxMjAgNzAgMTMwIDUwIDE1MCA1MFoiIGZpbGw9IiNEMUQ1REIiLz4KPHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjYwMCIgdmlld0JveD0iMCAwIDMwMCA2MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI2MDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTUwIDUwQzE3MCA1MCAxODAgNzAgMjAwIDEwMEMyMjAgMTUwIDIyMCAyMDAgMjAwIDMwMEMxODAgNDAwIDE4MCA1MDAgMTUwIDU1MEMxMjAgNTAwIDEyMCA0MDAgMTAwIDMwMEM4MCAyMDAgODAgMTUwIDEwMCAxMDBDMTIwIDcwIDEzMCA1MCAxNTAgNTBaIiBmaWxsPSIjRDFENURCIi8+PC9zdmc+'
