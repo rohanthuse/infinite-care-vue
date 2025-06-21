@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
@@ -34,7 +35,6 @@ interface TabItem {
   label: string;
   value: string;
   description?: string;
-  needsDedicatedPage?: boolean;
 }
 
 const primaryTabs: TabItem[] = [
@@ -51,7 +51,7 @@ const secondaryTabGroups = [
   {
     label: "Operations",
     items: [
-      { icon: Workflow, label: "Workflow", value: "workflow", description: "Process management", needsDedicatedPage: true },
+      { icon: Workflow, label: "Workflow", value: "workflow", description: "Process management" },
       { icon: ListChecks, label: "Key Parameters", value: "key-parameters", description: "Track metrics" },
       { icon: Pill, label: "Medication", value: "medication", description: "Medicine tracking" },
     ]
@@ -59,26 +59,26 @@ const secondaryTabGroups = [
   {
     label: "Administration",
     items: [
-      { icon: DollarSign, label: "Accounting", value: "accounting", description: "Financial management", needsDedicatedPage: true },
-      { icon: FileText, label: "Agreements", value: "agreements", description: "Legal documents", needsDedicatedPage: true },
-      { icon: Bell, label: "Events & Logs", value: "events-logs", description: "Activity tracking", needsDedicatedPage: true },
-      { icon: ClipboardCheck, label: "Attendance", value: "attendance", description: "Staff attendance", needsDedicatedPage: true },
+      { icon: DollarSign, label: "Accounting", value: "accounting", description: "Financial management" },
+      { icon: FileText, label: "Agreements", value: "agreements", description: "Legal documents" },
+      { icon: Bell, label: "Events & Logs", value: "events-logs", description: "Activity tracking" },
+      { icon: ClipboardCheck, label: "Attendance", value: "attendance", description: "Staff attendance" },
     ]
   },
   {
     label: "Resources",
     items: [
-      { icon: FileUp, label: "Form Builder", value: "form-builder", description: "Create custom forms", needsDedicatedPage: true },
-      { icon: Folder, label: "Documents", value: "documents", description: "Manage documents", needsDedicatedPage: true },
-      { icon: Bell, label: "Notifications", value: "notifications", description: "Alert management", needsDedicatedPage: true },
-      { icon: Folder, label: "Library", value: "library", description: "Resources & guides", needsDedicatedPage: true },
-      { icon: UserPlus, label: "Third Party Access", value: "third-party", description: "External users", needsDedicatedPage: true },
+      { icon: FileUp, label: "Form Builder", value: "form-builder", description: "Create custom forms" },
+      { icon: Folder, label: "Documents", value: "documents", description: "Manage documents" },
+      { icon: Bell, label: "Notifications", value: "notifications", description: "Alert management" },
+      { icon: Folder, label: "Library", value: "library", description: "Resources & guides" },
+      { icon: UserPlus, label: "Third Party Access", value: "third-party", description: "External users" },
     ]
   },
   {
     label: "Reports",
     items: [
-      { icon: BarChart4, label: "Reports", value: "reports", description: "Data analysis", needsDedicatedPage: true },
+      { icon: BarChart4, label: "Reports", value: "reports", description: "Data analysis" },
     ]
   },
 ];
@@ -112,42 +112,18 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
   };
 
   const handleTabNavigation = (tabValue: string) => {
-    const tab = allTabs.find(t => t.value === tabValue);
-    
-    if (tab?.needsDedicatedPage && id && branchName) {
-      // Navigate to dedicated page for tabs that need their own pages
-      const routeMap: { [key: string]: string } = {
-        'workflow': '/admin/workflow',
-        'accounting': '/admin/accounting',
-        'agreements': '/admin/agreement',
-        'events-logs': '/admin/events-logs',
-        'attendance': '/admin/attendance',
-        'form-builder': '/admin/form-builder',
-        'documents': '/admin/documents',
-        'notifications': '/admin/notifications',
-        'library': '/admin/library',
-        'third-party': '/admin/third-party',
-        'reports': '/admin/reports'
-      };
-      
-      const route = routeMap[tabValue];
-      if (route) {
-        navigate(`${route}/${id}/${branchName}`);
-      } else {
-        // Fallback to branch dashboard with tab
-        navigate(`/admin/branch-dashboard/${id}/${branchName}/${tabValue}`);
-      }
+    if (tabValue === "events-logs" && id && branchName) {
+      // Navigate to dedicated Events & Logs page
+      navigate(`/branch-dashboard/${id}/${branchName}/events-logs`);
     } else {
-      // Use the provided onChange for tabs that stay within branch dashboard
+      // Use the provided onChange for other tabs
       onChange(tabValue);
     }
   };
 
   // Handle direct Reports menu item click without submenu
   const handleReportsClick = () => {
-    if (id && branchName) {
-      navigate(`/admin/reports/${id}/${branchName}`);
-    }
+    onChange("reports");
   };
   
   return (
