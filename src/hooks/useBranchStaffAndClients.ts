@@ -13,7 +13,7 @@ export const useBranchStaffAndClients = (branchId: string) => {
         .eq('status', 'Active');
 
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
@@ -26,7 +26,7 @@ export const useBranchStaffAndClients = (branchId: string) => {
         .eq('branch_id', branchId);
 
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 

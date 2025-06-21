@@ -413,6 +413,62 @@ export type Database = {
           },
         ]
       }
+      attendance_records: {
+        Row: {
+          attendance_date: string
+          branch_id: string
+          check_in_time: string | null
+          check_out_time: string | null
+          created_at: string
+          created_by: string | null
+          hours_worked: number | null
+          id: string
+          notes: string | null
+          person_id: string
+          person_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attendance_date: string
+          branch_id: string
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string
+          created_by?: string | null
+          hours_worked?: number | null
+          id?: string
+          notes?: string | null
+          person_id: string
+          person_type: string
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          attendance_date?: string
+          branch_id?: string
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string
+          created_by?: string | null
+          hours_worked?: number | null
+          id?: string
+          notes?: string | null
+          person_id?: string
+          person_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_records_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_holidays: {
         Row: {
           created_at: string
