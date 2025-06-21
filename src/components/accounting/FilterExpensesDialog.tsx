@@ -17,19 +17,44 @@ import {
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  ExpenseCategory,
-  ExpenseFilter,
-  ExpenseStatus,
-  expenseCategoryLabels,
-  expenseStatusLabels,
-} from "@/types/expense";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+
+// Define expense-related types locally since we're using database types
+type ExpenseCategory = 'office_supplies' | 'travel' | 'meals' | 'equipment' | 'utilities' | 'rent' | 'software' | 'training' | 'medical_supplies' | 'other';
+type ExpenseStatus = 'pending' | 'approved' | 'rejected' | 'reimbursed';
+
+interface ExpenseFilter {
+  categories: ExpenseCategory[];
+  dateRange: { from?: Date; to?: Date };
+  status: ExpenseStatus[];
+  minAmount?: number;
+  maxAmount?: number;
+}
+
+const expenseCategoryLabels: Record<ExpenseCategory, string> = {
+  office_supplies: "Office Supplies",
+  travel: "Travel",
+  meals: "Meals",
+  equipment: "Equipment",
+  utilities: "Utilities",
+  rent: "Rent",
+  software: "Software",
+  training: "Training",
+  medical_supplies: "Medical Supplies",
+  other: "Other"
+};
+
+const expenseStatusLabels: Record<ExpenseStatus, string> = {
+  pending: "Pending",
+  approved: "Approved",
+  rejected: "Rejected",
+  reimbursed: "Reimbursed"
+};
 
 interface FilterExpensesDialogProps {
   open: boolean;

@@ -2,10 +2,65 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PayrollRecord, paymentMethodLabels, paymentStatusLabels } from "@/types/payroll";
 import { Edit, Download, FileCheck, AlertCircle, Clock, XCircle, User, Calendar, Clock as ClockIcon, DollarSign } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
 import { format } from "date-fns";
+
+// Define payroll-related types locally since we're using database types
+interface PayrollRecord {
+  id: string;
+  staff_id: string;
+  branch_id: string;
+  pay_period_start: string;
+  pay_period_end: string;
+  regular_hours: number;
+  overtime_hours: number;
+  hourly_rate: number;
+  overtime_rate?: number;
+  basic_salary: number;
+  overtime_pay: number;
+  bonus: number;
+  gross_pay: number;
+  tax_deduction: number;
+  ni_deduction: number;
+  pension_deduction: number;
+  other_deductions: number;
+  net_pay: number;
+  payment_status: string;
+  payment_method: string;
+  payment_date?: string;
+  payment_reference?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  staff?: {
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+}
+
+const paymentMethodLabels: Record<string, string> = {
+  bank_transfer: "Bank Transfer",
+  cash: "Cash",
+  cheque: "Cheque",
+  other: "Other"
+};
+
+const paymentStatusLabels: Record<string, string> = {
+  pending: "Pending",
+  processed: "Processed",
+  failed: "Failed",
+  cancelled: "Cancelled"
+};
+
+// Format currency helper
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP'
+  }).format(amount);
+};
 
 interface ViewPayrollDialogProps {
   open: boolean;
@@ -46,17 +101,21 @@ const ViewPayrollDialog: React.FC<ViewPayrollDialogProps> = ({
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${colorClass}`}>
         <StatusIcon className="h-3.5 w-3.5" />
-        {paymentStatusLabels[payrollRecord.paymentStatus]}
+        {paymentStatusLabels[payrollRecord.payment_status] || payrollRecord.payment_status}
       </span>
     );
   };
 
   // Calculate total deductions
   const totalDeductions = 
-    payrollRecord.deductions.tax + 
-    payrollRecord.deductions.nationalInsurance + 
-    payrollRecord.deductions.pension + 
-    payrollRecord.deductions.other;
+    payrollRecord.tax_deduction + 
+    payrollRecord.ni_deduction + 
+    payrollRecord.pension_deduction + 
+    payrollRecord.other_deductions;
+
+  const employeeName = payrollRecord.staff 
+    ? `${payrollRecord.staff.first_name} ${payrollRecord.staff.last_name}`
+    : 'Unknown Employee';
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -64,7 +123,7 @@ const ViewPayrollDialog: React.FC<ViewPayrollDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Payroll Record Details</span>
-            {renderStatusBadge(payrollRecord.paymentStatus)}
+            {renderStatusBadge(payrollRecord.payment_status)}
           </DialogTitle>
         </DialogHeader>
 
@@ -77,13 +136,13 @@ const ViewPayrollDialog: React.FC<ViewPayrollDialogProps> = ({
                   <User className="h-4 w-4" />
                   <span>Employee</span>
                 </div>
-                <div className="font-medium text-lg">{payrollRecord.employeeName}</div>
-                <div className="text-sm text-gray-600">{payrollRecord.jobTitle}</div>
-                <div className="text-sm text-gray-500">ID: {payrollRecord.employeeId}</div>
+                <div className="font-medium text-lg">{employeeName}</div>
+                <div className="text-sm text-gray-600">{payrollRecord.staff?.email || 'N/A'}</div>
+                <div className="text-sm text-gray-500">ID: {payrollRecord.staff_id}</div>
               </div>
               <div className="flex flex-col items-end">
                 <div className="text-sm text-gray-500">Net Pay</div>
-                <div className="font-bold text-xl">{formatCurrency(payrollRecord.netPay)}</div>
+                <div className="font-bold text-xl">{formatCurrency(payrollRecord.net_pay)}</div>
               </div>
             </div>
           </div>
@@ -100,21 +159,27 @@ const ViewPayrollDialog: React.FC<ViewPayrollDialogProps> = ({
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Period</div>
                     <div className="font-medium">
-                      {format(new Date(payrollRecord.payPeriod.from), "PP")} - {format(new Date(payrollRecord.payPeriod.to), "PP")}
+                      {format(new Date(payrollRecord.pay_period_start), "PP")} - {format(new Date(payrollRecord.pay_period_end), "PP")}
                     </div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Payment Date</div>
                     <div className="font-medium">
-                      {format(new Date(payrollRecord.paymentDate), "PP")}
+                      {payrollRecord.payment_date ? format(new Date(payrollRecord.payment_date), "PP") : 'Not set'}
                     </div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Payment Method</div>
                     <div className="font-medium">
-                      {paymentMethodLabels[payrollRecord.paymentMethod]}
+                      {paymentMethodLabels[payrollRecord.payment_method] || payrollRecord.payment_method}
                     </div>
                   </div>
+                  {payrollRecord.payment_reference && (
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">Payment Reference</div>
+                      <div className="font-medium">{payrollRecord.payment_reference}</div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -129,27 +194,31 @@ const ViewPayrollDialog: React.FC<ViewPayrollDialogProps> = ({
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Regular Hours</div>
-                    <div className="font-medium">{payrollRecord.regularHours}</div>
+                    <div className="font-medium">{payrollRecord.regular_hours}</div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Overtime Hours</div>
-                    <div className="font-medium">{payrollRecord.overtimeHours}</div>
+                    <div className="font-medium">{payrollRecord.overtime_hours}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1">Hourly Rate</div>
+                    <div className="font-medium">{formatCurrency(payrollRecord.hourly_rate)}</div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Basic Salary</div>
-                    <div className="font-medium">{formatCurrency(payrollRecord.basicSalary)}</div>
+                    <div className="font-medium">{formatCurrency(payrollRecord.basic_salary)}</div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Overtime Pay</div>
-                    <div className="font-medium">{formatCurrency(payrollRecord.overtimePay)}</div>
+                    <div className="font-medium">{formatCurrency(payrollRecord.overtime_pay)}</div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Bonus</div>
                     <div className="font-medium">{formatCurrency(payrollRecord.bonus)}</div>
                   </div>
-                  <div>
+                  <div className="md:col-span-3">
                     <div className="text-sm text-gray-500 mb-1">Gross Pay</div>
-                    <div className="font-medium font-bold">{formatCurrency(payrollRecord.grossPay)}</div>
+                    <div className="font-medium font-bold">{formatCurrency(payrollRecord.gross_pay)}</div>
                   </div>
                 </div>
               </div>
@@ -165,19 +234,19 @@ const ViewPayrollDialog: React.FC<ViewPayrollDialogProps> = ({
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Tax</div>
-                    <div className="font-medium text-red-600">-{formatCurrency(payrollRecord.deductions.tax)}</div>
+                    <div className="font-medium text-red-600">-{formatCurrency(payrollRecord.tax_deduction)}</div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-500 mb-1">National Insurance</div>
-                    <div className="font-medium text-red-600">-{formatCurrency(payrollRecord.deductions.nationalInsurance)}</div>
+                    <div className="font-medium text-red-600">-{formatCurrency(payrollRecord.ni_deduction)}</div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Pension</div>
-                    <div className="font-medium text-red-600">-{formatCurrency(payrollRecord.deductions.pension)}</div>
+                    <div className="font-medium text-red-600">-{formatCurrency(payrollRecord.pension_deduction)}</div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Other Deductions</div>
-                    <div className="font-medium text-red-600">-{formatCurrency(payrollRecord.deductions.other)}</div>
+                    <div className="font-medium text-red-600">-{formatCurrency(payrollRecord.other_deductions)}</div>
                   </div>
                   <div className="md:col-span-2">
                     <div className="text-sm text-gray-500 mb-1">Total Deductions</div>
@@ -192,11 +261,11 @@ const ViewPayrollDialog: React.FC<ViewPayrollDialogProps> = ({
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center">
                   <div className="text-sm text-gray-500 mb-1">Gross Pay</div>
-                  <div className="font-bold text-lg">{formatCurrency(payrollRecord.grossPay)}</div>
+                  <div className="font-bold text-lg">{formatCurrency(payrollRecord.gross_pay)}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm text-gray-500 mb-1">Net Pay</div>
-                  <div className="font-bold text-xl text-green-700">{formatCurrency(payrollRecord.netPay)}</div>
+                  <div className="font-bold text-xl text-green-700">{formatCurrency(payrollRecord.net_pay)}</div>
                 </div>
               </div>
             </div>

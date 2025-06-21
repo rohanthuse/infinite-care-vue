@@ -4,8 +4,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { PaymentStatus, paymentStatusLabels, PayrollFilter } from "@/types/payroll";
 import { Checkbox } from "@/components/ui/checkbox";
+
+// Define payroll-related types locally since we're using database types
+type PaymentStatus = 'pending' | 'processed' | 'failed' | 'cancelled';
+
+interface PayrollFilter {
+  dateRange: { from?: Date; to?: Date };
+  paymentStatuses: PaymentStatus[];
+  minGrossPay?: number;
+  maxGrossPay?: number;
+}
+
+const paymentStatusLabels: Record<PaymentStatus, string> = {
+  pending: "Pending",
+  processed: "Processed",
+  failed: "Failed", 
+  cancelled: "Cancelled"
+};
 
 interface FilterPayrollDialogProps {
   open: boolean;
