@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +24,11 @@ interface BodyMapSelectorProps {
   onPointsChange: (points: BodyMapPoint[]) => void;
 }
 
+interface LoadedImageState {
+  isLoaded: boolean;
+  imageUrl?: string;
+}
+
 export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelectorProps) {
   const [currentSide, setCurrentSide] = useState<'front' | 'back'>('front');
   const [isAddingPoint, setIsAddingPoint] = useState(false);
@@ -32,7 +36,7 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
-  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
+  const [loadedImages, setLoadedImages] = useState<Record<string, LoadedImageState>>({});
   const [debugInfo, setDebugInfo] = useState<string>('');
 
   const injuryTypes = [
@@ -105,9 +109,9 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
 
   // Load images when component mounts or side changes
   useEffect(() => {
-    const currentImageKey = `${currentSide}-loaded`;
+    const currentImageKey = currentSide;
     
-    if (loadedImages[currentImageKey]) {
+    if (loadedImages[currentImageKey]?.isLoaded) {
       setImageLoading(false);
       setImageError(false);
       return;
@@ -122,8 +126,10 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
         if (successfulUrl) {
           setLoadedImages(prev => ({ 
             ...prev, 
-            [currentImageKey]: true,
-            [`${currentSide}-url`]: successfulUrl 
+            [currentImageKey]: {
+              isLoaded: true,
+              imageUrl: successfulUrl
+            }
           }));
           setImageLoading(false);
           setImageError(false);
@@ -144,7 +150,7 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
 
   // Get the loaded image URL
   const getLoadedImageUrl = () => {
-    return loadedImages[`${currentSide}-url`] as string || getImageSources(currentSide)[0];
+    return loadedImages[currentSide]?.imageUrl || getImageSources(currentSide)[0];
   };
 
   const handleBodyClick = (event: React.MouseEvent<HTMLDivElement>) => {
