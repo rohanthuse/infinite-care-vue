@@ -60,6 +60,51 @@ interface OperationalReportsData {
   }>;
 }
 
+// Type guard functions to safely convert Json to our interfaces
+function isClientReportsData(data: any): data is ClientReportsData {
+  return data && 
+    Array.isArray(data.clientActivity) && 
+    Array.isArray(data.demographics) && 
+    Array.isArray(data.serviceUtilization);
+}
+
+function isStaffReportsData(data: any): data is StaffReportsData {
+  return data && 
+    Array.isArray(data.performance) && 
+    Array.isArray(data.availability);
+}
+
+function isFinancialReportsData(data: any): data is FinancialReportsData {
+  return data && 
+    Array.isArray(data.monthlyRevenue) && 
+    Array.isArray(data.serviceRevenue);
+}
+
+function isOperationalReportsData(data: any): data is OperationalReportsData {
+  return data && Array.isArray(data.taskCompletion);
+}
+
+// Default fallback data
+const defaultClientReportsData: ClientReportsData = {
+  clientActivity: [],
+  demographics: [],
+  serviceUtilization: []
+};
+
+const defaultStaffReportsData: StaffReportsData = {
+  performance: [],
+  availability: []
+};
+
+const defaultFinancialReportsData: FinancialReportsData = {
+  monthlyRevenue: [],
+  serviceRevenue: []
+};
+
+const defaultOperationalReportsData: OperationalReportsData = {
+  taskCompletion: []
+};
+
 export function useClientReportsData({ branchId, startDate, endDate }: ReportsDataParams) {
   return useQuery({
     queryKey: ['client-reports', branchId, startDate, endDate],
@@ -75,7 +120,13 @@ export function useClientReportsData({ branchId, startDate, endDate }: ReportsDa
         throw error;
       }
       
-      return data as ClientReportsData;
+      // Safely convert Json to ClientReportsData
+      if (isClientReportsData(data)) {
+        return data;
+      }
+      
+      console.warn('Invalid client reports data structure, using fallback');
+      return defaultClientReportsData;
     },
     enabled: !!branchId,
   });
@@ -96,7 +147,13 @@ export function useStaffReportsData({ branchId, startDate, endDate }: ReportsDat
         throw error;
       }
       
-      return data as StaffReportsData;
+      // Safely convert Json to StaffReportsData
+      if (isStaffReportsData(data)) {
+        return data;
+      }
+      
+      console.warn('Invalid staff reports data structure, using fallback');
+      return defaultStaffReportsData;
     },
     enabled: !!branchId,
   });
@@ -117,7 +174,13 @@ export function useFinancialReportsData({ branchId, startDate, endDate }: Report
         throw error;
       }
       
-      return data as FinancialReportsData;
+      // Safely convert Json to FinancialReportsData
+      if (isFinancialReportsData(data)) {
+        return data;
+      }
+      
+      console.warn('Invalid financial reports data structure, using fallback');
+      return defaultFinancialReportsData;
     },
     enabled: !!branchId,
   });
@@ -138,7 +201,13 @@ export function useOperationalReportsData({ branchId, startDate, endDate }: Repo
         throw error;
       }
       
-      return data as OperationalReportsData;
+      // Safely convert Json to OperationalReportsData
+      if (isOperationalReportsData(data)) {
+        return data;
+      }
+      
+      console.warn('Invalid operational reports data structure, using fallback');
+      return defaultOperationalReportsData;
     },
     enabled: !!branchId,
   });
