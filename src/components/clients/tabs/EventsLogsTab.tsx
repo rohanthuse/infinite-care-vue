@@ -1,34 +1,29 @@
 
 import React, { useState } from "react";
 import { format } from "date-fns";
-import { AlertTriangle, Clock, Plus, User } from "lucide-react";
+import { AlertTriangle, Clock, Plus, User, Eye } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AddEventDialog } from "../dialogs/AddEventDialog";
-import { useClientEvents, useCreateClientEvent } from "@/hooks/useClientEvents";
+import { useClientEvents } from "@/hooks/useClientEvents";
+import { EventDetailsDialog } from "@/components/events-logs/EventDetailsDialog";
 
 interface EventsLogsTabProps {
   clientId: string;
+  carePlanId?: string;
+  patientName?: string;
   onAddEvent?: () => void;
 }
 
-export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({ clientId }) => {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({ 
+  clientId, 
+  carePlanId, 
+  patientName, 
+  onAddEvent 
+}) => {
   const { data: events = [], isLoading } = useClientEvents(clientId);
-  const createEventMutation = useCreateClientEvent();
-
-  const handleAddEvent = async (eventData: any) => {
-    await createEventMutation.mutateAsync({
-      client_id: clientId,
-      event_type: eventData.event_type,
-      title: eventData.title,
-      description: eventData.description,
-      severity: eventData.severity,
-      reporter: eventData.reporter,
-      status: 'open', // Add the missing status property
-    });
-  };
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -50,6 +45,11 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({ clientId }) => {
     }
   };
 
+  const handleViewDetails = (event: any) => {
+    setSelectedEvent(event);
+    setIsDetailsOpen(true);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-32">
@@ -67,18 +67,26 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({ clientId }) => {
               <AlertTriangle className="h-5 w-5 text-blue-600" />
               <CardTitle className="text-lg">Events & Logs</CardTitle>
             </div>
-            <Button size="sm" className="gap-1" onClick={() => setIsAddDialogOpen(true)}>
+            <Button size="sm" className="gap-1" onClick={onAddEvent}>
               <Plus className="h-4 w-4" />
               <span>Add Event</span>
             </Button>
           </div>
-          <CardDescription>Incident reports and event logs for client {clientId}</CardDescription>
+          <CardDescription>
+            Incident reports and event logs for {patientName || `client ${clientId}`}
+          </CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
           {events.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <AlertTriangle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
               <p className="text-sm">No events logged for this client</p>
+              {onAddEvent && (
+                <Button variant="outline" className="mt-3" onClick={onAddEvent}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Event
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -97,7 +105,7 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({ clientId }) => {
                         </Badge>
                       </div>
                       {event.description && (
-                        <p className="text-sm text-gray-600">{event.description}</p>
+                        <p className="text-sm text-gray-600 line-clamp-2">{event.description}</p>
                       )}
                       <div className="flex items-center gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
@@ -108,8 +116,23 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({ clientId }) => {
                           <Clock className="h-4 w-4" />
                           <span>{format(new Date(event.created_at), 'MMM dd, yyyy HH:mm')}</span>
                         </div>
+                        {event.body_map_points && Array.isArray(event.body_map_points) && event.body_map_points.length > 0 && (
+                          <div className="flex items-center gap-1">
+                            <Eye className="h-4 w-4" />
+                            <span>{event.body_map_points.length} body map point(s)</span>
+                          </div>
+                        )}
                       </div>
                     </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleViewDetails(event)}
+                      className="ml-4"
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View Details
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -118,10 +141,11 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({ clientId }) => {
         </CardContent>
       </Card>
 
-      <AddEventDialog
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        onSave={handleAddEvent}
+      {/* Event Details Dialog */}
+      <EventDetailsDialog
+        event={selectedEvent}
+        open={isDetailsOpen}
+        onOpenChange={setIsDetailsOpen}
       />
     </div>
   );

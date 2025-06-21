@@ -5,8 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { AlertTriangle, Calendar, Clock, MapPin, User, Eye } from 'lucide-react';
+import { AlertTriangle, Calendar, Clock, MapPin, User } from 'lucide-react';
 import { EventLog } from '@/data/hooks/useEventsLogs';
+import { BodyMapViewer } from './BodyMapViewer';
 
 interface EventDetailsDialogProps {
   event: EventLog | null;
@@ -38,45 +39,9 @@ export function EventDetailsDialog({ event, open, onOpenChange, onEdit }: EventD
     }
   };
 
-  const renderBodyMapPoints = () => {
-    if (!event.body_map_points || !Array.isArray(event.body_map_points) || event.body_map_points.length === 0) {
-      return null;
-    }
-
-    return (
-      <div className="space-y-3">
-        <h4 className="font-medium text-sm flex items-center gap-2">
-          <Eye className="h-4 w-4" />
-          Body Map Locations
-        </h4>
-        <div className="bg-gray-50 rounded-lg p-3">
-          <div className="grid grid-cols-1 gap-2">
-            {event.body_map_points.map((point: any, index: number) => (
-              <div key={point.id || index} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full border-2 border-white shadow-sm"
-                    style={{ backgroundColor: point.color }}
-                  />
-                  <span className="font-medium">{point.type}</span>
-                  <Badge variant="outline" className="text-xs">
-                    {point.side}
-                  </Badge>
-                </div>
-                <Badge className={getSeverityColor(point.severity)}>
-                  {point.severity}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-orange-500" />
@@ -164,10 +129,13 @@ export function EventDetailsDialog({ event, open, onOpenChange, onEdit }: EventD
           )}
 
           {/* Body Map Points */}
-          {renderBodyMapPoints() && (
+          {event.body_map_points && Array.isArray(event.body_map_points) && event.body_map_points.length > 0 && (
             <>
               <Separator />
-              {renderBodyMapPoints()}
+              <div className="space-y-3">
+                <h4 className="font-medium text-sm">Body Map</h4>
+                <BodyMapViewer bodyMapPoints={event.body_map_points} />
+              </div>
             </>
           )}
         </div>
