@@ -46,6 +46,21 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
 
   const currentList = attendanceType === "staff" ? staff : clients;
 
+  // Helper function to get person role safely
+  const getPersonRole = (person: any, type: string) => {
+    if (type === "staff") {
+      return person.specialization || "Staff";
+    } else {
+      return "Client";
+    }
+  };
+
+  // Helper function to get person display text
+  const getPersonDisplayText = (person: any, type: string) => {
+    const role = getPersonRole(person, type);
+    return `${person.first_name} ${person.last_name} - ${role}`;
+  };
+
   const calculateHours = (checkIn: string, checkOut: string): number => {
     if (!checkIn || !checkOut) return 0;
     
@@ -133,7 +148,7 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
       setBulkEntries(prev => [...prev, {
         personId: person.id,
         personName: `${person.first_name} ${person.last_name}`,
-        personRole: attendanceType === "staff" ? person.specialization || "Staff" : "Client",
+        personRole: getPersonRole(person, attendanceType),
         status: "present"
       }]);
     } else {
@@ -154,7 +169,7 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
       setBulkEntries(currentList.map(person => ({
         personId: person.id,
         personName: `${person.first_name} ${person.last_name}`,
-        personRole: attendanceType === "staff" ? person.specialization || "Staff" : "Client",
+        personRole: getPersonRole(person, attendanceType),
         status: "present"
       })));
     }
@@ -261,7 +276,7 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
                           <SelectContent>
                             {currentList.map(person => (
                               <SelectItem key={person.id} value={person.id}>
-                                {person.first_name} {person.last_name} - {attendanceType === "staff" ? person.specialization || "Staff" : "Client"}
+                                {getPersonDisplayText(person, attendanceType)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -347,7 +362,7 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
                                 onCheckedChange={(checked) => handleBulkPersonToggle(person, checked === true)}
                               />
                               <Label htmlFor={`${attendanceType}-${person.id}`} className="flex-1 cursor-pointer">
-                                {person.first_name} {person.last_name} <span className="text-gray-500 text-sm">({attendanceType === "staff" ? person.specialization || "Staff" : "Client"})</span>
+                                {person.first_name} {person.last_name} <span className="text-gray-500 text-sm">({getPersonRole(person, attendanceType)})</span>
                               </Label>
                               <Select 
                                 value={entry?.status || "present"}
