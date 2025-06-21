@@ -80,6 +80,7 @@ const AdminRoutes = () => {
         
         {/* Workflow and matrix routes */}
         <Route path="workflow" element={<Workflow />} />
+        <Route path="workflow/:id/:branchName" element={<Workflow />} />
         <Route path="task-matrix" element={<TaskMatrix branchId="main" branchName="Main Branch" />} />
         <Route path="training-matrix" element={<TrainingMatrix branchId="main" branchName="Main Branch" />} />
         <Route path="key-parameters" element={<KeyParameters />} />
