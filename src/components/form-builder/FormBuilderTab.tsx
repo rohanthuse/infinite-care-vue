@@ -85,43 +85,27 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
   const totalPages = Math.ceil(filteredForms.length / itemsPerPage);
   const paginatedForms = filteredForms.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const handleCreateForm = async () => {
+  const handleCreateForm = () => {
     const userId = user?.id || 'temp-user-id';
     
-    try {
-      // Create the form in the database first
-      const newFormData = {
-        title: 'Untitled Form',
-        description: 'New form description',
-        created_by: userId,
-        published: false,
-        requires_review: false,
-        settings: {
-          showProgressBar: false,
-          allowSaveAsDraft: false,
-          autoSaveEnabled: false,
-          autoSaveInterval: 60,
-          redirectAfterSubmit: false,
-          submitButtonText: 'Submit'
-        }
-      };
+    const newFormData = {
+      title: 'Untitled Form',
+      description: 'New form description',
+      created_by: userId,
+      published: false,
+      requires_review: false,
+      settings: {
+        showProgressBar: false,
+        allowSaveAsDraft: false,
+        autoSaveEnabled: false,
+        autoSaveInterval: 60,
+        redirectAfterSubmit: false,
+        submitButtonText: 'Submit'
+      }
+    };
 
-      // Note: The createForm function should be updated to return the created form
-      // For now, we'll call it and then navigate after a short delay to allow the mutation to complete
-      createForm(newFormData);
-      
-      // We need to wait for the form to be created and then navigate
-      // Since the current createForm doesn't return the created form ID,
-      // we'll need a different approach - let's use a timeout and navigate to the latest form
-      setTimeout(() => {
-        // Navigate to the form builder with the assumption that the form was created
-        // This is not ideal but works with the current implementation
-        window.location.reload(); // Reload to get the latest forms
-      }, 1000);
-      
-    } catch (error) {
-      console.error('Failed to create form:', error);
-    }
+    // Just call createForm - the hook's onSuccess callback will handle navigation
+    createForm(newFormData);
   };
 
   const handleEditForm = (formId: string) => {
