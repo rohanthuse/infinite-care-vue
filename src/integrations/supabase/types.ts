@@ -1271,11 +1271,15 @@ export type Database = {
       }
       client_events_logs: {
         Row: {
+          body_map_points: Json | null
+          branch_id: string | null
+          category: string | null
           client_id: string
           created_at: string
           description: string | null
           event_type: string
           id: string
+          location: string | null
           reporter: string
           severity: string
           status: string
@@ -1283,11 +1287,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          body_map_points?: Json | null
+          branch_id?: string | null
+          category?: string | null
           client_id: string
           created_at?: string
           description?: string | null
           event_type: string
           id?: string
+          location?: string | null
           reporter: string
           severity?: string
           status?: string
@@ -1295,11 +1303,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          body_map_points?: Json | null
+          branch_id?: string | null
+          category?: string | null
           client_id?: string
           created_at?: string
           description?: string | null
           event_type?: string
           id?: string
+          location?: string | null
           reporter?: string
           severity?: string
           status?: string
@@ -1307,6 +1319,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "client_events_logs_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "client_events_logs_client_id_fkey"
             columns: ["client_id"]

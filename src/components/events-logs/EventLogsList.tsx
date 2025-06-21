@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Search, Filter, Download, Eye, Calendar, Clock, MapPin, User, FileText, MoreVertical } from 'lucide-react';
+import { Search, Filter, Download, Eye, Calendar, Clock, MapPin, User, FileText, MoreVertical, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,13 +9,11 @@ import { Badge } from '@/components/ui/badge';
 import {
   Pagination,
   PaginationContent,
-  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Dialog, 
   DialogContent, 
@@ -29,71 +28,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
-
-const mockEvents = [
-  {
-    id: 'EV001',
-    title: 'Medication Error',
-    eventType: 'client',
-    clientName: 'James Wilson',
-    location: 'Client\'s Home',
-    date: '2025-04-10',
-    time: '09:30',
-    category: 'medication_error',
-    status: 'Pending Review',
-    details: 'Client was given the wrong medication dose.'
-  },
-  {
-    id: 'EV002',
-    title: 'Fall Incident',
-    eventType: 'client',
-    clientName: 'Emma Williams',
-    location: 'Bathroom',
-    date: '2025-04-09',
-    time: '14:15',
-    category: 'accident',
-    status: 'In Progress',
-    details: 'Client slipped in the bathroom, no serious injuries.'
-  },
-  {
-    id: 'EV003',
-    title: 'Client Complaint',
-    eventType: 'client',
-    clientName: 'Daniel Smith',
-    location: 'Med-Infinite Office',
-    date: '2025-04-08',
-    time: '11:00',
-    category: 'complaint',
-    status: 'Resolved',
-    details: 'Client complained about the quality of care provided.'
-  },
-  {
-    id: 'EV004',
-    title: 'Staff Injury',
-    eventType: 'staff',
-    clientName: '',
-    staffName: 'Sarah Johnson',
-    location: 'Client\'s Home',
-    date: '2025-04-07',
-    time: '16:45',
-    category: 'accident',
-    status: 'Closed',
-    details: 'Staff member injured back while helping client.'
-  },
-  {
-    id: 'EV005',
-    title: 'Safeguarding Concern',
-    eventType: 'client',
-    clientName: 'Sophia Martinez',
-    location: 'Client\'s Home',
-    date: '2025-04-05',
-    time: '10:30',
-    category: 'safeguarding',
-    status: 'Pending Review',
-    details: 'Potential signs of neglect observed.'
-  }
-];
+import { format } from 'date-fns';
+import { useEventsLogs, useUpdateEventLogStatus, useDeleteEventLog } from '@/data/hooks/useEventsLogs';
+import { EventDetailsDialog } from './EventDetailsDialog';
 
 interface EventLogsListProps {
   branchId: string;
@@ -103,37 +40,31 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterType, setFilterType] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState('');
-  const [events, setEvents] = useState(mockEvents);
-  const itemsPerPage = 5;
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const itemsPerPage = 10;
 
-  React.useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [branchId]);
+  const filters = {
+    searchQuery: searchTerm,
+    typeFilter: filterType,
+    statusFilter: filterStatus,
+    categoryFilter: filterCategory,
+    dateFilter: dateFilter,
+  };
 
-  const filteredEvents = events.filter(event => {
-    const matchesSearch = 
-      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (event.clientName && event.clientName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (event.staffName && event.staffName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      event.id.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = filterCategory === 'all' || event.category === filterCategory;
-    const matchesStatus = filterStatus === 'all' || event.status === filterStatus;
-    
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+  const { data: events = [], isLoading, error } = useEventsLogs(branchId, filters);
+  const updateStatusMutation = useUpdateEventLogStatus();
+  const deleteEventMutation = useDeleteEventLog();
 
-  const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
-  const paginatedEvents = filteredEvents.slice(
+  // Pagination
+  const totalPages = Math.ceil(events.length / itemsPerPage);
+  const paginatedEvents = events.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -143,81 +74,97 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
     setStatusDialogOpen(true);
   };
 
-  const confirmStatusChange = () => {
+  const confirmStatusChange = async () => {
     if (!selectedEvent || !newStatus) return;
     
-    const updatedEvents = events.map(event => {
-      if (event.id === selectedEvent.id) {
-        return { ...event, status: newStatus };
-      }
-      return event;
-    });
+    try {
+      await updateStatusMutation.mutateAsync({
+        id: selectedEvent.id,
+        status: newStatus,
+      });
+      setStatusDialogOpen(false);
+      setSelectedEvent(null);
+      setNewStatus('');
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!selectedEvent) return;
     
-    setEvents(updatedEvents);
-    
-    toast.success(`Status updated to ${newStatus}`, {
-      description: `Event ${selectedEvent.id} status has been updated`
-    });
-    
-    setStatusDialogOpen(false);
-    setSelectedEvent(null);
-    setNewStatus('');
+    try {
+      await deleteEventMutation.mutateAsync(selectedEvent.id);
+      setDeleteDialogOpen(false);
+      setSelectedEvent(null);
+    } catch (error) {
+      console.error('Error deleting event:', error);
+    }
   };
 
   const getCategoryBadge = (category: string) => {
-    switch (category) {
-      case 'accident':
-        return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Accident</Badge>;
-      case 'incident':
-        return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">Incident</Badge>;
-      case 'near_miss':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Near Miss</Badge>;
-      case 'medication_error':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Medication Error</Badge>;
-      case 'safeguarding':
-        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Safeguarding</Badge>;
-      case 'complaint':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Complaint</Badge>;
-      case 'compliment':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Compliment</Badge>;
-      default:
-        return <Badge variant="outline">Other</Badge>;
-    }
+    const styles = {
+      accident: "bg-amber-50 text-amber-700 border-amber-200",
+      incident: "bg-orange-50 text-orange-700 border-orange-200",
+      near_miss: "bg-yellow-50 text-yellow-700 border-yellow-200",
+      medication_error: "bg-red-50 text-red-700 border-red-200",
+      safeguarding: "bg-purple-50 text-purple-700 border-purple-200",
+      complaint: "bg-blue-50 text-blue-700 border-blue-200",
+      compliment: "bg-green-50 text-green-700 border-green-200",
+      other: "bg-gray-50 text-gray-700 border-gray-200",
+    };
+    
+    return (
+      <Badge variant="outline" className={styles[category as keyof typeof styles] || styles.other}>
+        {category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+      </Badge>
+    );
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'Draft':
-        return <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">Draft</Badge>;
-      case 'Pending Review':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Pending Review</Badge>;
-      case 'In Progress':
-        return <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">In Progress</Badge>;
-      case 'Resolved':
-        return <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">Resolved</Badge>;
-      case 'Closed':
-        return <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">Closed</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
+    const styles = {
+      open: "bg-blue-50 text-blue-600 border-blue-200",
+      "in-progress": "bg-amber-50 text-amber-600 border-amber-200",
+      resolved: "bg-green-50 text-green-600 border-green-200",
+      closed: "bg-gray-50 text-gray-600 border-gray-200",
+    };
+    
+    return (
+      <Badge variant="outline" className={styles[status as keyof typeof styles] || styles.open}>
+        {status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+      </Badge>
+    );
+  };
+
+  const getSeverityBadge = (severity: string) => {
+    const styles = {
+      low: "bg-green-50 text-green-600 border-green-200",
+      medium: "bg-yellow-50 text-yellow-600 border-yellow-200",
+      high: "bg-orange-50 text-orange-600 border-orange-200",
+      critical: "bg-red-50 text-red-600 border-red-200",
+    };
+    
+    return (
+      <Badge variant="outline" className={styles[severity as keyof typeof styles] || styles.low}>
+        {severity.charAt(0).toUpperCase() + severity.slice(1)}
+      </Badge>
+    );
   };
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row gap-4 items-end">
-          <Skeleton className="h-9 w-full flex-1" />
-          <Skeleton className="h-9 w-full md:w-48" />
-          <Skeleton className="h-9 w-full md:w-48" />
-          <Skeleton className="h-9 w-32" />
-          <Skeleton className="h-9 w-32" />
-        </div>
-        
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="space-y-2">
-            <Skeleton className="h-32 w-full rounded-md" />
-          </div>
-        ))}
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <AlertTriangle className="h-12 w-12 mx-auto mb-3 text-red-500" />
+        <h3 className="text-lg font-medium text-gray-900 mb-1">Error Loading Events</h3>
+        <p className="text-gray-500">Failed to load events and logs. Please try again.</p>
       </div>
     );
   }
@@ -231,7 +178,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input 
               id="search"
-              placeholder="Search by ID, name, or keyword..." 
+              placeholder="Search by title, reporter, or description..." 
               className="pl-10" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -240,15 +187,15 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
         </div>
         
         <div className="w-full md:w-48">
-          <label htmlFor="category" className="text-sm font-medium mb-1 block">Category</label>
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger id="category">
-              <SelectValue placeholder="All Categories" />
+          <label htmlFor="type" className="text-sm font-medium mb-1 block">Type</label>
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger id="type">
+              <SelectValue placeholder="All Types" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="accident">Accident</SelectItem>
+              <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="incident">Incident</SelectItem>
+              <SelectItem value="accident">Accident</SelectItem>
               <SelectItem value="near_miss">Near Miss</SelectItem>
               <SelectItem value="medication_error">Medication Error</SelectItem>
               <SelectItem value="safeguarding">Safeguarding</SelectItem>
@@ -267,20 +214,27 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="Draft">Draft</SelectItem>
-              <SelectItem value="Pending Review">Pending Review</SelectItem>
-              <SelectItem value="In Progress">In Progress</SelectItem>
-              <SelectItem value="Resolved">Resolved</SelectItem>
-              <SelectItem value="Closed">Closed</SelectItem>
+              <SelectItem value="open">Open</SelectItem>
+              <SelectItem value="in-progress">In Progress</SelectItem>
+              <SelectItem value="resolved">Resolved</SelectItem>
+              <SelectItem value="closed">Closed</SelectItem>
             </SelectContent>
           </Select>
         </div>
         
-        <div className="flex-shrink-0">
-          <Button variant="outline" className="flex items-center w-full">
-            <Filter className="h-4 w-4 mr-2" />
-            <span className="truncate">More Filters</span>
-          </Button>
+        <div className="w-full md:w-48">
+          <label htmlFor="date" className="text-sm font-medium mb-1 block">Date Range</label>
+          <Select value={dateFilter} onValueChange={setDateFilter}>
+            <SelectTrigger id="date">
+              <SelectValue placeholder="All Dates" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Dates</SelectItem>
+              <SelectItem value="last7days">Last 7 Days</SelectItem>
+              <SelectItem value="last30days">Last 30 Days</SelectItem>
+              <SelectItem value="last90days">Last 90 Days</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         
         <div className="flex-shrink-0">
@@ -301,8 +255,9 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-medium truncate">{event.title}</h3>
                       {getCategoryBadge(event.category)}
+                      {getSeverityBadge(event.severity)}
                     </div>
-                    <p className="text-sm text-gray-500 truncate">Reference: {event.id}</p>
+                    <p className="text-sm text-gray-500 truncate">ID: {event.id.slice(0, 8)}</p>
                   </div>
                   
                   <div className="flex items-center gap-2 mt-2 md:mt-0 flex-shrink-0">
@@ -318,32 +273,54 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                       <DropdownMenuContent align="end" className="w-[200px]">
                         <DropdownMenuItem onSelect={() => {
                           setSelectedEvent(event);
-                          handleStatusChange('Pending Review');
+                          setViewDialogOpen(true);
                         }}>
-                          Mark as Pending Review
+                          View Details
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => {
                           setSelectedEvent(event);
-                          handleStatusChange('In Progress');
+                          handleStatusChange('open');
+                        }}>
+                          Mark as Open
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => {
+                          setSelectedEvent(event);
+                          handleStatusChange('in-progress');
                         }}>
                           Mark as In Progress
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => {
                           setSelectedEvent(event);
-                          handleStatusChange('Resolved');
+                          handleStatusChange('resolved');
                         }}>
                           Mark as Resolved
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => {
                           setSelectedEvent(event);
-                          handleStatusChange('Closed');
+                          handleStatusChange('closed');
                         }}>
                           Mark as Closed
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onSelect={() => {
+                            setSelectedEvent(event);
+                            setDeleteDialogOpen(true);
+                          }}
+                          className="text-red-600"
+                        >
+                          Delete Event
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                     
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => {
+                        setSelectedEvent(event);
+                        setViewDialogOpen(true);
+                      }}
+                    >
                       <Eye className="h-4 w-4 mr-1" />
                       <span className="hidden sm:inline">View</span>
                     </Button>
@@ -354,12 +331,8 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                   <div className="flex items-start">
                     <User className="h-4 w-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
                     <div className="min-w-0 truncate">
-                      <div className="text-xs text-gray-500">
-                        {event.eventType === 'client' ? 'Client' : 'Staff Member'}
-                      </div>
-                      <div className="text-sm truncate">
-                        {event.eventType === 'client' ? event.clientName : event.staffName}
-                      </div>
+                      <div className="text-xs text-gray-500">Reporter</div>
+                      <div className="text-sm truncate">{event.reporter}</div>
                     </div>
                   </div>
                   
@@ -367,7 +340,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                     <MapPin className="h-4 w-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
                     <div className="min-w-0 truncate">
                       <div className="text-xs text-gray-500">Location</div>
-                      <div className="text-sm truncate">{event.location}</div>
+                      <div className="text-sm truncate">{event.location || 'Not specified'}</div>
                     </div>
                   </div>
                   
@@ -376,18 +349,20 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                     <div className="min-w-0 truncate">
                       <div className="text-xs text-gray-500">Date & Time</div>
                       <div className="text-sm truncate">
-                        {new Date(event.date).toLocaleDateString()} at {event.time}
+                        {format(new Date(event.created_at), 'MMM dd, yyyy HH:mm')}
                       </div>
                     </div>
                   </div>
                 </div>
                 
-                <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
-                  <div className="flex items-start">
-                    <FileText className="h-4 w-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
-                    <p className="text-sm text-gray-700 line-clamp-2 break-words">{event.details}</p>
+                {event.description && (
+                  <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
+                    <div className="flex items-start">
+                      <FileText className="h-4 w-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
+                      <p className="text-sm text-gray-700 line-clamp-2 break-words">{event.description}</p>
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           ))
@@ -397,12 +372,16 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
               <Search className="h-6 w-6 text-gray-400" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-1">No events found</h3>
-            <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+            <p className="text-gray-500">
+              {searchTerm || filterType !== 'all' || filterStatus !== 'all' || dateFilter !== 'all'
+                ? 'Try adjusting your search or filter criteria'
+                : 'No events have been logged yet'}
+            </p>
           </div>
         )}
       </div>
       
-      {filteredEvents.length > 0 && (
+      {events.length > 0 && totalPages > 1 && (
         <Pagination className="mt-6">
           <PaginationContent>
             <PaginationItem>
@@ -417,20 +396,25 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
               />
             </PaginationItem>
             
-            {Array.from({ length: totalPages }).map((_, index) => (
-              <PaginationItem key={index}>
-                <PaginationLink
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setCurrentPage(index + 1);
-                  }}
-                  isActive={currentPage === index + 1}
-                >
-                  {index + 1}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
+            {Array.from({ length: Math.min(totalPages, 5) }).map((_, index) => {
+              const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + index;
+              if (pageNum > totalPages) return null;
+              
+              return (
+                <PaginationItem key={pageNum}>
+                  <PaginationLink
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setCurrentPage(pageNum);
+                    }}
+                    isActive={currentPage === pageNum}
+                  >
+                    {pageNum}
+                  </PaginationLink>
+                </PaginationItem>
+              );
+            })}
             
             <PaginationItem>
               <PaginationNext 
@@ -447,24 +431,61 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
         </Pagination>
       )}
 
+      {/* Status Update Dialog */}
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Update Event Status</DialogTitle>
             <DialogDescription>
-              Are you sure you want to change the status of this event to {newStatus}?
+              Are you sure you want to change the status of this event to "{newStatus.replace('-', ' ')}"?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={confirmStatusChange}>
-              Update Status
+            <Button 
+              onClick={confirmStatusChange}
+              disabled={updateStatusMutation.isPending}
+            >
+              {updateStatusMutation.isPending ? 'Updating...' : 'Update Status'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete Event</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this event? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleDeleteEvent}
+              disabled={deleteEventMutation.isPending}
+            >
+              {deleteEventMutation.isPending ? 'Deleting...' : 'Delete Event'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Event Details Dialog */}
+      {selectedEvent && (
+        <EventDetailsDialog
+          event={selectedEvent}
+          open={viewDialogOpen}
+          onOpenChange={setViewDialogOpen}
+        />
+      )}
     </div>
   );
 }
