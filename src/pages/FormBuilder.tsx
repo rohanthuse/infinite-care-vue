@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '@/components/DashboardHeader';
@@ -12,6 +11,7 @@ import { FormValidationTab } from '@/components/form-builder/FormValidationTab';
 import { FormAdvancedTab } from '@/components/form-builder/FormAdvancedTab';
 import { TabNavigation as FormTabNavigation } from '@/components/form-builder/TabNavigation';
 import { TabNavigation } from '@/components/TabNavigation';
+import { FormBuilderTab } from '@/components/form-builder/FormBuilderTab';
 import { Form, FormElement, FormSettings, FormPermissions } from '@/types/form-builder';
 import { useFormManagement, DatabaseForm } from '@/hooks/useFormManagement';
 import { useFormElements } from '@/hooks/useFormElements';
@@ -27,7 +27,42 @@ const FormBuilder = () => {
   const [activeTab, setActiveTab] = useState<string>('design');
   const [isFormDirty, setIsFormDirty] = useState<boolean>(false);
   const [isLoadingForm, setIsLoadingForm] = useState<boolean>(!!formId);
-  
+
+  // If no formId is provided, show the Form Matrix (FormBuilderTab)
+  if (!formId) {
+    const decodedBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
+
+    const handleNavigate = (tab: string) => {
+      if (tab !== "form-builder" && branchId && branchName) {
+        navigate(`/branch-dashboard/${branchId}/${branchName}/${tab}`);
+      }
+    };
+
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        
+        <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full">
+          <BranchInfoHeader 
+            branchName={decodedBranchName} 
+            branchId={branchId || ""}
+            onNewBooking={() => {}}
+          />
+          
+          <div className="mb-6">
+            <TabNavigation 
+              activeTab="form-builder" 
+              onChange={handleNavigate}
+            />
+          </div>
+          
+          <FormBuilderTab branchId={branchId || ''} branchName={decodedBranchName} />
+        </main>
+      </div>
+    );
+  }
+
+  // Rest of the component for form editing (when formId is provided)
   const { 
     forms, 
     createForm, 
