@@ -32,6 +32,7 @@ import ThirdPartyAccess from "@/pages/ThirdPartyAccess";
 import Reports from "@/pages/Reports";
 import BookingApprovals from "@/pages/BookingApprovals";
 import ClientEdit from "@/pages/client/ClientEdit";
+import Accounting from "@/pages/Accounting";
 
 const RequireAdminAuth = () => {
   const { session, loading } = useAuth();
@@ -89,6 +90,10 @@ const AdminRoutes = () => {
         <Route path="key-parameters" element={<KeyParameters />} />
         <Route path="booking-approvals" element={<BookingApprovals />} />
         
+        {/* Accounting routes */}
+        <Route path="accounting" element={<Accounting />} />
+        <Route path="accounting/:id/:branchName" element={<Accounting />} />
+        
         {/* Attendance routes */}
         <Route path="attendance" element={<Attendance />} />
         <Route path="attendance/:id/:branchName" element={<Attendance />} />
@@ -140,6 +145,7 @@ const AdminRoutes = () => {
         <Route path="branch-dashboard/:id/:branchName/library" element={<Library />} />
         <Route path="branch-dashboard/:id/:branchName/third-party" element={<ThirdPartyAccess />} />
         <Route path="branch-dashboard/:id/:branchName/reports" element={<Reports />} />
+        <Route path="branch-dashboard/:id/:branchName/accounting" element={<Accounting />} />
         <Route path="branch-dashboard/:id/:branchName/booking-approvals" element={<BookingApprovals />} />
       </Route>
     </Routes>
