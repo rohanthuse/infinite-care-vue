@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X, Plus, User, RotateCcw } from 'lucide-react';
+import { generateBodyMapSvg } from '@/lib/bodyMapUtils';
 
 interface BodyMapPoint {
   id: string;
@@ -151,74 +152,28 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
           )}
         </div>
 
-        {/* Body Diagram */}
-        <div className="relative mx-auto max-w-md">
+        {/* Realistic Body Diagram */}
+        <div className="relative mx-auto max-w-sm">
           <div
-            className={`relative w-full h-96 border-2 border-dashed border-gray-300 rounded-lg bg-gradient-to-b from-gray-50 to-gray-100 ${
+            className={`relative w-full h-[500px] border-2 border-dashed border-gray-300 rounded-lg bg-gradient-to-b from-gray-50 to-gray-100 overflow-hidden ${
               isAddingPoint ? 'cursor-crosshair border-blue-400 bg-blue-50' : 'cursor-default'
             }`}
             onClick={handleBodyClick}
           >
-            {/* Simplified body outline */}
-            <svg
-              viewBox="0 0 200 400"
-              className="absolute inset-0 w-full h-full"
+            {/* Realistic Human Body SVG */}
+            <div 
+              className="absolute inset-0 w-full h-full flex items-center justify-center"
+              dangerouslySetInnerHTML={{ 
+                __html: generateBodyMapSvg(currentSide).replace('data:image/svg+xml;charset=utf-8,', '').replace(/%3C/g, '<').replace(/%3E/g, '>').replace(/%20/g, ' ').replace(/%22/g, '"').replace(/%23/g, '#').replace(/%2F/g, '/').replace(/%3A/g, ':').replace(/%3B/g, ';').replace(/%2C/g, ',').replace(/%2E/g, '.').replace(/%28/g, '(').replace(/%29/g, ')').replace(/%5B/g, '[').replace(/%5D/g, ']').replace(/%7B/g, '{').replace(/%7D/g, '}')
+              }}
               style={{ pointerEvents: 'none' }}
-            >
-              {currentSide === 'front' ? (
-                // Front view outline
-                <g fill="none" stroke="#6B7280" strokeWidth="2">
-                  {/* Head */}
-                  <circle cx="100" cy="40" r="25" />
-                  {/* Neck */}
-                  <line x1="100" y1="65" x2="100" y2="80" />
-                  {/* Torso */}
-                  <rect x="75" y="80" width="50" height="120" rx="10" />
-                  {/* Arms */}
-                  <rect x="45" y="90" width="25" height="80" rx="12" />
-                  <rect x="130" y="90" width="25" height="80" rx="12" />
-                  {/* Legs */}
-                  <rect x="85" y="200" width="15" height="120" rx="7" />
-                  <rect x="100" y="200" width="15" height="120" rx="7" />
-                  {/* Hands */}
-                  <circle cx="57" cy="180" r="8" />
-                  <circle cx="143" cy="180" r="8" />
-                  {/* Feet */}
-                  <ellipse cx="92" cy="330" rx="8" ry="12" />
-                  <ellipse cx="108" cy="330" rx="8" ry="12" />
-                </g>
-              ) : (
-                // Back view outline
-                <g fill="none" stroke="#6B7280" strokeWidth="2">
-                  {/* Head */}
-                  <circle cx="100" cy="40" r="25" />
-                  {/* Neck */}
-                  <line x1="100" y1="65" x2="100" y2="80" />
-                  {/* Torso */}
-                  <rect x="75" y="80" width="50" height="120" rx="10" />
-                  {/* Arms */}
-                  <rect x="45" y="90" width="25" height="80" rx="12" />
-                  <rect x="130" y="90" width="25" height="80" rx="12" />
-                  {/* Legs */}
-                  <rect x="85" y="200" width="15" height="120" rx="7" />
-                  <rect x="100" y="200" width="15" height="120" rx="7" />
-                  {/* Hands */}
-                  <circle cx="57" cy="180" r="8" />
-                  <circle cx="143" cy="180" r="8" />
-                  {/* Feet */}
-                  <ellipse cx="92" cy="330" rx="8" ry="12" />
-                  <ellipse cx="108" cy="330" rx="8" ry="12" />
-                  {/* Spine line for back view */}
-                  <line x1="100" y1="80" x2="100" y2="200" strokeDasharray="3,3" />
-                </g>
-              )}
-            </svg>
+            />
 
             {/* Injury points */}
             {currentSidePoints.map((point) => (
               <div
                 key={point.id}
-                className="absolute w-4 h-4 rounded-full border-2 border-white shadow-lg cursor-pointer transform -translate-x-2 -translate-y-2 hover:scale-125 transition-transform"
+                className="absolute w-4 h-4 rounded-full border-2 border-white shadow-lg cursor-pointer transform -translate-x-2 -translate-y-2 hover:scale-125 transition-transform z-10"
                 style={{
                   left: `${point.x}%`,
                   top: `${point.y}%`,
@@ -233,7 +188,7 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
             ))}
 
             {isAddingPoint && (
-              <div className="absolute inset-0 flex items-center justify-center bg-blue-50 bg-opacity-50">
+              <div className="absolute inset-0 flex items-center justify-center bg-blue-50 bg-opacity-50 z-5">
                 <div className="text-blue-600 font-medium">Click to add injury point</div>
               </div>
             )}
