@@ -1271,6 +1271,8 @@ export type Database = {
       }
       client_events_logs: {
         Row: {
+          body_map_back_image_url: string | null
+          body_map_front_image_url: string | null
           body_map_points: Json | null
           branch_id: string | null
           category: string | null
@@ -1287,6 +1289,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          body_map_back_image_url?: string | null
+          body_map_front_image_url?: string | null
           body_map_points?: Json | null
           branch_id?: string | null
           category?: string | null
@@ -1303,6 +1307,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          body_map_back_image_url?: string | null
+          body_map_front_image_url?: string | null
           body_map_points?: Json | null
           branch_id?: string | null
           category?: string | null

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Info } from 'lucide-react';
+import { Eye, Info, ImageIcon } from 'lucide-react';
 import { generateBodyMapSvg } from '@/lib/bodyMapUtils';
 
 interface BodyMapPoint {
@@ -19,10 +19,16 @@ interface BodyMapPoint {
 
 interface BodyMapViewerProps {
   bodyMapPoints: BodyMapPoint[];
+  frontImageUrl?: string;
+  backImageUrl?: string;
 }
 
-export function BodyMapViewer({ bodyMapPoints }: BodyMapViewerProps) {
+export function BodyMapViewer({ bodyMapPoints, frontImageUrl, backImageUrl }: BodyMapViewerProps) {
   const [selectedPoint, setSelectedPoint] = useState<BodyMapPoint | null>(null);
+  const [imageLoadErrors, setImageLoadErrors] = useState<{ front: boolean; back: boolean }>({
+    front: false,
+    back: false
+  });
 
   if (!bodyMapPoints || bodyMapPoints.length === 0) {
     return (
@@ -46,7 +52,45 @@ export function BodyMapViewer({ bodyMapPoints }: BodyMapViewerProps) {
     }
   };
 
-  const renderBodyDiagram = (side: 'front' | 'back', points: BodyMapPoint[]) => (
+  const handleImageError = (side: 'front' | 'back') => {
+    setImageLoadErrors(prev => ({ ...prev, [side]: true }));
+  };
+
+  const renderStaticImage = (side: 'front' | 'back', imageUrl: string, points: BodyMapPoint[]) => (
+    <div className="relative mx-auto" style={{ width: '300px', height: '500px' }}>
+      <img
+        src={imageUrl}
+        alt={`${side} view body map`}
+        className="absolute inset-0 w-full h-full object-contain"
+        onError={() => handleImageError(side)}
+      />
+      
+      {/* Clickable areas for points (invisible overlay) */}
+      {points.map((point) => (
+        <button
+          key={point.id}
+          className="absolute w-5 h-5 rounded-full opacity-0 hover:opacity-20 hover:bg-blue-500 transition-opacity z-10"
+          style={{
+            left: `${point.x}px`,
+            top: `${point.y}px`,
+            transform: 'translate(-50%, -50%)',
+          }}
+          onClick={() => setSelectedPoint(point)}
+          title={`${point.type} - ${point.severity}`}
+        />
+      ))}
+      
+      {/* Side label */}
+      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2">
+        <Badge variant="outline" className="text-xs bg-white">
+          <ImageIcon className="h-3 w-3 mr-1" />
+          {side === 'front' ? 'Front View (Saved)' : 'Back View (Saved)'}
+        </Badge>
+      </div>
+    </div>
+  );
+
+  const renderDynamicDiagram = (side: 'front' | 'back', points: BodyMapPoint[]) => (
     <div className="relative mx-auto" style={{ width: '300px', height: '500px' }}>
       {/* Realistic Body Diagram */}
       <div 
@@ -84,6 +128,16 @@ export function BodyMapViewer({ bodyMapPoints }: BodyMapViewerProps) {
     </div>
   );
 
+  const renderBodyView = (side: 'front' | 'back', points: BodyMapPoint[], imageUrl?: string) => {
+    const hasError = imageLoadErrors[side];
+    
+    if (imageUrl && !hasError) {
+      return renderStaticImage(side, imageUrl, points);
+    } else {
+      return renderDynamicDiagram(side, points);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Tabs defaultValue="front" className="w-full">
@@ -91,17 +145,23 @@ export function BodyMapViewer({ bodyMapPoints }: BodyMapViewerProps) {
           <TabsTrigger value="front" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
             Front View ({frontPoints.length})
+            {frontImageUrl && !imageLoadErrors.front && (
+              <ImageIcon className="h-3 w-3 text-green-600" />
+            )}
           </TabsTrigger>
           <TabsTrigger value="back" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
             Back View ({backPoints.length})
+            {backImageUrl && !imageLoadErrors.back && (
+              <ImageIcon className="h-3 w-3 text-green-600" />
+            )}
           </TabsTrigger>
         </TabsList>
         
         <TabsContent value="front" className="mt-4">
           <div className="bg-gray-50 rounded-lg p-6 flex justify-center">
             {frontPoints.length > 0 ? (
-              renderBodyDiagram('front', frontPoints)
+              renderBodyView('front', frontPoints, frontImageUrl)
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <p className="text-sm">No points marked on front view</p>
@@ -113,7 +173,7 @@ export function BodyMapViewer({ bodyMapPoints }: BodyMapViewerProps) {
         <TabsContent value="back" className="mt-4">
           <div className="bg-gray-50 rounded-lg p-6 flex justify-center">
             {backPoints.length > 0 ? (
-              renderBodyDiagram('back', backPoints)
+              renderBodyView('back', backPoints, backImageUrl)
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <p className="text-sm">No points marked on back view</p>
@@ -182,10 +242,16 @@ export function BodyMapViewer({ bodyMapPoints }: BodyMapViewerProps) {
           <div>
             <span className="font-medium">Front View:</span>
             <span className="ml-2">{frontPoints.length}</span>
+            {frontImageUrl && !imageLoadErrors.front && (
+              <ImageIcon className="h-3 w-3 inline ml-1 text-green-600" />
+            )}
           </div>
           <div>
             <span className="font-medium">Back View:</span>
             <span className="ml-2">{backPoints.length}</span>
+            {backImageUrl && !imageLoadErrors.back && (
+              <ImageIcon className="h-3 w-3 inline ml-1 text-green-600" />
+            )}
           </div>
         </div>
       </div>

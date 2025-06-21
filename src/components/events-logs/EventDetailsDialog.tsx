@@ -146,7 +146,11 @@ export function EventDetailsDialog({ event, open, onOpenChange, onEdit }: EventD
               <Separator />
               <div className="space-y-3">
                 <h4 className="font-medium text-sm">Body Map</h4>
-                <BodyMapViewer bodyMapPoints={event.body_map_points} />
+                <BodyMapViewer 
+                  bodyMapPoints={event.body_map_points}
+                  frontImageUrl={event.body_map_front_image_url}
+                  backImageUrl={event.body_map_back_image_url}
+                />
               </div>
             </>
           )}

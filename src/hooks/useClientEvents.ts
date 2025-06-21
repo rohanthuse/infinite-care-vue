@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { generateBodyMapImages } from "@/lib/bodyMapImageGenerator";
 
 export interface ClientEvent {
   id: string;
@@ -13,6 +14,8 @@ export interface ClientEvent {
   status: string;
   reporter: string;
   body_map_points?: any;
+  body_map_front_image_url?: string;
+  body_map_back_image_url?: string;
   created_at: string;
   updated_at: string;
   // Client information
@@ -63,6 +66,7 @@ export const useCreateClientEvent = () => {
 
   return useMutation({
     mutationFn: async (eventData: Omit<ClientEvent, "id" | "created_at" | "updated_at">) => {
+      // First, create the event record to get the ID
       const { data, error } = await supabase
         .from("client_events_logs")
         .insert([eventData])
@@ -72,6 +76,36 @@ export const useCreateClientEvent = () => {
       if (error) {
         console.error("Error creating client event:", error);
         throw error;
+      }
+
+      // If there are body map points, generate images
+      if (data && eventData.body_map_points && Array.isArray(eventData.body_map_points) && eventData.body_map_points.length > 0) {
+        try {
+          const images = await generateBodyMapImages(eventData.body_map_points, data.id);
+          
+          // Update the event with image URLs
+          const updateData: any = {};
+          if (images.frontImageUrl) updateData.body_map_front_image_url = images.frontImageUrl;
+          if (images.backImageUrl) updateData.body_map_back_image_url = images.backImageUrl;
+          
+          if (Object.keys(updateData).length > 0) {
+            const { error: updateError } = await supabase
+              .from('client_events_logs')
+              .update(updateData)
+              .eq('id', data.id);
+            
+            if (updateError) {
+              console.error('Error updating event with image URLs:', updateError);
+              // Don't fail the whole operation, just log the error
+            } else {
+              // Return updated data
+              return { ...data, ...updateData };
+            }
+          }
+        } catch (imageError) {
+          console.error('Error generating body map images:', imageError);
+          // Don't fail the whole operation, just log the error
+        }
       }
 
       return data;
