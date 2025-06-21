@@ -7,7 +7,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { TabNavigation } from "@/components/TabNavigation";
 import { UnifiedDocumentsList } from "@/components/documents/UnifiedDocumentsList";
-import { UnifiedUploadDialog } from "@/components/documents/UnifiedUploadDialog";
+import { UnifiedUploadDialog, UploadDocumentData } from "@/components/documents/UnifiedUploadDialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
@@ -36,6 +36,56 @@ const Documents = () => {
   
   const handleNewBooking = () => {
     toast.info("New booking functionality will be implemented soon");
+  };
+
+  // Mock documents data - this would normally come from a hook/API
+  const mockDocuments = [
+    {
+      id: "1",
+      name: "Sample Document.pdf",
+      type: "PDF",
+      category: "Medical Report",
+      description: "Sample medical report",
+      file_path: "documents/sample.pdf",
+      file_size: "2.1 MB",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      uploaded_by: "admin",
+      uploaded_by_name: "Admin User",
+      tags: ["medical", "report"],
+      access_level: "branch",
+      source_table: "documents",
+      related_entity: "Client",
+      client_name: "John Doe",
+      staff_name: null,
+      has_file: true
+    }
+  ];
+
+  const handleViewDocument = (filePath: string) => {
+    toast.info("Document viewer will be implemented soon");
+    console.log("Viewing document:", filePath);
+  };
+
+  const handleDownloadDocument = (filePath: string, fileName: string) => {
+    toast.info("Document download will be implemented soon");
+    console.log("Downloading document:", filePath, fileName);
+  };
+
+  const handleDeleteDocument = (documentId: string) => {
+    toast.info("Document deletion will be implemented soon");
+    console.log("Deleting document:", documentId);
+  };
+
+  const handleSaveDocument = async (documentData: UploadDocumentData) => {
+    try {
+      console.log("Saving document:", documentData);
+      toast.success("Document uploaded successfully");
+      // Here you would normally call your upload API
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload document");
+    }
   };
 
   return (
@@ -70,13 +120,20 @@ const Documents = () => {
           </div>
           
           <div className="p-6">
-            <UnifiedDocumentsList />
+            <UnifiedDocumentsList 
+              documents={mockDocuments}
+              onViewDocument={handleViewDocument}
+              onDownloadDocument={handleDownloadDocument}
+              onDeleteDocument={handleDeleteDocument}
+              isLoading={false}
+            />
           </div>
         </div>
         
         <UnifiedUploadDialog
           open={uploadDialogOpen}
           onOpenChange={setUploadDialogOpen}
+          onSave={handleSaveDocument}
         />
       </main>
     </div>
