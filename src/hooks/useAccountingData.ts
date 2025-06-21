@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -516,39 +515,54 @@ export function useCreateExtraTimeRecord() {
   });
 }
 
-// Hook to get staff list for dropdowns
+// Hook to get staff list for dropdowns - FIXED STATUS FILTER
 export function useStaffList(branchId?: string) {
   return useQuery({
     queryKey: ['staff-list', branchId],
     queryFn: async () => {
       if (!branchId) return [];
 
+      console.log('Fetching staff list for branch:', branchId);
+
       const { data, error } = await supabase
         .from('staff')
         .select('id, first_name, last_name, email')
         .eq('branch_id', branchId)
-        .eq('status', 'active');
+        .eq('status', 'Active'); // Fixed: Changed from 'active' to 'Active'
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching staff list:', error);
+        throw error;
+      }
+
+      console.log('Staff list fetched:', data?.length || 0, 'records');
       return data || [];
     },
     enabled: !!branchId,
   });
 }
 
-// Hook to get clients list for dropdowns
+// Hook to get clients list for dropdowns - FIXED STATUS FILTER
 export function useClientsList(branchId?: string) {
   return useQuery({
     queryKey: ['clients-list', branchId],
     queryFn: async () => {
       if (!branchId) return [];
 
+      console.log('Fetching clients list for branch:', branchId);
+
       const { data, error } = await supabase
         .from('clients')
         .select('id, first_name, last_name, email')
         .eq('branch_id', branchId);
+        // Note: Removed status filter as clients table may not have consistent status values
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching clients list:', error);
+        throw error;
+      }
+
+      console.log('Clients list fetched:', data?.length || 0, 'records');
       return data || [];
     },
     enabled: !!branchId,
