@@ -1,5 +1,5 @@
+
 import { Routes, Route, Outlet } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/Dashboard";
 import Services from "@/pages/Services";
 import Settings from "@/pages/Settings";
@@ -30,6 +30,7 @@ import Library from "@/pages/Library";
 import ThirdPartyAccess from "@/pages/ThirdPartyAccess";
 import Reports from "@/pages/Reports";
 import BookingApprovals from "@/pages/BookingApprovals";
+import Accounting from "@/pages/Accounting";
 import ClientEdit from "@/pages/client/ClientEdit";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 
@@ -81,6 +82,34 @@ const AdminRoutes = () => {
         <Route path="branch-dashboard/:id/:branchName/third-party" element={<ThirdPartyAccess />} />
         <Route path="branch-dashboard/:id/:branchName/reports" element={<Reports />} />
         <Route path="branch-dashboard/:id/:branchName/booking-approvals" element={<BookingApprovals />} />
+        <Route path="accounting/:id/:branchName" element={<Accounting />} />
+        <Route path="accounting/:id/:branchName/:tab" element={<Accounting />} />
+        <Route path="reports/:id/:branchName" element={<Reports />} />
+        <Route path="reports/:id/:branchName/:tab" element={<Reports />} />
+        <Route path="workflow/:id/:branchName" element={<Workflow />} />
+        <Route path="workflow/:id/:branchName/:tab" element={<Workflow />} />
+        <Route path="training/:id/:branchName" element={<TrainingMatrix />} />
+        <Route path="training/:id/:branchName/:tab" element={<TrainingMatrix />} />
+        <Route path="tasks/:id/:branchName" element={<TaskMatrix />} />
+        <Route path="tasks/:id/:branchName/:tab" element={<TaskMatrix />} />
+        <Route path="form-builder/:id/:branchName" element={<FormBuilder />} />
+        <Route path="form-builder/:id/:branchName/:tab" element={<FormBuilder />} />
+        <Route path="agreement/:id/:branchName" element={<Agreement />} />
+        <Route path="agreement/:id/:branchName/:tab" element={<Agreement />} />
+        <Route path="attendance/:id/:branchName" element={<Attendance />} />
+        <Route path="attendance/:id/:branchName/:tab" element={<Attendance />} />
+        <Route path="booking-approvals/:id/:branchName" element={<BookingApprovals />} />
+        <Route path="library/:id/:branchName" element={<Library />} />
+        <Route path="library/:id/:branchName/:tab" element={<Library />} />
+        <Route path="documents/:id/:branchName" element={<Documents />} />
+        <Route path="documents/:id/:branchName/:tab" element={<Documents />} />
+        <Route path="events-logs/:id/:branchName" element={<EventsLogs />} />
+        <Route path="events-logs/:id/:branchName/:tab" element={<EventsLogs />} />
+        <Route path="notifications/:id/:branchName" element={<Notifications />} />
+        <Route path="notifications/:id/:branchName/:tab" element={<Notifications />} />
+        <Route path="care-plan/:id" element={<CarePlanView />} />
+        <Route path="carer-profile/:id" element={<CarerProfilePage />} />
+        <Route path="third-party/:id/:branchName" element={<ThirdPartyAccess />} />
       </Route>
     </Routes>
   );
