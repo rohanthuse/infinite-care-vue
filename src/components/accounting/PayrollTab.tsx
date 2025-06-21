@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import AddPayrollDialog from "./AddPayrollDialog";
 import ViewPayrollDialog from "./ViewPayrollDialog";
 import FilterPayrollDialog from "./FilterPayrollDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 interface PayrollTabProps {
   branchId?: string;
@@ -40,6 +42,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
   const [filteredRecords, setFilteredRecords] = useState<PayrollRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRecord, setSelectedRecord] = useState<PayrollRecord | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Dialogs state
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -103,6 +106,84 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
     
     setFilteredRecords(results);
   }, [payrollRecords, searchQuery, activeFilters]);
+
+  // Export function
+  const handleExportPayroll = async () => {
+    try {
+      setIsExporting(true);
+      
+      // Prepare CSV data
+      const headers = [
+        'Employee Name',
+        'Email',
+        'Pay Period Start',
+        'Pay Period End',
+        'Regular Hours',
+        'Overtime Hours',
+        'Hourly Rate',
+        'Basic Salary',
+        'Overtime Pay',
+        'Bonus',
+        'Gross Pay',
+        'Tax Deduction',
+        'NI Deduction',
+        'Pension Deduction',
+        'Other Deductions',
+        'Net Pay',
+        'Payment Status',
+        'Payment Method',
+        'Payment Date',
+        'Payment Reference'
+      ];
+      
+      const csvData = filteredRecords.map(record => [
+        record.staff ? `${record.staff.first_name} ${record.staff.last_name}` : 'Unknown Employee',
+        record.staff?.email || 'N/A',
+        new Date(record.pay_period_start).toLocaleDateString(),
+        new Date(record.pay_period_end).toLocaleDateString(),
+        record.regular_hours.toString(),
+        record.overtime_hours.toString(),
+        `£${record.hourly_rate.toFixed(2)}`,
+        `£${record.basic_salary.toFixed(2)}`,
+        `£${record.overtime_pay.toFixed(2)}`,
+        `£${record.bonus.toFixed(2)}`,
+        `£${record.gross_pay.toFixed(2)}`,
+        `£${record.tax_deduction.toFixed(2)}`,
+        `£${record.ni_deduction.toFixed(2)}`,
+        `£${record.pension_deduction.toFixed(2)}`,
+        `£${record.other_deductions.toFixed(2)}`,
+        `£${record.net_pay.toFixed(2)}`,
+        record.payment_status.charAt(0).toUpperCase() + record.payment_status.slice(1),
+        record.payment_method.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        record.payment_date ? new Date(record.payment_date).toLocaleDateString() : 'Not set',
+        record.payment_reference || 'N/A'
+      ]);
+      
+      // Create CSV content
+      const csvContent = [
+        headers.join(','),
+        ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+      
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `payroll_${branchName || 'branch'}_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success(`Exported ${filteredRecords.length} payroll records`);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export payroll data');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Handle adding new payroll record
   const handleAddPayroll = async (record: Partial<PayrollRecord>) => {
@@ -230,9 +311,15 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-2"
+            onClick={handleExportPayroll}
+            disabled={isExporting}
+          >
             <FileDown className="h-4 w-4" />
-            <span>Export</span>
+            <span>{isExporting ? 'Exporting...' : 'Export'}</span>
           </Button>
           <Button 
             variant="default" 
@@ -390,3 +477,4 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
 };
 
 export default PayrollTab;
+

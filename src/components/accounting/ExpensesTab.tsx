@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle 
 } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 interface ExpensesTabProps {
   branchId?: string;
@@ -39,6 +41,7 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
 
   const [filteredExpenses, setFilteredExpenses] = useState<ExpenseRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
   
   // Dialog states
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -116,6 +119,60 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
     
     setFilteredExpenses(result);
   }, [expenses, searchTerm, filters]);
+
+  // Export function
+  const handleExportExpenses = async () => {
+    try {
+      setIsExporting(true);
+      
+      // Prepare CSV data
+      const headers = [
+        'Date',
+        'Description',
+        'Category',
+        'Amount',
+        'Payment Method',
+        'Status',
+        'Staff',
+        'Notes'
+      ];
+      
+      const csvData = filteredExpenses.map(expense => [
+        new Date(expense.expense_date).toLocaleDateString(),
+        expense.description,
+        expense.category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        `£${expense.amount.toFixed(2)}`,
+        expense.payment_method.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        expense.status.charAt(0).toUpperCase() + expense.status.slice(1),
+        expense.staff ? `${expense.staff.first_name} ${expense.staff.last_name}` : 'N/A',
+        expense.notes || ''
+      ]);
+      
+      // Create CSV content
+      const csvContent = [
+        headers.join(','),
+        ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+      
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `expenses_${branchName || 'branch'}_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success(`Exported ${filteredExpenses.length} expense records`);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export expenses');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Handler functions
   const handleAddExpense = async (expenseData: Partial<ExpenseRecord>) => {
@@ -208,9 +265,15 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
         
         <div className="flex items-center gap-2">
           {filteredExpenses.length > 0 && (
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-2"
+              onClick={handleExportExpenses}
+              disabled={isExporting}
+            >
               <Download className="h-4 w-4" />
-              <span>Export</span>
+              <span>{isExporting ? 'Exporting...' : 'Export'}</span>
             </Button>
           )}
           <Button 
@@ -329,3 +392,4 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
 };
 
 export default ExpensesTab;
+
