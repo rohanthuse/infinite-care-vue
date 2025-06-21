@@ -9,6 +9,7 @@ import { OperationalReports } from "./OperationalReports";
 import { ComplianceReports } from "./ComplianceReports";
 import { ClinicalReports } from "./ClinicalReports";
 import { ReportsHeader } from "./ReportsHeader";
+import { DateRange } from "react-day-picker";
 import { 
   Users, 
   Briefcase, 
@@ -42,6 +43,7 @@ interface ReportOption {
 
 export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
   const [activeReport, setActiveReport] = useState<ReportType>("client");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   
   const reportOptions: ReportOption[] = [
     {
@@ -89,23 +91,29 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
   ];
   
   const renderActiveReport = () => {
+    const commonProps = {
+      branchId,
+      branchName,
+      dateRange
+    };
+
     switch (activeReport) {
       case "client":
-        return <ClientReports branchId={branchId} branchName={branchName} />;
+        return <ClientReports {...commonProps} />;
       case "staff":
-        return <StaffReports branchId={branchId} branchName={branchName} />;
+        return <StaffReports {...commonProps} />;
       case "service":
-        return <ServiceReports branchId={branchId} branchName={branchName} />;
+        return <ServiceReports {...commonProps} />;
       case "financial":
-        return <FinancialReports branchId={branchId} branchName={branchName} />;
+        return <FinancialReports {...commonProps} />;
       case "operational":
-        return <OperationalReports branchId={branchId} branchName={branchName} />;
+        return <OperationalReports {...commonProps} />;
       case "compliance":
         return <ComplianceReports branchId={branchId} branchName={branchName} />;
       case "clinical":
         return <ClinicalReports branchId={branchId} branchName={branchName} />;
       default:
-        return <ClientReports branchId={branchId} branchName={branchName} />;
+        return <ClientReports {...commonProps} />;
     }
   };
   
@@ -115,12 +123,16 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
         <CardHeader className="pb-3">
           <CardTitle className="text-2xl font-bold">Reports</CardTitle>
           <CardDescription>
-            Generate and analyze reports across various categories
+            Generate and analyze reports across various categories with real-time data
           </CardDescription>
         </CardHeader>
       </Card>
 
-      <ReportsHeader />
+      <ReportsHeader 
+        branchName={branchName}
+        activeReportType={reportOptions.find(r => r.id === activeReport)?.title || "Reports"}
+        onDateRangeChange={setDateRange}
+      />
       
       {activeReport ? (
         <div className="space-y-4">

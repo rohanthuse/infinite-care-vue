@@ -14,23 +14,16 @@ import {
   Line,
   ResponsiveContainer
 } from "recharts";
+import { useOperationalReportsData } from "@/hooks/useReportsData";
+import { Loader2 } from "lucide-react";
 
 interface OperationalReportsProps {
   branchId: string;
   branchName: string;
+  dateRange?: { from: Date; to: Date };
 }
 
-// Mock data for operational reports
-const taskCompletionData = [
-  { day: "Monday", scheduled: 65, completed: 62, cancelled: 3 },
-  { day: "Tuesday", scheduled: 68, completed: 65, cancelled: 3 },
-  { day: "Wednesday", scheduled: 70, completed: 68, cancelled: 2 },
-  { day: "Thursday", scheduled: 72, completed: 69, cancelled: 3 },
-  { day: "Friday", scheduled: 75, completed: 73, cancelled: 2 },
-  { day: "Saturday", scheduled: 60, completed: 57, cancelled: 3 },
-  { day: "Sunday", scheduled: 50, completed: 48, cancelled: 2 },
-];
-
+// Mock response time data since we don't have this in the database yet
 const responseTimeData = [
   { month: "Jan", responseTime: 28 },
   { month: "Feb", responseTime: 26 },
@@ -40,39 +33,70 @@ const responseTimeData = [
   { month: "Jun", responseTime: 18 },
 ];
 
-export function OperationalReports({ branchId, branchName }: OperationalReportsProps) {
+export function OperationalReports({ branchId, branchName, dateRange }: OperationalReportsProps) {
+  const { data: reportsData, isLoading, error } = useOperationalReportsData({
+    branchId,
+    startDate: dateRange?.from?.toISOString().split('T')[0],
+    endDate: dateRange?.to?.toISOString().split('T')[0]
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading operational reports...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center p-8 text-red-600">
+        Error loading operational reports. Please try again later.
+      </div>
+    );
+  }
+
+  const taskCompletionData = reportsData?.taskCompletion || [];
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card className="border border-gray-200 shadow-sm">
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold mb-4">Task Completion Rates</h3>
-          <div className="w-full" style={{ height: "350px" }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <ChartContainer 
-                config={{
-                  scheduled: { color: "#0088FE" },
-                  completed: { color: "#00C49F" },
-                  cancelled: { color: "#FF8042" },
-                }}
-              >
-                <BarChart
-                  data={taskCompletionData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          {taskCompletionData.length > 0 ? (
+            <div className="w-full" style={{ height: "350px" }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <ChartContainer 
+                  config={{
+                    scheduled: { color: "#0088FE" },
+                    completed: { color: "#00C49F" },
+                    cancelled: { color: "#FF8042" },
+                  }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="scheduled" name="Scheduled Tasks" fill="var(--color-scheduled)" />
-                  <Bar dataKey="completed" name="Completed Tasks" fill="var(--color-completed)" />
-                  <Bar dataKey="cancelled" name="Cancelled Tasks" fill="var(--color-cancelled)" />
-                </BarChart>
-              </ChartContainer>
-            </ResponsiveContainer>
-          </div>
+                  <BarChart
+                    data={taskCompletionData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="day" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="scheduled" name="Scheduled Tasks" fill="var(--color-scheduled)" />
+                    <Bar dataKey="completed" name="Completed Tasks" fill="var(--color-completed)" />
+                    <Bar dataKey="cancelled" name="Cancelled Tasks" fill="var(--color-cancelled)" />
+                  </BarChart>
+                </ChartContainer>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              No task completion data available for the selected period.
+            </div>
+          )}
           <div className="mt-4 text-sm text-muted-foreground">
-            <p>This report shows task completion rates across different days of the week.</p>
+            <p>This report shows task completion rates across different days of the week for the selected period.</p>
           </div>
         </CardContent>
       </Card>
@@ -102,7 +126,7 @@ export function OperationalReports({ branchId, branchName }: OperationalReportsP
             </ResponsiveContainer>
           </div>
           <div className="mt-4 text-sm text-muted-foreground">
-            <p>This report shows the average time to respond to client requests over the past 6 months.</p>
+            <p>This report shows the average time to respond to client requests. <em>(Currently showing sample data - response time tracking to be implemented)</em></p>
           </div>
         </CardContent>
       </Card>
