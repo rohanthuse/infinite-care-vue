@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import NotificationCard, { NotificationCardProps } from "./NotificationCard";
 import { useDynamicNotificationData } from "@/hooks/useNotifications";
+import { ErrorBoundary } from "@/components/care/ErrorBoundary";
 
 interface NotificationsOverviewProps {
   branchId?: string;
@@ -20,21 +21,25 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
   const effectiveBranchId = branchId || id;
   const effectiveBranchName = branchName || paramBranchName;
   
-  // Get dynamic notification data
-  const { data: dynamicData, isLoading } = useDynamicNotificationData(effectiveBranchId);
+  // Get dynamic notification data with error handling
+  const { data: dynamicData, isLoading, error } = useDynamicNotificationData(effectiveBranchId);
   
   const handleNavigate = (path: string) => {
-    console.log("Navigating to:", path);
-    console.log("Branch ID:", effectiveBranchId);
-    console.log("Branch Name:", effectiveBranchName);
-    
-    if (effectiveBranchId && effectiveBranchName) {
-      const fullPath = `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/notifications/${path}`;
-      console.log("Full navigation path:", fullPath);
-      navigate(fullPath);
-    } else {
-      console.log("Navigating without branch context");
-      navigate(`/notifications/${path}`);
+    try {
+      console.log("Navigating to:", path);
+      console.log("Branch ID:", effectiveBranchId);
+      console.log("Branch Name:", effectiveBranchName);
+      
+      if (effectiveBranchId && effectiveBranchName) {
+        const fullPath = `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/notifications/${path}`;
+        console.log("Full navigation path:", fullPath);
+        navigate(fullPath);
+      } else {
+        console.log("Navigating without branch context");
+        navigate(`/notifications/${path}`);
+      }
+    } catch (error) {
+      console.error("Navigation error:", error);
     }
   };
 
@@ -102,6 +107,10 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
     },
   ];
 
+  if (error) {
+    console.warn("Error loading notifications overview:", error);
+  }
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -113,24 +122,30 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-      {notificationData.map((notification, index) => (
-        <NotificationCard
-          key={index}
-          title={notification.title}
-          count={notification.count}
-          icon={notification.icon}
-          color={notification.color}
-          bgColor={notification.bgColor}
-          borderColor={notification.borderColor}
-          description={notification.description}
-          onClick={() => {
-            console.log(`Clicked on ${notification.title}`);
-            handleNavigate(notification.path);
-          }}
-        />
-      ))}
-    </div>
+    <ErrorBoundary fallback={
+      <div className="p-4 text-center">
+        <p className="text-gray-500">Unable to load notifications overview</p>
+      </div>
+    }>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        {notificationData.map((notification, index) => (
+          <NotificationCard
+            key={index}
+            title={notification.title}
+            count={notification.count}
+            icon={notification.icon}
+            color={notification.color}
+            bgColor={notification.bgColor}
+            borderColor={notification.borderColor}
+            description={notification.description}
+            onClick={() => {
+              console.log(`Clicked on ${notification.title}`);
+              handleNavigate(notification.path);
+            }}
+          />
+        ))}
+      </div>
+    </ErrorBoundary>
   );
 };
 
