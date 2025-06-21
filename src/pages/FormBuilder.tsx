@@ -24,45 +24,8 @@ const FormBuilder = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuthSafe();
-  const [activeTab, setActiveTab] = useState<string>('design');
-  const [isFormDirty, setIsFormDirty] = useState<boolean>(false);
-  const [isLoadingForm, setIsLoadingForm] = useState<boolean>(!!formId);
-
-  // If no formId is provided, show the Form Matrix (FormBuilderTab)
-  if (!formId) {
-    const decodedBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
-
-    const handleNavigate = (tab: string) => {
-      if (tab !== "form-builder" && branchId && branchName) {
-        navigate(`/branch-dashboard/${branchId}/${branchName}/${tab}`);
-      }
-    };
-
-    return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
-        <DashboardHeader />
-        
-        <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full">
-          <BranchInfoHeader 
-            branchName={decodedBranchName} 
-            branchId={branchId || ""}
-            onNewBooking={() => {}}
-          />
-          
-          <div className="mb-6">
-            <TabNavigation 
-              activeTab="form-builder" 
-              onChange={handleNavigate}
-            />
-          </div>
-          
-          <FormBuilderTab branchId={branchId || ''} branchName={decodedBranchName} />
-        </main>
-      </div>
-    );
-  }
-
-  // Rest of the component for form editing (when formId is provided)
+  
+  // Move all hooks to the top before any conditional logic
   const { 
     forms, 
     createForm, 
@@ -77,6 +40,10 @@ const FormBuilder = () => {
     saveElements,
     isSaving: isSavingElements 
   } = useFormElements(formId || '');
+
+  const [activeTab, setActiveTab] = useState<string>('design');
+  const [isFormDirty, setIsFormDirty] = useState<boolean>(false);
+  const [isLoadingForm, setIsLoadingForm] = useState<boolean>(!!formId);
 
   const [form, setForm] = useState<Form>({
     id: formId || uuidv4(),
@@ -179,15 +146,6 @@ const FormBuilder = () => {
     }
   }, [formId, forms.length, isLoadingElements, isLoadingForm, branchId, branchName]);
 
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-  };
-
-  const handleFormChange = (updatedForm: Form) => {
-    setForm(updatedForm);
-    setIsFormDirty(true);
-  };
-
   // Auto-save elements when form elements change
   const saveFormElements = useCallback(async (elements: FormElement[]) => {
     if (formId && elements.length >= 0) {
@@ -207,6 +165,15 @@ const FormBuilder = () => {
       }
     }
   }, [formId, saveElements, toast]);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
+
+  const handleFormChange = (updatedForm: Form) => {
+    setForm(updatedForm);
+    setIsFormDirty(true);
+  };
 
   const handleSaveForm = async () => {
     const userId = user?.id || 'temp-user-id';
@@ -424,6 +391,32 @@ const FormBuilder = () => {
       navigate(`/branch-dashboard/${branchId}/${branchName}/${tab}`);
     }
   };
+
+  // If no formId is provided, show the Form Matrix (FormBuilderTab)
+  if (!formId) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        
+        <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full">
+          <BranchInfoHeader 
+            branchName={decodedBranchName} 
+            branchId={branchId || ""}
+            onNewBooking={() => {}}
+          />
+          
+          <div className="mb-6">
+            <TabNavigation 
+              activeTab="form-builder" 
+              onChange={handleNavigate}
+            />
+          </div>
+          
+          <FormBuilderTab branchId={branchId || ''} branchName={decodedBranchName} />
+        </main>
+      </div>
+    );
+  }
 
   if (isLoadingForm || (formId && isLoadingElements)) {
     return (
