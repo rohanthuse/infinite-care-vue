@@ -1,4 +1,5 @@
 
+
 import { supabase } from "@/integrations/supabase/client";
 
 interface BodyMapPoint {
@@ -56,9 +57,9 @@ async function generateSingleBodyMapImage(
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Could not get canvas context');
     
-    // Set canvas size to match the realistic body image dimensions
+    // Set canvas size to match the marking interface dimensions (600px height)
     canvas.width = 300;
-    canvas.height = 500;
+    canvas.height = 600;
     
     // Get the realistic body image URL
     const imageUrl = side === 'front' 
@@ -78,11 +79,15 @@ async function generateSingleBodyMapImage(
           // Draw the realistic body diagram as background
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           
-          // Draw the marked points on top
+          // Draw the marked points on top with coordinate conversion
           points.forEach(point => {
+            // Convert percentage coordinates to pixel coordinates
+            const pixelX = (point.x / 100) * canvas.width;
+            const pixelY = (point.y / 100) * canvas.height;
+            
             // Draw point circle with border
             ctx.beginPath();
-            ctx.arc(point.x, point.y, 10, 0, 2 * Math.PI);
+            ctx.arc(pixelX, pixelY, 10, 0, 2 * Math.PI);
             ctx.fillStyle = point.color;
             ctx.fill();
             ctx.strokeStyle = '#ffffff';
@@ -94,7 +99,7 @@ async function generateSingleBodyMapImage(
             ctx.font = 'bold 12px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(point.id.slice(-1).toUpperCase(), point.x, point.y);
+            ctx.fillText(point.id.slice(-1).toUpperCase(), pixelX, pixelY);
           });
           
           // Convert canvas to blob
@@ -172,3 +177,4 @@ export async function deleteBodyMapImages(frontImageUrl?: string, backImageUrl?:
     }
   }
 }
+
