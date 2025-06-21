@@ -123,10 +123,18 @@ export const LibraryResourceForm: React.FC<LibraryResourceFormProps> = ({
   const onSubmit = async (data: FormValues) => {
     try {
       await createResource({
-        ...data,
+        title: data.title,
+        description: data.description || undefined,
+        category: data.category,
+        resource_type: data.resource_type,
+        url: data.url || undefined,
+        author: data.author || undefined,
+        version: data.version || undefined,
         tags,
+        is_private: data.is_private,
         access_roles: selectedAccessRoles,
         file: selectedFile || undefined,
+        expires_at: data.expires_at || undefined,
       });
       
       // Reset form
