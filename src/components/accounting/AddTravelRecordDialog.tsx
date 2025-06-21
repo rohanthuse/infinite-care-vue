@@ -1,25 +1,77 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { TravelRecord, VehicleType, vehicleTypeLabels } from "@/types/travel";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TravelRecord } from "@/hooks/useAccountingData";
+import { toast } from "sonner";
+import { createFutureDateValidation, createPositiveNumberValidation } from "@/utils/validationUtils";
+
+const travelSchema = z.object({
+  travel_date: createFutureDateValidation("Travel date"),
+  start_location: z.string().min(1, "Start location is required"),
+  end_location: z.string().min(1, "End location is required"),
+  distance_miles: createPositiveNumberValidation("Distance", 0.1),
+  travel_time_minutes: z.number().min(1, "Travel time must be at least 1 minute").optional(),
+  vehicle_type: z.enum(["car_personal", "car_company", "public_transport", "taxi", "other"]),
+  mileage_rate: createPositiveNumberValidation("Mileage rate", 0.01),
+  total_cost: createPositiveNumberValidation("Total cost"),
+  purpose: z.string().min(5, "Purpose must be at least 5 characters"),
+  receipt_url: z.string().optional(),
+  notes: z.string().optional(),
+  client_name: z.string().optional(),
+  carer_name: z.string().min(1, "Carer name is required"),
+}).refine((data) => {
+  // Validate reasonable distance limits
+  return data.distance_miles <= 500;
+}, {
+  message: "Distance cannot exceed 500 miles for a single journey",
+  path: ["distance_miles"]
+}).refine((data) => {
+  // Validate travel time vs distance relationship (basic sanity check)
+  if (!data.travel_time_minutes) return true;
+  const avgSpeedMph = (data.distance_miles / data.travel_time_minutes) * 60;
+  return avgSpeedMph <= 200; // Maximum reasonable speed
+}, {
+  message: "Travel time seems unrealistic for the distance",
+  path: ["travel_time_minutes"]
+}).refine((data) => {
+  // Validate cost reasonableness for mileage-based vehicles
+  if (data.vehicle_type === "car_personal" || data.vehicle_type === "car_company") {
+    const calculatedCost = data.distance_miles * data.mileage_rate;
+    const variance = Math.abs(data.total_cost - calculatedCost);
+    return variance <= 1; // Allow £1 variance for rounding
+  }
+  return true;
+}, {
+  message: "Total cost should match distance × mileage rate for personal/company vehicles",
+  path: ["total_cost"]
+});
+
+type TravelFormData = z.infer<typeof travelSchema>;
 
 interface AddTravelRecordDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (travelData: Omit<TravelRecord, "id" | "status" | "createdBy">) => void;
+  onSave: (travelData: Omit<TravelRecord, "id" | "status" | "created_at" | "updated_at" | "staff" | "client">) => void;
   initialData?: TravelRecord;
   isEditing?: boolean;
+  branchId?: string;
 }
+
+const vehicleTypeLabels = {
+  car_personal: "Personal Car",
+  car_company: "Company Car",
+  public_transport: "Public Transport",
+  taxi: "Taxi",
+  other: "Other"
+};
 
 const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
   open,
@@ -27,60 +79,102 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
   onSave,
   initialData,
   isEditing = false,
+  branchId,
 }) => {
-  const [date, setDate] = useState<Date | undefined>(
-    initialData ? new Date(initialData.date) : new Date()
-  );
-  const [startLocation, setStartLocation] = useState(initialData?.startLocation || "");
-  const [endLocation, setEndLocation] = useState(initialData?.endLocation || "");
-  const [distance, setDistance] = useState<number>(initialData?.distance || 0);
-  const [duration, setDuration] = useState<number>(initialData?.duration || 0);
-  const [purpose, setPurpose] = useState(initialData?.purpose || "");
-  const [vehicleType, setVehicleType] = useState<VehicleType>(
-    initialData?.vehicleType || "car_personal"
-  );
-  const [costPerMile, setCostPerMile] = useState<number>(
-    initialData?.costPerMile || 0.45
-  );
-  const [totalCost, setTotalCost] = useState<number>(initialData?.totalCost || 0);
-  const [notes, setNotes] = useState(initialData?.notes || "");
-  const [clientName, setClientName] = useState(initialData?.clientName || "");
-  const [carerName, setCarerName] = useState(initialData?.carerName || "");
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<TravelFormData>({
+    resolver: zodResolver(travelSchema),
+    defaultValues: initialData ? {
+      travel_date: initialData.travel_date,
+      start_location: initialData.start_location,
+      end_location: initialData.end_location,
+      distance_miles: initialData.distance_miles,
+      travel_time_minutes: initialData.travel_time_minutes || undefined,
+      vehicle_type: initialData.vehicle_type as any,
+      mileage_rate: initialData.mileage_rate,
+      total_cost: initialData.total_cost,
+      purpose: initialData.purpose,
+      receipt_url: initialData.receipt_url || "",
+      notes: initialData.notes || "",
+      client_name: "",
+      carer_name: "",
+    } : {
+      travel_date: new Date().toISOString().split('T')[0],
+      start_location: "",
+      end_location: "",
+      distance_miles: 0,
+      travel_time_minutes: undefined,
+      vehicle_type: "car_personal",
+      mileage_rate: 0.45,
+      total_cost: 0,
+      purpose: "",
+      receipt_url: "",
+      notes: "",
+      client_name: "",
+      carer_name: "",
+    },
+  });
 
-  // Calculate total cost based on distance and cost per mile
-  useEffect(() => {
-    if (vehicleType === 'car_personal' || vehicleType === 'car_company') {
-      setTotalCost(parseFloat((distance * costPerMile).toFixed(2)));
+  const watchedValues = watch();
+
+  // Auto-calculate total cost for mileage-based vehicles
+  React.useEffect(() => {
+    if (watchedValues.vehicle_type === 'car_personal' || watchedValues.vehicle_type === 'car_company') {
+      const calculatedCost = (watchedValues.distance_miles || 0) * (watchedValues.mileage_rate || 0);
+      setValue("total_cost", parseFloat(calculatedCost.toFixed(2)));
     }
-  }, [distance, costPerMile, vehicleType]);
+  }, [watchedValues.distance_miles, watchedValues.mileage_rate, watchedValues.vehicle_type, setValue]);
 
-  const handleSave = () => {
-    if (!date || !startLocation || !endLocation || distance <= 0 || !purpose) {
-      return; // Form validation failed
+  const onSubmit = async (data: TravelFormData) => {
+    try {
+      if (!branchId) {
+        toast.error('Branch ID is required');
+        return;
+      }
+
+      const travelData: Omit<TravelRecord, "id" | "status" | "created_at" | "updated_at" | "staff" | "client"> = {
+        branch_id: branchId,
+        staff_id: "", // This should be populated based on the current user or selection
+        client_id: undefined,
+        booking_id: undefined,
+        travel_date: data.travel_date,
+        start_location: data.start_location,
+        end_location: data.end_location,
+        distance_miles: data.distance_miles,
+        travel_time_minutes: data.travel_time_minutes || null,
+        vehicle_type: data.vehicle_type,
+        mileage_rate: data.mileage_rate,
+        total_cost: data.total_cost,
+        purpose: data.purpose,
+        receipt_url: data.receipt_url || null,
+        notes: data.notes || null,
+        approved_by: null,
+        approved_at: null,
+        reimbursed_at: null,
+      };
+
+      onSave(travelData);
+      reset();
+      onClose();
+    } catch (error) {
+      console.error('Error saving travel record:', error);
+      toast.error('Failed to save travel record');
     }
+  };
 
-    const travelData: Omit<TravelRecord, "id" | "status" | "createdBy"> = {
-      date: format(date, "yyyy-MM-dd"),
-      startLocation,
-      endLocation,
-      distance,
-      duration,
-      purpose,
-      vehicleType,
-      costPerMile,
-      totalCost,
-      notes: notes || undefined,
-      clientName: clientName || undefined,
-      carerName: carerName || undefined,
-      carerId: undefined,
-      receiptImage: undefined,
-    };
-
-    onSave(travelData);
+  const handleClose = () => {
+    reset();
+    onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
@@ -88,39 +182,29 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-6 py-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Date */}
             <div className="space-y-2">
-              <Label htmlFor="date">Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "PPP") : <span>Select a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label htmlFor="travel_date">Date *</Label>
+              <Input
+                id="travel_date"
+                type="date"
+                {...register("travel_date")}
+                className={errors.travel_date ? "border-red-500" : ""}
+              />
+              {errors.travel_date && (
+                <p className="text-sm text-red-600">{errors.travel_date.message}</p>
+              )}
             </div>
 
             {/* Vehicle Type */}
             <div className="space-y-2">
-              <Label htmlFor="vehicleType">Vehicle Type</Label>
-              <Select value={vehicleType} onValueChange={(value: VehicleType) => setVehicleType(value)}>
+              <Label htmlFor="vehicle_type">Vehicle Type *</Label>
+              <Select 
+                value={watchedValues.vehicle_type} 
+                onValueChange={(value) => setValue("vehicle_type", value as any)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select vehicle type" />
                 </SelectTrigger>
@@ -132,118 +216,154 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
                   ))}
                 </SelectContent>
               </Select>
+              {errors.vehicle_type && (
+                <p className="text-sm text-red-600">{errors.vehicle_type.message}</p>
+              )}
             </div>
           </div>
 
           {/* Locations */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="startLocation">Start Location</Label>
+              <Label htmlFor="start_location">Start Location *</Label>
               <Input
-                id="startLocation"
-                value={startLocation}
-                onChange={(e) => setStartLocation(e.target.value)}
+                id="start_location"
+                {...register("start_location")}
                 placeholder="Starting point"
+                className={errors.start_location ? "border-red-500" : ""}
               />
+              {errors.start_location && (
+                <p className="text-sm text-red-600">{errors.start_location.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="endLocation">End Location</Label>
+              <Label htmlFor="end_location">End Location *</Label>
               <Input
-                id="endLocation"
-                value={endLocation}
-                onChange={(e) => setEndLocation(e.target.value)}
+                id="end_location"
+                {...register("end_location")}
                 placeholder="Destination"
+                className={errors.end_location ? "border-red-500" : ""}
               />
+              {errors.end_location && (
+                <p className="text-sm text-red-600">{errors.end_location.message}</p>
+              )}
             </div>
           </div>
 
           {/* Distance and Duration */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="distance">Distance (miles)</Label>
+              <Label htmlFor="distance_miles">Distance (miles) *</Label>
               <Input
-                id="distance"
+                id="distance_miles"
                 type="number"
                 step="0.1"
                 min="0"
-                value={distance}
-                onChange={(e) => setDistance(parseFloat(e.target.value) || 0)}
+                {...register("distance_miles", { valueAsNumber: true })}
+                className={errors.distance_miles ? "border-red-500" : ""}
               />
+              {errors.distance_miles && (
+                <p className="text-sm text-red-600">{errors.distance_miles.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="duration">Duration (minutes)</Label>
+              <Label htmlFor="travel_time_minutes">Duration (minutes)</Label>
               <Input
-                id="duration"
+                id="travel_time_minutes"
                 type="number"
                 step="1"
                 min="0"
-                value={duration}
-                onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
+                {...register("travel_time_minutes", { valueAsNumber: true })}
+                className={errors.travel_time_minutes ? "border-red-500" : ""}
               />
+              {errors.travel_time_minutes && (
+                <p className="text-sm text-red-600">{errors.travel_time_minutes.message}</p>
+              )}
             </div>
 
             {/* Cost section */}
-            {(vehicleType === 'car_personal' || vehicleType === 'car_company') ? (
+            {(watchedValues.vehicle_type === 'car_personal' || watchedValues.vehicle_type === 'car_company') ? (
               <div className="space-y-2">
-                <Label htmlFor="costPerMile">Cost per Mile (£)</Label>
+                <Label htmlFor="mileage_rate">Rate per Mile (£) *</Label>
                 <Input
-                  id="costPerMile"
+                  id="mileage_rate"
                   type="number"
                   step="0.01"
                   min="0"
-                  value={costPerMile}
-                  onChange={(e) => setCostPerMile(parseFloat(e.target.value) || 0)}
+                  {...register("mileage_rate", { valueAsNumber: true })}
+                  className={errors.mileage_rate ? "border-red-500" : ""}
                 />
+                {errors.mileage_rate && (
+                  <p className="text-sm text-red-600">{errors.mileage_rate.message}</p>
+                )}
               </div>
             ) : (
               <div className="space-y-2">
-                <Label htmlFor="totalCost">Total Cost (£)</Label>
+                <Label htmlFor="total_cost">Total Cost (£) *</Label>
                 <Input
-                  id="totalCost"
+                  id="total_cost"
                   type="number"
                   step="0.01"
                   min="0"
-                  value={totalCost}
-                  onChange={(e) => setTotalCost(parseFloat(e.target.value) || 0)}
+                  {...register("total_cost", { valueAsNumber: true })}
+                  className={errors.total_cost ? "border-red-500" : ""}
                 />
+                {errors.total_cost && (
+                  <p className="text-sm text-red-600">{errors.total_cost.message}</p>
+                )}
               </div>
             )}
           </div>
 
           {/* Purpose */}
           <div className="space-y-2">
-            <Label htmlFor="purpose">Purpose</Label>
+            <Label htmlFor="purpose">Purpose *</Label>
             <Input
               id="purpose"
-              value={purpose}
-              onChange={(e) => setPurpose(e.target.value)}
+              {...register("purpose")}
               placeholder="Reason for travel"
+              className={errors.purpose ? "border-red-500" : ""}
             />
+            {errors.purpose && (
+              <p className="text-sm text-red-600">{errors.purpose.message}</p>
+            )}
           </div>
 
           {/* Client and Carer */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="clientName">Client Name (if applicable)</Label>
+              <Label htmlFor="client_name">Client Name (if applicable)</Label>
               <Input
-                id="clientName"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
+                id="client_name"
+                {...register("client_name")}
                 placeholder="Optional"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="carerName">Carer Name</Label>
+              <Label htmlFor="carer_name">Carer Name *</Label>
               <Input
-                id="carerName"
-                value={carerName}
-                onChange={(e) => setCarerName(e.target.value)}
+                id="carer_name"
+                {...register("carer_name")}
                 placeholder="Who made this journey"
+                className={errors.carer_name ? "border-red-500" : ""}
               />
+              {errors.carer_name && (
+                <p className="text-sm text-red-600">{errors.carer_name.message}</p>
+              )}
             </div>
+          </div>
+
+          {/* Receipt URL */}
+          <div className="space-y-2">
+            <Label htmlFor="receipt_url">Receipt URL (optional)</Label>
+            <Input
+              id="receipt_url"
+              {...register("receipt_url")}
+              placeholder="Receipt reference or URL"
+            />
           </div>
 
           {/* Notes */}
@@ -251,35 +371,34 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
             <Label htmlFor="notes">Additional Notes</Label>
             <Textarea
               id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              {...register("notes")}
               placeholder="Any additional details"
               rows={3}
             />
           </div>
 
           {/* Calculated total */}
-          {vehicleType === 'car_personal' || vehicleType === 'car_company' ? (
+          {(watchedValues.vehicle_type === 'car_personal' || watchedValues.vehicle_type === 'car_company') && (
             <div className="bg-gray-50 p-3 rounded-md">
               <div className="flex justify-between items-center">
                 <span className="font-medium">Total Cost:</span>
-                <span className="font-bold">£{totalCost.toFixed(2)}</span>
+                <span className="font-bold">£{(watchedValues.total_cost || 0).toFixed(2)}</span>
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                Calculated as {distance.toFixed(1)} miles × £{costPerMile.toFixed(2)} per mile
+                Calculated as {(watchedValues.distance_miles || 0).toFixed(1)} miles × £{(watchedValues.mileage_rate || 0).toFixed(2)} per mile
               </div>
             </div>
-          ) : null}
-        </div>
+          )}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>
-            {isEditing ? "Update" : "Save"} Record
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : isEditing ? "Update" : "Save"} Record
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -1,5 +1,8 @@
 
 import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +10,56 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PayrollRecord } from "@/hooks/useAccountingData";
+import { toast } from "sonner";
+import { createDateValidation, createPositiveNumberValidation } from "@/utils/validationUtils";
+
+const payrollSchema = z.object({
+  staff_id: z.string().min(1, "Staff ID is required"),
+  pay_period_start: createDateValidation("Pay period start date"),
+  pay_period_end: createDateValidation("Pay period end date"),
+  regular_hours: createPositiveNumberValidation("Regular hours"),
+  overtime_hours: createPositiveNumberValidation("Overtime hours"),
+  hourly_rate: createPositiveNumberValidation("Hourly rate", 0.01),
+  overtime_rate: z.number().min(0, "Overtime rate must be positive").optional(),
+  basic_salary: createPositiveNumberValidation("Basic salary"),
+  overtime_pay: createPositiveNumberValidation("Overtime pay"),
+  bonus: createPositiveNumberValidation("Bonus"),
+  tax_deduction: createPositiveNumberValidation("Tax deduction"),
+  ni_deduction: createPositiveNumberValidation("NI deduction"),
+  pension_deduction: createPositiveNumberValidation("Pension deduction"),
+  other_deductions: createPositiveNumberValidation("Other deductions"),
+  payment_status: z.enum(["pending", "processed", "failed"]),
+  payment_method: z.enum(["bank_transfer", "cash", "cheque", "other"]),
+  payment_date: createDateValidation("Payment date"),
+  notes: z.string().optional(),
+}).refine((data) => {
+  // Validate pay period dates
+  const startDate = new Date(data.pay_period_start);
+  const endDate = new Date(data.pay_period_end);
+  return startDate <= endDate;
+}, {
+  message: "Pay period start date must be before or equal to end date",
+  path: ["pay_period_end"]
+}).refine((data) => {
+  // Validate payment date is after pay period end
+  const endDate = new Date(data.pay_period_end);
+  const paymentDate = new Date(data.payment_date);
+  return paymentDate >= endDate;
+}, {
+  message: "Payment date must be on or after pay period end date",
+  path: ["payment_date"]
+}).refine((data) => {
+  // Validate pay period is not too long (max 1 month)
+  const startDate = new Date(data.pay_period_start);
+  const endDate = new Date(data.pay_period_end);
+  const diffDays = (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
+  return diffDays <= 31;
+}, {
+  message: "Pay period cannot exceed 31 days",
+  path: ["pay_period_end"]
+});
+
+type PayrollFormData = z.infer<typeof payrollSchema>;
 
 interface AddPayrollDialogProps {
   open: boolean;
@@ -37,8 +90,35 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
   initialData,
   isEditing = false,
 }) => {
-  const [payrollData, setPayrollData] = useState<Partial<PayrollRecord>>(
-    initialData || {
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<PayrollFormData>({
+    resolver: zodResolver(payrollSchema),
+    defaultValues: initialData ? {
+      staff_id: initialData.staff_id,
+      pay_period_start: initialData.pay_period_start,
+      pay_period_end: initialData.pay_period_end,
+      regular_hours: initialData.regular_hours,
+      overtime_hours: initialData.overtime_hours,
+      hourly_rate: initialData.hourly_rate,
+      overtime_rate: initialData.overtime_rate || 0,
+      basic_salary: initialData.basic_salary,
+      overtime_pay: initialData.overtime_pay,
+      bonus: initialData.bonus,
+      tax_deduction: initialData.tax_deduction,
+      ni_deduction: initialData.ni_deduction,
+      pension_deduction: initialData.pension_deduction,
+      other_deductions: initialData.other_deductions,
+      payment_status: initialData.payment_status as any,
+      payment_method: initialData.payment_method as any,
+      payment_date: initialData.payment_date || new Date().toISOString().split('T')[0],
+      notes: initialData.notes || "",
+    } : {
       staff_id: "",
       pay_period_start: new Date().toISOString().split('T')[0],
       pay_period_end: new Date().toISOString().split('T')[0],
@@ -49,261 +129,291 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
       basic_salary: 0,
       overtime_pay: 0,
       bonus: 0,
-      gross_pay: 0,
       tax_deduction: 0,
       ni_deduction: 0,
       pension_deduction: 0,
       other_deductions: 0,
-      net_pay: 0,
       payment_status: "pending",
       payment_method: "bank_transfer",
       payment_date: new Date().toISOString().split('T')[0],
       notes: "",
-    }
-  );
+    },
+  });
 
-  const handleInputChange = (field: string, value: string | number) => {
-    setPayrollData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  const watchedValues = watch();
+  const [calculatedTotals, setCalculatedTotals] = useState({ grossPay: 0, netPay: 0 });
 
   const calculateTotals = () => {
-    const basicSalary = Number(payrollData.basic_salary) || 0;
-    const overtimePay = Number(payrollData.overtime_pay) || 0;
-    const bonus = Number(payrollData.bonus) || 0;
+    const basicSalary = Number(watchedValues.basic_salary) || 0;
+    const overtimePay = Number(watchedValues.overtime_pay) || 0;
+    const bonus = Number(watchedValues.bonus) || 0;
     
     const grossPay = basicSalary + overtimePay + bonus;
     
-    const tax = Number(payrollData.tax_deduction) || 0;
-    const ni = Number(payrollData.ni_deduction) || 0;
-    const pension = Number(payrollData.pension_deduction) || 0;
-    const other = Number(payrollData.other_deductions) || 0;
+    const tax = Number(watchedValues.tax_deduction) || 0;
+    const ni = Number(watchedValues.ni_deduction) || 0;
+    const pension = Number(watchedValues.pension_deduction) || 0;
+    const other = Number(watchedValues.other_deductions) || 0;
     
     const totalDeductions = tax + ni + pension + other;
     const netPay = grossPay - totalDeductions;
     
-    setPayrollData((prev) => ({
-      ...prev,
-      gross_pay: grossPay,
-      net_pay: netPay,
-    }));
+    setCalculatedTotals({ grossPay, netPay });
   };
 
-  const handleSubmit = () => {
-    calculateTotals();
-    
-    const formattedRecord: Partial<PayrollRecord> = {
-      ...payrollData,
-      regular_hours: Number(payrollData.regular_hours) || 0,
-      overtime_hours: Number(payrollData.overtime_hours) || 0,
-      hourly_rate: Number(payrollData.hourly_rate) || 0,
-      overtime_rate: Number(payrollData.overtime_rate) || 0,
-      basic_salary: Number(payrollData.basic_salary) || 0,
-      overtime_pay: Number(payrollData.overtime_pay) || 0,
-      bonus: Number(payrollData.bonus) || 0,
-      gross_pay: Number(payrollData.gross_pay) || 0,
-      tax_deduction: Number(payrollData.tax_deduction) || 0,
-      ni_deduction: Number(payrollData.ni_deduction) || 0,
-      pension_deduction: Number(payrollData.pension_deduction) || 0,
-      other_deductions: Number(payrollData.other_deductions) || 0,
-      net_pay: Number(payrollData.net_pay) || 0,
-    };
+  const onSubmit = async (data: PayrollFormData) => {
+    try {
+      const formattedRecord: Partial<PayrollRecord> = {
+        ...data,
+        gross_pay: calculatedTotals.grossPay,
+        net_pay: calculatedTotals.netPay,
+      };
 
-    onAdd(formattedRecord);
+      onAdd(formattedRecord);
+      reset();
+      onClose();
+    } catch (error) {
+      console.error('Error saving payroll record:', error);
+      toast.error('Failed to save payroll record');
+    }
+  };
+
+  const handleClose = () => {
+    reset();
     onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit Payroll Record" : "Add New Payroll Record"}</DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-6 py-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Employee Information */}
-          <div className="grid grid-cols-1 gap-4">
+          <div className="space-y-4">
             <h3 className="font-medium text-sm">Employee Information</h3>
             <div className="space-y-2">
-              <Label htmlFor="staff_id">Staff ID</Label>
+              <Label htmlFor="staff_id">Staff ID *</Label>
               <Input
                 id="staff_id"
-                value={payrollData.staff_id}
-                onChange={(e) => handleInputChange("staff_id", e.target.value)}
+                {...register("staff_id")}
                 placeholder="Enter staff ID"
+                className={errors.staff_id ? "border-red-500" : ""}
               />
+              {errors.staff_id && (
+                <p className="text-sm text-red-600">{errors.staff_id.message}</p>
+              )}
             </div>
           </div>
 
           {/* Pay Period Information */}
-          <div className="grid grid-cols-1 gap-4 border-t pt-4">
+          <div className="space-y-4 border-t pt-4">
             <h3 className="font-medium text-sm">Pay Period</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="pay_period_start">From</Label>
+                <Label htmlFor="pay_period_start">From *</Label>
                 <Input
                   id="pay_period_start"
                   type="date"
-                  value={payrollData.pay_period_start}
-                  onChange={(e) => handleInputChange("pay_period_start", e.target.value)}
+                  {...register("pay_period_start")}
+                  className={errors.pay_period_start ? "border-red-500" : ""}
                 />
+                {errors.pay_period_start && (
+                  <p className="text-sm text-red-600">{errors.pay_period_start.message}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="pay_period_end">To</Label>
+                <Label htmlFor="pay_period_end">To *</Label>
                 <Input
                   id="pay_period_end"
                   type="date"
-                  value={payrollData.pay_period_end}
-                  onChange={(e) => handleInputChange("pay_period_end", e.target.value)}
+                  {...register("pay_period_end")}
+                  className={errors.pay_period_end ? "border-red-500" : ""}
                 />
+                {errors.pay_period_end && (
+                  <p className="text-sm text-red-600">{errors.pay_period_end.message}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="payment_date">Payment Date</Label>
+                <Label htmlFor="payment_date">Payment Date *</Label>
                 <Input
                   id="payment_date"
                   type="date"
-                  value={payrollData.payment_date}
-                  onChange={(e) => handleInputChange("payment_date", e.target.value)}
+                  {...register("payment_date")}
+                  className={errors.payment_date ? "border-red-500" : ""}
                 />
+                {errors.payment_date && (
+                  <p className="text-sm text-red-600">{errors.payment_date.message}</p>
+                )}
               </div>
             </div>
           </div>
 
           {/* Hours and Pay */}
-          <div className="grid grid-cols-1 gap-4 border-t pt-4">
+          <div className="space-y-4 border-t pt-4">
             <h3 className="font-medium text-sm">Hours and Pay</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="regular_hours">Regular Hours</Label>
+                <Label htmlFor="regular_hours">Regular Hours *</Label>
                 <Input
                   id="regular_hours"
                   type="number"
-                  value={payrollData.regular_hours}
-                  onChange={(e) => handleInputChange("regular_hours", e.target.value)}
-                  min="0"
                   step="0.5"
+                  min="0"
+                  {...register("regular_hours", { valueAsNumber: true })}
+                  className={errors.regular_hours ? "border-red-500" : ""}
                 />
+                {errors.regular_hours && (
+                  <p className="text-sm text-red-600">{errors.regular_hours.message}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="overtime_hours">Overtime Hours</Label>
+                <Label htmlFor="overtime_hours">Overtime Hours *</Label>
                 <Input
                   id="overtime_hours"
                   type="number"
-                  value={payrollData.overtime_hours}
-                  onChange={(e) => handleInputChange("overtime_hours", e.target.value)}
-                  min="0"
                   step="0.5"
+                  min="0"
+                  {...register("overtime_hours", { valueAsNumber: true })}
+                  className={errors.overtime_hours ? "border-red-500" : ""}
                 />
+                {errors.overtime_hours && (
+                  <p className="text-sm text-red-600">{errors.overtime_hours.message}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="hourly_rate">Hourly Rate (£)</Label>
+                <Label htmlFor="hourly_rate">Hourly Rate (£) *</Label>
                 <Input
                   id="hourly_rate"
                   type="number"
-                  value={payrollData.hourly_rate}
-                  onChange={(e) => handleInputChange("hourly_rate", e.target.value)}
-                  min="0"
                   step="0.01"
+                  min="0"
+                  {...register("hourly_rate", { valueAsNumber: true })}
+                  className={errors.hourly_rate ? "border-red-500" : ""}
                 />
+                {errors.hourly_rate && (
+                  <p className="text-sm text-red-600">{errors.hourly_rate.message}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="basic_salary">Basic Salary (£)</Label>
+                <Label htmlFor="basic_salary">Basic Salary (£) *</Label>
                 <Input
                   id="basic_salary"
                   type="number"
-                  value={payrollData.basic_salary}
-                  onChange={(e) => handleInputChange("basic_salary", e.target.value)}
-                  min="0"
                   step="0.01"
+                  min="0"
+                  {...register("basic_salary", { valueAsNumber: true })}
+                  className={errors.basic_salary ? "border-red-500" : ""}
                 />
+                {errors.basic_salary && (
+                  <p className="text-sm text-red-600">{errors.basic_salary.message}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="overtime_pay">Overtime Pay (£)</Label>
+                <Label htmlFor="overtime_pay">Overtime Pay (£) *</Label>
                 <Input
                   id="overtime_pay"
                   type="number"
-                  value={payrollData.overtime_pay}
-                  onChange={(e) => handleInputChange("overtime_pay", e.target.value)}
-                  min="0"
                   step="0.01"
+                  min="0"
+                  {...register("overtime_pay", { valueAsNumber: true })}
+                  className={errors.overtime_pay ? "border-red-500" : ""}
                 />
+                {errors.overtime_pay && (
+                  <p className="text-sm text-red-600">{errors.overtime_pay.message}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="bonus">Bonus (£)</Label>
+                <Label htmlFor="bonus">Bonus (£) *</Label>
                 <Input
                   id="bonus"
                   type="number"
-                  value={payrollData.bonus}
-                  onChange={(e) => handleInputChange("bonus", e.target.value)}
-                  min="0"
                   step="0.01"
+                  min="0"
+                  {...register("bonus", { valueAsNumber: true })}
+                  className={errors.bonus ? "border-red-500" : ""}
                 />
+                {errors.bonus && (
+                  <p className="text-sm text-red-600">{errors.bonus.message}</p>
+                )}
               </div>
             </div>
           </div>
 
           {/* Deductions */}
-          <div className="grid grid-cols-1 gap-4 border-t pt-4">
+          <div className="space-y-4 border-t pt-4">
             <h3 className="font-medium text-sm">Deductions</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="tax_deduction">Tax (£)</Label>
+                <Label htmlFor="tax_deduction">Tax (£) *</Label>
                 <Input
                   id="tax_deduction"
                   type="number"
-                  value={payrollData.tax_deduction}
-                  onChange={(e) => handleInputChange("tax_deduction", e.target.value)}
-                  min="0"
                   step="0.01"
+                  min="0"
+                  {...register("tax_deduction", { valueAsNumber: true })}
+                  className={errors.tax_deduction ? "border-red-500" : ""}
                 />
+                {errors.tax_deduction && (
+                  <p className="text-sm text-red-600">{errors.tax_deduction.message}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="ni_deduction">National Insurance (£)</Label>
+                <Label htmlFor="ni_deduction">National Insurance (£) *</Label>
                 <Input
                   id="ni_deduction"
                   type="number"
-                  value={payrollData.ni_deduction}
-                  onChange={(e) => handleInputChange("ni_deduction", e.target.value)}
-                  min="0"
                   step="0.01"
+                  min="0"
+                  {...register("ni_deduction", { valueAsNumber: true })}
+                  className={errors.ni_deduction ? "border-red-500" : ""}
                 />
+                {errors.ni_deduction && (
+                  <p className="text-sm text-red-600">{errors.ni_deduction.message}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="pension_deduction">Pension (£)</Label>
+                <Label htmlFor="pension_deduction">Pension (£) *</Label>
                 <Input
                   id="pension_deduction"
                   type="number"
-                  value={payrollData.pension_deduction}
-                  onChange={(e) => handleInputChange("pension_deduction", e.target.value)}
-                  min="0"
                   step="0.01"
+                  min="0"
+                  {...register("pension_deduction", { valueAsNumber: true })}
+                  className={errors.pension_deduction ? "border-red-500" : ""}
                 />
+                {errors.pension_deduction && (
+                  <p className="text-sm text-red-600">{errors.pension_deduction.message}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="other_deductions">Other Deductions (£)</Label>
+                <Label htmlFor="other_deductions">Other Deductions (£) *</Label>
                 <Input
                   id="other_deductions"
                   type="number"
-                  value={payrollData.other_deductions}
-                  onChange={(e) => handleInputChange("other_deductions", e.target.value)}
-                  min="0"
                   step="0.01"
+                  min="0"
+                  {...register("other_deductions", { valueAsNumber: true })}
+                  className={errors.other_deductions ? "border-red-500" : ""}
                 />
+                {errors.other_deductions && (
+                  <p className="text-sm text-red-600">{errors.other_deductions.message}</p>
+                )}
               </div>
             </div>
           </div>
 
           {/* Payment Details */}
-          <div className="grid grid-cols-1 gap-4 border-t pt-4">
+          <div className="space-y-4 border-t pt-4">
             <h3 className="font-medium text-sm">Payment Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="payment_method">Payment Method</Label>
+                <Label htmlFor="payment_method">Payment Method *</Label>
                 <Select 
-                  value={payrollData.payment_method} 
-                  onValueChange={(value) => handleInputChange("payment_method", value)}
+                  value={watchedValues.payment_method} 
+                  onValueChange={(value) => setValue("payment_method", value as any)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select payment method" />
@@ -314,12 +424,15 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.payment_method && (
+                  <p className="text-sm text-red-600">{errors.payment_method.message}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="payment_status">Payment Status</Label>
+                <Label htmlFor="payment_status">Payment Status *</Label>
                 <Select 
-                  value={payrollData.payment_status} 
-                  onValueChange={(value) => handleInputChange("payment_status", value)}
+                  value={watchedValues.payment_status} 
+                  onValueChange={(value) => setValue("payment_status", value as any)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select status" />
@@ -330,18 +443,20 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.payment_status && (
+                  <p className="text-sm text-red-600">{errors.payment_status.message}</p>
+                )}
               </div>
             </div>
           </div>
 
           {/* Notes */}
-          <div className="grid grid-cols-1 gap-4 border-t pt-4">
+          <div className="space-y-4 border-t pt-4">
             <div className="space-y-2">
               <Label htmlFor="notes">Additional Notes</Label>
               <Textarea
                 id="notes"
-                value={payrollData.notes || ""}
-                onChange={(e) => handleInputChange("notes", e.target.value)}
+                {...register("notes")}
                 rows={3}
               />
             </div>
@@ -360,30 +475,30 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
           </div>
 
           {/* Totals Display */}
-          {(payrollData.gross_pay !== undefined || payrollData.net_pay !== undefined) && (
+          {(calculatedTotals.grossPay > 0 || calculatedTotals.netPay > 0) && (
             <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-md">
               <div className="text-center">
                 <span className="text-sm text-gray-500">Gross Pay:</span>
                 <div className="text-lg font-bold">
-                  £{Number(payrollData.gross_pay || 0).toFixed(2)}
+                  £{calculatedTotals.grossPay.toFixed(2)}
                 </div>
               </div>
               <div className="text-center">
                 <span className="text-sm text-gray-500">Net Pay:</span>
                 <div className="text-lg font-bold">
-                  £{Number(payrollData.net_pay || 0).toFixed(2)}
+                  £{calculatedTotals.netPay.toFixed(2)}
                 </div>
               </div>
             </div>
           )}
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit}>
-            {isEditing ? "Save Changes" : "Add Payroll Record"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : isEditing ? "Save Changes" : "Add Payroll Record"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

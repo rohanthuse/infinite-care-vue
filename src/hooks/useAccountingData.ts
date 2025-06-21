@@ -394,7 +394,32 @@ export function useExtraTimeRecords(branchId?: string) {
 }
 
 // Define the type for creating extra time records
-type CreateExtraTimeRecord = Omit<ExtraTimeRecord, 'id' | 'created_at' | 'updated_at' | 'staff' | 'client'>;
+export type CreateExtraTimeRecord = {
+  branch_id: string;
+  staff_id: string;
+  client_id?: string | null;
+  booking_id?: string | null;
+  work_date: string;
+  scheduled_start_time: string;
+  scheduled_end_time: string;
+  actual_start_time?: string | null;
+  actual_end_time?: string | null;
+  scheduled_duration_minutes: number;
+  actual_duration_minutes?: number | null;
+  extra_time_minutes: number;
+  hourly_rate: number;
+  extra_time_rate?: number | null;
+  total_cost: number;
+  reason?: string | null;
+  notes?: string | null;
+  status: string;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  invoiced: boolean;
+  invoice_id?: string | null;
+  created_by?: string | null;
+  creator_role?: string | null;
+};
 
 // Mutation hooks for creating records
 export function useCreateExpense() {

@@ -21,22 +21,50 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useStaffList, useClientsList, ExtraTimeRecord } from "@/hooks/useAccountingData";
+import { useStaffList, useClientsList, ExtraTimeRecord, CreateExtraTimeRecord } from "@/hooks/useAccountingData";
 import { useUserRole, UserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
+import { createFutureDateValidation, createTimeValidation, createOptionalTimeValidation, createPositiveNumberValidation } from "@/utils/validationUtils";
 
 const extraTimeSchema = z.object({
   staff_id: z.string().min(1, "Staff member is required"),
   client_id: z.string().optional(),
-  work_date: z.string().min(1, "Work date is required"),
-  scheduled_start_time: z.string().min(1, "Scheduled start time is required"),
-  scheduled_end_time: z.string().min(1, "Scheduled end time is required"),
-  actual_start_time: z.string().optional(),
-  actual_end_time: z.string().optional(),
-  hourly_rate: z.number().min(0, "Hourly rate must be positive"),
-  extra_time_rate: z.number().optional(),
+  work_date: createFutureDateValidation("Work date"),
+  scheduled_start_time: createTimeValidation("Scheduled start time"),
+  scheduled_end_time: createTimeValidation("Scheduled end time"),
+  actual_start_time: createOptionalTimeValidation("Actual start time"),
+  actual_end_time: createOptionalTimeValidation("Actual end time"),
+  hourly_rate: createPositiveNumberValidation("Hourly rate", 0.01),
+  extra_time_rate: z.number().min(0, "Extra time rate must be positive").optional(),
   reason: z.string().optional(),
   notes: z.string().optional(),
+}).refine((data) => {
+  // Validate scheduled time range
+  const scheduledStart = new Date(`2000-01-01T${data.scheduled_start_time}`);
+  const scheduledEnd = new Date(`2000-01-01T${data.scheduled_end_time}`);
+  return scheduledStart < scheduledEnd;
+}, {
+  message: "Scheduled start time must be before scheduled end time",
+  path: ["scheduled_end_time"]
+}).refine((data) => {
+  // Validate actual time range if both are provided
+  if (!data.actual_start_time || !data.actual_end_time) return true;
+  
+  const actualStart = new Date(`2000-01-01T${data.actual_start_time}`);
+  const actualEnd = new Date(`2000-01-01T${data.actual_end_time}`);
+  return actualStart < actualEnd;
+}, {
+  message: "Actual start time must be before actual end time",
+  path: ["actual_end_time"]
+}).refine((data) => {
+  // Validate minimum scheduled duration (at least 15 minutes)
+  const scheduledStart = new Date(`2000-01-01T${data.scheduled_start_time}`);
+  const scheduledEnd = new Date(`2000-01-01T${data.scheduled_end_time}`);
+  const durationMinutes = (scheduledEnd.getTime() - scheduledStart.getTime()) / (1000 * 60);
+  return durationMinutes >= 15;
+}, {
+  message: "Scheduled duration must be at least 15 minutes",
+  path: ["scheduled_end_time"]
 });
 
 type ExtraTimeFormData = z.infer<typeof extraTimeSchema>;
@@ -44,7 +72,7 @@ type ExtraTimeFormData = z.infer<typeof extraTimeSchema>;
 interface AddExtraTimeDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (data: Omit<ExtraTimeRecord, 'id' | 'created_at' | 'updated_at' | 'staff' | 'client'>) => Promise<void>;
+  onSave: (data: CreateExtraTimeRecord) => Promise<void>;
   initialData?: ExtraTimeRecord;
   isEditing?: boolean;
   branchId?: string;
@@ -172,7 +200,7 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
         actualDurationMinutes = (actualEnd.getTime() - actualStart.getTime()) / (1000 * 60);
       }
 
-      const extraTimeData: Omit<ExtraTimeRecord, 'id' | 'created_at' | 'updated_at' | 'staff' | 'client'> = {
+      const extraTimeData: CreateExtraTimeRecord = {
         branch_id: branchId,
         staff_id: data.staff_id,
         client_id: data.client_id === "no-client" ? null : data.client_id || null,
@@ -344,7 +372,11 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
                 id="actual_start_time"
                 type="time"
                 {...register("actual_start_time")}
+                className={errors.actual_start_time ? "border-red-500" : ""}
               />
+              {errors.actual_start_time && (
+                <p className="text-sm text-red-600">{errors.actual_start_time.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -353,7 +385,11 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
                 id="actual_end_time"
                 type="time"
                 {...register("actual_end_time")}
+                className={errors.actual_end_time ? "border-red-500" : ""}
               />
+              {errors.actual_end_time && (
+                <p className="text-sm text-red-600">{errors.actual_end_time.message}</p>
+              )}
             </div>
           </div>
 
