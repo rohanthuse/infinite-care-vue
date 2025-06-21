@@ -5,6 +5,7 @@ import {
   Bell, AlertTriangle, Clock, Calendar, CheckCircle, FileWarning, LucideIcon
 } from "lucide-react";
 import NotificationCard, { NotificationCardProps } from "./NotificationCard";
+import { useDynamicNotificationData } from "@/hooks/useNotifications";
 
 interface NotificationsOverviewProps {
   branchId?: string;
@@ -18,6 +19,9 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
   // Use props if provided, otherwise fall back to URL params
   const effectiveBranchId = branchId || id;
   const effectiveBranchName = branchName || paramBranchName;
+  
+  // Get dynamic notification data
+  const { data: dynamicData, isLoading } = useDynamicNotificationData(effectiveBranchId);
   
   const handleNavigate = (path: string) => {
     console.log("Navigating to:", path);
@@ -37,8 +41,18 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
   // Create an array of notification data with proper typing for icons
   const notificationData: (Omit<NotificationCardProps, "icon"> & { path: string; icon: LucideIcon })[] = [
     {
+      title: "Staff Notifications",
+      count: isLoading ? 0 : (dynamicData?.staff || 0),
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
+      borderColor: "border-blue-200",
+      description: "Overdue bookings and staff alerts",
+      path: "staff",
+      icon: Bell
+    },
+    {
       title: "System Alerts",
-      count: 5,
+      count: 3, // Keep static for system-level alerts
       color: "text-red-600",
       bgColor: "bg-red-50",
       borderColor: "border-red-200",
@@ -47,56 +61,56 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
       icon: AlertTriangle
     },
     {
-      title: "Staff Reviews",
-      count: 12,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
-      borderColor: "border-blue-200",
-      description: "Due for completion",
-      path: "staff-reviews",
-      icon: Bell
-    },
-    {
-      title: "Pending Tasks",
-      count: 8,
-      color: "text-amber-600",
-      bgColor: "bg-amber-50",
-      borderColor: "border-amber-200",
-      description: "Requiring attention",
-      path: "pending",
-      icon: Clock
-    },
-    {
-      title: "Upcoming Appointments",
-      count: 15,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
-      borderColor: "border-purple-200",
-      description: "Next 7 days",
-      path: "appointments",
-      icon: Calendar
-    },
-    {
-      title: "Completed Actions",
-      count: 47,
+      title: "Client Notifications",
+      count: isLoading ? 0 : (dynamicData?.client || 0),
       color: "text-green-600",
       bgColor: "bg-green-50",
       borderColor: "border-green-200",
-      description: "Last 30 days",
-      path: "completed",
-      icon: CheckCircle
+      description: "Client requests and appointments",
+      path: "client",
+      icon: Bell
+    },
+    {
+      title: "Medication Alerts",
+      count: isLoading ? 0 : (dynamicData?.medication || 0),
+      color: "text-purple-600",
+      bgColor: "bg-purple-50",
+      borderColor: "border-purple-200",
+      description: "Upcoming medication schedules",
+      path: "medication",
+      icon: Clock
+    },
+    {
+      title: "Rota Errors",
+      count: isLoading ? 0 : (dynamicData?.rota || 0),
+      color: "text-amber-600",
+      bgColor: "bg-amber-50",
+      borderColor: "border-amber-200",
+      description: "Schedule conflicts and errors",
+      path: "rota",
+      icon: Calendar
     },
     {
       title: "Document Updates",
-      count: 3,
+      count: isLoading ? 0 : (dynamicData?.reports || 0),
       color: "text-indigo-600",
       bgColor: "bg-indigo-50",
       borderColor: "border-indigo-200",
-      description: "Recently modified",
+      description: "Recently modified documents",
       path: "documents",
       icon: FileWarning
     },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        {notificationData.map((_, index) => (
+          <div key={index} className="h-32 bg-gray-100 animate-pulse rounded-lg" />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">

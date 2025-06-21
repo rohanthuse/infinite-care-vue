@@ -1,15 +1,22 @@
 
-import { LogOut, HelpCircle, Menu, Heart, Bell, Search } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { LogOut, HelpCircle, Menu, Heart, Search } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
+import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 
 export function DashboardHeader() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+
+  // Extract branch ID from URL if we're in a branch context
+  const branchId = location.pathname.includes('/branch-dashboard/') 
+    ? location.pathname.split('/')[2] 
+    : undefined;
 
   // Close mobile menu when resizing to desktop
   useEffect(() => {
@@ -24,6 +31,15 @@ export function DashboardHeader() {
   
   const handleLogout = () => {
     navigate('/super-admin');
+  };
+
+  const handleViewAllNotifications = () => {
+    if (branchId) {
+      const branchName = location.pathname.split('/')[3];
+      navigate(`/branch-dashboard/${branchId}/${branchName}/notifications`);
+    } else {
+      navigate('/notifications');
+    }
   };
   
   return <header className="bg-white shadow-sm border-b border-gray-100 py-3 md:py-4 sticky top-0 z-50 w-full">
@@ -53,14 +69,10 @@ export function DashboardHeader() {
         
         {/* Bell notification on right for desktop view */}
         <div className="hidden md:flex items-center">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="h-9 w-9 rounded-full relative"
-          >
-            <Bell className="h-4 w-4" />
-            <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-          </Button>
+          <NotificationDropdown 
+            branchId={branchId} 
+            onViewAll={handleViewAllNotifications}
+          />
         </div>
         
         {/* Mobile menu button */}
@@ -104,14 +116,12 @@ export function DashboardHeader() {
                 onChange={(e) => setSearchValue(e.target.value)}
               />
             </div>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="h-9 w-9 rounded-full relative ml-2"
-            >
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-            </Button>
+            <div className="ml-2">
+              <NotificationDropdown 
+                branchId={branchId} 
+                onViewAll={handleViewAllNotifications}
+              />
+            </div>
           </div>
           
           <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm py-2 px-4 rounded-full border border-gray-100/60 shadow-sm w-full md:w-auto justify-between md:justify-start ml-0 md:ml-2">

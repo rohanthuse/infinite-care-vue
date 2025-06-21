@@ -2971,6 +2971,89 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          notification_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          notification_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          notification_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          branch_id: string | null
+          category: string
+          created_at: string
+          data: Json | null
+          expires_at: string | null
+          id: string
+          message: string
+          priority: string
+          read_at: string | null
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          branch_id?: string | null
+          category: string
+          created_at?: string
+          data?: Json | null
+          expires_at?: string | null
+          id?: string
+          message: string
+          priority?: string
+          read_at?: string | null
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          branch_id?: string | null
+          category?: string
+          created_at?: string
+          data?: Json | null
+          expires_at?: string | null
+          id?: string
+          message?: string
+          priority?: string
+          read_at?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_records: {
         Row: {
           created_at: string
@@ -4029,6 +4112,10 @@ export type Database = {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: boolean
       }
+      create_overdue_booking_notifications: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_branch_chart_data: {
         Args: { p_branch_id: string }
         Returns: Json
@@ -4053,6 +4140,15 @@ export type Database = {
           updated_at: string
           source_table: string
           related_entity: string
+        }[]
+      }
+      get_notification_stats: {
+        Args: { p_user_id: string; p_branch_id?: string }
+        Returns: {
+          total_count: number
+          unread_count: number
+          high_priority_count: number
+          by_type: Json
         }[]
       }
       get_staff_profile: {

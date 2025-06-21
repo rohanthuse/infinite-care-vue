@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
-  Bell, 
   ChevronDown, 
   Heart,
   HelpCircle, 
@@ -34,12 +33,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 
 export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMobileMenuToggle }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const carerName = localStorage.getItem("carerName") || "Carer";
-  const location = useLocation();
   const [searchValue, setSearchValue] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
@@ -109,6 +109,10 @@ export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMo
     navigate("/carer-login");
   };
 
+  const handleViewAllNotifications = () => {
+    navigate('/carer-dashboard/notifications');
+  };
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-100 py-3 md:py-4 sticky top-0 z-50 w-full">
       <div className="container mx-auto px-4 flex justify-between items-center relative">
@@ -137,14 +141,7 @@ export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMo
         
         {/* Bell notification on right for desktop view */}
         <div className="hidden md:flex items-center">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="h-9 w-9 rounded-full relative"
-          >
-            <Bell className="h-4 w-4" />
-            <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-          </Button>
+          <NotificationDropdown onViewAll={handleViewAllNotifications} />
         </div>
         
         {/* Mobile menu button */}

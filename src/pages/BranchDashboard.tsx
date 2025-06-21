@@ -10,6 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useServices } from "@/data/hooks/useServices";
 import { useBookingData } from "@/components/bookings/hooks/useBookingData";
 import { useBranchDashboardNavigation } from "@/hooks/useBranchDashboardNavigation";
+import { useNotificationGenerator } from "@/hooks/useNotificationGenerator";
 
 // Import refactored sections
 import { DashboardStatsSection } from "@/components/branch-dashboard/DashboardStatsSection";
@@ -51,6 +52,9 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     handleTabChange,
     handleWorkflowNavigation
   } = useBranchDashboardNavigation();
+
+  // Initialize notification generator for this branch
+  useNotificationGenerator(id);
 
   const { clients: bookingClients, carers: bookingCarers } = useBookingData(id);
   const { data: services = [], isLoading: isLoadingServices, error: servicesError } = useServices();
