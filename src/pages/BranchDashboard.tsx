@@ -127,6 +127,16 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     }
   };
 
+  // Enhanced tab change handler with events-logs navigation
+  const enhancedHandleTabChange = (value: string) => {
+    if (value === "events-logs" && id && branchName) {
+      // Navigate to dedicated Events & Logs page
+      navigate(`/branch-dashboard/${id}/${branchName}/events-logs`);
+    } else {
+      handleTabChange(value);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -171,7 +181,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         <div className="mb-6">
           <TabNavigation 
             activeTab={activeTab} 
-            onChange={handleTabChange}
+            onChange={enhancedHandleTabChange}
           />
         </div>
         
@@ -181,7 +191,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
             <DashboardStatsSection
               branchId={id}
               onNewClient={handleNewClient}
-              onTabChange={handleTabChange}
+              onTabChange={enhancedHandleTabChange}
             />
             <DashboardChartsSection branchId={id} />
             <DashboardActivitySection branchId={id} />
@@ -210,6 +220,21 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         {activeTab === "care-plan" && <CareTab branchId={id} branchName={branchName} />}
         {activeTab === "agreements" && <BranchAgreementsTab branchId={id || ""} branchName={displayBranchName} />}
         {activeTab === "forms" && <FormBuilderTab branchId={id || ""} branchName={displayBranchName} />}
+        
+        {/* Events & Logs fallback - redirect to dedicated page */}
+        {activeTab === "events-logs" && (() => {
+          React.useEffect(() => {
+            if (id && branchName) {
+              navigate(`/branch-dashboard/${id}/${branchName}/events-logs`);
+            }
+          }, []);
+          return (
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+              <h2 className="text-2xl font-bold mb-4">Redirecting to Events & Logs...</h2>
+              <p className="text-gray-500">Loading Events & Logs page...</p>
+            </div>
+          );
+        })()}
         
         {/* Notifications Tab */}
         {activeTab === "notifications" && restPath === "notifications" && (

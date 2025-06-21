@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X, Plus, User, RotateCcw } from 'lucide-react';
-import { generateBodyMapSvg } from '@/lib/bodyMapUtils';
 
 interface BodyMapPoint {
   id: string;
@@ -95,6 +94,125 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
 
   const currentSidePoints = selectedPoints.filter(p => p.side === currentSide);
 
+  // Create realistic human body SVG
+  const createBodySvg = (side: 'front' | 'back') => {
+    const frontBodySvg = `
+      <svg viewBox="0 0 200 500" className="w-full h-full">
+        <defs>
+          <linearGradient id="skinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#f4e4c1;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#e6d3a7;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        
+        <!-- Head -->
+        <ellipse cx="100" cy="50" rx="30" ry="35" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Eyes -->
+        <ellipse cx="90" cy="45" rx="3" ry="4" fill="#333"/>
+        <ellipse cx="110" cy="45" rx="3" ry="4" fill="#333"/>
+        
+        <!-- Nose -->
+        <path d="M100 50 L98 58 L102 58 Z" fill="#d4a574"/>
+        
+        <!-- Mouth -->
+        <path d="M95 65 Q100 68 105 65" stroke="#d4a574" stroke-width="1.5" fill="none"/>
+        
+        <!-- Neck -->
+        <rect x="90" y="82" width="20" height="25" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Torso -->
+        <ellipse cx="100" cy="180" rx="45" ry="75" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Arms -->
+        <ellipse cx="55" cy="140" rx="12" ry="50" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
+        <ellipse cx="145" cy="140" rx="12" ry="50" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Forearms -->
+        <ellipse cx="50" cy="210" rx="10" ry="40" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
+        <ellipse cx="150" cy="210" rx="10" ry="40" fill="url(#skinGradient)" stroke-width="1"/>
+        
+        <!-- Hands -->
+        <ellipse cx="48" cy="255" rx="8" ry="12" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
+        <ellipse cx="152" cy="255" rx="8" ry="12" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Pelvis -->
+        <ellipse cx="100" cy="280" rx="35" ry="25" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Thighs -->
+        <ellipse cx="85" cy="350" rx="18" ry="50" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
+        <ellipse cx="115" cy="350" rx="18" ry="50" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Calves -->
+        <ellipse cx="85" cy="425" rx="15" ry="45" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
+        <ellipse cx="115" cy="425" rx="15" ry="45" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Feet -->
+        <ellipse cx="85" cy="475" rx="12" ry="15" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
+        <ellipse cx="115" cy="475" rx="12" ry="15" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
+      </svg>
+    `;
+
+    const backBodySvg = `
+      <svg viewBox="0 0 200 500" className="w-full h-full">
+        <defs>
+          <linearGradient id="skinGradientBack" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#f4e4c1;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#e6d3a7;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        
+        <!-- Head (back view) -->
+        <ellipse cx="100" cy="50" rx="30" ry="35" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Hair line -->
+        <path d="M75 30 Q100 25 125 30" stroke="#8B4513" stroke-width="2" fill="none"/>
+        
+        <!-- Neck -->
+        <rect x="90" y="82" width="20" height="25" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Torso (back view) -->
+        <ellipse cx="100" cy="180" rx="45" ry="75" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Spine line -->
+        <line x1="100" y1="110" x2="100" y2="250" stroke="#d4a574" stroke-width="1" stroke-dasharray="3,2"/>
+        
+        <!-- Shoulder blades -->
+        <ellipse cx="80" cy="130" rx="15" ry="20" fill="none" stroke="#d4a574" stroke-width="1"/>
+        <ellipse cx="120" cy="130" rx="15" ry="20" fill="none" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Arms (back view) -->
+        <ellipse cx="55" cy="140" rx="12" ry="50" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
+        <ellipse cx="145" cy="140" rx="12" ry="50" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Forearms (back view) -->
+        <ellipse cx="50" cy="210" rx="10" ry="40" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
+        <ellipse cx="150" cy="210" rx="10" ry="40" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Hands (back view) -->
+        <ellipse cx="48" cy="255" rx="8" ry="12" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
+        <ellipse cx="152" cy="255" rx="8" ry="12" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Pelvis (back view) -->
+        <ellipse cx="100" cy="280" rx="35" ry="25" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Thighs (back view) -->
+        <ellipse cx="85" cy="350" rx="18" ry="50" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
+        <ellipse cx="115" cy="350" rx="18" ry="50" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Calves (back view) -->
+        <ellipse cx="85" cy="425" rx="15" ry="45" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
+        <ellipse cx="115" cy="425" rx="15" ry="45" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
+        
+        <!-- Feet (back view) -->
+        <ellipse cx="85" cy="475" rx="12" ry="15" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
+        <ellipse cx="115" cy="475" rx="12" ry="15" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
+      </svg>
+    `;
+
+    return side === 'front' ? frontBodySvg : backBodySvg;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -164,7 +282,7 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
             <div 
               className="absolute inset-0 w-full h-full flex items-center justify-center"
               dangerouslySetInnerHTML={{ 
-                __html: generateBodyMapSvg(currentSide).replace('data:image/svg+xml;charset=utf-8,', '').replace(/%3C/g, '<').replace(/%3E/g, '>').replace(/%20/g, ' ').replace(/%22/g, '"').replace(/%23/g, '#').replace(/%2F/g, '/').replace(/%3A/g, ':').replace(/%3B/g, ';').replace(/%2C/g, ',').replace(/%2E/g, '.').replace(/%28/g, '(').replace(/%29/g, ')').replace(/%5B/g, '[').replace(/%5D/g, ']').replace(/%7B/g, '{').replace(/%7D/g, '}')
+                __html: createBodySvg(currentSide)
               }}
               style={{ pointerEvents: 'none' }}
             />

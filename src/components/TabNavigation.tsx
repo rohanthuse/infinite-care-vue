@@ -1,5 +1,6 @@
 
 import React, { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { 
   LayoutDashboard, Workflow, ListChecks, Users, 
   Calendar, Star, MessageSquare, Pill, DollarSign, 
@@ -92,6 +93,8 @@ interface TabNavigationProps {
 }
 
 export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false, hideQuickAdd = false }: TabNavigationProps) => {
+  const navigate = useNavigate();
+  const { id, branchName } = useParams();
   const allTabs = [...primaryTabs, ...secondaryTabs];
   const activeTabObject = allTabs.find(tab => tab.value === activeTab);
   const [searchTerm, setSearchTerm] = useState("");
@@ -106,6 +109,16 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
       position: "top-center",
     });
     console.log(`Quick Add action selected: ${action}`);
+  };
+
+  const handleTabNavigation = (tabValue: string) => {
+    if (tabValue === "events-logs" && id && branchName) {
+      // Navigate to dedicated Events & Logs page
+      navigate(`/branch-dashboard/${id}/${branchName}/events-logs`);
+    } else {
+      // Use the provided onChange for other tabs
+      onChange(tabValue);
+    }
   };
 
   // Handle direct Reports menu item click without submenu
@@ -179,7 +192,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                     "flex flex-col items-center justify-center gap-1 h-auto px-1 py-2 rounded-lg",
                     isActive ? "bg-blue-50 text-blue-600" : "text-gray-500"
                   )}
-                  onClick={() => onChange(tab.value)}
+                  onClick={() => handleTabNavigation(tab.value)}
                 >
                   <Icon className="h-5 w-5" />
                   <span className="text-xs">{tab.label}</span>
@@ -227,7 +240,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                               tab.value === activeTab ? "bg-blue-50 text-blue-600" : ""
                             )}
                             onClick={() => {
-                              onChange(tab.value);
+                              handleTabNavigation(tab.value);
                               setSearchTerm("");
                             }}
                           >
@@ -257,7 +270,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                                     item.value === activeTab ? "bg-blue-50 text-blue-600" : ""
                                   )}
                                   onClick={() => {
-                                    onChange(item.value);
+                                    handleTabNavigation(item.value);
                                     setSearchTerm("");
                                   }}
                                 >
@@ -283,7 +296,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
             <div className="w-full overflow-x-auto hide-scrollbar bg-white border border-gray-100 rounded-xl shadow-sm">
               <Tabs 
                 value={activeTab} 
-                onValueChange={onChange}
+                onValueChange={handleTabNavigation}
                 className="w-full"
               >
                 <TabsList className="bg-white p-1 rounded-xl w-full justify-start">
@@ -337,7 +350,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                               tab.value === activeTab ? "bg-blue-50 text-blue-600" : ""
                             )}
                             onClick={() => {
-                              onChange(tab.value);
+                              handleTabNavigation(tab.value);
                               setSearchTerm("");
                             }}
                           >
@@ -379,7 +392,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                                   "py-2 px-3 rounded-md my-1 text-sm cursor-pointer",
                                   isActive ? "bg-blue-50 text-blue-600" : "hover:bg-gray-50"
                                 )}
-                                onClick={() => onChange(item.value)}
+                                onClick={() => handleTabNavigation(item.value)}
                               >
                                 <Icon className="h-4 w-4 mr-2" />
                                 <span>{item.label}</span>
@@ -402,7 +415,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                           "py-2 px-3 rounded-md my-1 text-sm cursor-pointer",
                           isActive ? "bg-blue-50 text-blue-600" : "hover:bg-gray-50"
                         )}
-                        onClick={() => onChange(item.value)}
+                        onClick={() => handleTabNavigation(item.value)}
                       >
                         <Icon className="h-4 w-4 mr-2" />
                         <span>{item.label}</span>
