@@ -2716,6 +2716,164 @@ export type Database = {
           },
         ]
       }
+      library_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      library_resource_access_logs: {
+        Row: {
+          access_type: string
+          accessed_at: string | null
+          branch_id: string | null
+          id: string
+          resource_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          access_type: string
+          accessed_at?: string | null
+          branch_id?: string | null
+          id?: string
+          resource_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          access_type?: string
+          accessed_at?: string | null
+          branch_id?: string | null
+          id?: string
+          resource_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_resource_access_logs_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_resource_access_logs_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "library_resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_resources: {
+        Row: {
+          access_roles: string[] | null
+          author: string | null
+          branch_id: string | null
+          category: string
+          created_at: string | null
+          description: string | null
+          downloads_count: number | null
+          expires_at: string | null
+          file_path: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          is_private: boolean | null
+          rating: number | null
+          resource_type: string
+          status: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+          url: string | null
+          version: string | null
+          views_count: number | null
+        }
+        Insert: {
+          access_roles?: string[] | null
+          author?: string | null
+          branch_id?: string | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          downloads_count?: number | null
+          expires_at?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_private?: boolean | null
+          rating?: number | null
+          resource_type: string
+          status?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          url?: string | null
+          version?: string | null
+          views_count?: number | null
+        }
+        Update: {
+          access_roles?: string[] | null
+          author?: string | null
+          branch_id?: string | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          downloads_count?: number | null
+          expires_at?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_private?: boolean | null
+          rating?: number | null
+          resource_type?: string
+          status?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+          url?: string | null
+          version?: string | null
+          views_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_resources_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medical_categories: {
         Row: {
           created_at: string
@@ -4192,6 +4350,10 @@ export type Database = {
       is_thread_participant: {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: boolean
+      }
+      update_resource_stats: {
+        Args: { resource_id: string; stat_type: string }
+        Returns: undefined
       }
     }
     Enums: {
