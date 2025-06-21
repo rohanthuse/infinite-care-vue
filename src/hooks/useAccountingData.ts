@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -339,12 +338,17 @@ export function useServiceRates(branchId?: string) {
   });
 }
 
-// Hook to fetch extra time records for a branch
+// Hook to fetch extra time records for a branch - FIXED WITH BETTER ERROR HANDLING
 export function useExtraTimeRecords(branchId?: string) {
   return useQuery({
     queryKey: ['extra-time-records', branchId],
     queryFn: async () => {
-      if (!branchId) return [];
+      if (!branchId) {
+        console.log('No branchId provided to useExtraTimeRecords');
+        return [];
+      }
+
+      console.log('Fetching extra time records for branch:', branchId);
 
       const { data, error } = await supabase
         .from('extra_time_records')
@@ -378,7 +382,12 @@ export function useExtraTimeRecords(branchId?: string) {
         .eq('branch_id', branchId)
         .order('work_date', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching extra time records:', error);
+        throw new Error(`Failed to fetch extra time records: ${error.message}`);
+      }
+
+      console.log('Extra time records fetched successfully:', data?.length || 0, 'records');
 
       const transformedData = (data || []).map(record => ({
         ...record,
@@ -389,6 +398,8 @@ export function useExtraTimeRecords(branchId?: string) {
       return transformedData as ExtraTimeRecord[];
     },
     enabled: !!branchId,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }
 
@@ -521,12 +532,21 @@ export function useCreateServiceRate() {
   });
 }
 
+// Enhanced mutation for creating extra time records with better error handling
 export function useCreateExtraTimeRecord() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (extraTime: CreateExtraTimeRecord) => {
       console.log('Creating extra time record with data:', extraTime);
+      
+      // Validate required fields
+      if (!extraTime.branch_id) {
+        throw new Error('Branch ID is required');
+      }
+      if (!extraTime.staff_id) {
+        throw new Error('Staff ID is required');
+      }
       
       const { data, error } = await supabase
         .from('extra_time_records')
@@ -536,7 +556,7 @@ export function useCreateExtraTimeRecord() {
 
       if (error) {
         console.error('Error creating extra time record:', error);
-        throw error;
+        throw new Error(`Failed to create extra time record: ${error.message}`);
       }
       
       console.log('Extra time record created successfully:', data);
@@ -545,16 +565,15 @@ export function useCreateExtraTimeRecord() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['extra-time-records'] });
       
-      // Show different success messages based on status
       if (data.status === 'approved') {
         toast.success('Extra time record created and automatically approved');
       } else {
         toast.success('Extra time record created and submitted for approval');
       }
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error creating extra time record:', error);
-      toast.error('Failed to create extra time record');
+      toast.error(`Failed to create extra time record: ${error.message}`);
     },
   });
 }

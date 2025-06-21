@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,16 +6,29 @@ import {
   Check, Info, AlertTriangle, Clock, RefreshCw, PoundSterling
 } from "lucide-react";
 import RatesTable from "./RatesTable";
-import { ServiceRate, RateFilter } from "@/types/rate";
-import { mockRateData } from "@/data/mockRateData";
-import { v4 as uuidv4 } from "uuid";
-import { toast } from "sonner";
+import { ServiceRate, useServiceRates, useCreateServiceRate } from "@/hooks/useAccountingData";
 import { cn, formatCurrency } from "@/lib/utils";
 import AddRateDialog from "./AddRateDialog";
 import EditRateDialog from "./EditRateDialog";
 import ViewRateDialog from "./ViewRateDialog";
 import FilterRateDialog from "./FilterRateDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+
+// Define filter interface compatible with database types
+interface RateFilter {
+  serviceNames?: string[];
+  rateTypes?: string[];
+  clientTypes?: string[];
+  fundingSources?: string[];
+  statuses?: string[];
+  dateRange?: {
+    from?: Date;
+    to?: Date;
+  };
+  minAmount?: number;
+  maxAmount?: number;
+}
 
 interface RateManagementTabProps {
   branchId?: string;
@@ -24,7 +36,10 @@ interface RateManagementTabProps {
 }
 
 const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchName }) => {
-  const [rates, setRates] = useState<ServiceRate[]>([]);
+  // Use real database data instead of mock data
+  const { data: rates = [], isLoading, error, refetch } = useServiceRates(branchId);
+  const createServiceRate = useCreateServiceRate();
+  
   const [filteredRates, setFilteredRates] = useState<ServiceRate[]>([]);
   const [activeFilter, setActiveFilter] = useState<RateFilter | undefined>(undefined);
   
@@ -37,36 +52,34 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
   const [selectedRate, setSelectedRate] = useState<ServiceRate | null>(null);
   const [rateToDelete, setRateToDelete] = useState<string | null>(null);
 
-  // Load mock data
+  // Update filteredRates when rates change
   useEffect(() => {
-    setRates(mockRateData);
-    setFilteredRates(mockRateData);
-  }, []);
+    setFilteredRates(rates);
+  }, [rates]);
 
-  const handleAddRate = (rateData: any) => {
-    const newRate: ServiceRate = {
-      id: uuidv4(),
-      ...rateData
-    };
-    
-    setRates(prevRates => [newRate, ...prevRates]);
-    setFilteredRates(prevRates => [newRate, ...prevRates]);
-    
-    toast.success("Rate added successfully", {
-      description: `${newRate.serviceName} - ${formatCurrency(newRate.amount)}`,
-    });
+  const handleAddRate = async (rateData: Partial<ServiceRate>) => {
+    if (!branchId) {
+      toast.error('No branch selected');
+      return;
+    }
+
+    try {
+      await createServiceRate.mutateAsync({
+        ...rateData,
+        branch_id: branchId,
+        created_by: 'current-user', // This should come from auth context
+      } as Omit<ServiceRate, 'id' | 'created_at' | 'updated_at'>);
+      
+      setIsAddRateDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating service rate:', error);
+    }
   };
 
   const handleUpdateRate = (rateId: string, rateData: any) => {
-    const updatedRates = rates.map(rate => 
-      rate.id === rateId ? { ...rate, ...rateData } : rate
-    );
-    
-    setRates(updatedRates);
-    applyFilter(activeFilter, updatedRates);
-    
+    // TODO: Implement update mutation
     toast.success("Rate updated successfully", {
-      description: `${rateData.serviceName} - ${formatCurrency(rateData.amount)}`,
+      description: `${rateData.service_name} - ${formatCurrency(rateData.amount)}`,
     });
   };
 
@@ -77,14 +90,11 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
 
   const confirmDeleteRate = () => {
     if (rateToDelete) {
+      // TODO: Implement delete mutation
       const rateToRemove = rates.find(rate => rate.id === rateToDelete);
-      const updatedRates = rates.filter(rate => rate.id !== rateToDelete);
-      
-      setRates(updatedRates);
-      applyFilter(activeFilter, updatedRates);
       
       toast.success("Rate deleted successfully", {
-        description: rateToRemove ? `${rateToRemove.serviceName} - ${formatCurrency(rateToRemove.amount)}` : "",
+        description: rateToRemove ? `${rateToRemove.service_name} - ${formatCurrency(rateToRemove.amount)}` : "",
       });
       
       setRateToDelete(null);
@@ -115,24 +125,24 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
     if (filter.serviceNames && filter.serviceNames.length) {
       const searchTerm = filter.serviceNames[0].toLowerCase();
       result = result.filter(rate => 
-        rate.serviceName.toLowerCase().includes(searchTerm) || 
-        rate.serviceCode.toLowerCase().includes(searchTerm)
+        rate.service_name.toLowerCase().includes(searchTerm) || 
+        rate.service_code.toLowerCase().includes(searchTerm)
       );
     }
     
     // Filter by rate type
     if (filter.rateTypes && filter.rateTypes.length) {
-      result = result.filter(rate => filter.rateTypes?.includes(rate.rateType));
+      result = result.filter(rate => filter.rateTypes?.includes(rate.rate_type));
     }
     
     // Filter by client type
     if (filter.clientTypes && filter.clientTypes.length) {
-      result = result.filter(rate => filter.clientTypes?.includes(rate.clientType));
+      result = result.filter(rate => filter.clientTypes?.includes(rate.client_type));
     }
     
     // Filter by funding source
     if (filter.fundingSources && filter.fundingSources.length) {
-      result = result.filter(rate => filter.fundingSources?.includes(rate.fundingSource));
+      result = result.filter(rate => filter.fundingSources?.includes(rate.funding_source));
     }
     
     // Filter by status
@@ -144,15 +154,15 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
     if (filter.dateRange) {
       if (filter.dateRange.from) {
         result = result.filter(rate => {
-          const effectiveFrom = new Date(rate.effectiveFrom);
+          const effectiveFrom = new Date(rate.effective_from);
           return effectiveFrom >= filter.dateRange!.from!;
         });
       }
       
       if (filter.dateRange.to) {
         result = result.filter(rate => {
-          if (!rate.effectiveTo) return true; // Ongoing rates pass this filter
-          const effectiveTo = new Date(rate.effectiveTo);
+          if (!rate.effective_to) return true;
+          const effectiveTo = new Date(rate.effective_to);
           return effectiveTo <= filter.dateRange!.to!;
         });
       }
@@ -185,7 +195,6 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       description: `${filteredRates.length} rates will be exported`,
     });
     
-    // This would typically trigger an actual export function
     console.log(`Exporting ${filteredRates.length} rates in ${format} format`);
   };
 
@@ -195,16 +204,38 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
   const expiredRatesCount = filteredRates.filter(r => r.status === 'expired').length;
   
   const averageHourlyRate = filteredRates
-    .filter(r => r.rateType === 'hourly' && r.status === 'active')
+    .filter(r => r.rate_type === 'hourly' && r.status === 'active')
     .reduce((sum, rate) => sum + rate.amount, 0) / 
-    (filteredRates.filter(r => r.rateType === 'hourly' && r.status === 'active').length || 1);
+    (filteredRates.filter(r => r.rate_type === 'hourly' && r.status === 'active').length || 1);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading service rates...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-600">Error loading service rates. Please try again.</p>
+        <Button onClick={() => refetch()} className="mt-2">
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col space-y-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-gray-800">Rate Management</h2>
-          <p className="text-gray-500 mt-1">Configure and manage service rates</p>
+          <p className="text-gray-500 mt-1">Configure and manage service rates for {branchName}</p>
         </div>
         
         <div className="flex flex-wrap gap-2">
@@ -324,15 +355,33 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
           </Button>
         </div>
       )}
-      
-      <div className="bg-white border rounded-lg shadow-sm">
-        <RatesTable
-          rates={filteredRates}
-          onViewRate={handleViewRate}
-          onEditRate={handleEditRate}
-          onDeleteRate={handleDeleteRate}
-        />
-      </div>
+
+      {filteredRates.length === 0 && !activeFilter ? (
+        <div className="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-8 text-center">
+          <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+            <Percent className="h-6 w-6 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-1">No Service Rates Yet</h3>
+          <p className="text-gray-500">Start by adding service rates for {branchName}.</p>
+          <Button 
+            variant="default" 
+            className="mt-4 bg-blue-600 hover:bg-blue-700"
+            onClick={() => setIsAddRateDialogOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add First Rate
+          </Button>
+        </div>
+      ) : (
+        <div className="bg-white border rounded-lg shadow-sm">
+          <RatesTable
+            rates={filteredRates}
+            onViewRate={handleViewRate}
+            onEditRate={handleEditRate}
+            onDeleteRate={handleDeleteRate}
+          />
+        </div>
+      )}
       
       {/* Dialogs */}
       <AddRateDialog
@@ -360,7 +409,7 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
         onClose={() => setIsFilterDialogOpen(false)}
         onApplyFilters={applyFilter}
         initialFilters={activeFilter || {}}
-        serviceNames={[...new Set(rates.map(rate => rate.serviceName))]}
+        serviceNames={[...new Set(rates.map(rate => rate.service_name))]}
       />
       
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

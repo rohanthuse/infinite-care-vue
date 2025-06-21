@@ -9,12 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PayrollRecord } from "@/hooks/useAccountingData";
+import { PayrollRecord, useStaffList } from "@/hooks/useAccountingData";
 import { toast } from "sonner";
 import { createDateValidation, createPositiveNumberValidation } from "@/utils/validationUtils";
 
 const payrollSchema = z.object({
-  staff_id: z.string().min(1, "Staff ID is required"),
+  staff_id: z.string().min(1, "Staff member is required"),
   pay_period_start: createDateValidation("Pay period start date"),
   pay_period_end: createDateValidation("Pay period end date"),
   regular_hours: createPositiveNumberValidation("Regular hours"),
@@ -33,7 +33,6 @@ const payrollSchema = z.object({
   payment_date: createDateValidation("Payment date"),
   notes: z.string().optional(),
 }).refine((data) => {
-  // Validate pay period dates
   const startDate = new Date(data.pay_period_start);
   const endDate = new Date(data.pay_period_end);
   return startDate <= endDate;
@@ -41,7 +40,6 @@ const payrollSchema = z.object({
   message: "Pay period start date must be before or equal to end date",
   path: ["pay_period_end"]
 }).refine((data) => {
-  // Validate payment date is after pay period end
   const endDate = new Date(data.pay_period_end);
   const paymentDate = new Date(data.payment_date);
   return paymentDate >= endDate;
@@ -49,7 +47,6 @@ const payrollSchema = z.object({
   message: "Payment date must be on or after pay period end date",
   path: ["payment_date"]
 }).refine((data) => {
-  // Validate pay period is not too long (max 1 month)
   const startDate = new Date(data.pay_period_start);
   const endDate = new Date(data.pay_period_end);
   const diffDays = (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
@@ -89,7 +86,11 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
   onAdd,
   initialData,
   isEditing = false,
+  branchId,
 }) => {
+  // Fetch staff list for the dropdown
+  const { data: staffList = [], isLoading: isLoadingStaff } = useStaffList(branchId);
+
   const {
     register,
     handleSubmit,
@@ -195,13 +196,36 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
           <div className="space-y-4">
             <h3 className="font-medium text-sm">Employee Information</h3>
             <div className="space-y-2">
-              <Label htmlFor="staff_id">Staff ID *</Label>
-              <Input
-                id="staff_id"
-                {...register("staff_id")}
-                placeholder="Enter staff ID"
-                className={errors.staff_id ? "border-red-500" : ""}
-              />
+              <Label htmlFor="staff_id">Staff Member *</Label>
+              {isLoadingStaff ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span className="text-sm text-gray-500">Loading staff...</span>
+                </div>
+              ) : staffList.length === 0 ? (
+                <div className="text-sm text-gray-500 p-2 bg-gray-50 rounded border">
+                  No active staff members found for this branch
+                </div>
+              ) : (
+                <Select 
+                  value={watchedValues.staff_id} 
+                  onValueChange={(value) => setValue("staff_id", value)}
+                >
+                  <SelectTrigger className={errors.staff_id ? "border-red-500" : ""}>
+                    <SelectValue placeholder="Select a staff member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staffList.map((staff) => (
+                      <SelectItem key={staff.id} value={staff.id}>
+                        {staff.first_name} {staff.last_name}
+                        {staff.specialization && (
+                          <span className="text-gray-500 ml-2">({staff.specialization})</span>
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               {errors.staff_id && (
                 <p className="text-sm text-red-600">{errors.staff_id.message}</p>
               )}
@@ -251,7 +275,6 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
             </div>
           </div>
 
-          {/* Hours and Pay */}
           <div className="space-y-4 border-t pt-4">
             <h3 className="font-medium text-sm">Hours and Pay</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -342,7 +365,6 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
             </div>
           </div>
 
-          {/* Deductions */}
           <div className="space-y-4 border-t pt-4">
             <h3 className="font-medium text-sm">Deductions</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -405,7 +427,6 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
             </div>
           </div>
 
-          {/* Payment Details */}
           <div className="space-y-4 border-t pt-4">
             <h3 className="font-medium text-sm">Payment Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -450,7 +471,6 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
             </div>
           </div>
 
-          {/* Notes */}
           <div className="space-y-4 border-t pt-4">
             <div className="space-y-2">
               <Label htmlFor="notes">Additional Notes</Label>
@@ -462,7 +482,6 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
             </div>
           </div>
 
-          {/* Calculate Button */}
           <div className="flex justify-center">
             <Button 
               type="button" 
@@ -474,7 +493,6 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
             </Button>
           </div>
 
-          {/* Totals Display */}
           {(calculatedTotals.grossPay > 0 || calculatedTotals.netPay > 0) && (
             <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-md">
               <div className="text-center">
@@ -494,7 +512,7 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || staffList.length === 0}>
               {isSubmitting ? 'Saving...' : isEditing ? "Save Changes" : "Add Payroll Record"}
             </Button>
           </DialogFooter>
