@@ -161,24 +161,40 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
           )}
         </div>
 
-        {/* Realistic Human Body Diagram */}
+        {/* Body Diagram Container */}
         <div className="relative mx-auto max-w-md">
           <div
-            className={`relative w-full h-[600px] border-2 border-dashed border-gray-300 rounded-lg bg-white overflow-hidden ${
+            className={`relative w-full h-[700px] border-2 border-dashed border-gray-300 rounded-lg bg-white overflow-hidden ${
               isAddingPoint ? 'cursor-crosshair border-blue-400 bg-blue-50' : 'cursor-default'
             }`}
             onClick={handleBodyClick}
           >
             {/* Human Body Background Image */}
             <div 
-              className="absolute inset-0 w-full h-full bg-contain bg-center bg-no-repeat"
+              className="absolute inset-0 w-full h-full bg-no-repeat"
               style={{ 
                 backgroundImage: `url(${getBackgroundImageUrl()})`,
                 backgroundPosition: 'center center',
-                backgroundSize: 'contain',
+                backgroundSize: 'auto 95%',
                 pointerEvents: 'none'
               }}
             />
+
+            {/* Image Loading Fallback */}
+            <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+              <div 
+                className="w-full h-full"
+                style={{
+                  backgroundImage: `url(${getBackgroundImageUrl()})`,
+                  backgroundPosition: 'center center',
+                  backgroundSize: 'auto 95%',
+                  backgroundRepeat: 'no-repeat',
+                }}
+                onError={(e) => {
+                  console.error('Failed to load body map image:', getBackgroundImageUrl());
+                }}
+              />
+            </div>
 
             {/* Injury points */}
             {currentSidePoints.map((point) => (
