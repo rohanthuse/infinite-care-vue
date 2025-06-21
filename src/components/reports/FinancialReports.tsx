@@ -17,33 +17,74 @@ import {
   Pie,
   Cell
 } from "recharts";
+import { useFinancialReportsData, transformChartData } from "@/hooks/useReportsData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface FinancialReportsProps {
   branchId: string;
   branchName: string;
 }
 
-// Mock data for financial reports
-const revenueData = [
-  { month: "Jan", revenue: 45000, expenses: 35000, profit: 10000 },
-  { month: "Feb", revenue: 48000, expenses: 36000, profit: 12000 },
-  { month: "Mar", revenue: 52000, expenses: 38000, profit: 14000 },
-  { month: "Apr", revenue: 49000, expenses: 37000, profit: 12000 },
-  { month: "May", revenue: 54000, expenses: 39000, profit: 15000 },
-  { month: "Jun", revenue: 58000, expenses: 41000, profit: 17000 },
-];
-
-const serviceRevenueData = [
-  { name: "Home Care", value: 35000 },
-  { name: "Nursing", value: 25000 },
-  { name: "Respite Care", value: 15000 },
-  { name: "Companionship", value: 18000 },
-  { name: "Other", value: 7000 },
-];
-
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
+// Fallback data
+const fallbackRevenueData = [
+  { month: "Jan", revenue: 0, expenses: 0, profit: 0 },
+  { month: "Feb", revenue: 0, expenses: 0, profit: 0 },
+  { month: "Mar", revenue: 0, expenses: 0, profit: 0 },
+  { month: "Apr", revenue: 0, expenses: 0, profit: 0 },
+  { month: "May", revenue: 0, expenses: 0, profit: 0 },
+  { month: "Jun", revenue: 0, expenses: 0, profit: 0 },
+];
+
+const fallbackServiceRevenueData = [
+  { name: "No Services", value: 1 },
+];
+
 export function FinancialReports({ branchId, branchName }: FinancialReportsProps) {
+  const { data: reportData, isLoading, error } = useFinancialReportsData({ 
+    branchId,
+    startDate: new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 6 months ago
+    endDate: new Date().toISOString().split('T')[0] // today
+  });
+
+  // Transform data with fallbacks
+  const revenueData = transformChartData(reportData?.monthlyRevenue, fallbackRevenueData);
+  const serviceRevenueData = transformChartData(reportData?.serviceRevenue, fallbackServiceRevenueData);
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="p-4 text-center text-red-600">
+          Error loading financial reports: {error.message}
+        </div>
+      </div>
+    );
+  }
+
+  const renderLoadingSkeleton = () => (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Card className="border border-gray-200 shadow-sm">
+        <CardContent className="p-6">
+          <Skeleton className="h-6 w-48 mb-4" />
+          <Skeleton className="h-[350px] w-full" />
+          <Skeleton className="h-4 w-full mt-4" />
+        </CardContent>
+      </Card>
+      <Card className="border border-gray-200 shadow-sm">
+        <CardContent className="p-6">
+          <Skeleton className="h-6 w-48 mb-4" />
+          <Skeleton className="h-[350px] w-full" />
+          <Skeleton className="h-4 w-full mt-4" />
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  if (isLoading) {
+    return renderLoadingSkeleton();
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card className="border border-gray-200 shadow-sm">

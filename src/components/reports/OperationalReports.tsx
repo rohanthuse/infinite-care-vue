@@ -14,33 +14,78 @@ import {
   Line,
   ResponsiveContainer
 } from "recharts";
+import { useOperationalReportsData, transformChartData } from "@/hooks/useReportsData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface OperationalReportsProps {
   branchId: string;
   branchName: string;
 }
 
-// Mock data for operational reports
-const taskCompletionData = [
-  { day: "Monday", scheduled: 65, completed: 62, cancelled: 3 },
-  { day: "Tuesday", scheduled: 68, completed: 65, cancelled: 3 },
-  { day: "Wednesday", scheduled: 70, completed: 68, cancelled: 2 },
-  { day: "Thursday", scheduled: 72, completed: 69, cancelled: 3 },
-  { day: "Friday", scheduled: 75, completed: 73, cancelled: 2 },
-  { day: "Saturday", scheduled: 60, completed: 57, cancelled: 3 },
-  { day: "Sunday", scheduled: 50, completed: 48, cancelled: 2 },
+// Fallback data
+const fallbackTaskCompletionData = [
+  { day: "Monday", scheduled: 0, completed: 0, cancelled: 0 },
+  { day: "Tuesday", scheduled: 0, completed: 0, cancelled: 0 },
+  { day: "Wednesday", scheduled: 0, completed: 0, cancelled: 0 },
+  { day: "Thursday", scheduled: 0, completed: 0, cancelled: 0 },
+  { day: "Friday", scheduled: 0, completed: 0, cancelled: 0 },
+  { day: "Saturday", scheduled: 0, completed: 0, cancelled: 0 },
+  { day: "Sunday", scheduled: 0, completed: 0, cancelled: 0 },
 ];
 
-const responseTimeData = [
-  { month: "Jan", responseTime: 28 },
-  { month: "Feb", responseTime: 26 },
-  { month: "Mar", responseTime: 24 },
-  { month: "Apr", responseTime: 22 },
-  { month: "May", responseTime: 20 },
-  { month: "Jun", responseTime: 18 },
+const fallbackResponseTimeData = [
+  { month: "Jan", responseTime: 0 },
+  { month: "Feb", responseTime: 0 },
+  { month: "Mar", responseTime: 0 },
+  { month: "Apr", responseTime: 0 },
+  { month: "May", responseTime: 0 },
+  { month: "Jun", responseTime: 0 },
 ];
 
 export function OperationalReports({ branchId, branchName }: OperationalReportsProps) {
+  const { data: reportData, isLoading, error } = useOperationalReportsData({ 
+    branchId,
+    startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 week ago
+    endDate: new Date().toISOString().split('T')[0] // today
+  });
+
+  // Transform data with fallbacks
+  const taskCompletionData = transformChartData(reportData?.taskCompletion, fallbackTaskCompletionData);
+  const responseTimeData = fallbackResponseTimeData; // This would need a new database function to implement properly
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="p-4 text-center text-red-600">
+          Error loading operational reports: {error.message}
+        </div>
+      </div>
+    );
+  }
+
+  const renderLoadingSkeleton = () => (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Card className="border border-gray-200 shadow-sm">
+        <CardContent className="p-6">
+          <Skeleton className="h-6 w-48 mb-4" />
+          <Skeleton className="h-[350px] w-full" />
+          <Skeleton className="h-4 w-full mt-4" />
+        </CardContent>
+      </Card>
+      <Card className="border border-gray-200 shadow-sm">
+        <CardContent className="p-6">
+          <Skeleton className="h-6 w-48 mb-4" />
+          <Skeleton className="h-[350px] w-full" />
+          <Skeleton className="h-4 w-full mt-4" />
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  if (isLoading) {
+    return renderLoadingSkeleton();
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card className="border border-gray-200 shadow-sm">

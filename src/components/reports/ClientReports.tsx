@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChartContainer } from "@/components/ui/chart";
 import { BarChart, XAxis, YAxis, Bar, Legend, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { useClientReportsData, transformChartData } from "@/hooks/useReportsData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ClientReportsProps {
   branchId: string;
@@ -16,41 +18,65 @@ interface TabOption {
   label: string;
 }
 
-// Mock data for the charts
-const clientActivityData = [
-  { name: "Jan", active: 65, inactive: 25, new: 15 },
-  { name: "Feb", active: 70, inactive: 20, new: 10 },
-  { name: "Mar", active: 75, inactive: 15, new: 18 },
-  { name: "Apr", active: 72, inactive: 18, new: 12 },
-  { name: "May", active: 78, inactive: 14, new: 16 },
-  { name: "Jun", active: 82, inactive: 10, new: 20 },
-];
-
-const clientDemographicsData = [
-  { name: "18-30", value: 15 },
-  { name: "31-50", value: 25 },
-  { name: "51-65", value: 30 },
-  { name: "66-80", value: 20 },
-  { name: "81+", value: 10 },
-];
-
-const clientServiceTypeData = [
-  { name: "Home Care", value: 40 },
-  { name: "Nursing", value: 25 },
-  { name: "Respite Care", value: 15 },
-  { name: "Companionship", value: 20 },
-];
-
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+// Fallback data in case of no real data
+const fallbackActivityData = [
+  { name: "Jan", active: 0, inactive: 0, new: 0 },
+  { name: "Feb", active: 0, inactive: 0, new: 0 },
+  { name: "Mar", active: 0, inactive: 0, new: 0 },
+  { name: "Apr", active: 0, inactive: 0, new: 0 },
+  { name: "May", active: 0, inactive: 0, new: 0 },
+  { name: "Jun", active: 0, inactive: 0, new: 0 },
+];
+
+const fallbackDemographicsData = [
+  { name: "No Data", value: 1 },
+];
+
+const fallbackServiceData = [
+  { name: "No Services", value: 1 },
+];
 
 export function ClientReports({ branchId, branchName }: ClientReportsProps) {
   const [activeTab, setActiveTab] = useState<ClientReportTab>("activity");
+  
+  const { data: reportData, isLoading, error } = useClientReportsData({ 
+    branchId,
+    startDate: new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 6 months ago
+    endDate: new Date().toISOString().split('T')[0] // today
+  });
   
   const tabOptions: TabOption[] = [
     { id: "activity", label: "Client Activity" },
     { id: "demographics", label: "Demographics" },
     { id: "services", label: "Service Utilization" },
   ];
+
+  // Transform data with fallbacks
+  const clientActivityData = transformChartData(reportData?.clientActivity, fallbackActivityData);
+  const clientDemographicsData = transformChartData(reportData?.demographics, fallbackDemographicsData);
+  const clientServiceTypeData = transformChartData(reportData?.serviceUtilization, fallbackServiceData);
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="p-4 text-center text-red-600">
+          Error loading client reports: {error.message}
+        </div>
+      </div>
+    );
+  }
+
+  const renderLoadingSkeleton = () => (
+    <Card className="border border-gray-200 shadow-sm">
+      <CardContent className="p-6">
+        <Skeleton className="h-6 w-48 mb-4" />
+        <Skeleton className="h-[350px] w-full" />
+        <Skeleton className="h-4 w-full mt-4" />
+      </CardContent>
+    </Card>
+  );
   
   return (
     <div className="space-y-4">
@@ -70,114 +96,120 @@ export function ClientReports({ branchId, branchName }: ClientReportsProps) {
         ))}
       </div>
 
-      {activeTab === "activity" && (
-        <Card className="border border-gray-200 shadow-sm">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Client Activity Overview</h3>
-            <div className="w-full" style={{ height: "350px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <ChartContainer 
-                  config={{
-                    active: { color: "#0088FE" },
-                    inactive: { color: "#FF8042" },
-                    new: { color: "#00C49F" },
-                  }}
-                >
-                  <BarChart data={clientActivityData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="active" name="Active Clients" fill="var(--color-active)" />
-                    <Bar dataKey="inactive" name="Inactive Clients" fill="var(--color-inactive)" />
-                    <Bar dataKey="new" name="New Clients" fill="var(--color-new)" />
-                  </BarChart>
-                </ChartContainer>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 text-sm text-muted-foreground">
-              <p>This report shows client activity trends over the last 6 months, including active, inactive, and new client counts.</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      {activeTab === "demographics" && (
-        <Card className="border border-gray-200 shadow-sm">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Client Demographics</h3>
-            <div className="w-full" style={{ height: "350px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <ChartContainer
-                  config={{
-                    primary: { color: "#0088FE" },
-                  }}
-                >
-                  <PieChart>
-                    <Pie
-                      data={clientDemographicsData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={true}
-                      outerRadius={130}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+      {isLoading ? (
+        renderLoadingSkeleton()
+      ) : (
+        <>
+          {activeTab === "activity" && (
+            <Card className="border border-gray-200 shadow-sm">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Client Activity Overview</h3>
+                <div className="w-full" style={{ height: "350px" }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ChartContainer 
+                      config={{
+                        active: { color: "#0088FE" },
+                        inactive: { color: "#FF8042" },
+                        new: { color: "#00C49F" },
+                      }}
                     >
-                      {clientDemographicsData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [`${value} clients`, 'Count']} />
-                    <Legend layout="horizontal" verticalAlign="bottom" align="center" />
-                  </PieChart>
-                </ChartContainer>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 text-sm text-muted-foreground">
-              <p>This report shows the age distribution of clients currently registered with the branch.</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      {activeTab === "services" && (
-        <Card className="border border-gray-200 shadow-sm">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Client Service Utilization</h3>
-            <div className="w-full" style={{ height: "350px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <ChartContainer
-                  config={{
-                    primary: { color: "#0088FE" },
-                  }}
-                >
-                  <PieChart>
-                    <Pie
-                      data={clientServiceTypeData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={true}
-                      outerRadius={130}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      <BarChart data={clientActivityData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="active" name="Active Clients" fill="var(--color-active)" />
+                        <Bar dataKey="inactive" name="Inactive Clients" fill="var(--color-inactive)" />
+                        <Bar dataKey="new" name="New Clients" fill="var(--color-new)" />
+                      </BarChart>
+                    </ChartContainer>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-4 text-sm text-muted-foreground">
+                  <p>This report shows client activity trends over the last 6 months, including active, inactive, and new client counts.</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {activeTab === "demographics" && (
+            <Card className="border border-gray-200 shadow-sm">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Client Demographics</h3>
+                <div className="w-full" style={{ height: "350px" }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ChartContainer
+                      config={{
+                        primary: { color: "#0088FE" },
+                      }}
                     >
-                      {clientServiceTypeData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [`${value} clients`, 'Count']} />
-                    <Legend layout="horizontal" verticalAlign="bottom" align="center" />
-                  </PieChart>
-                </ChartContainer>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 text-sm text-muted-foreground">
-              <p>This report shows the distribution of different service types utilized by clients.</p>
-            </div>
-          </CardContent>
-        </Card>
+                      <PieChart>
+                        <Pie
+                          data={clientDemographicsData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={true}
+                          outerRadius={130}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {clientDemographicsData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => [`${value} clients`, 'Count']} />
+                        <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+                      </PieChart>
+                    </ChartContainer>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-4 text-sm text-muted-foreground">
+                  <p>This report shows the age distribution of clients currently registered with the branch.</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {activeTab === "services" && (
+            <Card className="border border-gray-200 shadow-sm">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Client Service Utilization</h3>
+                <div className="w-full" style={{ height: "350px" }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ChartContainer
+                      config={{
+                        primary: { color: "#0088FE" },
+                      }}
+                    >
+                      <PieChart>
+                        <Pie
+                          data={clientServiceTypeData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={true}
+                          outerRadius={130}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {clientServiceTypeData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => [`${value} clients`, 'Count']} />
+                        <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+                      </PieChart>
+                    </ChartContainer>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-4 text-sm text-muted-foreground">
+                  <p>This report shows the distribution of different service types utilized by clients.</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
     </div>
   );
