@@ -115,7 +115,7 @@ export const useFormManagement = (branchId: string) => {
     enabled: forms.length > 0,
   });
 
-  // Create form mutation
+  // Create form mutation - improved to return the created form and navigate
   const createFormMutation = useMutation({
     mutationFn: async (formData: Partial<DatabaseForm> & { title: string; created_by: string }) => {
       const { data, error } = await supabase
@@ -142,12 +142,16 @@ export const useFormManagement = (branchId: string) => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['forms', branchId] });
       toast({
         title: "Success",
         description: "Form created successfully",
       });
+      
+      // Navigate to the newly created form
+      const encodedBranchName = encodeURIComponent(window.location.pathname.split('/')[3] || 'branch');
+      window.location.href = `/branch-dashboard/${branchId}/${encodedBranchName}/form-builder/${data.id}`;
     },
     onError: (error) => {
       toast({
