@@ -97,7 +97,7 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
   // Get the appropriate background image URL based on current side
   const getBackgroundImageUrl = () => {
     if (currentSide === 'front') {
-      return '/lovable-uploads/6ae72834-6cd3-4532-8413-685da389a623.png';
+      return '/lovable-uploads/c32c5c4d-97fb-413d-887f-29a90bfb3050.png';
     } else {
       // Use the original image for back view until a specific back view is provided
       return '/lovable-uploads/e823d8ed-e260-4f9e-b0af-edf308ef3e29.png';
@@ -164,36 +164,34 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
         {/* Body Diagram Container */}
         <div className="relative mx-auto max-w-md">
           <div
-            className={`relative w-full h-[700px] border-2 border-dashed border-gray-300 rounded-lg bg-white overflow-hidden ${
+            className={`relative w-full h-[600px] border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 overflow-hidden ${
               isAddingPoint ? 'cursor-crosshair border-blue-400 bg-blue-50' : 'cursor-default'
             }`}
             onClick={handleBodyClick}
           >
             {/* Human Body Background Image */}
             <div 
-              className="absolute inset-0 w-full h-full bg-no-repeat"
+              className="absolute inset-0 w-full h-full bg-no-repeat bg-center"
               style={{ 
                 backgroundImage: `url(${getBackgroundImageUrl()})`,
-                backgroundPosition: 'center center',
-                backgroundSize: 'auto 95%',
+                backgroundSize: 'contain',
                 pointerEvents: 'none'
+              }}
+              onLoad={() => {
+                console.log('Body map image loaded successfully:', getBackgroundImageUrl());
+              }}
+              onError={() => {
+                console.error('Failed to load body map image:', getBackgroundImageUrl());
               }}
             />
 
-            {/* Image Loading Fallback */}
-            <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-              <div 
-                className="w-full h-full"
-                style={{
-                  backgroundImage: `url(${getBackgroundImageUrl()})`,
-                  backgroundPosition: 'center center',
-                  backgroundSize: 'auto 95%',
-                  backgroundRepeat: 'no-repeat',
-                }}
-                onError={(e) => {
-                  console.error('Failed to load body map image:', getBackgroundImageUrl());
-                }}
-              />
+            {/* Fallback for when image fails to load */}
+            <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-sm">
+              {/* This will only show if the background image fails to load */}
+              <div className="text-center opacity-20">
+                <User className="h-24 w-24 mx-auto mb-2" />
+                <p>Body Map</p>
+              </div>
             </div>
 
             {/* Injury points */}
