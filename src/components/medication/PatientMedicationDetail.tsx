@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -150,7 +151,7 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
           <TabsTrigger value="records" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-800 rounded-lg px-4 py-2">
             Records
           </TabsTrigger>
-        </Tabs>
+        </TabsList>
         
         <TabsContent value="medications" className="mt-0">
           <div className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm">
