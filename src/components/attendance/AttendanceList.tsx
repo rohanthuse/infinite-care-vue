@@ -1,5 +1,4 @@
-
-import React, { useState, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,139 +6,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Download, FileDown, Filter, RefreshCw, Search, Clock, UserCheck, Users, X } from "lucide-react";
-import { format, startOfMonth, endOfMonth, parseISO, isWithinInterval, isToday, subDays, subWeeks, subMonths } from "date-fns";
+import { CalendarIcon, Download, FileDown, Filter, RefreshCw, Search, Clock, UserCheck, Users, X, Edit, Trash } from "lucide-react";
+import { format, startOfMonth, endOfMonth, parseISO, subDays, subWeeks, subMonths } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useAttendanceRecords, useDeleteAttendanceRecord, AttendanceFilters } from "@/hooks/useAttendanceRecords";
+import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
 
 interface AttendanceListProps {
   branchId: string;
 }
-
-interface AttendanceRecord {
-  id: string;
-  name: string;
-  role: string;
-  date: string;
-  status: string;
-  checkIn: string;
-  checkOut: string;
-  hours: number;
-  notes?: string;
-}
-
-const mockAttendanceData: AttendanceRecord[] = [
-  {
-    id: "1",
-    name: "Jane Smith",
-    role: "Nurse",
-    date: "2025-04-01",
-    status: "present",
-    checkIn: "08:00",
-    checkOut: "17:00",
-    hours: 8,
-    notes: "Regular shift"
-  },
-  {
-    id: "2",
-    name: "John Doe",
-    role: "Caregiver",
-    date: "2025-04-01",
-    status: "late",
-    checkIn: "09:15",
-    checkOut: "17:30",
-    hours: 8.25,
-    notes: "Traffic delay"
-  },
-  {
-    id: "3",
-    name: "Emily Johnson",
-    role: "Administrator",
-    date: "2025-04-01",
-    status: "present",
-    checkIn: "08:30",
-    checkOut: "16:30",
-    hours: 8,
-  },
-  {
-    id: "4",
-    name: "Michael Brown",
-    role: "Physiotherapist",
-    date: "2025-04-01",
-    status: "half_day",
-    checkIn: "08:00",
-    checkOut: "12:00",
-    hours: 4,
-    notes: "Doctor appointment in afternoon"
-  },
-  {
-    id: "5",
-    name: "Sarah Lee",
-    role: "Nurse",
-    date: "2025-04-01",
-    status: "absent",
-    checkIn: "",
-    checkOut: "",
-    hours: 0,
-    notes: "Sick leave"
-  },
-  {
-    id: "6",
-    name: "Jane Smith",
-    role: "Nurse",
-    date: "2025-04-02",
-    status: "present",
-    checkIn: "08:05",
-    checkOut: "17:10",
-    hours: 9.08,
-  },
-  {
-    id: "7",
-    name: "John Doe",
-    role: "Caregiver",
-    date: "2025-04-02",
-    status: "present",
-    checkIn: "08:00",
-    checkOut: "17:00",
-    hours: 8,
-  },
-  {
-    id: "8",
-    name: "Emily Johnson",
-    role: "Administrator",
-    date: "2025-04-02",
-    status: "excused",
-    checkIn: "",
-    checkOut: "",
-    hours: 0,
-    notes: "Pre-approved leave"
-  },
-  {
-    id: "9",
-    name: "David Wilson",
-    role: "Driver",
-    date: "2025-04-03",
-    status: "present",
-    checkIn: "08:00",
-    checkOut: "16:00",
-    hours: 8,
-    notes: "Transport duties"
-  },
-  {
-    id: "10",
-    name: "Sarah Lee",
-    role: "Nurse",
-    date: "2025-04-03",
-    status: "present",
-    checkIn: "09:00",
-    checkOut: "17:00",
-    hours: 8,
-    notes: "Patient rounds"
-  }
-];
 
 export function AttendanceList({ branchId }: AttendanceListProps) {
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
@@ -149,21 +28,33 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [status, setStatus] = useState("all");
-  const [attendanceType, setAttendanceType] = useState("staff");
+  const [attendanceType, setAttendanceType] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [roles, setRoles] = useState<string[]>([]);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
-  const recordsPerPage = 5;
+  const recordsPerPage = 10;
 
-  // Extract unique roles from data for filtering
-  React.useEffect(() => {
-    const uniqueRoles = Array.from(new Set(mockAttendanceData.map(record => record.role)));
-    setRoles(uniqueRoles);
-  }, []);
+  const { staff, clients } = useBranchStaffAndClients(branchId);
+  
+  // Get unique roles for filtering
+  const roles = useMemo(() => {
+    const staffRoles = staff.map(s => s.specialization || 'Staff').filter(Boolean);
+    const clientRole = clients.length > 0 ? ['Client'] : [];
+    return Array.from(new Set([...staffRoles, ...clientRole]));
+  }, [staff, clients]);
+
+  const filters: AttendanceFilters = {
+    searchQuery,
+    attendanceType: attendanceType !== 'all' ? attendanceType : undefined,
+    status: status !== 'all' ? status : undefined,
+    selectedRoles: selectedRoles.length > 0 ? selectedRoles : undefined,
+    dateRange,
+  };
+
+  const { data: attendanceRecords = [], isLoading, refetch } = useAttendanceRecords(branchId, filters);
+  const deleteAttendance = useDeleteAttendanceRecord();
 
   const applyFilter = (filter: string) => {
-    // Set date range based on selected filter
     const today = new Date();
     switch (filter) {
       case "today":
@@ -191,6 +82,7 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
       default:
         break;
     }
+    setCurrentPage(1);
   };
 
   const resetFilters = () => {
@@ -200,7 +92,7 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
     });
     setSearchQuery("");
     setStatus("all");
-    setAttendanceType("staff");
+    setAttendanceType("all");
     setSelectedRoles([]);
     setCurrentPage(1);
     setFilterType("all");
@@ -208,31 +100,15 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
   };
 
   const handleRefresh = () => {
-    // In a real application, this would fetch fresh data from the API
+    refetch();
     toast.success("Data refreshed");
   };
 
-  const filteredRecords = mockAttendanceData.filter(record => {
-    const recordDate = parseISO(record.date);
-    const isInDateRange = isWithinInterval(recordDate, { 
-      start: dateRange.from, 
-      end: dateRange.to 
-    });
-    
-    const matchesSearch = record.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          record.role.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = status === "all" || record.status === status;
-    
-    const matchesRoles = selectedRoles.length === 0 || selectedRoles.includes(record.role);
-    
-    return isInDateRange && matchesSearch && matchesStatus && matchesRoles;
-  });
-
-  const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
+  // Client-side pagination
+  const totalPages = Math.ceil(attendanceRecords.length / recordsPerPage);
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentRecords = filteredRecords.slice(indexOfFirstRecord, indexOfLastRecord);
+  const currentRecords = attendanceRecords.slice(indexOfFirstRecord, indexOfLastRecord);
 
   const handlePrevPage = () => {
     setCurrentPage(prev => Math.max(prev - 1, 1));
@@ -262,14 +138,14 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
   const handleExport = () => {
     const csvContent = [
       ["Name", "Role", "Date", "Status", "Check In", "Check Out", "Hours", "Notes"],
-      ...filteredRecords.map(record => [
-        record.name,
-        record.role,
-        format(parseISO(record.date), "dd/MM/yyyy"),
+      ...attendanceRecords.map(record => [
+        record.person_name || "",
+        record.person_role || "",
+        format(parseISO(record.attendance_date), "dd/MM/yyyy"),
         record.status,
-        record.checkIn || "",
-        record.checkOut || "",
-        record.hours.toString(),
+        record.check_in_time || "",
+        record.check_out_time || "",
+        record.hours_worked.toString(),
         record.notes || ""
       ])
     ].map(e => e.join(",")).join("\n");
@@ -288,6 +164,24 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
     
     toast.success("Export successful");
   };
+
+  const handleDelete = (id: string) => {
+    if (confirm("Are you sure you want to delete this attendance record?")) {
+      deleteAttendance.mutate(id);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Card className="border-gray-200 shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-gray-500">Loading attendance records...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-gray-200 shadow-sm">
@@ -346,6 +240,7 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
                                   } else {
                                     setSelectedRoles(prev => prev.filter(r => r !== role));
                                   }
+                                  setCurrentPage(1);
                                 }}
                                 className="h-4 w-4"
                               />
@@ -381,7 +276,7 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
-                    setCurrentPage(1); // Reset to first page when searching
+                    setCurrentPage(1);
                   }}
                 />
                 {searchQuery && (
@@ -405,16 +300,17 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="staff">
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
-                        <span>Staff Attendance</span>
+                        <span>Staff Only</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="client">
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
-                        <span>Client Attendance</span>
+                        <span>Clients Only</span>
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -528,6 +424,7 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Role</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>
@@ -544,25 +441,40 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
                     </TableHead>
                     <TableHead>Hours</TableHead>
                     <TableHead>Notes</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {currentRecords.length > 0 ? (
                     currentRecords.map((record) => (
                       <TableRow key={record.id} className="hover:bg-gray-50">
-                        <TableCell className="font-medium">{record.name}</TableCell>
-                        <TableCell>{record.role}</TableCell>
-                        <TableCell>{format(parseISO(record.date), "dd MMM yyyy")}</TableCell>
+                        <TableCell className="font-medium">{record.person_name}</TableCell>
+                        <TableCell>{record.person_role}</TableCell>
+                        <TableCell className="capitalize">{record.person_type}</TableCell>
+                        <TableCell>{format(parseISO(record.attendance_date), "dd MMM yyyy")}</TableCell>
                         <TableCell>{renderStatusBadge(record.status)}</TableCell>
-                        <TableCell>{record.checkIn || "-"}</TableCell>
-                        <TableCell>{record.checkOut || "-"}</TableCell>
-                        <TableCell>{record.hours > 0 ? record.hours : "-"}</TableCell>
+                        <TableCell>{record.check_in_time || "-"}</TableCell>
+                        <TableCell>{record.check_out_time || "-"}</TableCell>
+                        <TableCell>{record.hours_worked > 0 ? record.hours_worked : "-"}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{record.notes || "-"}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              title="Delete"
+                              onClick={() => handleDelete(record.id)}
+                            >
+                              <Trash className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={10} className="text-center py-8 text-gray-500">
                         No attendance records found for the selected criteria
                       </TableCell>
                     </TableRow>
@@ -573,7 +485,7 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
             
             <div className="flex items-center justify-between p-4 border-t">
               <div className="text-sm text-gray-500">
-                Showing {filteredRecords.length > 0 ? indexOfFirstRecord + 1 : 0}-{Math.min(indexOfLastRecord, filteredRecords.length)} of {filteredRecords.length} records
+                Showing {attendanceRecords.length > 0 ? indexOfFirstRecord + 1 : 0}-{Math.min(indexOfLastRecord, attendanceRecords.length)} of {attendanceRecords.length} records
               </div>
               <div className="flex items-center space-x-2">
                 <Button 
