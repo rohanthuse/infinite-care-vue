@@ -132,7 +132,7 @@ export const useThirdPartyAccess = (branchId: string) => {
     },
   });
 
-  // Approve request mutation
+  // Enhanced approve request mutation with better error handling
   const approveRequestMutation = useMutation({
     mutationFn: async (requestId: string) => {
       console.log('Approving access request:', requestId);
@@ -142,49 +142,87 @@ export const useThirdPartyAccess = (branchId: string) => {
         throw new Error('You must be logged in to approve requests');
       }
 
-      // Generate invite token
-      const { data: tokenData, error: tokenError } = await supabase
-        .rpc('generate_invite_token');
+      try {
+        // Generate invite token using the fixed database function
+        const { data: tokenData, error: tokenError } = await supabase
+          .rpc('generate_invite_token');
 
-      if (tokenError) {
-        throw new Error('Failed to generate invite token');
-      }
-
-      const { data, error } = await supabase
-        .from('third_party_access_requests')
-        .update({
-          status: 'approved',
-          approved_by: user.id,
-          approved_at: new Date().toISOString(),
-          invite_token: tokenData,
-        })
-        .eq('id', requestId)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error approving request:', error);
-        if (error.message?.includes('RLS') || error.message?.includes('policy')) {
-          throw new Error('Access denied: You do not have permission to approve this request.');
+        if (tokenError) {
+          console.error('Token generation error:', tokenError);
+          throw new Error(`Failed to generate invite token: ${tokenError.message}`);
         }
+
+        console.log('Generated token:', tokenData);
+
+        // Update request status and add token
+        const { data, error } = await supabase
+          .from('third_party_access_requests')
+          .update({
+            status: 'approved',
+            approved_by: user.id,
+            approved_at: new Date().toISOString(),
+            invite_token: tokenData,
+          })
+          .eq('id', requestId)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error approving request:', error);
+          if (error.message?.includes('RLS') || error.message?.includes('policy')) {
+            throw new Error('Access denied: You do not have permission to approve this request.');
+          }
+          throw new Error(`Database error: ${error.message}`);
+        }
+
+        console.log('Request approved successfully:', data);
+
+        // Create third-party user account
+        try {
+          const { data: userId, error: userError } = await supabase
+            .rpc('create_third_party_user_account', { request_id_param: requestId });
+
+          if (userError) {
+            console.error('Error creating third-party user:', userError);
+            // Don't fail the approval if user creation fails - this can be retried
+          } else {
+            console.log('Third-party user created:', userId);
+          }
+        } catch (userCreationError) {
+          console.error('User creation failed:', userCreationError);
+          // Continue with approval even if user creation fails
+        }
+
+        // Send invitation email
+        try {
+          const { error: emailError } = await supabase.functions.invoke('send-third-party-invitation', {
+            body: { requestId, inviteToken: tokenData }
+          });
+
+          if (emailError) {
+            console.error('Error sending invitation email:', emailError);
+            toast({
+              title: "Request Approved",
+              description: "Request approved but email invitation failed to send. You can resend it manually.",
+              variant: "default",
+            });
+          } else {
+            console.log('Invitation email sent successfully');
+          }
+        } catch (emailError) {
+          console.error('Email sending failed:', emailError);
+          toast({
+            title: "Request Approved", 
+            description: "Request approved but email invitation failed to send. You can resend it manually.",
+            variant: "default",
+          });
+        }
+
+        return data;
+      } catch (error) {
+        console.error('Approval process failed:', error);
         throw error;
       }
-
-      // Send invitation email
-      try {
-        const { error: emailError } = await supabase.functions.invoke('send-third-party-invitation', {
-          body: { requestId, inviteToken: tokenData }
-        });
-
-        if (emailError) {
-          console.error('Error sending invitation email:', emailError);
-          // Don't fail the approval if email fails
-        }
-      } catch (emailError) {
-        console.error('Error sending invitation email:', emailError);
-      }
-
-      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['third-party-access-requests', branchId] });
@@ -194,7 +232,7 @@ export const useThirdPartyAccess = (branchId: string) => {
       });
     },
     onError: (error) => {
-      console.error('Error approving request:', error);
+      console.error('Error in approval mutation:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to approve request",
@@ -252,7 +290,6 @@ export const useThirdPartyAccess = (branchId: string) => {
     },
   });
 
-  // Revoke access mutation
   const revokeAccessMutation = useMutation({
     mutationFn: async (requestId: string) => {
       console.log('Revoking access request:', requestId);
@@ -275,7 +312,6 @@ export const useThirdPartyAccess = (branchId: string) => {
         throw error;
       }
 
-      // Also deactivate any active third-party users for this request
       await supabase
         .from('third_party_users')
         .update({ is_active: false })

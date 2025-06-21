@@ -4143,6 +4143,50 @@ export type Database = {
           },
         ]
       }
+      third_party_login_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          ip_address: unknown | null
+          is_active: boolean
+          last_accessed_at: string
+          third_party_user_id: string
+          token: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean
+          last_accessed_at?: string
+          third_party_user_id: string
+          token: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean
+          last_accessed_at?: string
+          third_party_user_id?: string
+          token?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "third_party_login_sessions_third_party_user_id_fkey"
+            columns: ["third_party_user_id"]
+            isOneToOne: false
+            referencedRelation: "third_party_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       third_party_sessions: {
         Row: {
           ended_at: string | null
@@ -4518,6 +4562,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      create_third_party_login_session: {
+        Args: {
+          token_param: string
+          user_id_param: string
+          ip_address_param?: unknown
+          user_agent_param?: string
+        }
+        Returns: string
+      }
+      create_third_party_user_account: {
+        Args: { request_id_param: string }
+        Returns: string
+      }
       expire_third_party_access: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -4577,6 +4634,21 @@ export type Database = {
           date_of_birth: string
           hire_date: string
           branch_id: string
+        }[]
+      }
+      get_third_party_user_by_token: {
+        Args: { token_param: string }
+        Returns: {
+          user_id: string
+          email: string
+          first_name: string
+          surname: string
+          organisation: string
+          role: string
+          branch_id: string
+          access_type: Database["public"]["Enums"]["third_party_access_type"]
+          access_expires_at: string
+          is_active: boolean
         }[]
       }
       get_uninvoiced_bookings: {
