@@ -53,6 +53,7 @@ export function CreateTemplateDialog({
         title,
         content: content || null,
         type_id: selectedType,
+        template_file_id: null,
         branch_id: branchId !== "global" ? branchId : null,
         created_by: null, // Will be set by auth context when available
       });

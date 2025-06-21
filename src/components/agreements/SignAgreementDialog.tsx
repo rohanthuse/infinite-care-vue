@@ -80,6 +80,8 @@ export function SignAgreementDialog({
         signing_party: signingParty,
         signed_at: signedDate.toISOString(),
         digital_signature: digitalSignature || null,
+        primary_document_id: null,
+        signature_file_id: null,
         branch_id: branchId !== "global" ? branchId : null,
       });
       

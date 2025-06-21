@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,6 +98,7 @@ export function ScheduleAgreementDialog({
         template_id: selectedTemplate || null,
         status: "Upcoming",
         notes: notes || null,
+        attachment_file_id: null,
         branch_id: branchId !== "global" ? branchId : null,
         created_by: null, // Will be set by auth context when available
       });
