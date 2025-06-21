@@ -1,28 +1,16 @@
 
 import React, { useState } from "react";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { DateRange } from "react-day-picker";
-
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { DataTable } from "@/components/ui/data-table";
-import { MedicationTableColumns } from "@/components/medication/MedicationTableColumns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddMedicationDialog } from "@/components/medication/AddMedicationDialog";
-import { usePendingMedications } from "@/hooks/useMedicationAdministration";
 import { useBranchDashboardNavigation } from "@/hooks/useBranchDashboardNavigation";
-import MedChartData from "@/components/medication/MedChartData";
+
+// Import tab components
+import { MedicationOverviewTab } from "@/components/medication/tabs/MedicationOverviewTab";
+import { PendingMedicationsTab } from "@/components/medication/tabs/PendingMedicationsTab";
+import { AllMedicationsTab } from "@/components/medication/tabs/AllMedicationsTab";
+import { AdministrationRecordsTab } from "@/components/medication/tabs/AdministrationRecordsTab";
+import { MedicationReportsTab } from "@/components/medication/tabs/MedicationReportsTab";
 
 interface MedicationTabProps {
   branchId?: string;
@@ -30,85 +18,53 @@ interface MedicationTabProps {
 }
 
 export const MedicationTab = ({ branchId: propBranchId, branchName }: MedicationTabProps) => {
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    to: new Date(),
-  });
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   const { id: navBranchId } = useBranchDashboardNavigation();
   
   // Use prop branchId if provided, otherwise fall back to navigation branchId
   const branchId = propBranchId || navBranchId;
-  
-  const { data: medications = [], refetch } = usePendingMedications(branchId);
 
   return (
     <div className="space-y-6">
-      {/* Charts Section - Now uses real data */}
-      <MedChartData viewType="overview" />
-      
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Medication Overview</h2>
+          <h2 className="text-2xl font-bold">Medication Management</h2>
           <p className="text-muted-foreground">
-            Here's an overview of all medications and their administration.
+            Comprehensive medication administration and monitoring system.
           </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                id="date"
-                variant={"outline"}
-                className={
-                  "w-[300px] justify-start text-left font-normal" +
-                  (!date
-                    ? "text-muted-foreground"
-                    : "text-foreground")
-                }
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date?.from ? (
-                  date.to ? (
-                    `${format(date.from, "MMM dd, yyyy")} - ${format(
-                      date.to,
-                      "MMM dd, yyyy"
-                    )}`
-                  ) : (
-                    format(date.from, "MMM dd, yyyy")
-                  )
-                ) : (
-                  <span>Pick a date</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              className="w-auto p-0"
-              align="end"
-            >
-              <Calendar
-                mode="range"
-                defaultMonth={date?.from}
-                selected={date}
-                onSelect={setDate}
-                numberOfMonths={2}
-              />
-            </PopoverContent>
-          </Popover>
-          <Button onClick={() => setOpen(true)}>Add Medication</Button>
-        </div>
+        <Button onClick={() => setOpen(true)}>
+          Add Medication
+        </Button>
       </div>
 
-      <Tabs defaultValue="pending" className="space-y-4">
+      <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="pending">Pending Medications</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="all">All Medications</TabsTrigger>
+          <TabsTrigger value="records">Administration Records</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
-        <TabsContent value="pending">
-          <DataTable columns={MedicationTableColumns} data={medications} />
+        
+        <TabsContent value="overview">
+          <MedicationOverviewTab branchId={branchId} />
         </TabsContent>
+        
+        <TabsContent value="pending">
+          <PendingMedicationsTab branchId={branchId} />
+        </TabsContent>
+        
         <TabsContent value="all">
-          <DataTable columns={MedicationTableColumns} data={medications} />
+          <AllMedicationsTab branchId={branchId} />
+        </TabsContent>
+        
+        <TabsContent value="records">
+          <AdministrationRecordsTab branchId={branchId} />
+        </TabsContent>
+        
+        <TabsContent value="reports">
+          <MedicationReportsTab branchId={branchId} />
         </TabsContent>
       </Tabs>
 
