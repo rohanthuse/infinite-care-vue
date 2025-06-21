@@ -22,7 +22,7 @@ export interface MedicationAdministrationRecord {
       clients?: {
         first_name: string;
         last_name: string;
-        branch_id: string;
+        branch_id?: string;
       };
     };
   };
@@ -30,7 +30,7 @@ export interface MedicationAdministrationRecord {
     id: string;
     first_name: string;
     last_name: string;
-  };
+  } | null;
 }
 
 export interface MARFormData {
@@ -62,11 +62,6 @@ export function useMARByMedication(medicationId: string, dateRange?: { start: st
                 branch_id
               )
             )
-          ),
-          administered_by_staff:staff!administered_by(
-            id,
-            first_name,
-            last_name
           )
         `)
         .eq('medication_id', medicationId)
@@ -80,7 +75,12 @@ export function useMARByMedication(medicationId: string, dateRange?: { start: st
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as MedicationAdministrationRecord[];
+      
+      // Transform the data to match our interface
+      return (data || []).map(record => ({
+        ...record,
+        administered_by_staff: null // We'll handle staff lookup separately if needed
+      })) as MedicationAdministrationRecord[];
     },
     enabled: !!medicationId,
   });
@@ -103,14 +103,10 @@ export function useMARByClient(clientId: string, dateRange?: { start: string; en
               title,
               clients(
                 first_name,
-                last_name
+                last_name,
+                branch_id
               )
             )
-          ),
-          administered_by_staff:staff!administered_by(
-            id,
-            first_name,
-            last_name
           )
         `)
         .eq('client_medications.client_care_plans.client_id', clientId)
@@ -124,7 +120,12 @@ export function useMARByClient(clientId: string, dateRange?: { start: string; en
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as MedicationAdministrationRecord[];
+      
+      // Transform the data to match our interface
+      return (data || []).map(record => ({
+        ...record,
+        administered_by_staff: null // We'll handle staff lookup separately if needed
+      })) as MedicationAdministrationRecord[];
     },
     enabled: !!clientId,
   });
