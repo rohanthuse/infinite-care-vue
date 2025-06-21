@@ -30,15 +30,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { UploadDocumentData } from "@/hooks/useUnifiedDocuments";
+import { useUnifiedDocuments } from "@/hooks/useUnifiedDocuments";
+import { toast } from "sonner";
+
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const ACCEPTED_FILE_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'text/plain'
+];
 
 const formSchema = z.object({
   name: z.string().min(1, "Document name is required"),
   type: z.string().min(1, "Document type is required"),
   category: z.string().min(1, "Category is required"),
   description: z.string().optional(),
-  access_level: z.string().default("branch"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -46,51 +60,20 @@ type FormValues = z.infer<typeof formSchema>;
 interface UnifiedUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (document: UploadDocumentData) => Promise<void>;
-  clients?: Array<{ id: string; first_name: string; last_name: string }>;
-  staff?: Array<{ id: string; first_name: string; last_name: string }>;
+  branchId: string;
+  onSuccess?: () => void;
 }
-
-const documentCategories = [
-  "Medical Report",
-  "Care Plan", 
-  "Legal Document",
-  "Insurance",
-  "Assessment",
-  "Agreement",
-  "Form",
-  "Training",
-  "Policy",
-  "Template",
-  "Invoice",
-  "General"
-];
-
-const documentTypes = [
-  "PDF",
-  "Word Document", 
-  "Excel Spreadsheet",
-  "Image",
-  "Text File",
-  "Presentation",
-  "Audio",
-  "Video",
-  "Other"
-];
 
 export function UnifiedUploadDialog({ 
   open, 
   onOpenChange, 
-  onSave,
-  clients = [],
-  staff = []
+  branchId,
+  onSuccess 
 }: UnifiedUploadDialogProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [tags, setTags] = useState<string[]>([]);
-  const [currentTag, setCurrentTag] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
-  const [relatedEntity, setRelatedEntity] = useState<string>("");
-  const [relatedEntityId, setRelatedEntityId] = useState<string>("");
+  const [dragActive, setDragActive] = useState(false);
+  
+  const { uploadDocument, isUploading } = useUnifiedDocuments(branchId);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -99,114 +82,199 @@ export function UnifiedUploadDialog({
       type: "",
       category: "",
       description: "",
-      access_level: "branch",
     },
   });
+
+  const documentTypes = [
+    "General Document",
+    "Medical Report",
+    "Care Plan",
+    "Assessment",
+    "Legal Document",
+    "Insurance",
+    "Prescription",
+    "Photo/Image",
+    "Training Material",
+    "Policy Document"
+  ];
+
+  const categories = [
+    "general",
+    "medical",
+    "legal",
+    "training",
+    "policy",
+    "assessment",
+    "insurance",
+    "personal"
+  ];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
-      if (!form.getValues('name')) {
-        form.setValue('name', file.name);
-      }
+      validateAndSetFile(file);
     }
   };
 
-  const addTag = () => {
-    if (currentTag.trim() && !tags.includes(currentTag.trim())) {
-      setTags([...tags, currentTag.trim()]);
-      setCurrentTag("");
+  const validateAndSetFile = (file: File) => {
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("File size too large", {
+        description: "Please select a file smaller than 50MB"
+      });
+      return;
+    }
+
+    if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+      toast.error("Invalid file type", {
+        description: "Please select a supported file type (PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, JPG, PNG, GIF, TXT)"
+      });
+      return;
+    }
+
+    setSelectedFile(file);
+    
+    // Auto-fill document name if not already filled
+    if (!form.getValues('name')) {
+      const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+      form.setValue('name', nameWithoutExt);
     }
   };
 
-  const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(true);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addTag();
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      validateAndSetFile(files[0]);
     }
+  };
+
+  const removeFile = () => {
+    setSelectedFile(null);
   };
 
   async function onSubmit(data: FormValues) {
     if (!selectedFile) {
-      form.setError("name", { message: "Please select a file to upload" });
+      toast.error("No file selected", {
+        description: "Please select a file to upload"
+      });
       return;
     }
 
-    setIsUploading(true);
+    if (!branchId) {
+      toast.error("Invalid branch", {
+        description: "Branch ID is required for uploading documents"
+      });
+      return;
+    }
+
     try {
-      const uploadData: UploadDocumentData = {
-        name: data.name,
-        type: data.type,
-        category: data.category,
-        description: data.description,
+      uploadDocument({
+        ...data,
         file: selectedFile,
-        tags,
-        access_level: data.access_level,
-      };
-
-      // Add related entity if selected
-      if (relatedEntity === "client" && relatedEntityId) {
-        uploadData.client_id = relatedEntityId;
-      } else if (relatedEntity === "staff" && relatedEntityId) {
-        uploadData.staff_id = relatedEntityId;
-      }
-
-      await onSave(uploadData);
+      });
       
-      // Reset form
+      // Reset form and close dialog on success
       form.reset();
       setSelectedFile(null);
-      setTags([]);
-      setRelatedEntity("");
-      setRelatedEntityId("");
       onOpenChange(false);
+      onSuccess?.();
     } catch (error) {
-      console.error('Upload error:', error);
-    } finally {
-      setIsUploading(false);
+      console.error('Upload error in dialog:', error);
     }
   }
 
+  const handleClose = () => {
+    if (isUploading) {
+      toast.warning("Upload in progress", {
+        description: "Please wait for the upload to complete"
+      });
+      return;
+    }
+    
+    form.reset();
+    setSelectedFile(null);
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-blue-600">
             <FileText className="h-5 w-5" />
             Upload Document
           </DialogTitle>
           <DialogDescription>
-            Upload a new document to the system with proper categorization and tagging
+            Upload a new document to the system
           </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* File Upload Area */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Select File</label>
-              <div className="flex items-center justify-center w-full">
-                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+              <div 
+                className={`flex items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+                  dragActive 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer">
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <Upload className="w-8 h-8 mb-4 text-gray-500" />
                     <p className="mb-2 text-sm text-gray-500">
                       <span className="font-semibold">Click to upload</span> or drag and drop
                     </p>
-                    <p className="text-xs text-gray-500">All file types supported (MAX. 10MB)</p>
+                    <p className="text-xs text-gray-500">
+                      PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, JPG, PNG, GIF, TXT (MAX. 50MB)
+                    </p>
                   </div>
                   <input
                     type="file"
                     className="hidden"
+                    accept={ACCEPTED_FILE_TYPES.join(',')}
                     onChange={handleFileChange}
+                    disabled={isUploading}
                   />
                 </label>
               </div>
+              
               {selectedFile && (
-                <p className="text-sm text-green-600">Selected: {selectedFile.name}</p>
+                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <FileText className="h-4 w-4 text-green-600" />
+                    <span className="text-sm text-green-800">{selectedFile.name}</span>
+                    <span className="text-xs text-green-600">
+                      ({Math.round(selectedFile.size / 1024)} KB)
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={removeFile}
+                    disabled={isUploading}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               )}
             </div>
 
@@ -216,9 +284,13 @@ export function UnifiedUploadDialog({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Document Name</FormLabel>
+                    <FormLabel>Document Name *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Document name" {...field} />
+                      <Input 
+                        placeholder="Enter document name" 
+                        {...field} 
+                        disabled={isUploading}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -230,8 +302,12 @@ export function UnifiedUploadDialog({
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Document Type</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <FormLabel>Document Type *</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                      disabled={isUploading}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select type" />
@@ -239,7 +315,9 @@ export function UnifiedUploadDialog({
                       </FormControl>
                       <SelectContent>
                         {documentTypes.map((type) => (
-                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -249,97 +327,34 @@ export function UnifiedUploadDialog({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {documentCategories.map((category) => (
-                          <SelectItem key={category} value={category}>{category}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="access_level"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Access Level</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select access level" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="public">Public</SelectItem>
-                        <SelectItem value="branch">Branch Only</SelectItem>
-                        <SelectItem value="restricted">Restricted</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Related Entity Selection */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Related To</label>
-                <Select value={relatedEntity} onValueChange={setRelatedEntity}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select entity type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">None</SelectItem>
-                    <SelectItem value="client">Client</SelectItem>
-                    <SelectItem value="staff">Staff</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {relatedEntity && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">
-                    Select {relatedEntity === "client" ? "Client" : "Staff Member"}
-                  </label>
-                  <Select value={relatedEntityId} onValueChange={setRelatedEntityId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={`Select ${relatedEntity}`} />
-                    </SelectTrigger>
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category *</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                    disabled={isUploading}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                    </FormControl>
                     <SelectContent>
-                      {relatedEntity === "client" ? 
-                        clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {client.first_name} {client.last_name}
-                          </SelectItem>
-                        )) :
-                        staff.map((staffMember) => (
-                          <SelectItem key={staffMember.id} value={staffMember.id}>
-                            {staffMember.first_name} {staffMember.last_name}
-                          </SelectItem>
-                        ))
-                      }
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category.charAt(0).toUpperCase() + category.slice(1)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                </div>
+                  <FormMessage />
+                </FormItem>
               )}
-            </div>
+            />
 
             <FormField
               control={form.control}
@@ -348,10 +363,11 @@ export function UnifiedUploadDialog({
                 <FormItem>
                   <FormLabel>Description (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Document description..." 
-                      className="min-h-[80px]"
-                      {...field} 
+                    <Textarea
+                      placeholder="Enter document description"
+                      className="resize-none"
+                      {...field}
+                      disabled={isUploading}
                     />
                   </FormControl>
                   <FormMessage />
@@ -359,39 +375,19 @@ export function UnifiedUploadDialog({
               )}
             />
 
-            {/* Tags Section */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Tags</label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add a tag..."
-                  value={currentTag}
-                  onChange={(e) => setCurrentTag(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="flex-1"
-                />
-                <Button type="button" onClick={addTag} size="sm">Add</Button>
-              </div>
-              {tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {tags.map((tag, index) => (
-                    <Badge key={index} variant="secondary" className="gap-1">
-                      {tag}
-                      <X 
-                        className="h-3 w-3 cursor-pointer" 
-                        onClick={() => removeTag(tag)}
-                      />
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isUploading}>
+            <DialogFooter className="gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                disabled={isUploading}
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isUploading}>
+              <Button
+                type="submit"
+                disabled={isUploading || !selectedFile}
+              >
                 {isUploading ? "Uploading..." : "Upload Document"}
               </Button>
             </DialogFooter>

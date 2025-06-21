@@ -55,6 +55,11 @@ export const useUserRoleCheck = () => {
           .single();
         
         assignedBranchId = staffInfo?.branch_id;
+        
+        // If staff has an assigned branch, add it to associated branches for document access
+        if (assignedBranchId && !associatedBranches.includes(assignedBranchId)) {
+          associatedBranches.push(assignedBranchId);
+        }
       }
 
       return {
