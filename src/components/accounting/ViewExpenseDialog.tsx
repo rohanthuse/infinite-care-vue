@@ -8,7 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Expense, expenseCategoryLabels, expenseStatusLabels, paymentMethodLabels } from "@/types/expense";
+import { ExpenseRecord } from "@/hooks/useAccountingData";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Edit, FileText } from "lucide-react";
@@ -17,8 +17,36 @@ interface ViewExpenseDialogProps {
   open: boolean;
   onClose: () => void;
   onEdit: () => void;
-  expense: Expense;
+  expense: ExpenseRecord;
 }
+
+const categoryLabels = {
+  office_supplies: "Office Supplies",
+  travel: "Travel",
+  meals: "Meals",
+  equipment: "Equipment",
+  utilities: "Utilities",
+  rent: "Rent",
+  software: "Software",
+  training: "Training",
+  medical_supplies: "Medical Supplies",
+  other: "Other"
+};
+
+const paymentMethodLabels = {
+  credit_card: "Credit Card",
+  cash: "Cash",
+  bank_transfer: "Bank Transfer",
+  cheque: "Cheque",
+  other: "Other"
+};
+
+const statusLabels = {
+  pending: "Pending",
+  approved: "Approved",
+  rejected: "Rejected",
+  reimbursed: "Reimbursed"
+};
 
 const ViewExpenseDialog: React.FC<ViewExpenseDialogProps> = ({
   open,
@@ -26,8 +54,8 @@ const ViewExpenseDialog: React.FC<ViewExpenseDialogProps> = ({
   onEdit,
   expense,
 }) => {
-  const renderStatusBadge = (status: Expense["status"]) => {
-    const variants: Record<Expense["status"], string> = {
+  const renderStatusBadge = (status: string) => {
+    const variants: Record<string, string> = {
       pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
       approved: "bg-green-100 text-green-800 border-green-200",
       rejected: "bg-red-100 text-red-800 border-red-200",
@@ -35,8 +63,8 @@ const ViewExpenseDialog: React.FC<ViewExpenseDialogProps> = ({
     };
 
     return (
-      <Badge variant="outline" className={`${variants[status]} font-medium`}>
-        {expenseStatusLabels[status]}
+      <Badge variant="outline" className={`${variants[status] || variants.pending} font-medium`}>
+        {statusLabels[status as keyof typeof statusLabels] || status}
       </Badge>
     );
   };
@@ -55,7 +83,7 @@ const ViewExpenseDialog: React.FC<ViewExpenseDialogProps> = ({
             <div>
               <p className="text-sm text-gray-500">Date</p>
               <p className="font-medium">
-                {format(new Date(expense.date), "PPPP")}
+                {format(new Date(expense.expense_date), "PPPP")}
               </p>
             </div>
             <div className="text-right">
@@ -77,7 +105,7 @@ const ViewExpenseDialog: React.FC<ViewExpenseDialogProps> = ({
             <div>
               <p className="text-sm text-gray-500">Category</p>
               <p className="font-medium">
-                {expenseCategoryLabels[expense.category]}
+                {categoryLabels[expense.category as keyof typeof categoryLabels] || expense.category}
               </p>
             </div>
           </div>
@@ -86,19 +114,19 @@ const ViewExpenseDialog: React.FC<ViewExpenseDialogProps> = ({
             <div>
               <p className="text-sm text-gray-500">Payment Method</p>
               <p className="font-medium">
-                {paymentMethodLabels[expense.paymentMethod]}
+                {paymentMethodLabels[expense.payment_method as keyof typeof paymentMethodLabels] || expense.payment_method}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Created By</p>
-              <p className="font-medium">{expense.createdBy}</p>
+              <p className="font-medium">{expense.created_by}</p>
             </div>
           </div>
 
-          {expense.receipt && (
+          {expense.receipt_url && (
             <div>
               <p className="text-sm text-gray-500">Receipt Reference</p>
-              <p className="font-medium">{expense.receipt}</p>
+              <p className="font-medium">{expense.receipt_url}</p>
             </div>
           )}
 

@@ -20,26 +20,21 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { 
-  Expense, 
-  ExpenseCategory, 
-  PaymentMethod, 
-  expenseCategoryLabels, 
-  paymentMethodLabels 
-} from "@/types/expense";
+import { ExpenseRecord } from "@/hooks/useAccountingData";
 
 interface AddExpenseDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (expense: Omit<Expense, "id" | "status" | "createdBy">) => void;
-  initialData?: Expense;
+  onSave: (expense: Partial<ExpenseRecord>) => void;
+  initialData?: ExpenseRecord;
   isEditing?: boolean;
+  branchId?: string;
 }
 
 const formSchema = z.object({
   description: z.string().min(5, "Description must be at least 5 characters"),
   amount: z.coerce.number().positive("Amount must be positive"),
-  date: z.date(),
+  expense_date: z.date(),
   category: z.enum([
     "office_supplies", 
     "travel", 
@@ -52,16 +47,37 @@ const formSchema = z.object({
     "medical_supplies", 
     "other"
   ] as const),
-  paymentMethod: z.enum([
+  payment_method: z.enum([
     "credit_card", 
     "cash", 
     "bank_transfer", 
     "cheque", 
     "other"
   ] as const),
-  receipt: z.string().optional(),
+  receipt_url: z.string().optional(),
   notes: z.string().optional(),
 });
+
+const categoryLabels = {
+  office_supplies: "Office Supplies",
+  travel: "Travel",
+  meals: "Meals",
+  equipment: "Equipment",
+  utilities: "Utilities",
+  rent: "Rent",
+  software: "Software",
+  training: "Training",
+  medical_supplies: "Medical Supplies",
+  other: "Other"
+};
+
+const paymentMethodLabels = {
+  credit_card: "Credit Card",
+  cash: "Cash",
+  bank_transfer: "Bank Transfer",
+  cheque: "Cheque",
+  other: "Other"
+};
 
 const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
   open,
@@ -73,29 +89,37 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData ? {
-      ...initialData,
-      date: new Date(initialData.date),
+      description: initialData.description,
+      amount: initialData.amount,
+      expense_date: new Date(initialData.expense_date),
+      category: initialData.category as any,
+      payment_method: initialData.payment_method as any,
+      receipt_url: initialData.receipt_url || "",
+      notes: initialData.notes || "",
     } : {
       description: "",
       amount: 0,
-      date: new Date(),
+      expense_date: new Date(),
       category: "office_supplies",
-      paymentMethod: "credit_card",
-      receipt: "",
+      payment_method: "credit_card",
+      receipt_url: "",
       notes: "",
     }
   });
 
   const handleSubmit = (data: z.infer<typeof formSchema>) => {
-    onSave({
+    const expenseData: Partial<ExpenseRecord> = {
       description: data.description,
       amount: data.amount,
-      date: format(data.date, "yyyy-MM-dd"),
+      expense_date: format(data.expense_date, "yyyy-MM-dd"),
       category: data.category,
-      paymentMethod: data.paymentMethod,
-      receipt: data.receipt,
-      notes: data.notes,
-    });
+      payment_method: data.payment_method,
+      receipt_url: data.receipt_url || null,
+      notes: data.notes || null,
+      status: 'pending'
+    };
+    
+    onSave(expenseData);
     form.reset();
   };
 
@@ -140,7 +164,7 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
 
               <FormField
                 control={form.control}
-                name="date"
+                name="expense_date"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Date</FormLabel>
@@ -195,13 +219,11 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {(Object.keys(expenseCategoryLabels) as ExpenseCategory[]).map(
-                          (category) => (
-                            <SelectItem key={category} value={category}>
-                              {expenseCategoryLabels[category]}
-                            </SelectItem>
-                          )
-                        )}
+                        {Object.entries(categoryLabels).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -211,7 +233,7 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
 
               <FormField
                 control={form.control}
-                name="paymentMethod"
+                name="payment_method"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Payment Method</FormLabel>
@@ -225,13 +247,11 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {(Object.keys(paymentMethodLabels) as PaymentMethod[]).map(
-                          (method) => (
-                            <SelectItem key={method} value={method}>
-                              {paymentMethodLabels[method]}
-                            </SelectItem>
-                          )
-                        )}
+                        {Object.entries(paymentMethodLabels).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -242,12 +262,12 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
 
             <FormField
               control={form.control}
-              name="receipt"
+              name="receipt_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Receipt (optional)</FormLabel>
+                  <FormLabel>Receipt URL (optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Receipt reference" {...field} value={field.value || ""} />
+                    <Input placeholder="Receipt reference or URL" {...field} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
