@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -218,9 +217,6 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
                     {staffList.map((staff) => (
                       <SelectItem key={staff.id} value={staff.id}>
                         {staff.first_name} {staff.last_name}
-                        {staff.specialization && (
-                          <span className="text-gray-500 ml-2">({staff.specialization})</span>
-                        )}
                       </SelectItem>
                     ))}
                   </SelectContent>
