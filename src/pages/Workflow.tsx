@@ -5,7 +5,6 @@ import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { TabNavigation } from "@/components/TabNavigation";
-import NotificationsOverview from "@/components/workflow/NotificationsOverview";
 import WorkflowContent from "@/components/workflow/WorkflowContent";
 
 const Workflow = () => {
@@ -56,19 +55,11 @@ const Workflow = () => {
         <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm">
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-2xl font-bold">Workflow Management</h2>
-            <p className="text-gray-500 mt-1">Manage and monitor all workflow processes</p>
+            <p className="text-gray-500 mt-1">Manage and monitor all workflow processes and notifications</p>
           </div>
           
           <div className="p-6">
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Notifications Overview</h3>
-              <NotificationsOverview branchId={id} branchName={branchName} />
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Workflow Elements</h3>
-              <WorkflowContent branchId={id} branchName={branchName} />
-            </div>
+            <WorkflowContent branchId={id} branchName={branchName} />
           </div>
         </div>
       </main>
