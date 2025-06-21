@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -75,7 +74,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
   const queryClient = useQueryClient();
   const { id: branchId } = useBranchDashboardNavigation();
 
-  // Fetch all clients in the current branch
+  // Fetch all clients in the current branch with inclusive filtering
   const { data: clients = [] } = useQuery({
     queryKey: ['branch-clients-for-medication', branchId],
     queryFn: async () => {
@@ -95,11 +94,19 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
           )
         `)
         .eq('branch_id', branchId)
-        .eq('status', 'Active')
         .order('last_name', { ascending: true });
 
       if (error) throw error;
-      return data;
+      
+      // Filter out only clearly inactive clients
+      return data.filter(client => {
+        const status = client.status?.toLowerCase();
+        // Exclude only clearly inactive statuses
+        return status !== 'former' && 
+               status !== 'closed enquiries' && 
+               status !== 'closed_enquiries' &&
+               status !== 'inactive';
+      });
     },
     enabled: !!branchId,
   });
@@ -218,10 +225,14 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                       <SelectContent>
                         {clients.map((client) => {
                           const hasActivePlan = client.client_care_plans?.some(cp => cp.status === 'active');
+                          const statusDisplay = client.status || 'No Status';
                           return (
                             <SelectItem key={client.id} value={client.id}>
                               <div className="flex items-center justify-between w-full">
-                                <span>{client.last_name}, {client.first_name}</span>
+                                <div className="flex flex-col">
+                                  <span>{client.last_name}, {client.first_name}</span>
+                                  <span className="text-xs text-gray-500">Status: {statusDisplay}</span>
+                                </div>
                                 {!hasActivePlan && (
                                   <span className="ml-2 text-xs text-orange-600 bg-orange-100 px-2 py-0.5 rounded">
                                     Auto-create plan
@@ -236,7 +247,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                     <FormDescription>
                       {clients.length === 0 
                         ? "No active clients found in this branch"
-                        : `${clients.length} clients available. Care plans will be created automatically if needed.`
+                        : `${clients.length} clients available (excluding former/closed clients). Care plans will be created automatically if needed.`
                       }
                     </FormDescription>
                     <FormMessage />
