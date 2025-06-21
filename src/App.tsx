@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import BranchDashboard from "./pages/BranchDashboard";
 import CarerLogin from "./pages/CarerLogin";
 import CarerInvitation from "./pages/CarerInvitation";
+import AdminRoutes from "./routes/AdminRoutes";
 
 const queryClient = new QueryClient();
 
@@ -20,9 +21,14 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
             <Route path="/carer-login" element={<CarerLogin />} />
             <Route path="/carer-invitation" element={<CarerInvitation />} />
+            
+            {/* Admin routes - includes all branch dashboard specific routes */}
+            {AdminRoutes}
+            
+            {/* Fallback route for branch dashboard */}
+            <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

@@ -1,11 +1,13 @@
 
-import { useContext } from 'react';
-import { AuthContext } from '@/contexts/AuthContext';
+import { useAuthSafe } from './useAuthSafe';
 
+// This hook provides the same interface as useAuthSafe but with the naming expected by AdminRoutes
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const { user, session, loading } = useAuthSafe();
+  
+  return {
+    session,
+    user,
+    loading
+  };
 };

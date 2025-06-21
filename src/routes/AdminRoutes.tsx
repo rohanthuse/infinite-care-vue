@@ -37,21 +37,18 @@ const RequireAdminAuth = () => {
   const { session, loading } = useAuth();
 
   if (loading) {
-    // You can replace this with a beautiful spinner
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
   if (!session) {
-    // Redirect to login page if not authenticated
     return <Navigate to="/super-admin" replace />;
   }
 
-  // Render child routes if authenticated
   return <Outlet />;
 };
 
-const AdminRoutes = () => {
-  return (
+const AdminRoutes = (
+  <>
     <Route element={<RequireAdminAuth />}>
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/notifications" element={<Notifications />} />
@@ -73,7 +70,6 @@ const AdminRoutes = () => {
       <Route path="/key-parameters" element={<KeyParameters />} />
       <Route path="/booking-approvals" element={<BookingApprovals />} />
       <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
-      <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
       <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
       <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
       <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
@@ -90,7 +86,7 @@ const AdminRoutes = () => {
       <Route path="/branch-dashboard/:id/:branchName/reports" element={<Reports />} />
       <Route path="/branch-dashboard/:id/:branchName/booking-approvals" element={<BookingApprovals />} />
     </Route>
-  );
-};
+  </>
+);
 
 export default AdminRoutes;
