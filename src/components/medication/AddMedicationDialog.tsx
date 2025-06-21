@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -116,7 +117,8 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
           title: `General Care Plan for ${client.first_name} ${client.last_name}`,
           provider_name: 'System Generated',
           start_date: new Date().toISOString().split('T')[0],
-          status: 'active'
+          status: 'active',
+          display_id: 'TEMP' // This will be overwritten by the database trigger
         })
         .select()
         .single();
