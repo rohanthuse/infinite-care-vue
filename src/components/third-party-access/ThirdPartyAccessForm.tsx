@@ -1,9 +1,10 @@
 
-import React, { useState } from "react";
-import { useForm } from "react-hook-form";
+import React from "react";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format, addDays } from "date-fns";
+import { toast } from "sonner";
 import {
   Form,
   FormControl,
@@ -20,13 +21,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent } from "@/components/ui/card";
 import { DateTimePickerField } from "@/components/third-party-access/DateTimePickerField";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Info, Save, Clock, X } from "lucide-react";
-import { useThirdPartyAccess } from "@/hooks/useThirdPartyAccess";
+import { Info, Save, Clock } from "lucide-react";
 
 interface ThirdPartyAccessFormProps {
   branchId: string;
-  onRequestCreated?: () => void;
-  onCancel?: () => void;
+  onAccessSubmitted?: () => void;
 }
 
 // Form schema with validation
@@ -70,11 +69,8 @@ type FormValues = z.infer<typeof formSchema>;
 
 export const ThirdPartyAccessForm = ({
   branchId,
-  onRequestCreated,
-  onCancel,
+  onAccessSubmitted,
 }: ThirdPartyAccessFormProps) => {
-  const { createRequest, isCreating } = useThirdPartyAccess(branchId);
-
   // Initialize the form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -95,27 +91,23 @@ export const ThirdPartyAccessForm = ({
 
   const onSubmit = async (data: FormValues) => {
     console.log("Form submitted:", data);
-    
-    createRequest({
-      first_name: data.firstName,
-      surname: data.surname,
-      email: data.email,
-      organisation: data.organisation || undefined,
-      role: data.role || undefined,
-      request_for: data.requestFor,
-      client_consent_required: data.clientConsentRequired === "yes",
-      reason_for_access: data.reasonForAccess,
-      access_from: data.accessFrom,
-      access_until: data.accessUntil,
-    });
-
-    // Call the callback function if provided
-    if (onRequestCreated) {
-      onRequestCreated();
+    try {
+      // Here you would typically make an API call to submit the form data
+      // Simulating server request with a timeout
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      // Call the callback function if provided
+      if (onAccessSubmitted) {
+        onAccessSubmitted();
+      }
+      
+      // Reset the form
+      form.reset();
+      
+    } catch (error) {
+      toast.error("Failed to submit access request. Please try again.");
+      console.error("Error submitting form:", error);
     }
-    
-    // Reset the form
-    form.reset();
   };
 
   return (
@@ -365,15 +357,12 @@ export const ThirdPartyAccessForm = ({
         </Card>
 
         <div className="flex items-center justify-end space-x-4">
-          {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              <X className="h-4 w-4 mr-1" />
-              Cancel
-            </Button>
-          )}
-          <Button type="submit" disabled={isCreating} className="flex items-center gap-2">
+          <Button type="button" variant="outline">
+            Cancel
+          </Button>
+          <Button type="submit" className="flex items-center gap-2">
             <Save className="h-4 w-4" />
-            {isCreating ? "Creating..." : "Submit Request"}
+            Submit Request
           </Button>
         </div>
       </form>
