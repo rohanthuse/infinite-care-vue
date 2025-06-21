@@ -15,6 +15,7 @@ import { FilePlus, Search, MoreHorizontal, Eye, Edit, Trash, Copy, AlertCircle, 
 import { useFormManagement } from '@/hooks/useFormManagement';
 import { useFormSubmissions } from '@/hooks/useFormSubmissions';
 import { FormTemplatesContent } from './FormTemplatesContent';
+import { v4 as uuidv4 } from 'uuid';
 
 interface FormBuilderTabProps {
   branchId: string;
@@ -84,7 +85,10 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
   const paginatedForms = filteredForms.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleCreateForm = () => {
-    navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-builder`);
+    // Generate a unique form ID for the new form
+    const newFormId = uuidv4();
+    // Navigate to the form editing interface with the new form ID
+    navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-builder/${newFormId}`);
   };
 
   const handleEditForm = (formId: string) => {
