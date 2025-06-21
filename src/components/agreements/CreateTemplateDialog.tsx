@@ -19,7 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAgreementTypes, useCreateTemplate } from "@/data/hooks/agreements";
+import { FileUploadDropzone } from "./FileUploadDropzone";
 
 interface CreateTemplateDialogProps {
   open: boolean;
@@ -35,6 +37,7 @@ export function CreateTemplateDialog({
   const [title, setTitle] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [content, setContent] = useState("");
+  const [currentStep, setCurrentStep] = useState(1);
   
   // Fetch data
   const { data: agreementTypes, isLoading: typesLoading } = useAgreementTypes();
@@ -65,18 +68,22 @@ export function CreateTemplateDialog({
     setTitle("");
     setSelectedType("");
     setContent("");
+    setCurrentStep(1);
   };
+
+  const canProceedToStep2 = title && selectedType;
+  const canComplete = canProceedToStep2;
 
   return (
     <Dialog open={open} onOpenChange={(value) => {
       if (!value) resetForm();
       onOpenChange(value);
     }}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Agreement Template</DialogTitle>
           <DialogDescription>
-            Create a new template for future agreements
+            Create a new template for future agreements with files and content
           </DialogDescription>
         </DialogHeader>
         
@@ -85,50 +92,73 @@ export function CreateTemplateDialog({
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         ) : (
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <label htmlFor="title" className="text-sm font-medium">
-                Template Title <span className="text-red-500">*</span>
-              </label>
-              <Input
-                id="title"
-                placeholder="Enter template title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
+          <Tabs value={`step${currentStep}`} onValueChange={(value) => setCurrentStep(parseInt(value.replace('step', '')))}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="step1">Template Details</TabsTrigger>
+              <TabsTrigger value="step2" disabled={!canProceedToStep2}>Template Files</TabsTrigger>
+            </TabsList>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Agreement Type <span className="text-red-500">*</span>
-              </label>
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select agreement type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {agreementTypes?.map((type) => (
-                    <SelectItem key={type.id} value={type.id}>
-                      {type.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <TabsContent value="step1" className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label htmlFor="title" className="text-sm font-medium">
+                  Template Title <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  id="title"
+                  placeholder="Enter template title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Template Content</label>
-              <Textarea
-                placeholder="Enter the template content. Use placeholders like {{CLIENT_NAME}}, {{DATE}}, etc. for dynamic content."
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="min-h-[200px]"
-              />
-              <p className="text-xs text-gray-500">
-                You can use placeholders like CLIENT_NAME, DATE, COMPANY_NAME that will be replaced when creating agreements from this template.
-              </p>
-            </div>
-          </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Agreement Type <span className="text-red-500">*</span>
+                </label>
+                <Select value={selectedType} onValueChange={setSelectedType}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select agreement type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {agreementTypes?.map((type) => (
+                      <SelectItem key={type.id} value={type.id}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Template Content</label>
+                <Textarea
+                  placeholder="Enter the template content. Use placeholders like {{CLIENT_NAME}}, {{DATE}}, etc. for dynamic content."
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="min-h-[200px]"
+                />
+                <p className="text-xs text-gray-500">
+                  You can use placeholders like CLIENT_NAME, DATE, COMPANY_NAME that will be replaced when creating agreements from this template.
+                </p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="step2" className="space-y-4 py-4">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Template Files</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Upload template documents that can be reused for multiple agreements
+                  </p>
+                  <FileUploadDropzone
+                    templateId="temp" // Will be replaced after template creation
+                    category="template"
+                    maxFiles={3}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         )}
         
         <DialogFooter>
@@ -138,12 +168,29 @@ export function CreateTemplateDialog({
           >
             Cancel
           </Button>
-          <Button 
-            onClick={handleCreateTemplate} 
-            disabled={createTemplateMutation.isPending || !title || !selectedType}
-          >
-            {createTemplateMutation.isPending ? "Creating..." : "Create Template"}
-          </Button>
+          {currentStep > 1 && (
+            <Button 
+              variant="outline"
+              onClick={() => setCurrentStep(currentStep - 1)}
+            >
+              Previous
+            </Button>
+          )}
+          {currentStep < 2 ? (
+            <Button 
+              onClick={() => setCurrentStep(currentStep + 1)}
+              disabled={!canProceedToStep2}
+            >
+              Next
+            </Button>
+          ) : (
+            <Button 
+              onClick={handleCreateTemplate} 
+              disabled={createTemplateMutation.isPending || !canComplete}
+            >
+              {createTemplateMutation.isPending ? "Creating..." : "Create Template"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

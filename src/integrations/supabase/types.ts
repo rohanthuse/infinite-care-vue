@@ -141,6 +141,73 @@ export type Database = {
           },
         ]
       }
+      agreement_files: {
+        Row: {
+          agreement_id: string | null
+          created_at: string
+          file_category: string
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          scheduled_agreement_id: string | null
+          storage_path: string
+          template_id: string | null
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          agreement_id?: string | null
+          created_at?: string
+          file_category?: string
+          file_name: string
+          file_size: number
+          file_type: string
+          id?: string
+          scheduled_agreement_id?: string | null
+          storage_path: string
+          template_id?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          agreement_id?: string | null
+          created_at?: string
+          file_category?: string
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          scheduled_agreement_id?: string | null
+          storage_path?: string
+          template_id?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_files_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_files_scheduled_agreement_id_fkey"
+            columns: ["scheduled_agreement_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_files_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agreement_templates: {
         Row: {
           branch_id: string | null
@@ -148,6 +215,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          template_file_id: string | null
           title: string
           type_id: string | null
           updated_at: string
@@ -159,6 +227,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          template_file_id?: string | null
           title: string
           type_id?: string | null
           updated_at?: string
@@ -170,6 +239,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          template_file_id?: string | null
           title?: string
           type_id?: string | null
           updated_at?: string
@@ -188,6 +258,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_templates_template_file_id_fkey"
+            columns: ["template_file_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_files"
             referencedColumns: ["id"]
           },
           {
@@ -233,6 +310,8 @@ export type Database = {
           created_at: string
           digital_signature: string | null
           id: string
+          primary_document_id: string | null
+          signature_file_id: string | null
           signed_at: string | null
           signed_by_client_id: string | null
           signed_by_name: string | null
@@ -250,6 +329,8 @@ export type Database = {
           created_at?: string
           digital_signature?: string | null
           id?: string
+          primary_document_id?: string | null
+          signature_file_id?: string | null
           signed_at?: string | null
           signed_by_client_id?: string | null
           signed_by_name?: string | null
@@ -267,6 +348,8 @@ export type Database = {
           created_at?: string
           digital_signature?: string | null
           id?: string
+          primary_document_id?: string | null
+          signature_file_id?: string | null
           signed_at?: string | null
           signed_by_client_id?: string | null
           signed_by_name?: string | null
@@ -284,6 +367,20 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreements_primary_document_id_fkey"
+            columns: ["primary_document_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreements_signature_file_id_fkey"
+            columns: ["signature_file_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_files"
             referencedColumns: ["id"]
           },
           {
@@ -2933,6 +3030,7 @@ export type Database = {
       }
       scheduled_agreements: {
         Row: {
+          attachment_file_id: string | null
           branch_id: string | null
           created_at: string
           id: string
@@ -2948,6 +3046,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attachment_file_id?: string | null
           branch_id?: string | null
           created_at?: string
           id?: string
@@ -2963,6 +3062,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attachment_file_id?: string | null
           branch_id?: string | null
           created_at?: string
           id?: string
@@ -2978,6 +3078,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "scheduled_agreements_attachment_file_id_fkey"
+            columns: ["attachment_file_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_files"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "scheduled_agreements_branch_id_fkey"
             columns: ["branch_id"]

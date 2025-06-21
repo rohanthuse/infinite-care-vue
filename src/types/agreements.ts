@@ -21,6 +21,8 @@ export type Agreement = {
     signing_party: "client" | "staff" | "other" | null;
     signed_at: string | null;
     digital_signature: string | null;
+    primary_document_id: string | null;
+    signature_file_id: string | null;
     branch_id: string | null;
     created_at: string;
     updated_at: string;
@@ -41,6 +43,7 @@ export type ScheduledAgreement = {
   template_id: string | null;
   status: 'Upcoming' | 'Pending Approval' | 'Under Review' | 'Completed' | 'Cancelled';
   notes: string | null;
+  attachment_file_id: string | null;
   branch_id: string | null;
   created_by: string | null;
   created_at: string;
@@ -53,6 +56,7 @@ export type AgreementTemplate = {
   title: string;
   content: string | null;
   type_id: string | null;
+  template_file_id: string | null;
   branch_id: string | null;
   created_by: string | null;
   usage_count: number;
