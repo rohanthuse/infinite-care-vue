@@ -24,13 +24,22 @@ import { usePendingMedications } from "@/hooks/useMedicationAdministration";
 import { useBranchDashboardNavigation } from "@/hooks/useBranchDashboardNavigation";
 import MedChartData from "@/components/medication/MedChartData";
 
-export const MedicationTab = () => {
+interface MedicationTabProps {
+  branchId?: string;
+  branchName?: string;
+}
+
+export const MedicationTab = ({ branchId: propBranchId, branchName }: MedicationTabProps) => {
   const [date, setDate] = React.useState<DateRange | undefined>({
     from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     to: new Date(),
   });
   const [open, setOpen] = React.useState(false);
-  const { id: branchId } = useBranchDashboardNavigation();
+  const { id: navBranchId } = useBranchDashboardNavigation();
+  
+  // Use prop branchId if provided, otherwise fall back to navigation branchId
+  const branchId = propBranchId || navBranchId;
+  
   const { data: medications = [], refetch } = usePendingMedications(branchId);
 
   return (
