@@ -42,6 +42,71 @@ export interface UploadDocumentData {
 export const useUnifiedDocuments = (branchId: string) => {
   const queryClient = useQueryClient();
 
+  // Enhanced helper function to determine bucket and path from file_path
+  const parseBucketAndPath = (filePath: string): { bucket: string; path: string } => {
+    if (!filePath || filePath === '<nil>' || filePath === 'null' || filePath === 'undefined') {
+      return { bucket: '', path: '' };
+    }
+    
+    // Check if the path includes bucket prefix
+    if (filePath.startsWith('client-documents/')) {
+      return {
+        bucket: 'client-documents',
+        path: filePath.substring('client-documents/'.length)
+      };
+    }
+    
+    if (filePath.startsWith('agreement-files/')) {
+      return {
+        bucket: 'agreement-files',
+        path: filePath.substring('agreement-files/'.length)
+      };
+    }
+    
+    if (filePath.startsWith('documents/')) {
+      return {
+        bucket: 'documents',
+        path: filePath.substring('documents/'.length)
+      };
+    }
+    
+    // Default to documents bucket for unprefixed paths
+    return {
+      bucket: 'documents',
+      path: filePath
+    };
+  };
+
+  // Check if a file is available in storage across multiple buckets
+  const checkFileAvailability = async (filePath?: string): Promise<boolean> => {
+    if (!filePath || filePath === '<nil>' || filePath === 'null' || filePath === 'undefined') {
+      return false;
+    }
+
+    try {
+      const { bucket, path } = parseBucketAndPath(filePath);
+      
+      if (!bucket || !path) return false;
+
+      console.log(`Checking file availability: bucket=${bucket}, path=${path}`);
+
+      // Try to get file info from storage
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .list(path.split('/').slice(0, -1).join('/'), {
+          search: path.split('/').pop()
+        });
+
+      const fileExists = !error && data && data.length > 0;
+      console.log(`File exists check: ${fileExists} for ${bucket}/${path}`);
+      
+      return fileExists;
+    } catch (error) {
+      console.error('Error checking file availability:', error);
+      return false;
+    }
+  };
+
   // Fetch all documents for a branch using the database function
   const {
     data: documents = [],
@@ -50,48 +115,33 @@ export const useUnifiedDocuments = (branchId: string) => {
   } = useQuery({
     queryKey: ['unified-documents', branchId],
     queryFn: async () => {
+      console.log('Fetching unified documents for branch:', branchId);
+      
       const { data, error } = await supabase.rpc('get_branch_documents', {
         p_branch_id: branchId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching documents:', error);
+        throw error;
+      }
+      
+      console.log('Raw documents from database:', data);
       
       // Add file availability check to each document
       const documentsWithFileStatus = await Promise.all(
         (data as UnifiedDocument[]).map(async (doc) => {
           const hasFile = await checkFileAvailability(doc.file_path);
+          console.log(`Document ${doc.name}: has_file=${hasFile}, file_path=${doc.file_path}`);
           return { ...doc, has_file: hasFile };
         })
       );
       
+      console.log('Documents with file status:', documentsWithFileStatus);
       return documentsWithFileStatus;
     },
     enabled: !!branchId,
   });
-
-  // Check if a file is available in storage
-  const checkFileAvailability = async (filePath?: string): Promise<boolean> => {
-    if (!filePath || filePath === '<nil>' || filePath === 'null' || filePath === 'undefined') {
-      return false;
-    }
-
-    try {
-      const normalizedPath = normalizeFilePath(filePath);
-      if (!normalizedPath) return false;
-
-      // Try to get file info from storage
-      const { data, error } = await supabase.storage
-        .from('documents')
-        .list(normalizedPath.split('/').slice(0, -1).join('/'), {
-          search: normalizedPath.split('/').pop()
-        });
-
-      return !error && data && data.length > 0;
-    } catch (error) {
-      console.error('Error checking file availability:', error);
-      return false;
-    }
-  };
 
   // Upload document mutation with improved path handling
   const uploadDocumentMutation = useMutation({
@@ -109,7 +159,7 @@ export const useUnifiedDocuments = (branchId: string) => {
 
       console.log('Uploading file with path:', filePath);
 
-      // Upload file to storage
+      // Upload file to the main documents storage bucket
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('documents')
         .upload(filePath, file);
@@ -201,23 +251,25 @@ export const useUnifiedDocuments = (branchId: string) => {
     },
   });
 
-  // Delete document mutation
+  // Delete document mutation with cross-bucket support
   const deleteDocumentMutation = useMutation({
     mutationFn: async (documentId: string) => {
-      // Get document to find file path
+      // Get document to find file path and source table
       const { data: document } = await supabase
         .from('documents')
-        .select('file_path')
+        .select('file_path, source_table')
         .eq('id', documentId)
         .single();
 
       // Delete from storage if file exists
       if (document?.file_path) {
-        const normalizedPath = normalizeFilePath(document.file_path);
-        if (normalizedPath) {
+        const { bucket, path } = parseBucketAndPath(document.file_path);
+        
+        if (bucket && path) {
+          console.log(`Deleting file from ${bucket}/${path}`);
           await supabase.storage
-            .from('documents')
-            .remove([normalizedPath]);
+            .from(bucket)
+            .remove([path]);
         }
       }
 
@@ -245,46 +297,7 @@ export const useUnifiedDocuments = (branchId: string) => {
     },
   });
 
-  // Enhanced helper function to normalize file paths
-  const normalizeFilePath = (filePath: string): string => {
-    if (!filePath || filePath === '<nil>' || filePath === 'null' || filePath === 'undefined') {
-      console.warn('Invalid file path detected:', filePath);
-      return '';
-    }
-    
-    let normalizedPath = filePath.trim();
-    
-    // Remove any leading slashes
-    normalizedPath = normalizedPath.replace(/^\/+/, '');
-    
-    // Remove common prefixes that might be incorrectly included
-    const prefixesToRemove = [
-      'documents/',
-      '/documents/',
-      'storage/v1/object/public/documents/',
-      'https://vcrjntfjsmpoupgairep.supabase.co/storage/v1/object/public/documents/',
-      'public/documents/',
-    ];
-    
-    for (const prefix of prefixesToRemove) {
-      if (normalizedPath.startsWith(prefix)) {
-        normalizedPath = normalizedPath.substring(prefix.length);
-        break;
-      }
-    }
-    
-    // Handle edge cases where path might just be the filename without branch folder
-    if (normalizedPath && !normalizedPath.includes('/') && normalizedPath.length > 0) {
-      // If it's just a filename, we can't determine which branch folder it belongs to
-      console.warn('File path missing branch folder structure:', normalizedPath);
-      return normalizedPath; // Return as-is and let storage handle the error
-    }
-    
-    console.log('Normalized path:', filePath, '->', normalizedPath);
-    return normalizedPath;
-  };
-
-  // Enhanced download document function
+  // Enhanced download document function with cross-bucket support
   const downloadDocument = async (filePath: string, fileName: string) => {
     try {
       console.log('Download attempt:', { filePath, fileName });
@@ -309,10 +322,10 @@ export const useUnifiedDocuments = (branchId: string) => {
         return;
       }
 
-      // Normalize the file path
-      const normalizedPath = normalizeFilePath(filePath);
+      // Parse bucket and path
+      const { bucket, path } = parseBucketAndPath(filePath);
       
-      if (!normalizedPath) {
+      if (!bucket || !path) {
         toast({
           title: "Download Error",
           description: "Invalid file path format.",
@@ -323,7 +336,8 @@ export const useUnifiedDocuments = (branchId: string) => {
 
       console.log('Attempting to download file:', {
         originalPath: filePath,
-        normalizedPath: normalizedPath,
+        bucket: bucket,
+        path: path,
         fileName: fileName
       });
 
@@ -339,8 +353,8 @@ export const useUnifiedDocuments = (branchId: string) => {
       }
 
       const { data, error } = await supabase.storage
-        .from('documents')
-        .download(normalizedPath);
+        .from(bucket)
+        .download(path);
 
       if (error) {
         console.error('Supabase storage download error:', error);
@@ -388,7 +402,7 @@ export const useUnifiedDocuments = (branchId: string) => {
     }
   };
 
-  // Enhanced view document function
+  // Enhanced view document function with cross-bucket support
   const viewDocument = async (filePath: string) => {
     try {
       console.log('View attempt:', { filePath });
@@ -413,10 +427,10 @@ export const useUnifiedDocuments = (branchId: string) => {
         return;
       }
 
-      // Normalize the file path
-      const normalizedPath = normalizeFilePath(filePath);
+      // Parse bucket and path
+      const { bucket, path } = parseBucketAndPath(filePath);
       
-      if (!normalizedPath) {
+      if (!bucket || !path) {
         toast({
           title: "View Error",
           description: "Invalid file path format.",
@@ -427,7 +441,8 @@ export const useUnifiedDocuments = (branchId: string) => {
 
       console.log('Attempting to view file:', {
         originalPath: filePath,
-        normalizedPath: normalizedPath
+        bucket: bucket,
+        path: path
       });
 
       // Check if file exists before attempting to view
@@ -442,8 +457,8 @@ export const useUnifiedDocuments = (branchId: string) => {
       }
 
       const { data, error } = await supabase.storage
-        .from('documents')
-        .createSignedUrl(normalizedPath, 3600); // 1 hour expiry
+        .from(bucket)
+        .createSignedUrl(path, 3600); // 1 hour expiry
 
       if (error) {
         console.error('Supabase signed URL error:', error);

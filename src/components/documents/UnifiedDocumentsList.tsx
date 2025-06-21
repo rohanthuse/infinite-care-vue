@@ -16,7 +16,8 @@ import {
   ChevronDown,
   MoreHorizontal,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Database
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -117,6 +118,16 @@ export function UnifiedDocumentsList({
     }
   };
 
+  const getStorageBucket = (filePath?: string) => {
+    if (!filePath) return 'unknown';
+    
+    if (filePath.startsWith('client-documents/')) return 'client-documents';
+    if (filePath.startsWith('agreement-files/')) return 'agreement-files';
+    if (filePath.startsWith('documents/')) return 'documents';
+    
+    return 'documents'; // default
+  };
+
   const getFileStatusIcon = (hasFile?: boolean, filePath?: string) => {
     if (!filePath || filePath === '<nil>' || filePath === 'null' || filePath === 'undefined') {
       return (
@@ -134,8 +145,9 @@ export function UnifiedDocumentsList({
       );
     }
     
+    const bucket = getStorageBucket(filePath);
     return (
-      <span title="File available">
+      <span title={`File available in ${bucket} bucket`}>
         <CheckCircle className="h-4 w-4 text-green-500" />
       </span>
     );
@@ -287,6 +299,7 @@ export function UnifiedDocumentsList({
                               <div className="flex items-center gap-2">
                                 <p className="font-medium truncate">{doc.name}</p>
                                 {getFileStatusIcon(doc.has_file, doc.file_path)}
+                                <Database className="h-3 w-3 text-gray-400" title={`Storage: ${getStorageBucket(doc.file_path)}`} />
                               </div>
                               <div className="flex items-center gap-2 text-sm text-gray-500">
                                 <span>{doc.type}</span>
