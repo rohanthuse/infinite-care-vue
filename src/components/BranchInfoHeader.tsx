@@ -3,7 +3,7 @@ import React from "react";
 import { Phone, Mail, MapPin, Clock, CalendarRange, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthSafe } from "@/hooks/useAuthSafe";
 
 interface BranchInfoHeaderProps {
   branchName: string;
@@ -16,7 +16,7 @@ export const BranchInfoHeader = ({
   branchId,
   onNewBooking
 }: BranchInfoHeaderProps) => {
-  const { user } = useAuth();
+  const { user } = useAuthSafe();
   
   // These would typically come from an API call based on branchId
   // For now, we'll use static mock data
