@@ -393,6 +393,9 @@ export function useExtraTimeRecords(branchId?: string) {
   });
 }
 
+// Define the type for creating extra time records
+type CreateExtraTimeRecord = Omit<ExtraTimeRecord, 'id' | 'created_at' | 'updated_at' | 'staff' | 'client'>;
+
 // Mutation hooks for creating records
 export function useCreateExpense() {
   const queryClient = useQueryClient();
@@ -498,7 +501,7 @@ export function useCreateExtraTimeRecord() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (extraTime: Partial<ExtraTimeRecord>) => {
+    mutationFn: async (extraTime: CreateExtraTimeRecord) => {
       console.log('Creating extra time record with data:', extraTime);
       
       const { data, error } = await supabase

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,7 +44,7 @@ type ExtraTimeFormData = z.infer<typeof extraTimeSchema>;
 interface AddExtraTimeDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (data: Partial<ExtraTimeRecord>) => Promise<void>;
+  onSave: (data: Omit<ExtraTimeRecord, 'id' | 'created_at' | 'updated_at' | 'staff' | 'client'>) => Promise<void>;
   initialData?: ExtraTimeRecord;
   isEditing?: boolean;
   branchId?: string;
@@ -153,6 +152,11 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
 
   const onSubmit = async (data: ExtraTimeFormData) => {
     try {
+      if (!branchId) {
+        toast.error('Branch ID is required');
+        return;
+      }
+
       const { extraMinutes, totalCost } = calculateExtraTime();
       
       // Calculate scheduled duration
@@ -168,9 +172,11 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
         actualDurationMinutes = (actualEnd.getTime() - actualStart.getTime()) / (1000 * 60);
       }
 
-      const extraTimeData: Partial<ExtraTimeRecord> = {
+      const extraTimeData: Omit<ExtraTimeRecord, 'id' | 'created_at' | 'updated_at' | 'staff' | 'client'> = {
+        branch_id: branchId,
         staff_id: data.staff_id,
         client_id: data.client_id === "no-client" ? null : data.client_id || null,
+        booking_id: null,
         work_date: data.work_date,
         scheduled_start_time: data.scheduled_start_time,
         scheduled_end_time: data.scheduled_end_time,
@@ -185,17 +191,19 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
         reason: data.reason || null,
         notes: data.notes || null,
         status: isEditing ? initialData?.status || 'pending' : initialStatus,
-        // Add creator information for new records
-        ...(isEditing ? {} : {
-          created_by: userRole?.id || '',
-          creator_role: userRole?.role || 'carer',
-          // Auto-approve for super admin
-          ...(userRole?.role === 'super_admin' ? {
-            approved_by: userRole.id,
-            approved_at: new Date().toISOString(),
-          } : {})
-        }),
+        approved_by: null,
+        approved_at: null,
+        invoiced: false,
+        invoice_id: null,
+        created_by: userRole?.id || null,
+        creator_role: userRole?.role || null,
       };
+
+      // Add auto-approval for super admin
+      if (!isEditing && userRole?.role === 'super_admin') {
+        extraTimeData.approved_by = userRole.id;
+        extraTimeData.approved_at = new Date().toISOString();
+      }
 
       await onSave(extraTimeData);
       reset();
