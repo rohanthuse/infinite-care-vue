@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { TaskProvider } from "@/contexts/TaskContext";
 import Index from "./pages/Index";
@@ -31,11 +31,17 @@ function App() {
               <Routes>
                 {/* Public routes */}
                 <Route path="/" element={<Index />} />
+                
+                {/* Authentication routes */}
                 <Route path="/super-admin-login" element={<SuperAdminLogin />} />
                 <Route path="/carer-login" element={<CarerLogin />} />
                 <Route path="/client-login" element={<ClientLogin />} />
                 <Route path="/third-party-login" element={<ThirdPartyLogin />} />
                 <Route path="/third-party-dashboard" element={<ThirdPartyDashboard />} />
+                
+                {/* Route redirects for common URL patterns */}
+                <Route path="/super-admin" element={<Navigate to="/super-admin-login" replace />} />
+                <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin/*" element={<AdminRoutes />} />
