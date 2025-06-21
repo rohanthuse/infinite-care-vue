@@ -1,9 +1,9 @@
-
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PenLine, Save, X, Undo2 } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface SignatureCanvasProps {
   onSave: (signature: string) => void;

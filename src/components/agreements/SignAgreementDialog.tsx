@@ -91,8 +91,8 @@ export function SignAgreementDialog({
         branch_id: branchId !== "global" ? branchId : null,
       };
 
-      // Create agreement and get the ID
-      const { data: newAgreement } = await createAgreementMutation.mutateAsync(agreementData);
+      // Create agreement and get the response
+      const newAgreement = await createAgreementMutation.mutateAsync(agreementData);
       
       if (newAgreement?.id) {
         setCreatedAgreementId(newAgreement.id);
