@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ interface PayrollTabProps {
   branchName?: string;
 }
 
+// Define filter types to match our database schema
 interface PayrollFilter {
   dateRange: { from?: Date; to?: Date };
   paymentStatuses: string[];
