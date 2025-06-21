@@ -16,7 +16,7 @@ export const CommunicationTypeSelector: React.FC<CommunicationTypeSelectorProps>
   placeholder = "Select communication type",
   disabled = false,
 }) => {
-  const { options: communicationTypeOptions, isLoading } = useCommunicationTypeOptions();
+  const { data: communicationTypeOptions = [], isLoading } = useCommunicationTypeOptions();
 
   return (
     <Select 

@@ -26,7 +26,7 @@ export const AddEventDialog: React.FC<AddEventDialogProps> = ({
   patientName,
   isLoading = false,
 }) => {
-  const { options: reportTypeOptions, isLoading: reportTypesLoading } = useReportTypeOptions();
+  const { data: reportTypeOptions = [], isLoading: reportTypesLoading } = useReportTypeOptions();
   
   const form = useForm({
     defaultValues: {

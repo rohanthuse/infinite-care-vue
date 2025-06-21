@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,7 +37,7 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
   const [bodyMapPoints, setBodyMapPoints] = useState<any[]>([]);
   const createEventLogMutation = useCreateEventLog();
   const { data: clients = [], isLoading: clientsLoading } = useEventClients(branchId);
-  const { options: reportTypeOptions, isLoading: reportTypesLoading } = useReportTypeOptions();
+  const { data: reportTypeOptions = [], isLoading: reportTypesLoading } = useReportTypeOptions();
 
   const form = useForm<EventLogFormData>({
     resolver: zodResolver(eventLogSchema),

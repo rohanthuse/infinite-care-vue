@@ -20,7 +20,7 @@ export const UploadDocumentDialog: React.FC<UploadDocumentDialogProps> = ({
   onOpenChange,
   onSave,
 }) => {
-  const { options: fileCategoryOptions, isLoading: categoriesLoading } = useFileCategoryOptions();
+  const { data: fileCategoryOptions = [], isLoading: categoriesLoading } = useFileCategoryOptions();
   
   const form = useForm({
     defaultValues: {

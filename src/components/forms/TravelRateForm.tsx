@@ -17,7 +17,7 @@ export const TravelRateForm: React.FC<TravelRateFormProps> = ({
   onSubmit,
   defaultValues,
 }) => {
-  const { options: travelRateOptions, isLoading } = useTravelRateOptions();
+  const { data: travelRateOptions = [], isLoading } = useTravelRateOptions();
   const { data: travelRates } = useTravelRates();
   
   const form = useForm({

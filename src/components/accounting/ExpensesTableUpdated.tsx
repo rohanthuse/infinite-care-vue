@@ -1,11 +1,9 @@
-
 import React, { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Eye, Plus, Filter } from "lucide-react";
 import { useExpenseTypes } from "@/hooks/useKeyParameters";
-import { useParameterById } from "@/hooks/useParameterOptions";
 
 // Mock data for demonstration
 const mockExpenses = [

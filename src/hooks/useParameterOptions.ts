@@ -40,3 +40,76 @@ export const useReportTypeOptions = () => {
     },
   });
 };
+
+export const useCommunicationTypeOptions = () => {
+  return useQuery({
+    queryKey: ['communication-type-options'],
+    queryFn: async () => {
+      return [
+        { value: 'email', label: 'Email' },
+        { value: 'phone', label: 'Phone Call' },
+        { value: 'sms', label: 'SMS' },
+        { value: 'meeting', label: 'Meeting' },
+        { value: 'video_call', label: 'Video Call' },
+        { value: 'letter', label: 'Letter' },
+        { value: 'other', label: 'Other' },
+      ];
+    },
+  });
+};
+
+export const useFileCategoryOptions = () => {
+  return useQuery({
+    queryKey: ['file-category-options'],
+    queryFn: async () => {
+      return [
+        { value: 'medical_report', label: 'Medical Report' },
+        { value: 'care_plan', label: 'Care Plan' },
+        { value: 'legal_document', label: 'Legal Document' },
+        { value: 'insurance', label: 'Insurance' },
+        { value: 'assessment', label: 'Assessment' },
+        { value: 'identification', label: 'Identification' },
+        { value: 'consent_form', label: 'Consent Form' },
+        { value: 'other', label: 'Other' },
+      ];
+    },
+  });
+};
+
+export const useTravelRateOptions = () => {
+  return useQuery({
+    queryKey: ['travel-rate-options'],
+    queryFn: async () => {
+      return [
+        { value: 'standard', label: 'Standard Rate' },
+        { value: 'premium', label: 'Premium Rate' },
+        { value: 'emergency', label: 'Emergency Rate' },
+        { value: 'weekend', label: 'Weekend Rate' },
+        { value: 'night', label: 'Night Rate' },
+      ];
+    },
+  });
+};
+
+export const useParameterById = (id: string) => {
+  return useQuery({
+    queryKey: ['parameter-by-id', id],
+    queryFn: async () => {
+      if (!id) return null;
+      
+      const { data, error } = await supabase
+        .from('report_types')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching parameter by id:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!id,
+  });
+};
