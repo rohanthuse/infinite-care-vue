@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -87,28 +86,27 @@ export function useMedicationStats(branchId?: string) {
     queryFn: async () => {
       const today = new Date().toISOString().split('T')[0];
       
-      // Get total medications
-      let totalQuery = supabase
+      // Get total medications for the branch
+      let totalMedicationsQuery = supabase
         .from('client_medications')
-        .select('id', { count: 'exact' })
+        .select(`
+          id,
+          client_care_plans!inner(
+            clients!inner(
+              branch_id
+            )
+          )
+        `, { count: 'exact' })
         .eq('status', 'active');
 
       if (branchId) {
-        totalQuery = totalQuery
-          .select(`
-            id,
-            client_care_plans!inner(
-              clients!inner(
-                branch_id
-              )
-            )
-          `, { count: 'exact' })
+        totalMedicationsQuery = totalMedicationsQuery
           .eq('client_care_plans.clients.branch_id', branchId);
       }
 
-      const { count: totalMedications } = await totalQuery;
+      const { count: totalMedications } = await totalMedicationsQuery;
 
-      // Get today's administration records
+      // Get today's administration records for the branch
       let marQuery = supabase
         .from('medication_administration_records')
         .select(`
