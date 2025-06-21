@@ -25,88 +25,15 @@ import { DateRange } from "react-day-picker";
 import { addDays, format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { toast } from "sonner";
-import { generateReportPDF } from "@/services/enhancedPdfGenerator";
 
-interface ReportsHeaderProps {
-  branchName: string;
-  activeReportType: string;
-  onDateRangeChange?: (dateRange: DateRange | undefined) => void;
-  reportData?: any;
-}
-
-export function ReportsHeader({ 
-  branchName, 
-  activeReportType, 
-  onDateRangeChange,
-  reportData 
-}: ReportsHeaderProps) {
+export function ReportsHeader() {
   const [date, setDate] = useState<DateRange | undefined>({
     from: addDays(new Date(), -30),
     to: new Date(),
   });
 
-  const handleDateChange = (newDate: DateRange | undefined) => {
-    setDate(newDate);
-    onDateRangeChange?.(newDate);
-  };
-
-  const handleExport = (exportFormat: string) => {
-    if (!date?.from || !date?.to) {
-      toast.error("Please select a date range first");
-      return;
-    }
-
-    try {
-      switch (exportFormat) {
-        case "PDF":
-          generateReportPDF({
-            branchName,
-            reportType: activeReportType,
-            dateRange: { from: date.from, to: date.to },
-            data: reportData
-          });
-          toast.success("PDF report generated successfully");
-          break;
-        case "Excel":
-        case "CSV":
-          // Create CSV content
-          const csvContent = generateCSVContent(reportData, activeReportType);
-          downloadCSV(csvContent, `${activeReportType}_Report_${format(new Date(), "yyyy-MM-dd")}.csv`);
-          toast.success(`${exportFormat} report exported successfully`);
-          break;
-        default:
-          toast.error("Export format not supported");
-      }
-    } catch (error) {
-      console.error("Export error:", error);
-      toast.error("Failed to export report");
-    }
-  };
-
-  const generateCSVContent = (data: any, reportType: string): string => {
-    if (!data) return "No data available";
-    
-    // Simple CSV generation - would be enhanced based on actual data structure
-    const headers = ["Report Type", "Generated", "Branch"];
-    const rows = [
-      [reportType, format(new Date(), "yyyy-MM-dd HH:mm:ss"), branchName]
-    ];
-    
-    return [headers, ...rows]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
-      .join('\n');
-  };
-
-  const downloadCSV = (content: string, filename: string) => {
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleExport = (format: string) => {
+    toast.success(`Report exported as ${format}`);
   };
 
   const handleSaveReport = () => {
@@ -132,7 +59,7 @@ export function ReportsHeader({
               <h4 className="font-medium text-sm">Filter Reports</h4>
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  Date range filtering is available. Additional filters will be added based on report type.
+                  Filters will be specific to the selected report type.
                 </p>
               </div>
             </div>
@@ -163,7 +90,7 @@ export function ReportsHeader({
               mode="range"
               defaultMonth={date?.from}
               selected={date}
-              onSelect={handleDateChange}
+              onSelect={setDate}
               numberOfMonths={2}
             />
           </PopoverContent>

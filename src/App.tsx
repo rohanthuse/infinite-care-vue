@@ -77,9 +77,8 @@ function App() {
                 {/* Client routes */}
                 <Route path="/client/*" element={<ClientRoutes />} />
                 
-                {/* Protected admin routes - Fix route order to ensure /branch comes before branch-dashboard patterns */}
+                {/* Protected admin routes */}
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/branch" element={<Branch />} />
                 <Route path="/services" element={<Services />} />
                 <Route path="/hobbies" element={<Hobbies />} />
                 <Route path="/skills" element={<Skills />} />
@@ -87,6 +86,7 @@ function App() {
                 <Route path="/medical-mental" element={<MedicalMental />} />
                 <Route path="/key-parameters" element={<KeyParameters />} />
                 <Route path="/body-map-points" element={<BodyMapPoints />} />
+                <Route path="/branch" element={<Branch />} />
                 <Route path="/branch-details/:id" element={<BranchDetails />} />
                 
                 {/* Branch Dashboard Routes - Main and with tabs */}

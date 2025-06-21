@@ -4609,22 +4609,6 @@ export type Database = {
           related_entity: string
         }[]
       }
-      get_client_reports_data: {
-        Args: {
-          p_branch_id: string
-          p_start_date?: string
-          p_end_date?: string
-        }
-        Returns: Json
-      }
-      get_financial_reports_data: {
-        Args: {
-          p_branch_id: string
-          p_start_date?: string
-          p_end_date?: string
-        }
-        Returns: Json
-      }
       get_notification_stats: {
         Args: { p_user_id: string; p_branch_id?: string }
         Returns: {
@@ -4633,14 +4617,6 @@ export type Database = {
           high_priority_count: number
           by_type: Json
         }[]
-      }
-      get_operational_reports_data: {
-        Args: {
-          p_branch_id: string
-          p_start_date?: string
-          p_end_date?: string
-        }
-        Returns: Json
       }
       get_staff_profile: {
         Args: { staff_user_id: string }
@@ -4659,14 +4635,6 @@ export type Database = {
           hire_date: string
           branch_id: string
         }[]
-      }
-      get_staff_reports_data: {
-        Args: {
-          p_branch_id: string
-          p_start_date?: string
-          p_end_date?: string
-        }
-        Returns: Json
       }
       get_third_party_user_by_token: {
         Args: { token_param: string }
