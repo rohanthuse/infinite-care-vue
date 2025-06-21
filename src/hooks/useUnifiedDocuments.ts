@@ -21,6 +21,7 @@ export interface UnifiedDocument {
   updated_at: string;
   source_table: string;
   related_entity: string;
+  has_file?: boolean;
 }
 
 export interface UploadDocumentData {
@@ -54,10 +55,43 @@ export const useUnifiedDocuments = (branchId: string) => {
       });
 
       if (error) throw error;
-      return data as UnifiedDocument[];
+      
+      // Add file availability check to each document
+      const documentsWithFileStatus = await Promise.all(
+        (data as UnifiedDocument[]).map(async (doc) => {
+          const hasFile = await checkFileAvailability(doc.file_path);
+          return { ...doc, has_file: hasFile };
+        })
+      );
+      
+      return documentsWithFileStatus;
     },
     enabled: !!branchId,
   });
+
+  // Check if a file is available in storage
+  const checkFileAvailability = async (filePath?: string): Promise<boolean> => {
+    if (!filePath || filePath === '<nil>' || filePath === 'null' || filePath === 'undefined') {
+      return false;
+    }
+
+    try {
+      const normalizedPath = normalizeFilePath(filePath);
+      if (!normalizedPath) return false;
+
+      // Try to get file info from storage
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .list(normalizedPath.split('/').slice(0, -1).join('/'), {
+          search: normalizedPath.split('/').pop()
+        });
+
+      return !error && data && data.length > 0;
+    } catch (error) {
+      console.error('Error checking file availability:', error);
+      return false;
+    }
+  };
 
   // Upload document mutation with improved path handling
   const uploadDocumentMutation = useMutation({
@@ -226,10 +260,10 @@ export const useUnifiedDocuments = (branchId: string) => {
     // Remove common prefixes that might be incorrectly included
     const prefixesToRemove = [
       'documents/',
+      '/documents/',
       'storage/v1/object/public/documents/',
       'https://vcrjntfjsmpoupgairep.supabase.co/storage/v1/object/public/documents/',
       'public/documents/',
-      '/documents/',
     ];
     
     for (const prefix of prefixesToRemove) {
@@ -250,30 +284,6 @@ export const useUnifiedDocuments = (branchId: string) => {
     return normalizedPath;
   };
 
-  // Check if file exists in storage
-  const checkFileExists = async (filePath: string): Promise<boolean> => {
-    try {
-      const normalizedPath = normalizeFilePath(filePath);
-      if (!normalizedPath) return false;
-      
-      const { data, error } = await supabase.storage
-        .from('documents')
-        .list(normalizedPath.split('/').slice(0, -1).join('/'), {
-          search: normalizedPath.split('/').pop()
-        });
-      
-      if (error) {
-        console.error('Error checking file existence:', error);
-        return false;
-      }
-      
-      return data && data.length > 0;
-    } catch (error) {
-      console.error('Error in checkFileExists:', error);
-      return false;
-    }
-  };
-
   // Enhanced download document function
   const downloadDocument = async (filePath: string, fileName: string) => {
     try {
@@ -283,7 +293,7 @@ export const useUnifiedDocuments = (branchId: string) => {
       if (!filePath || !fileName) {
         toast({
           title: "Download Error",
-          description: "Document information is incomplete. Please contact support.",
+          description: "Document information is incomplete.",
           variant: "destructive",
         });
         return;
@@ -293,7 +303,7 @@ export const useUnifiedDocuments = (branchId: string) => {
       if (filePath === '<nil>' || filePath === 'null' || filePath === 'undefined') {
         toast({
           title: "File Not Available",
-          description: "This document file is no longer available. It may have been moved or deleted.",
+          description: "This document file is no longer available.",
           variant: "destructive",
         });
         return;
@@ -305,7 +315,7 @@ export const useUnifiedDocuments = (branchId: string) => {
       if (!normalizedPath) {
         toast({
           title: "Download Error",
-          description: "Invalid file path format. Please contact support if this persists.",
+          description: "Invalid file path format.",
           variant: "destructive",
         });
         return;
@@ -318,11 +328,11 @@ export const useUnifiedDocuments = (branchId: string) => {
       });
 
       // Check if file exists before attempting download
-      const fileExists = await checkFileExists(filePath);
+      const fileExists = await checkFileAvailability(filePath);
       if (!fileExists) {
         toast({
           title: "File Not Found",
-          description: "The document file could not be found in storage. It may have been moved or deleted.",
+          description: "The document file could not be found in storage.",
           variant: "destructive",
         });
         return;
@@ -338,13 +348,11 @@ export const useUnifiedDocuments = (branchId: string) => {
         // Provide specific error messages based on error type
         let errorMessage = "Failed to download document";
         if (error.message.includes('not found') || error.message.includes('does not exist')) {
-          errorMessage = "Document file not found. It may have been moved or deleted.";
+          errorMessage = "Document file not found.";
         } else if (error.message.includes('access') || error.message.includes('permission')) {
-          errorMessage = "Access denied. You don't have permission to download this file.";
+          errorMessage = "Access denied.";
         } else if (error.message.includes('network') || error.message.includes('timeout')) {
-          errorMessage = "Network error. Please check your connection and try again.";
-        } else if (error.message.includes('bucket')) {
-          errorMessage = "Storage configuration error. Please contact support.";
+          errorMessage = "Network error. Please try again.";
         }
         
         toast({
@@ -374,7 +382,7 @@ export const useUnifiedDocuments = (branchId: string) => {
       console.error('Download error:', error);
       toast({
         title: "Download Failed",
-        description: "An unexpected error occurred while downloading the document. Please try again.",
+        description: "An unexpected error occurred while downloading the document.",
         variant: "destructive",
       });
     }
@@ -389,7 +397,7 @@ export const useUnifiedDocuments = (branchId: string) => {
       if (!filePath) {
         toast({
           title: "View Error",
-          description: "Document path is missing. Please contact support.",
+          description: "Document path is missing.",
           variant: "destructive",
         });
         return;
@@ -411,7 +419,7 @@ export const useUnifiedDocuments = (branchId: string) => {
       if (!normalizedPath) {
         toast({
           title: "View Error",
-          description: "Invalid file path format. Please contact support if this persists.",
+          description: "Invalid file path format.",
           variant: "destructive",
         });
         return;
@@ -423,11 +431,11 @@ export const useUnifiedDocuments = (branchId: string) => {
       });
 
       // Check if file exists before attempting to view
-      const fileExists = await checkFileExists(filePath);
+      const fileExists = await checkFileAvailability(filePath);
       if (!fileExists) {
         toast({
           title: "File Not Found",
-          description: "The document file could not be found for viewing. It may have been moved or deleted.",
+          description: "The document file could not be found for viewing.",
           variant: "destructive",
         });
         return;
@@ -443,11 +451,9 @@ export const useUnifiedDocuments = (branchId: string) => {
         // Provide specific error messages
         let errorMessage = "Failed to open document for viewing";
         if (error.message.includes('not found') || error.message.includes('does not exist')) {
-          errorMessage = "Document file not found. It may have been moved or deleted.";
+          errorMessage = "Document file not found.";
         } else if (error.message.includes('access') || error.message.includes('permission')) {
-          errorMessage = "Access denied. You don't have permission to view this file.";
-        } else if (error.message.includes('bucket')) {
-          errorMessage = "Storage configuration error. Please contact support.";
+          errorMessage = "Access denied.";
         }
         
         toast({
@@ -465,7 +471,7 @@ export const useUnifiedDocuments = (branchId: string) => {
       console.error('View error:', error);
       toast({
         title: "View Failed",
-        description: "An unexpected error occurred while opening the document. Please try again.",
+        description: "An unexpected error occurred while opening the document.",
         variant: "destructive",
       });
     }

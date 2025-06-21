@@ -14,7 +14,9 @@ import {
   Building,
   Calendar,
   ChevronDown,
-  MoreHorizontal
+  MoreHorizontal,
+  AlertCircle,
+  CheckCircle
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -89,7 +91,6 @@ export function UnifiedDocumentsList({
   }, [documents, searchQuery, categoryFilter, entityFilter, sourceFilter, activeTab]);
 
   const getDocumentIcon = (type: string, category: string) => {
-    // You can customize icons based on type/category
     return <FileText className="h-4 w-4 text-blue-600" />;
   };
 
@@ -100,6 +101,26 @@ export function UnifiedDocumentsList({
       case 'agreement_files': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const getFileStatusIcon = (hasFile?: boolean, filePath?: string) => {
+    if (!filePath || filePath === '<nil>' || filePath === 'null' || filePath === 'undefined') {
+      return <AlertCircle className="h-4 w-4 text-red-500" title="No file attached" />;
+    }
+    
+    if (hasFile === false) {
+      return <AlertCircle className="h-4 w-4 text-orange-500" title="File not found in storage" />;
+    }
+    
+    return <CheckCircle className="h-4 w-4 text-green-500" title="File available" />;
+  };
+
+  const canDownloadOrView = (doc: UnifiedDocument) => {
+    return doc.file_path && 
+           doc.file_path !== '<nil>' && 
+           doc.file_path !== 'null' && 
+           doc.file_path !== 'undefined' &&
+           doc.has_file !== false;
   };
 
   if (isLoading) {
@@ -237,7 +258,10 @@ export function UnifiedDocumentsList({
                               {getDocumentIcon(doc.type, doc.category)}
                             </div>
                             <div className="min-w-0">
-                              <p className="font-medium truncate">{doc.name}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium truncate">{doc.name}</p>
+                                {getFileStatusIcon(doc.has_file, doc.file_path)}
+                              </div>
                               <div className="flex items-center gap-2 text-sm text-gray-500">
                                 <span>{doc.type}</span>
                                 {doc.file_size && (
@@ -302,7 +326,7 @@ export function UnifiedDocumentsList({
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              {doc.file_path && (
+                              {canDownloadOrView(doc) ? (
                                 <>
                                   <DropdownMenuItem onClick={() => onViewDocument(doc.file_path!)}>
                                     <Eye className="mr-2 h-4 w-4" />
@@ -313,6 +337,11 @@ export function UnifiedDocumentsList({
                                     Download
                                   </DropdownMenuItem>
                                 </>
+                              ) : (
+                                <DropdownMenuItem disabled>
+                                  <AlertCircle className="mr-2 h-4 w-4" />
+                                  File not available
+                                </DropdownMenuItem>
                               )}
                               {onEditDocument && doc.source_table === 'documents' && (
                                 <DropdownMenuItem onClick={() => onEditDocument(doc)}>
