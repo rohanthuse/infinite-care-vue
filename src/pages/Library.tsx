@@ -2,46 +2,39 @@
 import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { TabNavigation } from "@/components/TabNavigation";
 import { LibraryResourcesList } from "@/components/library/LibraryResourcesList";
 import { LibraryResourceForm } from "@/components/library/LibraryResourceForm";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 const Library = () => {
   const { id, branchName } = useParams();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("view");
   const [activeNavTab, setActiveNavTab] = useState("library");
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const decodedBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
 
-  // Set page title
   useEffect(() => {
     document.title = `Library | ${decodedBranchName}`;
   }, [decodedBranchName]);
   
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-  };
-  
   const handleNavTabChange = (value: string) => {
     setActiveNavTab(value);
     
-    // Navigate to the appropriate route based on the selected tab
     if (value !== "library") {
-      navigate(`/branch-dashboard/${id}/${encodeURIComponent(decodedBranchName)}/${value}`);
+      if (id && branchName) {
+        navigate(`/admin/branch-dashboard/${id}/${encodeURIComponent(decodedBranchName)}/${value}`);
+      } else {
+        navigate(`/admin/${value}`);
+      }
     }
   };
   
   const handleNewBooking = () => {
     toast.info("New booking functionality will be implemented soon");
-  };
-
-  const handleResourceAdded = () => {
-    // Switch to the view tab after a resource is added successfully
-    setActiveTab("view");
-    toast.success("Resource added successfully to the library");
   };
 
   return (
@@ -63,59 +56,29 @@ const Library = () => {
           />
         </div>
         
-        <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-2xl font-bold">Library Resources</h2>
-            <p className="text-gray-500 mt-1">Add, manage and share educational and reference materials</p>
+        <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Resource Library</h2>
+              <p className="text-gray-500 mt-1">Manage training materials, guides, and resources</p>
+            </div>
+            <Button onClick={() => setShowCreateForm(true)} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Resource
+            </Button>
           </div>
           
-          <Tabs 
-            value={activeTab} 
-            onValueChange={handleTabChange} 
-            className="w-full flex flex-col flex-1"
-          >
-            <div className="bg-gray-50 border-b border-gray-100 p-1.5 sm:p-2.5 sticky top-0 z-20">
-              <TabsList className="w-full grid grid-cols-2 rounded-md overflow-hidden bg-gray-100/80 p-0.5 sm:p-1">
-                <TabsTrigger 
-                  value="add" 
-                  className="text-base font-medium py-2.5 rounded-md transition-all duration-200 data-[state=active]:text-blue-700 data-[state=active]:shadow-sm data-[state=active]:bg-white"
-                >
-                  Add Resource
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="view" 
-                  className="text-base font-medium py-2.5 rounded-md transition-all duration-200 data-[state=active]:text-blue-700 data-[state=active]:shadow-sm data-[state=active]:bg-white"
-                >
-                  Browse Resources
-                </TabsTrigger>
-              </TabsList>
-            </div>
-            
-            <div className="flex-1 overflow-hidden">
-              <TabsContent 
-                value="add" 
-                className="p-0 focus:outline-none m-0 h-full overflow-y-auto"
-              >
-                <div className="p-4 md:p-6 max-w-full">
-                  <LibraryResourceForm 
-                    branchId={id || ""} 
-                    onResourceAdded={handleResourceAdded}
-                  />
-                </div>
-              </TabsContent>
-              <TabsContent 
-                value="view" 
-                className="p-0 focus:outline-none m-0 h-full overflow-y-auto"
-              >
-                <div className="p-4 md:p-6 max-w-full">
-                  <LibraryResourcesList 
-                    branchId={id || ""} 
-                    onAddNew={() => handleTabChange("add")}
-                  />
-                </div>
-              </TabsContent>
-            </div>
-          </Tabs>
+          <div className="p-6">
+            {showCreateForm ? (
+              <LibraryResourceForm 
+                branchId={id || ""} 
+                onSuccess={() => setShowCreateForm(false)}
+                onCancel={() => setShowCreateForm(false)}
+              />
+            ) : (
+              <LibraryResourcesList branchId={id || ""} />
+            )}
+          </div>
         </div>
       </main>
     </div>

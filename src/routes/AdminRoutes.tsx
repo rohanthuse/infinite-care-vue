@@ -65,6 +65,7 @@ const AdminRoutes = () => {
         <Route path="services" element={<Services />} />
         <Route path="settings" element={<Settings />} />
         <Route path="agreement" element={<Agreement />} />
+        <Route path="agreement/:id/:branchName" element={<Agreement />} />
         
         {/* Parameter management routes */}
         <Route path="hobbies" element={<Hobbies />} />
@@ -82,9 +83,45 @@ const AdminRoutes = () => {
         <Route path="workflow" element={<Workflow />} />
         <Route path="workflow/:id/:branchName" element={<Workflow />} />
         <Route path="task-matrix" element={<TaskMatrix branchId="main" branchName="Main Branch" />} />
+        <Route path="task-matrix/:id/:branchName" element={<TaskMatrix />} />
         <Route path="training-matrix" element={<TrainingMatrix branchId="main" branchName="Main Branch" />} />
+        <Route path="training-matrix/:id/:branchName" element={<TrainingMatrix />} />
         <Route path="key-parameters" element={<KeyParameters />} />
         <Route path="booking-approvals" element={<BookingApprovals />} />
+        
+        {/* Attendance routes */}
+        <Route path="attendance" element={<Attendance />} />
+        <Route path="attendance/:id/:branchName" element={<Attendance />} />
+        
+        {/* Events and logs routes */}
+        <Route path="events-logs" element={<EventsLogs />} />
+        <Route path="events-logs/:id/:branchName" element={<EventsLogs />} />
+        
+        {/* Form builder routes */}
+        <Route path="form-builder" element={<FormBuilder />} />
+        <Route path="form-builder/:id/:branchName" element={<FormBuilder />} />
+        <Route path="form-builder/:formId" element={<FormBuilder />} />
+        <Route path="form-builder/:id/:branchName/:formId" element={<FormBuilder />} />
+        
+        {/* Documents routes */}
+        <Route path="documents" element={<Documents />} />
+        <Route path="documents/:id/:branchName" element={<Documents />} />
+        
+        {/* Library routes */}
+        <Route path="library" element={<Library />} />
+        <Route path="library/:id/:branchName" element={<Library />} />
+        
+        {/* Third party access routes */}
+        <Route path="third-party" element={<ThirdPartyAccess />} />
+        <Route path="third-party/:id/:branchName" element={<ThirdPartyAccess />} />
+        
+        {/* Reports routes */}
+        <Route path="reports" element={<Reports />} />
+        <Route path="reports/:id/:branchName" element={<Reports />} />
+        
+        {/* Notifications with branch context */}
+        <Route path="notifications/:id/:branchName" element={<Notifications />} />
+        <Route path="notifications/:id/:branchName/:categoryId" element={<Notifications />} />
         
         {/* Branch dashboard routes - Fixed to properly handle nested routing */}
         <Route path="branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
