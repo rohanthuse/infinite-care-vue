@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -209,6 +208,25 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
     .reduce((sum, rate) => sum + rate.amount, 0) / 
     (filteredRates.filter(r => r.rate_type === 'hourly' && r.status === 'active').length || 1);
 
+  // Transform database ServiceRate to UI ServiceRate format for the table
+  const transformedRates = filteredRates.map(rate => ({
+    id: rate.id,
+    serviceName: rate.service_name,
+    serviceCode: rate.service_code,
+    rateType: rate.rate_type as any,
+    amount: rate.amount,
+    effectiveFrom: rate.effective_from,
+    effectiveTo: rate.effective_to,
+    description: rate.description,
+    applicableDays: rate.applicable_days,
+    clientType: rate.client_type as any,
+    fundingSource: rate.funding_source as any,
+    status: rate.status as any,
+    lastUpdated: rate.updated_at,
+    createdBy: rate.created_by,
+    isDefault: rate.is_default
+  }));
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -286,6 +304,7 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
           </Button>
         </div>
       </div>
+      
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -376,9 +395,17 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       ) : (
         <div className="bg-white border rounded-lg shadow-sm">
           <RatesTable
-            rates={filteredRates}
-            onViewRate={handleViewRate}
-            onEditRate={handleEditRate}
+            rates={transformedRates}
+            onViewRate={(uiRate) => {
+              // Find the original database rate using the ID
+              const dbRate = rates.find(r => r.id === uiRate.id);
+              if (dbRate) handleViewRate(dbRate);
+            }}
+            onEditRate={(uiRate) => {
+              // Find the original database rate using the ID
+              const dbRate = rates.find(r => r.id === uiRate.id);
+              if (dbRate) handleEditRate(dbRate);
+            }}
             onDeleteRate={handleDeleteRate}
           />
         </div>
@@ -401,7 +428,11 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       <ViewRateDialog
         open={isViewRateDialogOpen}
         onClose={() => setIsViewRateDialogOpen(false)}
-        onEdit={handleEditRate}
+        onEdit={(rate) => {
+          // Find the database rate using the UI rate ID
+          const dbRate = rates.find(r => r.id === rate.id);
+          if (dbRate) handleEditRate(dbRate);
+        }}
         rate={selectedRate}
       />
       
