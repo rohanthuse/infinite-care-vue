@@ -51,11 +51,25 @@ export function UnifiedDocumentsList({
   const [sourceFilter, setSourceFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("all");
 
-  // Get unique values for filters
+  // Get unique values for filters, filtering out empty/null/undefined values
   const { categories, entities, sources } = useMemo(() => {
-    const categories = Array.from(new Set(documents.map(d => d.category))).sort();
-    const entities = Array.from(new Set(documents.map(d => d.related_entity))).sort();
-    const sources = Array.from(new Set(documents.map(d => d.source_table))).sort();
+    const categories = Array.from(new Set(
+      documents
+        .map(d => d.category)
+        .filter(cat => cat && cat.trim() !== '')
+    )).sort();
+    
+    const entities = Array.from(new Set(
+      documents
+        .map(d => d.related_entity)
+        .filter(entity => entity && entity.trim() !== '')
+    )).sort();
+    
+    const sources = Array.from(new Set(
+      documents
+        .map(d => d.source_table)
+        .filter(source => source && source.trim() !== '')
+    )).sort();
     
     return { categories, entities, sources };
   }, [documents]);
