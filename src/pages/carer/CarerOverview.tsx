@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -13,6 +12,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerBranch } from "@/hooks/useCarerBranch";
+import { AttendanceStatusWidget } from "@/components/attendance/AttendanceStatusWidget";
 import TaskDetailDialog from "@/components/carer/TaskDetailDialog";
 
 // Mock data for upcoming appointments
@@ -87,6 +89,8 @@ const initialTasks = [
 const CarerOverview: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useCarerAuth();
+  const { data: carerBranch, isLoading: isBranchLoading } = useCarerBranch();
   const carerName = localStorage.getItem("carerName") || "Carer";
   const [tasks, setTasks] = useState(initialTasks);
   const [selectedTask, setSelectedTask] = useState<any>(null);
@@ -159,6 +163,19 @@ const CarerOverview: React.FC = () => {
         <h1 className="text-2xl font-bold">Your Dashboard</h1>
         <p className="text-gray-500">{formattedDate}</p>
       </div>
+
+      {/* Add Attendance Widget */}
+      {user && carerBranch && !isBranchLoading && (
+        <div className="mb-6">
+          <AttendanceStatusWidget
+            personId={user.id}
+            personType="staff"
+            branchId={carerBranch.branch_id}
+            personName={`${carerBranch.first_name} ${carerBranch.last_name}`}
+            showActions={true}
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card>

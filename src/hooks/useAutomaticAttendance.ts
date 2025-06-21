@@ -30,26 +30,30 @@ export const useAutomaticAttendance = () => {
         // Check if attendance record already exists for today
         const { data: existingRecord } = await supabase
           .from('attendance_records')
-          .select('id')
+          .select('id, check_in_time')
           .eq('person_id', data.personId)
           .eq('attendance_date', today)
           .single();
 
         if (existingRecord) {
-          // Update existing record with check-in time
-          const { data: updatedRecord, error } = await supabase
-            .from('attendance_records')
-            .update({
-              status: 'present',
-              check_in_time: currentTime,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', existingRecord.id)
-            .select()
-            .single();
+          // Update existing record with check-in time (only if not already checked in)
+          if (!existingRecord.check_in_time) {
+            const { data: updatedRecord, error } = await supabase
+              .from('attendance_records')
+              .update({
+                status: 'present',
+                check_in_time: currentTime,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingRecord.id)
+              .select()
+              .single();
 
-          if (error) throw error;
-          return updatedRecord;
+            if (error) throw error;
+            return updatedRecord;
+          } else {
+            throw new Error('Already checked in for today');
+          }
         } else {
           // Create new attendance record
           const { data: newRecord, error } = await supabase
@@ -61,7 +65,8 @@ export const useAutomaticAttendance = () => {
               attendance_date: today,
               status: 'present',
               check_in_time: currentTime,
-              hours_worked: 0
+              hours_worked: 0,
+              notes: data.bookingId ? `Auto check-in from booking ${data.bookingId}` : 'Manual check-in'
             })
             .select()
             .single();
@@ -73,13 +78,17 @@ export const useAutomaticAttendance = () => {
         // Check out - update existing record
         const { data: existingRecord } = await supabase
           .from('attendance_records')
-          .select('id, check_in_time')
+          .select('id, check_in_time, check_out_time')
           .eq('person_id', data.personId)
           .eq('attendance_date', today)
           .single();
 
         if (!existingRecord) {
           throw new Error('No check-in record found for today');
+        }
+
+        if (existingRecord.check_out_time) {
+          throw new Error('Already checked out for today');
         }
 
         // Calculate hours worked
@@ -91,11 +100,16 @@ export const useAutomaticAttendance = () => {
           hoursWorked = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
         }
 
+        const updateNotes = data.bookingId 
+          ? `Auto check-out from booking ${data.bookingId}` 
+          : 'Manual check-out';
+
         const { data: updatedRecord, error } = await supabase
           .from('attendance_records')
           .update({
             check_out_time: currentTime,
             hours_worked: hoursWorked,
+            notes: updateNotes,
             updated_at: new Date().toISOString()
           })
           .eq('id', existingRecord.id)

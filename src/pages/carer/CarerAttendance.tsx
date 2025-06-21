@@ -18,70 +18,51 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-
-// Mock attendance data
-const mockAttendanceHistory = [
-  {
-    date: "2025-04-29",
-    checkIn: "08:45 AM",
-    checkOut: "05:15 PM",
-    hours: "8.5",
-    location: "Med-Infinite Office"
-  },
-  {
-    date: "2025-04-28",
-    checkIn: "08:55 AM",
-    checkOut: "05:05 PM",
-    hours: "8.17",
-    location: "Med-Infinite Office"
-  },
-  {
-    date: "2025-04-25",
-    checkIn: "09:00 AM",
-    checkOut: "04:45 PM",
-    hours: "7.75",
-    location: "Remote"
-  },
-  {
-    date: "2025-04-24",
-    checkIn: "08:30 AM",
-    checkOut: "05:30 PM",
-    hours: "9",
-    location: "Med-Infinite Office"
-  },
-  {
-    date: "2025-04-23",
-    checkIn: "09:15 AM",
-    checkOut: "05:00 PM",
-    hours: "7.75",
-    location: "Remote"
-  }
-];
+import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerBranch } from "@/hooks/useCarerBranch";
+import { useAttendanceRecords } from "@/hooks/useAttendanceRecords";
+import { useAutomaticAttendance, useGetTodayAttendance } from "@/hooks/useAutomaticAttendance";
+import { AttendanceStatusWidget } from "@/components/attendance/AttendanceStatusWidget";
 
 const CarerAttendance: React.FC = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [checkedIn, setCheckedIn] = useState(false);
-  const [checkedOut, setCheckedOut] = useState(false);
-  const [checkInTime, setCheckInTime] = useState<string | null>(null);
-  const [checkOutTime, setCheckOutTime] = useState<string | null>(null);
+  const { user } = useCarerAuth();
+  const { data: carerBranch } = useCarerBranch();
   
-  const handleCheckIn = () => {
-    const now = new Date();
-    setCheckInTime(format(now, "hh:mm a"));
-    setCheckedIn(true);
-  };
-  
-  const handleCheckOut = () => {
-    const now = new Date();
-    setCheckOutTime(format(now, "hh:mm a"));
-    setCheckedOut(true);
-  };
+  // Get attendance records for the carer
+  const { data: attendanceRecords = [], isLoading } = useAttendanceRecords(
+    carerBranch?.branch_id || "",
+    {
+      attendanceType: 'staff',
+      dateRange: {
+        from: new Date(new Date().setDate(new Date().getDate() - 30)), // Last 30 days
+        to: new Date()
+      }
+    }
+  );
+
+  // Filter records for current user
+  const myAttendanceRecords = attendanceRecords.filter(
+    record => record.person_id === user?.id
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-muted-foreground">Loading attendance data...</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Attendance</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Today's Attendance Widget */}
         <Card className="md:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle>Today's Attendance</CardTitle>
@@ -90,45 +71,17 @@ const CarerAttendance: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {(!checkedIn && !checkedOut) ? (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
-                  <Clock className="h-8 w-8 text-blue-600" />
-                </div>
-                <h3 className="text-lg font-medium mb-2">Start your day</h3>
-                <p className="text-gray-500 mb-6">You haven't checked in yet.</p>
-                <Button className="gap-2" onClick={handleCheckIn}>
-                  <Clock className="h-4 w-4" />
-                  <span>Check In Now</span>
-                </Button>
-              </div>
-            ) : checkedIn && !checkedOut ? (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                  <Check className="h-8 w-8 text-green-600" />
-                </div>
-                <h3 className="text-lg font-medium mb-2">You're checked in</h3>
-                <p className="text-gray-500 mb-2">Check-in time: <span className="font-medium">{checkInTime}</span></p>
-                <div className="flex justify-center mt-6">
-                  <Button className="gap-2" onClick={handleCheckOut}>
-                    <Clock className="h-4 w-4" />
-                    <span>Check Out</span>
-                  </Button>
-                </div>
-              </div>
+            {user && carerBranch ? (
+              <AttendanceStatusWidget
+                personId={user.id}
+                personType="staff"
+                branchId={carerBranch.branch_id}
+                personName={`${carerBranch.first_name} ${carerBranch.last_name}`}
+                showActions={true}
+              />
             ) : (
               <div className="text-center py-8">
-                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                  <Check className="h-8 w-8 text-green-600" />
-                </div>
-                <h3 className="text-lg font-medium mb-2">Day completed</h3>
-                <div className="space-y-1 mb-4">
-                  <p className="text-gray-500">Check-in time: <span className="font-medium">{checkInTime}</span></p>
-                  <p className="text-gray-500">Check-out time: <span className="font-medium">{checkOutTime}</span></p>
-                </div>
-                <div className="px-4 py-2 bg-gray-50 rounded-lg inline-block">
-                  <p className="text-sm">Thanks for your work today!</p>
-                </div>
+                <p className="text-gray-500">Loading your attendance status...</p>
               </div>
             )}
           </CardContent>
@@ -176,36 +129,55 @@ const CarerAttendance: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Check In</TableHead>
-                <TableHead>Check Out</TableHead>
-                <TableHead>Hours</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead className="text-right">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockAttendanceHistory.map((record, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">
-                    {format(new Date(record.date), "dd MMM yyyy")}
-                  </TableCell>
-                  <TableCell>{record.checkIn}</TableCell>
-                  <TableCell>{record.checkOut}</TableCell>
-                  <TableCell>{record.hours}</TableCell>
-                  <TableCell>{record.location}</TableCell>
-                  <TableCell className="text-right">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                      Completed
-                    </span>
-                  </TableCell>
+          {myAttendanceRecords.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Check In</TableHead>
+                  <TableHead>Check Out</TableHead>
+                  <TableHead>Hours</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Notes</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {myAttendanceRecords.map((record) => (
+                  <TableRow key={record.id}>
+                    <TableCell className="font-medium">
+                      {format(new Date(record.attendance_date), "dd MMM yyyy")}
+                    </TableCell>
+                    <TableCell>{record.check_in_time || '-'}</TableCell>
+                    <TableCell>{record.check_out_time || '-'}</TableCell>
+                    <TableCell>{record.hours_worked || '0'}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        record.status === 'present' 
+                          ? 'bg-green-100 text-green-700'
+                          : record.status === 'late'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : record.status === 'absent'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right text-sm text-gray-500">
+                      {record.notes || '-'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No attendance records found.</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Your attendance will appear here once you start checking in.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
