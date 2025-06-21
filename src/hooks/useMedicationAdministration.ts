@@ -174,6 +174,11 @@ export function useRecordMedicationAdministration() {
       queryClient.invalidateQueries({ queryKey: ['medication-stats'] });
       queryClient.invalidateQueries({ queryKey: ['pending-medications'] });
       
+      // Invalidate chart data queries
+      queryClient.invalidateQueries({ queryKey: ['medication-trend-data'] });
+      queryClient.invalidateQueries({ queryKey: ['medication-type-distribution'] });
+      queryClient.invalidateQueries({ queryKey: ['time-of-day-distribution'] });
+      
       toast.success('Medication administration recorded successfully');
       
       // Trigger real-time updates for other users
@@ -265,6 +270,11 @@ export function useRealTimeMedicationUpdates(branchId?: string) {
           queryClient.invalidateQueries({ queryKey: ['mar'] });
           queryClient.invalidateQueries({ queryKey: ['medication-stats'] });
           queryClient.invalidateQueries({ queryKey: ['pending-medications'] });
+          
+          // Invalidate chart data queries for real-time chart updates
+          queryClient.invalidateQueries({ queryKey: ['medication-trend-data'] });
+          queryClient.invalidateQueries({ queryKey: ['medication-type-distribution'] });
+          queryClient.invalidateQueries({ queryKey: ['time-of-day-distribution'] });
         })
         .on('postgres_changes', {
           event: '*',
@@ -274,6 +284,8 @@ export function useRealTimeMedicationUpdates(branchId?: string) {
           console.log('Medication administration change:', payload);
           queryClient.invalidateQueries({ queryKey: ['mar'] });
           queryClient.invalidateQueries({ queryKey: ['medication-stats'] });
+          queryClient.invalidateQueries({ queryKey: ['medication-trend-data'] });
+          queryClient.invalidateQueries({ queryKey: ['time-of-day-distribution'] });
         })
         .on('postgres_changes', {
           event: '*',
@@ -283,6 +295,7 @@ export function useRealTimeMedicationUpdates(branchId?: string) {
           console.log('Medication change:', payload);
           queryClient.invalidateQueries({ queryKey: ['medications'] });
           queryClient.invalidateQueries({ queryKey: ['pending-medications'] });
+          queryClient.invalidateQueries({ queryKey: ['medication-type-distribution'] });
         })
         .subscribe();
 

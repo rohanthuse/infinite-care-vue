@@ -550,7 +550,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
               </Card>
             </div>
             
-            <MedChartData viewType="overview" />
+            <MedChartData viewType="overview" branchId={branchId} />
             
             <div className="mt-4 flex justify-end">
               <Button onClick={() => navigation.navigateToReports()}>
