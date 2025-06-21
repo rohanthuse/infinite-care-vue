@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { 
   Search, Filter, Plus, Download, Pill, Clock, Calendar, ChevronLeft, ChevronRight, 
   Edit, Eye, Trash, ArrowLeft, User, FileText, ClipboardList, Stethoscope,
-  Clock7, AlertCircle, CheckCircle2
+  Clock7, AlertCircle, CheckCircle2, ExternalLink
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,13 +13,15 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
 } from "@/components/ui/select";
 import { AddMedicationDialog } from "./AddMedicationDialog";
+import { MedicationAdministrationDialog } from "./MedicationAdministrationDialog";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import PatientMedicationDetail from "./PatientMedicationDetail";
 import MedChartData from "./MedChartData";
 import { usePatientsWithMedications, useMedicationStats } from "@/hooks/useMedicationPatients";
-import { usePendingMedications } from "@/hooks/useMedicationAdministration";
+import { usePendingMedications, useRealTimeMedicationUpdates } from "@/hooks/useMedicationAdministration";
+import { useMedicationNavigation } from "@/hooks/useMedicationNavigation";
 
 interface MedicationTabProps {
   branchId: string | undefined;
@@ -30,15 +32,21 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
   const [searchValue, setSearchValue] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [addMedicationDialogOpen, setAddMedicationDialogOpen] = useState(false);
+  const [administrationDialogOpen, setAdministrationDialogOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
+  const [selectedMedicationForAdmin, setSelectedMedicationForAdmin] = useState<any>(null);
   const [viewMode, setViewMode] = useState<"patients" | "pending" | "mar">("patients");
   
   const itemsPerPage = 5;
+  const navigation = useMedicationNavigation();
 
-  // Use the new hooks
+  // Use the enhanced hooks with real-time updates
   const { data: patients = [], isLoading: patientsLoading } = usePatientsWithMedications(branchId);
   const { data: medicationStats } = useMedicationStats(branchId);
   const { data: pendingMedications = [] } = usePendingMedications(branchId);
+  
+  // Set up real-time updates
+  useRealTimeMedicationUpdates(branchId);
   
   const filteredPatients = patients.filter(patient => {
     const matchesSearch = 
@@ -80,6 +88,11 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
     setSelectedPatient(null);
   };
 
+  const handleAdministerMedication = (medication: any) => {
+    setSelectedMedicationForAdmin(medication);
+    setAdministrationDialogOpen(true);
+  };
+
   const getSelectedPatient = () => {
     return patients.find(patient => patient.id === selectedPatient);
   };
@@ -108,7 +121,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
               <div>
                 <h2 className="text-2xl font-bold">{patient ? `${patient.first_name} ${patient.last_name}` : "Unknown Patient"}</h2>
                 <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
-                  <span>ID: {patient?.id}</span>
+                  <span>ID: {patient?.id.slice(-8)}</span>
                   <span>DOB: {patient?.date_of_birth ? format(new Date(patient.date_of_birth), 'dd/MM/yyyy') : 'N/A'}</span>
                   <span>Gender: {patient?.gender || 'N/A'}</span>
                 </div>
@@ -116,7 +129,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
             </div>
             
             <div className="flex gap-2">
-              <Button variant="outline">
+              <Button variant="outline" onClick={() => navigation.navigateToClientProfile(selectedPatient)}>
                 <User className="h-4 w-4 mr-2" />
                 Patient Profile
               </Button>
@@ -154,7 +167,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
               <Filter className="h-4 w-4" />
             </Button>
             
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="icon" onClick={() => navigation.navigateToReports()}>
               <Download className="h-4 w-4" />
             </Button>
             
@@ -231,14 +244,14 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
             className="data-[state=active]:bg-white rounded-md px-4 py-2"
             onClick={() => setViewMode("patients")}
           >
-            Patients
+            Patients ({patients.length})
           </TabsTrigger>
           <TabsTrigger 
             value="pending" 
             className="data-[state=active]:bg-white rounded-md px-4 py-2"
             onClick={() => setViewMode("pending")}
           >
-            Pending Medications
+            Pending ({pendingMedications.length})
           </TabsTrigger>
           <TabsTrigger 
             value="mar" 
@@ -321,10 +334,21 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
                           className="h-8 w-8"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handlePatientSelect(patient.id);
+                            navigation.navigateToBookings(patient.id);
                           }}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Calendar className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigation.navigateToClientProfile(patient.id);
+                          }}
+                        >
+                          <ExternalLink className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -377,7 +401,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
           <CardContent className="pt-6">
             <div className="flex justify-between mb-4">
               <h3 className="text-lg font-semibold">Pending Medications</h3>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => navigation.navigateToReports()}>
                 <Clock className="h-4 w-4 mr-2" />
                 View All
               </Button>
@@ -402,8 +426,18 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
                           <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-medium">
                             {medication.client_care_plans?.clients?.first_name?.[0]}{medication.client_care_plans?.clients?.last_name?.[0]}
                           </div>
-                          <div className="font-medium">
-                            {medication.client_care_plans?.clients?.first_name} {medication.client_care_plans?.clients?.last_name}
+                          <div>
+                            <div className="font-medium">
+                              {medication.client_care_plans?.clients?.first_name} {medication.client_care_plans?.clients?.last_name}
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="p-0 h-auto text-xs text-blue-600 hover:text-blue-800"
+                              onClick={() => handlePatientSelect(medication.client_care_plans?.client_id || '')}
+                            >
+                              View Details
+                            </Button>
                           </div>
                         </div>
                       </TableCell>
@@ -418,7 +452,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm">
+                        <Button size="sm" onClick={() => handleAdministerMedication(medication)}>
                           <CheckCircle2 className="h-4 w-4 mr-1" />
                           Administer
                         </Button>
@@ -459,7 +493,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
                     <SelectItem value="this-month">This Month</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => navigation.navigateToReports()}>
                   <FileText className="h-4 w-4 mr-2" />
                   Export Report
                 </Button>
@@ -519,7 +553,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
             <MedChartData viewType="overview" />
             
             <div className="mt-4 flex justify-end">
-              <Button>
+              <Button onClick={() => navigation.navigateToReports()}>
                 View Detailed Reports
               </Button>
             </div>
@@ -530,6 +564,12 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
       <AddMedicationDialog 
         open={addMedicationDialogOpen} 
         onOpenChange={setAddMedicationDialogOpen} 
+      />
+      
+      <MedicationAdministrationDialog
+        open={administrationDialogOpen}
+        onOpenChange={setAdministrationDialogOpen}
+        medication={selectedMedicationForAdmin}
       />
     </div>
   );

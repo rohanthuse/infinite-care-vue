@@ -1,11 +1,10 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Clock, Pill, FileText, MoreHorizontal, AlertCircle, CheckCircle, AlertTriangle } from "lucide-react";
+import { Calendar, Clock, Pill, FileText, MoreHorizontal, AlertCircle, CheckCircle, AlertTriangle, ExternalLink, User, UserCheck, CalendarDays } from "lucide-react";
 import { format, addDays, subDays } from "date-fns";
 import { 
   DropdownMenu,
@@ -18,7 +17,8 @@ import {
 import { toast } from "sonner";
 import MedChartData from "./MedChartData";
 import { useMedicationsByClient } from "@/hooks/useMedications";
-import { useMARByClient, useRecordMedicationAdministration, MedicationAdministrationRecord } from "@/hooks/useMedicationAdministration";
+import { useMARByClient, useRecordMedicationAdministration, useRealTimeMedicationUpdates, MedicationAdministrationRecord } from "@/hooks/useMedicationAdministration";
+import { useMedicationNavigation } from "@/hooks/useMedicationNavigation";
 
 interface PatientMedicationDetailProps {
   patientId: string;
@@ -27,28 +27,50 @@ interface PatientMedicationDetailProps {
 const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patientId }) => {
   const [activeTab, setActiveTab] = useState("medications");
   
-  // Use real data hooks
+  // Use real data hooks with enhanced functionality
   const { data: medications = [], isLoading: medicationsLoading } = useMedicationsByClient(patientId);
   const { data: marRecords = [], isLoading: marLoading } = useMARByClient(patientId, {
     start: subDays(new Date(), 6).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
   });
   const recordAdministration = useRecordMedicationAdministration();
+  const navigation = useMedicationNavigation();
   
-  const handleActionClick = (action: string, medicationId: string) => {
-    if (action === "Record") {
-      // Open medication administration dialog
-      recordAdministration.mutate({
-        medication_id: medicationId,
-        administered_at: new Date().toISOString(),
-        administered_by: "Current User", // This should come from auth context
-        status: "given",
-        notes: ""
-      });
-    } else {
-      toast.success(`${action} action for medication ${medicationId}`, {
-        description: "This feature will be implemented soon",
-      });
+  // Set up real-time updates
+  useRealTimeMedicationUpdates();
+  
+  const handleActionClick = (action: string, medicationId: string, medication?: any) => {
+    switch (action) {
+      case "Record":
+        recordAdministration.mutate({
+          medication_id: medicationId,
+          administered_at: new Date().toISOString(),
+          status: "given",
+          notes: ""
+        });
+        break;
+      case "View":
+        if (medication?.client_care_plans?.id) {
+          navigation.navigateToCarePlan(medication.client_care_plans.id);
+        }
+        break;
+      case "EditCarePlan":
+        if (medication?.client_care_plans?.id) {
+          navigation.navigateToCarePlan(medication.client_care_plans.id);
+        }
+        break;
+      case "ViewBookings":
+        navigation.navigateToBookings(patientId);
+        break;
+      case "ViewStaff":
+        if (medication?.administered_by_staff?.id) {
+          navigation.navigateToStaffProfile(medication.administered_by_staff.id);
+        }
+        break;
+      default:
+        toast.success(`${action} action for medication`, {
+          description: "This feature will be implemented soon",
+        });
     }
   };
   
@@ -90,272 +112,342 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
   }
 
   return (
-    <Tabs defaultValue="medications" value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="mb-6 bg-white border border-gray-100 rounded-xl shadow-sm p-1">
-        <TabsTrigger value="medications" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-800 rounded-lg px-4 py-2">
-          Medications
-        </TabsTrigger>
-        <TabsTrigger value="mar" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-800 rounded-lg px-4 py-2">
-          MAR Chart
-        </TabsTrigger>
-        <TabsTrigger value="records" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-800 rounded-lg px-4 py-2">
-          Records
-        </TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="medications" className="mt-0">
-        <div className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[80px]">ID</TableHead>
-                <TableHead>Medication</TableHead>
-                <TableHead>Dosage</TableHead>
-                <TableHead>Schedule</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {medications.map((medication) => (
-                <TableRow key={medication.id}>
-                  <TableCell className="font-medium">{medication.id.slice(-4)}</TableCell>
-                  <TableCell>
-                    <div className="font-medium">{medication.name}</div>
-                    <div className="text-xs text-gray-500">Care Plan: {medication.client_care_plans?.title || 'N/A'}</div>
-                  </TableCell>
-                  <TableCell>{medication.dosage}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <div className="flex items-center text-sm">
-                        <Calendar className="h-3.5 w-3.5 mr-1 text-gray-500" />
-                        <span>{medication.frequency}</span>
-                      </div>
-                      <div className="flex items-center text-xs text-gray-500 mt-1">
-                        <span>{format(new Date(medication.start_date), "MMM d, yyyy")}</span>
-                        {medication.end_date && (
-                          <span> - {format(new Date(medication.end_date), "MMM d, yyyy")}</span>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{renderStatusBadge(medication.status)}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleActionClick("View", medication.id)}>
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleActionClick("Edit", medication.id)}>
-                          Edit Medication
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleActionClick("Record", medication.id)}>
-                          Record Administration
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleActionClick("History", medication.id)}>
-                          View History
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {medication.status === "active" ? (
-                          <DropdownMenuItem onClick={() => handleActionClick("Discontinue", medication.id)} className="text-red-600">
-                            Discontinue
-                          </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem onClick={() => handleActionClick("Reactivate", medication.id)} className="text-green-600">
-                            Reactivate
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+    <div className="space-y-6">
+      {/* Quick Actions Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <UserCheck className="h-5 w-5" />
+            Quick Actions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            <Button variant="outline" onClick={() => navigation.navigateToBookings(patientId)}>
+              <CalendarDays className="h-4 w-4 mr-2" />
+              View Appointments
+            </Button>
+            <Button variant="outline" onClick={() => navigation.navigateToClientProfile(patientId)}>
+              <User className="h-4 w-4 mr-2" />
+              Client Profile
+            </Button>
+            <Button variant="outline" onClick={() => navigation.navigateToReports()}>
+              <FileText className="h-4 w-4 mr-2" />
+              Generate Report
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Tabs defaultValue="medications" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-6 bg-white border border-gray-100 rounded-xl shadow-sm p-1">
+          <TabsTrigger value="medications" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-800 rounded-lg px-4 py-2">
+            Medications
+          </TabsTrigger>
+          <TabsTrigger value="mar" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-800 rounded-lg px-4 py-2">
+            MAR Chart
+          </TabsTrigger>
+          <TabsTrigger value="records" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-800 rounded-lg px-4 py-2">
+            Records
+          </TabsTrigger>
+        </Tabs>
+        
+        <TabsContent value="medications" className="mt-0">
+          <div className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[80px]">ID</TableHead>
+                  <TableHead>Medication</TableHead>
+                  <TableHead>Dosage</TableHead>
+                  <TableHead>Schedule</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Care Plan</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          
-          {medications.length === 0 && (
-            <div className="py-8 text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-                <Pill className="h-6 w-6 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900">No medications found</h3>
-              <p className="text-gray-500 max-w-md mx-auto mt-2">
-                This patient doesn't have any medications recorded yet.
-              </p>
-            </div>
-          )}
-        </div>
-      </TabsContent>
-      
-      <TabsContent value="mar" className="mt-0">
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg">Medication Administration Record</CardTitle>
-                <CardDescription>Last 7 days</CardDescription>
-              </div>
-              <Button variant="outline" size="sm">
-                <FileText className="h-4 w-4 mr-2" />
-                Print MAR Chart
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <MedChartData patientId={patientId} viewType="patient" />
+              </TableHeader>
+              <TableBody>
+                {medications.map((medication) => (
+                  <TableRow key={medication.id}>
+                    <TableCell className="font-medium">{medication.id.slice(-4)}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{medication.name}</div>
+                      <div className="text-xs text-gray-500">ID: {medication.id.slice(-8)}</div>
+                    </TableCell>
+                    <TableCell>{medication.dosage}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <div className="flex items-center text-sm">
+                          <Calendar className="h-3.5 w-3.5 mr-1 text-gray-500" />
+                          <span>{medication.frequency}</span>
+                        </div>
+                        <div className="flex items-center text-xs text-gray-500 mt-1">
+                          <span>{format(new Date(medication.start_date), "MMM d, yyyy")}</span>
+                          {medication.end_date && (
+                            <span> - {format(new Date(medication.end_date), "MMM d, yyyy")}</span>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{renderStatusBadge(medication.status)}</TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="p-0 h-auto font-normal text-blue-600 hover:text-blue-800"
+                        onClick={() => handleActionClick("View", medication.id, medication)}
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        {medication.client_care_plans?.title || 'View Plan'}
+                      </Button>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleActionClick("Record", medication.id)}>
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Record Administration
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleActionClick("View", medication.id, medication)}>
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            View Care Plan
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleActionClick("ViewBookings", medication.id)}>
+                            <CalendarDays className="h-4 w-4 mr-2" />
+                            View Appointments
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleActionClick("History", medication.id)}>
+                            <FileText className="h-4 w-4 mr-2" />
+                            View History
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {medication.status === "active" ? (
+                            <DropdownMenuItem onClick={() => handleActionClick("Discontinue", medication.id)} className="text-red-600">
+                              Discontinue
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => handleActionClick("Reactivate", medication.id)} className="text-green-600">
+                              Reactivate
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
             
-            {marLoading ? (
+            {medications.length === 0 && (
               <div className="py-8 text-center">
-                <div className="text-center">
-                  <FileText className="h-12 w-12 mx-auto text-gray-400 mb-3 animate-pulse" />
-                  <h3 className="text-lg font-medium text-gray-900">Loading MAR records...</h3>
+                <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                  <Pill className="h-6 w-6 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900">No medications found</h3>
+                <p className="text-gray-500 max-w-md mx-auto mt-2">
+                  This patient doesn't have any medications recorded yet.
+                </p>
+                <div className="mt-4 space-x-2">
+                  <Button variant="outline" onClick={() => navigation.navigateToCarePlan('')}>
+                    Create Care Plan
+                  </Button>
+                  <Button variant="outline" onClick={() => navigation.navigateToBookings(patientId)}>
+                    Schedule Appointment
+                  </Button>
                 </div>
               </div>
-            ) : (
-              <div className="overflow-x-auto mt-6">
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="mar" className="mt-0">
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Medication Administration Record</CardTitle>
+                  <CardDescription>Last 7 days</CardDescription>
+                </div>
+                <Button variant="outline" size="sm">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Print MAR Chart
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <MedChartData patientId={patientId} viewType="patient" />
+              
+              {marLoading ? (
+                <div className="py-8 text-center">
+                  <div className="text-center">
+                    <FileText className="h-12 w-12 mx-auto text-gray-400 mb-3 animate-pulse" />
+                    <h3 className="text-lg font-medium text-gray-900">Loading MAR records...</h3>
+                  </div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto mt-6">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[180px]">Medication</TableHead>
+                        {Array.from({ length: 7 }, (_, i) => {
+                          const date = subDays(new Date(), 6 - i);
+                          return (
+                            <TableHead key={i} className="text-center min-w-[100px]">
+                              {format(date, "E")}
+                              <div className="text-xs font-normal text-gray-500">
+                                {format(date, "MMM d")}
+                              </div>
+                            </TableHead>
+                          );
+                        })}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {medications.map((medication) => {
+                        const medicationRecords = marRecords.filter(record => 
+                          record.medication_id === medication.id
+                        );
+                        
+                        return (
+                          <TableRow key={medication.id}>
+                            <TableCell>
+                              <div className="font-medium">{medication.name}</div>
+                              <div className="text-xs text-gray-500">{medication.dosage}</div>
+                            </TableCell>
+                            {Array.from({ length: 7 }, (_, i) => {
+                              const date = subDays(new Date(), 6 - i);
+                              const dayRecord = medicationRecords.find(record => 
+                                format(new Date(record.administered_at), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+                              );
+                              
+                              return (
+                                <TableCell key={i} className="text-center">
+                                  <div className="flex flex-col items-center justify-center">
+                                    {dayRecord ? renderMarStatus(dayRecord.status) : renderMarStatus('not_given')}
+                                    {dayRecord?.status === 'given' && (
+                                      <div className="mt-1 text-xs text-gray-500">
+                                        {format(new Date(dayRecord.administered_at), 'HH:mm')}
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              );
+                            })}
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+              
+              <div className="mt-6 flex gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                    <CheckCircle className="w-3 h-3 text-green-600" />
+                  </div>
+                  <span className="text-sm">Given</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center">
+                    <AlertCircle className="w-3 h-3 text-red-600" />
+                  </div>
+                  <span className="text-sm">Refused</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-yellow-100 flex items-center justify-center">
+                    <AlertTriangle className="w-3 h-3 text-yellow-600" />
+                  </div>
+                  <span className="text-sm">Not Given</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
+                    <MoreHorizontal className="w-3 h-3 text-gray-600" />
+                  </div>
+                  <span className="text-sm">Not Applicable</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="records" className="mt-0">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Medication Administration Records</CardTitle>
+              <CardDescription>Historical records of medication administration</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {marRecords.length === 0 ? (
+                <div className="text-center py-10">
+                  <Pill className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                  <h3 className="text-lg font-medium text-gray-900">No Records Available</h3>
+                  <p className="text-gray-500 max-w-md mx-auto mt-2">
+                    There are no medication administration records available at this time. Records will appear here once medications have been administered.
+                  </p>
+                  <Button variant="outline" className="mt-4" onClick={() => setActiveTab("medications")}>
+                    Record Administration
+                  </Button>
+                </div>
+              ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="min-w-[180px]">Medication</TableHead>
-                      {Array.from({ length: 7 }, (_, i) => {
-                        const date = subDays(new Date(), 6 - i);
-                        return (
-                          <TableHead key={i} className="text-center min-w-[100px]">
-                            {format(date, "E")}
-                            <div className="text-xs font-normal text-gray-500">
-                              {format(date, "MMM d")}
-                            </div>
-                          </TableHead>
-                        );
-                      })}
+                      <TableHead>Medication</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Administered By</TableHead>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead>Notes</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {medications.map((medication) => {
-                      const medicationRecords = marRecords.filter(record => 
-                        record.medication_id === medication.id
-                      );
-                      
-                      return (
-                        <TableRow key={medication.id}>
-                          <TableCell>
-                            <div className="font-medium">{medication.name}</div>
-                            <div className="text-xs text-gray-500">{medication.dosage}</div>
-                          </TableCell>
-                          {Array.from({ length: 7 }, (_, i) => {
-                            const date = subDays(new Date(), 6 - i);
-                            const dayRecord = medicationRecords.find(record => 
-                              format(new Date(record.administered_at), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
-                            );
-                            
-                            return (
-                              <TableCell key={i} className="text-center">
-                                <div className="flex flex-col items-center justify-center">
-                                  {dayRecord ? renderMarStatus(dayRecord.status) : renderMarStatus('not_given')}
-                                  {dayRecord?.status === 'given' && (
-                                    <div className="mt-1 text-xs text-gray-500">
-                                      {format(new Date(dayRecord.administered_at), 'HH:mm')}
-                                    </div>
-                                  )}
-                                </div>
-                              </TableCell>
-                            );
-                          })}
-                        </TableRow>
-                      );
-                    })}
+                    {marRecords.slice(0, 10).map((record) => (
+                      <TableRow key={record.id}>
+                        <TableCell>
+                          <div className="font-medium">{record.client_medications?.name}</div>
+                          <div className="text-xs text-gray-500">{record.client_medications?.dosage}</div>
+                        </TableCell>
+                        <TableCell>{renderStatusBadge(record.status)}</TableCell>
+                        <TableCell>
+                          <div className="font-medium">{record.administered_by}</div>
+                          {record.administered_by_staff && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="p-0 h-auto text-xs text-blue-600 hover:text-blue-800"
+                              onClick={() => handleActionClick("ViewStaff", record.id, record)}
+                            >
+                              View Profile
+                            </Button>
+                          )}
+                        </TableCell>
+                        <TableCell>{format(new Date(record.administered_at), 'MMM d, yyyy HH:mm')}</TableCell>
+                        <TableCell>{record.notes || '-'}</TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="sm">
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
-              </div>
-            )}
-            
-            <div className="mt-6 flex gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                  <CheckCircle className="w-3 h-3 text-green-600" />
-                </div>
-                <span className="text-sm">Given</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center">
-                  <AlertCircle className="w-3 h-3 text-red-600" />
-                </div>
-                <span className="text-sm">Refused</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-full bg-yellow-100 flex items-center justify-center">
-                  <AlertTriangle className="w-3 h-3 text-yellow-600" />
-                </div>
-                <span className="text-sm">Not Given</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
-                  <MoreHorizontal className="w-3 h-3 text-gray-600" />
-                </div>
-                <span className="text-sm">Not Applicable</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
-      
-      <TabsContent value="records" className="mt-0">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Medication Administration Records</CardTitle>
-            <CardDescription>Historical records of medication administration</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {marRecords.length === 0 ? (
-              <div className="text-center py-10">
-                <Pill className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                <h3 className="text-lg font-medium text-gray-900">No Records Available</h3>
-                <p className="text-gray-500 max-w-md mx-auto mt-2">
-                  There are no medication administration records available at this time. Records will appear here once medications have been administered.
-                </p>
-                <Button variant="outline" className="mt-4">
-                  Record Administration
-                </Button>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Medication</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Administered By</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Notes</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {marRecords.slice(0, 10).map((record) => (
-                    <TableRow key={record.id}>
-                      <TableCell>
-                        <div className="font-medium">{record.client_medications?.name}</div>
-                        <div className="text-xs text-gray-500">{record.client_medications?.dosage}</div>
-                      </TableCell>
-                      <TableCell>{renderStatusBadge(record.status)}</TableCell>
-                      <TableCell>{record.administered_by}</TableCell>
-                      <TableCell>{format(new Date(record.administered_at), 'MMM d, yyyy HH:mm')}</TableCell>
-                      <TableCell>{record.notes || '-'}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      </TabsContent>
-    </Tabs>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 
