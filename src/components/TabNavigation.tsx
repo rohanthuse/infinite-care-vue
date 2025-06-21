@@ -117,17 +117,17 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
     if (tab?.needsDedicatedPage && id && branchName) {
       // Navigate to dedicated page for tabs that need their own pages
       const routeMap: { [key: string]: string } = {
-        'workflow': '/workflow',
-        'accounting': '/accounting',
-        'agreements': '/agreement',
-        'events-logs': '/events-logs',
-        'attendance': '/attendance',
-        'form-builder': '/form-builder',
-        'documents': '/documents',
-        'notifications': '/notifications',
-        'library': '/library',
-        'third-party': '/third-party',
-        'reports': '/reports'
+        'workflow': '/admin/workflow',
+        'accounting': '/admin/accounting',
+        'agreements': '/admin/agreement',
+        'events-logs': '/admin/events-logs',
+        'attendance': '/admin/attendance',
+        'form-builder': '/admin/form-builder',
+        'documents': '/admin/documents',
+        'notifications': '/admin/notifications',
+        'library': '/admin/library',
+        'third-party': '/admin/third-party',
+        'reports': '/admin/reports'
       };
       
       const route = routeMap[tabValue];
@@ -135,7 +135,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
         navigate(`${route}/${id}/${branchName}`);
       } else {
         // Fallback to branch dashboard with tab
-        navigate(`/branch-dashboard/${id}/${branchName}/${tabValue}`);
+        navigate(`/admin/branch-dashboard/${id}/${branchName}/${tabValue}`);
       }
     } else {
       // Use the provided onChange for tabs that stay within branch dashboard
@@ -146,7 +146,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
   // Handle direct Reports menu item click without submenu
   const handleReportsClick = () => {
     if (id && branchName) {
-      navigate(`/reports/${id}/${branchName}`);
+      navigate(`/admin/reports/${id}/${branchName}`);
     }
   };
   

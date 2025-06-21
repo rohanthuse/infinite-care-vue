@@ -15,11 +15,9 @@ const Dashboard = () => {
   const { toast } = useToast();
   const { signOut } = useAuth();
   
-  // The old loading and auth check logic is now handled by the AuthProvider and protected route.
-  
   const handleLogout = async () => {
     await signOut();
-    navigate('/super-admin'); // Redirect to login page after logout
+    navigate('/super-admin-login');
     toast({
       title: "Logged out",
       description: "You have been successfully logged out.",
@@ -47,8 +45,6 @@ const Dashboard = () => {
             Logout
           </Button>
         </div>
-
-        {/* Removed Workflow section */}
         
         <AdminsTable />
       </motion.main>

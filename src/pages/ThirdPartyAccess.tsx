@@ -2,10 +2,10 @@
 import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
-import { TabNavigation } from "@/components/TabNavigation";
 import { useParams, useNavigate } from "react-router-dom";
-import { ThirdPartyAccessManagement } from "@/components/third-party-access/ThirdPartyAccessManagement";
 import { toast } from "sonner";
+import { TabNavigation } from "@/components/TabNavigation";
+import { ThirdPartyAccessManagement } from "@/components/third-party-access/ThirdPartyAccessManagement";
 
 const ThirdPartyAccess = () => {
   const { id, branchName } = useParams();
@@ -13,7 +13,6 @@ const ThirdPartyAccess = () => {
   const [activeNavTab, setActiveNavTab] = useState("third-party");
   const decodedBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
 
-  // Set page title
   useEffect(() => {
     document.title = `Third Party Access | ${decodedBranchName}`;
   }, [decodedBranchName]);
@@ -21,9 +20,12 @@ const ThirdPartyAccess = () => {
   const handleNavTabChange = (value: string) => {
     setActiveNavTab(value);
     
-    // Navigate to the appropriate route based on the selected tab
     if (value !== "third-party") {
-      navigate(`/branch-dashboard/${id}/${encodeURIComponent(decodedBranchName)}/${value}`);
+      if (id && branchName) {
+        navigate(`/admin/branch-dashboard/${id}/${encodeURIComponent(decodedBranchName)}/${value}`);
+      } else {
+        navigate(`/admin/${value}`);
+      }
     }
   };
   
@@ -50,8 +52,15 @@ const ThirdPartyAccess = () => {
           />
         </div>
         
-        <div className="mt-6">
-          <ThirdPartyAccessManagement branchId={id || ""} />
+        <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+          <div className="p-6 border-b border-gray-100">
+            <h2 className="text-2xl font-bold">Third Party Access Management</h2>
+            <p className="text-gray-500 mt-1">Manage external access requests and permissions</p>
+          </div>
+          
+          <div className="p-6">
+            <ThirdPartyAccessManagement branchId={id || ""} />
+          </div>
         </div>
       </main>
     </div>
