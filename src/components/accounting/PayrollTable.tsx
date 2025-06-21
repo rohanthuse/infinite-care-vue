@@ -1,6 +1,6 @@
 
 import React from "react";
-import { PayrollRecord, paymentStatusLabels, paymentMethodLabels } from "@/types/payroll";
+import { PayrollRecord } from "@/hooks/useAccountingData";
 import { 
   Table, 
   TableBody, 
@@ -86,43 +86,50 @@ const PayrollTable: React.FC<PayrollTableProps> = ({
         <TableBody>
           {payrollRecords.map((record) => {
             const totalDeductions = 
-              record.deductions.tax + 
-              record.deductions.nationalInsurance + 
-              record.deductions.pension + 
-              record.deductions.other;
+              record.tax_deduction + 
+              record.ni_deduction + 
+              record.pension_deduction + 
+              record.other_deductions;
               
             return (
               <TableRow key={record.id}>
                 <TableCell>
-                  <div className="font-medium">{record.employeeName}</div>
-                  <div className="text-sm text-gray-500">{record.jobTitle}</div>
+                  <div className="font-medium">
+                    {record.staff 
+                      ? `${record.staff.first_name} ${record.staff.last_name}`
+                      : "Unknown Employee"
+                    }
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {record.staff?.email || "N/A"}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">
-                    {new Date(record.payPeriod.from).toLocaleDateString()} - {new Date(record.payPeriod.to).toLocaleDateString()}
+                    {new Date(record.pay_period_start).toLocaleDateString()} - {new Date(record.pay_period_end).toLocaleDateString()}
                   </div>
                   <div className="text-xs text-gray-500">
-                    Payment: {new Date(record.paymentDate).toLocaleDateString()}
+                    Payment: {record.payment_date ? new Date(record.payment_date).toLocaleDateString() : "Not set"}
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
-                  <div>{record.regularHours}</div>
-                  {record.overtimeHours > 0 && (
+                  <div>{record.regular_hours}</div>
+                  {record.overtime_hours > 0 && (
                     <div className="text-xs text-gray-500">
-                      +{record.overtimeHours} OT
+                      +{record.overtime_hours} OT
                     </div>
                   )}
                 </TableCell>
                 <TableCell className="text-right font-medium">
-                  {formatCurrency(record.grossPay)}
+                  {formatCurrency(record.gross_pay)}
                 </TableCell>
                 <TableCell className="text-right text-red-600">
                   -{formatCurrency(totalDeductions)}
                 </TableCell>
                 <TableCell className="text-right font-bold">
-                  {formatCurrency(record.netPay)}
+                  {formatCurrency(record.net_pay)}
                 </TableCell>
-                <TableCell>{renderStatusBadge(record.paymentStatus)}</TableCell>
+                <TableCell>{renderStatusBadge(record.payment_status)}</TableCell>
                 <TableCell>
                   <div className="flex justify-end gap-2">
                     <Button

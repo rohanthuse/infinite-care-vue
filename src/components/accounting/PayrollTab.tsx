@@ -13,8 +13,7 @@ import {
   CalendarDays,
   SlidersHorizontal
 } from "lucide-react";
-import { mockPayrollData } from "@/data/mockPayrollData";
-import { PayrollRecord, PayrollFilter, PaymentStatus } from "@/types/payroll";
+import { usePayrollRecords, useCreatePayrollRecord, PayrollRecord } from "@/hooks/useAccountingData";
 import PayrollTable from "./PayrollTable";
 import AddPayrollDialog from "./AddPayrollDialog";
 import ViewPayrollDialog from "./ViewPayrollDialog";
@@ -26,10 +25,18 @@ interface PayrollTabProps {
   branchName?: string;
 }
 
+interface PayrollFilter {
+  dateRange: { from?: Date; to?: Date };
+  paymentStatuses: string[];
+  minGrossPay?: number;
+  maxGrossPay?: number;
+}
+
 const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
-  // State management
-  const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>(mockPayrollData);
-  const [filteredRecords, setFilteredRecords] = useState<PayrollRecord[]>(mockPayrollData);
+  const { data: payrollRecords = [], isLoading, error } = usePayrollRecords(branchId);
+  const createPayrollMutation = useCreatePayrollRecord();
+
+  const [filteredRecords, setFilteredRecords] = useState<PayrollRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRecord, setSelectedRecord] = useState<PayrollRecord | null>(null);
   
@@ -54,42 +61,42 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       results = results.filter(record => 
-        record.employeeName.toLowerCase().includes(query) ||
-        record.employeeId.toLowerCase().includes(query) ||
-        record.jobTitle.toLowerCase().includes(query)
+        (record.staff && `${record.staff.first_name} ${record.staff.last_name}`.toLowerCase().includes(query)) ||
+        record.staff_id.toLowerCase().includes(query) ||
+        record.payment_reference?.toLowerCase().includes(query)
       );
     }
     
     // Apply date range filter
     if (activeFilters.dateRange.from) {
       results = results.filter(record => 
-        new Date(record.paymentDate) >= activeFilters.dateRange.from!
+        new Date(record.pay_period_start) >= activeFilters.dateRange.from!
       );
     }
     
     if (activeFilters.dateRange.to) {
       results = results.filter(record => 
-        new Date(record.paymentDate) <= activeFilters.dateRange.to!
+        new Date(record.pay_period_end) <= activeFilters.dateRange.to!
       );
     }
     
     // Apply status filters
     if (activeFilters.paymentStatuses.length > 0) {
       results = results.filter(record => 
-        activeFilters.paymentStatuses.includes(record.paymentStatus)
+        activeFilters.paymentStatuses.includes(record.payment_status)
       );
     }
     
     // Apply amount filters
     if (activeFilters.minGrossPay !== undefined) {
       results = results.filter(record => 
-        record.grossPay >= activeFilters.minGrossPay!
+        record.gross_pay >= activeFilters.minGrossPay!
       );
     }
     
     if (activeFilters.maxGrossPay !== undefined) {
       results = results.filter(record => 
-        record.grossPay <= activeFilters.maxGrossPay!
+        record.gross_pay <= activeFilters.maxGrossPay!
       );
     }
     
@@ -97,21 +104,27 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
   }, [payrollRecords, searchQuery, activeFilters]);
 
   // Handle adding new payroll record
-  const handleAddPayroll = (record: PayrollRecord) => {
-    if (isEditing && selectedRecord) {
-      // Update existing record
-      const updatedRecords = payrollRecords.map(item => 
-        item.id === record.id ? record : item
-      );
-      setPayrollRecords(updatedRecords);
-    } else {
-      // Add new record
-      setPayrollRecords([...payrollRecords, record]);
-    }
+  const handleAddPayroll = async (record: Partial<PayrollRecord>) => {
+    if (!branchId) return;
     
-    setAddDialogOpen(false);
-    setIsEditing(false);
-    setSelectedRecord(null);
+    try {
+      if (isEditing && selectedRecord) {
+        // TODO: Implement update mutation
+        console.log('Update record:', record);
+      } else {
+        await createPayrollMutation.mutateAsync({
+          ...record,
+          branch_id: branchId,
+          created_by: 'current-user', // Replace with actual user ID
+        } as Omit<PayrollRecord, 'id' | 'created_at' | 'updated_at'>);
+      }
+      
+      setAddDialogOpen(false);
+      setIsEditing(false);
+      setSelectedRecord(null);
+    } catch (error) {
+      console.error('Failed to save payroll record:', error);
+    }
   };
 
   // Handle viewing record details
@@ -138,12 +151,9 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
   };
 
   const handleDeleteConfirm = () => {
-    if (selectedRecord) {
-      const updatedRecords = payrollRecords.filter(record => record.id !== selectedRecord.id);
-      setPayrollRecords(updatedRecords);
-      setDeleteDialogOpen(false);
-      setSelectedRecord(null);
-    }
+    // TODO: Implement delete mutation
+    setDeleteDialogOpen(false);
+    setSelectedRecord(null);
   };
 
   // Handle filter application
@@ -161,9 +171,9 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
     };
     
     filteredRecords.forEach(record => {
-      if (record.paymentStatus === 'pending') counts.pending++;
-      if (record.paymentStatus === 'processed') counts.processed++;
-      if (record.paymentStatus === 'failed') counts.failed++;
+      if (record.payment_status === 'pending') counts.pending++;
+      if (record.payment_status === 'processed') counts.processed++;
+      if (record.payment_status === 'failed') counts.failed++;
     });
     
     return counts;
@@ -190,6 +200,25 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
     });
     setSearchQuery("");
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading payroll records...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-600">Error loading payroll records. Please try again.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col space-y-6">
@@ -365,6 +394,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
         onAdd={handleAddPayroll}
         initialData={isEditing ? selectedRecord! : undefined}
         isEditing={isEditing}
+        branchId={branchId}
       />
       
       {/* View Payroll Dialog */}
@@ -398,7 +428,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this payroll record for {selectedRecord?.employeeName}? This action cannot be undone.
+              Are you sure you want to delete this payroll record for {selectedRecord?.staff ? `${selectedRecord.staff.first_name} ${selectedRecord.staff.last_name}` : 'this employee'}? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1877,6 +1877,229 @@ export type Database = {
         }
         Relationships: []
       }
+      expenses: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          branch_id: string
+          category: string
+          client_id: string | null
+          created_at: string
+          created_by: string
+          description: string
+          expense_date: string
+          id: string
+          notes: string | null
+          payment_method: string
+          receipt_url: string | null
+          staff_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          branch_id: string
+          category: string
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          description: string
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          receipt_url?: string | null
+          staff_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          branch_id?: string
+          category?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          receipt_url?: string | null
+          staff_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      extra_time_records: {
+        Row: {
+          actual_duration_minutes: number | null
+          actual_end_time: string | null
+          actual_start_time: string | null
+          approved_at: string | null
+          approved_by: string | null
+          booking_id: string | null
+          branch_id: string
+          client_id: string | null
+          created_at: string
+          extra_time_minutes: number
+          extra_time_rate: number | null
+          hourly_rate: number
+          id: string
+          invoice_id: string | null
+          invoiced: boolean
+          notes: string | null
+          reason: string | null
+          scheduled_duration_minutes: number
+          scheduled_end_time: string
+          scheduled_start_time: string
+          staff_id: string
+          status: string
+          total_cost: number
+          updated_at: string
+          work_date: string
+        }
+        Insert: {
+          actual_duration_minutes?: number | null
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          booking_id?: string | null
+          branch_id: string
+          client_id?: string | null
+          created_at?: string
+          extra_time_minutes?: number
+          extra_time_rate?: number | null
+          hourly_rate: number
+          id?: string
+          invoice_id?: string | null
+          invoiced?: boolean
+          notes?: string | null
+          reason?: string | null
+          scheduled_duration_minutes: number
+          scheduled_end_time: string
+          scheduled_start_time: string
+          staff_id: string
+          status?: string
+          total_cost?: number
+          updated_at?: string
+          work_date: string
+        }
+        Update: {
+          actual_duration_minutes?: number | null
+          actual_end_time?: string | null
+          actual_start_time?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          booking_id?: string | null
+          branch_id?: string
+          client_id?: string | null
+          created_at?: string
+          extra_time_minutes?: number
+          extra_time_rate?: number | null
+          hourly_rate?: number
+          id?: string
+          invoice_id?: string | null
+          invoiced?: boolean
+          notes?: string | null
+          reason?: string | null
+          scheduled_duration_minutes?: number
+          scheduled_end_time?: string
+          scheduled_start_time?: string
+          staff_id?: string
+          status?: string
+          total_cost?: number
+          updated_at?: string
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extra_time_records_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extra_time_records_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extra_time_records_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extra_time_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extra_time_records_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "client_billing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extra_time_records_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       file_categories: {
         Row: {
           created_at: string
@@ -2493,6 +2716,115 @@ export type Database = {
           },
         ]
       }
+      payroll_records: {
+        Row: {
+          basic_salary: number
+          bonus: number
+          branch_id: string
+          created_at: string
+          created_by: string
+          gross_pay: number
+          hourly_rate: number
+          id: string
+          net_pay: number
+          ni_deduction: number
+          notes: string | null
+          other_deductions: number
+          overtime_hours: number
+          overtime_pay: number
+          overtime_rate: number | null
+          pay_period_end: string
+          pay_period_start: string
+          payment_date: string | null
+          payment_method: string
+          payment_reference: string | null
+          payment_status: string
+          pension_deduction: number
+          regular_hours: number
+          staff_id: string
+          tax_deduction: number
+          updated_at: string
+        }
+        Insert: {
+          basic_salary?: number
+          bonus?: number
+          branch_id: string
+          created_at?: string
+          created_by: string
+          gross_pay: number
+          hourly_rate: number
+          id?: string
+          net_pay: number
+          ni_deduction?: number
+          notes?: string | null
+          other_deductions?: number
+          overtime_hours?: number
+          overtime_pay?: number
+          overtime_rate?: number | null
+          pay_period_end: string
+          pay_period_start: string
+          payment_date?: string | null
+          payment_method?: string
+          payment_reference?: string | null
+          payment_status?: string
+          pension_deduction?: number
+          regular_hours?: number
+          staff_id: string
+          tax_deduction?: number
+          updated_at?: string
+        }
+        Update: {
+          basic_salary?: number
+          bonus?: number
+          branch_id?: string
+          created_at?: string
+          created_by?: string
+          gross_pay?: number
+          hourly_rate?: number
+          id?: string
+          net_pay?: number
+          ni_deduction?: number
+          notes?: string | null
+          other_deductions?: number
+          overtime_hours?: number
+          overtime_pay?: number
+          overtime_rate?: number | null
+          pay_period_end?: string
+          pay_period_start?: string
+          payment_date?: string | null
+          payment_method?: string
+          payment_reference?: string | null
+          payment_status?: string
+          pension_deduction?: number
+          regular_hours?: number
+          staff_id?: string
+          tax_deduction?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_records_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_records_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_records_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           email: string | null
@@ -2683,6 +3015,94 @@ export type Database = {
           },
         ]
       }
+      service_rates: {
+        Row: {
+          amount: number
+          applicable_days: string[]
+          branch_id: string
+          client_type: string
+          created_at: string
+          created_by: string
+          currency: string
+          description: string | null
+          effective_from: string
+          effective_to: string | null
+          funding_source: string
+          id: string
+          is_default: boolean
+          rate_type: string
+          service_code: string
+          service_id: string | null
+          service_name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          applicable_days?: string[]
+          branch_id: string
+          client_type?: string
+          created_at?: string
+          created_by: string
+          currency?: string
+          description?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          funding_source?: string
+          id?: string
+          is_default?: boolean
+          rate_type?: string
+          service_code: string
+          service_id?: string | null
+          service_name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          applicable_days?: string[]
+          branch_id?: string
+          client_type?: string
+          created_at?: string
+          created_by?: string
+          currency?: string
+          description?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          funding_source?: string
+          id?: string
+          is_default?: boolean
+          rate_type?: string
+          service_code?: string
+          service_id?: string | null
+          service_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_rates_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_rates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_rates_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           category: string
@@ -2798,6 +3218,56 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_bank_details: {
+        Row: {
+          account_holder_name: string
+          account_number: string
+          bank_name: string
+          created_at: string
+          iban: string | null
+          id: string
+          is_active: boolean
+          sort_code: string
+          staff_id: string
+          swift_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_holder_name: string
+          account_number: string
+          bank_name: string
+          created_at?: string
+          iban?: string | null
+          id?: string
+          is_active?: boolean
+          sort_code: string
+          staff_id: string
+          swift_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_holder_name?: string
+          account_number?: string
+          bank_name?: string
+          created_at?: string
+          iban?: string | null
+          id?: string
+          is_active?: boolean
+          sort_code?: string
+          staff_id?: string
+          swift_code?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_bank_details_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
         ]
@@ -3080,6 +3550,117 @@ export type Database = {
           user_type?: string
         }
         Relationships: []
+      }
+      travel_records: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          booking_id: string | null
+          branch_id: string
+          client_id: string | null
+          created_at: string
+          distance_miles: number
+          end_location: string
+          id: string
+          mileage_rate: number
+          notes: string | null
+          purpose: string
+          receipt_url: string | null
+          reimbursed_at: string | null
+          staff_id: string
+          start_location: string
+          status: string
+          total_cost: number
+          travel_date: string
+          travel_time_minutes: number | null
+          updated_at: string
+          vehicle_type: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          booking_id?: string | null
+          branch_id: string
+          client_id?: string | null
+          created_at?: string
+          distance_miles: number
+          end_location: string
+          id?: string
+          mileage_rate: number
+          notes?: string | null
+          purpose: string
+          receipt_url?: string | null
+          reimbursed_at?: string | null
+          staff_id: string
+          start_location: string
+          status?: string
+          total_cost: number
+          travel_date?: string
+          travel_time_minutes?: number | null
+          updated_at?: string
+          vehicle_type?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          booking_id?: string | null
+          branch_id?: string
+          client_id?: string | null
+          created_at?: string
+          distance_miles?: number
+          end_location?: string
+          id?: string
+          mileage_rate?: number
+          notes?: string | null
+          purpose?: string
+          receipt_url?: string | null
+          reimbursed_at?: string | null
+          staff_id?: string
+          start_location?: string
+          status?: string
+          total_cost?: number
+          travel_date?: string
+          travel_time_minutes?: number | null
+          updated_at?: string
+          vehicle_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "travel_records_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "travel_records_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "travel_records_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "travel_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "travel_records_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

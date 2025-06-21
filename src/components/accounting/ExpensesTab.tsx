@@ -3,13 +3,11 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Filter, Plus, FileText, Download } from "lucide-react";
-import { mockExpenses } from "@/data/mockExpenseData";
-import { Expense, ExpenseFilter } from "@/types/expense";
+import { useExpenses, useCreateExpense, ExpenseRecord } from "@/hooks/useAccountingData";
 import ExpensesTable from "./ExpensesTable";
 import AddExpenseDialog from "./AddExpenseDialog";
 import FilterExpensesDialog from "./FilterExpensesDialog";
 import ViewExpenseDialog from "./ViewExpenseDialog";
-import { v4 as uuidv4 } from "uuid";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -26,9 +24,19 @@ interface ExpensesTabProps {
   branchName?: string;
 }
 
+interface ExpenseFilter {
+  categories: string[];
+  dateRange: { from?: Date; to?: Date };
+  status: string[];
+  minAmount?: number;
+  maxAmount?: number;
+}
+
 const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
-  const [expenses, setExpenses] = useState<Expense[]>(mockExpenses);
-  const [filteredExpenses, setFilteredExpenses] = useState<Expense[]>(mockExpenses);
+  const { data: expenses = [], isLoading, error } = useExpenses(branchId);
+  const createExpenseMutation = useCreateExpense();
+
+  const [filteredExpenses, setFilteredExpenses] = useState<ExpenseRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   
   // Dialog states
@@ -38,7 +46,7 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   
   // Current expense states
-  const [currentExpense, setCurrentExpense] = useState<Expense | undefined>(undefined);
+  const [currentExpense, setCurrentExpense] = useState<ExpenseRecord | undefined>(undefined);
   const [expenseToDelete, setExpenseToDelete] = useState<string | undefined>(undefined);
   
   // Filter state
@@ -61,9 +69,9 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
         (expense) =>
           expense.description.toLowerCase().includes(searchLower) ||
           expense.category.toLowerCase().includes(searchLower) ||
-          expense.paymentMethod.toLowerCase().includes(searchLower) ||
+          expense.payment_method.toLowerCase().includes(searchLower) ||
           expense.amount.toString().includes(searchTerm) ||
-          expense.createdBy.toLowerCase().includes(searchLower)
+          (expense.staff && `${expense.staff.first_name} ${expense.staff.last_name}`.toLowerCase().includes(searchLower))
       );
     }
     
@@ -94,14 +102,14 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
       const fromDate = new Date(filters.dateRange.from);
       fromDate.setHours(0, 0, 0, 0);
       result = result.filter(
-        (expense) => new Date(expense.date) >= fromDate
+        (expense) => new Date(expense.expense_date) >= fromDate
       );
     }
     if (filters.dateRange.to) {
       const toDate = new Date(filters.dateRange.to);
       toDate.setHours(23, 59, 59, 999);
       result = result.filter(
-        (expense) => new Date(expense.date) <= toDate
+        (expense) => new Date(expense.expense_date) <= toDate
       );
     }
     
@@ -109,41 +117,28 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
   }, [expenses, searchTerm, filters]);
 
   // Handler functions
-  const handleAddExpense = (expenseData: Omit<Expense, "id" | "status" | "createdBy">) => {
-    const newExpense: Expense = {
-      ...expenseData,
-      id: uuidv4(),
-      status: "pending", // Default status for new expenses
-      createdBy: "Current User" // In a real app, this would come from auth context
-    };
-    setExpenses([newExpense, ...expenses]);
-    setAddDialogOpen(false);
+  const handleAddExpense = async (expenseData: Partial<ExpenseRecord>) => {
+    if (!branchId) return;
+    
+    try {
+      await createExpenseMutation.mutateAsync({
+        ...expenseData,
+        branch_id: branchId,
+        created_by: 'current-user', // Replace with actual user ID from auth
+      } as Omit<ExpenseRecord, 'id' | 'created_at' | 'updated_at'>);
+      
+      setAddDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to create expense:', error);
+    }
   };
 
-  const handleEditExpense = (expense: Expense) => {
+  const handleEditExpense = (expense: ExpenseRecord) => {
     setCurrentExpense(expense);
     setAddDialogOpen(true);
   };
 
-  const handleUpdateExpense = (updatedData: Omit<Expense, "id" | "status" | "createdBy">) => {
-    if (currentExpense) {
-      const updatedExpense: Expense = {
-        ...updatedData,
-        id: currentExpense.id,
-        status: currentExpense.status,
-        createdBy: currentExpense.createdBy
-      };
-      
-      setExpenses(
-        expenses.map((exp) => (exp.id === currentExpense.id ? updatedExpense : exp))
-      );
-      
-      setAddDialogOpen(false);
-      setCurrentExpense(undefined);
-    }
-  };
-
-  const handleViewExpense = (expense: Expense) => {
+  const handleViewExpense = (expense: ExpenseRecord) => {
     setCurrentExpense(expense);
     setViewDialogOpen(true);
   };
@@ -154,29 +149,24 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
   };
 
   const confirmDeleteExpense = () => {
-    if (expenseToDelete) {
-      setExpenses(expenses.filter((exp) => exp.id !== expenseToDelete));
-      setDeleteDialogOpen(false);
-      setExpenseToDelete(undefined);
-    }
+    // TODO: Implement delete mutation
+    setDeleteDialogOpen(false);
+    setExpenseToDelete(undefined);
   };
 
   const handleApplyFilters = (newFilters: ExpenseFilter) => {
     setFilters(newFilters);
   };
 
-  // Handle the "Add Expense" or "Add First Expense" button click
   const handleAddExpenseClick = () => {
-    setCurrentExpense(undefined); // Ensure we're not in edit mode
+    setCurrentExpense(undefined);
     setAddDialogOpen(true);
   };
 
-  // Handle the filter button click
   const handleFilterClick = () => {
     setFilterDialogOpen(true);
   };
 
-  // Determine if filters are active
   const hasActiveFilters = () => {
     return (
       filters.categories.length > 0 ||
@@ -187,6 +177,25 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
       filters.dateRange.to !== undefined
     );
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading expenses...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-600">Error loading expenses. Please try again.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col space-y-6">
@@ -268,9 +277,10 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
           setAddDialogOpen(false);
           setCurrentExpense(undefined);
         }}
-        onSave={currentExpense ? handleUpdateExpense : handleAddExpense}
+        onSave={handleAddExpense}
         initialData={currentExpense}
         isEditing={!!currentExpense}
+        branchId={branchId}
       />
       
       {/* View Expense Dialog */}
