@@ -125,7 +125,7 @@ export function CreateTemplateDialog({
                 className="min-h-[200px]"
               />
               <p className="text-xs text-gray-500">
-                You can use placeholders like {{"{{"}}CLIENT_NAME{{"}}"}}, {{"{{"}}DATE{{"}}"}}, {{"{{"}}COMPANY_NAME{{"}}"}} that will be replaced when creating agreements from this template.
+                You can use placeholders like CLIENT_NAME, DATE, COMPANY_NAME that will be replaced when creating agreements from this template.
               </p>
             </div>
           </div>
