@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -25,16 +26,8 @@ import ReviewsTab from "@/components/reviews/ReviewsTab";
 import { CommunicationsTab } from "@/components/communications/CommunicationsTab";
 import { MedicationTab } from "@/components/medication/MedicationTab";
 import { CareTab } from "@/components/care/CareTab";
-import { BranchAgreementsTab } from "@/components/agreements/BranchAgreementsTab";
-import { FormBuilderTab } from "@/components/form-builder/FormBuilderTab";
 import KeyParametersContent from "@/components/keyparameters/KeyParametersContent";
-import WorkflowContent from "@/components/workflow/WorkflowContent";
-import NotificationsOverview from "@/components/workflow/NotificationsOverview";
-import TaskMatrix from "./TaskMatrix";
-import TrainingMatrix from "./TrainingMatrix";
-import AccountingTab from "@/components/accounting/AccountingTab";
 import { format } from "date-fns";
-import { Bell, AlertCircle, Users, Calendar, FileText } from "lucide-react";
 
 interface BranchDashboardProps {
   tab?: string;
@@ -131,14 +124,38 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     }
   };
 
-  // Enhanced tab change handler with events-logs navigation
+  // Enhanced tab change handler that redirects to dedicated pages when needed
   const enhancedHandleTabChange = (value: string) => {
-    if (value === "events-logs" && id && branchName) {
-      // Navigate to dedicated Events & Logs page
-      navigate(`/branch-dashboard/${id}/${branchName}/events-logs`);
-    } else {
-      handleTabChange(value);
+    const tabsWithDedicatedPages = [
+      'workflow', 'accounting', 'agreements', 'events-logs', 'attendance',
+      'form-builder', 'documents', 'notifications', 'library', 'third-party', 'reports'
+    ];
+    
+    if (tabsWithDedicatedPages.includes(value) && id && branchName) {
+      // Redirect to dedicated page
+      const routeMap: { [key: string]: string } = {
+        'workflow': '/workflow',
+        'accounting': '/accounting',
+        'agreements': '/agreement',
+        'events-logs': '/events-logs',
+        'attendance': '/attendance',
+        'form-builder': '/form-builder',
+        'documents': '/documents',
+        'notifications': '/notifications',
+        'library': '/library',
+        'third-party': '/third-party',
+        'reports': '/reports'
+      };
+      
+      const route = routeMap[value];
+      if (route) {
+        navigate(`${route}/${id}/${branchName}`);
+        return;
+      }
     }
+    
+    // For tabs that stay within branch dashboard
+    handleTabChange(value);
   };
 
   return (
@@ -202,11 +219,8 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
           </>
         )}
         
-        {/* Other Tabs */}
+        {/* Tabs that stay within branch dashboard */}
         {activeTab === "key-parameters" && <KeyParametersContent branchId={id} branchName={branchName} />}
-        {activeTab === "workflow" && <WorkflowContent branchId={id} branchName={branchName} />}
-        {activeTab === "task-matrix" && <TaskMatrix branchId={id || "main"} branchName={displayBranchName} />}
-        {activeTab === "training-matrix" && <TrainingMatrix branchId={id || "main"} branchName={displayBranchName} />}
         {activeTab === "bookings" && <BookingsTab branchId={id} />}
         {activeTab === "carers" && <CarersTab branchId={id} branchName={branchName} />}
         {activeTab === "clients" && (
@@ -220,98 +234,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         {activeTab === "reviews" && <ReviewsTab branchId={id} branchName={branchName} />}
         {activeTab === "communication" && <CommunicationsTab branchId={id} branchName={branchName} />}
         {activeTab === "medication" && <MedicationTab branchId={id} branchName={branchName} />}
-        {activeTab === "accounting" && <AccountingTab branchId={id} branchName={displayBranchName} />}
         {activeTab === "care-plan" && <CareTab branchId={id} branchName={branchName} />}
-        {activeTab === "agreements" && <BranchAgreementsTab branchId={id || ""} branchName={displayBranchName} />}
-        {activeTab === "forms" && <FormBuilderTab branchId={id || ""} branchName={displayBranchName} />}
-        
-        {/* Events & Logs fallback - redirect to dedicated page */}
-        {activeTab === "events-logs" && (() => {
-          React.useEffect(() => {
-            if (id && branchName) {
-              navigate(`/branch-dashboard/${id}/${branchName}/events-logs`);
-            }
-          }, []);
-          return (
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-              <h2 className="text-2xl font-bold mb-4">Redirecting to Events & Logs...</h2>
-              <p className="text-gray-500">Loading Events & Logs page...</p>
-            </div>
-          );
-        })()}
-        
-        {/* Notifications Tab */}
-        {activeTab === "notifications" && restPath === "notifications" && (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-            <h2 className="text-2xl font-bold mb-4">Notifications</h2>
-            <p className="text-gray-500 mb-6">Branch: {displayBranchName} (ID: {id})</p>
-            <NotificationsOverview branchId={id} branchName={branchName} />
-          </div>
-        )}
-        
-        {activeTab === "notifications" && restPath !== "notifications" && (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-            <h2 className="text-2xl font-bold mb-4">Notifications</h2>
-            <p className="text-gray-500">Branch: {branchName} (ID: {id})</p>
-            
-            <div className="mt-6 space-y-4">
-              <div className="p-4 border border-blue-200 rounded-lg bg-blue-50 flex items-start">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                  <Bell className="h-4 w-4 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium">System Update</h3>
-                  <p className="text-sm text-gray-600 mt-1">The Med-Infinite system will be updated tonight at 2 AM. Expected downtime: 30 minutes.</p>
-                  <div className="text-xs text-gray-500 mt-2">2 hours ago</div>
-                </div>
-              </div>
-              
-              <div className="p-4 border border-amber-200 rounded-lg bg-amber-50 flex items-start">
-                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium">New Protocol</h3>
-                  <p className="text-sm text-gray-600 mt-1">Updated safety protocols have been published. Please review and acknowledge by Friday.</p>
-                  <div className="text-xs text-gray-500 mt-2">Yesterday</div>
-                </div>
-              </div>
-              
-              <div className="p-4 border border-green-200 rounded-lg bg-green-50 flex items-start">
-                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                  <Users className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium">New Client Assigned</h3>
-                  <p className="text-sm text-gray-600 mt-1">Emma Thompson has been assigned to your branch. Initial assessment scheduled for next week.</p>
-                  <div className="text-xs text-gray-500 mt-2">2 days ago</div>
-                </div>
-              </div>
-              
-              <div className="p-4 border border-purple-200 rounded-lg bg-purple-50 flex items-start">
-                <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                  <Calendar className="h-4 w-4 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium">Upcoming Training</h3>
-                  <p className="text-sm text-gray-600 mt-1">Mandatory training session on new medication dispensing procedures on May 15th at 10 AM.</p>
-                  <div className="text-xs text-gray-500 mt-2">3 days ago</div>
-                </div>
-              </div>
-              
-              <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 flex items-start">
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                  <FileText className="h-4 w-4 text-gray-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium">Document Expiring</h3>
-                  <p className="text-sm text-gray-600 mt-1">Annual service agreement for Robert Johnson is expiring in 15 days. Please initiate renewal process.</p>
-                  <div className="text-xs text-gray-500 mt-2">5 days ago</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );

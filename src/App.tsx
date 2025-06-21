@@ -88,8 +88,12 @@ function App() {
                 <Route path="/body-map-points" element={<BodyMapPoints />} />
                 <Route path="/branch" element={<Branch />} />
                 <Route path="/branch-details/:id" element={<BranchDetails />} />
+                
+                {/* Branch Dashboard Routes - Main and with tabs */}
                 <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
                 <Route path="/branch-dashboard/:id/:branchName/:tab" element={<BranchDashboard />} />
+                
+                {/* Dedicated Branch Pages */}
                 <Route path="/branch-admins/:id" element={<BranchAdmins />} />
                 <Route path="/accounting/:id/:branchName" element={<Accounting />} />
                 <Route path="/accounting/:id/:branchName/:tab" element={<Accounting />} />
@@ -116,7 +120,8 @@ function App() {
                 <Route path="/documents/:id/:branchName/:tab" element={<Documents />} />
                 <Route path="/events-logs/:id/:branchName" element={<EventsLogs />} />
                 <Route path="/events-logs/:id/:branchName/:tab" element={<EventsLogs />} />
-                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/notifications/:id/:branchName" element={<Notifications />} />
+                <Route path="/notifications/:id/:branchName/:tab" element={<Notifications />} />
                 <Route path="/care-plan/:id" element={<CarePlanView />} />
                 <Route path="/carer-profile/:id" element={<CarerProfilePage />} />
                 
