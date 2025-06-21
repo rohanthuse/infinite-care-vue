@@ -85,7 +85,7 @@ const AdminRoutes = () => {
         <Route path="key-parameters" element={<KeyParameters />} />
         <Route path="booking-approvals" element={<BookingApprovals />} />
         
-        {/* Branch dashboard routes */}
+        {/* Branch dashboard routes - Fixed to properly handle nested routing */}
         <Route path="branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
         <Route path="branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
         <Route path="branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
