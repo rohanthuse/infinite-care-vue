@@ -42,7 +42,7 @@ const ExtraTimeTable: React.FC<ExtraTimeTableProps> = ({
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
     
     return (
-      <Badge variant={config.variant} className={config.className}>
+      <Badge variant={config.variant} className={config.className || ""}>
         {config.label}
       </Badge>
     );
