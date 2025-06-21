@@ -1,97 +1,42 @@
 
-import { 
-  useReportTypes, 
-  useFileCategories, 
-  useCommunicationTypes, 
-  useExpenseTypes,
-  useTravelRates,
-  useBankHolidays
-} from './useKeyParameters';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-// Helper hook to get options for dropdowns/selects
-export function useReportTypeOptions() {
-  const { data, isLoading } = useReportTypes();
-  
-  const options = data
-    ?.filter(item => item.status === 'Active')
-    ?.map(item => ({ value: item.id, label: item.title })) || [];
-  
-  return { options, isLoading };
-}
-
-export function useFileCategoryOptions() {
-  const { data, isLoading } = useFileCategories();
-  
-  const options = data
-    ?.filter(item => item.status === 'Active')
-    ?.map(item => ({ value: item.id, label: item.title })) || [];
-  
-  return { options, isLoading };
-}
-
-export function useCommunicationTypeOptions() {
-  const { data, isLoading } = useCommunicationTypes();
-  
-  const options = data
-    ?.filter(item => item.status === 'Active')
-    ?.map(item => ({ value: item.id, label: item.title })) || [];
-  
-  return { options, isLoading };
-}
-
-export function useExpenseTypeOptions() {
-  const { data, isLoading } = useExpenseTypes();
-  
-  const options = data
-    ?.filter(item => item.status === 'Active')
-    ?.map(item => ({ value: item.id, label: item.title })) || [];
-  
-  return { options, isLoading };
-}
-
-export function useTravelRateOptions() {
-  const { data, isLoading } = useTravelRates();
-  
-  const options = data
-    ?.filter(item => item.status === 'Active')
-    ?.map(item => ({ value: item.id, label: item.title })) || [];
-  
-  return { options, isLoading };
-}
-
-export function useBankHolidayOptions() {
-  const { data, isLoading } = useBankHolidays();
-  
-  const options = data
-    ?.filter(item => item.status === 'Active')
-    ?.map(item => ({ value: item.id, label: item.title })) || [];
-  
-  return { options, isLoading };
-}
-
-// Helper to get parameter by ID
-export function useParameterById(parameterType: string, id: string) {
-  const reportTypes = useReportTypes();
-  const fileCategories = useFileCategories();
-  const communicationTypes = useCommunicationTypes();
-  const expenseTypes = useExpenseTypes();
-  const travelRates = useTravelRates();
-  const bankHolidays = useBankHolidays();
-
-  switch (parameterType) {
-    case 'report-types':
-      return reportTypes.data?.find(item => item.id === id);
-    case 'file-categories':
-      return fileCategories.data?.find(item => item.id === id);
-    case 'communication-types':
-      return communicationTypes.data?.find(item => item.id === id);
-    case 'expense-types':
-      return expenseTypes.data?.find(item => item.id === id);
-    case 'travel-rates':
-      return travelRates.data?.find(item => item.id === id);
-    case 'bank-holidays':
-      return bankHolidays.data?.find(item => item.id === id);
-    default:
-      return null;
-  }
-}
+export const useReportTypeOptions = () => {
+  return useQuery({
+    queryKey: ['report-type-options'],
+    queryFn: async () => {
+      // First try to get from report_types table
+      const { data: reportTypes, error } = await supabase
+        .from('report_types')
+        .select('title')
+        .eq('status', 'Active')
+        .order('title');
+      
+      if (error) {
+        console.error('Error fetching report types:', error);
+        // Fallback to static options if table doesn't exist or has issues
+        return [
+          { value: 'incident', label: 'Incident' },
+          { value: 'accident', label: 'Accident' },
+          { value: 'near_miss', label: 'Near Miss' },
+          { value: 'medication_error', label: 'Medication Error' },
+          { value: 'safeguarding', label: 'Safeguarding' },
+          { value: 'complaint', label: 'Complaint' },
+          { value: 'compliment', label: 'Compliment' },
+          { value: 'medical_event', label: 'Medical Event' },
+          { value: 'behavioral', label: 'Behavioral' },
+          { value: 'safety_concern', label: 'Safety Concern' },
+          { value: 'fall', label: 'Fall' },
+          { value: 'other', label: 'Other' },
+        ];
+      }
+      
+      // Convert database results to option format
+      return reportTypes.map(type => ({
+        value: type.title.toLowerCase().replace(/\s+/g, '_'),
+        label: type.title
+      }));
+    },
+  });
+};

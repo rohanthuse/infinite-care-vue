@@ -45,6 +45,8 @@ export const useEventsLogs = (branchId?: string, filters?: {
   return useQuery({
     queryKey: ['events-logs', branchId, filters],
     queryFn: async () => {
+      console.log('Fetching events logs with filters:', { branchId, filters });
+      
       let query = supabase.from('client_events_logs').select('*');
       
       if (branchId && branchId !== 'global') {
@@ -83,8 +85,11 @@ export const useEventsLogs = (branchId?: string, filters?: {
         throw error;
       }
       
+      console.log('Fetched events logs:', data?.length || 0, 'records');
       return data as EventLog[];
     },
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 };
 
@@ -94,6 +99,8 @@ export const useCreateEventLog = () => {
   
   return useMutation({
     mutationFn: async (eventData: CreateEventLogData) => {
+      console.log('Creating event log:', eventData);
+      
       const { data, error } = await supabase
         .from('client_events_logs')
         .insert(eventData)
@@ -105,15 +112,17 @@ export const useCreateEventLog = () => {
         throw error;
       }
       
+      console.log('Created event log:', data);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['events-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['client-events', data.client_id] });
       toast.success("Event log created successfully");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error creating event log:', error);
-      toast.error('Failed to create event log');
+      toast.error('Failed to create event log: ' + (error.message || 'Unknown error'));
     },
   });
 };
@@ -124,6 +133,8 @@ export const useUpdateEventLogStatus = () => {
   
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      console.log('Updating event log status:', id, status);
+      
       const { data, error } = await supabase
         .from('client_events_logs')
         .update({ status, updated_at: new Date().toISOString() })
@@ -136,15 +147,16 @@ export const useUpdateEventLogStatus = () => {
         throw error;
       }
       
+      console.log('Updated event log status:', data);
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events-logs'] });
       toast.success("Event status updated successfully");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error updating event log status:', error);
-      toast.error('Failed to update event status');
+      toast.error('Failed to update event status: ' + (error.message || 'Unknown error'));
     },
   });
 };
@@ -155,6 +167,8 @@ export const useDeleteEventLog = () => {
   
   return useMutation({
     mutationFn: async (id: string) => {
+      console.log('Deleting event log:', id);
+      
       const { error } = await supabase
         .from('client_events_logs')
         .delete()
@@ -164,14 +178,16 @@ export const useDeleteEventLog = () => {
         console.error('Error deleting event log:', error);
         throw error;
       }
+      
+      console.log('Deleted event log:', id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events-logs'] });
       toast.success("Event deleted successfully");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error deleting event log:', error);
-      toast.error('Failed to delete event');
+      toast.error('Failed to delete event: ' + (error.message || 'Unknown error'));
     },
   });
 };
@@ -181,6 +197,8 @@ export const useEventClients = (branchId?: string) => {
   return useQuery({
     queryKey: ['event-clients', branchId],
     queryFn: async () => {
+      console.log('Fetching clients for events:', branchId);
+      
       let query = supabase.from('clients').select('id, first_name, last_name');
       
       if (branchId && branchId !== 'global') {
@@ -194,7 +212,10 @@ export const useEventClients = (branchId?: string) => {
         throw error;
       }
       
+      console.log('Fetched clients:', data?.length || 0, 'records');
       return data || [];
     },
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 };

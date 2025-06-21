@@ -10,9 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Save, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCreateEventLog, useEventClients } from '@/data/hooks/useEventsLogs';
+import { useReportTypeOptions } from '@/hooks/useParameterOptions';
 import { BodyMapSelector } from './BodyMapSelector';
 
 const eventLogSchema = z.object({
@@ -37,6 +38,7 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
   const [bodyMapPoints, setBodyMapPoints] = useState<any[]>([]);
   const createEventLogMutation = useCreateEventLog();
   const { data: clients = [], isLoading: clientsLoading } = useEventClients(branchId);
+  const { options: reportTypeOptions, isLoading: reportTypesLoading } = useReportTypeOptions();
 
   const form = useForm<EventLogFormData>({
     resolver: zodResolver(eventLogSchema),
@@ -81,15 +83,24 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
     }
   };
 
-  const eventTypes = [
-    { value: 'incident', label: 'Incident' },
-    { value: 'accident', label: 'Accident' },
-    { value: 'near_miss', label: 'Near Miss' },
-    { value: 'medication_error', label: 'Medication Error' },
-    { value: 'safeguarding', label: 'Safeguarding' },
-    { value: 'complaint', label: 'Complaint' },
-    { value: 'compliment', label: 'Compliment' },
-    { value: 'other', label: 'Other' },
+  const handleReset = () => {
+    form.reset();
+    setBodyMapPoints([]);
+    toast.info('Form reset');
+  };
+
+  const severityLevels = [
+    { value: 'low', label: 'Low', description: 'Minor issue with minimal impact' },
+    { value: 'medium', label: 'Medium', description: 'Moderate issue requiring attention' },
+    { value: 'high', label: 'High', description: 'Serious issue requiring urgent action' },
+    { value: 'critical', label: 'Critical', description: 'Critical issue requiring immediate action' },
+  ];
+
+  const statusOptions = [
+    { value: 'open', label: 'Open', description: 'Newly reported event' },
+    { value: 'in-progress', label: 'In Progress', description: 'Event being investigated' },
+    { value: 'resolved', label: 'Resolved', description: 'Event resolved' },
+    { value: 'closed', label: 'Closed', description: 'Event closed' },
   ];
 
   const categories = [
@@ -101,20 +112,6 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
     { value: 'complaint', label: 'Complaint' },
     { value: 'compliment', label: 'Compliment' },
     { value: 'other', label: 'Other' },
-  ];
-
-  const severityLevels = [
-    { value: 'low', label: 'Low' },
-    { value: 'medium', label: 'Medium' },
-    { value: 'high', label: 'High' },
-    { value: 'critical', label: 'Critical' },
-  ];
-
-  const statusOptions = [
-    { value: 'open', label: 'Open' },
-    { value: 'in-progress', label: 'In Progress' },
-    { value: 'resolved', label: 'Resolved' },
-    { value: 'closed', label: 'Closed' },
   ];
 
   return (
@@ -134,199 +131,217 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Basic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Event Title *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Brief description of the event" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="client_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Client *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Basic Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Event Title *</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={clientsLoading ? "Loading clients..." : "Select client"} />
-                          </SelectTrigger>
+                          <Input placeholder="Brief description of the event" {...field} />
                         </FormControl>
-                        <SelectContent>
-                          {clients.map((client) => (
-                            <SelectItem key={client.id} value={client.id}>
-                              {client.first_name} {client.last_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="client_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Client *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={clientsLoading ? "Loading clients..." : "Select client"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {clients.map((client) => (
+                              <SelectItem key={client.id} value={client.id}>
+                                {client.first_name} {client.last_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
               {/* Event Classification */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="event_type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Event Type *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select event type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {eventTypes.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Event Classification</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="event_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Event Type *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={reportTypesLoading}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={reportTypesLoading ? "Loading..." : "Select event type"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {reportTypeOptions.map((type) => (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category.value} value={category.value}>
-                              {category.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {categories.map((category) => (
+                              <SelectItem key={category.value} value={category.value}>
+                                {category.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="severity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Severity *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select severity" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {severityLevels.map((level) => (
-                            <SelectItem key={level.value} value={level.value}>
-                              {level.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="severity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Severity *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select severity" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {severityLevels.map((level) => (
+                              <SelectItem key={level.value} value={level.value}>
+                                <div>
+                                  <div className="font-medium">{level.label}</div>
+                                  <div className="text-xs text-gray-500">{level.description}</div>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
               {/* Reporter and Location */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="reporter"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Reporter *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Name of person reporting" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Where did this occur?" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Event Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="reporter"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Reporter *</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
+                          <Input placeholder="Name of person reporting" {...field} />
                         </FormControl>
-                        <SelectContent>
-                          {statusOptions.map((status) => (
-                            <SelectItem key={status.value} value={status.value}>
-                              {status.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Where did this occur?" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {statusOptions.map((status) => (
+                              <SelectItem key={status.value} value={status.value}>
+                                <div>
+                                  <div className="font-medium">{status.label}</div>
+                                  <div className="text-xs text-gray-500">{status.description}</div>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Description</h3>
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Detailed Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Provide a detailed description of what happened, including any relevant context, circumstances, and outcomes..."
+                          className="min-h-[120px]"
+                          {...field}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
-
-              {/* Description */}
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Detailed description of the event..."
-                        className="min-h-[100px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <Separator />
 
@@ -345,21 +360,21 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
                 />
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
+              <div className="flex justify-end space-x-3 pt-6 border-t">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    form.reset();
-                    setBodyMapPoints([]);
-                  }}
+                  onClick={handleReset}
+                  disabled={createEventLogMutation.isPending}
                 >
+                  <RotateCcw className="h-4 w-4 mr-2" />
                   Reset Form
                 </Button>
                 <Button
                   type="submit"
                   disabled={createEventLogMutation.isPending}
                 >
+                  <Save className="h-4 w-4 mr-2" />
                   {createEventLogMutation.isPending ? 'Creating...' : 'Create Event Log'}
                 </Button>
               </div>
