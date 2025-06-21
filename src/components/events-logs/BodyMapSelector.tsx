@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Plus, User, RotateCcw, Loader2 } from 'lucide-react';
+import { X, Plus, User, RotateCcw, Loader2, AlertTriangle } from 'lucide-react';
 
 interface BodyMapPoint {
   id: string;
@@ -33,6 +33,7 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   const injuryTypes = [
     { value: 'bruise', label: 'Bruise', color: '#8B5CF6' },
@@ -50,36 +51,63 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
     { value: 'severe', label: 'Severe' },
   ];
 
-  // Get the appropriate background image URL based on current side
-  const getBackgroundImageUrl = () => {
-    if (currentSide === 'front') {
-      return '/lovable-uploads/7bee49ea-2274-4e66-a8f7-e5f32fcb207b.png';
+  // Multiple image sources with fallbacks
+  const getImageSources = (side: 'front' | 'back') => {
+    if (side === 'front') {
+      return [
+        '/lovable-uploads/7bee49ea-2274-4e66-a8f7-e5f32fcb207b.png',
+        'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=300&h=600&fit=crop&auto=format',
+        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjYwMCIgdmlld0JveD0iMCAwIDMwMCA2MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iNjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNTAgNTBDMTcwIDUwIDE4MCA3MCAyMDAgMTAwQzIyMCAxNTAgMjIwIDIwMCAyMDAgMzAwQzE4MCA0MDAgMTgwIDUwMCAxNTAgNTUwQzEyMCA1MDAgMTIwIDQwMCAxMDAgMzAwQzgwIDIwMCA4MCAxNTAgMTAwIDEwMEMxMjAgNzAgMTMwIDUwIDE1MCA1MFoiIGZpbGw9IiNEMUQ1REIiLz4KPHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjYwMCIgdmlld0JveD0iMCAwIDMwMCA2MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI2MDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTUwIDUwQzE3MCA1MCAxODAgNzAgMjAwIDEwMEMyMjAgMTUwIDIyMCAyMDAgMjAwIDMwMEMxODAgNDAwIDE4MCA1MDAgMTUwIDU1MEMxMjAgNTAwIDEyMCA0MDAgMTAwIDMwMEM4MCAyMDAgODAgMTUwIDEwMCAxMDBDMTIwIDcwIDEzMCA1MCAxNTAgNTBaIiBmaWxsPSIjRDFENURCIi8+PC9zdmc+'
+      ];
     } else {
-      return '/lovable-uploads/e823d8ed-e260-4f9e-b0af-edf308ef3e29.png';
+      return [
+        '/lovable-uploads/e823d8ed-e260-4f9e-b0af-edf308ef3e29.png',
+        'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=300&h=600&fit=crop&auto=format',
+        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjYwMCIgdmlld0JveD0iMCAwIDMwMCA2MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iNjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xNTAgNTBDMTcwIDUwIDE4MCA3MCAyMDAgMTAwQzIyMCAxNTAgMjIwIDIwMCAyMDAgMzAwQzE4MCA0MDAgMTgwIDUwMCAxNTAgNTUwQzEyMCA1MDAgMTIwIDQwMCAxMDAgMzAwQzgwIDIwMCA4MCAxNTAgMTAwIDEwMEMxMjAgNzAgMTMwIDUwIDE1MCA1MFoiIGZpbGw9IiNEMUQ1REIiLz4KPHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjYwMCIgdmlld0JveD0iMCAwIDMwMCA2MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSI2MDAiIGZpbGw9IiNGM0Y0RjYiLz48cGF0aCBkPSJNMTUwIDUwQzE3MCA1MCAxODAgNzAgMjAwIDEwMEMyMjAgMTUwIDIyMCAyMDAgMjAwIDMwMEMxODAgNDAwIDE4MCA1MDAgMTUwIDU1MEMxMjAgNTAwIDEyMCA0MDAgMTAwIDMwMEM4MCAyMDAgODAgMTUwIDEwMCAxMDBDMTIwIDcwIDEzMCA1MCAxNTAgNTBaIiBmaWxsPSIjRDFENURCIi8+PC9zdmc+'
+      ];
     }
   };
 
-  // Preload image function
-  const preloadImage = (url: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        console.log('Body map image loaded successfully:', url);
-        resolve();
-      };
-      img.onerror = () => {
-        console.error('Failed to load body map image:', url);
-        reject(new Error(`Failed to load image: ${url}`));
-      };
-      img.src = url;
-    });
+  // Enhanced image preloading with fallback logic
+  const preloadImageWithFallbacks = async (side: 'front' | 'back'): Promise<string | null> => {
+    const imageSources = getImageSources(side);
+    
+    for (let i = 0; i < imageSources.length; i++) {
+      const url = imageSources[i];
+      console.log(`Attempting to load ${side} view image ${i + 1}/${imageSources.length}:`, url);
+      
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            console.log(`Successfully loaded ${side} view image:`, url);
+            resolve();
+          };
+          img.onerror = (error) => {
+            console.error(`Failed to load ${side} view image:`, url, error);
+            reject(new Error(`Failed to load image: ${url}`));
+          };
+          img.src = url;
+        });
+        
+        // If we get here, the image loaded successfully
+        return url;
+      } catch (error) {
+        console.log(`Trying next fallback for ${side} view...`);
+        setDebugInfo(`Failed source ${i + 1}: ${url.substring(0, 50)}...`);
+        continue;
+      }
+    }
+    
+    console.error(`All image sources failed for ${side} view`);
+    return null;
   };
 
   // Load images when component mounts or side changes
   useEffect(() => {
-    const currentImageUrl = getBackgroundImageUrl();
+    const currentImageKey = `${currentSide}-loaded`;
     
-    if (loadedImages[currentImageUrl]) {
+    if (loadedImages[currentImageKey]) {
       setImageLoading(false);
       setImageError(false);
       return;
@@ -87,18 +115,37 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
 
     setImageLoading(true);
     setImageError(false);
+    setDebugInfo('Loading body map image...');
 
-    preloadImage(currentImageUrl)
-      .then(() => {
-        setLoadedImages(prev => ({ ...prev, [currentImageUrl]: true }));
-        setImageLoading(false);
-        setImageError(false);
+    preloadImageWithFallbacks(currentSide)
+      .then((successfulUrl) => {
+        if (successfulUrl) {
+          setLoadedImages(prev => ({ 
+            ...prev, 
+            [currentImageKey]: true,
+            [`${currentSide}-url`]: successfulUrl 
+          }));
+          setImageLoading(false);
+          setImageError(false);
+          setDebugInfo('');
+        } else {
+          setImageLoading(false);
+          setImageError(true);
+          setDebugInfo('All image sources failed to load');
+        }
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Error in image preloading:', error);
         setImageLoading(false);
         setImageError(true);
+        setDebugInfo(`Error: ${error.message}`);
       });
   }, [currentSide]);
+
+  // Get the loaded image URL
+  const getLoadedImageUrl = () => {
+    return loadedImages[`${currentSide}-url`] as string || getImageSources(currentSide)[0];
+  };
 
   const handleBodyClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!isAddingPoint || imageLoading || imageError) return;
@@ -160,6 +207,13 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
       </CardHeader>
       
       <CardContent className="space-y-4">
+        {/* Debug Info */}
+        {debugInfo && (
+          <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+            Debug: {debugInfo}
+          </div>
+        )}
+
         {/* Controls */}
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2">
@@ -215,21 +269,26 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
           >
             {/* Loading State */}
             {imageLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-20">
                 <div className="text-center">
                   <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-gray-500" />
                   <p className="text-gray-600 text-sm">Loading body map...</p>
+                  <p className="text-gray-400 text-xs mt-1">Trying image sources...</p>
                 </div>
               </div>
             )}
 
             {/* Error State */}
             {imageError && !imageLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-20">
                 <div className="text-center text-gray-500">
-                  <User className="h-24 w-24 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">Body map image unavailable</p>
-                  <p className="text-xs text-gray-400 mt-1">Click functionality disabled</p>
+                  <AlertTriangle className="h-12 w-12 mx-auto mb-2 text-orange-400" />
+                  <p className="text-sm font-medium">Body map temporarily unavailable</p>
+                  <p className="text-xs text-gray-400 mt-1">Using fallback interface</p>
+                  <div className="mt-4 p-4 bg-white rounded border">
+                    <User className="h-16 w-16 mx-auto mb-2 opacity-30" />
+                    <p className="text-xs">Click anywhere to add points</p>
+                  </div>
                 </div>
               </div>
             )}
@@ -237,19 +296,18 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
             {/* Body Map Image */}
             {!imageLoading && !imageError && (
               <div 
-                className="absolute inset-0 w-full h-full bg-no-repeat bg-center"
+                className="absolute inset-0 w-full h-full bg-no-repeat bg-center bg-contain"
                 style={{ 
-                  backgroundImage: `url(${getBackgroundImageUrl()})`,
-                  backgroundSize: 'contain'
+                  backgroundImage: `url(${getLoadedImageUrl()})`
                 }}
               />
             )}
 
             {/* Injury points */}
-            {!imageLoading && !imageError && currentSidePoints.map((point) => (
+            {currentSidePoints.map((point) => (
               <div
                 key={point.id}
-                className="absolute w-4 h-4 rounded-full border-2 border-white shadow-lg cursor-pointer transform -translate-x-2 -translate-y-2 hover:scale-125 transition-transform z-10"
+                className="absolute w-4 h-4 rounded-full border-2 border-white shadow-lg cursor-pointer transform -translate-x-2 -translate-y-2 hover:scale-125 transition-transform z-30"
                 style={{
                   left: `${point.x}%`,
                   top: `${point.y}%`,
@@ -264,8 +322,8 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
             ))}
 
             {/* Add Point Overlay */}
-            {isAddingPoint && !imageLoading && !imageError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-blue-50 bg-opacity-50 z-5">
+            {isAddingPoint && !imageLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-blue-50 bg-opacity-50 z-10">
                 <div className="text-blue-600 font-medium">Click to add injury point</div>
               </div>
             )}
