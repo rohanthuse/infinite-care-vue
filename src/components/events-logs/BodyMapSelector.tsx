@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -97,7 +96,7 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
   // Get the appropriate background image URL based on current side
   const getBackgroundImageUrl = () => {
     if (currentSide === 'front') {
-      return '/lovable-uploads/c32c5c4d-97fb-413d-887f-29a90bfb3050.png';
+      return '/lovable-uploads/7bee49ea-2274-4e66-a8f7-e5f32fcb207b.png';
     } else {
       // Use the original image for back view until a specific back view is provided
       return '/lovable-uploads/e823d8ed-e260-4f9e-b0af-edf308ef3e29.png';
