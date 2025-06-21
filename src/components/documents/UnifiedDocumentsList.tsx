@@ -105,14 +105,26 @@ export function UnifiedDocumentsList({
 
   const getFileStatusIcon = (hasFile?: boolean, filePath?: string) => {
     if (!filePath || filePath === '<nil>' || filePath === 'null' || filePath === 'undefined') {
-      return <AlertCircle className="h-4 w-4 text-red-500" title="No file attached" />;
+      return (
+        <span title="No file attached">
+          <AlertCircle className="h-4 w-4 text-red-500" />
+        </span>
+      );
     }
     
     if (hasFile === false) {
-      return <AlertCircle className="h-4 w-4 text-orange-500" title="File not found in storage" />;
+      return (
+        <span title="File not found in storage">
+          <AlertCircle className="h-4 w-4 text-orange-500" />
+        </span>
+      );
     }
     
-    return <CheckCircle className="h-4 w-4 text-green-500" title="File available" />;
+    return (
+      <span title="File available">
+        <CheckCircle className="h-4 w-4 text-green-500" />
+      </span>
+    );
   };
 
   const canDownloadOrView = (doc: UnifiedDocument) => {
