@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -372,9 +373,7 @@ export function useExtraTimeRecords(branchId?: string) {
           invoiced,
           invoice_id,
           created_at,
-          updated_at,
-          created_by,
-          creator_role
+          updated_at
         `)
         .eq('branch_id', branchId)
         .order('work_date', { ascending: false });
@@ -417,8 +416,6 @@ export type CreateExtraTimeRecord = {
   approved_at?: string | null;
   invoiced: boolean;
   invoice_id?: string | null;
-  created_by?: string | null;
-  creator_role?: string | null;
 };
 
 // Mutation hooks for creating records
@@ -531,7 +528,7 @@ export function useCreateExtraTimeRecord() {
       
       const { data, error } = await supabase
         .from('extra_time_records')
-        .insert([extraTime]) // Wrap in array to ensure proper type handling
+        .insert(extraTime)
         .select()
         .single();
 

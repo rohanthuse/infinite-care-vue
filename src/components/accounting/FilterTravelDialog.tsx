@@ -10,14 +10,44 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { CalendarIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { TravelFilter, VehicleType, TravelStatus, vehicleTypeLabels, travelStatusLabels } from "@/types/travel";
+
+// Define filter interface that matches what TravelTab expects
+interface TravelTabFilter {
+  dateRange: {
+    from?: Date;
+    to?: Date;
+  };
+  vehicleTypes: string[];
+  status: string[];
+  minDistance?: number;
+  maxDistance?: number;
+  minCost?: number;
+  maxCost?: number;
+  carerIds?: string[];
+  clientNames?: string[];
+}
 
 interface FilterTravelDialogProps {
   open: boolean;
   onClose: () => void;
-  onApplyFilters: (filters: TravelFilter) => void;
-  currentFilters: TravelFilter;
+  onApplyFilters: (filters: TravelTabFilter) => void;
+  currentFilters: TravelTabFilter;
 }
+
+const vehicleTypeLabels: Record<string, string> = {
+  car_personal: "Personal Car",
+  car_company: "Company Car", 
+  public_transport: "Public Transport",
+  taxi: "Taxi",
+  other: "Other"
+};
+
+const travelStatusLabels: Record<string, string> = {
+  pending: "Pending",
+  approved: "Approved",
+  rejected: "Rejected", 
+  reimbursed: "Reimbursed"
+};
 
 const FilterTravelDialog: React.FC<FilterTravelDialogProps> = ({
   open,
@@ -25,10 +55,10 @@ const FilterTravelDialog: React.FC<FilterTravelDialogProps> = ({
   onApplyFilters,
   currentFilters,
 }) => {
-  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>(
+  const [vehicleTypes, setVehicleTypes] = useState<string[]>(
     currentFilters.vehicleTypes || []
   );
-  const [status, setStatus] = useState<TravelStatus[]>(currentFilters.status || []);
+  const [status, setStatus] = useState<string[]>(currentFilters.status || []);
   const [dateRange, setDateRange] = useState({
     from: currentFilters.dateRange.from,
     to: currentFilters.dateRange.to,
@@ -47,7 +77,7 @@ const FilterTravelDialog: React.FC<FilterTravelDialogProps> = ({
   );
 
   // Toggle vehicle type selection
-  const toggleVehicleType = (value: VehicleType) => {
+  const toggleVehicleType = (value: string) => {
     setVehicleTypes((current) =>
       current.includes(value)
         ? current.filter((v) => v !== value)
@@ -56,7 +86,7 @@ const FilterTravelDialog: React.FC<FilterTravelDialogProps> = ({
   };
 
   // Toggle status selection
-  const toggleStatus = (value: TravelStatus) => {
+  const toggleStatus = (value: string) => {
     setStatus((current) =>
       current.includes(value)
         ? current.filter((s) => s !== value)
@@ -186,10 +216,8 @@ const FilterTravelDialog: React.FC<FilterTravelDialogProps> = ({
                 <div key={value} className="flex items-center space-x-2">
                   <Checkbox
                     id={`vehicle-${value}`}
-                    checked={vehicleTypes.includes(value as VehicleType)}
-                    onCheckedChange={() =>
-                      toggleVehicleType(value as VehicleType)
-                    }
+                    checked={vehicleTypes.includes(value)}
+                    onCheckedChange={() => toggleVehicleType(value)}
                   />
                   <Label
                     htmlFor={`vehicle-${value}`}
@@ -210,8 +238,8 @@ const FilterTravelDialog: React.FC<FilterTravelDialogProps> = ({
                 <div key={value} className="flex items-center space-x-2">
                   <Checkbox
                     id={`status-${value}`}
-                    checked={status.includes(value as TravelStatus)}
-                    onCheckedChange={() => toggleStatus(value as TravelStatus)}
+                    checked={status.includes(value)}
+                    onCheckedChange={() => toggleStatus(value)}
                   />
                   <Label
                     htmlFor={`status-${value}`}

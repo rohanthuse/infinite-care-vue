@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 // Define filter interface compatible with database types
-interface TravelFilter {
+interface TravelTabFilter {
   dateRange: {
     from?: Date;
     to?: Date;
@@ -58,7 +58,7 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
   const [recordToDelete, setRecordToDelete] = useState<string | undefined>(undefined);
   
   // Filter state
-  const [filters, setFilters] = useState<TravelFilter>({
+  const [filters, setFilters] = useState<TravelTabFilter>({
     vehicleTypes: [],
     dateRange: { from: undefined, to: undefined },
     status: [],
@@ -173,7 +173,7 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
     }
   };
 
-  const handleApplyFilters = (newFilters: TravelFilter) => {
+  const handleApplyFilters = (newFilters: TravelTabFilter) => {
     setFilters(newFilters);
   };
 

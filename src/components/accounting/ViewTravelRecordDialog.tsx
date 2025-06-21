@@ -2,7 +2,7 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { TravelRecord, vehicleTypeLabels, travelStatusLabels } from "@/types/travel";
+import { TravelRecord } from "@/hooks/useAccountingData";
 import { format } from "date-fns";
 import { Edit, Download, ArrowRight, MapPin, Clock, Car, FileText, User, Users } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
@@ -13,6 +13,21 @@ interface ViewTravelRecordDialogProps {
   onEdit: () => void;
   travelRecord: TravelRecord;
 }
+
+const vehicleTypeLabels: Record<string, string> = {
+  car_personal: "Personal Car",
+  car_company: "Company Car",
+  public_transport: "Public Transport",
+  taxi: "Taxi",
+  other: "Other"
+};
+
+const travelStatusLabels: Record<string, string> = {
+  pending: "Pending",
+  approved: "Approved",
+  rejected: "Rejected",
+  reimbursed: "Reimbursed"
+};
 
 const ViewTravelRecordDialog: React.FC<ViewTravelRecordDialogProps> = ({
   open,
@@ -45,7 +60,8 @@ const ViewTravelRecordDialog: React.FC<ViewTravelRecordDialogProps> = ({
   };
 
   // Format duration to hours and minutes
-  const formatDuration = (minutes: number) => {
+  const formatDuration = (minutes?: number) => {
+    if (!minutes) return "Not specified";
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     
@@ -72,16 +88,16 @@ const ViewTravelRecordDialog: React.FC<ViewTravelRecordDialogProps> = ({
               <div>
                 <div className="text-sm text-gray-500">Date</div>
                 <div className="font-medium">
-                  {format(new Date(travelRecord.date), "PPP")}
+                  {format(new Date(travelRecord.travel_date), "PPP")}
                 </div>
               </div>
               <div>
                 <div className="text-sm text-gray-500">Total Distance</div>
-                <div className="font-medium">{travelRecord.distance.toFixed(1)} miles</div>
+                <div className="font-medium">{travelRecord.distance_miles.toFixed(1)} miles</div>
               </div>
               <div>
                 <div className="text-sm text-gray-500">Total Cost</div>
-                <div className="font-bold text-lg">{formatCurrency(travelRecord.totalCost)}</div>
+                <div className="font-bold text-lg">{formatCurrency(travelRecord.total_cost)}</div>
               </div>
             </div>
           </div>
@@ -97,16 +113,16 @@ const ViewTravelRecordDialog: React.FC<ViewTravelRecordDialogProps> = ({
                 <div className="flex flex-col gap-2">
                   <div className="flex items-start">
                     <div className="min-w-[80px] text-gray-500">From:</div>
-                    <div className="font-medium">{travelRecord.startLocation}</div>
+                    <div className="font-medium">{travelRecord.start_location}</div>
                   </div>
                   <div className="flex items-start">
                     <div className="min-w-[80px] text-gray-500">To:</div>
-                    <div className="font-medium">{travelRecord.endLocation}</div>
+                    <div className="font-medium">{travelRecord.end_location}</div>
                   </div>
                   <div className="flex items-center mt-2">
                     <ArrowRight className="h-4 w-4 text-gray-400 mx-2" />
                     <div className="text-sm text-gray-600">
-                      {formatDuration(travelRecord.duration)} journey time
+                      {formatDuration(travelRecord.travel_time_minutes)} journey time
                     </div>
                   </div>
                 </div>
@@ -125,17 +141,17 @@ const ViewTravelRecordDialog: React.FC<ViewTravelRecordDialogProps> = ({
                     <div className="flex items-start">
                       <div className="min-w-[100px] text-gray-500">Vehicle Type:</div>
                       <div className="font-medium">
-                        {vehicleTypeLabels[travelRecord.vehicleType]}
+                        {vehicleTypeLabels[travelRecord.vehicle_type] || travelRecord.vehicle_type}
                       </div>
                     </div>
-                    {travelRecord.vehicleType === 'car_personal' || travelRecord.vehicleType === 'car_company' ? (
+                    {(travelRecord.vehicle_type === 'car_personal' || travelRecord.vehicle_type === 'car_company') && (
                       <div className="flex items-start">
                         <div className="min-w-[100px] text-gray-500">Rate:</div>
                         <div className="font-medium">
-                          £{travelRecord.costPerMile.toFixed(2)} per mile
+                          £{travelRecord.mileage_rate.toFixed(2)} per mile
                         </div>
                       </div>
-                    ) : null}
+                    )}
                   </div>
                 </div>
               </div>
@@ -152,17 +168,17 @@ const ViewTravelRecordDialog: React.FC<ViewTravelRecordDialogProps> = ({
                       <div className="font-medium">{travelRecord.purpose}</div>
                     </div>
                     
-                    {travelRecord.carerName && (
+                    {travelRecord.staff && (
                       <div className="flex items-start">
-                        <div className="min-w-[80px] text-gray-500">Carer:</div>
-                        <div>{travelRecord.carerName}</div>
+                        <div className="min-w-[80px] text-gray-500">Staff:</div>
+                        <div>{travelRecord.staff.first_name} {travelRecord.staff.last_name}</div>
                       </div>
                     )}
                     
-                    {travelRecord.clientName && (
+                    {travelRecord.client && (
                       <div className="flex items-start">
                         <div className="min-w-[80px] text-gray-500">Client:</div>
-                        <div>{travelRecord.clientName}</div>
+                        <div>{travelRecord.client.first_name} {travelRecord.client.last_name}</div>
                       </div>
                     )}
                   </div>
@@ -183,10 +199,10 @@ const ViewTravelRecordDialog: React.FC<ViewTravelRecordDialogProps> = ({
               </div>
             )}
 
-            {/* Created by */}
+            {/* Created info */}
             <div className="text-sm text-gray-500 mt-4 flex items-center">
               <User className="h-4 w-4 mr-1" />
-              <span>Created by {travelRecord.createdBy}</span>
+              <span>Created on {format(new Date(travelRecord.created_at), "PPP")}</span>
             </div>
           </div>
         </div>
