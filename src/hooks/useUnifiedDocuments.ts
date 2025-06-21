@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -254,26 +253,7 @@ export const useUnifiedDocuments = (branchId: string) => {
   // Delete document mutation with cross-bucket support
   const deleteDocumentMutation = useMutation({
     mutationFn: async (documentId: string) => {
-      // Get document to find file path and source table
-      const { data: document } = await supabase
-        .from('documents')
-        .select('file_path, source_table')
-        .eq('id', documentId)
-        .single();
-
-      // Delete from storage if file exists
-      if (document?.file_path) {
-        const { bucket, path } = parseBucketAndPath(document.file_path);
-        
-        if (bucket && path) {
-          console.log(`Deleting file from ${bucket}/${path}`);
-          await supabase.storage
-            .from(bucket)
-            .remove([path]);
-        }
-      }
-
-      // Delete document record
+      // Delete document record directly since we can only delete from documents table
       const { error } = await supabase
         .from('documents')
         .delete()

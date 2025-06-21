@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { 
@@ -299,7 +298,9 @@ export function UnifiedDocumentsList({
                               <div className="flex items-center gap-2">
                                 <p className="font-medium truncate">{doc.name}</p>
                                 {getFileStatusIcon(doc.has_file, doc.file_path)}
-                                <Database className="h-3 w-3 text-gray-400" title={`Storage: ${getStorageBucket(doc.file_path)}`} />
+                                <span title={`Storage: ${getStorageBucket(doc.file_path)}`}>
+                                  <Database className="h-3 w-3 text-gray-400" />
+                                </span>
                               </div>
                               <div className="flex items-center gap-2 text-sm text-gray-500">
                                 <span>{doc.type}</span>
