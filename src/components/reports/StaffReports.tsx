@@ -17,10 +17,13 @@ import {
   Cell,
   ResponsiveContainer
 } from "recharts";
+import { useStaffReportsData } from "@/hooks/useReportsData";
+import { Loader2 } from "lucide-react";
 
 interface StaffReportsProps {
   branchId: string;
   branchName: string;
+  dateRange?: { from: Date; to: Date };
 }
 
 type StaffReportTab = "performance" | "availability" | "qualifications";
@@ -30,26 +33,9 @@ interface TabOption {
   label: string;
 }
 
-// Mock data for the charts
-const staffPerformanceData = [
-  { name: "Smith, John", completedTasks: 45, onTimePercentage: 95, clientFeedback: 4.8 },
-  { name: "Jones, Mary", completedTasks: 52, onTimePercentage: 98, clientFeedback: 4.9 },
-  { name: "Williams, David", completedTasks: 38, onTimePercentage: 90, clientFeedback: 4.5 },
-  { name: "Brown, Linda", completedTasks: 41, onTimePercentage: 92, clientFeedback: 4.7 },
-  { name: "Taylor, Sarah", completedTasks: 49, onTimePercentage: 97, clientFeedback: 4.9 },
-  { name: "Johnson, Michael", completedTasks: 36, onTimePercentage: 88, clientFeedback: 4.4 },
-];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
-const staffAvailabilityData = [
-  { day: "Monday", available: 18, unavailable: 3 },
-  { day: "Tuesday", available: 17, unavailable: 4 },
-  { day: "Wednesday", available: 19, unavailable: 2 },
-  { day: "Thursday", available: 16, unavailable: 5 },
-  { day: "Friday", available: 15, unavailable: 6 },
-  { day: "Saturday", available: 12, unavailable: 9 },
-  { day: "Sunday", available: 10, unavailable: 11 },
-];
-
+// Mock qualifications data since we don't have this in the database yet
 const staffQualificationsData = [
   { name: "Home Care", value: 15 },
   { name: "Dementia Care", value: 8 },
@@ -58,16 +44,40 @@ const staffQualificationsData = [
   { name: "Medication Management", value: 14 },
 ];
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
-
-export function StaffReports({ branchId, branchName }: StaffReportsProps) {
+export function StaffReports({ branchId, branchName, dateRange }: StaffReportsProps) {
   const [activeTab, setActiveTab] = useState<StaffReportTab>("performance");
+  
+  const { data: reportsData, isLoading, error } = useStaffReportsData({
+    branchId,
+    startDate: dateRange?.from?.toISOString().split('T')[0],
+    endDate: dateRange?.to?.toISOString().split('T')[0]
+  });
   
   const tabOptions: TabOption[] = [
     { id: "performance", label: "Staff Performance" },
     { id: "availability", label: "Availability" },
     { id: "qualifications", label: "Qualifications" },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading staff reports...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center p-8 text-red-600">
+        Error loading staff reports. Please try again later.
+      </div>
+    );
+  }
+
+  const performanceData = reportsData?.performance || [];
+  const availabilityData = reportsData?.availability || [];
   
   return (
     <div className="space-y-4">
@@ -91,29 +101,35 @@ export function StaffReports({ branchId, branchName }: StaffReportsProps) {
         <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-6">
             <h3 className="text-lg font-semibold mb-4">Staff Performance Metrics</h3>
-            <div className="w-full" style={{ height: "350px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <ChartContainer 
-                  config={{
-                    completedTasks: { color: "#0088FE" },
-                    onTimePercentage: { color: "#00C49F" },
-                  }}
-                >
-                  <BarChart 
-                    data={staffPerformanceData} 
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                    layout="vertical"
+            {performanceData.length > 0 ? (
+              <div className="w-full" style={{ height: "350px" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <ChartContainer 
+                    config={{
+                      completedTasks: { color: "#0088FE" },
+                      onTimePercentage: { color: "#00C49F" },
+                    }}
                   >
-                    <XAxis type="number" />
-                    <YAxis dataKey="name" type="category" width={100} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="completedTasks" name="Tasks Completed" fill="var(--color-completedTasks)" />
-                    <Bar dataKey="onTimePercentage" name="On-time %" fill="var(--color-onTimePercentage)" />
-                  </BarChart>
-                </ChartContainer>
-              </ResponsiveContainer>
-            </div>
+                    <BarChart 
+                      data={performanceData} 
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      layout="vertical"
+                    >
+                      <XAxis type="number" />
+                      <YAxis dataKey="name" type="category" width={100} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="completedTasks" name="Tasks Completed" fill="var(--color-completedTasks)" />
+                      <Bar dataKey="onTimePercentage" name="On-time %" fill="var(--color-onTimePercentage)" />
+                    </BarChart>
+                  </ChartContainer>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No staff performance data available for the selected period.
+              </div>
+            )}
             <div className="mt-4 text-sm text-muted-foreground">
               <p>This report shows performance metrics for staff members including completed tasks and punctuality.</p>
             </div>
@@ -125,29 +141,35 @@ export function StaffReports({ branchId, branchName }: StaffReportsProps) {
         <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-6">
             <h3 className="text-lg font-semibold mb-4">Staff Availability by Day</h3>
-            <div className="w-full" style={{ height: "350px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <ChartContainer
-                  config={{
-                    available: { color: "#0088FE" },
-                    unavailable: { color: "#FF8042" },
-                  }}
-                >
-                  <LineChart
-                    data={staffAvailabilityData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            {availabilityData.length > 0 ? (
+              <div className="w-full" style={{ height: "350px" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <ChartContainer
+                    config={{
+                      available: { color: "#0088FE" },
+                      unavailable: { color: "#FF8042" },
+                    }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="available" name="Available Staff" stroke="var(--color-available)" activeDot={{ r: 8 }} />
-                    <Line type="monotone" dataKey="unavailable" name="Unavailable Staff" stroke="var(--color-unavailable)" />
-                  </LineChart>
-                </ChartContainer>
-              </ResponsiveContainer>
-            </div>
+                    <LineChart
+                      data={availabilityData}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="day" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Line type="monotone" dataKey="available" name="Available Staff" stroke="var(--color-available)" activeDot={{ r: 8 }} />
+                      <Line type="monotone" dataKey="unavailable" name="Unavailable Staff" stroke="var(--color-unavailable)" />
+                    </LineChart>
+                  </ChartContainer>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No staff availability data available for the selected period.
+              </div>
+            )}
             <div className="mt-4 text-sm text-muted-foreground">
               <p>This report shows staff availability patterns throughout the week.</p>
             </div>
@@ -188,7 +210,7 @@ export function StaffReports({ branchId, branchName }: StaffReportsProps) {
               </ResponsiveContainer>
             </div>
             <div className="mt-4 text-sm text-muted-foreground">
-              <p>This report shows the distribution of qualifications among staff members.</p>
+              <p>This report shows the distribution of qualifications among staff members. <em>(Currently showing sample data - qualifications tracking to be implemented)</em></p>
             </div>
           </CardContent>
         </Card>
