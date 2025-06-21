@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useStaffList, useClientsList, ExtraTimeRecord } from "@/hooks/useAccountingData";
+import { useUserRole, UserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 
 const extraTimeSchema = z.object({
@@ -50,6 +51,34 @@ interface AddExtraTimeDialogProps {
   branchId?: string;
 }
 
+// Helper function to determine initial status based on creator role
+const determineInitialStatus = (creatorRole: UserRole | undefined): string => {
+  switch (creatorRole) {
+    case 'super_admin':
+      return 'approved'; // Auto-approved
+    case 'branch_admin':
+      return 'pending'; // Needs super admin approval
+    case 'carer':
+      return 'pending'; // Needs admin approval
+    default:
+      return 'pending';
+  }
+};
+
+// Helper function to get approval message based on role
+const getApprovalMessage = (creatorRole: UserRole | undefined): string => {
+  switch (creatorRole) {
+    case 'super_admin':
+      return 'This record will be automatically approved as you are a Super Admin.';
+    case 'branch_admin':
+      return 'This record will require Super Admin approval.';
+    case 'carer':
+      return 'This record will require Branch Admin or Super Admin approval.';
+    default:
+      return 'This record will require approval.';
+  }
+};
+
 const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
   open,
   onClose,
@@ -60,6 +89,7 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
 }) => {
   const { data: staffList = [], isLoading: staffLoading } = useStaffList(branchId);
   const { data: clientsList = [], isLoading: clientsLoading } = useClientsList(branchId);
+  const { data: userRole } = useUserRole();
 
   const {
     register,
@@ -116,6 +146,10 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
   };
 
   const { extraMinutes, totalCost } = calculateExtraTime();
+  
+  // Get initial status and approval message based on user role
+  const initialStatus = determineInitialStatus(userRole?.role);
+  const approvalMessage = getApprovalMessage(userRole?.role);
 
   const onSubmit = async (data: ExtraTimeFormData) => {
     try {
@@ -150,7 +184,17 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
         total_cost: totalCost,
         reason: data.reason || null,
         notes: data.notes || null,
-        status: 'pending',
+        status: isEditing ? initialData?.status || 'pending' : initialStatus,
+        // Add creator information for new records
+        ...(isEditing ? {} : {
+          created_by: userRole?.id || '',
+          creator_role: userRole?.role || 'carer',
+          // Auto-approve for super admin
+          ...(userRole?.role === 'super_admin' ? {
+            approved_by: userRole.id,
+            approved_at: new Date().toISOString(),
+          } : {})
+        }),
       };
 
       await onSave(extraTimeData);
@@ -178,6 +222,26 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
         </DialogHeader>
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Role-based approval information */}
+          {!isEditing && userRole?.role && (
+            <div className={`p-3 rounded-lg border ${
+              userRole.role === 'super_admin' 
+                ? 'bg-green-50 border-green-200' 
+                : 'bg-blue-50 border-blue-200'
+            }`}>
+              <div className={`text-sm font-medium ${
+                userRole.role === 'super_admin' ? 'text-green-800' : 'text-blue-800'
+              }`}>
+                Approval Status
+              </div>
+              <div className={`text-sm ${
+                userRole.role === 'super_admin' ? 'text-green-600' : 'text-blue-600'
+              }`}>
+                {approvalMessage}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="staff_id">Staff Member *</Label>

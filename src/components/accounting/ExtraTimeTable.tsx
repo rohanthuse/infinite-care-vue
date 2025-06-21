@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Table,
@@ -15,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, Edit, Trash2 } from "lucide-react";
+import { MoreHorizontal, Eye, Edit, Trash2, CheckCircle } from "lucide-react";
 import { ExtraTimeRecord } from "@/hooks/useAccountingData";
 
 interface ExtraTimeTableProps {
@@ -31,7 +32,7 @@ const ExtraTimeTable: React.FC<ExtraTimeTableProps> = ({
   onEditRecord,
   onDeleteRecord,
 }) => {
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, creatorRole?: string) => {
     const statusConfig: Record<string, { variant: "secondary" | "default" | "destructive"; label: string; className?: string }> = {
       pending: { variant: "secondary" as const, label: "Pending" },
       approved: { variant: "default" as const, label: "Approved", className: "bg-green-100 text-green-800 hover:bg-green-200" },
@@ -41,9 +42,17 @@ const ExtraTimeTable: React.FC<ExtraTimeTableProps> = ({
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
     
     return (
-      <Badge variant={config.variant} className={config.className || ""}>
-        {config.label}
-      </Badge>
+      <div className="flex items-center gap-2">
+        <Badge variant={config.variant} className={config.className || ""}>
+          {config.label}
+        </Badge>
+        {status === 'approved' && creatorRole === 'super_admin' && (
+          <div className="flex items-center text-xs text-green-600">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Auto-approved
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -54,6 +63,19 @@ const ExtraTimeTable: React.FC<ExtraTimeTableProps> = ({
       return `${hours}h ${mins}m`;
     }
     return `${mins}m`;
+  };
+
+  const getCreatorRoleDisplay = (role?: string) => {
+    switch (role) {
+      case 'super_admin':
+        return 'Super Admin';
+      case 'branch_admin':
+        return 'Branch Admin';
+      case 'carer':
+        return 'Carer';
+      default:
+        return 'Unknown';
+    }
   };
 
   return (
@@ -69,6 +91,7 @@ const ExtraTimeTable: React.FC<ExtraTimeTableProps> = ({
               <TableHead>Actual Time</TableHead>
               <TableHead>Extra Time</TableHead>
               <TableHead>Cost</TableHead>
+              <TableHead>Created By</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -131,7 +154,15 @@ const ExtraTimeTable: React.FC<ExtraTimeTableProps> = ({
                   <div className="font-medium">£{record.total_cost.toFixed(2)}</div>
                 </TableCell>
                 <TableCell>
-                  {getStatusBadge(record.status)}
+                  <div className="text-sm">
+                    <div className="font-medium">{getCreatorRoleDisplay(record.creator_role)}</div>
+                    {record.created_by && (
+                      <div className="text-gray-500">{record.created_by}</div>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {getStatusBadge(record.status, record.creator_role)}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>

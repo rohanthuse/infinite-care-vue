@@ -1,7 +1,9 @@
+
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { CheckCircle } from "lucide-react";
 import { ExtraTimeRecord } from "@/hooks/useAccountingData";
 
 interface ViewExtraTimeDialogProps {
@@ -17,7 +19,7 @@ const ViewExtraTimeDialog: React.FC<ViewExtraTimeDialogProps> = ({
   onEdit,
   record,
 }) => {
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, creatorRole?: string) => {
     const statusConfig: Record<string, { variant: "secondary" | "default" | "destructive"; label: string; className?: string }> = {
       pending: { variant: "secondary" as const, label: "Pending" },
       approved: { variant: "default" as const, label: "Approved", className: "bg-green-100 text-green-800" },
@@ -27,9 +29,17 @@ const ViewExtraTimeDialog: React.FC<ViewExtraTimeDialogProps> = ({
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
     
     return (
-      <Badge variant={config.variant} className={config.className || ""}>
-        {config.label}
-      </Badge>
+      <div className="flex items-center gap-2">
+        <Badge variant={config.variant} className={config.className || ""}>
+          {config.label}
+        </Badge>
+        {status === 'approved' && creatorRole === 'super_admin' && (
+          <div className="flex items-center text-xs text-green-600">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Auto-approved
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -40,6 +50,19 @@ const ViewExtraTimeDialog: React.FC<ViewExtraTimeDialogProps> = ({
       return `${hours}h ${mins}m`;
     }
     return `${mins}m`;
+  };
+
+  const getCreatorRoleDisplay = (role?: string) => {
+    switch (role) {
+      case 'super_admin':
+        return 'Super Admin';
+      case 'branch_admin':
+        return 'Branch Admin';
+      case 'carer':
+        return 'Carer';
+      default:
+        return 'Unknown';
+    }
   };
 
   return (
@@ -72,15 +95,22 @@ const ViewExtraTimeDialog: React.FC<ViewExtraTimeDialogProps> = ({
             </div>
           </div>
 
-          {/* Date and Status */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Date, Status, and Creator Information */}
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <h4 className="text-sm font-medium text-gray-500">Work Date</h4>
               <p className="text-sm">{new Date(record.work_date).toLocaleDateString()}</p>
             </div>
             <div>
               <h4 className="text-sm font-medium text-gray-500">Status</h4>
-              {getStatusBadge(record.status)}
+              {getStatusBadge(record.status, record.creator_role)}
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-gray-500">Created By</h4>
+              <p className="text-sm font-medium">{getCreatorRoleDisplay(record.creator_role)}</p>
+              {record.created_by && (
+                <p className="text-xs text-gray-500">{record.created_by}</p>
+              )}
             </div>
           </div>
 
@@ -169,6 +199,11 @@ const ViewExtraTimeDialog: React.FC<ViewExtraTimeDialogProps> = ({
               <p className="text-sm text-green-700">
                 Approved at: {new Date(record.approved_at).toLocaleString()}
               </p>
+              {record.creator_role === 'super_admin' && (
+                <p className="text-xs text-green-600 mt-1">
+                  (Automatically approved - Super Admin created)
+                </p>
+              )}
             </div>
           )}
 

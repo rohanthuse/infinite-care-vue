@@ -146,6 +146,8 @@ export interface ExtraTimeRecord {
   invoice_id?: string;
   created_at: string;
   updated_at: string;
+  created_by?: string;
+  creator_role?: string;
   staff?: {
     first_name: string;
     last_name: string;
@@ -370,7 +372,9 @@ export function useExtraTimeRecords(branchId?: string) {
           invoiced,
           invoice_id,
           created_at,
-          updated_at
+          updated_at,
+          created_by,
+          creator_role
         `)
         .eq('branch_id', branchId)
         .order('work_date', { ascending: false });
@@ -494,19 +498,32 @@ export function useCreateExtraTimeRecord() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (extraTime: Omit<ExtraTimeRecord, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (extraTime: Partial<ExtraTimeRecord>) => {
+      console.log('Creating extra time record with data:', extraTime);
+      
       const { data, error } = await supabase
         .from('extra_time_records')
         .insert(extraTime)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating extra time record:', error);
+        throw error;
+      }
+      
+      console.log('Extra time record created successfully:', data);
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['extra-time-records'] });
-      toast.success('Extra time record created successfully');
+      
+      // Show different success messages based on status
+      if (data.status === 'approved') {
+        toast.success('Extra time record created and automatically approved');
+      } else {
+        toast.success('Extra time record created and submitted for approval');
+      }
     },
     onError: (error) => {
       console.error('Error creating extra time record:', error);
