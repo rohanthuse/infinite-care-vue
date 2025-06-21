@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -249,7 +248,6 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
         </div>
       </div>
       
-      {/* Search and filter row */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -272,53 +270,6 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
         </Button>
       </div>
       
-      {/* Filter tags */}
-      {hasActiveFilters() && (
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-sm text-gray-500">Filters:</span>
-          
-          {activeFilters.dateRange.from && (
-            <div className="bg-blue-50 text-blue-700 text-xs px-3 py-1 rounded-full flex items-center gap-1.5">
-              <CalendarDays className="h-3 w-3" />
-              <span>From {activeFilters.dateRange.from.toLocaleDateString()}</span>
-            </div>
-          )}
-          
-          {activeFilters.dateRange.to && (
-            <div className="bg-blue-50 text-blue-700 text-xs px-3 py-1 rounded-full flex items-center gap-1.5">
-              <CalendarDays className="h-3 w-3" />
-              <span>To {activeFilters.dateRange.to.toLocaleDateString()}</span>
-            </div>
-          )}
-          
-          {activeFilters.paymentStatuses.map((status) => (
-            <div key={status} className="bg-blue-50 text-blue-700 text-xs px-3 py-1 rounded-full flex items-center gap-1.5">
-              <SlidersHorizontal className="h-3 w-3" />
-              <span>Status: {status.charAt(0).toUpperCase() + status.slice(1)}</span>
-            </div>
-          ))}
-          
-          {activeFilters.minGrossPay !== undefined && (
-            <div className="bg-blue-50 text-blue-700 text-xs px-3 py-1 rounded-full flex items-center gap-1.5">
-              <SlidersHorizontal className="h-3 w-3" />
-              <span>Min: £{activeFilters.minGrossPay.toFixed(2)}</span>
-            </div>
-          )}
-          
-          {activeFilters.maxGrossPay !== undefined && (
-            <div className="bg-blue-50 text-blue-700 text-xs px-3 py-1 rounded-full flex items-center gap-1.5">
-              <SlidersHorizontal className="h-3 w-3" />
-              <span>Max: £{activeFilters.maxGrossPay.toFixed(2)}</span>
-            </div>
-          )}
-          
-          <Button variant="ghost" size="sm" className="h-6 text-sm text-gray-500" onClick={clearAllFilters}>
-            Clear all
-          </Button>
-        </div>
-      )}
-      
-      {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between">
@@ -369,7 +320,6 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
         </div>
       </div>
       
-      {/* Payroll table */}
       {filteredRecords.length > 0 ? (
         <PayrollTable
           payrollRecords={filteredRecords}
@@ -383,7 +333,6 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
         </div>
       )}
       
-      {/* Add/Edit Payroll Dialog */}
       <AddPayrollDialog
         open={addDialogOpen}
         onClose={() => {
@@ -397,7 +346,6 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
         branchId={branchId}
       />
       
-      {/* View Payroll Dialog */}
       {selectedRecord && (
         <ViewPayrollDialog
           open={viewDialogOpen}
@@ -414,7 +362,6 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
         />
       )}
       
-      {/* Filter Dialog */}
       <FilterPayrollDialog
         open={filterDialogOpen}
         onClose={() => setFilterDialogOpen(false)}
@@ -422,7 +369,6 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
         initialFilters={activeFilters}
       />
       
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

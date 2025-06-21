@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -270,7 +269,6 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
         />
       )}
       
-      {/* Add/Edit Expense Dialog */}
       <AddExpenseDialog
         open={addDialogOpen}
         onClose={() => {
@@ -283,7 +281,6 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
         branchId={branchId}
       />
       
-      {/* View Expense Dialog */}
       {currentExpense && (
         <ViewExpenseDialog
           open={viewDialogOpen}
@@ -299,7 +296,6 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
         />
       )}
       
-      {/* Filter Dialog */}
       <FilterExpensesDialog
         open={filterDialogOpen}
         onClose={() => setFilterDialogOpen(false)}
@@ -307,7 +303,6 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
         currentFilters={filters}
       />
       
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

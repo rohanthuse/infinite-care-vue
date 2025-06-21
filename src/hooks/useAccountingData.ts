@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-// Types for database entities
+// Types for database entities that match the database schema
 export interface ExpenseRecord {
   id: string;
   branch_id: string;
@@ -25,11 +25,11 @@ export interface ExpenseRecord {
   staff?: {
     first_name: string;
     last_name: string;
-  };
+  } | null;
   client?: {
     first_name: string;
     last_name: string;
-  };
+  } | null;
 }
 
 export interface PayrollRecord {
@@ -63,7 +63,7 @@ export interface PayrollRecord {
     first_name: string;
     last_name: string;
     email: string;
-  };
+  } | null;
 }
 
 export interface TravelRecord {
@@ -92,11 +92,11 @@ export interface TravelRecord {
   staff?: {
     first_name: string;
     last_name: string;
-  };
+  } | null;
   client?: {
     first_name: string;
     last_name: string;
-  };
+  } | null;
 }
 
 export interface ServiceRate {
@@ -150,11 +150,11 @@ export interface ExtraTimeRecord {
   staff?: {
     first_name: string;
     last_name: string;
-  };
+  } | null;
   client?: {
     first_name: string;
     last_name: string;
-  };
+  } | null;
 }
 
 // Hook to fetch expenses for a branch
@@ -162,22 +162,20 @@ export function useExpenses(branchId?: string) {
   return useQuery({
     queryKey: ['expenses', branchId],
     queryFn: async () => {
-      let query = supabase
+      if (!branchId) return [];
+
+      const { data, error } = await supabase
         .from('expenses')
         .select(`
           *,
           staff:staff_id(first_name, last_name),
           client:client_id(first_name, last_name)
         `)
+        .eq('branch_id', branchId)
         .order('expense_date', { ascending: false });
 
-      if (branchId) {
-        query = query.eq('branch_id', branchId);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
-      return data as ExpenseRecord[];
+      return (data || []) as ExpenseRecord[];
     },
     enabled: !!branchId,
   });
@@ -188,21 +186,19 @@ export function usePayrollRecords(branchId?: string) {
   return useQuery({
     queryKey: ['payroll-records', branchId],
     queryFn: async () => {
-      let query = supabase
+      if (!branchId) return [];
+
+      const { data, error } = await supabase
         .from('payroll_records')
         .select(`
           *,
           staff:staff_id(first_name, last_name, email)
         `)
+        .eq('branch_id', branchId)
         .order('pay_period_start', { ascending: false });
 
-      if (branchId) {
-        query = query.eq('branch_id', branchId);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
-      return data as PayrollRecord[];
+      return (data || []) as PayrollRecord[];
     },
     enabled: !!branchId,
   });
@@ -213,22 +209,20 @@ export function useTravelRecords(branchId?: string) {
   return useQuery({
     queryKey: ['travel-records', branchId],
     queryFn: async () => {
-      let query = supabase
+      if (!branchId) return [];
+
+      const { data, error } = await supabase
         .from('travel_records')
         .select(`
           *,
           staff:staff_id(first_name, last_name),
           client:client_id(first_name, last_name)
         `)
+        .eq('branch_id', branchId)
         .order('travel_date', { ascending: false });
 
-      if (branchId) {
-        query = query.eq('branch_id', branchId);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
-      return data as TravelRecord[];
+      return (data || []) as TravelRecord[];
     },
     enabled: !!branchId,
   });
@@ -239,18 +233,16 @@ export function useServiceRates(branchId?: string) {
   return useQuery({
     queryKey: ['service-rates', branchId],
     queryFn: async () => {
-      let query = supabase
+      if (!branchId) return [];
+
+      const { data, error } = await supabase
         .from('service_rates')
         .select('*')
+        .eq('branch_id', branchId)
         .order('effective_from', { ascending: false });
 
-      if (branchId) {
-        query = query.eq('branch_id', branchId);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
-      return data as ServiceRate[];
+      return (data || []) as ServiceRate[];
     },
     enabled: !!branchId,
   });
@@ -261,22 +253,20 @@ export function useExtraTimeRecords(branchId?: string) {
   return useQuery({
     queryKey: ['extra-time-records', branchId],
     queryFn: async () => {
-      let query = supabase
+      if (!branchId) return [];
+
+      const { data, error } = await supabase
         .from('extra_time_records')
         .select(`
           *,
           staff:staff_id(first_name, last_name),
           client:client_id(first_name, last_name)
         `)
+        .eq('branch_id', branchId)
         .order('work_date', { ascending: false });
 
-      if (branchId) {
-        query = query.eq('branch_id', branchId);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
-      return data as ExtraTimeRecord[];
+      return (data || []) as ExtraTimeRecord[];
     },
     enabled: !!branchId,
   });
@@ -413,18 +403,16 @@ export function useStaffList(branchId?: string) {
   return useQuery({
     queryKey: ['staff-list', branchId],
     queryFn: async () => {
-      let query = supabase
+      if (!branchId) return [];
+
+      const { data, error } = await supabase
         .from('staff')
         .select('id, first_name, last_name, email')
+        .eq('branch_id', branchId)
         .eq('status', 'active');
 
-      if (branchId) {
-        query = query.eq('branch_id', branchId);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: !!branchId,
   });
@@ -435,17 +423,15 @@ export function useClientsList(branchId?: string) {
   return useQuery({
     queryKey: ['clients-list', branchId],
     queryFn: async () => {
-      let query = supabase
+      if (!branchId) return [];
+
+      const { data, error } = await supabase
         .from('clients')
-        .select('id, first_name, last_name, email');
+        .select('id, first_name, last_name, email')
+        .eq('branch_id', branchId);
 
-      if (branchId) {
-        query = query.eq('branch_id', branchId);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: !!branchId,
   });
