@@ -94,125 +94,6 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
 
   const currentSidePoints = selectedPoints.filter(p => p.side === currentSide);
 
-  // Create realistic human body SVG
-  const createBodySvg = (side: 'front' | 'back') => {
-    const frontBodySvg = `
-      <svg viewBox="0 0 200 500" className="w-full h-full">
-        <defs>
-          <linearGradient id="skinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#f4e4c1;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#e6d3a7;stop-opacity:1" />
-          </linearGradient>
-        </defs>
-        
-        <!-- Head -->
-        <ellipse cx="100" cy="50" rx="30" ry="35" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Eyes -->
-        <ellipse cx="90" cy="45" rx="3" ry="4" fill="#333"/>
-        <ellipse cx="110" cy="45" rx="3" ry="4" fill="#333"/>
-        
-        <!-- Nose -->
-        <path d="M100 50 L98 58 L102 58 Z" fill="#d4a574"/>
-        
-        <!-- Mouth -->
-        <path d="M95 65 Q100 68 105 65" stroke="#d4a574" stroke-width="1.5" fill="none"/>
-        
-        <!-- Neck -->
-        <rect x="90" y="82" width="20" height="25" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Torso -->
-        <ellipse cx="100" cy="180" rx="45" ry="75" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Arms -->
-        <ellipse cx="55" cy="140" rx="12" ry="50" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
-        <ellipse cx="145" cy="140" rx="12" ry="50" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Forearms -->
-        <ellipse cx="50" cy="210" rx="10" ry="40" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
-        <ellipse cx="150" cy="210" rx="10" ry="40" fill="url(#skinGradient)" stroke-width="1"/>
-        
-        <!-- Hands -->
-        <ellipse cx="48" cy="255" rx="8" ry="12" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
-        <ellipse cx="152" cy="255" rx="8" ry="12" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Pelvis -->
-        <ellipse cx="100" cy="280" rx="35" ry="25" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Thighs -->
-        <ellipse cx="85" cy="350" rx="18" ry="50" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
-        <ellipse cx="115" cy="350" rx="18" ry="50" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Calves -->
-        <ellipse cx="85" cy="425" rx="15" ry="45" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
-        <ellipse cx="115" cy="425" rx="15" ry="45" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Feet -->
-        <ellipse cx="85" cy="475" rx="12" ry="15" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
-        <ellipse cx="115" cy="475" rx="12" ry="15" fill="url(#skinGradient)" stroke="#d4a574" stroke-width="1"/>
-      </svg>
-    `;
-
-    const backBodySvg = `
-      <svg viewBox="0 0 200 500" className="w-full h-full">
-        <defs>
-          <linearGradient id="skinGradientBack" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#f4e4c1;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#e6d3a7;stop-opacity:1" />
-          </linearGradient>
-        </defs>
-        
-        <!-- Head (back view) -->
-        <ellipse cx="100" cy="50" rx="30" ry="35" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Hair line -->
-        <path d="M75 30 Q100 25 125 30" stroke="#8B4513" stroke-width="2" fill="none"/>
-        
-        <!-- Neck -->
-        <rect x="90" y="82" width="20" height="25" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Torso (back view) -->
-        <ellipse cx="100" cy="180" rx="45" ry="75" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Spine line -->
-        <line x1="100" y1="110" x2="100" y2="250" stroke="#d4a574" stroke-width="1" stroke-dasharray="3,2"/>
-        
-        <!-- Shoulder blades -->
-        <ellipse cx="80" cy="130" rx="15" ry="20" fill="none" stroke="#d4a574" stroke-width="1"/>
-        <ellipse cx="120" cy="130" rx="15" ry="20" fill="none" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Arms (back view) -->
-        <ellipse cx="55" cy="140" rx="12" ry="50" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
-        <ellipse cx="145" cy="140" rx="12" ry="50" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Forearms (back view) -->
-        <ellipse cx="50" cy="210" rx="10" ry="40" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
-        <ellipse cx="150" cy="210" rx="10" ry="40" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Hands (back view) -->
-        <ellipse cx="48" cy="255" rx="8" ry="12" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
-        <ellipse cx="152" cy="255" rx="8" ry="12" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Pelvis (back view) -->
-        <ellipse cx="100" cy="280" rx="35" ry="25" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Thighs (back view) -->
-        <ellipse cx="85" cy="350" rx="18" ry="50" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
-        <ellipse cx="115" cy="350" rx="18" ry="50" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Calves (back view) -->
-        <ellipse cx="85" cy="425" rx="15" ry="45" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
-        <ellipse cx="115" cy="425" rx="15" ry="45" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
-        
-        <!-- Feet (back view) -->
-        <ellipse cx="85" cy="475" rx="12" ry="15" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
-        <ellipse cx="115" cy="475" rx="12" ry="15" fill="url(#skinGradientBack)" stroke="#d4a574" stroke-width="1"/>
-      </svg>
-    `;
-
-    return side === 'front' ? frontBodySvg : backBodySvg;
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -270,21 +151,23 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
           )}
         </div>
 
-        {/* Realistic Body Diagram */}
-        <div className="relative mx-auto max-w-sm">
+        {/* Realistic Human Body Diagram */}
+        <div className="relative mx-auto max-w-md">
           <div
-            className={`relative w-full h-[500px] border-2 border-dashed border-gray-300 rounded-lg bg-gradient-to-b from-gray-50 to-gray-100 overflow-hidden ${
+            className={`relative w-full h-[600px] border-2 border-dashed border-gray-300 rounded-lg bg-white overflow-hidden ${
               isAddingPoint ? 'cursor-crosshair border-blue-400 bg-blue-50' : 'cursor-default'
             }`}
             onClick={handleBodyClick}
           >
-            {/* Realistic Human Body SVG */}
+            {/* Human Body Background Image */}
             <div 
-              className="absolute inset-0 w-full h-full flex items-center justify-center"
-              dangerouslySetInnerHTML={{ 
-                __html: createBodySvg(currentSide)
+              className="absolute inset-0 w-full h-full bg-contain bg-center bg-no-repeat"
+              style={{ 
+                backgroundImage: `url(/lovable-uploads/e823d8ed-e260-4f9e-b0af-edf308ef3e29.png)`,
+                backgroundPosition: currentSide === 'front' ? 'left center' : 'right center',
+                backgroundSize: '200% 100%',
+                pointerEvents: 'none'
               }}
-              style={{ pointerEvents: 'none' }}
             />
 
             {/* Injury points */}
