@@ -89,7 +89,7 @@ export function UnifiedUploadDialog({
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [relatedEntity, setRelatedEntity] = useState<string>("");
+  const [relatedEntity, setRelatedEntity] = useState<string>("none");
   const [relatedEntityId, setRelatedEntityId] = useState<string>("");
   
   const form = useForm<FormValues>({
@@ -162,7 +162,7 @@ export function UnifiedUploadDialog({
       form.reset();
       setSelectedFile(null);
       setTags([]);
-      setRelatedEntity("");
+      setRelatedEntity("none");
       setRelatedEntityId("");
       onOpenChange(false);
     } catch (error) {
@@ -306,14 +306,14 @@ export function UnifiedUploadDialog({
                     <SelectValue placeholder="Select entity type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     <SelectItem value="client">Client</SelectItem>
                     <SelectItem value="staff">Staff</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {relatedEntity && (
+              {relatedEntity && relatedEntity !== "none" && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
                     Select {relatedEntity === "client" ? "Client" : "Staff Member"}
