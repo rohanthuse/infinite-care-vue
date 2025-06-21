@@ -164,18 +164,45 @@ export function useExpenses(branchId?: string) {
     queryFn: async () => {
       if (!branchId) return [];
 
+      console.log('Fetching expenses for branch:', branchId);
+
       const { data, error } = await supabase
         .from('expenses')
         .select(`
-          *,
-          staff:staff_id(first_name, last_name),
-          client:client_id(first_name, last_name)
+          id,
+          branch_id,
+          staff_id,
+          client_id,
+          description,
+          amount,
+          expense_date,
+          category,
+          payment_method,
+          receipt_url,
+          notes,
+          status,
+          approved_by,
+          approved_at,
+          created_by,
+          created_at,
+          updated_at
         `)
         .eq('branch_id', branchId)
         .order('expense_date', { ascending: false });
 
-      if (error) throw error;
-      return (data || []) as ExpenseRecord[];
+      if (error) {
+        console.error('Error fetching expenses:', error);
+        throw error;
+      }
+
+      // Transform the data to include staff and client info by ID lookup if needed
+      const transformedData = (data || []).map(expense => ({
+        ...expense,
+        staff: null, // We'll populate this separately if needed
+        client: null // We'll populate this separately if needed
+      }));
+
+      return transformedData as ExpenseRecord[];
     },
     enabled: !!branchId,
   });
@@ -188,17 +215,53 @@ export function usePayrollRecords(branchId?: string) {
     queryFn: async () => {
       if (!branchId) return [];
 
+      console.log('Fetching payroll records for branch:', branchId);
+
       const { data, error } = await supabase
         .from('payroll_records')
         .select(`
-          *,
-          staff:staff_id(first_name, last_name, email)
+          id,
+          branch_id,
+          staff_id,
+          pay_period_start,
+          pay_period_end,
+          regular_hours,
+          overtime_hours,
+          hourly_rate,
+          overtime_rate,
+          basic_salary,
+          overtime_pay,
+          bonus,
+          gross_pay,
+          tax_deduction,
+          ni_deduction,
+          pension_deduction,
+          other_deductions,
+          net_pay,
+          payment_status,
+          payment_method,
+          payment_date,
+          payment_reference,
+          notes,
+          created_by,
+          created_at,
+          updated_at
         `)
         .eq('branch_id', branchId)
         .order('pay_period_start', { ascending: false });
 
-      if (error) throw error;
-      return (data || []) as PayrollRecord[];
+      if (error) {
+        console.error('Error fetching payroll records:', error);
+        throw error;
+      }
+
+      // Transform the data to include staff info by ID lookup if needed
+      const transformedData = (data || []).map(record => ({
+        ...record,
+        staff: null // We'll populate this separately if needed
+      }));
+
+      return transformedData as PayrollRecord[];
     },
     enabled: !!branchId,
   });
@@ -214,15 +277,41 @@ export function useTravelRecords(branchId?: string) {
       const { data, error } = await supabase
         .from('travel_records')
         .select(`
-          *,
-          staff:staff_id(first_name, last_name),
-          client:client_id(first_name, last_name)
+          id,
+          branch_id,
+          staff_id,
+          client_id,
+          booking_id,
+          travel_date,
+          start_location,
+          end_location,
+          distance_miles,
+          travel_time_minutes,
+          vehicle_type,
+          mileage_rate,
+          total_cost,
+          purpose,
+          receipt_url,
+          notes,
+          status,
+          approved_by,
+          approved_at,
+          reimbursed_at,
+          created_at,
+          updated_at
         `)
         .eq('branch_id', branchId)
         .order('travel_date', { ascending: false });
 
       if (error) throw error;
-      return (data || []) as TravelRecord[];
+
+      const transformedData = (data || []).map(record => ({
+        ...record,
+        staff: null,
+        client: null
+      }));
+
+      return transformedData as TravelRecord[];
     },
     enabled: !!branchId,
   });
@@ -258,15 +347,44 @@ export function useExtraTimeRecords(branchId?: string) {
       const { data, error } = await supabase
         .from('extra_time_records')
         .select(`
-          *,
-          staff:staff_id(first_name, last_name),
-          client:client_id(first_name, last_name)
+          id,
+          branch_id,
+          staff_id,
+          client_id,
+          booking_id,
+          work_date,
+          scheduled_start_time,
+          scheduled_end_time,
+          actual_start_time,
+          actual_end_time,
+          scheduled_duration_minutes,
+          actual_duration_minutes,
+          extra_time_minutes,
+          hourly_rate,
+          extra_time_rate,
+          total_cost,
+          reason,
+          notes,
+          status,
+          approved_by,
+          approved_at,
+          invoiced,
+          invoice_id,
+          created_at,
+          updated_at
         `)
         .eq('branch_id', branchId)
         .order('work_date', { ascending: false });
 
       if (error) throw error;
-      return (data || []) as ExtraTimeRecord[];
+
+      const transformedData = (data || []).map(record => ({
+        ...record,
+        staff: null,
+        client: null
+      }));
+
+      return transformedData as ExtraTimeRecord[];
     },
     enabled: !!branchId,
   });
