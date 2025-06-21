@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,7 @@ const ViewExtraTimeDialog: React.FC<ViewExtraTimeDialogProps> = ({
   record,
 }) => {
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
+    const statusConfig: Record<string, { variant: "secondary" | "default" | "destructive"; label: string; className?: string }> = {
       pending: { variant: "secondary" as const, label: "Pending" },
       approved: { variant: "default" as const, label: "Approved", className: "bg-green-100 text-green-800" },
       rejected: { variant: "destructive" as const, label: "Rejected" },

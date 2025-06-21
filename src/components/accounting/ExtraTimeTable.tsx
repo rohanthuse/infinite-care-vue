@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Table,
@@ -33,7 +32,7 @@ const ExtraTimeTable: React.FC<ExtraTimeTableProps> = ({
   onDeleteRecord,
 }) => {
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
+    const statusConfig: Record<string, { variant: "secondary" | "default" | "destructive"; label: string; className?: string }> = {
       pending: { variant: "secondary" as const, label: "Pending" },
       approved: { variant: "default" as const, label: "Approved", className: "bg-green-100 text-green-800 hover:bg-green-200" },
       rejected: { variant: "destructive" as const, label: "Rejected" },
