@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -41,67 +42,143 @@ export interface UploadDocumentData {
 export const useUnifiedDocuments = (branchId: string) => {
   const queryClient = useQueryClient();
 
-  // Enhanced helper function to determine bucket and path from file_path
+  // Enhanced helper function to determine bucket and path from file_path with improved fallback logic
   const parseBucketAndPath = (filePath: string): { bucket: string; path: string } => {
     if (!filePath || filePath === '<nil>' || filePath === 'null' || filePath === 'undefined') {
+      console.log('Invalid file path:', filePath);
       return { bucket: '', path: '' };
     }
     
+    console.log('Parsing file path:', filePath);
+    
     // Check if the path includes bucket prefix
     if (filePath.startsWith('client-documents/')) {
+      const path = filePath.substring('client-documents/'.length);
+      console.log('Detected client-documents bucket, path:', path);
       return {
         bucket: 'client-documents',
-        path: filePath.substring('client-documents/'.length)
+        path: path
       };
     }
     
     if (filePath.startsWith('agreement-files/')) {
+      const path = filePath.substring('agreement-files/'.length);
+      console.log('Detected agreement-files bucket, path:', path);
       return {
         bucket: 'agreement-files',
-        path: filePath.substring('agreement-files/'.length)
+        path: path
       };
     }
     
     if (filePath.startsWith('documents/')) {
+      const path = filePath.substring('documents/'.length);
+      console.log('Detected documents bucket, path:', path);
       return {
         bucket: 'documents',
-        path: filePath.substring('documents/'.length)
+        path: path
       };
     }
     
+    // For legacy paths without bucket prefix, try to determine bucket from context
     // Default to documents bucket for unprefixed paths
+    console.log('No bucket prefix detected, defaulting to documents bucket');
     return {
       bucket: 'documents',
       path: filePath
     };
   };
 
-  // Check if a file is available in storage across multiple buckets
-  const checkFileAvailability = async (filePath?: string): Promise<boolean> => {
+  // Enhanced file availability check with multiple bucket fallback logic
+  const checkFileAvailability = async (filePath?: string, sourceTable?: string): Promise<boolean> => {
     if (!filePath || filePath === '<nil>' || filePath === 'null' || filePath === 'undefined') {
+      console.log('File availability check: Invalid file path');
       return false;
     }
 
+    console.log('Checking file availability for:', { filePath, sourceTable });
+
     try {
+      // Primary bucket based on path parsing
       const { bucket, path } = parseBucketAndPath(filePath);
       
-      if (!bucket || !path) return false;
+      if (!bucket || !path) {
+        console.log('Could not parse bucket and path');
+        return false;
+      }
 
-      console.log(`Checking file availability: bucket=${bucket}, path=${path}`);
+      console.log(`Primary check: bucket=${bucket}, path=${path}`);
 
-      // Try to get file info from storage
-      const { data, error } = await supabase.storage
+      // Try to get file info from the parsed bucket first
+      const { data: primaryData, error: primaryError } = await supabase.storage
         .from(bucket)
-        .list(path.split('/').slice(0, -1).join('/'), {
+        .list(path.split('/').slice(0, -1).join('/') || '', {
           search: path.split('/').pop()
         });
 
-      const fileExists = !error && data && data.length > 0;
-      console.log(`File exists check: ${fileExists} for ${bucket}/${path}`);
-      
-      return fileExists;
+      if (!primaryError && primaryData && primaryData.length > 0) {
+        console.log(`File found in primary bucket ${bucket}:`, primaryData[0]);
+        return true;
+      }
+
+      console.log(`File not found in primary bucket ${bucket}, trying fallback strategies`);
+
+      // Fallback strategy 1: If we tried documents bucket, also try client-documents bucket
+      if (bucket === 'documents' && sourceTable === 'client_documents') {
+        console.log('Trying client-documents bucket as fallback');
+        const clientPath = `client-documents/${path}`;
+        const fallbackResult = await checkSingleBucket('client-documents', path);
+        if (fallbackResult) {
+          console.log('File found in client-documents bucket via fallback');
+          return true;
+        }
+      }
+
+      // Fallback strategy 2: For paths without bucket prefix, try multiple buckets based on source
+      if (!filePath.includes('/') || !filePath.startsWith('client-documents/') && !filePath.startsWith('agreement-files/') && !filePath.startsWith('documents/')) {
+        console.log('Trying multiple buckets for unprefixed path');
+        
+        const bucketsToTry = sourceTable === 'client_documents' 
+          ? ['client-documents', 'documents'] 
+          : sourceTable === 'agreement_files'
+          ? ['agreement-files', 'documents']
+          : ['documents', 'client-documents'];
+        
+        for (const tryBucket of bucketsToTry) {
+          console.log(`Trying bucket: ${tryBucket}`);
+          const result = await checkSingleBucket(tryBucket, path);
+          if (result) {
+            console.log(`File found in ${tryBucket} bucket`);
+            return true;
+          }
+        }
+      }
+
+      console.log('File not found in any bucket');
+      return false;
     } catch (error) {
       console.error('Error checking file availability:', error);
+      return false;
+    }
+  };
+
+  // Helper function to check a single bucket
+  const checkSingleBucket = async (bucket: string, path: string): Promise<boolean> => {
+    try {
+      const pathParts = path.split('/');
+      const fileName = pathParts.pop();
+      const folderPath = pathParts.join('/');
+      
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .list(folderPath || '', {
+          search: fileName
+        });
+
+      const found = !error && data && data.length > 0;
+      console.log(`Single bucket check ${bucket}/${path}:`, found ? 'found' : 'not found');
+      return found;
+    } catch (error) {
+      console.error(`Error checking bucket ${bucket}:`, error);
       return false;
     }
   };
@@ -127,11 +204,16 @@ export const useUnifiedDocuments = (branchId: string) => {
       
       console.log('Raw documents from database:', data);
       
-      // Add file availability check to each document
+      // Add file availability check to each document with enhanced logic
       const documentsWithFileStatus = await Promise.all(
         (data as UnifiedDocument[]).map(async (doc) => {
-          const hasFile = await checkFileAvailability(doc.file_path);
-          console.log(`Document ${doc.name}: has_file=${hasFile}, file_path=${doc.file_path}`);
+          console.log(`\n--- Processing document: ${doc.name} ---`);
+          console.log(`Source table: ${doc.source_table}`);
+          console.log(`File path: ${doc.file_path}`);
+          
+          const hasFile = await checkFileAvailability(doc.file_path, doc.source_table);
+          console.log(`Final result for ${doc.name}: has_file=${hasFile}`);
+          
           return { ...doc, has_file: hasFile };
         })
       );
@@ -250,7 +332,7 @@ export const useUnifiedDocuments = (branchId: string) => {
     },
   });
 
-  // Delete document mutation with cross-bucket support
+  // Delete document mutation
   const deleteDocumentMutation = useMutation({
     mutationFn: async (documentId: string) => {
       // Delete document record directly since we can only delete from documents table
@@ -277,7 +359,7 @@ export const useUnifiedDocuments = (branchId: string) => {
     },
   });
 
-  // Enhanced download document function with cross-bucket support
+  // Enhanced download document function with improved bucket resolution
   const downloadDocument = async (filePath: string, fileName: string) => {
     try {
       console.log('Download attempt:', { filePath, fileName });
@@ -302,7 +384,7 @@ export const useUnifiedDocuments = (branchId: string) => {
         return;
       }
 
-      // Parse bucket and path
+      // Parse bucket and path with enhanced logic
       const { bucket, path } = parseBucketAndPath(filePath);
       
       if (!bucket || !path) {
@@ -321,31 +403,31 @@ export const useUnifiedDocuments = (branchId: string) => {
         fileName: fileName
       });
 
-      // Check if file exists before attempting download
-      const fileExists = await checkFileAvailability(filePath);
-      if (!fileExists) {
-        toast({
-          title: "File Not Found",
-          description: "The document file could not be found in storage.",
-          variant: "destructive",
-        });
-        return;
+      // Try to download from the parsed bucket
+      let downloadData, downloadError;
+      
+      ({ data: downloadData, error: downloadError } = await supabase.storage
+        .from(bucket)
+        .download(path));
+
+      // If download failed and we're using documents bucket, try client-documents as fallback
+      if (downloadError && bucket === 'documents') {
+        console.log('Primary download failed, trying client-documents bucket');
+        ({ data: downloadData, error: downloadError } = await supabase.storage
+          .from('client-documents')
+          .download(path));
       }
 
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .download(path);
-
-      if (error) {
-        console.error('Supabase storage download error:', error);
+      if (downloadError) {
+        console.error('Supabase storage download error:', downloadError);
         
         // Provide specific error messages based on error type
         let errorMessage = "Failed to download document";
-        if (error.message.includes('not found') || error.message.includes('does not exist')) {
+        if (downloadError.message.includes('not found') || downloadError.message.includes('does not exist')) {
           errorMessage = "Document file not found.";
-        } else if (error.message.includes('access') || error.message.includes('permission')) {
+        } else if (downloadError.message.includes('access') || downloadError.message.includes('permission')) {
           errorMessage = "Access denied.";
-        } else if (error.message.includes('network') || error.message.includes('timeout')) {
+        } else if (downloadError.message.includes('network') || downloadError.message.includes('timeout')) {
           errorMessage = "Network error. Please try again.";
         }
         
@@ -358,7 +440,7 @@ export const useUnifiedDocuments = (branchId: string) => {
       }
 
       // Create download link
-      const url = window.URL.createObjectURL(data);
+      const url = window.URL.createObjectURL(downloadData);
       const a = document.createElement('a');
       a.href = url;
       a.download = fileName;
@@ -382,7 +464,7 @@ export const useUnifiedDocuments = (branchId: string) => {
     }
   };
 
-  // Enhanced view document function with cross-bucket support
+  // Enhanced view document function with improved bucket resolution
   const viewDocument = async (filePath: string) => {
     try {
       console.log('View attempt:', { filePath });
@@ -407,7 +489,7 @@ export const useUnifiedDocuments = (branchId: string) => {
         return;
       }
 
-      // Parse bucket and path
+      // Parse bucket and path with enhanced logic
       const { bucket, path } = parseBucketAndPath(filePath);
       
       if (!bucket || !path) {
@@ -425,29 +507,29 @@ export const useUnifiedDocuments = (branchId: string) => {
         path: path
       });
 
-      // Check if file exists before attempting to view
-      const fileExists = await checkFileAvailability(filePath);
-      if (!fileExists) {
-        toast({
-          title: "File Not Found",
-          description: "The document file could not be found for viewing.",
-          variant: "destructive",
-        });
-        return;
+      // Try to create signed URL from the parsed bucket
+      let signedUrlData, signedUrlError;
+      
+      ({ data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(path, 3600)); // 1 hour expiry
+
+      // If signed URL creation failed and we're using documents bucket, try client-documents as fallback
+      if (signedUrlError && bucket === 'documents') {
+        console.log('Primary signed URL failed, trying client-documents bucket');
+        ({ data: signedUrlData, error: signedUrlError } = await supabase.storage
+          .from('client-documents')
+          .createSignedUrl(path, 3600));
       }
 
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .createSignedUrl(path, 3600); // 1 hour expiry
-
-      if (error) {
-        console.error('Supabase signed URL error:', error);
+      if (signedUrlError) {
+        console.error('Supabase signed URL error:', signedUrlError);
         
         // Provide specific error messages
         let errorMessage = "Failed to open document for viewing";
-        if (error.message.includes('not found') || error.message.includes('does not exist')) {
+        if (signedUrlError.message.includes('not found') || signedUrlError.message.includes('does not exist')) {
           errorMessage = "Document file not found.";
-        } else if (error.message.includes('access') || error.message.includes('permission')) {
+        } else if (signedUrlError.message.includes('access') || signedUrlError.message.includes('permission')) {
           errorMessage = "Access denied.";
         }
         
@@ -460,7 +542,7 @@ export const useUnifiedDocuments = (branchId: string) => {
       }
 
       // Open in new tab
-      window.open(data.signedUrl, '_blank');
+      window.open(signedUrlData.signedUrl, '_blank');
       
     } catch (error: any) {
       console.error('View error:', error);
