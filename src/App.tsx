@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import BranchDashboard from "./pages/BranchDashboard";
 import CarerLogin from "./pages/CarerLogin";
 import CarerInvitation from "./pages/CarerInvitation";
+import SuperAdminLogin from "./pages/SuperAdminLogin";
 import AdminRoutes from "./routes/AdminRoutes";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/super-admin" element={<SuperAdminLogin />} />
             <Route path="/carer-login" element={<CarerLogin />} />
             <Route path="/carer-invitation" element={<CarerInvitation />} />
             
