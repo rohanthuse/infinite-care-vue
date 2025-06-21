@@ -59,27 +59,36 @@ export const useUnifiedDocuments = (branchId: string) => {
     enabled: !!branchId,
   });
 
-  // Upload document mutation
+  // Upload document mutation with improved path handling
   const uploadDocumentMutation = useMutation({
     mutationFn: async (documentData: UploadDocumentData) => {
       const { file, ...metadata } = documentData;
       
-      // Generate unique file path
+      // Generate unique file path with consistent format
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(2);
+      const fileName = `${timestamp}-${randomId}.${fileExt}`;
+      
+      // Use consistent path format: branchId/fileName (no leading slash)
       const filePath = `${branchId}/${fileName}`;
+
+      console.log('Uploading file with path:', filePath);
 
       // Upload file to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('documents')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
 
       // Get current user for uploaded_by
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Insert document record
+      // Insert document record with consistent path
       const { data, error } = await supabase
         .from('documents')
         .insert({
@@ -87,7 +96,7 @@ export const useUnifiedDocuments = (branchId: string) => {
           type: metadata.type,
           category: metadata.category,
           description: metadata.description,
-          file_path: uploadData.path,
+          file_path: uploadData.path, // This will be the consistent format
           file_size: `${(file.size / 1024).toFixed(2)} KB`,
           file_type: file.type,
           uploaded_by: user?.id,
@@ -104,7 +113,12 @@ export const useUnifiedDocuments = (branchId: string) => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database insert error:', error);
+        throw error;
+      }
+      
+      console.log('Successfully uploaded and recorded document:', data);
       return data;
     },
     onSuccess: () => {
@@ -115,8 +129,9 @@ export const useUnifiedDocuments = (branchId: string) => {
       });
     },
     onError: (error) => {
+      console.error('Upload mutation error:', error);
       toast({
-        title: "Error",
+        title: "Upload Failed",
         description: "Failed to upload document: " + error.message,
         variant: "destructive",
       });
@@ -164,9 +179,12 @@ export const useUnifiedDocuments = (branchId: string) => {
 
       // Delete from storage if file exists
       if (document?.file_path) {
-        await supabase.storage
-          .from('documents')
-          .remove([document.file_path]);
+        const normalizedPath = normalizeFilePath(document.file_path);
+        if (normalizedPath) {
+          await supabase.storage
+            .from('documents')
+            .remove([normalizedPath]);
+        }
       }
 
       // Delete document record
@@ -193,14 +211,80 @@ export const useUnifiedDocuments = (branchId: string) => {
     },
   });
 
-  // Download document function - corrected signature
+  // Helper function to normalize file paths
+  const normalizeFilePath = (filePath: string): string => {
+    if (!filePath) return '';
+    
+    // Remove any leading slashes or bucket prefixes
+    let normalizedPath = filePath.replace(/^\/+/, '');
+    
+    // Remove common prefixes that might be incorrectly included
+    const prefixesToRemove = [
+      'documents/',
+      'storage/v1/object/public/documents/',
+      'https://vcrjntfjsmpoupgairep.supabase.co/storage/v1/object/public/documents/'
+    ];
+    
+    for (const prefix of prefixesToRemove) {
+      if (normalizedPath.startsWith(prefix)) {
+        normalizedPath = normalizedPath.substring(prefix.length);
+        break;
+      }
+    }
+    
+    return normalizedPath;
+  };
+
+  // Download document function with improved error handling
   const downloadDocument = async (filePath: string, fileName: string) => {
     try {
+      // Validate inputs
+      if (!filePath || !fileName) {
+        toast({
+          title: "Download Error",
+          description: "Invalid file path or name. Please contact support.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Normalize the file path
+      const normalizedPath = normalizeFilePath(filePath);
+      
+      if (!normalizedPath) {
+        toast({
+          title: "Download Error",
+          description: "Invalid file path format. Please contact support.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Attempting to download file:', {
+        originalPath: filePath,
+        normalizedPath: normalizedPath,
+        fileName: fileName
+      });
+
       const { data, error } = await supabase.storage
         .from('documents')
-        .download(filePath);
+        .download(normalizedPath);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase storage error:', error);
+        
+        // Provide specific error messages based on error type
+        let errorMessage = "Failed to download document";
+        if (error.message.includes('not found') || error.message.includes('does not exist')) {
+          errorMessage = "Document file not found. It may have been moved or deleted.";
+        } else if (error.message.includes('access')) {
+          errorMessage = "Access denied. You don't have permission to download this file.";
+        } else if (error.message.includes('network')) {
+          errorMessage = "Network error. Please check your connection and try again.";
+        }
+        
+        throw new Error(errorMessage);
+      }
 
       // Create download link
       const url = window.URL.createObjectURL(data);
@@ -211,30 +295,76 @@ export const useUnifiedDocuments = (branchId: string) => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (error: any) {
+
       toast({
-        title: "Error",
-        description: "Failed to download document: " + error.message,
+        title: "Success",
+        description: "Document downloaded successfully",
+      });
+    } catch (error: any) {
+      console.error('Download error:', error);
+      toast({
+        title: "Download Failed",
+        description: error.message || "Failed to download document. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  // View document function - corrected signature
+  // View document function with improved error handling
   const viewDocument = async (filePath: string) => {
     try {
+      // Validate input
+      if (!filePath) {
+        toast({
+          title: "View Error",
+          description: "Invalid file path. Please contact support.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Normalize the file path
+      const normalizedPath = normalizeFilePath(filePath);
+      
+      if (!normalizedPath) {
+        toast({
+          title: "View Error",
+          description: "Invalid file path format. Please contact support.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Attempting to view file:', {
+        originalPath: filePath,
+        normalizedPath: normalizedPath
+      });
+
       const { data, error } = await supabase.storage
         .from('documents')
-        .createSignedUrl(filePath, 3600); // 1 hour expiry
+        .createSignedUrl(normalizedPath, 3600); // 1 hour expiry
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase signed URL error:', error);
+        
+        // Provide specific error messages
+        let errorMessage = "Failed to view document";
+        if (error.message.includes('not found') || error.message.includes('does not exist')) {
+          errorMessage = "Document file not found. It may have been moved or deleted.";
+        } else if (error.message.includes('access')) {
+          errorMessage = "Access denied. You don't have permission to view this file.";
+        }
+        
+        throw new Error(errorMessage);
+      }
 
       // Open in new tab
       window.open(data.signedUrl, '_blank');
     } catch (error: any) {
+      console.error('View error:', error);
       toast({
-        title: "Error",
-        description: "Failed to view document: " + error.message,
+        title: "View Failed",
+        description: error.message || "Failed to view document. Please try again.",
         variant: "destructive",
       });
     }
