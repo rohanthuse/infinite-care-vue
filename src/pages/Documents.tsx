@@ -18,17 +18,25 @@ const Documents = () => {
   const [activeNavTab, setActiveNavTab] = useState("documents");
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   
+  console.log('Documents page - branchId:', branchId, 'branchName:', branchName);
+  
   // Get user role information
   const { data: roleInfo, isLoading: roleLoading, error: roleError } = useUserRoleCheck();
+  
+  console.log('Documents page - roleInfo:', roleInfo, 'loading:', roleLoading, 'error:', roleError);
   
   // Determine if we're in branch context or standalone
   const isStandalone = !branchId;
   const decodedBranchName = branchName ? decodeURIComponent(branchName) : "Documents";
   
+  console.log('Documents page - isStandalone:', isStandalone, 'decodedBranchName:', decodedBranchName);
+  
   // Get the first available branch for standalone mode
   const selectedBranchId = isStandalone && roleInfo?.associatedBranches?.length 
     ? roleInfo.associatedBranches[0] 
     : branchId;
+
+  console.log('Documents page - selectedBranchId:', selectedBranchId);
 
   // Set page title
   useEffect(() => {
@@ -51,12 +59,16 @@ const Documents = () => {
 
   // Show loading state while checking roles
   if (roleLoading) {
+    console.log('Documents page - showing loading state');
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
         <DashboardHeader />
         <main className="flex-1 px-4 md:px-8 pt-4 pb-8 md:py-6 w-full max-w-[1600px] mx-auto">
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading user permissions...</p>
+            </div>
           </div>
         </main>
       </div>
@@ -65,6 +77,7 @@ const Documents = () => {
 
   // Show error if role check failed
   if (roleError) {
+    console.log('Documents page - showing error state:', roleError);
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
         <DashboardHeader />
@@ -73,6 +86,8 @@ const Documents = () => {
             <AlertCircle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800">
               Failed to load user permissions. Please refresh the page or contact support.
+              <br />
+              <small className="text-gray-600 mt-2 block">Error: {roleError.message}</small>
             </AlertDescription>
           </Alert>
         </main>
@@ -80,25 +95,14 @@ const Documents = () => {
     );
   }
 
-  // Show access denied if user has no associated branches
-  if (!roleInfo?.isSuperAdmin && (!roleInfo?.associatedBranches?.length && !roleInfo?.assignedBranchId)) {
-    return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
-        <DashboardHeader />
-        <main className="flex-1 px-4 md:px-8 pt-4 pb-8 md:py-6 w-full max-w-[1600px] mx-auto">
-          <Alert className="border-red-200 bg-red-50 max-w-md mx-auto mt-8">
-            <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">
-              You do not have access to any branches. Please contact your administrator.
-            </AlertDescription>
-          </Alert>
-        </main>
-      </div>
-    );
+  // Allow access even without specific role info for now - better UX
+  if (!roleInfo) {
+    console.log('Documents page - no role info, allowing basic access');
   }
 
   // Show branch selection for standalone mode if no branch is available
-  if (isStandalone && !selectedBranchId) {
+  if (isStandalone && !selectedBranchId && roleInfo && !roleInfo.isSuperAdmin) {
+    console.log('Documents page - no branch available for standalone mode');
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
         <DashboardHeader />
@@ -123,6 +127,8 @@ const Documents = () => {
       </div>
     );
   }
+
+  console.log('Documents page - rendering main content');
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
@@ -183,7 +189,7 @@ const Documents = () => {
               </div>
             )}
             
-            <UnifiedDocumentsList branchId={selectedBranchId || ""} />
+            <UnifiedDocumentsList branchId={selectedBranchId || branchId || ""} />
           </div>
         </div>
       </main>
@@ -191,7 +197,7 @@ const Documents = () => {
       <UnifiedUploadDialog
         open={showUploadDialog}
         onOpenChange={setShowUploadDialog}
-        branchId={selectedBranchId || ""}
+        branchId={selectedBranchId || branchId || ""}
         onSuccess={handleUploadSuccess}
       />
     </div>

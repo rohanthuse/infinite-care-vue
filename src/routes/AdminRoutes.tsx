@@ -8,6 +8,7 @@ import Reports from "@/pages/Reports";
 import Accounting from "@/pages/Accounting";
 import ThirdPartyAccess from "@/pages/ThirdPartyAccess";
 import Library from "@/pages/Library";
+import Notifications from "@/pages/Notifications";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 export const AdminRoutes = () => {
@@ -32,6 +33,16 @@ export const AdminRoutes = () => {
         } 
       />
       
+      {/* Standalone notifications route */}
+      <Route 
+        path="/notifications/*" 
+        element={
+          <ProtectedRoute>
+            <Notifications />
+          </ProtectedRoute>
+        } 
+      />
+      
       {/* Branch-specific routes */}
       <Route 
         path="/branch-dashboard/:id/:branchName/*" 
@@ -44,6 +55,7 @@ export const AdminRoutes = () => {
               <Route path="documents" element={<Documents />} />
               <Route path="library" element={<Library />} />
               <Route path="third-party" element={<ThirdPartyAccess />} />
+              <Route path="notifications/*" element={<Notifications />} />
             </Routes>
           </ProtectedRoute>
         } 
