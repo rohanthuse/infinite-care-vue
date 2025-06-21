@@ -1,3 +1,4 @@
+
 export type AgreementType = {
   id: string;
   name: string;
@@ -34,8 +35,16 @@ export type ScheduledAgreement = {
   title: string;
   scheduled_for: string | null;
   scheduled_with_name: string | null;
+  scheduled_with_client_id: string | null;
+  scheduled_with_staff_id: string | null;
+  type_id: string | null;
+  template_id: string | null;
   status: 'Upcoming' | 'Pending Approval' | 'Under Review' | 'Completed' | 'Cancelled';
   notes: string | null;
+  branch_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
   agreement_types: { name: string } | null;
 };
 
@@ -45,6 +54,7 @@ export type AgreementTemplate = {
   content: string | null;
   type_id: string | null;
   branch_id: string | null;
+  created_by: string | null;
   usage_count: number;
   created_at: string;
   updated_at: string;

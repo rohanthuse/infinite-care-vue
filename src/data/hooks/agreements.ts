@@ -4,6 +4,38 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Agreement, AgreementTemplate, ScheduledAgreement, AgreementType, AgreementPartyFilter } from "@/types/agreements";
 
+// --- CLIENTS AND STAFF DATA ---
+
+export const useClients = (branchId?: string) => {
+  return useQuery({
+    queryKey: ['clients', branchId],
+    queryFn: async () => {
+      let query = supabase.from('clients').select('id, first_name, last_name');
+      if (branchId && branchId !== 'global') {
+        query = query.eq('branch_id', branchId);
+      }
+      const { data, error } = await query;
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+};
+
+export const useStaff = (branchId?: string) => {
+  return useQuery({
+    queryKey: ['staff', branchId],
+    queryFn: async () => {
+      let query = supabase.from('staff').select('id, first_name, last_name');
+      if (branchId && branchId !== 'global') {
+        query = query.eq('branch_id', branchId);
+      }
+      const { data, error } = await query;
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+  });
+};
+
 // --- AGREEMENT TYPES ---
 
 const fetchAgreementTypes = async () => {
@@ -46,6 +78,23 @@ export const useSignedAgreements = ({ searchQuery, typeFilter, dateFilter, branc
   });
 };
 
+const createAgreement = async (agreementData: Omit<Agreement, 'id' | 'created_at' | 'updated_at'>) => {
+  const { error } = await supabase.from('agreements').insert(agreementData);
+  if (error) throw new Error(error.message);
+};
+
+export const useCreateAgreement = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createAgreement,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agreements'] });
+      toast.success("Agreement created successfully");
+    },
+    onError: (error) => toast.error(`Failed to create agreement: ${error.message}`),
+  });
+};
+
 const deleteAgreement = async (id: string) => {
     const { error } = await supabase.from('agreements').delete().eq('id', id);
     if (error) throw new Error(error.message);
@@ -66,8 +115,29 @@ export const useDeleteAgreement = () => {
 // --- SCHEDULED AGREEMENTS ---
 
 const fetchScheduledAgreements = async ({ searchQuery = "", typeFilter = "all", dateFilter = "all", branchId }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId: string; }) => {
-    let query = supabase.from('scheduled_agreements').select(`*, agreement_types ( name )`).eq('branch_id', branchId);
-    // Add filters similar to signed agreements
+    let query = supabase.from('scheduled_agreements').select(`*, agreement_types ( name )`);
+    
+    if (branchId && branchId !== "global") {
+        query = query.eq('branch_id', branchId);
+    }
+    
+    if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,scheduled_with_name.ilike.%${searchQuery}%`);
+    }
+    
+    if (typeFilter !== 'all') {
+        query = query.eq('type_id', typeFilter);
+    }
+    
+    if (dateFilter !== "all") {
+        const now = new Date();
+        const filterDate = new Date();
+        if (dateFilter === "last7days") filterDate.setDate(now.getDate() - 7);
+        else if (dateFilter === "last30days") filterDate.setDate(now.getDate() - 30);
+        else if (dateFilter === "last90days") filterDate.setDate(now.getDate() - 90);
+        query = query.gte('scheduled_for', filterDate.toISOString());
+    }
+    
     const { data, error } = await query.order('scheduled_for', { ascending: true });
     if (error) throw new Error(error.message);
     return data as ScheduledAgreement[];
@@ -77,6 +147,23 @@ export const useScheduledAgreements = ({ searchQuery, typeFilter, dateFilter, br
     return useQuery<ScheduledAgreement[], Error>({
         queryKey: ['scheduled_agreements', { searchQuery, typeFilter, dateFilter, branchId }],
         queryFn: () => fetchScheduledAgreements({ searchQuery, typeFilter, dateFilter, branchId }),
+    });
+};
+
+const createScheduledAgreement = async (data: Omit<ScheduledAgreement, 'id' | 'created_at' | 'updated_at' | 'agreement_types'>) => {
+    const { error } = await supabase.from('scheduled_agreements').insert(data);
+    if (error) throw new Error(error.message);
+};
+
+export const useCreateScheduledAgreement = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: createScheduledAgreement,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['scheduled_agreements'] });
+            toast.success("Agreement scheduled successfully");
+        },
+        onError: (error) => toast.error(`Failed to schedule agreement: ${error.message}`),
     });
 };
 
@@ -123,6 +210,23 @@ export const useAgreementTemplates = ({ searchQuery, typeFilter, branchId }: { s
     return useQuery<AgreementTemplate[], Error>({
         queryKey: ['agreement_templates', { searchQuery, typeFilter, branchId }],
         queryFn: () => fetchTemplates({ searchQuery, typeFilter, branchId }),
+    });
+};
+
+const createTemplate = async (templateData: Omit<AgreementTemplate, 'id' | 'created_at' | 'updated_at' | 'usage_count' | 'agreement_types'>) => {
+    const { error } = await supabase.from('agreement_templates').insert({ ...templateData, usage_count: 0 });
+    if (error) throw new Error(error.message);
+};
+
+export const useCreateTemplate = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: createTemplate,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['agreement_templates'] });
+            toast.success("Template created successfully");
+        },
+        onError: (error) => toast.error(`Failed to create template: ${error.message}`),
     });
 };
 

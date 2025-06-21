@@ -11,8 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
-import { Calendar as CalendarIcon, Clock, Users, Tag } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -24,27 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-// Mock clients list
-const mockClients = [
-  { id: "CL001", name: "Aderinsola Thomas" },
-  { id: "CL002", name: "James Wilson" },
-  { id: "CL003", name: "Sophia Martinez" },
-  { id: "CL004", name: "Michael Johnson" },
-  { id: "CL005", name: "Emma Williams" },
-  { id: "CL006", name: "Daniel Smith" },
-  { id: "CL007", name: "Olivia Brown" },
-  { id: "CL008", name: "Noah Davis" }
-];
-
-// Mock templates list
-const mockTemplates = [
-  { id: 1, title: "Standard Employment Contract", type: "Employment Agreement" },
-  { id: 2, title: "Non-Disclosure Agreement", type: "NDA" },
-  { id: 3, title: "Service Level Agreement", type: "Service Agreement" },
-  { id: 4, title: "Data Processing Agreement", type: "Data Agreement" },
-  { id: 5, title: "Caretaker Contract", type: "Employment Agreement" }
-];
+import { useAgreementTypes, useAgreementTemplates, useClients, useStaff, useCreateScheduledAgreement } from "@/data/hooks/agreements";
 
 // Time slots
 const timeSlots = [
@@ -65,51 +44,93 @@ export function ScheduleAgreementDialog({
   branchId
 }: ScheduleAgreementDialogProps) {
   const [title, setTitle] = useState("");
+  const [selectedType, setSelectedType] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState("");
   const [selectedClient, setSelectedClient] = useState("");
+  const [selectedStaff, setSelectedStaff] = useState("");
+  const [schedulingWith, setSchedulingWith] = useState<"client" | "staff" | "other">("client");
+  const [otherPersonName, setOtherPersonName] = useState("");
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
   const [scheduledTime, setScheduledTime] = useState("");
-  const [selectedTemplate, setSelectedTemplate] = useState("");
   const [notes, setNotes] = useState("");
-  const [loading, setLoading] = useState(false);
+  
+  // Fetch data
+  const { data: agreementTypes, isLoading: typesLoading } = useAgreementTypes();
+  const { data: templates, isLoading: templatesLoading } = useAgreementTemplates({
+    searchQuery: "",
+    typeFilter: selectedType || "all",
+    branchId
+  });
+  const { data: clients, isLoading: clientsLoading } = useClients(branchId);
+  const { data: staff, isLoading: staffLoading } = useStaff(branchId);
+  
+  const createScheduledAgreementMutation = useCreateScheduledAgreement();
   
   const handleScheduleAgreement = async () => {
-    if (!title || !selectedClient || !scheduledDate || !scheduledTime) {
-      toast.error("Please fill in all required fields");
+    if (!title || !scheduledDate || !scheduledTime) {
       return;
     }
     
-    setLoading(true);
+    // Combine date and time
+    const scheduledDateTime = new Date(scheduledDate);
+    const [hours, minutes] = scheduledTime.split(':');
+    scheduledDateTime.setHours(parseInt(hours), parseInt(minutes));
+    
+    // Determine scheduled with name
+    let scheduledWithName = "";
+    if (schedulingWith === "client" && selectedClient) {
+      const client = clients?.find(c => c.id === selectedClient);
+      scheduledWithName = client ? `${client.first_name} ${client.last_name}` : "";
+    } else if (schedulingWith === "staff" && selectedStaff) {
+      const staffMember = staff?.find(s => s.id === selectedStaff);
+      scheduledWithName = staffMember ? `${staffMember.first_name} ${staffMember.last_name}` : "";
+    } else if (schedulingWith === "other") {
+      scheduledWithName = otherPersonName;
+    }
     
     try {
-      // In a real app, we would make an API call here
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await createScheduledAgreementMutation.mutateAsync({
+        title,
+        scheduled_for: scheduledDateTime.toISOString(),
+        scheduled_with_name: scheduledWithName,
+        scheduled_with_client_id: schedulingWith === "client" ? selectedClient || null : null,
+        scheduled_with_staff_id: schedulingWith === "staff" ? selectedStaff || null : null,
+        type_id: selectedType || null,
+        template_id: selectedTemplate || null,
+        status: "Upcoming",
+        notes: notes || null,
+        branch_id: branchId !== "global" ? branchId : null,
+        created_by: null, // Will be set by auth context when available
+      });
       
-      toast.success("Agreement scheduled successfully");
       resetForm();
       onOpenChange(false);
     } catch (error) {
-      toast.error("Failed to schedule agreement");
-      console.error(error);
-    } finally {
-      setLoading(false);
+      console.error('Error scheduling agreement:', error);
     }
   };
   
   const resetForm = () => {
     setTitle("");
+    setSelectedType("");
+    setSelectedTemplate("");
     setSelectedClient("");
+    setSelectedStaff("");
+    setSchedulingWith("client");
+    setOtherPersonName("");
     setScheduledDate(undefined);
     setScheduledTime("");
-    setSelectedTemplate("");
     setNotes("");
   };
+
+  const isLoading = typesLoading || templatesLoading || clientsLoading || staffLoading;
 
   return (
     <Dialog open={open} onOpenChange={(value) => {
       if (!value) resetForm();
       onOpenChange(value);
     }}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Schedule Agreement Signing</DialogTitle>
           <DialogDescription>
@@ -117,130 +138,176 @@ export function ScheduleAgreementDialog({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4 py-2">
-          <div className="space-y-2">
-            <label htmlFor="title" className="text-sm font-medium">
-              Agreement Title <span className="text-red-500">*</span>
-            </label>
-            <Input
-              id="title"
-              placeholder="Enter agreement title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
+        {isLoading ? (
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="h-6 w-6 animate-spin" />
           </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Client <span className="text-red-500">*</span>
-            </label>
-            <Select value={selectedClient} onValueChange={setSelectedClient}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select client" />
-              </SelectTrigger>
-              <SelectContent>
-                {mockClients.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Agreement Template
-            </label>
-            <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select template (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                {mockTemplates.map((template) => (
-                  <SelectItem key={template.id} value={template.id.toString()}>
-                    {template.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Type <span className="text-red-500">*</span>
-            </label>
-            <Select defaultValue="Employment Agreement">
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select agreement type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Employment Agreement">Employment Agreement</SelectItem>
-                <SelectItem value="Service Agreement">Service Agreement</SelectItem>
-                <SelectItem value="NDA">Non-Disclosure Agreement</SelectItem>
-                <SelectItem value="Data Agreement">Data Agreement</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+        ) : (
+          <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Date <span className="text-red-500">*</span>
+              <label htmlFor="title" className="text-sm font-medium">
+                Agreement Title <span className="text-red-500">*</span>
               </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !scheduledDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {scheduledDate ? format(scheduledDate, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={scheduledDate}
-                    onSelect={setScheduledDate}
-                    initialFocus
-                    disabled={(date) => date < new Date()}
-                  />
-                </PopoverContent>
-              </Popover>
+              <Input
+                id="title"
+                placeholder="Enter agreement title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Time <span className="text-red-500">*</span>
-              </label>
-              <Select value={scheduledTime} onValueChange={setScheduledTime}>
+              <label className="text-sm font-medium">Agreement Type</label>
+              <Select value={selectedType} onValueChange={setSelectedType}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select time" />
+                  <SelectValue placeholder="Select agreement type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {timeSlots.map((time) => (
-                    <SelectItem key={time} value={time}>
-                      {time}
+                  {agreementTypes?.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Notes</label>
-            <Textarea
-              placeholder="Enter any additional notes about the agreement"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Template (Optional)</label>
+              <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select template (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates?.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Scheduling With</label>
+              <Select value={schedulingWith} onValueChange={(value: "client" | "staff" | "other") => setSchedulingWith(value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="client">Client</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="other">Other Person</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {schedulingWith === "client" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Client</label>
+                <Select value={selectedClient} onValueChange={setSelectedClient}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients?.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.first_name} {client.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {schedulingWith === "staff" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Staff Member</label>
+                <Select value={selectedStaff} onValueChange={setSelectedStaff}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select staff member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staff?.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.first_name} {member.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {schedulingWith === "other" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Person Name</label>
+                <Input
+                  placeholder="Enter name of person"
+                  value={otherPersonName}
+                  onChange={(e) => setOtherPersonName(e.target.value)}
+                />
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Date <span className="text-red-500">*</span>
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !scheduledDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {scheduledDate ? format(scheduledDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={scheduledDate}
+                      onSelect={setScheduledDate}
+                      initialFocus
+                      disabled={(date) => date < new Date()}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Time <span className="text-red-500">*</span>
+                </label>
+                <Select value={scheduledTime} onValueChange={setScheduledTime}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeSlots.map((time) => (
+                      <SelectItem key={time} value={time}>
+                        {time}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Notes</label>
+              <Textarea
+                placeholder="Enter any additional notes about the agreement"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </div>
           </div>
-        </div>
+        )}
         
         <DialogFooter>
           <Button 
@@ -251,9 +318,9 @@ export function ScheduleAgreementDialog({
           </Button>
           <Button 
             onClick={handleScheduleAgreement} 
-            disabled={loading || !title || !selectedClient || !scheduledDate || !scheduledTime}
+            disabled={createScheduledAgreementMutation.isPending || !title || !scheduledDate || !scheduledTime}
           >
-            {loading ? "Processing..." : "Schedule Agreement"}
+            {createScheduledAgreementMutation.isPending ? "Processing..." : "Schedule Agreement"}
           </Button>
         </DialogFooter>
       </DialogContent>
