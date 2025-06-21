@@ -43,6 +43,26 @@ function App() {
                 <Route path="/super-admin" element={<Navigate to="/super-admin-login" replace />} />
                 <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
                 
+                {/* Legacy admin route redirects */}
+                <Route path="/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
+                <Route path="/services" element={<Navigate to="/admin/services" replace />} />
+                <Route path="/settings" element={<Navigate to="/admin/settings" replace />} />
+                <Route path="/agreement" element={<Navigate to="/admin/agreement" replace />} />
+                <Route path="/hobbies" element={<Navigate to="/admin/hobbies" replace />} />
+                <Route path="/skills" element={<Navigate to="/admin/skills" replace />} />
+                <Route path="/medical-mental" element={<Navigate to="/admin/medical-mental" replace />} />
+                <Route path="/type-of-work" element={<Navigate to="/admin/type-of-work" replace />} />
+                <Route path="/body-map-points" element={<Navigate to="/admin/body-map-points" replace />} />
+                <Route path="/branch" element={<Navigate to="/admin/branch" replace />} />
+                <Route path="/branch-details/:id" element={<Navigate to="/admin/branch-details/:id" replace />} />
+                <Route path="/branch-admins" element={<Navigate to="/admin/branch-admins" replace />} />
+                <Route path="/workflow" element={<Navigate to="/admin/workflow" replace />} />
+                <Route path="/task-matrix" element={<Navigate to="/admin/task-matrix" replace />} />
+                <Route path="/training-matrix" element={<Navigate to="/admin/training-matrix" replace />} />
+                <Route path="/key-parameters" element={<Navigate to="/admin/key-parameters" replace />} />
+                <Route path="/booking-approvals" element={<Navigate to="/admin/booking-approvals" replace />} />
+                <Route path="/notifications" element={<Navigate to="/admin/notifications" replace />} />
+                
                 {/* Admin routes */}
                 <Route path="/admin/*" element={<AdminRoutes />} />
                 
