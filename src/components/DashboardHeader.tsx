@@ -6,10 +6,14 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 export function DashboardHeader() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { signOut } = useAuth();
+  const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
 
@@ -29,8 +33,22 @@ export function DashboardHeader() {
     return () => window.removeEventListener('resize', handleResize);
   }, [mobileMenuOpen]);
   
-  const handleLogout = () => {
-    navigate('/super-admin');
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+      navigate('/super-admin');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Logout failed",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleViewAllNotifications = () => {
