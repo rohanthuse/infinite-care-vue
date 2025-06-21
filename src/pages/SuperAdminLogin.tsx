@@ -1,16 +1,17 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, Lock, AlertCircle, Eye, EyeOff, Mail } from "lucide-react"; // Added Mail icon, removed User
+import { Heart, Lock, AlertCircle, Eye, EyeOff, Mail } from "lucide-react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client"; // Import supabase client
+import { supabase } from "@/integrations/supabase/client";
+import { useAuthSafe } from "@/hooks/useAuthSafe";
 
 const SuperAdminLogin = () => {
-  const [email, setEmail] = useState(""); // Changed from username
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -18,6 +19,26 @@ const SuperAdminLogin = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { session, loading } = useAuthSafe();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!loading && session) {
+      navigate("/dashboard");
+    }
+  }, [session, loading, navigate]);
+
+  // Show loading while checking auth state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +64,7 @@ const SuperAdminLogin = () => {
           title: "Login successful",
           description: "Welcome back, Super Admin!",
         });
-        navigate("/dashboard"); // Navigate to dashboard
+        // Navigation will be handled by the useEffect hook when session updates
       }
     } catch (err: any) {
       setError("An unexpected error occurred during login. Please try again.");
