@@ -12,6 +12,7 @@ export interface ClientEvent {
   description?: string;
   status: string;
   reporter: string;
+  body_map_points?: any;
   created_at: string;
   updated_at: string;
 }
