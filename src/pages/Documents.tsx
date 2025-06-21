@@ -7,7 +7,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { TabNavigation } from "@/components/TabNavigation";
 import { UnifiedDocumentsList } from "@/components/documents/UnifiedDocumentsList";
-import { UnifiedUploadDialog, UploadDocumentData } from "@/components/documents/UnifiedUploadDialog";
+import { UnifiedUploadDialog } from "@/components/documents/UnifiedUploadDialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
@@ -58,7 +58,8 @@ const Documents = () => {
       related_entity: "Client",
       client_name: "John Doe",
       staff_name: null,
-      has_file: true
+      has_file: true,
+      status: "active"
     }
   ];
 
@@ -77,7 +78,7 @@ const Documents = () => {
     console.log("Deleting document:", documentId);
   };
 
-  const handleSaveDocument = async (documentData: UploadDocumentData) => {
+  const handleSaveDocument = async (documentData: any) => {
     try {
       console.log("Saving document:", documentData);
       toast.success("Document uploaded successfully");
