@@ -211,18 +211,25 @@ export const useUnifiedDocuments = (branchId: string) => {
     },
   });
 
-  // Helper function to normalize file paths
+  // Enhanced helper function to normalize file paths
   const normalizeFilePath = (filePath: string): string => {
-    if (!filePath) return '';
+    if (!filePath || filePath === '<nil>' || filePath === 'null' || filePath === 'undefined') {
+      console.warn('Invalid file path detected:', filePath);
+      return '';
+    }
     
-    // Remove any leading slashes or bucket prefixes
-    let normalizedPath = filePath.replace(/^\/+/, '');
+    let normalizedPath = filePath.trim();
+    
+    // Remove any leading slashes
+    normalizedPath = normalizedPath.replace(/^\/+/, '');
     
     // Remove common prefixes that might be incorrectly included
     const prefixesToRemove = [
       'documents/',
       'storage/v1/object/public/documents/',
-      'https://vcrjntfjsmpoupgairep.supabase.co/storage/v1/object/public/documents/'
+      'https://vcrjntfjsmpoupgairep.supabase.co/storage/v1/object/public/documents/',
+      'public/documents/',
+      '/documents/',
     ];
     
     for (const prefix of prefixesToRemove) {
@@ -232,17 +239,61 @@ export const useUnifiedDocuments = (branchId: string) => {
       }
     }
     
+    // Handle edge cases where path might just be the filename without branch folder
+    if (normalizedPath && !normalizedPath.includes('/') && normalizedPath.length > 0) {
+      // If it's just a filename, we can't determine which branch folder it belongs to
+      console.warn('File path missing branch folder structure:', normalizedPath);
+      return normalizedPath; // Return as-is and let storage handle the error
+    }
+    
+    console.log('Normalized path:', filePath, '->', normalizedPath);
     return normalizedPath;
   };
 
-  // Download document function with improved error handling
+  // Check if file exists in storage
+  const checkFileExists = async (filePath: string): Promise<boolean> => {
+    try {
+      const normalizedPath = normalizeFilePath(filePath);
+      if (!normalizedPath) return false;
+      
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .list(normalizedPath.split('/').slice(0, -1).join('/'), {
+          search: normalizedPath.split('/').pop()
+        });
+      
+      if (error) {
+        console.error('Error checking file existence:', error);
+        return false;
+      }
+      
+      return data && data.length > 0;
+    } catch (error) {
+      console.error('Error in checkFileExists:', error);
+      return false;
+    }
+  };
+
+  // Enhanced download document function
   const downloadDocument = async (filePath: string, fileName: string) => {
     try {
+      console.log('Download attempt:', { filePath, fileName });
+      
       // Validate inputs
       if (!filePath || !fileName) {
         toast({
           title: "Download Error",
-          description: "Invalid file path or name. Please contact support.",
+          description: "Document information is incomplete. Please contact support.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check for invalid file paths
+      if (filePath === '<nil>' || filePath === 'null' || filePath === 'undefined') {
+        toast({
+          title: "File Not Available",
+          description: "This document file is no longer available. It may have been moved or deleted.",
           variant: "destructive",
         });
         return;
@@ -254,7 +305,7 @@ export const useUnifiedDocuments = (branchId: string) => {
       if (!normalizedPath) {
         toast({
           title: "Download Error",
-          description: "Invalid file path format. Please contact support.",
+          description: "Invalid file path format. Please contact support if this persists.",
           variant: "destructive",
         });
         return;
@@ -266,24 +317,42 @@ export const useUnifiedDocuments = (branchId: string) => {
         fileName: fileName
       });
 
+      // Check if file exists before attempting download
+      const fileExists = await checkFileExists(filePath);
+      if (!fileExists) {
+        toast({
+          title: "File Not Found",
+          description: "The document file could not be found in storage. It may have been moved or deleted.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data, error } = await supabase.storage
         .from('documents')
         .download(normalizedPath);
 
       if (error) {
-        console.error('Supabase storage error:', error);
+        console.error('Supabase storage download error:', error);
         
         // Provide specific error messages based on error type
         let errorMessage = "Failed to download document";
         if (error.message.includes('not found') || error.message.includes('does not exist')) {
           errorMessage = "Document file not found. It may have been moved or deleted.";
-        } else if (error.message.includes('access')) {
+        } else if (error.message.includes('access') || error.message.includes('permission')) {
           errorMessage = "Access denied. You don't have permission to download this file.";
-        } else if (error.message.includes('network')) {
+        } else if (error.message.includes('network') || error.message.includes('timeout')) {
           errorMessage = "Network error. Please check your connection and try again.";
+        } else if (error.message.includes('bucket')) {
+          errorMessage = "Storage configuration error. Please contact support.";
         }
         
-        throw new Error(errorMessage);
+        toast({
+          title: "Download Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return;
       }
 
       // Create download link
@@ -300,24 +369,37 @@ export const useUnifiedDocuments = (branchId: string) => {
         title: "Success",
         description: "Document downloaded successfully",
       });
+      
     } catch (error: any) {
       console.error('Download error:', error);
       toast({
         title: "Download Failed",
-        description: error.message || "Failed to download document. Please try again.",
+        description: "An unexpected error occurred while downloading the document. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  // View document function with improved error handling
+  // Enhanced view document function
   const viewDocument = async (filePath: string) => {
     try {
+      console.log('View attempt:', { filePath });
+      
       // Validate input
       if (!filePath) {
         toast({
           title: "View Error",
-          description: "Invalid file path. Please contact support.",
+          description: "Document path is missing. Please contact support.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check for invalid file paths
+      if (filePath === '<nil>' || filePath === 'null' || filePath === 'undefined') {
+        toast({
+          title: "File Not Available",
+          description: "This document file is no longer available for viewing.",
           variant: "destructive",
         });
         return;
@@ -329,7 +411,7 @@ export const useUnifiedDocuments = (branchId: string) => {
       if (!normalizedPath) {
         toast({
           title: "View Error",
-          description: "Invalid file path format. Please contact support.",
+          description: "Invalid file path format. Please contact support if this persists.",
           variant: "destructive",
         });
         return;
@@ -340,6 +422,17 @@ export const useUnifiedDocuments = (branchId: string) => {
         normalizedPath: normalizedPath
       });
 
+      // Check if file exists before attempting to view
+      const fileExists = await checkFileExists(filePath);
+      if (!fileExists) {
+        toast({
+          title: "File Not Found",
+          description: "The document file could not be found for viewing. It may have been moved or deleted.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data, error } = await supabase.storage
         .from('documents')
         .createSignedUrl(normalizedPath, 3600); // 1 hour expiry
@@ -348,23 +441,31 @@ export const useUnifiedDocuments = (branchId: string) => {
         console.error('Supabase signed URL error:', error);
         
         // Provide specific error messages
-        let errorMessage = "Failed to view document";
+        let errorMessage = "Failed to open document for viewing";
         if (error.message.includes('not found') || error.message.includes('does not exist')) {
           errorMessage = "Document file not found. It may have been moved or deleted.";
-        } else if (error.message.includes('access')) {
+        } else if (error.message.includes('access') || error.message.includes('permission')) {
           errorMessage = "Access denied. You don't have permission to view this file.";
+        } else if (error.message.includes('bucket')) {
+          errorMessage = "Storage configuration error. Please contact support.";
         }
         
-        throw new Error(errorMessage);
+        toast({
+          title: "View Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return;
       }
 
       // Open in new tab
       window.open(data.signedUrl, '_blank');
+      
     } catch (error: any) {
       console.error('View error:', error);
       toast({
         title: "View Failed",
-        description: error.message || "Failed to view document. Please try again.",
+        description: "An unexpected error occurred while opening the document. Please try again.",
         variant: "destructive",
       });
     }
