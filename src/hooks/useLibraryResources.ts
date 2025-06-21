@@ -63,6 +63,8 @@ export const useLibraryResources = (branchId: string) => {
   } = useQuery({
     queryKey: ['library-resources', branchId],
     queryFn: async () => {
+      console.log('Fetching library resources for branch:', branchId);
+      
       const { data, error } = await supabase
         .from('library_resources')
         .select('*')
@@ -70,7 +72,15 @@ export const useLibraryResources = (branchId: string) => {
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching library resources:', error);
+        if (error.message?.includes('RLS')) {
+          throw new Error('Access denied: You do not have permission to view resources in this branch. Please contact your administrator.');
+        }
+        throw error;
+      }
+      
+      console.log('Fetched library resources:', data);
       return data as LibraryResource[];
     },
     enabled: !!branchId,
@@ -94,8 +104,14 @@ export const useLibraryResources = (branchId: string) => {
   // Create resource mutation
   const createResourceMutation = useMutation({
     mutationFn: async (resourceData: CreateLibraryResourceData) => {
+      console.log('Creating library resource:', resourceData);
+      
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) {
+        throw new Error('You must be logged in to create resources');
+      }
+
+      console.log('Current user:', user.id);
 
       let filePath = null;
       let fileSize = null;
@@ -103,6 +119,8 @@ export const useLibraryResources = (branchId: string) => {
 
       // Upload file if provided
       if (resourceData.file) {
+        console.log('Uploading file:', resourceData.file.name);
+        
         const fileExt = resourceData.file.name.split('.').pop();
         const fileName = `${Date.now()}.${fileExt}`;
         const storagePath = `${branchId}/${fileName}`;
@@ -111,8 +129,15 @@ export const useLibraryResources = (branchId: string) => {
           .from('library-resources')
           .upload(storagePath, resourceData.file);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('File upload error:', uploadError);
+          if (uploadError.message?.includes('RLS') || uploadError.message?.includes('policy')) {
+            throw new Error('Access denied: You do not have permission to upload files to this branch. Please contact your administrator.');
+          }
+          throw uploadError;
+        }
 
+        console.log('File uploaded successfully to:', storagePath);
         filePath = storagePath;
         fileSize = resourceData.file.size;
         fileType = resourceData.file.type;
@@ -128,6 +153,8 @@ export const useLibraryResources = (branchId: string) => {
       const uploadedByName = profile 
         ? `${profile.first_name} ${profile.last_name}`.trim()
         : user.email || 'Unknown User';
+
+      console.log('Creating resource record with uploaded_by_name:', uploadedByName);
 
       const { data, error } = await supabase
         .from('library_resources')
@@ -153,7 +180,24 @@ export const useLibraryResources = (branchId: string) => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating resource:', error);
+        
+        // Clean up uploaded file if resource creation fails
+        if (filePath) {
+          await supabase.storage
+            .from('library-resources')
+            .remove([filePath]);
+        }
+        
+        if (error.message?.includes('RLS') || error.message?.includes('policy')) {
+          throw new Error('Access denied: You do not have permission to create resources in this branch. Please contact your administrator.');
+        }
+        
+        throw error;
+      }
+
+      console.log('Resource created successfully:', data);
       return data;
     },
     onSuccess: () => {
@@ -167,7 +211,7 @@ export const useLibraryResources = (branchId: string) => {
       console.error('Error creating resource:', error);
       toast({
         title: "Error",
-        description: "Failed to add resource to library",
+        description: error.message || "Failed to add resource to library",
         variant: "destructive",
       });
     },
@@ -176,6 +220,8 @@ export const useLibraryResources = (branchId: string) => {
   // Update resource mutation
   const updateResourceMutation = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<LibraryResource> & { id: string }) => {
+      console.log('Updating resource:', id, updates);
+      
       const { data, error } = await supabase
         .from('library_resources')
         .update(updates)
@@ -183,7 +229,13 @@ export const useLibraryResources = (branchId: string) => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating resource:', error);
+        if (error.message?.includes('RLS') || error.message?.includes('policy')) {
+          throw new Error('Access denied: You do not have permission to update this resource.');
+        }
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -197,7 +249,7 @@ export const useLibraryResources = (branchId: string) => {
       console.error('Error updating resource:', error);
       toast({
         title: "Error",
-        description: "Failed to update resource",
+        description: error.message || "Failed to update resource",
         variant: "destructive",
       });
     },
@@ -206,6 +258,8 @@ export const useLibraryResources = (branchId: string) => {
   // Delete resource mutation
   const deleteResourceMutation = useMutation({
     mutationFn: async (resourceId: string) => {
+      console.log('Deleting resource:', resourceId);
+      
       // Get resource to check for file
       const { data: resource } = await supabase
         .from('library_resources')
@@ -215,6 +269,7 @@ export const useLibraryResources = (branchId: string) => {
 
       // Delete file from storage if exists
       if (resource?.file_path) {
+        console.log('Deleting file from storage:', resource.file_path);
         await supabase.storage
           .from('library-resources')
           .remove([resource.file_path]);
@@ -226,7 +281,13 @@ export const useLibraryResources = (branchId: string) => {
         .delete()
         .eq('id', resourceId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting resource:', error);
+        if (error.message?.includes('RLS') || error.message?.includes('policy')) {
+          throw new Error('Access denied: You do not have permission to delete this resource.');
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['library-resources', branchId] });
@@ -239,7 +300,7 @@ export const useLibraryResources = (branchId: string) => {
       console.error('Error deleting resource:', error);
       toast({
         title: "Error",
-        description: "Failed to delete resource",
+        description: error.message || "Failed to delete resource",
         variant: "destructive",
       });
     },
@@ -248,6 +309,8 @@ export const useLibraryResources = (branchId: string) => {
   // View resource (increment view count and log access)
   const viewResource = async (resourceId: string) => {
     try {
+      console.log('Viewing resource:', resourceId);
+      
       const { data: { user } } = await supabase.auth.getUser();
       
       // Update view count
@@ -277,11 +340,19 @@ export const useLibraryResources = (branchId: string) => {
   // Download resource
   const downloadResource = async (resourceId: string, filePath: string, fileName: string) => {
     try {
+      console.log('Downloading resource:', resourceId, filePath);
+      
       const { data, error } = await supabase.storage
         .from('library-resources')
         .download(filePath);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Download error:', error);
+        if (error.message?.includes('RLS') || error.message?.includes('policy')) {
+          throw new Error('Access denied: You do not have permission to download this file.');
+        }
+        throw error;
+      }
 
       // Create download link
       const url = URL.createObjectURL(data);
@@ -322,7 +393,7 @@ export const useLibraryResources = (branchId: string) => {
       console.error('Error downloading resource:', error);
       toast({
         title: "Error",
-        description: "Failed to download resource",
+        description: error.message || "Failed to download resource",
         variant: "destructive",
       });
     }
@@ -331,6 +402,8 @@ export const useLibraryResources = (branchId: string) => {
   // Get file URL for preview
   const getFileUrl = async (filePath: string) => {
     try {
+      console.log('Getting file URL for:', filePath);
+      
       const { data } = await supabase.storage
         .from('library-resources')
         .createSignedUrl(filePath, 3600); // 1 hour expiry

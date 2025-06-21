@@ -1,9 +1,8 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Upload, FileText, X, Link, User, Calendar, Tag } from "lucide-react";
+import { Upload, FileText, X, Link, User, Calendar, Tag, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -25,7 +24,9 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useLibraryResources } from "@/hooks/useLibraryResources";
+import { useCanAccessBranch } from "@/hooks/useUserRoleCheck";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -76,6 +77,7 @@ export const LibraryResourceForm: React.FC<LibraryResourceFormProps> = ({
   const [selectedAccessRoles, setSelectedAccessRoles] = useState<string[]>([]);
   
   const { categories, createResource, isCreating } = useLibraryResources(branchId);
+  const canAccess = useCanAccessBranch(branchId);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -91,6 +93,20 @@ export const LibraryResourceForm: React.FC<LibraryResourceFormProps> = ({
       expires_at: "",
     },
   });
+
+  // Show access denied message if user can't access this branch
+  if (!canAccess) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <Alert className="border-red-200 bg-red-50">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            You do not have permission to add resources to this branch. Please contact your administrator.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -122,6 +138,8 @@ export const LibraryResourceForm: React.FC<LibraryResourceFormProps> = ({
 
   const onSubmit = async (data: FormValues) => {
     try {
+      console.log('Submitting library resource form:', data);
+      
       await createResource({
         title: data.title,
         description: data.description || undefined,
@@ -145,6 +163,7 @@ export const LibraryResourceForm: React.FC<LibraryResourceFormProps> = ({
       onResourceAdded?.();
     } catch (error) {
       console.error('Error creating resource:', error);
+      // Error handling is done in the hook
     }
   };
 
