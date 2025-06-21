@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { generateBodyMapSvg } from "./bodyMapUtils";
 
 interface BodyMapPoint {
   id: string;
@@ -19,7 +18,7 @@ export interface GeneratedBodyMapImages {
 }
 
 /**
- * Generates static JPG images for body map with marked points
+ * Generates static JPG images for body map with marked points using realistic body diagrams
  */
 export async function generateBodyMapImages(
   bodyMapPoints: BodyMapPoint[],
@@ -44,7 +43,7 @@ export async function generateBodyMapImages(
 }
 
 /**
- * Generates a single body map image for the specified side
+ * Generates a single body map image for the specified side using realistic body diagrams
  */
 async function generateSingleBodyMapImage(
   side: 'front' | 'back',
@@ -57,23 +56,31 @@ async function generateSingleBodyMapImage(
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Could not get canvas context');
     
-    // Set canvas size
+    // Set canvas size to match the realistic body image dimensions
     canvas.width = 300;
     canvas.height = 500;
     
-    // Create and load the SVG image
-    const svgDataUrl = generateBodyMapSvg(side);
+    // Get the realistic body image URL
+    const imageUrl = side === 'front' 
+      ? '/lovable-uploads/ae9319f2-7a0b-422d-9739-bb11a44681c9.png'  // Front view
+      : '/lovable-uploads/039ad1bb-2eff-43f0-9b7d-fdc323188cc0.png'; // Back view
+    
     const img = new Image();
+    img.crossOrigin = 'anonymous'; // Allow cross-origin loading
     
     return new Promise((resolve, reject) => {
       img.onload = async () => {
         try {
-          // Draw the body diagram
+          // Clear canvas with white background
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // Draw the realistic body diagram as background
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           
-          // Draw the points
+          // Draw the marked points on top
           points.forEach(point => {
-            // Draw point circle
+            // Draw point circle with border
             ctx.beginPath();
             ctx.arc(point.x, point.y, 10, 0, 2 * Math.PI);
             ctx.fillStyle = point.color;
@@ -82,7 +89,7 @@ async function generateSingleBodyMapImage(
             ctx.lineWidth = 2;
             ctx.stroke();
             
-            // Draw point label
+            // Draw point label (letter/number)
             ctx.fillStyle = '#ffffff';
             ctx.font = 'bold 12px Arial';
             ctx.textAlign = 'center';
@@ -127,10 +134,11 @@ async function generateSingleBodyMapImage(
       };
       
       img.onerror = () => {
-        reject(new Error('Failed to load body diagram image'));
+        reject(new Error(`Failed to load realistic body diagram: ${imageUrl}`));
       };
       
-      img.src = svgDataUrl;
+      // Load the realistic body image
+      img.src = imageUrl;
     });
   } catch (error) {
     console.error('Error generating body map image:', error);
