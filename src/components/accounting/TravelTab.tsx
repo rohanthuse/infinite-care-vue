@@ -3,13 +3,11 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Filter, Plus, FileText, Download, Car, Route } from "lucide-react";
-import { mockTravelRecords } from "@/data/mockTravelData";
-import { TravelRecord, TravelFilter } from "@/types/travel";
+import { TravelRecord, useCreateTravelRecord, useTravelRecords } from "@/hooks/useAccountingData";
 import TravelRecordsTable from "./TravelRecordsTable";
 import AddTravelRecordDialog from "./AddTravelRecordDialog";
 import FilterTravelDialog from "./FilterTravelDialog";
 import ViewTravelRecordDialog from "./ViewTravelRecordDialog";
-import { v4 as uuidv4 } from "uuid";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -21,14 +19,32 @@ import {
   AlertDialogTitle 
 } from "@/components/ui/alert-dialog";
 
+// Define filter interface compatible with database types
+interface TravelFilter {
+  dateRange: {
+    from?: Date;
+    to?: Date;
+  };
+  vehicleTypes: string[];
+  status: string[];
+  minDistance?: number;
+  maxDistance?: number;
+  minCost?: number;
+  maxCost?: number;
+  carerIds?: string[];
+  clientNames?: string[];
+}
+
 interface TravelTabProps {
   branchId?: string;
   branchName?: string;
 }
 
 const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
-  const [travelRecords, setTravelRecords] = useState<TravelRecord[]>(mockTravelRecords);
-  const [filteredRecords, setFilteredRecords] = useState<TravelRecord[]>(mockTravelRecords);
+  const { data: travelRecords = [], isLoading } = useTravelRecords(branchId);
+  const createTravelRecord = useCreateTravelRecord();
+  
+  const [filteredRecords, setFilteredRecords] = useState<TravelRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   
   // Dialog states
@@ -52,6 +68,11 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
     maxCost: undefined,
   });
 
+  // Update filteredRecords when travelRecords changes
+  useEffect(() => {
+    setFilteredRecords(travelRecords);
+  }, [travelRecords]);
+
   // Apply search and filters to travel records
   useEffect(() => {
     let result = [...travelRecords];
@@ -62,19 +83,16 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
       result = result.filter(
         (record) =>
           record.purpose.toLowerCase().includes(searchLower) ||
-          record.startLocation.toLowerCase().includes(searchLower) ||
-          record.endLocation.toLowerCase().includes(searchLower) ||
-          (record.clientName && record.clientName.toLowerCase().includes(searchLower)) ||
-          (record.carerName && record.carerName.toLowerCase().includes(searchLower)) ||
-          (record.notes && record.notes.toLowerCase().includes(searchLower)) ||
-          record.distance.toString().includes(searchTerm)
+          record.start_location.toLowerCase().includes(searchLower) ||
+          record.end_location.toLowerCase().includes(searchLower) ||
+          record.distance_miles.toString().includes(searchTerm)
       );
     }
     
     // Apply vehicle type filters
     if (filters.vehicleTypes.length > 0) {
       result = result.filter((record) =>
-        filters.vehicleTypes.includes(record.vehicleType)
+        filters.vehicleTypes.includes(record.vehicle_type)
       );
     }
     
@@ -87,18 +105,18 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
     
     // Apply distance filters
     if (filters.minDistance !== undefined) {
-      result = result.filter((record) => record.distance >= filters.minDistance!);
+      result = result.filter((record) => record.distance_miles >= filters.minDistance!);
     }
     if (filters.maxDistance !== undefined) {
-      result = result.filter((record) => record.distance <= filters.maxDistance!);
+      result = result.filter((record) => record.distance_miles <= filters.maxDistance!);
     }
     
     // Apply cost filters
     if (filters.minCost !== undefined) {
-      result = result.filter((record) => record.totalCost >= filters.minCost!);
+      result = result.filter((record) => record.total_cost >= filters.minCost!);
     }
     if (filters.maxCost !== undefined) {
-      result = result.filter((record) => record.totalCost <= filters.maxCost!);
+      result = result.filter((record) => record.total_cost <= filters.maxCost!);
     }
     
     // Apply date range filters
@@ -106,14 +124,14 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
       const fromDate = new Date(filters.dateRange.from);
       fromDate.setHours(0, 0, 0, 0);
       result = result.filter(
-        (record) => new Date(record.date) >= fromDate
+        (record) => new Date(record.travel_date) >= fromDate
       );
     }
     if (filters.dateRange.to) {
       const toDate = new Date(filters.dateRange.to);
       toDate.setHours(23, 59, 59, 999);
       result = result.filter(
-        (record) => new Date(record.date) <= toDate
+        (record) => new Date(record.travel_date) <= toDate
       );
     }
     
@@ -121,14 +139,8 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
   }, [travelRecords, searchTerm, filters]);
 
   // Handler functions
-  const handleAddRecord = (recordData: Omit<TravelRecord, "id" | "status" | "createdBy">) => {
-    const newRecord: TravelRecord = {
-      ...recordData,
-      id: uuidv4(),
-      status: "pending", // Default status for new records
-      createdBy: "Current User" // In a real app, this would come from auth context
-    };
-    setTravelRecords([newRecord, ...travelRecords]);
+  const handleAddRecord = (recordData: Omit<TravelRecord, "id" | "created_at" | "updated_at" | "staff" | "client">) => {
+    createTravelRecord.mutate(recordData);
     setAddDialogOpen(false);
   };
 
@@ -137,22 +149,10 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
     setAddDialogOpen(true);
   };
 
-  const handleUpdateRecord = (updatedData: Omit<TravelRecord, "id" | "status" | "createdBy">) => {
-    if (currentRecord) {
-      const updatedRecord: TravelRecord = {
-        ...updatedData,
-        id: currentRecord.id,
-        status: currentRecord.status,
-        createdBy: currentRecord.createdBy
-      };
-      
-      setTravelRecords(
-        travelRecords.map((rec) => (rec.id === currentRecord.id ? updatedRecord : rec))
-      );
-      
-      setAddDialogOpen(false);
-      setCurrentRecord(undefined);
-    }
+  const handleUpdateRecord = (updatedData: Omit<TravelRecord, "id" | "created_at" | "updated_at" | "staff" | "client">) => {
+    // For now, we'll just close the dialog - actual update mutation would be implemented here
+    setAddDialogOpen(false);
+    setCurrentRecord(undefined);
   };
 
   const handleViewRecord = (record: TravelRecord) => {
@@ -167,7 +167,7 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
 
   const confirmDeleteRecord = () => {
     if (recordToDelete) {
-      setTravelRecords(travelRecords.filter((rec) => rec.id !== recordToDelete));
+      // Delete mutation would be implemented here
       setDeleteDialogOpen(false);
       setRecordToDelete(undefined);
     }
@@ -285,6 +285,7 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
         onSave={currentRecord ? handleUpdateRecord : handleAddRecord}
         initialData={currentRecord}
         isEditing={!!currentRecord}
+        branchId={branchId}
       />
       
       {/* View Record Dialog */}

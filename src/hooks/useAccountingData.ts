@@ -531,7 +531,7 @@ export function useCreateExtraTimeRecord() {
       
       const { data, error } = await supabase
         .from('extra_time_records')
-        .insert(extraTime)
+        .insert([extraTime]) // Wrap in array to ensure proper type handling
         .select()
         .single();
 

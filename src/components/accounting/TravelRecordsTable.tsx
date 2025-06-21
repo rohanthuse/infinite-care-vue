@@ -1,6 +1,6 @@
 
 import React from "react";
-import { TravelRecord, travelStatusLabels, vehicleTypeLabels } from "@/types/travel";
+import { TravelRecord } from "@/hooks/useAccountingData";
 import { 
   Table, 
   TableBody, 
@@ -27,6 +27,14 @@ interface TravelRecordsTableProps {
   onEditRecord: (record: TravelRecord) => void;
   onDeleteRecord: (recordId: string) => void;
 }
+
+const vehicleTypeLabels: Record<string, string> = {
+  car_personal: "Personal Car",
+  car_company: "Company Car",
+  public_transport: "Public Transport",
+  taxi: "Taxi",
+  other: "Other"
+};
 
 const TravelRecordsTable: React.FC<TravelRecordsTableProps> = ({
   travelRecords,
@@ -86,26 +94,26 @@ const TravelRecordsTable: React.FC<TravelRecordsTableProps> = ({
         <TableBody>
           {travelRecords.map((record) => (
             <TableRow key={record.id}>
-              <TableCell className="font-medium">{new Date(record.date).toLocaleDateString()}</TableCell>
+              <TableCell className="font-medium">{new Date(record.travel_date).toLocaleDateString()}</TableCell>
               <TableCell>
                 <div className="text-sm">
-                  <div className="font-medium">From: {record.startLocation}</div>
-                  <div className="text-gray-500">To: {record.endLocation}</div>
+                  <div className="font-medium">From: {record.start_location}</div>
+                  <div className="text-gray-500">To: {record.end_location}</div>
                 </div>
               </TableCell>
-              <TableCell className="text-right">{record.distance.toFixed(1)} miles</TableCell>
-              <TableCell>{vehicleTypeLabels[record.vehicleType]}</TableCell>
+              <TableCell className="text-right">{record.distance_miles.toFixed(1)} miles</TableCell>
+              <TableCell>{vehicleTypeLabels[record.vehicle_type] || record.vehicle_type}</TableCell>
               <TableCell>
                 <div className="text-sm max-w-[200px] truncate" title={record.purpose}>
                   {record.purpose}
                 </div>
-                {record.clientName && (
+                {record.client && (
                   <div className="text-xs text-gray-500">
-                    Client: {record.clientName}
+                    Client: {record.client.first_name} {record.client.last_name}
                   </div>
                 )}
               </TableCell>
-              <TableCell className="text-right font-medium">{formatCurrency(record.totalCost)}</TableCell>
+              <TableCell className="text-right font-medium">{formatCurrency(record.total_cost)}</TableCell>
               <TableCell>{renderStatusBadge(record.status)}</TableCell>
               <TableCell>
                 <div className="flex justify-end gap-2">
