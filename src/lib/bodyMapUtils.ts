@@ -9,114 +9,146 @@
  * @returns string - Data URL for the SVG
  */
 export function generateBodyMapSvg(type: 'front' | 'back'): string {
-  // Anatomically accurate body outline SVG
+  // Realistic human body outline SVG for front view
   const frontBodySvg = `
-  <svg width="200" height="500" viewBox="0 0 200 500" xmlns="http://www.w3.org/2000/svg">
+  <svg width="300" height="500" viewBox="0 0 300 500" xmlns="http://www.w3.org/2000/svg">
     <style>
-      .body-part { fill: #f9f9f9; stroke: #666; stroke-width: 1; }
-      .body-part:hover { fill: #f0f0f0; cursor: pointer; }
-      .body-outline { fill: none; stroke: #555; stroke-width: 1.2; }
+      .body-outline { fill: #f8f9fa; stroke: #495057; stroke-width: 2; }
+      .body-detail { fill: none; stroke: #6c757d; stroke-width: 1; }
     </style>
+    <defs>
+      <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" style="stop-color:#f8f9fa;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#e9ecef;stop-opacity:1" />
+      </linearGradient>
+    </defs>
+    
     <!-- Head -->
-    <g class="body-part">
-      <ellipse cx="100" cy="40" rx="30" ry="35" />
-      <!-- Face features -->
-      <ellipse cx="90" cy="35" rx="3" ry="4" fill="#555" /> <!-- Left eye -->
-      <ellipse cx="110" cy="35" rx="3" ry="4" fill="#555" /> <!-- Right eye -->
-      <path d="M95 45 Q100 50 105 45" stroke="#555" stroke-width="1.5" fill="none" /> <!-- Mouth -->
-      <path d="M100 35 L100 40" stroke="#555" stroke-width="1" /> <!-- Nose -->
-    </g>
+    <ellipse cx="150" cy="45" rx="35" ry="40" class="body-outline" fill="url(#bodyGradient)" />
+    <!-- Face features -->
+    <circle cx="140" cy="40" r="3" fill="#495057" />
+    <circle cx="160" cy="40" r="3" fill="#495057" />
+    <path d="M140 50 Q150 55 160 50" stroke="#495057" stroke-width="2" fill="none" />
     
     <!-- Neck -->
-    <path class="body-part" d="M85 65 C85 55, 115 55, 115 65 L115 75 L85 75 Z" />
+    <rect x="135" y="85" width="30" height="25" rx="15" class="body-outline" fill="url(#bodyGradient)" />
     
     <!-- Torso -->
-    <path class="body-part" d="M85 75 L85 200 C85 215, 115 215, 115 200 L115 75 Z" />
+    <path d="M110 110 Q105 120 105 140 L105 280 Q105 300 120 310 L180 310 Q195 300 195 280 L195 140 Q195 120 190 110 L170 110 Q160 105 150 105 Q140 105 130 110 Z" 
+          class="body-outline" fill="url(#bodyGradient)" />
     
-    <!-- Shoulders -->
-    <path class="body-part" d="M85 85 L60 95 L60 105 L85 100 Z" /> <!-- Left shoulder -->
-    <path class="body-part" d="M115 85 L140 95 L140 105 L115 100 Z" /> <!-- Right shoulder -->
+    <!-- Chest details -->
+    <circle cx="135" cy="160" r="8" class="body-detail" />
+    <circle cx="165" cy="160" r="8" class="body-detail" />
     
     <!-- Arms -->
-    <path class="body-part" d="M60 105 L50 160 L65 160 L65 105 Z" /> <!-- Left upper arm -->
-    <path class="body-part" d="M140 105 L150 160 L135 160 L135 105 Z" /> <!-- Right upper arm -->
+    <!-- Left arm -->
+    <ellipse cx="85" cy="150" rx="15" ry="45" transform="rotate(-15 85 150)" class="body-outline" fill="url(#bodyGradient)" />
+    <ellipse cx="65" cy="220" rx="12" ry="35" transform="rotate(-10 65 220)" class="body-outline" fill="url(#bodyGradient)" />
+    <ellipse cx="50" cy="270" rx="15" ry="20" class="body-outline" fill="url(#bodyGradient)" />
     
-    <!-- Forearms -->
-    <path class="body-part" d="M50 160 L45 210 L65 210 L65 160 Z" /> <!-- Left forearm -->
-    <path class="body-part" d="M150 160 L155 210 L135 210 L135 160 Z" /> <!-- Right forearm -->
-    
-    <!-- Hands -->
-    <ellipse class="body-part" cx="55" cy="220" rx="12" ry="15" /> <!-- Left hand -->
-    <ellipse class="body-part" cx="145" cy="220" rx="12" ry="15" /> <!-- Right hand -->
+    <!-- Right arm -->
+    <ellipse cx="215" cy="150" rx="15" ry="45" transform="rotate(15 215 150)" class="body-outline" fill="url(#bodyGradient)" />
+    <ellipse cx="235" cy="220" rx="12" ry="35" transform="rotate(10 235 220)" class="body-outline" fill="url(#bodyGradient)" />
+    <ellipse cx="250" cy="270" rx="15" ry="20" class="body-outline" fill="url(#bodyGradient)" />
     
     <!-- Pelvis -->
-    <path class="body-part" d="M85 200 C85 220, 115 220, 115 200 L115 230 L85 230 Z" />
+    <ellipse cx="150" cy="330" rx="45" ry="25" class="body-outline" fill="url(#bodyGradient)" />
     
     <!-- Legs -->
-    <path class="body-part" d="M85 230 L80 350 L95 350 L95 230 Z" /> <!-- Left leg -->
-    <path class="body-part" d="M115 230 L120 350 L105 350 L105 230 Z" /> <!-- Right leg -->
+    <!-- Left leg -->
+    <ellipse cx="125" cy="390" rx="18" ry="55" class="body-outline" fill="url(#bodyGradient)" />
+    <ellipse cx="120" cy="460" rx="15" ry="40" class="body-outline" fill="url(#bodyGradient)" />
     
-    <!-- Lower legs -->
-    <path class="body-part" d="M80 350 L75 450 L95 450 L95 350 Z" /> <!-- Left lower leg -->
-    <path class="body-part" d="M120 350 L125 450 L105 450 L105 350 Z" /> <!-- Right lower leg -->
+    <!-- Right leg -->
+    <ellipse cx="175" cy="390" rx="18" ry="55" class="body-outline" fill="url(#bodyGradient)" />
+    <ellipse cx="180" cy="460" rx="15" ry="40" class="body-outline" fill="url(#bodyGradient)" />
     
     <!-- Feet -->
-    <path class="body-part" d="M75 450 L60 460 L95 460 L95 450 Z" /> <!-- Left foot -->
-    <path class="body-part" d="M125 450 L140 460 L105 460 L105 450 Z" /> <!-- Right foot -->
+    <ellipse cx="115" cy="485" rx="20" ry="12" class="body-outline" fill="url(#bodyGradient)" />
+    <ellipse cx="185" cy="485" rx="20" ry="12" class="body-outline" fill="url(#bodyGradient)" />
+    
+    <!-- Joint indicators -->
+    <circle cx="85" cy="180" r="3" fill="#6c757d" />
+    <circle cx="215" cy="180" r="3" fill="#6c757d" />
+    <circle cx="125" cy="355" r="3" fill="#6c757d" />
+    <circle cx="175" cy="355" r="3" fill="#6c757d" />
+    <circle cx="120" cy="425" r="3" fill="#6c757d" />
+    <circle cx="180" cy="425" r="3" fill="#6c757d" />
   </svg>
   `;
   
+  // Realistic human body outline SVG for back view
   const backBodySvg = `
-  <svg width="200" height="500" viewBox="0 0 200 500" xmlns="http://www.w3.org/2000/svg">
+  <svg width="300" height="500" viewBox="0 0 300 500" xmlns="http://www.w3.org/2000/svg">
     <style>
-      .body-part { fill: #f9f9f9; stroke: #666; stroke-width: 1; }
-      .body-part:hover { fill: #f0f0f0; cursor: pointer; }
-      .body-outline { fill: none; stroke: #555; stroke-width: 1.2; }
+      .body-outline { fill: #f8f9fa; stroke: #495057; stroke-width: 2; }
+      .body-detail { fill: none; stroke: #6c757d; stroke-width: 1; }
     </style>
+    <defs>
+      <linearGradient id="bodyGradientBack" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" style="stop-color:#f8f9fa;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#e9ecef;stop-opacity:1" />
+      </linearGradient>
+    </defs>
+    
     <!-- Head -->
-    <ellipse class="body-part" cx="100" cy="40" rx="30" ry="35" />
+    <ellipse cx="150" cy="45" rx="35" ry="40" class="body-outline" fill="url(#bodyGradientBack)" />
     
     <!-- Neck -->
-    <path class="body-part" d="M85 65 C85 55, 115 55, 115 65 L115 75 L85 75 Z" />
+    <rect x="135" y="85" width="30" height="25" rx="15" class="body-outline" fill="url(#bodyGradientBack)" />
     
     <!-- Torso -->
-    <path class="body-part" d="M85 75 L85 200 C85 215, 115 215, 115 200 L115 75 Z" />
+    <path d="M110 110 Q105 120 105 140 L105 280 Q105 300 120 310 L180 310 Q195 300 195 280 L195 140 Q195 120 190 110 L170 110 Q160 105 150 105 Q140 105 130 110 Z" 
+          class="body-outline" fill="url(#bodyGradientBack)" />
     
-    <!-- Shoulders -->
-    <path class="body-part" d="M85 85 L60 95 L60 105 L85 100 Z" /> <!-- Left shoulder -->
-    <path class="body-part" d="M115 85 L140 95 L140 105 L115 100 Z" /> <!-- Right shoulder -->
+    <!-- Spine -->
+    <line x1="150" y1="110" x2="150" y2="310" stroke="#6c757d" stroke-width="2" />
+    <circle cx="150" cy="130" r="2" fill="#6c757d" />
+    <circle cx="150" cy="160" r="2" fill="#6c757d" />
+    <circle cx="150" cy="190" r="2" fill="#6c757d" />
+    <circle cx="150" cy="220" r="2" fill="#6c757d" />
+    <circle cx="150" cy="250" r="2" fill="#6c757d" />
+    <circle cx="150" cy="280" r="2" fill="#6c757d" />
+    
+    <!-- Shoulder blades -->
+    <ellipse cx="125" cy="140" rx="20" ry="30" class="body-detail" />
+    <ellipse cx="175" cy="140" rx="20" ry="30" class="body-detail" />
     
     <!-- Arms -->
-    <path class="body-part" d="M60 105 L50 160 L65 160 L65 105 Z" /> <!-- Left upper arm -->
-    <path class="body-part" d="M140 105 L150 160 L135 160 L135 105 Z" /> <!-- Right upper arm -->
+    <!-- Left arm -->
+    <ellipse cx="85" cy="150" rx="15" ry="45" transform="rotate(-15 85 150)" class="body-outline" fill="url(#bodyGradientBack)" />
+    <ellipse cx="65" cy="220" rx="12" ry="35" transform="rotate(-10 65 220)" class="body-outline" fill="url(#bodyGradientBack)" />
+    <ellipse cx="50" cy="270" rx="15" ry="20" class="body-outline" fill="url(#bodyGradientBack)" />
     
-    <!-- Forearms -->
-    <path class="body-part" d="M50 160 L45 210 L65 210 L65 160 Z" /> <!-- Left forearm -->
-    <path class="body-part" d="M150 160 L155 210 L135 210 L135 160 Z" /> <!-- Right forearm -->
-    
-    <!-- Hands -->
-    <ellipse class="body-part" cx="55" cy="220" rx="12" ry="15" /> <!-- Left hand -->
-    <ellipse class="body-part" cx="145" cy="220" rx="12" ry="15" /> <!-- Right hand -->
+    <!-- Right arm -->
+    <ellipse cx="215" cy="150" rx="15" ry="45" transform="rotate(15 215 150)" class="body-outline" fill="url(#bodyGradientBack)" />
+    <ellipse cx="235" cy="220" rx="12" ry="35" transform="rotate(10 235 220)" class="body-outline" fill="url(#bodyGradientBack)" />
+    <ellipse cx="250" cy="270" rx="15" ry="20" class="body-outline" fill="url(#bodyGradientBack)" />
     
     <!-- Pelvis -->
-    <path class="body-part" d="M85 200 C85 220, 115 220, 115 200 L115 230 L85 230 Z" />
+    <ellipse cx="150" cy="330" rx="45" ry="25" class="body-outline" fill="url(#bodyGradientBack)" />
     
     <!-- Legs -->
-    <path class="body-part" d="M85 230 L80 350 L95 350 L95 230 Z" /> <!-- Left leg -->
-    <path class="body-part" d="M115 230 L120 350 L105 350 L105 230 Z" /> <!-- Right leg -->
+    <!-- Left leg -->
+    <ellipse cx="125" cy="390" rx="18" ry="55" class="body-outline" fill="url(#bodyGradientBack)" />
+    <ellipse cx="120" cy="460" rx="15" ry="40" class="body-outline" fill="url(#bodyGradientBack)" />
     
-    <!-- Lower legs -->
-    <path class="body-part" d="M80 350 L75 450 L95 450 L95 350 Z" /> <!-- Left lower leg -->
-    <path class="body-part" d="M120 350 L125 450 L105 450 L105 350 Z" /> <!-- Right lower leg -->
+    <!-- Right leg -->
+    <ellipse cx="175" cy="390" rx="18" ry="55" class="body-outline" fill="url(#bodyGradientBack)" />
+    <ellipse cx="180" cy="460" rx="15" ry="40" class="body-outline" fill="url(#bodyGradientBack)" />
     
     <!-- Feet -->
-    <path class="body-part" d="M75 450 L60 460 L95 460 L95 450 Z" /> <!-- Left foot -->
-    <path class="body-part" d="M125 450 L140 460 L105 460 L105 450 Z" /> <!-- Right foot -->
+    <ellipse cx="115" cy="485" rx="20" ry="12" class="body-outline" fill="url(#bodyGradientBack)" />
+    <ellipse cx="185" cy="485" rx="20" ry="12" class="body-outline" fill="url(#bodyGradientBack)" />
     
-    <!-- Back features -->
-    <path d="M100 75 L100 200" stroke="#888" stroke-width="0.8" fill="none" /> <!-- Spine -->
-    <path d="M90 110 L110 110" stroke="#888" stroke-width="0.8" fill="none" /> <!-- Shoulder blades upper -->
-    <path d="M88 130 L112 130" stroke="#888" stroke-width="0.8" fill="none" /> <!-- Shoulder blades lower -->
+    <!-- Joint indicators -->
+    <circle cx="85" cy="180" r="3" fill="#6c757d" />
+    <circle cx="215" cy="180" r="3" fill="#6c757d" />
+    <circle cx="125" cy="355" r="3" fill="#6c757d" />
+    <circle cx="175" cy="355" r="3" fill="#6c757d" />
+    <circle cx="120" cy="425" r="3" fill="#6c757d" />
+    <circle cx="180" cy="425" r="3" fill="#6c757d" />
   </svg>
   `;
   

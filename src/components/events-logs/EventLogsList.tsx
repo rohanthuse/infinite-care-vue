@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -210,6 +209,9 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="font-semibold text-lg">{event.title}</h3>
+                        {event.client_name && (
+                          <p className="text-sm text-blue-600 font-medium">Client: {event.client_name}</p>
+                        )}
                         <div className="flex flex-wrap items-center gap-2 mt-2">
                           <Badge className={getSeverityColor(event.severity)}>
                             {event.severity}

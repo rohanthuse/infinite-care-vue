@@ -15,6 +15,10 @@ export interface ClientEvent {
   body_map_points?: any;
   created_at: string;
   updated_at: string;
+  // Client information
+  client_name?: string;
+  client_first_name?: string;
+  client_last_name?: string;
 }
 
 export const useClientEvents = (clientId: string) => {
@@ -25,7 +29,13 @@ export const useClientEvents = (clientId: string) => {
       
       const { data, error } = await supabase
         .from("client_events_logs")
-        .select("*")
+        .select(`
+          *,
+          clients!inner(
+            first_name,
+            last_name
+          )
+        `)
         .eq("client_id", clientId)
         .order("created_at", { ascending: false });
 
@@ -34,7 +44,15 @@ export const useClientEvents = (clientId: string) => {
         throw error;
       }
 
-      return data as ClientEvent[];
+      // Transform the data to include client names
+      const transformedData = data?.map(event => ({
+        ...event,
+        client_name: event.clients ? `${event.clients.first_name} ${event.clients.last_name}` : 'Unknown Client',
+        client_first_name: event.clients?.first_name,
+        client_last_name: event.clients?.last_name,
+      })) || [];
+
+      return transformedData as ClientEvent[];
     },
     enabled: !!clientId,
   });

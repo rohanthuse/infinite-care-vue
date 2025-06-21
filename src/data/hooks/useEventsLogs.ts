@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -18,6 +17,10 @@ export interface EventLog {
   branch_id?: string;
   created_at: string;
   updated_at: string;
+  // Client information
+  client_name?: string;
+  client_first_name?: string;
+  client_last_name?: string;
 }
 
 export interface CreateEventLogData {
@@ -47,7 +50,15 @@ export const useEventsLogs = (branchId?: string, filters?: {
     queryFn: async () => {
       console.log('Fetching events logs with filters:', { branchId, filters });
       
-      let query = supabase.from('client_events_logs').select('*');
+      let query = supabase
+        .from('client_events_logs')
+        .select(`
+          *,
+          clients!inner(
+            first_name,
+            last_name
+          )
+        `);
       
       if (branchId && branchId !== 'global') {
         query = query.eq('branch_id', branchId);
@@ -85,8 +96,16 @@ export const useEventsLogs = (branchId?: string, filters?: {
         throw error;
       }
       
-      console.log('Fetched events logs:', data?.length || 0, 'records');
-      return data as EventLog[];
+      // Transform the data to include client names
+      const transformedData = data?.map(event => ({
+        ...event,
+        client_name: event.clients ? `${event.clients.first_name} ${event.clients.last_name}` : 'Unknown Client',
+        client_first_name: event.clients?.first_name,
+        client_last_name: event.clients?.last_name,
+      })) || [];
+      
+      console.log('Fetched events logs:', transformedData.length, 'records');
+      return transformedData as EventLog[];
     },
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),

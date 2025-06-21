@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, Info } from 'lucide-react';
+import { generateBodyMapSvg } from '@/lib/bodyMapUtils';
 
 interface BodyMapPoint {
   id: string;
@@ -46,59 +47,21 @@ export function BodyMapViewer({ bodyMapPoints }: BodyMapViewerProps) {
   };
 
   const renderBodyDiagram = (side: 'front' | 'back', points: BodyMapPoint[]) => (
-    <div className="relative mx-auto" style={{ width: '300px', height: '400px' }}>
-      {/* Body outline SVG */}
-      <svg
-        width="300"
-        height="400"
-        viewBox="0 0 300 400"
-        className="absolute inset-0"
-      >
-        {/* Basic human body outline */}
-        <path
-          d="M150 20 C140 20 130 30 130 40 L130 60 C120 65 110 80 110 100 L110 200 C110 220 120 240 130 250 L130 380 L170 380 L170 250 C180 240 190 220 190 200 L190 100 C190 80 180 65 170 60 L170 40 C170 30 160 20 150 20 Z"
-          fill="none"
-          stroke="#e5e7eb"
-          strokeWidth="2"
-        />
-        
-        {/* Head */}
-        <circle cx="150" cy="30" r="20" fill="none" stroke="#e5e7eb" strokeWidth="2" />
-        
-        {/* Arms */}
-        <path
-          d="M110 100 L80 120 L80 180 L90 180 L110 160"
-          fill="none"
-          stroke="#e5e7eb"
-          strokeWidth="2"
-        />
-        <path
-          d="M190 100 L220 120 L220 180 L210 180 L190 160"
-          fill="none"
-          stroke="#e5e7eb"
-          strokeWidth="2"
-        />
-        
-        {/* Legs */}
-        <path
-          d="M130 250 L130 350 L120 380 L140 380 L150 350"
-          fill="none"
-          stroke="#e5e7eb"
-          strokeWidth="2"
-        />
-        <path
-          d="M170 250 L170 350 L180 380 L160 380 L150 350"
-          fill="none"
-          stroke="#e5e7eb"
-          strokeWidth="2"
-        />
-      </svg>
+    <div className="relative mx-auto" style={{ width: '300px', height: '500px' }}>
+      {/* Realistic Body Diagram */}
+      <div 
+        className="absolute inset-0 bg-contain bg-no-repeat bg-center"
+        style={{ 
+          backgroundImage: `url(${generateBodyMapSvg(side)})`,
+          backgroundSize: 'contain'
+        }}
+      />
 
       {/* Render points */}
       {points.map((point) => (
         <button
           key={point.id}
-          className="absolute w-4 h-4 rounded-full border-2 border-white shadow-lg hover:scale-125 transition-transform z-10"
+          className="absolute w-5 h-5 rounded-full border-2 border-white shadow-lg hover:scale-125 transition-transform z-10 flex items-center justify-center text-white text-xs font-bold"
           style={{
             left: `${point.x}px`,
             top: `${point.y}px`,
@@ -107,12 +70,14 @@ export function BodyMapViewer({ bodyMapPoints }: BodyMapViewerProps) {
           }}
           onClick={() => setSelectedPoint(point)}
           title={`${point.type} - ${point.severity}`}
-        />
+        >
+          {point.id.slice(-1).toUpperCase()}
+        </button>
       ))}
       
       {/* Side label */}
       <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2">
-        <Badge variant="outline" className="text-xs">
+        <Badge variant="outline" className="text-xs bg-white">
           {side === 'front' ? 'Front View' : 'Back View'}
         </Badge>
       </div>
@@ -134,7 +99,7 @@ export function BodyMapViewer({ bodyMapPoints }: BodyMapViewerProps) {
         </TabsList>
         
         <TabsContent value="front" className="mt-4">
-          <div className="bg-gray-50 rounded-lg p-6">
+          <div className="bg-gray-50 rounded-lg p-6 flex justify-center">
             {frontPoints.length > 0 ? (
               renderBodyDiagram('front', frontPoints)
             ) : (
@@ -146,7 +111,7 @@ export function BodyMapViewer({ bodyMapPoints }: BodyMapViewerProps) {
         </TabsContent>
         
         <TabsContent value="back" className="mt-4">
-          <div className="bg-gray-50 rounded-lg p-6">
+          <div className="bg-gray-50 rounded-lg p-6 flex justify-center">
             {backPoints.length > 0 ? (
               renderBodyDiagram('back', backPoints)
             ) : (
