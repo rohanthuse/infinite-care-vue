@@ -21,7 +21,7 @@ export interface EventLog {
 }
 
 export interface CreateEventLogData {
-  client_id?: string;
+  client_id: string;
   title: string;
   event_type: string;
   severity: string;
@@ -96,7 +96,7 @@ export const useCreateEventLog = () => {
     mutationFn: async (eventData: CreateEventLogData) => {
       const { data, error } = await supabase
         .from('client_events_logs')
-        .insert([eventData])
+        .insert(eventData)
         .select()
         .single();
       

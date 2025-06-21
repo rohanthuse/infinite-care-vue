@@ -10,13 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { AlertTriangle, User, MapPin, Calendar, Tag } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCreateEventLog, useEventClients } from '@/data/hooks/useEventsLogs';
 import { BodyMapSelector } from './BodyMapSelector';
 
 const eventLogSchema = z.object({
-  client_id: z.string().optional(),
+  client_id: z.string().min(1, 'Client is required'),
   title: z.string().min(1, 'Title is required'),
   event_type: z.string().min(1, 'Event type is required'),
   category: z.string().min(1, 'Category is required'),
@@ -56,8 +56,15 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
   const onSubmit = async (data: EventLogFormData) => {
     try {
       const eventData = {
-        ...data,
-        client_id: data.client_id || undefined,
+        client_id: data.client_id,
+        title: data.title,
+        event_type: data.event_type,
+        category: data.category,
+        severity: data.severity,
+        status: data.status,
+        reporter: data.reporter,
+        location: data.location || undefined,
+        description: data.description || undefined,
         body_map_points: bodyMapPoints.length > 0 ? bodyMapPoints : undefined,
         branch_id: branchId !== 'global' ? branchId : undefined,
       };
@@ -147,15 +154,14 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
                   name="client_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Client (Optional)</FormLabel>
+                      <FormLabel>Client *</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder={clientsLoading ? "Loading clients..." : "Select client (optional)"} />
+                            <SelectValue placeholder={clientsLoading ? "Loading clients..." : "Select client"} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">No client selected</SelectItem>
                           {clients.map((client) => (
                             <SelectItem key={client.id} value={client.id}>
                               {client.first_name} {client.last_name}
