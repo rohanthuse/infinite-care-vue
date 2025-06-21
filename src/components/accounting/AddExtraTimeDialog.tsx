@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -127,24 +128,53 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
     formState: { errors, isSubmitting },
   } = useForm<ExtraTimeFormData>({
     resolver: zodResolver(extraTimeSchema),
-    defaultValues: initialData ? {
-      staff_id: initialData.staff_id,
-      client_id: initialData.client_id || "no-client",
-      work_date: initialData.work_date,
-      scheduled_start_time: initialData.scheduled_start_time,
-      scheduled_end_time: initialData.scheduled_end_time,
-      actual_start_time: initialData.actual_start_time || "",
-      actual_end_time: initialData.actual_end_time || "",
-      hourly_rate: initialData.hourly_rate,
-      extra_time_rate: initialData.extra_time_rate || initialData.hourly_rate,
-      reason: initialData.reason || "",
-      notes: initialData.notes || "",
-    } : {
+    defaultValues: {
       hourly_rate: 15.00,
       extra_time_rate: 22.50,
       client_id: "no-client",
     },
   });
+
+  // Add useEffect to populate form when editing
+  useEffect(() => {
+    if (open) {
+      if (isEditing && initialData) {
+        // Populate form with existing data for editing
+        console.log('Populating form with initial data:', initialData);
+        
+        reset({
+          staff_id: initialData.staff_id,
+          client_id: initialData.client_id || "no-client",
+          work_date: initialData.work_date,
+          scheduled_start_time: initialData.scheduled_start_time,
+          scheduled_end_time: initialData.scheduled_end_time,
+          actual_start_time: initialData.actual_start_time || "",
+          actual_end_time: initialData.actual_end_time || "",
+          hourly_rate: initialData.hourly_rate,
+          extra_time_rate: initialData.extra_time_rate || initialData.hourly_rate,
+          reason: initialData.reason || "",
+          notes: initialData.notes || "",
+        });
+      } else {
+        // Reset to default values for adding new record
+        console.log('Resetting form for new record');
+        
+        reset({
+          staff_id: "",
+          client_id: "no-client",
+          work_date: new Date().toISOString().split('T')[0],
+          scheduled_start_time: "",
+          scheduled_end_time: "",
+          actual_start_time: "",
+          actual_end_time: "",
+          hourly_rate: 15.00,
+          extra_time_rate: 22.50,
+          reason: "",
+          notes: "",
+        });
+      }
+    }
+  }, [open, isEditing, initialData, reset]);
 
   const watchedValues = watch();
 
@@ -234,7 +264,6 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
       }
 
       await onSave(extraTimeData);
-      reset();
       onClose();
     } catch (error) {
       console.error('Error saving extra time record:', error);
@@ -243,7 +272,6 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
   };
 
   const handleClose = () => {
-    reset();
     onClose();
   };
 
