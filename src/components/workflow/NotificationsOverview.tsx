@@ -31,12 +31,12 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
       console.log("Branch Name:", effectiveBranchName);
       
       if (effectiveBranchId && effectiveBranchName) {
-        const fullPath = `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/notifications/${path}`;
+        const fullPath = `/admin/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/notifications/${path}`;
         console.log("Full navigation path:", fullPath);
         navigate(fullPath);
       } else {
         console.log("Navigating without branch context");
-        navigate(`/notifications/${path}`);
+        navigate(`/admin/notifications/${path}`);
       }
     } catch (error) {
       console.error("Navigation error:", error);
