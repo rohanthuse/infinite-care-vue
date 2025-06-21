@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -53,11 +52,7 @@ export const useAttendanceRecords = (branchId: string, filters?: AttendanceFilte
       
       let query = supabase
         .from('attendance_records')
-        .select(`
-          *,
-          staff:person_id(first_name, last_name, specialization),
-          clients:person_id(first_name, last_name)
-        `)
+        .select('*')
         .eq('branch_id', branchId);
 
       // Apply date range filter
@@ -77,26 +72,78 @@ export const useAttendanceRecords = (branchId: string, filters?: AttendanceFilte
         query = query.eq('status', filters.status);
       }
 
-      const { data, error } = await query.order('attendance_date', { ascending: false });
+      const { data: attendanceRecords, error } = await query.order('attendance_date', { ascending: false });
 
       if (error) {
         console.error('Error fetching attendance records:', error);
         throw error;
       }
 
+      if (!attendanceRecords || attendanceRecords.length === 0) {
+        console.log('No attendance records found');
+        return [];
+      }
+
+      // Separate staff and client IDs
+      const staffIds = attendanceRecords
+        .filter(record => record.person_type === 'staff')
+        .map(record => record.person_id);
+      
+      const clientIds = attendanceRecords
+        .filter(record => record.person_type === 'client')
+        .map(record => record.person_id);
+
+      // Fetch staff data
+      let staffData: any[] = [];
+      if (staffIds.length > 0) {
+        const { data, error: staffError } = await supabase
+          .from('staff')
+          .select('id, first_name, last_name, specialization')
+          .in('id', staffIds);
+        
+        if (staffError) {
+          console.error('Error fetching staff data:', staffError);
+        } else {
+          staffData = data || [];
+        }
+      }
+
+      // Fetch client data
+      let clientData: any[] = [];
+      if (clientIds.length > 0) {
+        const { data, error: clientError } = await supabase
+          .from('clients')
+          .select('id, first_name, last_name')
+          .in('id', clientIds);
+        
+        if (clientError) {
+          console.error('Error fetching client data:', clientError);
+        } else {
+          clientData = data || [];
+        }
+      }
+
+      // Create lookup maps for better performance
+      const staffMap = new Map(staffData.map(staff => [staff.id, staff]));
+      const clientMap = new Map(clientData.map(client => [client.id, client]));
+
       // Process the data to add person names and roles
-      const processedData = (data || []).map(record => {
+      const processedData = attendanceRecords.map(record => {
         let personName = 'Unknown';
         let personRole = 'Unknown';
 
-        if (record.person_type === 'staff' && record.staff) {
-          const staff = Array.isArray(record.staff) ? record.staff[0] : record.staff;
-          personName = `${staff.first_name} ${staff.last_name}`;
-          personRole = staff.specialization || 'Staff';
-        } else if (record.person_type === 'client' && record.clients) {
-          const client = Array.isArray(record.clients) ? record.clients[0] : record.clients;
-          personName = `${client.first_name} ${client.last_name}`;
-          personRole = 'Client';
+        if (record.person_type === 'staff') {
+          const staff = staffMap.get(record.person_id);
+          if (staff) {
+            personName = `${staff.first_name} ${staff.last_name}`;
+            personRole = staff.specialization || 'Staff';
+          }
+        } else if (record.person_type === 'client') {
+          const client = clientMap.get(record.person_id);
+          if (client) {
+            personName = `${client.first_name} ${client.last_name}`;
+            personRole = 'Client';
+          }
         }
 
         return {
@@ -124,7 +171,7 @@ export const useAttendanceRecords = (branchId: string, filters?: AttendanceFilte
         );
       }
 
-      console.log('Fetched attendance records:', filteredData.length, 'records');
+      console.log('Processed attendance records:', filteredData.length, 'records');
       return filteredData;
     },
     retry: 3,
