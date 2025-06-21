@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Plus, User, RotateCcw } from 'lucide-react';
+import { X, Plus, User, RotateCcw, Loader2 } from 'lucide-react';
 
 interface BodyMapPoint {
   id: string;
@@ -29,6 +30,9 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
   const [isAddingPoint, setIsAddingPoint] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState<BodyMapPoint | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
   const injuryTypes = [
     { value: 'bruise', label: 'Bruise', color: '#8B5CF6' },
@@ -46,8 +50,58 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
     { value: 'severe', label: 'Severe' },
   ];
 
+  // Get the appropriate background image URL based on current side
+  const getBackgroundImageUrl = () => {
+    if (currentSide === 'front') {
+      return '/lovable-uploads/7bee49ea-2274-4e66-a8f7-e5f32fcb207b.png';
+    } else {
+      return '/lovable-uploads/e823d8ed-e260-4f9e-b0af-edf308ef3e29.png';
+    }
+  };
+
+  // Preload image function
+  const preloadImage = (url: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        console.log('Body map image loaded successfully:', url);
+        resolve();
+      };
+      img.onerror = () => {
+        console.error('Failed to load body map image:', url);
+        reject(new Error(`Failed to load image: ${url}`));
+      };
+      img.src = url;
+    });
+  };
+
+  // Load images when component mounts or side changes
+  useEffect(() => {
+    const currentImageUrl = getBackgroundImageUrl();
+    
+    if (loadedImages[currentImageUrl]) {
+      setImageLoading(false);
+      setImageError(false);
+      return;
+    }
+
+    setImageLoading(true);
+    setImageError(false);
+
+    preloadImage(currentImageUrl)
+      .then(() => {
+        setLoadedImages(prev => ({ ...prev, [currentImageUrl]: true }));
+        setImageLoading(false);
+        setImageError(false);
+      })
+      .catch(() => {
+        setImageLoading(false);
+        setImageError(true);
+      });
+  }, [currentSide]);
+
   const handleBodyClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!isAddingPoint) return;
+    if (!isAddingPoint || imageLoading || imageError) return;
 
     const rect = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * 100;
@@ -93,16 +147,6 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
 
   const currentSidePoints = selectedPoints.filter(p => p.side === currentSide);
 
-  // Get the appropriate background image URL based on current side
-  const getBackgroundImageUrl = () => {
-    if (currentSide === 'front') {
-      return '/lovable-uploads/7bee49ea-2274-4e66-a8f7-e5f32fcb207b.png';
-    } else {
-      // Use the original image for back view until a specific back view is provided
-      return '/lovable-uploads/e823d8ed-e260-4f9e-b0af-edf308ef3e29.png';
-    }
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -143,6 +187,7 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
             variant={isAddingPoint ? 'secondary' : 'outline'}
             size="sm"
             onClick={() => setIsAddingPoint(!isAddingPoint)}
+            disabled={imageLoading || imageError}
           >
             <Plus className="h-4 w-4 mr-1" />
             {isAddingPoint ? 'Cancel' : 'Add Point'}
@@ -164,37 +209,44 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
         <div className="relative mx-auto max-w-md">
           <div
             className={`relative w-full h-[600px] border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 overflow-hidden ${
-              isAddingPoint ? 'cursor-crosshair border-blue-400 bg-blue-50' : 'cursor-default'
+              isAddingPoint && !imageLoading && !imageError ? 'cursor-crosshair border-blue-400 bg-blue-50' : 'cursor-default'
             }`}
             onClick={handleBodyClick}
           >
-            {/* Human Body Background Image */}
-            <div 
-              className="absolute inset-0 w-full h-full bg-no-repeat bg-center"
-              style={{ 
-                backgroundImage: `url(${getBackgroundImageUrl()})`,
-                backgroundSize: 'contain',
-                pointerEvents: 'none'
-              }}
-              onLoad={() => {
-                console.log('Body map image loaded successfully:', getBackgroundImageUrl());
-              }}
-              onError={() => {
-                console.error('Failed to load body map image:', getBackgroundImageUrl());
-              }}
-            />
-
-            {/* Fallback for when image fails to load */}
-            <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-sm">
-              {/* This will only show if the background image fails to load */}
-              <div className="text-center opacity-20">
-                <User className="h-24 w-24 mx-auto mb-2" />
-                <p>Body Map</p>
+            {/* Loading State */}
+            {imageLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                <div className="text-center">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-gray-500" />
+                  <p className="text-gray-600 text-sm">Loading body map...</p>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Error State */}
+            {imageError && !imageLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                <div className="text-center text-gray-500">
+                  <User className="h-24 w-24 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">Body map image unavailable</p>
+                  <p className="text-xs text-gray-400 mt-1">Click functionality disabled</p>
+                </div>
+              </div>
+            )}
+
+            {/* Body Map Image */}
+            {!imageLoading && !imageError && (
+              <div 
+                className="absolute inset-0 w-full h-full bg-no-repeat bg-center"
+                style={{ 
+                  backgroundImage: `url(${getBackgroundImageUrl()})`,
+                  backgroundSize: 'contain'
+                }}
+              />
+            )}
 
             {/* Injury points */}
-            {currentSidePoints.map((point) => (
+            {!imageLoading && !imageError && currentSidePoints.map((point) => (
               <div
                 key={point.id}
                 className="absolute w-4 h-4 rounded-full border-2 border-white shadow-lg cursor-pointer transform -translate-x-2 -translate-y-2 hover:scale-125 transition-transform z-10"
@@ -211,7 +263,8 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
               />
             ))}
 
-            {isAddingPoint && (
+            {/* Add Point Overlay */}
+            {isAddingPoint && !imageLoading && !imageError && (
               <div className="absolute inset-0 flex items-center justify-center bg-blue-50 bg-opacity-50 z-5">
                 <div className="text-blue-600 font-medium">Click to add injury point</div>
               </div>
