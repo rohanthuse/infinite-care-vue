@@ -94,6 +94,16 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
 
   const currentSidePoints = selectedPoints.filter(p => p.side === currentSide);
 
+  // Get the appropriate background image URL based on current side
+  const getBackgroundImageUrl = () => {
+    if (currentSide === 'front') {
+      return '/lovable-uploads/6ae72834-6cd3-4532-8413-685da389a623.png';
+    } else {
+      // Use the original image for back view until a specific back view is provided
+      return '/lovable-uploads/e823d8ed-e260-4f9e-b0af-edf308ef3e29.png';
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -163,9 +173,9 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
             <div 
               className="absolute inset-0 w-full h-full bg-contain bg-center bg-no-repeat"
               style={{ 
-                backgroundImage: `url(/lovable-uploads/e823d8ed-e260-4f9e-b0af-edf308ef3e29.png)`,
-                backgroundPosition: currentSide === 'front' ? 'left center' : 'right center',
-                backgroundSize: '200% 100%',
+                backgroundImage: `url(${getBackgroundImageUrl()})`,
+                backgroundPosition: 'center center',
+                backgroundSize: 'contain',
                 pointerEvents: 'none'
               }}
             />
