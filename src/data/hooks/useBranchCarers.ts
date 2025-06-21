@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-// Enhanced Carer interface with all staff table fields
+// Enhanced Carer interface with all new fields
 export interface CarerDB {
   id: string;
   first_name: string;
@@ -20,6 +20,29 @@ export interface CarerDB {
   branch_id: string | null;
   created_at?: string;
   updated_at?: string;
+  // New comprehensive fields
+  national_insurance_number?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_relationship?: string;
+  dbs_check_date?: string;
+  dbs_certificate_number?: string;
+  dbs_status?: string;
+  qualifications?: string[];
+  certifications?: string[];
+  training_records?: any[];
+  contract_start_date?: string;
+  contract_type?: string;
+  salary_amount?: number;
+  salary_frequency?: string;
+  bank_account_name?: string;
+  bank_account_number?: string;
+  bank_sort_code?: string;
+  bank_name?: string;
+  profile_completed?: boolean;
+  invitation_sent_at?: string;
+  invitation_accepted_at?: string;
+  first_login_completed?: boolean;
 }
 
 export interface CreateCarerData {
@@ -33,6 +56,24 @@ export interface CreateCarerData {
   availability: string;
   date_of_birth?: string;
   branch_id: string;
+  // New comprehensive fields
+  national_insurance_number?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_relationship?: string;
+  dbs_check_date?: string;
+  dbs_certificate_number?: string;
+  dbs_status?: string;
+  qualifications?: string[];
+  certifications?: string[];
+  contract_start_date?: string;
+  contract_type?: string;
+  salary_amount?: number;
+  salary_frequency?: string;
+  bank_account_name?: string;
+  bank_account_number?: string;
+  bank_sort_code?: string;
+  bank_name?: string;
 }
 
 export interface UpdateCarerData extends Partial<CreateCarerData> {
@@ -78,34 +119,22 @@ export async function fetchCarerProfile(carerId: string) {
   return data;
 }
 
-export async function createCarer(carerData: CreateCarerData) {
-  console.log('[createCarer] Creating carer:', carerData);
+export async function createCarerWithInvitation(carerData: CreateCarerData) {
+  console.log('[createCarerWithInvitation] Creating carer with invitation:', carerData);
   
-  const { data, error } = await supabase
-    .from("staff")
-    .insert({
-      first_name: carerData.first_name,
-      last_name: carerData.last_name,
-      email: carerData.email,
-      phone: carerData.phone,
-      address: carerData.address,
-      experience: carerData.experience,
-      specialization: carerData.specialization,
-      availability: carerData.availability,
-      date_of_birth: carerData.date_of_birth,
-      branch_id: carerData.branch_id,
-      status: 'Active'
-    })
-    .select()
-    .single();
+  // Use the new database function to create carer with invitation
+  const { data, error } = await supabase.rpc('create_carer_with_invitation', {
+    p_carer_data: carerData,
+    p_branch_id: carerData.branch_id
+  });
 
   if (error) {
-    console.error('[createCarer] Error:', error);
+    console.error('[createCarerWithInvitation] Error:', error);
     throw error;
   }
   
-  console.log('[createCarer] Created carer:', data);
-  return data;
+  console.log('[createCarerWithInvitation] Created carer with ID:', data);
+  return { id: data };
 }
 
 export async function updateCarer(carerData: UpdateCarerData) {
@@ -167,19 +196,19 @@ export function useCarerProfile(carerId?: string) {
   });
 }
 
-export function useCreateCarer() {
+export function useCreateCarerWithInvitation() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: createCarer,
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["branch-carers", data.branch_id] });
-      toast.success("Carer created successfully", {
-        description: `${data.first_name} ${data.last_name} has been added to the system.`
+    mutationFn: createCarerWithInvitation,
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["branch-carers", variables.branch_id] });
+      toast.success("Carer created and invitation sent!", {
+        description: `${variables.first_name} ${variables.last_name} has been added and will receive an invitation email.`
       });
     },
     onError: (error) => {
-      console.error('[useCreateCarer] Error:', error);
+      console.error('[useCreateCarerWithInvitation] Error:', error);
       toast.error("Failed to create carer", {
         description: error.message || "An error occurred while creating the carer."
       });

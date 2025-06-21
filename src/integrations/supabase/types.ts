@@ -695,6 +695,41 @@ export type Database = {
           },
         ]
       }
+      carer_invitations: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          invitation_token: string
+          staff_id: string | null
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          invitation_token: string
+          staff_id?: string | null
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          invitation_token?: string
+          staff_id?: string | null
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carer_invitations_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_activities: {
         Row: {
           care_plan_id: string
@@ -3717,52 +3752,121 @@ export type Database = {
         Row: {
           address: string | null
           availability: string | null
+          bank_account_name: string | null
+          bank_account_number: string | null
+          bank_name: string | null
+          bank_sort_code: string | null
           branch_id: string | null
+          certifications: string[] | null
+          contract_start_date: string | null
+          contract_type: string | null
           created_at: string | null
           date_of_birth: string | null
+          dbs_certificate_number: string | null
+          dbs_check_date: string | null
+          dbs_status: string | null
           email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relationship: string | null
           experience: string | null
+          first_login_completed: boolean | null
           first_name: string
           hire_date: string | null
           id: string
+          invitation_accepted_at: string | null
+          invitation_sent_at: string | null
           last_name: string
+          national_insurance_number: string | null
           phone: string | null
+          profile_completed: boolean | null
+          qualifications: string[] | null
+          salary_amount: number | null
+          salary_frequency: string | null
           specialization: string | null
           status: string | null
+          temporary_password: string | null
+          training_records: Json | null
           updated_at: string | null
         }
         Insert: {
           address?: string | null
           availability?: string | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          bank_sort_code?: string | null
           branch_id?: string | null
+          certifications?: string[] | null
+          contract_start_date?: string | null
+          contract_type?: string | null
           created_at?: string | null
           date_of_birth?: string | null
+          dbs_certificate_number?: string | null
+          dbs_check_date?: string | null
+          dbs_status?: string | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
           experience?: string | null
+          first_login_completed?: boolean | null
           first_name: string
           hire_date?: string | null
           id?: string
+          invitation_accepted_at?: string | null
+          invitation_sent_at?: string | null
           last_name: string
+          national_insurance_number?: string | null
           phone?: string | null
+          profile_completed?: boolean | null
+          qualifications?: string[] | null
+          salary_amount?: number | null
+          salary_frequency?: string | null
           specialization?: string | null
           status?: string | null
+          temporary_password?: string | null
+          training_records?: Json | null
           updated_at?: string | null
         }
         Update: {
           address?: string | null
           availability?: string | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          bank_sort_code?: string | null
           branch_id?: string | null
+          certifications?: string[] | null
+          contract_start_date?: string | null
+          contract_type?: string | null
           created_at?: string | null
           date_of_birth?: string | null
+          dbs_certificate_number?: string | null
+          dbs_check_date?: string | null
+          dbs_status?: string | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
           experience?: string | null
+          first_login_completed?: boolean | null
           first_name?: string
           hire_date?: string | null
           id?: string
+          invitation_accepted_at?: string | null
+          invitation_sent_at?: string | null
           last_name?: string
+          national_insurance_number?: string | null
           phone?: string | null
+          profile_completed?: boolean | null
+          qualifications?: string[] | null
+          salary_amount?: number | null
+          salary_frequency?: string | null
           specialization?: string | null
           status?: string | null
+          temporary_password?: string | null
+          training_records?: Json | null
           updated_at?: string | null
         }
         Relationships: [
@@ -4557,6 +4661,10 @@ export type Database = {
       can_access_thread: {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: boolean
+      }
+      create_carer_with_invitation: {
+        Args: { p_carer_data: Json; p_branch_id: string }
+        Returns: string
       }
       create_overdue_booking_notifications: {
         Args: Record<PropertyKey, never>
