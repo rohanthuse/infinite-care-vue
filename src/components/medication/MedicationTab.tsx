@@ -18,147 +18,13 @@ import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import PatientMedicationDetail from "./PatientMedicationDetail";
 import MedChartData from "./MedChartData";
+import { usePatientsWithMedications, useMedicationStats } from "@/hooks/useMedicationPatients";
+import { usePendingMedications } from "@/hooks/useMedicationAdministration";
 
 interface MedicationTabProps {
   branchId: string | undefined;
   branchName: string | undefined;
 }
-
-// Mock data for patients with medications
-const mockPatients = [
-  {
-    id: "CL-3421",
-    name: "Wendy Smith",
-    email: "wendysmith@gmail.com",
-    phone: "+44 20 7946 0587",
-    location: "Milton Keynes, MK9 3NZ",
-    status: "Active",
-    avatar: "WS",
-    dateOfBirth: "15/05/1972",
-    gender: "Female",
-    medicationCount: 3,
-    lastUpdated: "12 May 2023"
-  },
-  {
-    id: "CL-2356",
-    name: "John Michael",
-    email: "john.michael@hotmail.com",
-    phone: "+44 20 7946 1122",
-    location: "London, SW1A 1AA",
-    status: "Active",
-    avatar: "JM",
-    dateOfBirth: "22/10/1968",
-    gender: "Male",
-    medicationCount: 2,
-    lastUpdated: "05 Apr 2023"
-  },
-  {
-    id: "CL-9876",
-    name: "Lisa Rodrigues",
-    email: "lisa.rod@outlook.com",
-    phone: "+44 20 7946 3344",
-    location: "Cambridge, CB2 1TN",
-    status: "Active",
-    avatar: "LR",
-    dateOfBirth: "03/12/1985",
-    gender: "Female",
-    medicationCount: 4,
-    lastUpdated: "15 May 2023"
-  },
-  {
-    id: "CL-5432",
-    name: "Kate Williams",
-    email: "kate.w@company.co.uk",
-    phone: "+44 20 7946 5566",
-    location: "Bristol, BS1 5TR",
-    status: "Active",
-    avatar: "KW",
-    dateOfBirth: "17/07/1979",
-    gender: "Female",
-    medicationCount: 1,
-    lastUpdated: "21 May 2023"
-  },
-  {
-    id: "CL-7890",
-    name: "Robert Johnson",
-    email: "r.johnson@gmail.com",
-    phone: "+44 20 7946 7788",
-    location: "Manchester, M1 1AE",
-    status: "Active",
-    avatar: "RJ",
-    dateOfBirth: "30/03/1965",
-    gender: "Male",
-    medicationCount: 5,
-    lastUpdated: "02 May 2023"
-  },
-  {
-    id: "CL-1122",
-    name: "Emma Thompson",
-    email: "emma.t@gmail.com",
-    phone: "+44 20 7946 9900",
-    location: "Southampton, SO14 2AR",
-    status: "Active",
-    avatar: "ET",
-    dateOfBirth: "08/11/1982",
-    gender: "Female",
-    medicationCount: 2,
-    lastUpdated: "14 Apr 2023"
-  },
-  {
-    id: "CL-3344",
-    name: "David Wilson",
-    email: "d.wilson@company.org",
-    phone: "+44 20 7946 1234",
-    location: "Norwich, NR1 3QU",
-    status: "Active",
-    avatar: "DW",
-    dateOfBirth: "25/06/1970",
-    gender: "Male",
-    medicationCount: 3,
-    lastUpdated: "16 May 2023"
-  },
-  {
-    id: "CL-5566",
-    name: "Olivia Parker",
-    email: "olivia.p@outlook.com",
-    phone: "+44 20 7946 5678",
-    location: "Exeter, EX1 1LB",
-    status: "Active",
-    avatar: "OP",
-    dateOfBirth: "14/02/1990",
-    gender: "Female",
-    medicationCount: 1,
-    lastUpdated: "10 May 2023"
-  }
-];
-
-// Mock medication stats data
-const medicationStatsData = [
-  {
-    title: "Total Medications",
-    value: "78",
-    icon: <Pill className="h-5 w-5 text-blue-600" />,
-    color: "blue"
-  },
-  {
-    title: "Due Today",
-    value: "23",
-    icon: <Clock className="h-5 w-5 text-amber-600" />,
-    color: "amber"
-  },
-  {
-    title: "Administered Today",
-    value: "17",
-    icon: <CheckCircle2 className="h-5 w-5 text-green-600" />,
-    color: "green"
-  },
-  {
-    title: "Missed Doses",
-    value: "4",
-    icon: <AlertCircle className="h-5 w-5 text-red-600" />,
-    color: "red"
-  }
-];
 
 export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
   const [searchValue, setSearchValue] = useState("");
@@ -168,12 +34,18 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
   const [viewMode, setViewMode] = useState<"patients" | "pending" | "mar">("patients");
   
   const itemsPerPage = 5;
+
+  // Use the new hooks
+  const { data: patients = [], isLoading: patientsLoading } = usePatientsWithMedications(branchId);
+  const { data: medicationStats } = useMedicationStats(branchId);
+  const { data: pendingMedications = [] } = usePendingMedications(branchId);
   
-  const filteredPatients = mockPatients.filter(patient => {
+  const filteredPatients = patients.filter(patient => {
     const matchesSearch = 
-      patient.name.toLowerCase().includes(searchValue.toLowerCase()) || 
+      patient.first_name.toLowerCase().includes(searchValue.toLowerCase()) || 
+      patient.last_name.toLowerCase().includes(searchValue.toLowerCase()) ||
       patient.id.toLowerCase().includes(searchValue.toLowerCase()) ||
-      patient.email.toLowerCase().includes(searchValue.toLowerCase());
+      patient.email?.toLowerCase().includes(searchValue.toLowerCase());
     
     return matchesSearch;
   });
@@ -209,15 +81,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
   };
 
   const getSelectedPatient = () => {
-    return mockPatients.find(patient => patient.id === selectedPatient);
-  };
-  
-  // Mock MAR statistics
-  const marStatCount = {
-    total: 48,
-    completed: 32,
-    pending: 13,
-    missed: 3
+    return patients.find(patient => patient.id === selectedPatient);
   };
 
   // If a patient is selected, show their medication details
@@ -239,14 +103,14 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl font-medium">
-                {patient?.avatar || "??"}
+                {patient?.avatar_initials || "??"}
               </div>
               <div>
-                <h2 className="text-2xl font-bold">{patient?.name || "Unknown Patient"}</h2>
+                <h2 className="text-2xl font-bold">{patient ? `${patient.first_name} ${patient.last_name}` : "Unknown Patient"}</h2>
                 <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
                   <span>ID: {patient?.id}</span>
-                  <span>DOB: {patient?.dateOfBirth}</span>
-                  <span>Gender: {patient?.gender}</span>
+                  <span>DOB: {patient?.date_of_birth ? format(new Date(patient.date_of_birth), 'dd/MM/yyyy') : 'N/A'}</span>
+                  <span>Gender: {patient?.gender || 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -303,21 +167,61 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        {medicationStatsData.map((stat, index) => (
-          <Card key={index}>
-            <CardContent className="pt-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-gray-500">{stat.title}</p>
-                  <h3 className="text-2xl font-bold mt-1">{stat.value}</h3>
-                </div>
-                <div className={`p-3 rounded-full bg-${stat.color}-100`}>
-                  {stat.icon}
-                </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-gray-500">Total Medications</p>
+                <h3 className="text-2xl font-bold mt-1">{medicationStats?.totalMedications || 0}</h3>
               </div>
-            </CardContent>
-          </Card>
-        ))}
+              <div className="p-3 rounded-full bg-blue-100">
+                <Pill className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-gray-500">Due Today</p>
+                <h3 className="text-2xl font-bold mt-1">{medicationStats?.dueToday || 0}</h3>
+              </div>
+              <div className="p-3 rounded-full bg-amber-100">
+                <Clock className="h-5 w-5 text-amber-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-gray-500">Administered Today</p>
+                <h3 className="text-2xl font-bold mt-1">{medicationStats?.administeredToday || 0}</h3>
+              </div>
+              <div className="p-3 rounded-full bg-green-100">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-gray-500">Missed Doses</p>
+                <h3 className="text-2xl font-bold mt-1">{medicationStats?.missedDoses || 0}</h3>
+              </div>
+              <div className="p-3 rounded-full bg-red-100">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
       
       <Tabs defaultValue="patients" className="mb-6">
@@ -348,80 +252,87 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
       
       {viewMode === "patients" && (
         <div className="bg-white overflow-hidden rounded-xl border border-gray-200 shadow-sm">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[80px]">ID</TableHead>
-                <TableHead>Patient</TableHead>
-                <TableHead className="hidden md:table-cell">DOB</TableHead>
-                <TableHead className="hidden lg:table-cell">Contact</TableHead>
-                <TableHead className="text-center">Medications</TableHead>
-                <TableHead className="hidden md:table-cell">Last Updated</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedPatients.map((patient) => (
-                <TableRow key={patient.id} className="cursor-pointer hover:bg-gray-50" onClick={() => handlePatientSelect(patient.id)}>
-                  <TableCell className="font-medium">{patient.id}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-medium">
-                        {patient.avatar}
-                      </div>
-                      <div>
-                        <div className="font-medium">{patient.name}</div>
-                        <div className="text-xs text-gray-500">{patient.gender}</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {patient.dateOfBirth}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <div className="text-sm">{patient.phone}</div>
-                    <div className="text-xs text-gray-500">{patient.email}</div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                      {patient.medicationCount} medications
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-gray-500 text-sm">
-                    {patient.lastUpdated}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePatientSelect(patient.id);
-                        }}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toast.info(`Editing ${patient.name}'s medications`, {
-                            description: "This feature is coming soon",
-                          });
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {patientsLoading ? (
+            <div className="py-8 text-center">
+              <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                <Pill className="h-6 w-6 text-gray-400 animate-pulse" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-1">Loading patients...</h3>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[80px]">ID</TableHead>
+                  <TableHead>Patient</TableHead>
+                  <TableHead className="hidden md:table-cell">DOB</TableHead>
+                  <TableHead className="hidden lg:table-cell">Contact</TableHead>
+                  <TableHead className="text-center">Medications</TableHead>
+                  <TableHead className="hidden md:table-cell">Last Updated</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {paginatedPatients.map((patient) => (
+                  <TableRow key={patient.id} className="cursor-pointer hover:bg-gray-50" onClick={() => handlePatientSelect(patient.id)}>
+                    <TableCell className="font-medium">{patient.id.slice(-4)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-medium">
+                          {patient.avatar_initials}
+                        </div>
+                        <div>
+                          <div className="font-medium">{patient.first_name} {patient.last_name}</div>
+                          <div className="text-xs text-gray-500">{patient.gender}</div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {patient.date_of_birth ? format(new Date(patient.date_of_birth), 'dd/MM/yyyy') : 'N/A'}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <div className="text-sm">{patient.phone || 'N/A'}</div>
+                      <div className="text-xs text-gray-500">{patient.email || 'N/A'}</div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        {patient.medication_count} medications
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-gray-500 text-sm">
+                      {patient.last_updated}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePatientSelect(patient.id);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePatientSelect(patient.id);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
           
           {filteredPatients.length > 0 ? (
             <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
@@ -455,7 +366,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
                 <Search className="h-6 w-6 text-gray-400" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-1">No patients found</h3>
-              <p className="text-gray-500">Try adjusting your search criteria.</p>
+              <p className="text-gray-500">Try adjusting your search criteria or add medications to patients.</p>
             </div>
           )}
         </div>
@@ -478,101 +389,54 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
                   <TableRow>
                     <TableHead>Patient</TableHead>
                     <TableHead>Medication</TableHead>
-                    <TableHead>Due Time</TableHead>
+                    <TableHead>Frequency</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-medium">
-                          WS
+                  {pendingMedications.slice(0, 10).map((medication) => (
+                    <TableRow key={medication.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-medium">
+                            {medication.client_care_plans?.clients?.first_name?.[0]}{medication.client_care_plans?.clients?.last_name?.[0]}
+                          </div>
+                          <div className="font-medium">
+                            {medication.client_care_plans?.clients?.first_name} {medication.client_care_plans?.clients?.last_name}
+                          </div>
                         </div>
-                        <div className="font-medium">Wendy Smith</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">Lisinopril</div>
-                      <div className="text-xs text-gray-500">10mg, Oral</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">14:30</div>
-                      <div className="text-xs text-gray-500">Today</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className="bg-amber-100 text-amber-800 border-amber-200">
-                        Due Soon
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button size="sm">
-                        <CheckCircle2 className="h-4 w-4 mr-1" />
-                        Administer
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-medium">
-                          JM
-                        </div>
-                        <div className="font-medium">John Michael</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">Amoxicillin</div>
-                      <div className="text-xs text-gray-500">250mg, Oral</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">11:00</div>
-                      <div className="text-xs text-gray-500">Today</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className="bg-red-100 text-red-800 border-red-200">
-                        Overdue
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button size="sm">
-                        <CheckCircle2 className="h-4 w-4 mr-1" />
-                        Administer
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-medium">
-                          LR
-                        </div>
-                        <div className="font-medium">Lisa Rodrigues</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">Amlodipine</div>
-                      <div className="text-xs text-gray-500">5mg, Oral</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">16:00</div>
-                      <div className="text-xs text-gray-500">Today</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-                        Scheduled
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button size="sm">
-                        <CheckCircle2 className="h-4 w-4 mr-1" />
-                        Administer
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{medication.name}</div>
+                        <div className="text-xs text-gray-500">{medication.dosage}</div>
+                      </TableCell>
+                      <TableCell>{medication.frequency}</TableCell>
+                      <TableCell>
+                        <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                          Due
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm">
+                          <CheckCircle2 className="h-4 w-4 mr-1" />
+                          Administer
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
+              
+              {pendingMedications.length === 0 && (
+                <div className="py-8 text-center">
+                  <div className="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                    <CheckCircle2 className="h-6 w-6 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">No pending medications</h3>
+                  <p className="text-gray-500">All medications have been administered for today.</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -609,7 +473,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
                     <div className="mx-auto w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mb-2">
                       <ClipboardList className="h-5 w-5 text-blue-600" />
                     </div>
-                    <h4 className="text-lg font-semibold">{marStatCount.total}</h4>
+                    <h4 className="text-lg font-semibold">{medicationStats?.totalMedications}</h4>
                     <p className="text-sm text-gray-500">Total MAR Records</p>
                   </div>
                 </CardContent>
@@ -621,7 +485,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
                     <div className="mx-auto w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mb-2">
                       <CheckCircle2 className="h-5 w-5 text-green-600" />
                     </div>
-                    <h4 className="text-lg font-semibold">{marStatCount.completed}</h4>
+                    <h4 className="text-lg font-semibold">{medicationStats?.administeredToday}</h4>
                     <p className="text-sm text-gray-500">Administered</p>
                   </div>
                 </CardContent>
@@ -633,7 +497,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
                     <div className="mx-auto w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mb-2">
                       <Clock className="h-5 w-5 text-amber-600" />
                     </div>
-                    <h4 className="text-lg font-semibold">{marStatCount.pending}</h4>
+                    <h4 className="text-lg font-semibold">{medicationStats?.dueToday}</h4>
                     <p className="text-sm text-gray-500">Pending</p>
                   </div>
                 </CardContent>
@@ -645,7 +509,7 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
                     <div className="mx-auto w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mb-2">
                       <AlertCircle className="h-5 w-5 text-red-600" />
                     </div>
-                    <h4 className="text-lg font-semibold">{marStatCount.missed}</h4>
+                    <h4 className="text-lg font-semibold">{medicationStats?.missedDoses}</h4>
                     <p className="text-sm text-gray-500">Missed</p>
                   </div>
                 </CardContent>
