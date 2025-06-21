@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
@@ -17,7 +18,7 @@ import { AddCarerDialog } from "./AddCarerDialog";
 import { EditCarerDialog } from "./EditCarerDialog";
 import RecruitmentSection from "./RecruitmentSection";
 import { useToast } from "@/hooks/use-toast";
-import { useBranchCarers, useDeleteCarer, CarerDB } from "@/data/hooks/useBranchCarers";
+import { useBranchCarers, useDeleteCarer } from "@/data/hooks/useBranchCarers";
 
 export interface CarersTabProps {
   branchId?: string;
@@ -58,7 +59,7 @@ export const CarersTab = ({ branchId, branchName }: CarersTabProps) => {
     }
   }, [error, toast]);
 
-  const filteredCarers = carers.filter((carer: CarerDB) => {
+  const filteredCarers = carers.filter((carer: any) => {
     const fullName = `${carer.first_name} ${carer.last_name}`.toLowerCase();
     const matchesSearch = 
       fullName.includes(searchValue.toLowerCase()) ||
@@ -200,7 +201,7 @@ export const CarersTab = ({ branchId, branchName }: CarersTabProps) => {
               </TableHeader>
               <TableBody>
                 {paginatedCarers.length > 0 ? (
-                  paginatedCarers.map((carer) => (
+                  paginatedCarers.map((carer: any) => (
                     <TableRow key={carer.id} className="hover:bg-gray-50 border-t border-gray-100">
                       <TableCell className="font-medium">{carer.id.slice(0, 8)}</TableCell>
                       <TableCell>

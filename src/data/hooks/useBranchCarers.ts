@@ -30,7 +30,7 @@ export interface CarerDB {
   dbs_status?: string;
   qualifications?: string[];
   certifications?: string[];
-  training_records?: any[];
+  training_records?: any;  // Changed from any[] to any to match JSON type
   contract_start_date?: string;
   contract_type?: string;
   salary_amount?: number;
@@ -122,9 +122,39 @@ export async function fetchCarerProfile(carerId: string) {
 export async function createCarerWithInvitation(carerData: CreateCarerData) {
   console.log('[createCarerWithInvitation] Creating carer with invitation:', carerData);
   
+  // Convert CreateCarerData to a format suitable for the RPC call
+  const carerDataForRPC = {
+    first_name: carerData.first_name,
+    last_name: carerData.last_name,
+    email: carerData.email,
+    phone: carerData.phone,
+    address: carerData.address,
+    experience: carerData.experience,
+    specialization: carerData.specialization,
+    availability: carerData.availability,
+    date_of_birth: carerData.date_of_birth,
+    national_insurance_number: carerData.national_insurance_number,
+    emergency_contact_name: carerData.emergency_contact_name,
+    emergency_contact_phone: carerData.emergency_contact_phone,
+    emergency_contact_relationship: carerData.emergency_contact_relationship,
+    dbs_check_date: carerData.dbs_check_date,
+    dbs_certificate_number: carerData.dbs_certificate_number,
+    dbs_status: carerData.dbs_status,
+    qualifications: carerData.qualifications,
+    certifications: carerData.certifications,
+    contract_start_date: carerData.contract_start_date,
+    contract_type: carerData.contract_type,
+    salary_amount: carerData.salary_amount,
+    salary_frequency: carerData.salary_frequency,
+    bank_account_name: carerData.bank_account_name,
+    bank_account_number: carerData.bank_account_number,
+    bank_sort_code: carerData.bank_sort_code,
+    bank_name: carerData.bank_name,
+  };
+  
   // Use the new database function to create carer with invitation
   const { data, error } = await supabase.rpc('create_carer_with_invitation', {
-    p_carer_data: carerData,
+    p_carer_data: carerDataForRPC,
     p_branch_id: carerData.branch_id
   });
 
@@ -247,7 +277,7 @@ export function useDeleteCarer() {
       
       allQueries.forEach(query => {
         if (query.queryKey[0] === 'branch-carers' && query.queryKey[1]) {
-          queryClient.setQueryData(query.queryKey, (old: CarerDB[] | undefined) => {
+          queryClient.setQueryData(query.queryKey, (old: any[] | undefined) => {
             if (!old) return [];
             return old.filter(carer => carer.id !== variables);
           });
