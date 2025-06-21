@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +15,7 @@ import ViewRateDialog from "./ViewRateDialog";
 import FilterRateDialog from "./FilterRateDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { ServiceRate as UIServiceRate, RateFilter as UIRateFilter } from "@/types/rate";
 
 // Define filter interface compatible with database types
 interface RateFilter {
@@ -49,13 +51,44 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
-  const [selectedRate, setSelectedRate] = useState<ServiceRate | null>(null);
+  const [selectedRate, setSelectedRate] = useState<UIServiceRate | null>(null);
   const [rateToDelete, setRateToDelete] = useState<string | null>(null);
 
   // Update filteredRates when rates change
   useEffect(() => {
     setFilteredRates(rates);
   }, [rates]);
+
+  // Helper function to transform database ServiceRate to UI ServiceRate
+  const transformDbRateToUI = (dbRate: ServiceRate): UIServiceRate => ({
+    id: dbRate.id,
+    serviceName: dbRate.service_name,
+    serviceCode: dbRate.service_code,
+    rateType: dbRate.rate_type as any,
+    amount: dbRate.amount,
+    effectiveFrom: dbRate.effective_from,
+    effectiveTo: dbRate.effective_to,
+    description: dbRate.description,
+    applicableDays: dbRate.applicable_days,
+    clientType: dbRate.client_type as any,
+    fundingSource: dbRate.funding_source as any,
+    status: dbRate.status as any,
+    lastUpdated: dbRate.updated_at,
+    createdBy: dbRate.created_by,
+    isDefault: dbRate.is_default
+  });
+
+  // Helper function to transform database RateFilter to UI RateFilter
+  const transformDbFilterToUI = (dbFilter: RateFilter): UIRateFilter => ({
+    serviceNames: dbFilter.serviceNames,
+    rateTypes: dbFilter.rateTypes as any,
+    clientTypes: dbFilter.clientTypes as any,
+    fundingSources: dbFilter.fundingSources as any,
+    statuses: dbFilter.statuses as any,
+    dateRange: dbFilter.dateRange,
+    minAmount: dbFilter.minAmount,
+    maxAmount: dbFilter.maxAmount
+  });
 
   const handleAddRate = async (rateData: Partial<ServiceRate>) => {
     if (!branchId) {
@@ -103,27 +136,39 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
   };
 
   const handleViewRate = (rate: ServiceRate) => {
-    setSelectedRate(rate);
+    setSelectedRate(transformDbRateToUI(rate));
     setIsViewRateDialogOpen(true);
   };
 
   const handleEditRate = (rate: ServiceRate) => {
-    setSelectedRate(rate);
+    setSelectedRate(transformDbRateToUI(rate));
     setIsEditRateDialogOpen(true);
   };
 
-  const applyFilter = (filter: RateFilter | undefined, ratesList = rates) => {
+  const applyFilter = (filter: UIRateFilter | undefined, ratesList = rates) => {
     if (!filter || Object.keys(filter).length === 0) {
       setFilteredRates(ratesList);
       setActiveFilter(undefined);
       return;
     }
     
+    // Convert UI filter to database filter format
+    const dbFilter: RateFilter = {
+      serviceNames: filter.serviceNames,
+      rateTypes: filter.rateTypes as string[],
+      clientTypes: filter.clientTypes as string[],
+      fundingSources: filter.fundingSources as string[],
+      statuses: filter.statuses as string[],
+      dateRange: filter.dateRange,
+      minAmount: filter.minAmount,
+      maxAmount: filter.maxAmount
+    };
+    
     let result = [...ratesList];
     
     // Filter by service name
-    if (filter.serviceNames && filter.serviceNames.length) {
-      const searchTerm = filter.serviceNames[0].toLowerCase();
+    if (dbFilter.serviceNames && dbFilter.serviceNames.length) {
+      const searchTerm = dbFilter.serviceNames[0].toLowerCase();
       result = result.filter(rate => 
         rate.service_name.toLowerCase().includes(searchTerm) || 
         rate.service_code.toLowerCase().includes(searchTerm)
@@ -131,54 +176,54 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
     }
     
     // Filter by rate type
-    if (filter.rateTypes && filter.rateTypes.length) {
-      result = result.filter(rate => filter.rateTypes?.includes(rate.rate_type));
+    if (dbFilter.rateTypes && dbFilter.rateTypes.length) {
+      result = result.filter(rate => dbFilter.rateTypes?.includes(rate.rate_type));
     }
     
     // Filter by client type
-    if (filter.clientTypes && filter.clientTypes.length) {
-      result = result.filter(rate => filter.clientTypes?.includes(rate.client_type));
+    if (dbFilter.clientTypes && dbFilter.clientTypes.length) {
+      result = result.filter(rate => dbFilter.clientTypes?.includes(rate.client_type));
     }
     
     // Filter by funding source
-    if (filter.fundingSources && filter.fundingSources.length) {
-      result = result.filter(rate => filter.fundingSources?.includes(rate.funding_source));
+    if (dbFilter.fundingSources && dbFilter.fundingSources.length) {
+      result = result.filter(rate => dbFilter.fundingSources?.includes(rate.funding_source));
     }
     
     // Filter by status
-    if (filter.statuses && filter.statuses.length) {
-      result = result.filter(rate => filter.statuses?.includes(rate.status));
+    if (dbFilter.statuses && dbFilter.statuses.length) {
+      result = result.filter(rate => dbFilter.statuses?.includes(rate.status));
     }
     
     // Filter by date range
-    if (filter.dateRange) {
-      if (filter.dateRange.from) {
+    if (dbFilter.dateRange) {
+      if (dbFilter.dateRange.from) {
         result = result.filter(rate => {
           const effectiveFrom = new Date(rate.effective_from);
-          return effectiveFrom >= filter.dateRange!.from!;
+          return effectiveFrom >= dbFilter.dateRange!.from!;
         });
       }
       
-      if (filter.dateRange.to) {
+      if (dbFilter.dateRange.to) {
         result = result.filter(rate => {
           if (!rate.effective_to) return true;
           const effectiveTo = new Date(rate.effective_to);
-          return effectiveTo <= filter.dateRange!.to!;
+          return effectiveTo <= dbFilter.dateRange!.to!;
         });
       }
     }
     
     // Filter by amount range
-    if (filter.minAmount !== undefined) {
-      result = result.filter(rate => rate.amount >= filter.minAmount!);
+    if (dbFilter.minAmount !== undefined) {
+      result = result.filter(rate => rate.amount >= dbFilter.minAmount!);
     }
     
-    if (filter.maxAmount !== undefined) {
-      result = result.filter(rate => rate.amount <= filter.maxAmount!);
+    if (dbFilter.maxAmount !== undefined) {
+      result = result.filter(rate => rate.amount <= dbFilter.maxAmount!);
     }
     
     setFilteredRates(result);
-    setActiveFilter(filter);
+    setActiveFilter(dbFilter);
     
     toast.success("Filters applied", {
       description: `Showing ${result.length} of ${ratesList.length} rates`,
@@ -429,9 +474,9 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
         open={isViewRateDialogOpen}
         onClose={() => setIsViewRateDialogOpen(false)}
         onEdit={(rate) => {
-          // Find the database rate using the UI rate ID
-          const dbRate = rates.find(r => r.id === rate.id);
-          if (dbRate) handleEditRate(dbRate);
+          setSelectedRate(rate);
+          setIsViewRateDialogOpen(false);
+          setIsEditRateDialogOpen(true);
         }}
         rate={selectedRate}
       />
@@ -440,7 +485,7 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
         open={isFilterDialogOpen}
         onClose={() => setIsFilterDialogOpen(false)}
         onApplyFilters={applyFilter}
-        initialFilters={activeFilter || {}}
+        initialFilters={activeFilter ? transformDbFilterToUI(activeFilter) : {}}
         serviceNames={[...new Set(rates.map(rate => rate.service_name))]}
       />
       
