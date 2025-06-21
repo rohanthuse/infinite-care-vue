@@ -54,7 +54,6 @@ function App() {
                 <Route path="/type-of-work" element={<Navigate to="/admin/type-of-work" replace />} />
                 <Route path="/body-map-points" element={<Navigate to="/admin/body-map-points" replace />} />
                 <Route path="/branch" element={<Navigate to="/admin/branch" replace />} />
-                <Route path="/branch-details/:id" element={<Navigate to="/admin/branch-details/:id" replace />} />
                 <Route path="/branch-admins" element={<Navigate to="/admin/branch-admins" replace />} />
                 <Route path="/workflow" element={<Navigate to="/admin/workflow" replace />} />
                 <Route path="/task-matrix" element={<Navigate to="/admin/task-matrix" replace />} />
