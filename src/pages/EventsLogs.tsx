@@ -3,11 +3,11 @@ import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EventLogForm } from "@/components/events-logs/EventLogForm";
+import { EventLogsList } from "@/components/events-logs/EventLogsList";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { TabNavigation } from "@/components/TabNavigation";
-import { EventLogsList } from "@/components/events-logs/EventLogsList";
-import { EventLogForm } from "@/components/events-logs/EventLogForm";
 
 const EventsLogs = () => {
   const { id, branchName } = useParams();
@@ -16,10 +16,11 @@ const EventsLogs = () => {
   const [activeNavTab, setActiveNavTab] = useState("events-logs");
   const decodedBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
 
+  // Set page title
   useEffect(() => {
     document.title = `Events & Logs | ${decodedBranchName}`;
   }, [decodedBranchName]);
-
+  
   const handleTabChange = (value: string) => {
     setActiveTab(value);
   };
@@ -27,12 +28,9 @@ const EventsLogs = () => {
   const handleNavTabChange = (value: string) => {
     setActiveNavTab(value);
     
+    // Navigate to the appropriate route based on the selected tab
     if (value !== "events-logs") {
-      if (id && branchName) {
-        navigate(`/admin/branch-dashboard/${id}/${encodeURIComponent(decodedBranchName)}/${value}`);
-      } else {
-        navigate(`/admin/${value}`);
-      }
+      navigate(`/branch-dashboard/${id}/${encodeURIComponent(decodedBranchName)}/${value}`);
     }
   };
   
@@ -61,8 +59,8 @@ const EventsLogs = () => {
         
         <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col">
           <div className="p-6 border-b border-gray-100">
-            <h2 className="text-2xl font-bold">Events & Logs Management</h2>
-            <p className="text-gray-500 mt-1">Record and monitor critical events and incidents</p>
+            <h2 className="text-2xl font-bold">Events & Logs</h2>
+            <p className="text-gray-500 mt-1">Record and track important events and incidents</p>
           </div>
           
           <Tabs 
@@ -76,13 +74,13 @@ const EventsLogs = () => {
                   value="new" 
                   className="text-base font-medium py-2.5 rounded-md transition-all duration-200 data-[state=active]:text-blue-700 data-[state=active]:shadow-sm data-[state=active]:bg-white"
                 >
-                  Record Event
+                  New Event/Log
                 </TabsTrigger>
                 <TabsTrigger 
                   value="view" 
                   className="text-base font-medium py-2.5 rounded-md transition-all duration-200 data-[state=active]:text-blue-700 data-[state=active]:shadow-sm data-[state=active]:bg-white"
                 >
-                  View Events
+                  View Events/Logs
                 </TabsTrigger>
               </TabsList>
             </div>

@@ -1,16 +1,16 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, Lock, AlertCircle, Eye, EyeOff, Mail } from "lucide-react";
+import { Heart, Lock, AlertCircle, Eye, EyeOff, Mail } from "lucide-react"; // Added Mail icon, removed User
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client"; // Import supabase client
 
 const SuperAdminLogin = () => {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(""); // Changed from username
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -43,7 +43,7 @@ const SuperAdminLogin = () => {
           title: "Login successful",
           description: "Welcome back, Super Admin!",
         });
-        navigate("/admin/dashboard");
+        navigate("/dashboard"); // Navigate to dashboard
       }
     } catch (err: any) {
       setError("An unexpected error occurred during login. Please try again.");

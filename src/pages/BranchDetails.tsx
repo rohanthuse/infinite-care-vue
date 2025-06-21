@@ -1,4 +1,3 @@
-
 import React from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
@@ -18,32 +17,22 @@ import { useBranchStatistics } from "@/data/hooks/useBranchStatistics";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// UUID validation function
-const isValidUUID = (uuid: string): boolean => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(uuid);
-};
-
 const BranchDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  console.log("BranchDetails - received id parameter:", id);
-  console.log("Current URL:", window.location.href);
-  
-  // Call all hooks at the top - before any conditional logic
-  const { data: branchData, isLoading, error } = useBranch(id && isValidUUID(id) ? id : undefined);
-  const { data: stats, isLoading: isLoadingStats, error: errorStats } = useBranchStatistics(id && isValidUUID(id) ? id : undefined);
+  const { data: branchData, isLoading, error } = useBranch(id);
+  const { data: stats, isLoading: isLoadingStats, error: errorStats } = useBranchStatistics(id);
 
   const handleNavigateToBranchAdmins = () => {
     toast.success("Navigating to Branch Admins dashboard");
-    navigate('/admin/branch-admins');
+    navigate('/branch-admins');
   };
 
   const handleNavigateToBranchDashboard = () => {
     toast.success("Navigating to Branch Dashboard");
     if (branchData) {
-      navigate(`/admin/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.name)}`);
+      navigate(`/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.name)}`);
     }
   };
 
@@ -70,9 +59,6 @@ const BranchDetails = () => {
     { title: "Total Reviews", value: stats?.reviewsCount ?? 0, icon: FileText, color: "bg-yellow-500" },
   ];
 
-  // Now handle validation and conditional rendering without violating hooks rules
-  const isValidId = id && isValidUUID(id);
-
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
       <DashboardHeader />
@@ -84,22 +70,7 @@ const BranchDetails = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        {!isValidId ? (
-          <div className="flex flex-col items-center justify-center h-[50vh] bg-red-50 text-red-700 rounded-lg p-8">
-            <AlertCircle className="h-12 w-12 mb-4" />
-            <h2 className="text-xl font-bold mb-2">Invalid Branch ID</h2>
-            <p>The branch ID provided is not valid. Please check the URL and try again.</p>
-            <p className="text-sm text-gray-600 mt-2">Received ID: {id}</p>
-            <Button 
-              variant="outline" 
-              className="mt-6"
-              onClick={() => navigate('/admin/branch')}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Branches
-            </Button>
-          </div>
-        ) : isLoading ? (
+        {isLoading ? (
           <div className="flex justify-center items-center h-[50vh]">
             <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
           </div>
@@ -111,7 +82,7 @@ const BranchDetails = () => {
                 <Button 
                   variant="outline" 
                   className="mt-6"
-                  onClick={() => navigate('/admin/branch')}
+                  onClick={() => navigate('/branch')}
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Branches
@@ -125,7 +96,7 @@ const BranchDetails = () => {
                   variant="outline" 
                   size="icon"
                   className="rounded-full border-gray-200"
-                  onClick={() => navigate('/admin/branch')}
+                  onClick={() => navigate('/branch')}
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
@@ -354,7 +325,7 @@ const BranchDetails = () => {
                 <Button 
                   variant="outline" 
                   className="mt-6"
-                  onClick={() => navigate('/admin/branch')}
+                  onClick={() => navigate('/branch')}
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Branches

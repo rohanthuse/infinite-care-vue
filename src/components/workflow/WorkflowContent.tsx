@@ -33,70 +33,43 @@ const WorkflowContent = ({
     console.log("Effective Branch Name:", effectiveBranchName);
     
     if (effectiveBranchId && effectiveBranchName) {
-      const fullPath = `/admin/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/${path}`;
+      const fullPath = `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/${path}`;
       console.log("Full path from WorkflowContent:", fullPath);
       navigate(fullPath);
     } else {
-      navigate(`/admin/${path}`);
+      navigate(`/${path}`);
     }
   };
 
   const handleTaskMatrixClick = () => {
     if (effectiveBranchId && effectiveBranchName) {
-      navigate(`/admin/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/task-matrix`);
+      navigate(`/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/task-matrix`);
     } else {
-      navigate(`/admin/task-matrix`);
+      navigate(`/task-matrix`);
     }
   };
   
   const handleTrainingMatrixClick = () => {
     if (effectiveBranchId && effectiveBranchName) {
-      navigate(`/admin/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/training-matrix`);
+      navigate(`/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/training-matrix`);
     } else {
-      navigate(`/admin/training-matrix`);
+      navigate(`/training-matrix`);
     }
   };
   
-  return (
-    <>
-      <div className="mb-6 bg-white rounded-lg border border-gray-200 shadow-sm p-4">
-        <div className="flex flex-col md:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search workflows..."
-              className="pl-10 pr-4"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-3">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Button variant="outline" className="gap-2">
-              <Filter className="h-4 w-4" />
-              <span className="hidden md:inline">More Filters</span>
-            </Button>
-            
-            <Button variant="outline" className="gap-2">
-              <Download className="h-4 w-4" />
-              <span className="hidden md:inline">Export</span>
-            </Button>
-          </div>
-        </div>
+  return <>
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Workflow Management</h1>
+        <p className="text-gray-500 mt-2 font-medium">Manage and monitor all workflow processes</p>
       </div>
-
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+      
+      <motion.div initial={{
+      opacity: 0
+    }} animate={{
+      opacity: 1
+    }} transition={{
+      duration: 0.3
+    }}>
         <div className="mb-8 mt-8">
           <h2 className="text-xl font-bold text-gray-800 tracking-tight mb-4">Core Workflow Elements</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -130,7 +103,7 @@ const WorkflowContent = ({
               </CardContent>
             </Card>
 
-            <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200" onClick={() => handleNavigate('form-builder')}>
+            <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200" onClick={() => handleNavigate('forms')}>
               <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                 <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-3">
                   <FileText className="h-8 w-8 text-amber-600" />
@@ -177,8 +150,7 @@ const WorkflowContent = ({
           </div>
         </div>
       </motion.div>
-    </>
-  );
+    </>;
 };
 
 export default WorkflowContent;

@@ -120,7 +120,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
 
   const handleEditClient = (client: any) => {
     if (id && branchName) {
-      navigate(`/admin/branch-dashboard/${id}/${branchName}/clients/${client.id}/edit`);
+      navigate(`/branch-dashboard/${id}/${branchName}/clients/${client.id}/edit`);
     }
   };
 
@@ -132,19 +132,19 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     ];
     
     if (tabsWithDedicatedPages.includes(value) && id && branchName) {
-      // Redirect to dedicated page with admin prefix
+      // Redirect to dedicated page
       const routeMap: { [key: string]: string } = {
-        'workflow': '/admin/workflow',
-        'accounting': '/admin/accounting',
-        'agreements': '/admin/agreement',
-        'events-logs': '/admin/events-logs',
-        'attendance': '/admin/attendance',
-        'form-builder': '/admin/form-builder',
-        'documents': '/admin/documents',
-        'notifications': '/admin/notifications',
-        'library': '/admin/library',
-        'third-party': '/admin/third-party',
-        'reports': '/admin/reports'
+        'workflow': '/workflow',
+        'accounting': '/accounting',
+        'agreements': '/agreement',
+        'events-logs': '/events-logs',
+        'attendance': '/attendance',
+        'form-builder': '/form-builder',
+        'documents': '/documents',
+        'notifications': '/notifications',
+        'library': '/library',
+        'third-party': '/third-party',
+        'reports': '/reports'
       };
       
       const route = routeMap[value];
