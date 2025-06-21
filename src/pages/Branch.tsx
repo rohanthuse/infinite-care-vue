@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
@@ -40,12 +41,17 @@ export type Branch = {
 };
 
 const fetchBranches = async (searchQuery: string): Promise<Branch[]> => {
+    console.log('Fetching branches with query:', searchQuery);
     let query = supabase.from('branches').select('*').order('name');
     if (searchQuery) {
         query = query.or(`name.ilike.%${searchQuery}%,country.ilike.%${searchQuery}%,branch_type.ilike.%${searchQuery}%,regulatory.ilike.%${searchQuery}%`);
     }
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) {
+        console.error('Error fetching branches:', error);
+        throw error;
+    }
+    console.log('Fetched branches:', data);
     return data as Branch[];
 };
 
@@ -67,8 +73,12 @@ const Branch = () => {
 
   const { mutate: deleteBranch, isPending: isDeleting } = useMutation({
     mutationFn: async (id: string) => {
+      console.log('Deleting branch with id:', id);
       const { error } = await supabase.from('branches').delete().eq('id', id);
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting branch:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({ title: "Branch deleted successfully" });
@@ -77,26 +87,31 @@ const Branch = () => {
       setItemToDelete(null);
     },
     onError: (error: any) => {
+      console.error('Delete branch error:', error);
       toast({ title: "Failed to delete branch", description: error.message, variant: "destructive" });
     },
   });
 
   const handleViewBranchDetails = (branchId: string) => {
+    console.log('Navigating to branch details:', branchId);
     navigate(`/branch-details/${branchId}`);
   };
 
   const handleEdit = (branch: Branch) => {
+    console.log('Editing branch:', branch);
     setSelectedBranch(branch);
     setIsEditDialogOpen(true);
   };
 
   const handleDeleteRequest = (branch: Branch) => {
+    console.log('Delete request for branch:', branch);
     setItemToDelete(branch);
     setIsDeleteDialogOpen(true);
   };
 
   const confirmDelete = () => {
     if (itemToDelete) {
+      console.log('Confirming delete for branch:', itemToDelete.id);
       deleteBranch(itemToDelete.id);
     }
   };
@@ -198,7 +213,14 @@ const Branch = () => {
     },
   ];
 
+  // Add console logs to debug the issue
+  console.log('Branch component rendering...');
+  console.log('IsLoading:', isLoading);
+  console.log('Error:', error);
+  console.log('Branches data:', branches);
+
   if (isLoading && !branches) {
+    console.log('Showing loading state');
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
         <DashboardHeader />
@@ -211,6 +233,7 @@ const Branch = () => {
   }
 
   if (error) {
+    console.error('Showing error state:', error);
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
         <DashboardHeader />
@@ -221,6 +244,8 @@ const Branch = () => {
       </div>
     );
   }
+  
+  console.log('Rendering main branch content with', branches?.length, 'branches');
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
