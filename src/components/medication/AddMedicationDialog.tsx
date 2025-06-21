@@ -39,8 +39,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateMedication } from "@/hooks/useMedications";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useBranchDashboardNavigation } from "@/hooks/useBranchDashboardNavigation";
 
 interface AddMedicationDialogProps {
   open: boolean;
@@ -48,8 +49,8 @@ interface AddMedicationDialogProps {
 }
 
 const formSchema = z.object({
-  care_plan_id: z.string({
-    required_error: "Care plan is required.",
+  client_id: z.string({
+    required_error: "Client is required.",
   }),
   name: z.string().min(2, {
     message: "Medication name must be at least 2 characters.",
@@ -71,25 +72,55 @@ type FormData = z.infer<typeof formSchema>;
 
 export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogProps) => {
   const createMedication = useCreateMedication();
+  const queryClient = useQueryClient();
+  const { id: branchId } = useBranchDashboardNavigation();
 
-  // Fetch care plans for dropdown
-  const { data: carePlans = [] } = useQuery({
-    queryKey: ['care-plans-for-medication'],
+  // Fetch all clients in the current branch
+  const { data: clients = [] } = useQuery({
+    queryKey: ['branch-clients-for-medication', branchId],
     queryFn: async () => {
+      if (!branchId) return [];
+      
       const { data, error } = await supabase
-        .from('client_care_plans')
+        .from('clients')
         .select(`
           id,
-          title,
-          display_id,
-          clients(
+          first_name,
+          last_name,
+          status,
+          client_care_plans(
             id,
-            first_name,
-            last_name
+            title,
+            status
           )
         `)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
+        .eq('branch_id', branchId)
+        .eq('status', 'Active')
+        .order('last_name', { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!branchId,
+  });
+
+  // Mutation to create a care plan if needed
+  const createCarePlan = useMutation({
+    mutationFn: async (clientId: string) => {
+      const client = clients.find(c => c.id === clientId);
+      if (!client) throw new Error('Client not found');
+
+      const { data, error } = await supabase
+        .from('client_care_plans')
+        .insert({
+          client_id: clientId,
+          title: `General Care Plan for ${client.first_name} ${client.last_name}`,
+          provider_name: 'System Generated',
+          start_date: new Date().toISOString().split('T')[0],
+          status: 'active'
+        })
+        .select()
+        .single();
 
       if (error) throw error;
       return data;
@@ -108,9 +139,28 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
 
   const onSubmit = async (values: FormData) => {
     try {
-      // Ensure care_plan_id is always present
+      const selectedClient = clients.find(c => c.id === values.client_id);
+      if (!selectedClient) {
+        toast.error('Selected client not found');
+        return;
+      }
+
+      // Check if client has an active care plan
+      let carePlan = selectedClient.client_care_plans?.find(cp => cp.status === 'active');
+      
+      // If no active care plan exists, create one
+      if (!carePlan) {
+        toast.info('Creating care plan for client...');
+        carePlan = await createCarePlan.mutateAsync(values.client_id);
+        
+        // Invalidate queries to refresh the data
+        queryClient.invalidateQueries({ queryKey: ['branch-clients-for-medication'] });
+        queryClient.invalidateQueries({ queryKey: ['care-plans'] });
+      }
+
+      // Create the medication
       const medicationData = {
-        care_plan_id: values.care_plan_id,
+        care_plan_id: carePlan.id,
         name: values.name,
         dosage: values.dosage,
         frequency: values.frequency,
@@ -125,6 +175,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
       onOpenChange(false);
     } catch (error) {
       console.error('Error creating medication:', error);
+      toast.error('Failed to create medication');
     }
   };
 
@@ -153,24 +204,40 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
             <div className="space-y-4">
               <FormField
                 control={form.control}
-                name="care_plan_id"
+                name="client_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Patient / Care Plan*</FormLabel>
+                    <FormLabel>Patient*</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a patient and care plan" />
+                          <SelectValue placeholder="Select a patient" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {carePlans.map((carePlan) => (
-                          <SelectItem key={carePlan.id} value={carePlan.id}>
-                            {carePlan.clients?.first_name} {carePlan.clients?.last_name} - {carePlan.title} ({carePlan.display_id})
-                          </SelectItem>
-                        ))}
+                        {clients.map((client) => {
+                          const hasActivePlan = client.client_care_plans?.some(cp => cp.status === 'active');
+                          return (
+                            <SelectItem key={client.id} value={client.id}>
+                              <div className="flex items-center justify-between w-full">
+                                <span>{client.last_name}, {client.first_name}</span>
+                                {!hasActivePlan && (
+                                  <span className="ml-2 text-xs text-orange-600 bg-orange-100 px-2 py-0.5 rounded">
+                                    Auto-create plan
+                                  </span>
+                                )}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
+                    <FormDescription>
+                      {clients.length === 0 
+                        ? "No active clients found in this branch"
+                        : `${clients.length} clients available. Care plans will be created automatically if needed.`
+                      }
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -325,8 +392,11 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={createMedication.isPending}>
-                {createMedication.isPending ? "Adding..." : "Add Medication"}
+              <Button 
+                type="submit" 
+                disabled={createMedication.isPending || createCarePlan.isPending}
+              >
+                {createMedication.isPending || createCarePlan.isPending ? "Adding..." : "Add Medication"}
               </Button>
             </DialogFooter>
           </form>
