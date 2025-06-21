@@ -2022,6 +2022,130 @@ export type Database = {
         }
         Relationships: []
       }
+      documents: {
+        Row: {
+          access_level: string
+          agreement_id: string | null
+          branch_id: string | null
+          care_plan_id: string | null
+          category: string
+          client_id: string | null
+          created_at: string
+          description: string | null
+          expiry_date: string | null
+          file_path: string | null
+          file_size: string | null
+          file_type: string | null
+          form_id: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          staff_id: string | null
+          status: string
+          storage_bucket: string | null
+          tags: string[] | null
+          type: string
+          updated_at: string
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+        }
+        Insert: {
+          access_level?: string
+          agreement_id?: string | null
+          branch_id?: string | null
+          care_plan_id?: string | null
+          category?: string
+          client_id?: string | null
+          created_at?: string
+          description?: string | null
+          expiry_date?: string | null
+          file_path?: string | null
+          file_size?: string | null
+          file_type?: string | null
+          form_id?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          staff_id?: string | null
+          status?: string
+          storage_bucket?: string | null
+          tags?: string[] | null
+          type: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Update: {
+          access_level?: string
+          agreement_id?: string | null
+          branch_id?: string | null
+          care_plan_id?: string | null
+          category?: string
+          client_id?: string | null
+          created_at?: string
+          description?: string | null
+          expiry_date?: string | null
+          file_path?: string | null
+          file_size?: string | null
+          file_type?: string | null
+          form_id?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          staff_id?: string | null
+          status?: string
+          storage_bucket?: string | null
+          tags?: string[] | null
+          type?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_care_plan_id_fkey"
+            columns: ["care_plan_id"]
+            isOneToOne: false
+            referencedRelation: "client_care_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expense_types: {
         Row: {
           amount: number
@@ -3908,6 +4032,28 @@ export type Database = {
       get_branch_chart_data: {
         Args: { p_branch_id: string }
         Returns: Json
+      }
+      get_branch_documents: {
+        Args: { p_branch_id: string }
+        Returns: {
+          id: string
+          name: string
+          type: string
+          category: string
+          description: string
+          file_path: string
+          file_size: string
+          file_type: string
+          uploaded_by_name: string
+          client_name: string
+          staff_name: string
+          tags: string[]
+          status: string
+          created_at: string
+          updated_at: string
+          source_table: string
+          related_entity: string
+        }[]
       }
       get_staff_profile: {
         Args: { staff_user_id: string }
