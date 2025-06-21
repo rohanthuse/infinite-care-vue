@@ -23,7 +23,7 @@ import Accounting from "./pages/Accounting";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
 import { AuthProvider } from "./contexts/AuthContext";
 import { TaskProvider } from "./contexts/TaskContext";
-import { AdminRoutes } from "./routes/AdminRoutes";
+import AdminRoutes from "./routes/AdminRoutes";
 import CarerRoutes from "./routes/CarerRoutes";
 import ClientRoutes from "./routes/ClientRoutes";
 
@@ -55,7 +55,7 @@ const App = () => (
               <Route path="/accounting" element={<Accounting />} />
               
               {/* Admin Routes */}
-              <Route path="/admin/*" element={<AdminRoutes />} />
+              {AdminRoutes()}
               
               {/* Carer Routes */}
               {CarerRoutes()}
