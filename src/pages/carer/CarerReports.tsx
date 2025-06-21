@@ -198,7 +198,11 @@ const CarerReports: React.FC = () => {
         </CardHeader>
       </Card>
 
-      <ReportsHeader />
+      <ReportsHeader 
+        branchName="Med-Infinite Branch"
+        activeReportType={reportOptions.find(r => r.id === activeReport)?.title || "Reports"}
+        onDateRangeChange={setDateRange}
+      />
       
       <div className="space-y-4 mt-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

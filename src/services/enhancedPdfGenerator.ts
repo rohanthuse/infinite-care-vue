@@ -57,18 +57,27 @@ export const generateReportPDF = (reportData: ReportPDFData): void => {
     </html>
   `;
 
-  // Create a new window with the HTML content
   const printWindow = window.open('', '_blank');
   if (printWindow) {
     printWindow.document.write(htmlContent);
     printWindow.document.close();
     
-    // Wait for content to load then print
     printWindow.onload = () => {
       printWindow.print();
       printWindow.close();
     };
   }
+};
+
+export const generateCarePlanDetailPDF = (carePlan: any, clientData: any, branchName: string): void => {
+  const reportData: ReportPDFData = {
+    branchName,
+    reportType: "Care Plan Detail",
+    dateRange: { from: new Date(), to: new Date() },
+    data: { carePlan, clientData }
+  };
+  
+  generateReportPDF(reportData);
 };
 
 export const generateBookingReportPDF = (bookings: any[], filters: any, branchName: string, title: string): void => {

@@ -8,10 +8,62 @@ export interface ReportsDataParams {
   endDate?: string;
 }
 
+interface ClientReportsData {
+  clientActivity: Array<{
+    name: string;
+    active: number;
+    inactive: number;
+    new: number;
+  }>;
+  demographics: Array<{
+    name: string;
+    value: number;
+  }>;
+  serviceUtilization: Array<{
+    name: string;
+    value: number;
+  }>;
+}
+
+interface StaffReportsData {
+  performance: Array<{
+    name: string;
+    completedTasks: number;
+    onTimePercentage: number;
+  }>;
+  availability: Array<{
+    day: string;
+    available: number;
+    unavailable: number;
+  }>;
+}
+
+interface FinancialReportsData {
+  monthlyRevenue: Array<{
+    month: string;
+    revenue: number;
+    expenses: number;
+    profit: number;
+  }>;
+  serviceRevenue: Array<{
+    name: string;
+    value: number;
+  }>;
+}
+
+interface OperationalReportsData {
+  taskCompletion: Array<{
+    day: string;
+    scheduled: number;
+    completed: number;
+    cancelled: number;
+  }>;
+}
+
 export function useClientReportsData({ branchId, startDate, endDate }: ReportsDataParams) {
   return useQuery({
     queryKey: ['client-reports', branchId, startDate, endDate],
-    queryFn: async () => {
+    queryFn: async (): Promise<ClientReportsData> => {
       const { data, error } = await supabase.rpc('get_client_reports_data', {
         p_branch_id: branchId,
         p_start_date: startDate || null,
@@ -23,7 +75,7 @@ export function useClientReportsData({ branchId, startDate, endDate }: ReportsDa
         throw error;
       }
       
-      return data;
+      return data as ClientReportsData;
     },
     enabled: !!branchId,
   });
@@ -32,7 +84,7 @@ export function useClientReportsData({ branchId, startDate, endDate }: ReportsDa
 export function useStaffReportsData({ branchId, startDate, endDate }: ReportsDataParams) {
   return useQuery({
     queryKey: ['staff-reports', branchId, startDate, endDate],
-    queryFn: async () => {
+    queryFn: async (): Promise<StaffReportsData> => {
       const { data, error } = await supabase.rpc('get_staff_reports_data', {
         p_branch_id: branchId,
         p_start_date: startDate || null,
@@ -44,7 +96,7 @@ export function useStaffReportsData({ branchId, startDate, endDate }: ReportsDat
         throw error;
       }
       
-      return data;
+      return data as StaffReportsData;
     },
     enabled: !!branchId,
   });
@@ -53,7 +105,7 @@ export function useStaffReportsData({ branchId, startDate, endDate }: ReportsDat
 export function useFinancialReportsData({ branchId, startDate, endDate }: ReportsDataParams) {
   return useQuery({
     queryKey: ['financial-reports', branchId, startDate, endDate],
-    queryFn: async () => {
+    queryFn: async (): Promise<FinancialReportsData> => {
       const { data, error } = await supabase.rpc('get_financial_reports_data', {
         p_branch_id: branchId,
         p_start_date: startDate || null,
@@ -65,7 +117,7 @@ export function useFinancialReportsData({ branchId, startDate, endDate }: Report
         throw error;
       }
       
-      return data;
+      return data as FinancialReportsData;
     },
     enabled: !!branchId,
   });
@@ -74,7 +126,7 @@ export function useFinancialReportsData({ branchId, startDate, endDate }: Report
 export function useOperationalReportsData({ branchId, startDate, endDate }: ReportsDataParams) {
   return useQuery({
     queryKey: ['operational-reports', branchId, startDate, endDate],
-    queryFn: async () => {
+    queryFn: async (): Promise<OperationalReportsData> => {
       const { data, error } = await supabase.rpc('get_operational_reports_data', {
         p_branch_id: branchId,
         p_start_date: startDate || null,
@@ -86,7 +138,7 @@ export function useOperationalReportsData({ branchId, startDate, endDate }: Repo
         throw error;
       }
       
-      return data;
+      return data as OperationalReportsData;
     },
     enabled: !!branchId,
   });
@@ -96,7 +148,6 @@ export function useServiceReportsData({ branchId, startDate, endDate }: ReportsD
   return useQuery({
     queryKey: ['service-reports', branchId, startDate, endDate],
     queryFn: async () => {
-      // For now, we'll use existing chart data function
       const { data, error } = await supabase.rpc('get_branch_chart_data', {
         p_branch_id: branchId
       });
@@ -116,8 +167,6 @@ export function useComplianceReportsData({ branchId, startDate, endDate }: Repor
   return useQuery({
     queryKey: ['compliance-reports', branchId, startDate, endDate],
     queryFn: async () => {
-      // This would need additional database functions for compliance data
-      // For now, return empty structure
       return {
         trainingCompliance: [],
         incidentTypes: []

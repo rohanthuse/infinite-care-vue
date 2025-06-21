@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { ClientReports } from "./ClientReports";
@@ -91,10 +90,14 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
   ];
   
   const renderActiveReport = () => {
+    const safeDateRange = dateRange?.from && dateRange?.to 
+      ? { from: dateRange.from, to: dateRange.to }
+      : undefined;
+
     const commonProps = {
       branchId,
       branchName,
-      dateRange
+      dateRange: safeDateRange
     };
 
     switch (activeReport) {
