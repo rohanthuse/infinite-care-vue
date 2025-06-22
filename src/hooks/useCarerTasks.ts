@@ -97,6 +97,7 @@ export const useCarerTasks = () => {
       const { data, error } = await supabase
         .from('tasks')
         .insert({
+          title: newTask.title,
           description: newTask.description,
           status: newTask.completed ? 'done' : 'pending',
           priority: newTask.priority,
