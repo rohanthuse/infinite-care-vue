@@ -15,6 +15,7 @@ import {
   Wallet, 
   GraduationCap,
   Users,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -23,7 +24,7 @@ import { useCarerAuth } from "@/hooks/useCarerAuth";
 const CarerDashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const { user, isAuthenticated, loading } = useCarerAuth();
+  const { user, isAuthenticated, loading, carerProfile, signOut } = useCarerAuth();
 
   // Menu items for mobile view
   const menuItems = [
@@ -92,6 +93,15 @@ const CarerDashboard: React.FC = () => {
     }
   }, [isAuthenticated, loading, navigate]);
 
+  const handleMobileLogout = async () => {
+    try {
+      await signOut();
+      setSidebarOpen(false);
+    } catch (error) {
+      console.error('Mobile logout error:', error);
+    }
+  };
+
   // Show loading state while checking authentication
   if (loading) {
     return (
@@ -108,6 +118,8 @@ const CarerDashboard: React.FC = () => {
   if (!isAuthenticated) {
     return null;
   }
+
+  const carerName = carerProfile ? `${carerProfile.first_name} ${carerProfile.last_name}` : "Carer";
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -144,6 +156,27 @@ const CarerDashboard: React.FC = () => {
                     {item.name}
                   </a>
                 ))}
+              </div>
+              
+              {/* Mobile profile section */}
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="flex items-center mb-4">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <User className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-900">{carerName}</p>
+                    <p className="text-xs text-gray-500">Carer</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  className="w-full flex justify-between items-center text-gray-700 hover:bg-gray-50"
+                  onClick={handleMobileLogout}
+                >
+                  <span>Logout</span>
+                  <LogOut className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </div>

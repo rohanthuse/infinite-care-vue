@@ -31,15 +31,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
+import { useCarerAuth } from "@/hooks/useCarerAuth";
 
 export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMobileMenuToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { toast } = useToast();
-  const carerName = localStorage.getItem("carerName") || "Carer";
+  const { carerProfile, signOut } = useCarerAuth();
   const [searchValue, setSearchValue] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
@@ -96,22 +95,19 @@ export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMo
     },
   ];
 
-  const handleLogout = () => {
-    // Clear auth state
-    localStorage.removeItem("userType");
-    localStorage.removeItem("carerName");
-    
-    toast({
-      title: "Logged out successfully",
-      description: "You have been logged out.",
-    });
-    
-    navigate("/carer-login");
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const handleViewAllNotifications = () => {
     navigate('/carer-dashboard/notifications');
   };
+
+  const carerName = carerProfile ? `${carerProfile.first_name} ${carerProfile.last_name}` : "Carer";
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-100 py-3 md:py-4 sticky top-0 z-50 w-full">
