@@ -1,11 +1,22 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, MapPin, User, AlertCircle } from "lucide-react";
+import { Clock, MapPin, User, AlertCircle, RotateCcw } from "lucide-react";
 import { useAutomaticAttendance, useTodayAttendance, AutoAttendanceData } from "@/hooks/useAutomaticAttendance";
 import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface AttendanceStatusWidgetProps {
   personId: string;
@@ -24,6 +35,7 @@ export function AttendanceStatusWidget({
 }: AttendanceStatusWidgetProps) {
   const automaticAttendance = useAutomaticAttendance();
   const { data: attendanceStatus, isLoading, error, refetch } = useTodayAttendance(personId);
+  const [showRecheckDialog, setShowRecheckDialog] = useState(false);
 
   const handleCheckIn = async () => {
     const attendanceData: AutoAttendanceData = {
@@ -55,6 +67,22 @@ export function AttendanceStatusWidget({
     }
   };
 
+  const handleReCheckIn = async () => {
+    const attendanceData: AutoAttendanceData = {
+      personId,
+      personType,
+      branchId,
+      action: 'recheck_in'
+    };
+
+    try {
+      await automaticAttendance.mutateAsync(attendanceData);
+      setShowRecheckDialog(false);
+    } catch (error) {
+      console.error('Re-check-in error:', error);
+    }
+  };
+
   const getStatusBadge = () => {
     if (!attendanceStatus) {
       return <Badge variant="outline" className="bg-gray-50 text-gray-700">Not Checked In</Badge>;
@@ -70,6 +98,9 @@ export function AttendanceStatusWidget({
 
     return <Badge variant="outline" className="bg-yellow-50 text-yellow-700">{attendanceStatus.status}</Badge>;
   };
+
+  const isCompleted = attendanceStatus?.check_in_time && attendanceStatus?.check_out_time;
+  const isCheckedIn = attendanceStatus?.check_in_time && !attendanceStatus?.check_out_time;
 
   if (error) {
     return (
@@ -163,7 +194,7 @@ export function AttendanceStatusWidget({
               </Button>
             )}
             
-            {attendanceStatus?.check_in_time && !attendanceStatus?.check_out_time && (
+            {isCheckedIn && (
               <Button 
                 size="sm" 
                 variant="outline"
@@ -174,6 +205,40 @@ export function AttendanceStatusWidget({
                 <Clock className="h-3 w-3 mr-1" />
                 Check Out
               </Button>
+            )}
+
+            {isCompleted && (
+              <AlertDialog open={showRecheckDialog} onOpenChange={setShowRecheckDialog}>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="flex-1"
+                    disabled={automaticAttendance.isPending}
+                  >
+                    <RotateCcw className="h-3 w-3 mr-1" />
+                    Re-Check In
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Re-Check In Confirmation</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      You have already checked out for today. Are you sure you want to re-check in? 
+                      This will clear your checkout time and allow you to continue working.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleReCheckIn}
+                      disabled={automaticAttendance.isPending}
+                    >
+                      Re-Check In
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
         )}

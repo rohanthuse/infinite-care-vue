@@ -8,7 +8,7 @@ export interface AutoAttendanceData {
   personType: 'staff' | 'client';
   branchId: string;
   bookingId?: string;
-  action: 'check_in' | 'check_out';
+  action: 'check_in' | 'check_out' | 'recheck_in';
   location?: {
     latitude: number;
     longitude: number;
@@ -73,6 +73,41 @@ export const useAutomaticAttendance = () => {
           if (error) throw error;
           return newRecord;
         }
+      } else if (data.action === 'recheck_in') {
+        // Re-check-in after checkout - clear checkout time and reset status
+        const { data: existingRecord } = await supabase
+          .from('attendance_records')
+          .select('id, check_in_time, check_out_time')
+          .eq('person_id', data.personId)
+          .eq('attendance_date', today)
+          .maybeSingle();
+
+        if (!existingRecord) {
+          throw new Error('No attendance record found for today');
+        }
+
+        if (!existingRecord.check_out_time) {
+          throw new Error('Cannot re-check-in without first checking out');
+        }
+
+        const recheckNotes = data.bookingId 
+          ? `Re-check-in from booking ${data.bookingId} at ${currentTime}` 
+          : `Manual re-check-in at ${currentTime}`;
+
+        const { data: updatedRecord, error } = await supabase
+          .from('attendance_records')
+          .update({
+            check_out_time: null,
+            status: 'present',
+            notes: existingRecord.notes ? `${existingRecord.notes}; ${recheckNotes}` : recheckNotes,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingRecord.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return updatedRecord;
       } else {
         // Check out - update existing record
         const { data: existingRecord } = await supabase
@@ -125,6 +160,8 @@ export const useAutomaticAttendance = () => {
       
       if (variables.action === 'check_in') {
         toast.success("Checked in successfully");
+      } else if (variables.action === 'recheck_in') {
+        toast.success("Re-checked in successfully");
       } else {
         toast.success("Checked out successfully");
       }
