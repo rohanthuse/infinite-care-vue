@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -79,6 +78,8 @@ export interface CreateCarerData {
 export interface UpdateCarerData extends Partial<CreateCarerData> {
   id: string;
   status?: string;
+  profile_completed?: boolean;
+  first_login_completed?: boolean;
 }
 
 export async function fetchBranchCarers(branchId?: string) {
