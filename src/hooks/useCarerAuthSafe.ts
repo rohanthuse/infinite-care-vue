@@ -1,0 +1,208 @@
+
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
+import { toast } from 'sonner';
+
+export interface CarerAuthState {
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
+  isAuthenticated: boolean;
+  isCarerRole: boolean;
+  carerProfile: any | null;
+  error: string | null;
+}
+
+export function useCarerAuthSafe() {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [carerProfile, setCarerProfile] = useState<any | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let mounted = true;
+
+    const handleAuthStateChange = async (event: string, session: Session | null) => {
+      if (!mounted) return;
+
+      console.log('[useCarerAuthSafe] Auth state changed:', event, session?.user?.id);
+      setSession(session);
+      setUser(session?.user ?? null);
+      setError(null);
+
+      if (event === 'SIGNED_IN' && session?.user) {
+        try {
+          // Check if user is a carer by looking at staff table
+          const { data: staffRecord, error: staffError } = await supabase
+            .from('staff')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (staffError) {
+            console.error('[useCarerAuthSafe] Staff lookup error:', staffError);
+            
+            if (staffError.code === 'PGRST116') {
+              setError('Access denied: This account is not registered as a carer. Please contact your administrator.');
+            } else {
+              setError('Unable to verify carer account. Please try again or contact support.');
+            }
+            
+            await supabase.auth.signOut();
+            return;
+          }
+
+          if (staffRecord) {
+            console.log('[useCarerAuthSafe] Carer authenticated:', staffRecord);
+            setCarerProfile(staffRecord);
+            toast.success(`Welcome back, ${staffRecord.first_name}!`);
+            
+            // Check if this is first login and profile needs completion
+            if (!staffRecord.first_login_completed) {
+              navigate('/carer-onboarding');
+            } else {
+              navigate('/carer-dashboard');
+            }
+          } else {
+            setError('No carer profile found for this account.');
+            await supabase.auth.signOut();
+          }
+        } catch (err: any) {
+          console.error('[useCarerAuthSafe] Profile fetch error:', err);
+          setError('Failed to load carer profile. Please try again.');
+          await supabase.auth.signOut();
+        }
+      }
+
+      if (event === 'SIGNED_OUT') {
+        console.log('[useCarerAuthSafe] User signed out');
+        setCarerProfile(null);
+        setError(null);
+        navigate('/carer-login');
+      }
+
+      setLoading(false);
+    };
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
+      console.log('[useCarerAuthSafe] Initial session check:', session?.user?.id);
+      
+      if (session?.user) {
+        handleAuthStateChange('SIGNED_IN', session);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
+
+  const signIn = async (email: string, password: string) => {
+    console.log('[useCarerAuthSafe] Attempting sign in for:', email);
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('[useCarerAuthSafe] Sign in error:', error);
+        
+        // Provide user-friendly error messages
+        let userMessage = 'Sign in failed. Please try again.';
+        
+        if (error.message.includes('Invalid login credentials')) {
+          userMessage = 'Invalid email or password. Please check your credentials and try again.';
+        } else if (error.message.includes('Email not confirmed')) {
+          userMessage = 'Please check your email and confirm your account before signing in.';
+        } else if (error.message.includes('Too many requests')) {
+          userMessage = 'Too many login attempts. Please wait a moment before trying again.';
+        }
+        
+        setError(userMessage);
+        toast.error('Sign in failed', { description: userMessage });
+        return { success: false, error: userMessage };
+      }
+
+      if (data.user) {
+        // Verify this user is a carer (additional check)
+        const { data: staffRecord, error: staffError } = await supabase
+          .from('staff')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+
+        if (staffError || !staffRecord) {
+          await supabase.auth.signOut();
+          const errorMsg = 'Access denied. This account is not registered as a carer.';
+          setError(errorMsg);
+          toast.error('Access denied', { description: errorMsg });
+          return { success: false, error: errorMsg };
+        }
+
+        console.log('[useCarerAuthSafe] Carer sign in successful:', staffRecord);
+        return { success: true, user: data.user, staff: staffRecord };
+      }
+    } catch (error: any) {
+      console.error('[useCarerAuthSafe] Unexpected sign in error:', error);
+      const errorMsg = 'An unexpected error occurred. Please try again.';
+      setError(errorMsg);
+      toast.error('Sign in failed', { description: errorMsg });
+      return { success: false, error: errorMsg };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signOut = async () => {
+    console.log('[useCarerAuthSafe] Signing out');
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      setCarerProfile(null);
+      setError(null);
+      toast.success('Signed out successfully');
+      navigate('/carer-login');
+    } catch (error: any) {
+      console.error('[useCarerAuthSafe] Sign out error:', error);
+      setError('Sign out failed. Please try again.');
+      toast.error('Sign out failed', { description: error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearError = () => setError(null);
+
+  return {
+    user,
+    session,
+    loading,
+    isAuthenticated: !!user,
+    isCarerRole: !!carerProfile,
+    carerProfile,
+    error,
+    signIn,
+    signOut,
+    clearError,
+  };
+}
