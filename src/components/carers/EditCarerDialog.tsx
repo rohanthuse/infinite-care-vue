@@ -11,12 +11,13 @@ import { useUpdateCarer, CarerDB } from "@/data/hooks/useBranchCarers";
 import { toast } from "sonner";
 
 interface EditCarerDialogProps {
-  carer: CarerDB;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  carer: CarerDB | null;
   trigger?: React.ReactNode;
 }
 
-export const EditCarerDialog = ({ carer, trigger }: EditCarerDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCarerDialogProps) => {
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -59,6 +60,11 @@ export const EditCarerDialog = ({ carer, trigger }: EditCarerDialogProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!carer) {
+      toast.error("No carer selected");
+      return;
+    }
+    
     if (!formData.first_name.trim() || !formData.last_name.trim()) {
       toast.error("First name and last name are required");
       return;
@@ -69,14 +75,19 @@ export const EditCarerDialog = ({ carer, trigger }: EditCarerDialogProps) => {
         id: carer.id,
         ...formData
       });
-      setOpen(false);
+      onOpenChange(false);
     } catch (error) {
       console.error("Error updating carer:", error);
     }
   };
 
+  // Don't render if no carer is provided
+  if (!carer) {
+    return null;
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         {trigger || (
           <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -222,7 +233,7 @@ export const EditCarerDialog = ({ carer, trigger }: EditCarerDialogProps) => {
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={updateCarerMutation.isPending}>

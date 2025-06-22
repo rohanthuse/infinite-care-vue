@@ -32,9 +32,10 @@ export const useSetCarerPassword = () => {
 
       if (error) throw error;
       
-      const response = data as DatabaseResponse;
+      // Safe type conversion with validation
+      const response = data as unknown as DatabaseResponse;
       
-      if (response && !response.success) {
+      if (response && typeof response === 'object' && 'success' in response && !response.success) {
         throw new Error(response.error || 'Failed to set password');
       }
       

@@ -226,11 +226,13 @@ export function CarersTab() {
       )}
 
       {/* Dialogs */}
-      <AddCarerDialog 
-        open={showAddDialog} 
-        onOpenChange={setShowAddDialog}
-        branchId={branchId}
-      />
+      {showAddDialog && (
+        <AddCarerDialog 
+          open={showAddDialog} 
+          onOpenChange={setShowAddDialog}
+          branchId={branchId}
+        />
+      )}
 
       <EditCarerDialog
         open={!!editingCarer}
