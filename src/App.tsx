@@ -11,8 +11,10 @@ import CarerLoginSafe from "./pages/CarerLoginSafe";
 import CarerInvitation from "./pages/CarerInvitation";
 import CarerOnboarding from "./pages/CarerOnboarding";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
+import ClientLogin from "./pages/ClientLogin";
 import AdminRoutes from "./routes/AdminRoutes";
 import CarerRoutes from "./routes/CarerRoutes";
+import ClientRoutes from "./routes/ClientRoutes";
 
 const queryClient = new QueryClient();
 
@@ -29,9 +31,13 @@ function App() {
             <Route path="/carer-login" element={<CarerLoginSafe />} />
             <Route path="/carer-invitation" element={<CarerInvitation />} />
             <Route path="/carer-onboarding" element={<CarerOnboarding />} />
+            <Route path="/client-login" element={<ClientLogin />} />
             
             {/* Include all carer routes */}
             {CarerRoutes()}
+            
+            {/* Include all client routes */}
+            {ClientRoutes()}
             
             {/* Admin routes - includes all branch dashboard specific routes */}
             {AdminRoutes}
