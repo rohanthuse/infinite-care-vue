@@ -24,6 +24,7 @@ import AddTaskDialog from "@/components/tasks/AddTaskDialog";
 import FilterTasksDialog from "@/components/carer/FilterTasksDialog";
 import SortTasksDialog from "@/components/carer/SortTasksDialog";
 import { useCarerTasks } from "@/hooks/useCarerTasks";
+import { useCarerBranch } from "@/hooks/useCarerBranch";
 import { v4 as uuidv4 } from "uuid";
 import { format, isWithinInterval, parse, parseISO, isBefore, isAfter } from "date-fns";
 import { SortOption } from "@/components/carer/SortTasksDialog";
@@ -37,6 +38,9 @@ const CarerTasks: React.FC = () => {
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [sortDialogOpen, setSortDialogOpen] = useState(false);
   const { toast } = useToast();
+  
+  // Get carer's branch information
+  const { data: carerBranch, isLoading: branchLoading } = useCarerBranch();
   
   // Get tasks from the new database hook
   const { tasks, completeTask, updateTask, addTask, isLoading } = useCarerTasks();
@@ -232,7 +236,7 @@ const CarerTasks: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || branchLoading) {
     return (
       <div>
         <h1 className="text-2xl font-bold mb-6">My Tasks</h1>
@@ -460,6 +464,7 @@ const CarerTasks: React.FC = () => {
         onAddTask={handleAddTask}
         clients={clients as string[]}
         categories={categories as string[]}
+        branchId={carerBranch?.branch_id}
       />
       
       {/* Filter Tasks Dialog */}

@@ -36,18 +36,23 @@ interface AddTaskDialogProps {
   initialStatus?: TaskStatus;
   clients?: string[]; // Keep for backward compatibility
   categories?: string[]; // Keep for backward compatibility
+  branchId?: string; // New prop for carer context
 }
 
 const AddTaskDialog: React.FC<AddTaskDialogProps> = ({ 
   isOpen, 
   onClose, 
   initialStatus = 'todo',
+  branchId: propBranchId,
 }) => {
   const params = useParams<{id: string}>();
-  const branchId = params.id!;
+  const urlBranchId = params.id;
   
-  const { createTask } = useTasks(branchId);
-  const { staff, clients } = useBranchStaffAndClients(branchId);
+  // Use branchId from props (carer context) or URL params (admin context)
+  const branchId = propBranchId || urlBranchId;
+  
+  const { createTask } = useTasks(branchId!);
+  const { staff, clients } = useBranchStaffAndClients(branchId!);
   
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -62,6 +67,11 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!branchId) {
+      console.error('No branch ID available');
+      return;
+    }
     
     createTask({
       title,
@@ -100,6 +110,11 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
     'general', 'Medical', 'Administrative', 'Training', 
     'Maintenance', 'Social', 'Safety', 'Nutrition', 'Therapy'
   ];
+
+  // Don't render if no branchId is available
+  if (!branchId) {
+    return null;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
