@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   CheckCircle, 
@@ -22,7 +23,7 @@ import TaskDetailDialog from "@/components/carer/TaskDetailDialog";
 import AddTaskDialog from "@/components/tasks/AddTaskDialog";
 import FilterTasksDialog from "@/components/carer/FilterTasksDialog";
 import SortTasksDialog from "@/components/carer/SortTasksDialog";
-import { useTasks } from "@/contexts/TaskContext";
+import { useCarerTasks } from "@/hooks/useCarerTasks";
 import { v4 as uuidv4 } from "uuid";
 import { format, isWithinInterval, parse, parseISO, isBefore, isAfter } from "date-fns";
 import { SortOption } from "@/components/carer/SortTasksDialog";
@@ -37,8 +38,8 @@ const CarerTasks: React.FC = () => {
   const [sortDialogOpen, setSortDialogOpen] = useState(false);
   const { toast } = useToast();
   
-  // Get tasks from context
-  const { tasks, completeTask, updateTask, addTask } = useTasks();
+  // Get tasks from the new database hook
+  const { tasks, completeTask, updateTask, addTask, isLoading } = useCarerTasks();
   
   // Filter and sort states
   const [filters, setFilters] = useState({
@@ -50,7 +51,7 @@ const CarerTasks: React.FC = () => {
   });
   
   const [sortOption, setSortOption] = useState<SortOption>({ 
-    field: "dueDate", 
+    field: "due_date", 
     direction: "asc", 
     label: "Due Date (Earliest First)" 
   });
@@ -97,9 +98,9 @@ const CarerTasks: React.FC = () => {
     // Date range filter
     let dateMatch = true;
     if (filters.dateRange.from || filters.dateRange.to) {
-      if (task.dueDate) {
-        const taskDate = typeof task.dueDate === 'string' 
-          ? (task.dueDate.includes('-') ? parseISO(task.dueDate) : parse(task.dueDate, 'MMMM d, yyyy', new Date()))
+      if (task.due_date) {
+        const taskDate = typeof task.due_date === 'string' 
+          ? (task.due_date.includes('-') ? parseISO(task.due_date) : parse(task.due_date, 'MMMM d, yyyy', new Date()))
           : new Date();
         
         if (filters.dateRange.from && filters.dateRange.to) {
@@ -149,15 +150,15 @@ const CarerTasks: React.FC = () => {
     }
     
     // Sort by date
-    if (field === 'dueDate') {
-      if (!a.dueDate) return direction === 'asc' ? 1 : -1;
-      if (!b.dueDate) return direction === 'asc' ? -1 : 1;
+    if (field === 'due_date') {
+      if (!a.due_date) return direction === 'asc' ? 1 : -1;
+      if (!b.due_date) return direction === 'asc' ? -1 : 1;
       
-      const dateA = typeof a.dueDate === 'string' 
-        ? (a.dueDate.includes('-') ? parseISO(a.dueDate) : parse(a.dueDate, 'MMMM d, yyyy', new Date()))
+      const dateA = typeof a.due_date === 'string' 
+        ? (a.due_date.includes('-') ? parseISO(a.due_date) : parse(a.due_date, 'MMMM d, yyyy', new Date()))
         : new Date();
-      const dateB = typeof b.dueDate === 'string' 
-        ? (b.dueDate.includes('-') ? parseISO(b.dueDate) : parse(b.dueDate, 'MMMM d, yyyy', new Date()))
+      const dateB = typeof b.due_date === 'string' 
+        ? (b.due_date.includes('-') ? parseISO(b.due_date) : parse(b.due_date, 'MMMM d, yyyy', new Date()))
         : new Date();
       
       return direction === 'asc'
@@ -193,24 +194,7 @@ const CarerTasks: React.FC = () => {
   };
 
   const handleAddTask = (taskData: any) => {
-    // Convert "none" values to null to match the expected data format
-    const client = taskData.client === "none" ? null : taskData.client;
-    const category = taskData.category === "none" ? "General" : taskData.category;
-    
-    const newTask = {
-      id: uuidv4(),
-      title: taskData.title,
-      description: taskData.description,
-      priority: taskData.priority,
-      completed: taskData.status === 'done',
-      dueDate: taskData.dueDate || null,
-      client: client,
-      category: category,
-      createdAt: new Date().toISOString(),
-      assignee: taskData.assignee || null
-    };
-    
-    addTask(newTask);
+    addTask(taskData);
     setAddTaskDialogOpen(false);
   };
 
@@ -247,6 +231,21 @@ const CarerTasks: React.FC = () => {
       return dueDateString;
     }
   };
+
+  if (isLoading) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold mb-6">My Tasks</h1>
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="h-24 bg-gray-200 rounded"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -307,13 +306,13 @@ const CarerTasks: React.FC = () => {
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <div className={`w-5 h-5 rounded-full flex-shrink-0 border mt-1 ${
-                      task.priority === "High" || task.priority === "high" || task.priority === "urgent"
+                      task.priority === "high" || task.priority === "urgent"
                         ? "border-red-300 bg-red-50" 
-                        : task.priority === "Medium" || task.priority === "medium"
+                        : task.priority === "medium"
                         ? "border-amber-300 bg-amber-50" 
                         : "border-green-300 bg-green-50"
                     }`}>
-                      {(task.priority === "High" || task.priority === "high" || task.priority === "urgent") && (
+                      {(task.priority === "high" || task.priority === "urgent") && (
                         <AlertCircle className="h-5 w-5 text-red-500" />
                       )}
                     </div>
@@ -322,9 +321,9 @@ const CarerTasks: React.FC = () => {
                       <div className="flex justify-between">
                         <h3 className="font-medium">{task.title}</h3>
                         <div className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          task.priority === "High" || task.priority === "high" || task.priority === "urgent"
+                          task.priority === "high" || task.priority === "urgent"
                             ? "bg-red-100 text-red-700" 
-                            : task.priority === "Medium" || task.priority === "medium"
+                            : task.priority === "medium"
                             ? "bg-amber-100 text-amber-700" 
                             : "bg-green-100 text-green-700"
                         }`}>
@@ -335,10 +334,10 @@ const CarerTasks: React.FC = () => {
                       <p className="text-sm text-gray-600 mt-1">{task.description}</p>
                       
                       <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3">
-                        {task.dueDate && (
+                        {task.due_date && (
                           <div className="flex items-center text-xs text-gray-500">
                             <Clock className="h-3.5 w-3.5 mr-1" />
-                            {formatDueDate(task.dueDate)}
+                            {formatDueDate(task.due_date)}
                           </div>
                         )}
                         
@@ -410,10 +409,10 @@ const CarerTasks: React.FC = () => {
                       <p className="text-sm text-gray-500 mt-1">{task.description}</p>
                       
                       <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3">
-                        {task.dueDate && (
+                        {task.due_date && (
                           <div className="flex items-center text-xs text-gray-500">
                             <Clock className="h-3.5 w-3.5 mr-1" />
-                            {formatDueDate(task.dueDate)}
+                            {formatDueDate(task.due_date)}
                           </div>
                         )}
                         
