@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Briefcase } from "lucide-react";
-import { RecruitmentSection } from "./RecruitmentSection";
+import RecruitmentSection from "./RecruitmentSection";
 import { TeamManagementSection } from "./TeamManagementSection";
 
 interface CarersTabProps {
