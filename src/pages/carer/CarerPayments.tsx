@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Search, Filter, Calendar, Download, ChevronDown, Wallet, Clock, CreditCard, Plus, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -80,7 +79,12 @@ const CarerPayments: React.FC = () => {
     );
   }
 
-  const { summary, paymentHistory, allCarerExpenses } = paymentData;
+  // Safely destructure with fallbacks
+  const { 
+    summary, 
+    paymentHistory = [], 
+    allCarerExpenses = [] 
+  } = paymentData;
 
   // Filter payment history based on period
   const filteredPayments = paymentHistory.filter(payment => {
@@ -174,9 +178,9 @@ const CarerPayments: React.FC = () => {
             <CardTitle className="text-md font-medium">Current Month</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(summary.currentMonth)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(summary?.currentMonth || 0)}</div>
             <p className="text-sm text-gray-500">
-              {summary.lastPayment ? `Payment for ${summary.lastPayment.period}` : 'No payments this month'}
+              {summary?.lastPayment ? `Payment for ${summary.lastPayment.period}` : 'No payments this month'}
             </p>
           </CardContent>
         </Card>
@@ -186,7 +190,7 @@ const CarerPayments: React.FC = () => {
             <CardTitle className="text-md font-medium">Year to Date</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(summary.yearToDate)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(summary?.yearToDate || 0)}</div>
             <p className="text-sm text-gray-500">Total earnings in {new Date().getFullYear()}</p>
           </CardContent>
         </Card>
@@ -196,7 +200,7 @@ const CarerPayments: React.FC = () => {
             <CardTitle className="text-md font-medium">Total Reimbursements</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(summary.totalReimbursements)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(summary?.totalReimbursements || 0)}</div>
             <p className="text-sm text-gray-500">All approved expense claims</p>
           </CardContent>
         </Card>
