@@ -1,15 +1,31 @@
 
 import React, { useState, useMemo } from "react";
-import { Plus, Search, MoreHorizontal, Edit, Trash2, Shield, UserCheck } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Edit, Trash2, Shield, UserCheck, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AddCarerDialog } from "./AddCarerDialog";
 import { EditCarerDialog } from "./EditCarerDialog";
 import { SetCarerPasswordDialog } from "./SetCarerPasswordDialog";
 import { CarerFilters } from "./CarerFilters";
 import { useBranchCarers, CarerDB, useDeleteCarer } from "@/data/hooks/useBranchCarers";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,10 +48,13 @@ interface TeamManagementSectionProps {
   branchName?: string;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export function TeamManagementSection({ branchId, branchName }: TeamManagementSectionProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [specializationFilter, setSpecializationFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingCarer, setEditingCarer] = useState<CarerDB | null>(null);
   const [settingPasswordCarer, setSettingPasswordCarer] = useState<CarerDB | null>(null);
@@ -57,6 +76,11 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
       return matchesSearch && matchesStatus && matchesSpecialization;
     });
   }, [carers, searchTerm, statusFilter, specializationFilter]);
+
+  const totalPages = Math.ceil(filteredCarers.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedCarers = filteredCarers.slice(startIndex, endIndex);
 
   const handleDelete = async () => {
     if (!deletingCarer) return;
@@ -83,17 +107,37 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
   };
 
   const hasAuthAccount = (carer: CarerDB) => {
-    // Check if carer has completed invitation process or has been assigned a password
     return carer.invitation_accepted_at || carer.first_login_completed;
   };
 
+  const LoadingSkeleton = () => (
+    <div className="space-y-4">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="flex items-center space-x-4 p-4">
+          <Skeleton className="h-4 w-[100px]" />
+          <Skeleton className="h-4 w-[200px]" />
+          <Skeleton className="h-4 w-[150px]" />
+          <Skeleton className="h-4 w-[120px]" />
+          <Skeleton className="h-4 w-[100px]" />
+        </div>
+      ))}
+    </div>
+  );
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading carers...</p>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+          <div>
+            <h3 className="text-xl font-semibold text-gray-900">Team Members</h3>
+            <p className="text-gray-600">Manage your care team members</p>
+          </div>
+          <Button disabled className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Carer
+          </Button>
         </div>
+        <LoadingSkeleton />
       </div>
     );
   }
@@ -132,99 +176,129 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         />
       </div>
 
-      {/* Carers Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCarers.map((carer) => (
-          <Card key={carer.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">
-                    {carer.first_name} {carer.last_name}
-                  </h3>
-                  <p className="text-sm text-gray-600">{carer.email}</p>
-                  <p className="text-sm text-gray-600">{carer.phone}</p>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setEditingCarer(carer)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Details
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSettingPasswordCarer(carer)}>
-                      <Shield className="h-4 w-4 mr-2" />
-                      Set Password
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => setDeletingCarer(carer)}
-                      className="text-red-600 focus:text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Status:</span>
+      {/* Table */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead className="hidden md:table-cell">Email</TableHead>
+              <TableHead className="hidden lg:table-cell">Phone</TableHead>
+              <TableHead className="hidden lg:table-cell">Specialization</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="hidden md:table-cell">Auth Account</TableHead>
+              <TableHead className="w-[70px]">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paginatedCarers.map((carer) => (
+              <TableRow key={carer.id}>
+                <TableCell className="font-medium">
+                  <div>
+                    <div className="font-semibold">{carer.first_name} {carer.last_name}</div>
+                    <div className="text-sm text-gray-500 md:hidden">{carer.email}</div>
+                  </div>
+                </TableCell>
+                <TableCell className="hidden md:table-cell">{carer.email}</TableCell>
+                <TableCell className="hidden lg:table-cell">{carer.phone}</TableCell>
+                <TableCell className="hidden lg:table-cell">{carer.specialization}</TableCell>
+                <TableCell>
                   <Badge variant="outline" className={getStatusColor(carer.status)}>
                     {carer.status}
                   </Badge>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Auth Account:</span>
-                  <div className="flex items-center gap-1">
-                    {hasAuthAccount(carer) ? (
-                      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-                        <UserCheck className="h-3 w-3 mr-1" />
-                        Set up
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                        <Shield className="h-3 w-3 mr-1" />
-                        Pending
-                      </Badge>
-                    )}
-                  </div>
-                </div>
+                </TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {hasAuthAccount(carer) ? (
+                    <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                      <UserCheck className="h-3 w-3 mr-1" />
+                      Set up
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                      <Shield className="h-3 w-3 mr-1" />
+                      Pending
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditingCarer(carer)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSettingPasswordCarer(carer)}>
+                        <Shield className="h-4 w-4 mr-2" />
+                        Set Password
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setDeletingCarer(carer)}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
-                {carer.specialization && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Specialization:</span>
-                    <span className="text-sm font-medium">{carer.specialization}</span>
-                  </div>
-                )}
+        {/* Empty State */}
+        {filteredCarers.length === 0 && (
+          <div className="text-center py-12">
+            <div className="text-gray-400 text-lg mb-2">No carers found</div>
+            <p className="text-gray-600">
+              {searchTerm || statusFilter !== "all" || specializationFilter !== "all"
+                ? "Try adjusting your search criteria"
+                : "Get started by adding your first carer"}
+            </p>
+          </div>
+        )}
 
-                {carer.availability && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Availability:</span>
-                    <span className="text-sm font-medium">{carer.availability}</span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {/* Pagination */}
+        {filteredCarers.length > 0 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+            <div className="text-sm text-gray-700">
+              Showing {startIndex + 1} to {Math.min(endIndex, filteredCarers.length)} of {filteredCarers.length} carers
+            </div>
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+                {[...Array(totalPages)].map((_, i) => (
+                  <PaginationItem key={i + 1}>
+                    <PaginationLink
+                      onClick={() => setCurrentPage(i + 1)}
+                      isActive={currentPage === i + 1}
+                      className="cursor-pointer"
+                    >
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext 
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </div>
-
-      {filteredCarers.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-gray-400 text-lg mb-2">No carers found</div>
-          <p className="text-gray-600">
-            {searchTerm || statusFilter !== "all" || specializationFilter !== "all"
-              ? "Try adjusting your search criteria"
-              : "Get started by adding your first carer"}
-          </p>
-        </div>
-      )}
 
       {/* Dialogs */}
       <AddCarerDialog 
