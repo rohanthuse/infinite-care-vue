@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCarerAuth } from "./useCarerAuth";
+import { useCarerBranch } from "./useCarerBranch";
 
 export interface CarerTask {
   id: string;
@@ -24,6 +25,7 @@ export interface CarerTask {
 
 export const useCarerTasks = () => {
   const { user } = useCarerAuth();
+  const { data: carerBranch } = useCarerBranch();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -61,7 +63,7 @@ export const useCarerTasks = () => {
         .update({
           ...updates,
           status: updates.completed ? 'done' : updates.status,
-          due_date: updates.dueDate || updates.due_date,
+          due_date: updates.due_date,
         })
         .eq('id', id)
         .select()
@@ -88,17 +90,21 @@ export const useCarerTasks = () => {
 
   const addTaskMutation = useMutation({
     mutationFn: async (newTask: Omit<CarerTask, 'id' | 'created_at'>) => {
+      if (!carerBranch?.branch_id) {
+        throw new Error('Branch information not available');
+      }
+
       const { data, error } = await supabase
         .from('tasks')
         .insert({
-          title: newTask.title,
           description: newTask.description,
           status: newTask.completed ? 'done' : 'pending',
           priority: newTask.priority,
-          due_date: newTask.dueDate || newTask.due_date,
+          due_date: newTask.due_date,
           assignee_id: user?.id,
           client_id: newTask.client_id,
           category: newTask.category || 'General',
+          branch_id: carerBranch.branch_id,
         })
         .select()
         .single();
