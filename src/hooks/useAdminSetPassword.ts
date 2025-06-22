@@ -8,6 +8,13 @@ interface SetPasswordData {
   newPassword: string;
 }
 
+interface AdminSetPasswordResponse {
+  success: boolean;
+  error?: string;
+  message?: string;
+  auth_user_id?: string;
+}
+
 export const useAdminSetPassword = () => {
   const queryClient = useQueryClient();
 
@@ -29,14 +36,22 @@ export const useAdminSetPassword = () => {
         throw new Error(error.message || 'Failed to set password');
       }
 
-      if (!data || !data.success) {
-        const errorMsg = data?.error || 'Failed to set password';
+      // Type guard to ensure data is an object with the expected structure
+      const response = data as AdminSetPasswordResponse;
+      
+      if (!response || typeof response !== 'object' || !('success' in response)) {
+        console.error('[useAdminSetPassword] Invalid response format:', data);
+        throw new Error('Invalid response from server');
+      }
+
+      if (!response.success) {
+        const errorMsg = response.error || 'Failed to set password';
         console.error('[useAdminSetPassword] Function returned error:', errorMsg);
         throw new Error(errorMsg);
       }
 
-      console.log('[useAdminSetPassword] Password set successfully:', data);
-      return data;
+      console.log('[useAdminSetPassword] Password set successfully:', response);
+      return response;
     },
     onSuccess: (data, variables) => {
       // Invalidate relevant queries
