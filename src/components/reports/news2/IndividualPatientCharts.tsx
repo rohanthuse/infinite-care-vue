@@ -27,7 +27,7 @@ const NORMAL_RANGES: NormalRanges = {
   respiratoryRate: { min: 12, max: 20, label: "12-20 breaths/min" },
   heartRate: { min: 60, max: 100, label: "60-100 bpm" },
   systolicBP: { min: 90, max: 140, label: "90-140 mmHg" },
-  oxygenSaturation: { min: 95, max: 100, label: ">95%" },
+  oxygenSaturation: { min: 95, max: 100, label: "&gt;95%" },
   temperature: { min: 36.1, max: 37.2, label: "36.1-37.2°C" },
   news2Score: { min: 0, max: 4, label: "0-4 (Low Risk)" }
 };
@@ -236,7 +236,7 @@ export function IndividualPatientCharts({ branchId }: IndividualPatientChartsPro
                     </ResponsiveContainer>
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    Normal: BP 90-140 mmHg, O₂ Sat >95%
+                    Normal: BP 90-140 mmHg, O₂ Sat &gt;95%
                   </div>
                 </div>
 
