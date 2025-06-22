@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Dialog, 
@@ -58,8 +57,8 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("medium");
   const [status, setStatus] = useState<TaskStatus>(initialStatus);
-  const [assigneeId, setAssigneeId] = useState<string>("");
-  const [clientId, setClientId] = useState<string>("");
+  const [assigneeId, setAssigneeId] = useState<string>("no-assignee");
+  const [clientId, setClientId] = useState<string>("no-client");
   const [category, setCategory] = useState<string>("general");
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [notes, setNotes] = useState("");
@@ -79,8 +78,8 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
       status,
       priority,
       branch_id: branchId,
-      assignee_id: assigneeId || null,
-      client_id: clientId || null,
+      assignee_id: assigneeId === "no-assignee" ? null : assigneeId,
+      client_id: clientId === "no-client" ? null : clientId,
       due_date: dueDate ? dueDate.toISOString() : null,
       created_by: null,
       tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
@@ -98,8 +97,8 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
     setDescription("");
     setPriority("medium");
     setStatus(initialStatus);
-    setAssigneeId("");
-    setClientId("");
+    setAssigneeId("no-assignee");
+    setClientId("no-client");
     setCategory("general");
     setDueDate(undefined);
     setNotes("");
@@ -214,7 +213,7 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
                   <SelectValue placeholder="Select assignee" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No assignee</SelectItem>
+                  <SelectItem value="no-assignee">No assignee</SelectItem>
                   {staff.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
                       {member.first_name} {member.last_name}
@@ -232,7 +231,7 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
                   <SelectValue placeholder="Select client" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No client</SelectItem>
+                  <SelectItem value="no-client">No client</SelectItem>
                   {clients.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
                       {client.first_name} {client.last_name}
