@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { CarerHeader } from "@/components/carer/CarerHeader";
 import { CarerSidebar } from "@/components/carer/CarerSidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 
 const CarerDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const {
     todayAppointments,
     upcomingAppointments,
@@ -24,6 +25,14 @@ const CarerDashboard: React.FC = () => {
     user,
     carerBranch,
   } = useCarerDashboard();
+
+  const handleMobileMenuToggle = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const handleSidebarClose = () => {
+    setSidebarOpen(false);
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority?.toLowerCase()) {
@@ -57,9 +66,9 @@ const CarerDashboard: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <CarerHeader />
+        <CarerHeader onMobileMenuToggle={handleMobileMenuToggle} />
         <div className="flex">
-          <CarerSidebar />
+          <CarerSidebar isOpen={sidebarOpen} onClose={handleSidebarClose} />
           <main className="flex-1 p-6">
             <div className="space-y-6">
               <Skeleton className="h-8 w-64" />
@@ -81,9 +90,9 @@ const CarerDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <CarerHeader />
+      <CarerHeader onMobileMenuToggle={handleMobileMenuToggle} />
       <div className="flex">
-        <CarerSidebar />
+        <CarerSidebar isOpen={sidebarOpen} onClose={handleSidebarClose} />
         <main className="flex-1 p-6">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
