@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, MapPin, User } from "lucide-react";
+import { Clock, MapPin, User, AlertCircle } from "lucide-react";
 import { useAutomaticAttendance, useGetTodayAttendance, AutoAttendanceData } from "@/hooks/useAutomaticAttendance";
 import { format } from "date-fns";
 
@@ -24,25 +24,57 @@ export function AttendanceStatusWidget({
 }: AttendanceStatusWidgetProps) {
   const [attendanceStatus, setAttendanceStatus] = React.useState<any>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [retryCount, setRetryCount] = React.useState(0);
   
   const automaticAttendance = useAutomaticAttendance();
   const getTodayAttendance = useGetTodayAttendance(personId);
 
   const loadTodayAttendance = React.useCallback(async () => {
     try {
+      console.log('[AttendanceStatusWidget] Loading attendance for:', personId);
       setIsLoading(true);
+      setError(null);
+      
       const today = await getTodayAttendance();
+      console.log('[AttendanceStatusWidget] Attendance data:', today);
       setAttendanceStatus(today);
-    } catch (error) {
-      console.error('Error loading today attendance:', error);
+      setRetryCount(0);
+    } catch (error: any) {
+      console.error('[AttendanceStatusWidget] Error loading attendance:', error);
+      setError(error.message || 'Failed to load attendance data');
+      
+      // Retry with exponential backoff (max 3 retries)
+      if (retryCount < 3) {
+        const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+          loadTodayAttendance();
+        }, delay);
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [getTodayAttendance]);
+  }, [getTodayAttendance, retryCount, personId]);
 
   React.useEffect(() => {
-    loadTodayAttendance();
-  }, [loadTodayAttendance]);
+    if (personId && branchId) {
+      loadTodayAttendance();
+    }
+  }, [loadTodayAttendance, personId, branchId]);
+
+  // Add loading timeout
+  React.useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.warn('[AttendanceStatusWidget] Loading timeout reached');
+        setIsLoading(false);
+        setError('Loading timeout - please try refreshing');
+      }
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [isLoading]);
 
   const handleCheckIn = async () => {
     const attendanceData: AutoAttendanceData = {
@@ -92,6 +124,35 @@ export function AttendanceStatusWidget({
     return <Badge variant="outline" className="bg-yellow-50 text-yellow-700">{attendanceStatus.status}</Badge>;
   };
 
+  if (error) {
+    return (
+      <Card className="border-red-200 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-red-500" />
+            Attendance Error
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="text-sm text-red-600">
+            {error}
+          </div>
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={() => {
+              setRetryCount(0);
+              loadTodayAttendance();
+            }}
+            className="w-full"
+          >
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (isLoading) {
     return (
       <Card className="border-gray-200 shadow-sm">
@@ -99,7 +160,10 @@ export function AttendanceStatusWidget({
           <CardTitle className="text-sm font-medium">Today's Attendance</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-gray-500">Loading...</div>
+          <div className="flex items-center justify-center py-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <span className="ml-2 text-sm text-gray-500">Loading attendance...</span>
+          </div>
         </CardContent>
       </Card>
     );

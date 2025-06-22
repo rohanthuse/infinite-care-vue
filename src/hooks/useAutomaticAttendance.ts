@@ -33,7 +33,7 @@ export const useAutomaticAttendance = () => {
           .select('id, check_in_time')
           .eq('person_id', data.personId)
           .eq('attendance_date', today)
-          .single();
+          .maybeSingle();
 
         if (existingRecord) {
           // Update existing record with check-in time (only if not already checked in)
@@ -81,7 +81,7 @@ export const useAutomaticAttendance = () => {
           .select('id, check_in_time, check_out_time')
           .eq('person_id', data.personId)
           .eq('attendance_date', today)
-          .single();
+          .maybeSingle();
 
         if (!existingRecord) {
           throw new Error('No check-in record found for today');
@@ -139,18 +139,21 @@ export const useAutomaticAttendance = () => {
 export const useGetTodayAttendance = (personId: string) => {
   return async () => {
     const today = format(new Date(), 'yyyy-MM-dd');
+    console.log('[useGetTodayAttendance] Fetching attendance for:', personId, 'on:', today);
     
     const { data, error } = await supabase
       .from('attendance_records')
       .select('*')
       .eq('person_id', personId)
       .eq('attendance_date', today)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" error
+    if (error) {
+      console.error('[useGetTodayAttendance] Error:', error);
       throw error;
     }
 
+    console.log('[useGetTodayAttendance] Result:', data);
     return data;
   };
 };
