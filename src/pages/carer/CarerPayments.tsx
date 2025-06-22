@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Search, Filter, Calendar, Download, ChevronDown, Wallet, Clock, CreditCard, Plus, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -79,7 +80,7 @@ const CarerPayments: React.FC = () => {
     );
   }
 
-  const { summary, paymentHistory, carerExpenses } = paymentData;
+  const { summary, paymentHistory, allCarerExpenses } = paymentData;
 
   // Filter payment history based on period
   const filteredPayments = paymentHistory.filter(payment => {
@@ -138,6 +139,7 @@ const CarerPayments: React.FC = () => {
     switch (status.toLowerCase()) {
       case 'paid':
       case 'completed':
+      case 'approved':
         return 'bg-green-100 text-green-700';
       case 'pending':
         return 'bg-yellow-100 text-yellow-700';
@@ -310,7 +312,7 @@ const CarerPayments: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {carerExpenses.map((expense) => (
+                    {allCarerExpenses.map((expense) => (
                       <tr key={expense.id} className="border-t border-gray-200">
                         <td className="py-4 px-4 text-sm">{expense.description}</td>
                         <td className="py-4 px-4 text-sm">{expense.category}</td>
@@ -328,7 +330,7 @@ const CarerPayments: React.FC = () => {
                         </td>
                       </tr>
                     ))}
-                    {carerExpenses.length === 0 && (
+                    {allCarerExpenses.length === 0 && (
                       <tr>
                         <td colSpan={6} className="py-8 text-center text-gray-500">
                           No expense claims found

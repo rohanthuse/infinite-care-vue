@@ -46,14 +46,22 @@ export function useCarerPayments() {
 
       // Filter records for current carer
       const carerPayroll = payrollRecords.filter(record => record.staff_id === staffId);
-      const carerExpenses = expenseRecords?.filter(expense => 
+      
+      // Get ALL expense records for the table (pending, approved, rejected)
+      const allCarerExpenses = expenseRecords?.filter(expense => 
+        expense.staff_id === staffId
+      ) || [];
+      
+      // Get only APPROVED expenses for reimbursement calculations
+      const approvedCarerExpenses = expenseRecords?.filter(expense => 
         expense.staff_id === staffId && expense.status === 'approved'
       ) || [];
+      
       const carerExtraTime = extraTimeRecords?.filter(record => 
         record.staff_id === staffId && record.status === 'approved'
       ) || [];
 
-      // Create payment history combining payroll, expenses, and extra time
+      // Create payment history combining payroll, approved expenses, and extra time
       const paymentHistory: PaymentHistoryItem[] = [
         // Regular payroll
         ...carerPayroll.map(record => ({
@@ -66,8 +74,8 @@ export function useCarerPayments() {
           reference: record.payment_reference || undefined,
         })),
         
-        // Expense reimbursements
-        ...carerExpenses.map(expense => ({
+        // Only approved expense reimbursements for payment history
+        ...approvedCarerExpenses.map(expense => ({
           id: expense.id,
           period: format(new Date(expense.expense_date), 'MMM yyyy'),
           amount: expense.amount,
@@ -87,7 +95,7 @@ export function useCarerPayments() {
         })),
       ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
-      // Calculate summary statistics
+      // Calculate summary statistics using only approved expenses
       const currentYear = new Date().getFullYear();
       const yearStart = startOfYear(new Date());
       const yearEnd = endOfYear(new Date());
@@ -120,7 +128,9 @@ export function useCarerPayments() {
       return {
         summary,
         paymentHistory,
-        carerExpenses,
+        allCarerExpenses, // All expenses for the table (including pending)
+        approvedCarerExpenses, // Only approved expenses for calculations
+        carerExpenses: allCarerExpenses, // Keep backward compatibility
         carerPayroll,
         carerExtraTime,
       };
