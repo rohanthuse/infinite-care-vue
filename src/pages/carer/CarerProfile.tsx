@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { 
   User, Mail, Phone, MapPin, Briefcase, Calendar, CheckCircle, 
@@ -13,50 +14,14 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { CarerDocuments } from "@/components/carer/CarerDocuments";
+import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useUpdateCarer } from "@/data/hooks/useBranchCarers";
+import { supabase } from "@/integrations/supabase/client";
 
 const CarerProfile: React.FC = () => {
   const { toast } = useToast();
-  
-  // Get name from localStorage or use default
-  const storedName = localStorage.getItem("carerName") || "Carer";
-
-  // State for profile data
-  const [profileData, setProfileData] = useState({
-    // Personal Details
-    name: storedName,
-    email: "carer@med-infinite.com",
-    phone: "+44 7700 900123",
-    address: "123 Healthcare Street, London, UK",
-    dateOfBirth: "15/05/1990",
-    nationalInsuranceNumber: "AB123456C",
-    emergencyContact: "John Smith",
-    emergencyPhone: "+44 7700 900456",
-    
-    // Professional Details
-    role: "Home Care Specialist",
-    qualifications: ["Registered Nurse", "Dementia Care Certified", "First Aid Certified"],
-    experience: "5+ years in home healthcare",
-    languages: ["English", "Hindi"],
-    specialization: "Elder Care",
-    availability: {
-      monday: true,
-      tuesday: true,
-      wednesday: true,
-      thursday: true,
-      friday: true,
-      saturday: false,
-      sunday: false
-    },
-    certifications: "Registered with Nursing and Midwifery Council",
-    employmentStartDate: "01/06/2018",
-    
-    // Bank Details
-    bankName: "Metro Bank",
-    accountName: "John Doe",
-    accountNumber: "12345678",
-    sortCode: "12-34-56",
-    payrollReference: "EMP12345"
-  });
+  const { carerProfile, loading } = useCarerAuth();
+  const updateCarerMutation = useUpdateCarer();
   
   // State for edit mode
   const [editMode, setEditMode] = useState({
@@ -72,12 +37,9 @@ const CarerProfile: React.FC = () => {
     confirmPassword: ""
   });
 
-  // Handle input change for all form fields
-  const handleInputChange = (section: string, field: string, value: any) => {
-    setProfileData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  // Handle input change for profile data
+  const handleInputChange = (field: string, value: any) => {
+    // Update is handled through the form submission
   };
 
   // Handle password input change
@@ -97,24 +59,50 @@ const CarerProfile: React.FC = () => {
   };
 
   // Handle save for each section
-  const handleSave = (section: string) => {
-    // In a real app, you would send this data to the server
-    // For now, we'll just show a toast and exit edit mode
-    toast({
-      title: "Changes saved",
-      description: `Your ${section} details have been updated successfully.`,
-    });
-    
-    // If it's personal section, update the name in localStorage
-    if (section === "personal") {
-      localStorage.setItem("carerName", profileData.name);
+  const handleSave = async (section: string, formData: FormData) => {
+    if (!carerProfile) return;
+
+    try {
+      const updateData: any = { id: carerProfile.id };
+      
+      if (section === "personal") {
+        updateData.first_name = formData.get("first_name") as string;
+        updateData.last_name = formData.get("last_name") as string;
+        updateData.email = formData.get("email") as string;
+        updateData.phone = formData.get("phone") as string;
+        updateData.address = formData.get("address") as string;
+        updateData.date_of_birth = formData.get("date_of_birth") as string;
+        updateData.national_insurance_number = formData.get("national_insurance_number") as string;
+        updateData.emergency_contact_name = formData.get("emergency_contact_name") as string;
+        updateData.emergency_contact_phone = formData.get("emergency_contact_phone") as string;
+      } else if (section === "professional") {
+        updateData.specialization = formData.get("specialization") as string;
+        updateData.experience = formData.get("experience") as string;
+        updateData.availability = formData.get("availability") as string;
+        const qualifications = formData.get("qualifications") as string;
+        updateData.qualifications = qualifications ? qualifications.split("\n").filter(q => q.trim()) : [];
+        const certifications = formData.get("certifications") as string;
+        updateData.certifications = certifications ? certifications.split("\n").filter(c => c.trim()) : [];
+      } else if (section === "bank") {
+        updateData.bank_name = formData.get("bank_name") as string;
+        updateData.bank_account_name = formData.get("bank_account_name") as string;
+        updateData.bank_account_number = formData.get("bank_account_number") as string;
+        updateData.bank_sort_code = formData.get("bank_sort_code") as string;
+      }
+
+      await updateCarerMutation.mutateAsync(updateData);
+      toggleEditMode(section);
+    } catch (error: any) {
+      toast({
+        title: "Update failed",
+        description: error.message || "Failed to update profile",
+        variant: "destructive"
+      });
     }
-    
-    toggleEditMode(section);
   };
 
   // Handle password update
-  const handleUpdatePassword = () => {
+  const handleUpdatePassword = async () => {
     // Validation
     if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
       toast({
@@ -133,21 +121,65 @@ const CarerProfile: React.FC = () => {
       });
       return;
     }
-    
-    // In a real app, you would verify the current password and update with the new one
-    // Here we'll just show a success toast
-    toast({
-      title: "Password updated",
-      description: "Your password has been changed successfully.",
-    });
-    
-    // Reset form
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: ""
-    });
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Password updated",
+        description: "Your password has been changed successfully.",
+      });
+      
+      // Reset form
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      });
+    } catch (error: any) {
+      toast({
+        title: "Password update failed",
+        description: error.message || "Failed to update password",
+        variant: "destructive"
+      });
+    }
   };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "";
+    return new Date(dateString).toISOString().split('T')[0];
+  };
+
+  const displayDate = (dateString?: string) => {
+    if (!dateString) return "Not provided";
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-muted-foreground">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!carerProfile) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Unable to load profile</p>
+          <Button onClick={() => window.location.reload()}>Refresh</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -158,29 +190,33 @@ const CarerProfile: React.FC = () => {
           <CardHeader className="flex flex-col items-center">
             <Avatar className="w-24 h-24 mb-4">
               <AvatarFallback className="bg-blue-100 text-blue-600 text-3xl font-bold">
-                {profileData.name.charAt(0).toUpperCase()}
+                {`${carerProfile.first_name?.charAt(0) || ''}${carerProfile.last_name?.charAt(0) || ''}`.toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <h2 className="text-xl font-semibold">{profileData.name}</h2>
-            <p className="text-gray-500">{profileData.role}</p>
-            <Badge className="mt-2 bg-green-100 text-green-700 hover:bg-green-200 border-0">Active</Badge>
+            <h2 className="text-xl font-semibold">
+              {carerProfile.first_name} {carerProfile.last_name}
+            </h2>
+            <p className="text-gray-500">{carerProfile.specialization || "Care Specialist"}</p>
+            <Badge className="mt-2 bg-green-100 text-green-700 hover:bg-green-200 border-0">
+              {carerProfile.status || "Active"}
+            </Badge>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-gray-500" />
-              <span>{profileData.email}</span>
+              <span>{carerProfile.email || "Not provided"}</span>
             </div>
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-gray-500" />
-              <span>{profileData.phone}</span>
+              <span>{carerProfile.phone || "Not provided"}</span>
             </div>
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-gray-500" />
-              <span>{profileData.address}</span>
+              <span>{carerProfile.address || "Not provided"}</span>
             </div>
             <div className="flex items-center gap-2">
               <Briefcase className="h-4 w-4 text-gray-500" />
-              <span>{profileData.experience}</span>
+              <span>{carerProfile.experience || "Not specified"}</span>
             </div>
           </CardContent>
         </Card>
@@ -224,111 +260,140 @@ const CarerProfile: React.FC = () => {
                       <Button variant="outline" size="sm" onClick={() => toggleEditMode('personal')}>
                         <X className="h-4 w-4 mr-1" /> Cancel
                       </Button>
-                      <Button size="sm" onClick={() => handleSave('personal')}>
-                        <Save className="h-4 w-4 mr-1" /> Save
-                      </Button>
                     </div>
                   )}
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="name">Full Name</Label>
-                      {editMode.personal ? (
-                        <Input 
-                          id="name" 
-                          value={profileData.name} 
-                          onChange={(e) => handleInputChange('personal', 'name', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.name}</div>
-                      )}
+                  {editMode.personal ? (
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      handleSave('personal', formData);
+                    }}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="first_name">First Name</Label>
+                          <Input 
+                            id="first_name" 
+                            name="first_name"
+                            defaultValue={carerProfile.first_name || ""}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="last_name">Last Name</Label>
+                          <Input 
+                            id="last_name" 
+                            name="last_name"
+                            defaultValue={carerProfile.last_name || ""}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="email">Email Address</Label>
+                          <Input 
+                            id="email" 
+                            name="email"
+                            type="email"
+                            defaultValue={carerProfile.email || ""}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="phone">Phone Number</Label>
+                          <Input 
+                            id="phone" 
+                            name="phone"
+                            defaultValue={carerProfile.phone || ""}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="date_of_birth">Date of Birth</Label>
+                          <Input 
+                            id="date_of_birth" 
+                            name="date_of_birth"
+                            type="date"
+                            defaultValue={formatDate(carerProfile.date_of_birth)}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="national_insurance_number">National Insurance Number</Label>
+                          <Input 
+                            id="national_insurance_number" 
+                            name="national_insurance_number"
+                            defaultValue={carerProfile.national_insurance_number || ""}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="address">Address</Label>
+                          <Input 
+                            id="address" 
+                            name="address"
+                            defaultValue={carerProfile.address || ""}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="emergency_contact_name">Emergency Contact</Label>
+                          <Input 
+                            id="emergency_contact_name" 
+                            name="emergency_contact_name"
+                            defaultValue={carerProfile.emergency_contact_name || ""}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="emergency_contact_phone">Emergency Contact Phone</Label>
+                          <Input 
+                            id="emergency_contact_phone" 
+                            name="emergency_contact_phone"
+                            defaultValue={carerProfile.emergency_contact_phone || ""}
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <Button type="submit" disabled={updateCarerMutation.isPending}>
+                          <Save className="h-4 w-4 mr-1" /> 
+                          {updateCarerMutation.isPending ? "Saving..." : "Save"}
+                        </Button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Full Name</Label>
+                        <div className="text-sm py-3 border-b">
+                          {carerProfile.first_name} {carerProfile.last_name}
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Email Address</Label>
+                        <div className="text-sm py-3 border-b">{carerProfile.email || "Not provided"}</div>
+                      </div>
+                      <div>
+                        <Label>Phone Number</Label>
+                        <div className="text-sm py-3 border-b">{carerProfile.phone || "Not provided"}</div>
+                      </div>
+                      <div>
+                        <Label>Date of Birth</Label>
+                        <div className="text-sm py-3 border-b">{displayDate(carerProfile.date_of_birth)}</div>
+                      </div>
+                      <div>
+                        <Label>National Insurance Number</Label>
+                        <div className="text-sm py-3 border-b">{carerProfile.national_insurance_number || "Not provided"}</div>
+                      </div>
+                      <div>
+                        <Label>Address</Label>
+                        <div className="text-sm py-3 border-b">{carerProfile.address || "Not provided"}</div>
+                      </div>
+                      <div>
+                        <Label>Emergency Contact</Label>
+                        <div className="text-sm py-3 border-b">{carerProfile.emergency_contact_name || "Not provided"}</div>
+                      </div>
+                      <div>
+                        <Label>Emergency Contact Phone</Label>
+                        <div className="text-sm py-3 border-b">{carerProfile.emergency_contact_phone || "Not provided"}</div>
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="email">Email Address</Label>
-                      {editMode.personal ? (
-                        <Input 
-                          id="email" 
-                          value={profileData.email} 
-                          onChange={(e) => handleInputChange('personal', 'email', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.email}</div>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="phone">Phone Number</Label>
-                      {editMode.personal ? (
-                        <Input 
-                          id="phone" 
-                          value={profileData.phone} 
-                          onChange={(e) => handleInputChange('personal', 'phone', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.phone}</div>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="dob">Date of Birth</Label>
-                      {editMode.personal ? (
-                        <Input 
-                          id="dob" 
-                          value={profileData.dateOfBirth}
-                          onChange={(e) => handleInputChange('personal', 'dateOfBirth', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.dateOfBirth}</div>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="ni">National Insurance Number</Label>
-                      {editMode.personal ? (
-                        <Input 
-                          id="ni" 
-                          value={profileData.nationalInsuranceNumber}
-                          onChange={(e) => handleInputChange('personal', 'nationalInsuranceNumber', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.nationalInsuranceNumber}</div>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="address">Address</Label>
-                      {editMode.personal ? (
-                        <Input 
-                          id="address" 
-                          value={profileData.address}
-                          onChange={(e) => handleInputChange('personal', 'address', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.address}</div>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="emergency-contact">Emergency Contact</Label>
-                      {editMode.personal ? (
-                        <Input 
-                          id="emergency-contact" 
-                          value={profileData.emergencyContact}
-                          onChange={(e) => handleInputChange('personal', 'emergencyContact', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.emergencyContact}</div>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="emergency-phone">Emergency Contact Phone</Label>
-                      {editMode.personal ? (
-                        <Input 
-                          id="emergency-phone" 
-                          value={profileData.emergencyPhone}
-                          onChange={(e) => handleInputChange('personal', 'emergencyPhone', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.emergencyPhone}</div>
-                      )}
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -347,147 +412,117 @@ const CarerProfile: React.FC = () => {
                       <Button variant="outline" size="sm" onClick={() => toggleEditMode('professional')}>
                         <X className="h-4 w-4 mr-1" /> Cancel
                       </Button>
-                      <Button size="sm" onClick={() => handleSave('professional')}>
-                        <Save className="h-4 w-4 mr-1" /> Save
-                      </Button>
                     </div>
                   )}
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="role">Job Title</Label>
-                      {editMode.professional ? (
-                        <Input 
-                          id="role" 
-                          value={profileData.role}
-                          onChange={(e) => handleInputChange('professional', 'role', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.role}</div>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="specialization">Specialization</Label>
-                      {editMode.professional ? (
-                        <Input 
-                          id="specialization" 
-                          value={profileData.specialization}
-                          onChange={(e) => handleInputChange('professional', 'specialization', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.specialization}</div>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="experience">Experience</Label>
-                      {editMode.professional ? (
-                        <Input 
-                          id="experience" 
-                          value={profileData.experience}
-                          onChange={(e) => handleInputChange('professional', 'experience', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.experience}</div>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="certifications">Certifications</Label>
-                      {editMode.professional ? (
-                        <Input 
-                          id="certifications" 
-                          value={profileData.certifications}
-                          onChange={(e) => handleInputChange('professional', 'certifications', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.certifications}</div>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="start-date">Employment Start Date</Label>
-                      {editMode.professional ? (
-                        <Input 
-                          id="start-date" 
-                          value={profileData.employmentStartDate}
-                          onChange={(e) => handleInputChange('professional', 'employmentStartDate', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.employmentStartDate}</div>
-                      )}
-                    </div>
-                    <div className="col-span-2">
-                      <Label htmlFor="languages">Languages</Label>
-                      {editMode.professional ? (
-                        <Input 
-                          id="languages" 
-                          value={profileData.languages.join(", ")}
-                          onChange={(e) => handleInputChange('professional', 'languages', e.target.value.split(", "))} 
-                        />
-                      ) : (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {profileData.languages.map((language, index) => (
-                            <div key={index} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
-                              {language}
-                            </div>
-                          ))}
+                  {editMode.professional ? (
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      handleSave('professional', formData);
+                    }}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="specialization">Specialization</Label>
+                          <Input 
+                            id="specialization" 
+                            name="specialization"
+                            defaultValue={carerProfile.specialization || ""}
+                          />
                         </div>
-                      )}
-                    </div>
-                    <div className="col-span-2">
-                      <Label>Qualifications</Label>
-                      {editMode.professional ? (
-                        <Textarea 
-                          value={profileData.qualifications.join("\n")}
-                          onChange={(e) => handleInputChange('professional', 'qualifications', e.target.value.split("\n"))}
-                          className="mt-2"
-                          rows={4}
-                        />
-                      ) : (
-                        <ul className="list-disc list-inside space-y-1 mt-2">
-                          {profileData.qualifications.map((qualification, index) => (
-                            <li key={index}>{qualification}</li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                    <div className="col-span-2">
-                      <Label>Availability</Label>
-                      <div className="grid grid-cols-7 gap-2 text-center mt-2">
-                        {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day, index) => {
-                          const dayKey = day.toLowerCase() as keyof typeof profileData.availability;
-                          return (
-                            <div key={index} className="space-y-1">
-                              <div className="font-medium">{day.substring(0, 3)}</div>
-                              {editMode.professional ? (
-                                <Button
-                                  variant={profileData.availability[dayKey] ? "default" : "outline"}
-                                  size="sm"
-                                  className="w-full"
-                                  onClick={() => setProfileData(prev => ({
-                                    ...prev,
-                                    availability: {
-                                      ...prev.availability,
-                                      [dayKey]: !prev.availability[dayKey]
-                                    }
-                                  }))}
-                                >
-                                  {profileData.availability[dayKey] ? "Available" : "Unavailable"}
-                                </Button>
-                              ) : (
-                                <div className={`px-2 py-1 rounded ${
-                                  profileData.availability[dayKey] 
-                                    ? "bg-green-100 text-green-700" 
-                                    : "bg-gray-100 text-gray-500"
-                                }`}>
-                                  {profileData.availability[dayKey] ? "Available" : "Unavailable"}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                        <div>
+                          <Label htmlFor="experience">Experience</Label>
+                          <Input 
+                            id="experience" 
+                            name="experience"
+                            defaultValue={carerProfile.experience || ""}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="availability">Availability</Label>
+                          <Input 
+                            id="availability" 
+                            name="availability"
+                            defaultValue={carerProfile.availability || ""}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="hire_date">Hire Date</Label>
+                          <div className="text-sm py-3 border-b">{displayDate(carerProfile.hire_date)}</div>
+                        </div>
+                        <div className="col-span-2">
+                          <Label htmlFor="qualifications">Qualifications (one per line)</Label>
+                          <Textarea 
+                            id="qualifications"
+                            name="qualifications"
+                            defaultValue={carerProfile.qualifications?.join("\n") || ""}
+                            className="mt-2"
+                            rows={4}
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Label htmlFor="certifications">Certifications (one per line)</Label>
+                          <Textarea 
+                            id="certifications"
+                            name="certifications"
+                            defaultValue={carerProfile.certifications?.join("\n") || ""}
+                            className="mt-2"
+                            rows={4}
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <Button type="submit" disabled={updateCarerMutation.isPending}>
+                          <Save className="h-4 w-4 mr-1" /> 
+                          {updateCarerMutation.isPending ? "Saving..." : "Save"}
+                        </Button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Specialization</Label>
+                        <div className="text-sm py-3 border-b">{carerProfile.specialization || "Not specified"}</div>
+                      </div>
+                      <div>
+                        <Label>Experience</Label>
+                        <div className="text-sm py-3 border-b">{carerProfile.experience || "Not specified"}</div>
+                      </div>
+                      <div>
+                        <Label>Availability</Label>
+                        <div className="text-sm py-3 border-b">{carerProfile.availability || "Not specified"}</div>
+                      </div>
+                      <div>
+                        <Label>Hire Date</Label>
+                        <div className="text-sm py-3 border-b">{displayDate(carerProfile.hire_date)}</div>
+                      </div>
+                      <div className="col-span-2">
+                        <Label>Qualifications</Label>
+                        {carerProfile.qualifications && carerProfile.qualifications.length > 0 ? (
+                          <ul className="list-disc list-inside space-y-1 mt-2">
+                            {carerProfile.qualifications.map((qualification, index) => (
+                              <li key={index}>{qualification}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div className="text-sm py-3 border-b text-gray-500">No qualifications listed</div>
+                        )}
+                      </div>
+                      <div className="col-span-2">
+                        <Label>Certifications</Label>
+                        {carerProfile.certifications && carerProfile.certifications.length > 0 ? (
+                          <ul className="list-disc list-inside space-y-1 mt-2">
+                            {carerProfile.certifications.map((certification, index) => (
+                              <li key={index}>{certification}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div className="text-sm py-3 border-b text-gray-500">No certifications listed</div>
+                        )}
                       </div>
                     </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -506,75 +541,77 @@ const CarerProfile: React.FC = () => {
                       <Button variant="outline" size="sm" onClick={() => toggleEditMode('bank')}>
                         <X className="h-4 w-4 mr-1" /> Cancel
                       </Button>
-                      <Button size="sm" onClick={() => handleSave('bank')}>
-                        <Save className="h-4 w-4 mr-1" /> Save
-                      </Button>
                     </div>
                   )}
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4 max-w-md">
-                    <div>
-                      <Label htmlFor="bank-name">Bank Name</Label>
-                      {editMode.bank ? (
-                        <Input 
-                          id="bank-name" 
-                          value={profileData.bankName}
-                          onChange={(e) => handleInputChange('bank', 'bankName', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.bankName}</div>
-                      )}
+                  {editMode.bank ? (
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      handleSave('bank', formData);
+                    }}>
+                      <div className="space-y-4 max-w-md">
+                        <div>
+                          <Label htmlFor="bank_name">Bank Name</Label>
+                          <Input 
+                            id="bank_name" 
+                            name="bank_name"
+                            defaultValue={carerProfile.bank_name || ""}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="bank_account_name">Account Holder Name</Label>
+                          <Input 
+                            id="bank_account_name" 
+                            name="bank_account_name"
+                            defaultValue={carerProfile.bank_account_name || ""}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="bank_account_number">Account Number</Label>
+                          <Input 
+                            id="bank_account_number" 
+                            name="bank_account_number"
+                            defaultValue={carerProfile.bank_account_number || ""}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="bank_sort_code">Sort Code</Label>
+                          <Input 
+                            id="bank_sort_code" 
+                            name="bank_sort_code"
+                            defaultValue={carerProfile.bank_sort_code || ""}
+                          />
+                        </div>
+                        <div>
+                          <Button type="submit" disabled={updateCarerMutation.isPending}>
+                            <Save className="h-4 w-4 mr-1" /> 
+                            {updateCarerMutation.isPending ? "Saving..." : "Save"}
+                          </Button>
+                        </div>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="space-y-4 max-w-md">
+                      <div>
+                        <Label>Bank Name</Label>
+                        <div className="text-sm py-3 border-b">{carerProfile.bank_name || "Not provided"}</div>
+                      </div>
+                      <div>
+                        <Label>Account Holder Name</Label>
+                        <div className="text-sm py-3 border-b">{carerProfile.bank_account_name || "Not provided"}</div>
+                      </div>
+                      <div>
+                        <Label>Account Number</Label>
+                        <div className="text-sm py-3 border-b">{carerProfile.bank_account_number || "Not provided"}</div>
+                      </div>
+                      <div>
+                        <Label>Sort Code</Label>
+                        <div className="text-sm py-3 border-b">{carerProfile.bank_sort_code || "Not provided"}</div>
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="account-name">Account Holder Name</Label>
-                      {editMode.bank ? (
-                        <Input 
-                          id="account-name" 
-                          value={profileData.accountName}
-                          onChange={(e) => handleInputChange('bank', 'accountName', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.accountName}</div>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="account-number">Account Number</Label>
-                      {editMode.bank ? (
-                        <Input 
-                          id="account-number" 
-                          value={profileData.accountNumber}
-                          onChange={(e) => handleInputChange('bank', 'accountNumber', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.accountNumber}</div>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="sort-code">Sort Code</Label>
-                      {editMode.bank ? (
-                        <Input 
-                          id="sort-code" 
-                          value={profileData.sortCode}
-                          onChange={(e) => handleInputChange('bank', 'sortCode', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.sortCode}</div>
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="payroll-ref">Payroll Reference</Label>
-                      {editMode.bank ? (
-                        <Input 
-                          id="payroll-ref" 
-                          value={profileData.payrollReference}
-                          onChange={(e) => handleInputChange('bank', 'payrollReference', e.target.value)} 
-                        />
-                      ) : (
-                        <div className="text-sm py-3 border-b">{profileData.payrollReference}</div>
-                      )}
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
