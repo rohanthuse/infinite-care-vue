@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { Search, Filter, UserRound, AlertTriangle, ArrowUp, ArrowDown, Activity, Clock, RefreshCw, Calendar, Download, FileText, SlidersHorizontal } from "lucide-react";
+import { Search, Filter, UserRound, AlertTriangle, ArrowUp, ArrowDown, Activity, Clock, RefreshCw, Calendar, Download, FileText, SlidersHorizontal, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NewObservationDialog } from "@/components/reports/news2/NewObservationDialog";
 import { PatientDetailsDialog } from "@/components/reports/news2/PatientDetailsDialog";
+import { AddPatientToNews2Dialog } from "@/components/reports/news2/AddPatientToNews2Dialog";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DateRange } from "react-day-picker";
@@ -27,6 +27,7 @@ const CarerNews2: React.FC = () => {
   const [urgencyFilter, setUrgencyFilter] = useState("all");
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [isNewObservationOpen, setIsNewObservationOpen] = useState(false);
+  const [isAddPatientOpen, setIsAddPatientOpen] = useState(false);
   const [sortField, setSortField] = useState<SortField>("score");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -80,6 +81,9 @@ const CarerNews2: React.FC = () => {
     // Add the raw patient data for detailed view
     _raw: patient
   })) || [];
+
+  // Get existing patient IDs for the add dialog
+  const existingPatientIds = news2Patients?.map(p => p.client_id) || [];
 
   // Filter patients based on search query, urgency, and date range
   const filteredPatients = transformedPatients.filter(patient => {
@@ -221,6 +225,14 @@ const CarerNews2: React.FC = () => {
         </div>
         
         <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => setIsAddPatientOpen(true)}
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            Add Patient
+          </Button>
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
@@ -324,6 +336,17 @@ const CarerNews2: React.FC = () => {
         onOpenChange={setIsNewObservationOpen}
         patients={transformedPatients}
         defaultPatientId={selectedPatient?.id}
+        onAddPatient={() => {
+          setIsNewObservationOpen(false);
+          setIsAddPatientOpen(true);
+        }}
+      />
+      
+      {/* Dialog for adding patients to NEWS2 */}
+      <AddPatientToNews2Dialog
+        open={isAddPatientOpen}
+        onOpenChange={setIsAddPatientOpen}
+        existingPatientIds={existingPatientIds}
       />
       
       {/* Dialog for patient details */}
@@ -346,9 +369,20 @@ const CarerNews2: React.FC = () => {
             <UserRound className="h-6 w-6 text-gray-500" />
           </div>
           <h3 className="text-lg font-medium text-gray-900">No patients found</h3>
-          <p className="text-gray-500 mt-2">
-            {searchQuery ? "Try a different search term or filter" : "No patients match the current filters"}
+          <p className="text-gray-500 mt-2 mb-4">
+            {transformedPatients.length === 0 
+              ? "No patients are currently enrolled in NEWS2 monitoring."
+              : searchQuery 
+                ? "Try a different search term or filter" 
+                : "No patients match the current filters"
+            }
           </p>
+          {transformedPatients.length === 0 && (
+            <Button onClick={() => setIsAddPatientOpen(true)} className="mt-2">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add First Patient
+            </Button>
+          )}
         </div>
       );
     }

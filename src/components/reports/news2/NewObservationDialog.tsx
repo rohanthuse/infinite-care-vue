@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarDays, Clock } from "lucide-react";
+import { CalendarDays, Clock, UserPlus } from "lucide-react";
 import { useCreateNews2Observation, CreateObservationData } from "@/hooks/useNews2Data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,13 +21,15 @@ interface NewObservationDialogProps {
     _raw?: any;
   }>;
   defaultPatientId?: string;
+  onAddPatient?: () => void;
 }
 
 export function NewObservationDialog({ 
   open, 
   onOpenChange, 
   patients, 
-  defaultPatientId 
+  defaultPatientId,
+  onAddPatient 
 }: NewObservationDialogProps) {
   const [selectedPatientId, setSelectedPatientId] = useState(defaultPatientId || "");
   const [formData, setFormData] = useState<Partial<CreateObservationData>>({
@@ -171,235 +173,256 @@ export function NewObservationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Form Section */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Patient Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="patient">Patient</Label>
-              <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a patient" />
-                </SelectTrigger>
-                <SelectContent>
-                  {patients.map((patient) => (
-                    <SelectItem key={patient.id} value={patient.id}>
-                      {patient.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        {patients.length === 0 ? (
+          // No patients available
+          <div className="py-12 text-center">
+            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+              <UserPlus className="h-6 w-6 text-gray-500" />
             </div>
-
-            {/* Vital Signs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Patients Enrolled</h3>
+            <p className="text-gray-500 mb-4">
+              You need to add patients to NEWS2 monitoring before recording observations.
+            </p>
+            {onAddPatient && (
+              <Button onClick={onAddPatient}>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add Patient to NEWS2
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Form Section */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Patient Selection */}
               <div className="space-y-2">
-                <Label htmlFor="respiratory_rate">Respiratory Rate (per min)</Label>
-                <Input
-                  id="respiratory_rate"
-                  type="number"
-                  min="0"
-                  max="60"
-                  value={formData.respiratory_rate || ""}
-                  onChange={(e) => handleInputChange('respiratory_rate', parseInt(e.target.value) || undefined)}
-                  placeholder="e.g., 16"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="oxygen_saturation">Oxygen Saturation (%)</Label>
-                <Input
-                  id="oxygen_saturation"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.oxygen_saturation || ""}
-                  onChange={(e) => handleInputChange('oxygen_saturation', parseInt(e.target.value) || undefined)}
-                  placeholder="e.g., 98"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="systolic_bp">Systolic Blood Pressure (mmHg)</Label>
-                <Input
-                  id="systolic_bp"
-                  type="number"
-                  min="0"
-                  max="300"
-                  value={formData.systolic_bp || ""}
-                  onChange={(e) => handleInputChange('systolic_bp', parseInt(e.target.value) || undefined)}
-                  placeholder="e.g., 120"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="pulse_rate">Pulse Rate (per min)</Label>
-                <Input
-                  id="pulse_rate"
-                  type="number"
-                  min="0"
-                  max="300"
-                  value={formData.pulse_rate || ""}
-                  onChange={(e) => handleInputChange('pulse_rate', parseInt(e.target.value) || undefined)}
-                  placeholder="e.g., 72"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="temperature">Temperature (°C)</Label>
-                <Input
-                  id="temperature"
-                  type="number"
-                  step="0.1"
-                  min="30"
-                  max="45"
-                  value={formData.temperature || ""}
-                  onChange={(e) => handleInputChange('temperature', parseFloat(e.target.value) || undefined)}
-                  placeholder="e.g., 36.5"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="consciousness_level">Consciousness Level</Label>
-                <Select value={formData.consciousness_level} onValueChange={(value) => handleInputChange('consciousness_level', value)}>
+                <Label htmlFor="patient">Patient</Label>
+                <Select value={selectedPatientId} onValueChange={setSelectedPatientId}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select a patient" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="A">A - Alert</SelectItem>
-                    <SelectItem value="V">V - Voice</SelectItem>
-                    <SelectItem value="P">P - Pain</SelectItem>
-                    <SelectItem value="U">U - Unresponsive</SelectItem>
+                    {patients.map((patient) => (
+                      <SelectItem key={patient.id} value={patient.id}>
+                        {patient.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Vital Signs */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="respiratory_rate">Respiratory Rate (per min)</Label>
+                  <Input
+                    id="respiratory_rate"
+                    type="number"
+                    min="0"
+                    max="60"
+                    value={formData.respiratory_rate || ""}
+                    onChange={(e) => handleInputChange('respiratory_rate', parseInt(e.target.value) || undefined)}
+                    placeholder="e.g., 16"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="oxygen_saturation">Oxygen Saturation (%)</Label>
+                  <Input
+                    id="oxygen_saturation"
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={formData.oxygen_saturation || ""}
+                    onChange={(e) => handleInputChange('oxygen_saturation', parseInt(e.target.value) || undefined)}
+                    placeholder="e.g., 98"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="systolic_bp">Systolic Blood Pressure (mmHg)</Label>
+                  <Input
+                    id="systolic_bp"
+                    type="number"
+                    min="0"
+                    max="300"
+                    value={formData.systolic_bp || ""}
+                    onChange={(e) => handleInputChange('systolic_bp', parseInt(e.target.value) || undefined)}
+                    placeholder="e.g., 120"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="pulse_rate">Pulse Rate (per min)</Label>
+                  <Input
+                    id="pulse_rate"
+                    type="number"
+                    min="0"
+                    max="300"
+                    value={formData.pulse_rate || ""}
+                    onChange={(e) => handleInputChange('pulse_rate', parseInt(e.target.value) || undefined)}
+                    placeholder="e.g., 72"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="temperature">Temperature (°C)</Label>
+                  <Input
+                    id="temperature"
+                    type="number"
+                    step="0.1"
+                    min="30"
+                    max="45"
+                    value={formData.temperature || ""}
+                    onChange={(e) => handleInputChange('temperature', parseFloat(e.target.value) || undefined)}
+                    placeholder="e.g., 36.5"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="consciousness_level">Consciousness Level</Label>
+                  <Select value={formData.consciousness_level} onValueChange={(value) => handleInputChange('consciousness_level', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="A">A - Alert</SelectItem>
+                      <SelectItem value="V">V - Voice</SelectItem>
+                      <SelectItem value="P">P - Pain</SelectItem>
+                      <SelectItem value="U">U - Unresponsive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Supplemental Oxygen */}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="supplemental_oxygen"
+                  checked={formData.supplemental_oxygen}
+                  onCheckedChange={(checked) => handleInputChange('supplemental_oxygen', checked)}
+                />
+                <Label htmlFor="supplemental_oxygen">Patient receiving supplemental oxygen</Label>
+              </div>
+
+              {/* Clinical Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="clinical_notes">Clinical Notes</Label>
+                <Textarea
+                  id="clinical_notes"
+                  value={formData.clinical_notes || ""}
+                  onChange={(e) => handleInputChange('clinical_notes', e.target.value)}
+                  placeholder="Enter any relevant clinical observations..."
+                  rows={3}
+                />
+              </div>
+
+              {/* Action Taken */}
+              <div className="space-y-2">
+                <Label htmlFor="action_taken">Action Taken</Label>
+                <Textarea
+                  id="action_taken"
+                  value={formData.action_taken || ""}
+                  onChange={(e) => handleInputChange('action_taken', e.target.value)}
+                  placeholder="Describe any actions taken or planned..."
+                  rows={2}
+                />
+              </div>
             </div>
 
-            {/* Supplemental Oxygen */}
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="supplemental_oxygen"
-                checked={formData.supplemental_oxygen}
-                onCheckedChange={(checked) => handleInputChange('supplemental_oxygen', checked)}
-              />
-              <Label htmlFor="supplemental_oxygen">Patient receiving supplemental oxygen</Label>
-            </div>
+            {/* Score Preview Section */}
+            <div className="lg:col-span-1">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    NEWS2 Score Preview
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {previewScore && (
+                    <>
+                      <div className="text-center">
+                        <div className={`w-16 h-16 rounded-full ${getRiskColor(previewScore.riskLevel)} text-white flex items-center justify-center font-bold text-2xl mx-auto mb-2`}>
+                          {previewScore.total}
+                        </div>
+                        <Badge variant={previewScore.riskLevel === 'high' ? 'destructive' : previewScore.riskLevel === 'medium' ? 'default' : 'secondary'}>
+                          {previewScore.riskLevel.toUpperCase()} RISK
+                        </Badge>
+                      </div>
 
-            {/* Clinical Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="clinical_notes">Clinical Notes</Label>
-              <Textarea
-                id="clinical_notes"
-                value={formData.clinical_notes || ""}
-                onChange={(e) => handleInputChange('clinical_notes', e.target.value)}
-                placeholder="Enter any relevant clinical observations..."
-                rows={3}
-              />
-            </div>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Respiratory Rate:</span>
+                          <span className="font-medium">{previewScore.scores.respiratory || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Oxygen Saturation:</span>
+                          <span className="font-medium">{previewScore.scores.oxygen || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Supplemental O₂:</span>
+                          <span className="font-medium">{previewScore.scores.suppOxygen || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Blood Pressure:</span>
+                          <span className="font-medium">{previewScore.scores.bloodPressure || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Pulse Rate:</span>
+                          <span className="font-medium">{previewScore.scores.pulse || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Consciousness:</span>
+                          <span className="font-medium">{previewScore.scores.consciousness || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Temperature:</span>
+                          <span className="font-medium">{previewScore.scores.temperature || 0}</span>
+                        </div>
+                        <hr />
+                        <div className="flex justify-between font-bold">
+                          <span>Total Score:</span>
+                          <span>{previewScore.total}</span>
+                        </div>
+                      </div>
 
-            {/* Action Taken */}
-            <div className="space-y-2">
-              <Label htmlFor="action_taken">Action Taken</Label>
-              <Textarea
-                id="action_taken"
-                value={formData.action_taken || ""}
-                onChange={(e) => handleInputChange('action_taken', e.target.value)}
-                placeholder="Describe any actions taken or planned..."
-                rows={2}
-              />
+                      {previewScore.total >= 7 && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                          <p className="text-red-800 text-sm font-medium">
+                            ⚠️ HIGH RISK: Urgent clinical response required
+                          </p>
+                        </div>
+                      )}
+
+                      {previewScore.total >= 5 && previewScore.total < 7 && (
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                          <p className="text-orange-800 text-sm font-medium">
+                            ⚡ MEDIUM RISK: Increased monitoring required
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </div>
+        )}
 
-          {/* Score Preview Section */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  NEWS2 Score Preview
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {previewScore && (
-                  <>
-                    <div className="text-center">
-                      <div className={`w-16 h-16 rounded-full ${getRiskColor(previewScore.riskLevel)} text-white flex items-center justify-center font-bold text-2xl mx-auto mb-2`}>
-                        {previewScore.total}
-                      </div>
-                      <Badge variant={previewScore.riskLevel === 'high' ? 'destructive' : previewScore.riskLevel === 'medium' ? 'default' : 'secondary'}>
-                        {previewScore.riskLevel.toUpperCase()} RISK
-                      </Badge>
-                    </div>
-
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Respiratory Rate:</span>
-                        <span className="font-medium">{previewScore.scores.respiratory || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Oxygen Saturation:</span>
-                        <span className="font-medium">{previewScore.scores.oxygen || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Supplemental O₂:</span>
-                        <span className="font-medium">{previewScore.scores.suppOxygen || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Blood Pressure:</span>
-                        <span className="font-medium">{previewScore.scores.bloodPressure || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Pulse Rate:</span>
-                        <span className="font-medium">{previewScore.scores.pulse || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Consciousness:</span>
-                        <span className="font-medium">{previewScore.scores.consciousness || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Temperature:</span>
-                        <span className="font-medium">{previewScore.scores.temperature || 0}</span>
-                      </div>
-                      <hr />
-                      <div className="flex justify-between font-bold">
-                        <span>Total Score:</span>
-                        <span>{previewScore.total}</span>
-                      </div>
-                    </div>
-
-                    {previewScore.total >= 7 && (
-                      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                        <p className="text-red-800 text-sm font-medium">
-                          ⚠️ HIGH RISK: Urgent clinical response required
-                        </p>
-                      </div>
-                    )}
-
-                    {previewScore.total >= 5 && previewScore.total < 7 && (
-                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                        <p className="text-orange-800 text-sm font-medium">
-                          ⚡ MEDIUM RISK: Increased monitoring required
-                        </p>
-                      </div>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
+        {patients.length > 0 && (
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={!selectedPatientId || createObservation.isPending}
+            >
+              {createObservation.isPending ? "Recording..." : "Record Observation"}
+            </Button>
           </div>
-        </div>
-
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={!selectedPatientId || createObservation.isPending}
-          >
-            {createObservation.isPending ? "Recording..." : "Record Observation"}
-          </Button>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
