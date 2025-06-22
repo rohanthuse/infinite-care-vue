@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { FileBarChart, Calendar, Download, ChevronRight, Filter, FileText, BarChart, PieChart, LineChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,7 @@ const CarerReports: React.FC = () => {
     to: new Date(),
   });
   
-  const { carerProfile } = useCarerAuth();
+  const { carerProfile, loading: authLoading } = useCarerAuth();
   
   const reportOptions: ReportOption[] = [
     {
@@ -137,6 +138,32 @@ const CarerReports: React.FC = () => {
     }
   };
 
+  // Show loading state while carer profile is being loaded
+  if (authLoading) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold mb-6">Reports</h1>
+        <div className="flex items-center justify-center py-8">
+          <div className="w-8 h-8 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Loading reports...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if no carer profile or branch ID is available
+  if (!carerProfile?.branch_id) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold mb-6">Reports</h1>
+        <div className="text-center py-8">
+          <p className="text-red-500 mb-2">Unable to load reports</p>
+          <p className="text-sm text-gray-500">No valid branch information found for your account</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Reports</h1>
@@ -190,7 +217,7 @@ const CarerReports: React.FC = () => {
             <div id="news2-dashboard">
               <h3 className="text-lg font-medium mb-4">NEWS2 Clinical Dashboard</h3>
               <News2Dashboard 
-                branchId={carerProfile?.branch_id || "carer-branch"} 
+                branchId={carerProfile.branch_id} 
                 branchName="Med-Infinite Branch" 
               />
               <div className="flex justify-end mt-4">
