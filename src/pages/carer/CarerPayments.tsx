@@ -1,116 +1,167 @@
 
 import React, { useState } from "react";
-import { Search, Filter, Calendar, Download, ChevronDown, Wallet, Clock, CreditCard, Plus } from "lucide-react";
+import { Search, Filter, Calendar, Download, ChevronDown, Wallet, Clock, CreditCard, Plus, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { format } from "date-fns";
-
-// Mock payment data
-const mockPayments = [
-  {
-    id: "1",
-    period: "April 2024",
-    amount: 2540.00,
-    date: new Date("2024-04-20"),
-    status: "Paid",
-    type: "Salary"
-  },
-  {
-    id: "2",
-    period: "March 2024",
-    amount: 2350.00,
-    date: new Date("2024-03-20"),
-    status: "Paid",
-    type: "Salary"
-  },
-  {
-    id: "3",
-    period: "February 2024",
-    amount: 2280.00,
-    date: new Date("2024-02-20"),
-    status: "Paid",
-    type: "Salary"
-  },
-  {
-    id: "4",
-    period: "April 2024",
-    amount: 120.00,
-    date: new Date("2024-04-15"),
-    status: "Paid",
-    type: "Expense Reimbursement"
-  },
-  {
-    id: "5",
-    period: "March 2024",
-    amount: 85.50,
-    date: new Date("2024-03-15"),
-    status: "Paid",
-    type: "Expense Reimbursement"
-  }
-];
-
-// Mock expenses data
-const mockExpenses = [
-  {
-    id: "1",
-    description: "Travel expenses - Client visits",
-    amount: 78.50,
-    date: new Date("2024-04-12"),
-    status: "Approved",
-    category: "Travel"
-  },
-  {
-    id: "2",
-    description: "Training materials",
-    amount: 42.00,
-    date: new Date("2024-04-05"),
-    status: "Approved",
-    category: "Training"
-  },
-  {
-    id: "3",
-    description: "Mobile phone bill (work-related)",
-    amount: 35.00,
-    date: new Date("2024-03-28"),
-    status: "Approved",
-    category: "Communication"
-  },
-  {
-    id: "4",
-    description: "Uniform cleaning",
-    amount: 25.00,
-    date: new Date("2024-03-20"),
-    status: "Approved",
-    category: "Uniform"
-  }
-];
+import { format, addDays, subMonths } from "date-fns";
+import { useCarerPayments } from "@/hooks/useCarerPayments";
+import { useCarerExpenseManagement } from "@/hooks/useCarerExpenseManagement";
+import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { formatCurrency } from "@/utils/currencyFormatter";
+import { toast } from "sonner";
 
 const CarerPayments: React.FC = () => {
   const [activeTab, setActiveTab] = useState("payments");
   const [periodFilter, setPeriodFilter] = useState("all");
   const [showAddExpense, setShowAddExpense] = useState(false);
-  
-  const filteredPayments = mockPayments.filter(payment => {
+  const [expenseForm, setExpenseForm] = useState({
+    description: "",
+    category: "",
+    amount: "",
+    date: format(new Date(), 'yyyy-MM-dd'),
+    notes: "",
+    receipt: null as File | null,
+  });
+
+  const { carerProfile } = useCarerAuth();
+  const { data: paymentData, isLoading, error } = useCarerPayments();
+  const { submitExpense, isSubmitting } = useCarerExpenseManagement();
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold mb-6">My Payments</h1>
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin mr-2" />
+          <span>Loading payment data...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold mb-6">My Payments</h1>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-red-500 mb-2">Error loading payment data</p>
+            <p className="text-sm text-gray-500">{error.message}</p>
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="mt-4"
+              variant="outline"
+            >
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // No data state
+  if (!paymentData) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold mb-6">My Payments</h1>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-500">No payment data available</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const { summary, paymentHistory, carerExpenses } = paymentData;
+
+  // Filter payment history based on period
+  const filteredPayments = paymentHistory.filter(payment => {
     if (periodFilter === "last3Months") {
-      const threeMonthsAgo = new Date();
-      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+      const threeMonthsAgo = subMonths(new Date(), 3);
       return payment.date >= threeMonthsAgo;
     }
-    
+    if (periodFilter === "thisYear") {
+      const currentYear = new Date().getFullYear();
+      return payment.date.getFullYear() === currentYear;
+    }
     return true;
   });
-  
-  const currentYearTotal = mockPayments
-    .filter(payment => payment.date.getFullYear() === new Date().getFullYear())
-    .reduce((sum, payment) => sum + payment.amount, 0);
-  
-  const totalReimbursements = mockPayments
-    .filter(payment => payment.type === "Expense Reimbursement")
-    .reduce((sum, payment) => sum + payment.amount, 0);
+
+  const handleExpenseSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!expenseForm.description || !expenseForm.category || !expenseForm.amount) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      await submitExpense.mutateAsync({
+        description: expenseForm.description,
+        amount: parseFloat(expenseForm.amount),
+        category: expenseForm.category,
+        expense_date: expenseForm.date,
+        notes: expenseForm.notes || undefined,
+        receipt_file: expenseForm.receipt || undefined,
+      });
+
+      // Reset form and close dialog
+      setExpenseForm({
+        description: "",
+        category: "",
+        amount: "",
+        date: format(new Date(), 'yyyy-MM-dd'),
+        notes: "",
+        receipt: null,
+      });
+      setShowAddExpense(false);
+    } catch (error) {
+      // Error handling is done in the hook
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setExpenseForm(prev => ({ ...prev, receipt: file }));
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'paid':
+      case 'completed':
+        return 'bg-green-100 text-green-700';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'cancelled':
+      case 'rejected':
+        return 'bg-red-100 text-red-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'salary':
+        return 'Salary';
+      case 'overtime':
+        return 'Overtime';
+      case 'expense_reimbursement':
+        return 'Expense Reimbursement';
+      default:
+        return 'Payment';
+    }
+  };
 
   return (
     <div>
@@ -122,8 +173,10 @@ const CarerPayments: React.FC = () => {
             <CardTitle className="text-md font-medium">Current Month</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">£{mockPayments[0].amount.toFixed(2)}</div>
-            <p className="text-sm text-gray-500">Payment for {mockPayments[0].period}</p>
+            <div className="text-2xl font-bold">{formatCurrency(summary.currentMonth)}</div>
+            <p className="text-sm text-gray-500">
+              {summary.lastPayment ? `Payment for ${summary.lastPayment.period}` : 'No payments this month'}
+            </p>
           </CardContent>
         </Card>
         
@@ -132,7 +185,7 @@ const CarerPayments: React.FC = () => {
             <CardTitle className="text-md font-medium">Year to Date</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">£{currentYearTotal.toFixed(2)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(summary.yearToDate)}</div>
             <p className="text-sm text-gray-500">Total earnings in {new Date().getFullYear()}</p>
           </CardContent>
         </Card>
@@ -142,7 +195,7 @@ const CarerPayments: React.FC = () => {
             <CardTitle className="text-md font-medium">Total Reimbursements</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">£{totalReimbursements.toFixed(2)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(summary.totalReimbursements)}</div>
             <p className="text-sm text-gray-500">All approved expense claims</p>
           </CardContent>
         </Card>
@@ -212,11 +265,11 @@ const CarerPayments: React.FC = () => {
                     {filteredPayments.map((payment) => (
                       <tr key={payment.id} className="border-t border-gray-200">
                         <td className="py-4 px-4 text-sm">{payment.period}</td>
-                        <td className="py-4 px-4 text-sm">{payment.type}</td>
-                        <td className="py-4 px-4 text-sm font-medium">£{payment.amount.toFixed(2)}</td>
+                        <td className="py-4 px-4 text-sm">{getTypeLabel(payment.type)}</td>
+                        <td className="py-4 px-4 text-sm font-medium">{formatCurrency(payment.amount)}</td>
                         <td className="py-4 px-4 text-sm">{format(payment.date, "dd MMM yyyy")}</td>
                         <td className="py-4 px-4">
-                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(payment.status)}`}>
                             {payment.status}
                           </span>
                         </td>
@@ -228,6 +281,13 @@ const CarerPayments: React.FC = () => {
                         </td>
                       </tr>
                     ))}
+                    {filteredPayments.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-gray-500">
+                          No payment records found for the selected period
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -262,14 +322,14 @@ const CarerPayments: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {mockExpenses.map((expense) => (
+                    {carerExpenses.map((expense) => (
                       <tr key={expense.id} className="border-t border-gray-200">
                         <td className="py-4 px-4 text-sm">{expense.description}</td>
                         <td className="py-4 px-4 text-sm">{expense.category}</td>
-                        <td className="py-4 px-4 text-sm font-medium">£{expense.amount.toFixed(2)}</td>
-                        <td className="py-4 px-4 text-sm">{format(expense.date, "dd MMM yyyy")}</td>
+                        <td className="py-4 px-4 text-sm font-medium">{formatCurrency(expense.amount)}</td>
+                        <td className="py-4 px-4 text-sm">{format(new Date(expense.expense_date), "dd MMM yyyy")}</td>
                         <td className="py-4 px-4">
-                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(expense.status)}`}>
                             {expense.status}
                           </span>
                         </td>
@@ -280,6 +340,13 @@ const CarerPayments: React.FC = () => {
                         </td>
                       </tr>
                     ))}
+                    {carerExpenses.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-gray-500">
+                          No expense claims found
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -307,7 +374,7 @@ const CarerPayments: React.FC = () => {
                         </div>
                         <div>
                           <h3 className="font-medium">Annual Income Statement</h3>
-                          <p className="text-sm text-gray-500">Tax year 2023/2024</p>
+                          <p className="text-sm text-gray-500">Tax year {new Date().getFullYear()}</p>
                         </div>
                       </div>
                       <Button variant="outline" size="sm" className="flex items-center gap-2">
@@ -349,15 +416,20 @@ const CarerPayments: React.FC = () => {
             <DialogTitle>Submit Expense Claim</DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4 pt-2">
+          <form onSubmit={handleExpenseSubmit} className="space-y-4 pt-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Description</label>
-              <Input placeholder="Brief description of expense" />
+              <label className="text-sm font-medium">Description *</label>
+              <Input 
+                placeholder="Brief description of expense"
+                value={expenseForm.description}
+                onChange={(e) => setExpenseForm(prev => ({ ...prev, description: e.target.value }))}
+                required
+              />
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Category</label>
-              <Select>
+              <label className="text-sm font-medium">Category *</label>
+              <Select value={expenseForm.category} onValueChange={(value) => setExpenseForm(prev => ({ ...prev, category: value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
@@ -366,6 +438,7 @@ const CarerPayments: React.FC = () => {
                   <SelectItem value="training">Training</SelectItem>
                   <SelectItem value="uniform">Uniform</SelectItem>
                   <SelectItem value="communication">Communication</SelectItem>
+                  <SelectItem value="supplies">Supplies</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
@@ -373,32 +446,79 @@ const CarerPayments: React.FC = () => {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Amount (£)</label>
-                <Input type="number" step="0.01" placeholder="0.00" />
+                <label className="text-sm font-medium">Amount (£) *</label>
+                <Input 
+                  type="number" 
+                  step="0.01" 
+                  placeholder="0.00"
+                  value={expenseForm.amount}
+                  onChange={(e) => setExpenseForm(prev => ({ ...prev, amount: e.target.value }))}
+                  required
+                />
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium">Date</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-                  <Input type="date" className="pl-10" />
-                </div>
+                <label className="text-sm font-medium">Date *</label>
+                <Input 
+                  type="date"
+                  value={expenseForm.date}
+                  onChange={(e) => setExpenseForm(prev => ({ ...prev, date: e.target.value }))}
+                  required
+                />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Notes</label>
+              <Input 
+                placeholder="Additional notes (optional)"
+                value={expenseForm.notes}
+                onChange={(e) => setExpenseForm(prev => ({ ...prev, notes: e.target.value }))}
+              />
             </div>
             
             <div className="space-y-2">
               <label className="text-sm font-medium">Upload Receipt</label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                <Button variant="outline" size="sm">Select File</Button>
-                <p className="text-xs text-gray-500 mt-2">PDF, JPG or PNG up to 5MB</p>
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="receipt-upload"
+                />
+                <label htmlFor="receipt-upload" className="cursor-pointer">
+                  <Button type="button" variant="outline" size="sm" asChild>
+                    <span>Select File</span>
+                  </Button>
+                </label>
+                <p className="text-xs text-gray-500 mt-2">
+                  {expenseForm.receipt ? expenseForm.receipt.name : 'PDF, JPG or PNG up to 5MB'}
+                </p>
               </div>
             </div>
             
             <div className="pt-4 flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowAddExpense(false)}>Cancel</Button>
-              <Button>Submit Claim</Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowAddExpense(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit Claim'
+                )}
+              </Button>
             </div>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
