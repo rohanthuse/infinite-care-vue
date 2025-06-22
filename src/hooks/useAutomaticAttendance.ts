@@ -1,3 +1,4 @@
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -77,7 +78,7 @@ export const useAutomaticAttendance = () => {
         // Re-check-in after checkout - clear checkout time and reset status
         const { data: existingRecord } = await supabase
           .from('attendance_records')
-          .select('id, check_in_time, check_out_time')
+          .select('id, check_in_time, check_out_time, notes')
           .eq('person_id', data.personId)
           .eq('attendance_date', today)
           .maybeSingle();
