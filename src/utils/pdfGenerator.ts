@@ -1,4 +1,3 @@
-
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { News2Patient, News2Observation } from "@/components/reports/news2/news2Types";
@@ -291,15 +290,15 @@ export const generateNews2PDF = (
     // Format observations for table
     const tableColumn = ["Date & Time", "Resp Rate", "SpO₂", "BP", "Pulse", "Temp", "Conscious", "O₂ Therapy", "Score"];
     const tableRows = patient.observations.map(obs => [
-      format(new Date(obs.dateTime), "dd MMM yyyy, HH:mm"),
-      obs.respRate.toString(),
-      `${obs.spo2}%`,
-      `${obs.systolicBP} mmHg`,
-      obs.pulse.toString(),
-      `${obs.temperature}°C`,
-      obs.consciousness,
-      obs.o2Therapy ? "Yes" : "No",
-      obs.score.toString()
+      format(new Date(obs.recorded_at), "dd MMM yyyy, HH:mm"),
+      obs.respiratory_rate?.toString() || 'N/A',
+      obs.oxygen_saturation ? `${obs.oxygen_saturation}%` : 'N/A',
+      obs.systolic_bp ? `${obs.systolic_bp} mmHg` : 'N/A',
+      obs.pulse_rate?.toString() || 'N/A',
+      obs.temperature ? `${obs.temperature}°C` : 'N/A',
+      obs.consciousness_level,
+      obs.supplemental_oxygen ? "Yes" : "No",
+      obs.total_score.toString()
     ]);
     
     // Add observations table

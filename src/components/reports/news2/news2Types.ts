@@ -84,6 +84,20 @@ export interface News2Alert {
   created_at: string;
 }
 
+export interface News2AlertSettings {
+  id: string;
+  branch_id: string;
+  high_score_threshold: number;
+  medium_score_threshold: number;
+  escalation_enabled: boolean;
+  auto_alerts_enabled: boolean;
+  notification_recipients: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export type News2PatientTrend = 'up' | 'down' | 'stable';
+
 // Backward compatibility with existing mock data structure
 export interface LegacyNews2Patient {
   id: string;

@@ -150,7 +150,12 @@ const fetchNews2Patients = async (branchId: string): Promise<News2Patient[]> => 
 
       return {
         ...patient,
-        latest_observation: latestObs || undefined,
+        risk_category: patient.risk_category as 'low' | 'medium' | 'high',
+        latest_observation: latestObs ? {
+          ...latestObs,
+          consciousness_level: latestObs.consciousness_level as 'A' | 'V' | 'P' | 'U',
+          risk_level: latestObs.risk_level as 'low' | 'medium' | 'high'
+        } : undefined,
         observation_count: count || 0
       };
     })
@@ -181,7 +186,11 @@ const fetchPatientObservations = async (patientId: string): Promise<News2Observa
     throw error;
   }
 
-  return data || [];
+  return (data || []).map(obs => ({
+    ...obs,
+    consciousness_level: obs.consciousness_level as 'A' | 'V' | 'P' | 'U',
+    risk_level: obs.risk_level as 'low' | 'medium' | 'high'
+  }));
 };
 
 // Create a new NEWS2 observation
@@ -212,7 +221,11 @@ const createNews2Observation = async (observationData: CreateObservationData): P
     throw error;
   }
 
-  return data;
+  return {
+    ...data,
+    consciousness_level: data.consciousness_level as 'A' | 'V' | 'P' | 'U',
+    risk_level: data.risk_level as 'low' | 'medium' | 'high'
+  };
 };
 
 // Create a NEWS2 patient from existing client
@@ -250,7 +263,10 @@ const createNews2Patient = async (clientId: string, branchId: string, assignedCa
     throw error;
   }
 
-  return data;
+  return {
+    ...data,
+    risk_category: data.risk_category as 'low' | 'medium' | 'high'
+  };
 };
 
 // Fetch alerts for a branch
@@ -272,7 +288,11 @@ const fetchNews2Alerts = async (branchId: string): Promise<News2Alert[]> => {
     throw error;
   }
 
-  return data || [];
+  return (data || []).map(alert => ({
+    ...alert,
+    alert_type: alert.alert_type as 'high_score' | 'deteriorating' | 'overdue_observation',
+    severity: alert.severity as 'low' | 'medium' | 'high' | 'critical'
+  }));
 };
 
 // Custom hooks
