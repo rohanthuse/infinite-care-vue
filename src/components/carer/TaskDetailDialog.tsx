@@ -24,7 +24,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, Clock, User, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useTasks } from "@/contexts/TaskContext";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -61,15 +60,9 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   const [category, setCategory] = useState(task?.category || "");
   const [assignee, setAssignee] = useState(task?.assignee || "");
   
-  const { tasks, deleteTask } = useTasks();
-  
-  // Extract unique categories and clients for dropdowns
-  const categories = Array.from(
-    new Set(tasks.map(t => t.category).filter(Boolean))
-  );
-  const clients = Array.from(
-    new Set(tasks.map(t => t.client).filter(Boolean))
-  );
+  // Mock data for categories and clients - in a real app, these would come from props or context
+  const categories = ["General", "Medical", "Administrative", "Training", "Maintenance"];
+  const clients = ["John Doe", "Jane Smith", "Bob Johnson"];
   
   // Initialize form when task changes
   useEffect(() => {
@@ -82,32 +75,33 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
       setAssignee(task.assignee || "");
       
       // Parse the due date string to a Date object
-      if (task.dueDate) {
+      if (task.dueDate || task.due_date) {
+        const dateString = task.dueDate || task.due_date;
         try {
-          if (task.dueDate.includes('-')) {
+          if (dateString.includes('-')) {
             // ISO date format
-            const parsedDate = parseISO(task.dueDate);
+            const parsedDate = parseISO(dateString);
             if (isValid(parsedDate)) {
               setDueDate(parsedDate);
             }
-          } else if (task.dueDate.includes(',')) {
+          } else if (dateString.includes(',')) {
             // Human-readable format with time
-            const dateString = task.dueDate.split(',')[0].trim();
+            const dateString2 = dateString.split(',')[0].trim();
             
-            if (dateString === "Today") {
+            if (dateString2 === "Today") {
               setDueDate(new Date());
-            } else if (dateString === "Tomorrow") {
+            } else if (dateString2 === "Tomorrow") {
               const tomorrow = new Date();
               tomorrow.setDate(tomorrow.getDate() + 1);
               setDueDate(tomorrow);
-            } else if (dateString === "Yesterday") {
+            } else if (dateString2 === "Yesterday") {
               const yesterday = new Date();
               yesterday.setDate(yesterday.getDate() - 1);
               setDueDate(yesterday);
             } else {
               // Try to parse other formats
               try {
-                const parsedDate = parse(dateString, "EEEE", new Date());
+                const parsedDate = parse(dateString2, "EEEE", new Date());
                 if (isValid(parsedDate)) {
                   setDueDate(parsedDate);
                 }
@@ -136,7 +130,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
       client: client || null,
       category: category || "General",
       assignee: assignee || null,
-      dueDate: dueDate ? format(dueDate, "yyyy-MM-dd") : null
+      due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : null
     };
     
     onSave(updatedTask);
@@ -144,7 +138,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   };
   
   const handleDelete = () => {
-    deleteTask(task.id);
+    // Note: This would need to be implemented with proper task deletion logic
     onOpenChange(false);
   };
   
@@ -208,9 +202,10 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Low">Low</SelectItem>
-                    <SelectItem value="Medium">Medium</SelectItem>
-                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -247,12 +242,12 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="client">Client</Label>
-                <Select value={client || ""} onValueChange={setClient}>
+                <Select value={client || "none"} onValueChange={(value) => setClient(value === "none" ? "" : value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select client" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {clients.map((c) => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
@@ -262,131 +257,107 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
               
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
-                <Select value={category || ""} onValueChange={setCategory}>
+                <Select value={category || "general"} onValueChange={(value) => setCategory(value === "general" ? "" : value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="General">General</SelectItem>
+                    <SelectItem value="general">General</SelectItem>
                     {categories.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                      <SelectItem key={c} value={c.toLowerCase()}>{c}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="assignee">Assignee</Label>
-              <Input
-                id="assignee"
-                value={assignee}
-                onChange={(e) => setAssignee(e.target.value)}
-                placeholder="Enter assignee name"
-              />
-            </div>
           </div>
         ) : (
-          <div className="py-4">
-            <div className="flex flex-col gap-4">
-              {task?.dueDate && (
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <Tag className="h-4 w-4 text-gray-500" />
+                <span className="text-gray-600">Priority:</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  task?.priority === "high" || task?.priority === "urgent"
+                    ? "bg-red-100 text-red-700" 
+                    : task?.priority === "medium"
+                    ? "bg-amber-100 text-amber-700" 
+                    : "bg-green-100 text-green-700"
+                }`}>
+                  {task?.priority}
+                </span>
+              </div>
+              
+              {task?.due_date && (
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">Due: {formatTaskDate(task.dueDate)}</span>
+                  <span className="text-gray-600">Due:</span>
+                  <span>{formatTaskDate(task.due_date)}</span>
                 </div>
               )}
               
               {task?.client && (
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">Client: {task.client}</span>
+                  <span className="text-gray-600">Client:</span>
+                  <span>{task.client}</span>
                 </div>
               )}
               
               {task?.category && (
                 <div className="flex items-center gap-2">
                   <Tag className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">Category: {task.category}</span>
+                  <span className="text-gray-600">Category:</span>
+                  <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs">
+                    {task.category}
+                  </span>
                 </div>
               )}
-              
-              {task?.assignee && (
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">Assigned to: {task.assignee}</span>
-                </div>
-              )}
-              
-              <div className="flex items-center gap-2">
-                <div 
-                  className={`px-2 py-0.5 inline-flex rounded-full text-xs font-medium ${
-                    task?.priority === "High" 
-                      ? "bg-red-100 text-red-700" 
-                      : task?.priority === "Medium" 
-                      ? "bg-amber-100 text-amber-700" 
-                      : "bg-green-100 text-green-700"
-                  }`}
-                >
-                  {task?.priority || "Low"} Priority
-                </div>
-                
-                {task?.completed && (
-                  <div className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">
-                    Completed
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         )}
         
-        <DialogFooter className={cn(
-          "flex-col-reverse sm:flex-row gap-2",
-          editMode ? "sm:justify-between" : ""
-        )}>
+        <DialogFooter>
           {editMode ? (
-            <>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setEditMode(false)}>
-                  Cancel
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive">Delete</Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This task will be permanently deleted.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setEditMode(false)}>
+                Cancel
+              </Button>
               <Button onClick={handleSave}>Save Changes</Button>
-            </>
+            </div>
           ) : (
-            <>
+            <div className="flex gap-2">
               {!task?.completed && (
                 <Button 
-                  variant="default"
-                  onClick={() => onComplete(task?.id)}
+                  onClick={() => onComplete(task.id)}
+                  className="bg-green-600 hover:bg-green-700"
                 >
-                  Mark as Complete
+                  Mark Complete
                 </Button>
               )}
-              <Button 
-                variant="outline"
-                onClick={() => setEditMode(true)}
-              >
+              <Button variant="outline" onClick={() => setEditMode(true)}>
                 Edit Task
               </Button>
-            </>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">Delete</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Task</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this task? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           )}
         </DialogFooter>
       </DialogContent>

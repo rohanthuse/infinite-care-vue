@@ -102,6 +102,10 @@ const FilterTasksDialog: React.FC<FilterTasksDialogProps> = ({
     setShowCompleted(false);
   };
 
+  // Filter out empty strings and ensure we have valid values
+  const validCategories = categories.filter(category => category && category.trim() !== '');
+  const validClients = clients.filter(client => client && client.trim() !== '');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
@@ -128,30 +132,33 @@ const FilterTasksDialog: React.FC<FilterTasksDialogProps> = ({
           
           <Separator />
           
-          <div>
-            <h3 className="font-medium mb-3">Category</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {categories.map((category) => (
-                <div key={category} className="flex items-center space-x-2">
-                  <Checkbox 
-                    id={`category-${category}`} 
-                    checked={selectedCategories.includes(category)}
-                    onCheckedChange={() => toggleCategory(category)}
-                  />
-                  <Label htmlFor={`category-${category}`}>{category}</Label>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {clients.length > 0 && (
+          {validCategories.length > 0 && (
             <>
+              <div>
+                <h3 className="font-medium mb-3">Category</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {validCategories.map((category) => (
+                    <div key={category} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`category-${category}`} 
+                        checked={selectedCategories.includes(category)}
+                        onCheckedChange={() => toggleCategory(category)}
+                      />
+                      <Label htmlFor={`category-${category}`}>{category}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <Separator />
-              
+            </>
+          )}
+          
+          {validClients.length > 0 && (
+            <>
               <div>
                 <h3 className="font-medium mb-3">Client</h3>
                 <div className="grid grid-cols-1 gap-2">
-                  {clients.map((client) => (
+                  {validClients.map((client) => (
                     <div key={client} className="flex items-center space-x-2">
                       <Checkbox 
                         id={`client-${client}`} 
@@ -163,10 +170,9 @@ const FilterTasksDialog: React.FC<FilterTasksDialogProps> = ({
                   ))}
                 </div>
               </div>
+              <Separator />
             </>
           )}
-          
-          <Separator />
           
           <div>
             <h3 className="font-medium mb-3">Date Range</h3>
