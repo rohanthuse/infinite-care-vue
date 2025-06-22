@@ -14,7 +14,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
-import { News2AlertSettings } from "./news2Types";
 import { toast } from "sonner";
 
 interface AlertManagementDialogProps {
@@ -22,12 +21,30 @@ interface AlertManagementDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Local interface for the dialog's alert settings
+interface LocalAlertSettings {
+  highThreshold: number;
+  mediumThreshold: number;
+  rapidIncreaseThreshold: number;
+  notifyClinicianOnDuty: boolean;
+  notifyAssignedNurse: boolean;
+  notifyMedicalDirector: boolean;
+  notifyRapidResponseTeam: boolean;
+  useSystemNotifications: boolean;
+  useEmail: boolean;
+  useSMS: boolean;
+  useMobileApp: boolean;
+  reminderInterval: number;
+  escalationTime: number;
+  overrideEmail: string;
+}
+
 export function AlertManagementDialog({
   open,
   onOpenChange,
 }: AlertManagementDialogProps) {
   // Default alert settings
-  const defaultSettings: News2AlertSettings = {
+  const defaultSettings: LocalAlertSettings = {
     highThreshold: 7,
     mediumThreshold: 5,
     rapidIncreaseThreshold: 3,
@@ -44,7 +61,7 @@ export function AlertManagementDialog({
     overrideEmail: "",
   };
 
-  const [settings, setSettings] = useState<News2AlertSettings>(defaultSettings);
+  const [settings, setSettings] = useState<LocalAlertSettings>(defaultSettings);
   const [activeTab, setActiveTab] = useState("thresholds");
 
   const handleSave = () => {
