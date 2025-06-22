@@ -172,6 +172,10 @@ export async function updateCarer(carerData: UpdateCarerData) {
   
   const { id, ...updateData } = carerData;
   
+  // Get current user info for better error reporting
+  const { data: { user } } = await supabase.auth.getUser();
+  console.log('[updateCarer] Current user:', user?.id);
+  
   const { data, error } = await supabase
     .from("staff")
     .update(updateData)
@@ -180,8 +184,22 @@ export async function updateCarer(carerData: UpdateCarerData) {
     .single();
 
   if (error) {
-    console.error('[updateCarer] Error:', error);
-    throw error;
+    console.error('[updateCarer] Error details:', error);
+    
+    // Provide more specific error messages based on error code
+    if (error.code === 'PGRST116') {
+      throw new Error('Access denied: You do not have permission to update this carer. Please check that you are assigned to the correct branch or contact your administrator.');
+    } else if (error.code === '42501') {
+      throw new Error('Permission denied: Your user role does not allow updating carer records.');
+    } else if (error.message.includes('row-level security')) {
+      throw new Error('Security policy violation: Unable to update carer. Please verify your permissions.');
+    } else {
+      throw new Error(`Failed to update carer: ${error.message}`);
+    }
+  }
+  
+  if (!data) {
+    throw new Error('No carer was updated. The carer may not exist or you may not have permission to update it.');
   }
   
   console.log('[updateCarer] Updated carer:', data);
@@ -288,7 +306,14 @@ export function useDeleteCarer() {
     },
     onError: (error) => {
       console.error('[useDeleteCarer] Error:', error);
-      toast.error("Failed to delete carer", {
+      
+      // Provide specific error messages for delete operations
+      let errorMessage = "Failed to delete carer";
+      if (error.message.includes('permission') || error.message.includes('access')) {
+        errorMessage = "Access denied: You do not have permission to delete this carer";
+      }
+      
+      toast.error(errorMessage, {
         description: error.message || "An error occurred while deleting the carer."
       });
     }
