@@ -1,11 +1,11 @@
+
 import React, { useState } from "react";
 import { FileBarChart, Calendar, Download, ChevronRight, Filter, FileText, BarChart, PieChart, LineChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { format, addDays, parseISO } from "date-fns";
+import { format, addDays } from "date-fns";
 import { ReportsHeader } from "@/components/reports/ReportsHeader";
 import { News2Dashboard } from "@/components/reports/news2/News2Dashboard";
 import { generateNews2PDF, generateNews2SummaryPDF } from "@/utils/pdfGenerator";
@@ -15,13 +15,9 @@ import { toast } from "sonner";
 import { DateRange } from "react-day-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ReportExporter } from "@/utils/reportExporter";
+import { useCarerAuth } from "@/hooks/useCarerAuth";
 
 type ReportType = 
   | "clinical"
@@ -35,50 +31,6 @@ interface ReportOption {
   icon: React.ReactNode;
 }
 
-// Mock reports data for non-clinical reports
-const mockReports = [
-  {
-    id: "1",
-    name: "Monthly Activity Summary",
-    description: "Summary of all care activities performed during the month",
-    generatedDate: new Date("2024-04-01"),
-    category: "activity",
-    format: "PDF"
-  },
-  {
-    id: "2",
-    name: "Client Visit Log",
-    description: "Detailed log of all client visits",
-    generatedDate: new Date("2024-04-10"),
-    category: "activity",
-    format: "PDF"
-  },
-  {
-    id: "3",
-    name: "Medication Administration Record",
-    description: "Record of all medications administered during the month",
-    generatedDate: new Date("2024-04-15"),
-    category: "clinical",
-    format: "Excel"
-  },
-  {
-    id: "4",
-    name: "Hours & Attendance Report",
-    description: "Summary of working hours and attendance",
-    generatedDate: new Date("2024-04-20"),
-    category: "attendance",
-    format: "PDF"
-  },
-  {
-    id: "5",
-    name: "Weekly Client Progress Notes",
-    description: "Weekly progress notes for all assigned clients",
-    generatedDate: new Date("2024-04-25"),
-    category: "activity",
-    format: "PDF"
-  }
-];
-
 const CarerReports: React.FC = () => {
   const [activeReport, setActiveReport] = useState<ReportType>("clinical");
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -86,6 +38,8 @@ const CarerReports: React.FC = () => {
     to: new Date(),
   });
   const [patients, setPatients] = useState<News2Patient[]>([]);
+  
+  const { carerProfile } = useCarerAuth();
   
   // Load NEWS2 patients data when component mounts
   React.useEffect(() => {
@@ -114,19 +68,6 @@ const CarerReports: React.FC = () => {
     }
   ];
 
-  // Filter reports based on active category
-  const filteredReports = mockReports.filter(report => {
-    if (activeReport !== "clinical" && report.category === activeReport) {
-      // Date range filtering
-      if (dateRange?.from && dateRange?.to) {
-        const reportDate = new Date(report.generatedDate);
-        return reportDate >= dateRange.from && reportDate <= addDays(dateRange.to, 1);
-      }
-      return true;
-    }
-    return false;
-  });
-
   // Handle exporting data
   const handleExport = (format: string, patientId?: string) => {
     try {
@@ -144,7 +85,6 @@ const CarerReports: React.FC = () => {
             }
           } else {
             // Export summary of all patients
-            // Fix for DateRange type issue - ensure both from and to are defined
             const safeRange = dateRange && dateRange.from && dateRange.to 
               ? { from: dateRange.from, to: dateRange.to } 
               : undefined;
@@ -160,21 +100,54 @@ const CarerReports: React.FC = () => {
             });
           }
         } else {
-          // Use regular PDF export for other report types
+          // Use new report exporter for other report types
+          const mockData = [
+            { type: activeReport, name: "Sample Data", value: 100, date: format(new Date(), 'yyyy-MM-dd') }
+          ];
+          
+          ReportExporter.exportToPDF({
+            title: `${reportOptions.find(r => r.id === activeReport)?.title} Report`,
+            data: mockData,
+            columns: ['type', 'name', 'value', 'date'],
+            branchName: carerProfile?.branch_id || 'Med-Infinite Branch',
+            dateRange
+          });
+          
           toast.success(`${format} export initiated`, {
             description: "Your report will download shortly"
           });
         }
       } else if (format === "CSV") {
+        const mockData = [
+          { type: activeReport, name: "Sample Data", value: 100, date: format(new Date(), 'yyyy-MM-dd') }
+        ];
+        
+        ReportExporter.exportToCSV({
+          title: `${reportOptions.find(r => r.id === activeReport)?.title} Report`,
+          data: mockData,
+          columns: ['type', 'name', 'value', 'date']
+        });
+        
         toast.success(`${format} export initiated`, {
           description: "Your data will download as a CSV file"
         });
       } else if (format === "Excel") {
+        const mockData = [
+          { type: activeReport, name: "Sample Data", value: 100, date: format(new Date(), 'yyyy-MM-dd') }
+        ];
+        
+        ReportExporter.exportToExcel({
+          title: `${reportOptions.find(r => r.id === activeReport)?.title} Report`,
+          data: mockData,
+          columns: ['type', 'name', 'value', 'date']
+        });
+        
         toast.success(`${format} export initiated`, {
           description: "Your data will download as an Excel file"
         });
       } else if (format === "Print") {
-        window.print();
+        const contentId = activeReport === "clinical" ? "news2-dashboard" : `${activeReport}-reports-content`;
+        ReportExporter.printReport(contentId);
         toast.success("Print dialog opened");
       }
     } catch (error) {
@@ -235,10 +208,10 @@ const CarerReports: React.FC = () => {
           <h2 className="text-xl font-semibold mb-4">{reportOptions.find(option => option.id === activeReport)?.title}</h2>
           
           {activeReport === "clinical" ? (
-            <div>
+            <div id="news2-dashboard">
               <h3 className="text-lg font-medium mb-4">NEWS2 Clinical Dashboard</h3>
               <News2Dashboard 
-                branchId="carer-branch" 
+                branchId={carerProfile?.branch_id || "carer-branch"} 
                 branchName="Med-Infinite Branch" 
               />
               <div className="flex justify-end mt-4">
@@ -252,7 +225,7 @@ const CarerReports: React.FC = () => {
               </div>
             </div>
           ) : (
-            <>
+            <div id={`${activeReport}-reports-content`}>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <Popover>
                   <PopoverTrigger asChild>
@@ -301,12 +274,16 @@ const CarerReports: React.FC = () => {
                         <FileText className="h-4 w-4 mr-2" />
                         <span>Generate PDF Report</span>
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExport("CSV")}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        <span>Generate CSV Report</span>
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleExport("Excel")}>
                         <FileText className="h-4 w-4 mr-2" />
                         <span>Generate Excel Report</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => window.print()}>
+                      <DropdownMenuItem onClick={() => handleExport("Print")}>
                         <FileText className="h-4 w-4 mr-2" />
                         <span>Print Current View</span>
                       </DropdownMenuItem>
@@ -315,57 +292,20 @@ const CarerReports: React.FC = () => {
                 </div>
               </div>
 
-              <div className="space-y-4 mt-4">
-                {filteredReports.length > 0 ? (
-                  filteredReports.map(report => (
-                    <Card key={report.id} className="group hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded bg-blue-100 text-blue-600 flex items-center justify-center">
-                              <FileBarChart className="h-5 w-5" />
-                            </div>
-                            <div>
-                              <h3 className="font-medium">{report.name}</h3>
-                              <p className="text-sm text-gray-500">{report.description}</p>
-                              <div className="text-xs text-gray-500 mt-1">
-                                Generated on {format(report.generatedDate, "MMMM d, yyyy")}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <div className="text-xs font-medium px-2 py-1 bg-gray-100 rounded">
-                              {report.format}
-                            </div>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="flex items-center gap-2"
-                              onClick={() => handleExport(report.format)}
-                            >
-                              <Download className="h-3.5 w-3.5" />
-                              <span>Download</span>
-                            </Button>
-                            <Button variant="ghost" size="sm" className="group-hover:bg-gray-100">
-                              <ChevronRight className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <div className="py-12 text-center bg-white border border-gray-200 rounded-lg">
-                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                      <FileBarChart className="h-6 w-6 text-gray-500" />
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-900">No reports found</h3>
-                    <p className="text-gray-500 mt-2">Try changing your filters or generate a new report</p>
-                  </div>
-                )}
+              <div className="py-12 text-center bg-white border border-gray-200 rounded-lg">
+                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+                  <FileBarChart className="h-6 w-6 text-gray-500" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900">Report Coming Soon</h3>
+                <p className="text-gray-500 mt-2">
+                  {activeReport === "activity" ? 
+                    "Activity reports will show your care activities and client interactions." :
+                    "Attendance reports will show your working hours and attendance patterns."
+                  }
+                </p>
+                <p className="text-gray-500 text-sm mt-1">Export functionality is available above.</p>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>

@@ -4982,6 +4982,14 @@ export type Database = {
         }
         Returns: Json
       }
+      get_compliance_reports_data: {
+        Args: {
+          p_branch_id: string
+          p_start_date?: string
+          p_end_date?: string
+        }
+        Returns: Json
+      }
       get_financial_reports_data: {
         Args: {
           p_branch_id: string
@@ -5000,6 +5008,14 @@ export type Database = {
         }[]
       }
       get_operational_reports_data: {
+        Args: {
+          p_branch_id: string
+          p_start_date?: string
+          p_end_date?: string
+        }
+        Returns: Json
+      }
+      get_service_reports_data: {
         Args: {
           p_branch_id: string
           p_start_date?: string

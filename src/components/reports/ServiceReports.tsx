@@ -1,203 +1,229 @@
 
 import React, { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { ChartContainer } from "@/components/ui/chart";
-import {
-  BarChart,
-  XAxis,
-  YAxis,
-  Bar,
-  Legend,
-  Tooltip,
-  LineChart,
-  Line,
-  CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
-  Area,
-  AreaChart,
-  ResponsiveContainer
-} from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DateRange } from "react-day-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Calendar, Download, FileText, Loader2 } from "lucide-react";
+import { format, addDays } from "date-fns";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { useServiceReportsData } from "@/hooks/useServiceReportsData";
+import { ReportExporter } from "@/utils/reportExporter";
+import { toast } from "sonner";
 
 interface ServiceReportsProps {
   branchId: string;
   branchName: string;
 }
 
-type ServiceReportTab = "utilization" | "satisfaction" | "distribution";
-
-interface TabOption {
-  id: ServiceReportTab;
-  label: string;
-}
-
-// Mock data for the charts
-const serviceUtilizationData = [
-  { name: "Jan", homecare: 145, nursing: 80, respite: 45, companion: 65 },
-  { name: "Feb", homecare: 150, nursing: 85, respite: 50, companion: 70 },
-  { name: "Mar", homecare: 160, nursing: 90, respite: 55, companion: 75 },
-  { name: "Apr", homecare: 155, nursing: 95, respite: 48, companion: 80 },
-  { name: "May", homecare: 170, nursing: 100, respite: 52, companion: 85 },
-  { name: "Jun", homecare: 180, nursing: 105, respite: 60, companion: 90 },
-];
-
-const serviceSatisfactionData = [
-  { name: "Home Care", excellent: 65, good: 25, average: 8, poor: 2 },
-  { name: "Nursing", excellent: 70, good: 20, average: 8, poor: 2 },
-  { name: "Respite Care", excellent: 60, good: 30, average: 7, poor: 3 },
-  { name: "Companionship", excellent: 75, good: 15, average: 8, poor: 2 },
-];
-
-const serviceTimeDistributionData = [
-  { name: "Morning (6-12)", value: 35 },
-  { name: "Afternoon (12-5)", value: 25 },
-  { name: "Evening (5-10)", value: 30 },
-  { name: "Night (10-6)", value: 10 },
-];
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'];
 
 export function ServiceReports({ branchId, branchName }: ServiceReportsProps) {
-  const [activeTab, setActiveTab] = useState<ServiceReportTab>("utilization");
-  
-  const tabOptions: TabOption[] = [
-    { id: "utilization", label: "Service Utilization" },
-    { id: "satisfaction", label: "Satisfaction Scores" },
-    { id: "distribution", label: "Time Distribution" },
-  ];
-  
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: addDays(new Date(), -30),
+    to: new Date(),
+  });
+
+  const { data: serviceData, isLoading, error, refetch } = useServiceReportsData({
+    branchId,
+    startDate: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
+    endDate: dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined,
+  });
+
+  const handleExport = (type: 'pdf' | 'csv' | 'excel') => {
+    if (!serviceData) {
+      toast.error("No data available to export");
+      return;
+    }
+
+    try {
+      const exportData = [
+        ...serviceData.serviceUtilization.map(item => ({
+          type: 'Service Utilization',
+          name: item.name,
+          value: item.bookings,
+          additional: `${item.avgDuration}h avg, £${item.revenue}`
+        })),
+        ...serviceData.clientSatisfaction.map(item => ({
+          type: 'Client Satisfaction',
+          name: item.name,
+          value: item.score,
+          additional: item.rating
+        }))
+      ];
+
+      const options = {
+        title: 'Service Reports',
+        data: exportData,
+        columns: ['type', 'name', 'value', 'additional'],
+        branchName,
+        dateRange,
+        fileName: `Service_Report_${branchName}_${format(new Date(), 'yyyyMMdd')}`
+      };
+
+      if (type === 'pdf') {
+        ReportExporter.exportToPDF(options);
+      } else if (type === 'csv') {
+        ReportExporter.exportToCSV(options);
+      } else {
+        ReportExporter.exportToExcel(options);
+      }
+
+      toast.success(`${type.toUpperCase()} exported successfully`);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export report');
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-500">Error loading service reports data</p>
+        <Button onClick={() => refetch()} className="mt-2">
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-2 mb-4">
-        {tabOptions.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === tab.id
-                ? "bg-blue-100 text-blue-700"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+    <div className="space-y-6">
+      {/* Controls */}
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-full sm:w-auto">
+              <Calendar className="h-4 w-4 mr-2" />
+              {dateRange?.from ? (
+                dateRange.to ? (
+                  <>
+                    {format(dateRange.from, "LLL dd, y")} -{" "}
+                    {format(dateRange.to, "LLL dd, y")}
+                  </>
+                ) : (
+                  format(dateRange.from, "LLL dd, y")
+                )
+              ) : (
+                <span>Pick a date range</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarComponent
+              initialFocus
+              mode="range"
+              defaultMonth={dateRange?.from}
+              selected={dateRange}
+              onSelect={setDateRange}
+            />
+          </PopoverContent>
+        </Popover>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="w-full sm:w-auto">
+              <Download className="h-4 w-4 mr-2" />
+              Export Report
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleExport('pdf')}>
+              <FileText className="h-4 w-4 mr-2" />
+              Export as PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport('csv')}>
+              <FileText className="h-4 w-4 mr-2" />
+              Export as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport('excel')}>
+              <FileText className="h-4 w-4 mr-2" />
+              Export as Excel
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      {activeTab === "utilization" && (
-        <Card className="border border-gray-200 shadow-sm">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Service Utilization Trends</h3>
-            <div className="w-full" style={{ height: "350px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <ChartContainer 
-                  config={{
-                    homecare: { color: "#0088FE" },
-                    nursing: { color: "#00C49F" },
-                    respite: { color: "#FFBB28" },
-                    companion: { color: "#FF8042" },
-                  }}
-                >
-                  <AreaChart
-                    data={serviceUtilizationData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" />
+          <span>Loading service reports...</span>
+        </div>
+      ) : (
+        <div id="service-reports-content" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Service Utilization */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Service Utilization</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={{}}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={serviceData?.serviceUtilization || []}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Area type="monotone" dataKey="homecare" name="Home Care" stackId="1" stroke="var(--color-homecare)" fill="var(--color-homecare)" />
-                    <Area type="monotone" dataKey="nursing" name="Nursing" stackId="1" stroke="var(--color-nursing)" fill="var(--color-nursing)" />
-                    <Area type="monotone" dataKey="respite" name="Respite Care" stackId="1" stroke="var(--color-respite)" fill="var(--color-respite)" />
-                    <Area type="monotone" dataKey="companion" name="Companionship" stackId="1" stroke="var(--color-companion)" fill="var(--color-companion)" />
-                  </AreaChart>
-                </ChartContainer>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 text-sm text-muted-foreground">
-              <p>This report shows service utilization trends over the past 6 months by service type.</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      {activeTab === "satisfaction" && (
-        <Card className="border border-gray-200 shadow-sm">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Service Satisfaction Scores</h3>
-            <div className="w-full" style={{ height: "350px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <ChartContainer
-                  config={{
-                    excellent: { color: "#00C49F" },
-                    good: { color: "#0088FE" },
-                    average: { color: "#FFBB28" },
-                    poor: { color: "#FF8042" },
-                  }}
-                >
-                  <BarChart
-                    data={serviceSatisfactionData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="excellent" name="Excellent" fill="var(--color-excellent)" stackId="a" />
-                    <Bar dataKey="good" name="Good" fill="var(--color-good)" stackId="a" />
-                    <Bar dataKey="average" name="Average" fill="var(--color-average)" stackId="a" />
-                    <Bar dataKey="poor" name="Poor" fill="var(--color-poor)" stackId="a" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="bookings" fill="#3b82f6" />
                   </BarChart>
-                </ChartContainer>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 text-sm text-muted-foreground">
-              <p>This report shows client satisfaction scores across different service types.</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      {activeTab === "distribution" && (
-        <Card className="border border-gray-200 shadow-sm">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Service Time Distribution</h3>
-            <div className="w-full" style={{ height: "350px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <ChartContainer
-                  config={{
-                    primary: { color: "#0088FE" },
-                  }}
-                >
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          {/* Client Satisfaction */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Client Satisfaction</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={{}}>
+                <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={serviceTimeDistributionData}
+                      data={serviceData?.clientSatisfaction || []}
                       cx="50%"
                       cy="50%"
-                      labelLine={true}
-                      outerRadius={100}
+                      outerRadius={80}
                       fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, value, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      dataKey="score"
+                      label
                     >
-                      {serviceTimeDistributionData.map((entry, index) => (
+                      {serviceData?.clientSatisfaction?.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => [`${value} hours`, 'Hours']} />
-                    <Legend />
+                    <ChartTooltip content={<ChartTooltipContent />} />
                   </PieChart>
-                </ChartContainer>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 text-sm text-muted-foreground">
-              <p>This report shows the distribution of service hours across different times of the day.</p>
-            </div>
-          </CardContent>
-        </Card>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          {/* Service Trends */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Service Trends Over Time</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={{}}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={serviceData?.serviceTrends || []}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

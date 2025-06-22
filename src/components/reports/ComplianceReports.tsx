@@ -1,117 +1,232 @@
 
-import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { ChartContainer } from "@/components/ui/chart";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer
-} from "recharts";
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { DateRange } from "react-day-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Calendar, Download, FileText, Loader2 } from "lucide-react";
+import { format, addDays } from "date-fns";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { useComplianceReportsData } from "@/hooks/useComplianceReportsData";
+import { ReportExporter } from "@/utils/reportExporter";
+import { toast } from "sonner";
 
 interface ComplianceReportsProps {
   branchId: string;
   branchName: string;
 }
 
-// Mock data for compliance reports
-const trainingComplianceData = [
-  { name: "First Aid", compliant: 90, noncompliant: 10 },
-  { name: "Safeguarding", compliant: 95, noncompliant: 5 },
-  { name: "Medication", compliant: 85, noncompliant: 15 },
-  { name: "Manual Handling", compliant: 92, noncompliant: 8 },
-  { name: "Infection Control", compliant: 88, noncompliant: 12 },
-];
-
-const incidentTypeData = [
-  { name: "Medication Error", value: 15 },
-  { name: "Fall", value: 22 },
-  { name: "Missed Visit", value: 18 },
-  { name: "Client Complaint", value: 12 },
-  { name: "Staff Issue", value: 8 },
-];
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+const COLORS = ['#10b981', '#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6'];
 
 export function ComplianceReports({ branchId, branchName }: ComplianceReportsProps) {
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card className="border border-gray-200 shadow-sm">
-        <CardContent className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Training Compliance</h3>
-          <div className="w-full" style={{ height: "350px" }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <ChartContainer 
-                config={{
-                  compliant: { color: "#00C49F" },
-                  noncompliant: { color: "#FF8042" },
-                }}
-              >
-                <BarChart
-                  data={trainingComplianceData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  layout="vertical"
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis type="category" dataKey="name" width={120} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="compliant" name="Compliant %" fill="var(--color-compliant)" stackId="a" />
-                  <Bar dataKey="noncompliant" name="Non-compliant %" fill="var(--color-noncompliant)" stackId="a" />
-                </BarChart>
-              </ChartContainer>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 text-sm text-muted-foreground">
-            <p>This report shows compliance percentages for various training requirements.</p>
-          </div>
-        </CardContent>
-      </Card>
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: addDays(new Date(), -30),
+    to: new Date(),
+  });
 
-      <Card className="border border-gray-200 shadow-sm">
-        <CardContent className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Incident Types</h3>
-          <div className="w-full" style={{ height: "350px" }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <ChartContainer 
-                config={{
-                  primary: { color: "#0088FE" },
-                }}
-              >
-                <PieChart>
-                  <Pie
-                    data={incidentTypeData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={true}
-                    outerRadius={130}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {incidentTypeData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [`${value} incidents`, 'Count']} />
-                  <Legend layout="horizontal" verticalAlign="bottom" align="center" />
-                </PieChart>
+  const { data: complianceData, isLoading, error, refetch } = useComplianceReportsData({
+    branchId,
+    startDate: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
+    endDate: dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined,
+  });
+
+  const handleExport = (type: 'pdf' | 'csv' | 'excel') => {
+    if (!complianceData) {
+      toast.error("No data available to export");
+      return;
+    }
+
+    try {
+      const exportData = [
+        ...complianceData.trainingCompliance.map(item => ({
+          type: 'Training Compliance',
+          name: item.name,
+          compliant: item.compliant,
+          noncompliant: item.noncompliant,
+          total: item.compliant + item.noncompliant
+        })),
+        ...complianceData.incidentTypes.map(item => ({
+          type: 'Incident Types',
+          name: item.name,
+          value: item.value,
+          compliant: '',
+          noncompliant: ''
+        }))
+      ];
+
+      const options = {
+        title: 'Compliance Reports',
+        data: exportData,
+        columns: ['type', 'name', 'compliant', 'noncompliant', 'value'],
+        branchName,
+        dateRange,
+        fileName: `Compliance_Report_${branchName}_${format(new Date(), 'yyyyMMdd')}`
+      };
+
+      if (type === 'pdf') {
+        ReportExporter.exportToPDF(options);
+      } else if (type === 'csv') {
+        ReportExporter.exportToCSV(options);
+      } else {
+        ReportExporter.exportToExcel(options);
+      }
+
+      toast.success(`${type.toUpperCase()} exported successfully`);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export report');
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-500">Error loading compliance reports data</p>
+        <Button onClick={() => refetch()} className="mt-2">
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Controls */}
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-full sm:w-auto">
+              <Calendar className="h-4 w-4 mr-2" />
+              {dateRange?.from ? (
+                dateRange.to ? (
+                  <>
+                    {format(dateRange.from, "LLL dd, y")} -{" "}
+                    {format(dateRange.to, "LLL dd, y")}
+                  </>
+                ) : (
+                  format(dateRange.from, "LLL dd, y")
+                )
+              ) : (
+                <span>Pick a date range</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarComponent
+              initialFocus
+              mode="range"
+              defaultMonth={dateRange?.from}
+              selected={dateRange}
+              onSelect={setDateRange}
+            />
+          </PopoverContent>
+        </Popover>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="w-full sm:w-auto">
+              <Download className="h-4 w-4 mr-2" />
+              Export Report
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleExport('pdf')}>
+              <FileText className="h-4 w-4 mr-2" />
+              Export as PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport('csv')}>
+              <FileText className="h-4 w-4 mr-2" />
+              Export as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport('excel')}>
+              <FileText className="h-4 w-4 mr-2" />
+              Export as Excel
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" />
+          <span>Loading compliance reports...</span>
+        </div>
+      ) : (
+        <div id="compliance-reports-content" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Training Compliance */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Training Compliance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={{}}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={complianceData?.trainingCompliance || []}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="compliant" fill="#10b981" name="Compliant" />
+                    <Bar dataKey="noncompliant" fill="#ef4444" name="Non-compliant" />
+                  </BarChart>
+                </ResponsiveContainer>
               </ChartContainer>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 text-sm text-muted-foreground">
-            <p>This report shows the distribution of different types of incidents reported.</p>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+
+          {/* Incident Types */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Incident Types</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={{}}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={complianceData?.incidentTypes || []}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label
+                    >
+                      {complianceData?.incidentTypes?.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          {/* Compliance Trends */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Incident Trends Over Time</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={{}}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={complianceData?.complianceTrends || []}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line type="monotone" dataKey="incidents" stroke="#ef4444" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
