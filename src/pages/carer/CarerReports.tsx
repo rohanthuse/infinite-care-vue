@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { FileBarChart, Calendar, Download, ChevronRight, Filter, FileText, BarChart, PieChart, LineChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,6 +38,11 @@ const CarerReports: React.FC = () => {
   });
   
   const { carerProfile, loading: authLoading } = useCarerAuth();
+
+  // Debug logging
+  console.log('[CarerReports] Auth loading:', authLoading);
+  console.log('[CarerReports] Carer profile:', carerProfile);
+  console.log('[CarerReports] Branch ID:', carerProfile?.branch_id);
   
   const reportOptions: ReportOption[] = [
     {
@@ -145,20 +149,41 @@ const CarerReports: React.FC = () => {
         <h1 className="text-2xl font-bold mb-6">Reports</h1>
         <div className="flex items-center justify-center py-8">
           <div className="w-8 h-8 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin mx-auto mb-4"></div>
-          <p>Loading reports...</p>
+          <p>Loading carer profile...</p>
         </div>
       </div>
     );
   }
 
-  // Show error state if no carer profile or branch ID is available
-  if (!carerProfile?.branch_id) {
+  // Show error state if no carer profile is available
+  if (!carerProfile) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold mb-6">Reports</h1>
+        <div className="text-center py-8">
+          <p className="text-red-500 mb-2">Unable to load carer profile</p>
+          <p className="text-sm text-gray-500">Please try refreshing the page or contact support</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="mt-4"
+            variant="outline"
+          >
+            Refresh Page
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if no branch ID is available
+  if (!carerProfile.branch_id) {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold mb-6">Reports</h1>
         <div className="text-center py-8">
           <p className="text-red-500 mb-2">Unable to load reports</p>
           <p className="text-sm text-gray-500">No valid branch information found for your account</p>
+          <p className="text-xs text-gray-400 mt-2">Profile ID: {carerProfile.id}</p>
         </div>
       </div>
     );

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,76 +20,113 @@ export function useCarerAuth() {
   const [carerProfile, setCarerProfile] = useState<any | null>(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('[useCarerAuth] Auth state changed:', event, session?.user?.id);
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-
-        if (event === 'SIGNED_IN' && session?.user) {
-          // Check if user is a carer by looking at staff table
-          const { data: staffRecord } = await supabase
-            .from('staff')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-
-          if (staffRecord) {
-            console.log('[useCarerAuth] Carer authenticated:', staffRecord);
-            setCarerProfile(staffRecord);
-            toast.success(`Welcome back, ${staffRecord.first_name}!`);
-            
-            // Check if this is first login and profile needs completion
-            if (!staffRecord.first_login_completed) {
-              navigate('/carer-onboarding');
-            } else {
-              navigate('/carer-dashboard');
-            }
-          }
-        }
-
-        if (event === 'SIGNED_OUT') {
-          console.log('[useCarerAuth] User signed out');
-          setCarerProfile(null);
-          navigate('/carer-login');
-        }
-      }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('[useCarerAuth] Initial session check:', session?.user?.id);
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      
-      // If session exists, fetch carer profile
-      if (session?.user) {
-        fetchCarerProfile(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
   const fetchCarerProfile = async (userId: string) => {
     try {
-      const { data: staffRecord } = await supabase
+      console.log('[useCarerAuth] Fetching carer profile for user:', userId);
+      
+      const { data: staffRecord, error } = await supabase
         .from('staff')
         .select('*')
         .eq('id', userId)
         .single();
       
+      if (error) {
+        console.error('[useCarerAuth] Error fetching staff record:', error);
+        throw error;
+      }
+
       if (staffRecord) {
+        console.log('[useCarerAuth] Carer profile loaded:', staffRecord);
         setCarerProfile(staffRecord);
+        return staffRecord;
+      } else {
+        console.warn('[useCarerAuth] No staff record found for user:', userId);
+        return null;
       }
     } catch (error) {
-      console.error('Error fetching carer profile:', error);
+      console.error('[useCarerAuth] Error fetching carer profile:', error);
+      setCarerProfile(null);
+      return null;
     }
   };
+
+  useEffect(() => {
+    let mounted = true;
+
+    const handleAuthStateChange = async (event: string, session: Session | null) => {
+      if (!mounted) return;
+
+      console.log('[useCarerAuth] Auth state changed:', event, session?.user?.id);
+      
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (event === 'SIGNED_IN' && session?.user) {
+        // Fetch carer profile for signed in user
+        const profile = await fetchCarerProfile(session.user.id);
+        
+        if (profile) {
+          toast.success(`Welcome back, ${profile.first_name}!`);
+          
+          // Check if this is first login and profile needs completion
+          if (!profile.first_login_completed) {
+            navigate('/carer-onboarding');
+          }
+        } else {
+          console.error('[useCarerAuth] Could not load carer profile');
+          toast.error('Unable to load your profile. Please contact support.');
+        }
+      }
+
+      if (event === 'SIGNED_OUT') {
+        console.log('[useCarerAuth] User signed out');
+        setCarerProfile(null);
+        navigate('/carer-login');
+      }
+
+      // Always set loading to false after handling auth state change
+      setLoading(false);
+    };
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+
+    // Check for existing session
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('[useCarerAuth] Error getting session:', error);
+          setLoading(false);
+          return;
+        }
+
+        console.log('[useCarerAuth] Initial session check:', session?.user?.id);
+        
+        if (session?.user) {
+          setSession(session);
+          setUser(session.user);
+          
+          // Fetch carer profile for existing session
+          await fetchCarerProfile(session.user.id);
+        }
+      } catch (error) {
+        console.error('[useCarerAuth] Error during auth initialization:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   const signIn = async (email: string, password: string) => {
     console.log('[useCarerAuth] Attempting sign in for:', email);
