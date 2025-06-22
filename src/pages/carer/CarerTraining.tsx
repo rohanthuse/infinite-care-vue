@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from "react";
-import { Search, Filter, GraduationCap, CheckCircle, Clock, Calendar, ChevronRight, Download, Award } from "lucide-react";
+import React, { useState } from "react";
+import { Search, Filter, GraduationCap, CheckCircle, Clock, Calendar, ChevronRight, Download, Award, Loader2, PlayCircle, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -8,100 +8,102 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, addDays, isAfter, isBefore, parseISO } from "date-fns";
 import { toast } from "sonner";
-import { 
-  getTrainingMatrix, 
-  mockTrainings, 
-  filterTrainingsByCategory,
-} from "@/data/mockTrainingData";
-import { Training, TrainingStatus, TrainingCategory, TrainingCell } from "@/types/training";
-import TrainingStatusCell from "@/components/training/TrainingStatusCell";
-import TrainingCertificateView from "@/components/training/TrainingCertificateView";
-import TrainingExportUser from "@/components/training/TrainingExportUser";
-import { CustomButton } from "@/components/ui/CustomButton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useCarerTraining } from "@/hooks/useCarerTraining";
+import { useCarerTrainingActions } from "@/hooks/useCarerTrainingActions";
+import { useCarerAuth } from "@/hooks/useCarerAuth";
 
-// Upcoming scheduled training events - this would come from the API in a real implementation
-const mockScheduledTraining = [
-  {
-    id: "s1",
-    title: "Advanced Wound Care",
-    date: addDays(new Date(), 3),
-    time: "10:00 AM - 12:00 PM",
-    location: "Main Training Room",
-    type: "In-person"
-  },
-  {
-    id: "s2",
-    title: "Medication Refresher Course",
-    date: addDays(new Date(), 7),
-    time: "2:00 PM - 4:00 PM",
-    location: "Online Webinar",
-    type: "Virtual"
-  }
-];
+type TrainingStatus = 'completed' | 'in-progress' | 'expired' | 'not-started';
+type TrainingCategory = 'core' | 'mandatory' | 'specialized' | 'optional';
 
 const CarerTraining: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<TrainingCategory | 'all'>('all');
-  const [selectedTraining, setSelectedTraining] = useState<Training | null>(null);
-  const [showCertificateDialog, setShowCertificateDialog] = useState(false);
+  const [selectedTraining, setSelectedTraining] = useState<any>(null);
   const [selectedStatus, setSelectedStatus] = useState<TrainingStatus | 'all'>('all');
-  const [carerId, setCarerId] = useState("staff-1"); // In real app, this would be dynamic based on logged in user
+  const [showActionDialog, setShowActionDialog] = useState(false);
+  const [actionType, setActionType] = useState<'start' | 'complete' | null>(null);
+  const [completionScore, setCompletionScore] = useState("");
 
-  // Get training matrix data
-  const matrixData = getTrainingMatrix();
-  const currentStaffMember = matrixData.staffMembers.find(staff => staff.id === carerId) || matrixData.staffMembers[0];
-  
-  // Filter trainings for current carer
-  const carerTrainings = matrixData.trainings.map(training => {
-    const trainingCell = matrixData.data[carerId]?.[training.id] || {
-      status: 'not-started' as TrainingStatus
-    };
-    
-    return {
-      ...training,
-      status: trainingCell.status,
-      completionDate: trainingCell.completionDate,
-      expiryDate: trainingCell.expiryDate,
-      score: trainingCell.score,
-      maxScore: trainingCell.maxScore || 100
-    };
-  });
+  const { carerProfile } = useCarerAuth();
+  const { trainingRecords, stats, isLoading, error } = useCarerTraining();
+  const { updateTrainingStatus, enrollInTraining, isUpdating, isEnrolling } = useCarerTrainingActions();
 
-  // Calculate completion statistics
-  const completedCount = carerTrainings.filter(t => t.status === 'completed').length;
-  const inProgressCount = carerTrainings.filter(t => t.status === 'in-progress').length;
-  const expiredCount = carerTrainings.filter(t => t.status === 'expired').length;
-  const totalCount = carerTrainings.length;
-  const completionPercentage = Math.round((completedCount / totalCount) * 100);
-  
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold mb-6">My Training</h1>
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin mr-2" />
+          <span>Loading training data...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold mb-6">My Training</h1>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-red-500 mb-2">Error loading training data</p>
+            <p className="text-sm text-gray-500">{error.message}</p>
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="mt-4"
+              variant="outline"
+            >
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Filter trainings based on search, status, and category
-  const filteredTrainings = carerTrainings.filter(training => {
+  const filteredTrainings = trainingRecords.filter(record => {
+    const training = record.training_course;
     const searchMatches = 
       training.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      training.description.toLowerCase().includes(searchQuery.toLowerCase());
+      (training.description && training.description.toLowerCase().includes(searchQuery.toLowerCase()));
     
     const categoryMatches = activeTab === 'all' || training.category === activeTab;
-    const statusMatches = selectedStatus === 'all' || training.status === selectedStatus;
+    const statusMatches = selectedStatus === 'all' || record.status === selectedStatus;
     
     return searchMatches && categoryMatches && statusMatches;
   });
-  
-  // Handle enrollment in a training course
-  const handleEnrollInTraining = (training: Training) => {
-    toast.success(`Enrolled in ${training.title}`, {
-      description: "You have been successfully enrolled in this training course"
-    });
-    setSelectedTraining(null);
-  };
 
-  // Handle viewing certificate
-  const handleViewCertificate = (training: Training) => {
-    setSelectedTraining(training);
-    setShowCertificateDialog(true);
+  // Handle training actions
+  const handleTrainingAction = async () => {
+    if (!selectedTraining || !actionType) return;
+
+    try {
+      if (actionType === 'start') {
+        await updateTrainingStatus.mutateAsync({
+          recordId: selectedTraining.id,
+          status: 'in-progress'
+        });
+      } else if (actionType === 'complete') {
+        const score = completionScore ? parseInt(completionScore) : undefined;
+        await updateTrainingStatus.mutateAsync({
+          recordId: selectedTraining.id,
+          status: 'completed',
+          score
+        });
+      }
+      setShowActionDialog(false);
+      setSelectedTraining(null);
+      setActionType(null);
+      setCompletionScore("");
+    } catch (error) {
+      // Error handling is done in the hook
+    }
   };
 
   // Get the appropriate status badge class
@@ -114,14 +116,23 @@ const CarerTraining: React.FC = () => {
       default: return "bg-gray-100 text-gray-700";
     }
   };
+
+  const getCategoryColor = (category: TrainingCategory): string => {
+    switch (category) {
+      case "core": return "bg-blue-100 text-blue-700 border-blue-200";
+      case "mandatory": return "bg-red-100 text-red-700 border-red-200";
+      case "specialized": return "bg-purple-100 text-purple-700 border-purple-200";
+      case "optional": return "bg-gray-100 text-gray-700 border-gray-200";
+      default: return "bg-gray-100 text-gray-700 border-gray-200";
+    }
+  };
   
   // Calculate training progress percentage
-  const calculateTrainingProgress = (training: Training): number => {
-    switch (training.status) {
+  const calculateTrainingProgress = (record: any): number => {
+    switch (record.status) {
       case "completed": return 100;
       case "in-progress": 
-        // For in-progress trainings, we can simulate progress from score or set a default
-        return training.score ? (training.score / (training.maxScore || 100)) * 100 : 60;
+        return record.score ? (record.score / record.training_course.max_score) * 100 : 60;
       case "expired": return 100; // It was completed but expired
       case "not-started": return 0;
       default: return 0;
@@ -143,6 +154,12 @@ const CarerTraining: React.FC = () => {
     return format(parseISO(dateString), 'MMM d, yyyy');
   };
 
+  const openActionDialog = (training: any, action: 'start' | 'complete') => {
+    setSelectedTraining(training);
+    setActionType(action);
+    setShowActionDialog(true);
+  };
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">My Training</h1>
@@ -154,62 +171,73 @@ const CarerTraining: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex justify-between items-center">
-              <span className="text-xl font-bold">{completionPercentage}%</span>
+              <span className="text-xl font-bold">{stats.completionPercentage}%</span>
               <span className="text-sm text-gray-500">Overall Completion</span>
             </div>
-            <Progress value={completionPercentage} className="h-2" />
+            <Progress value={stats.completionPercentage} className="h-2" />
             
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-green-50 p-3 rounded-md">
-                <div className="text-green-600 font-bold text-xl">{completedCount}</div>
+                <div className="text-green-600 font-bold text-xl">{stats.completedCount}</div>
                 <div className="text-xs text-gray-600">Completed</div>
               </div>
               <div className="bg-blue-50 p-3 rounded-md">
-                <div className="text-blue-600 font-bold text-xl">{inProgressCount}</div>
+                <div className="text-blue-600 font-bold text-xl">{stats.inProgressCount}</div>
                 <div className="text-xs text-gray-600">In Progress</div>
               </div>
               <div className="bg-amber-50 p-3 rounded-md">
-                <div className="text-amber-600 font-bold text-xl">{expiredCount}</div>
+                <div className="text-amber-600 font-bold text-xl">{stats.expiredCount}</div>
                 <div className="text-xs text-gray-600">Expired</div>
               </div>
             </div>
 
-            <TrainingExportUser trainings={carerTrainings} staffMember={currentStaffMember} />
+            <div className="border-t pt-4">
+              <div className="text-sm text-gray-600 mb-2">Mandatory Training</div>
+              <div className="flex justify-between">
+                <span className="text-sm">{stats.mandatoryCompleted} of {stats.mandatoryTotal} completed</span>
+                <span className="text-sm font-medium">
+                  {stats.mandatoryTotal > 0 ? Math.round((stats.mandatoryCompleted / stats.mandatoryTotal) * 100) : 0}%
+                </span>
+              </div>
+            </div>
           </CardContent>
         </Card>
         
         <Card className="col-span-1 lg:col-span-2">
           <CardHeader className="pb-2">
-            <CardTitle className="text-md font-medium">Upcoming Training</CardTitle>
+            <CardTitle className="text-md font-medium">Training Overview</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {mockScheduledTraining.map((training) => (
-              <div key={training.id} className="flex justify-between items-center gap-4 border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded bg-blue-100 text-blue-600 flex items-center justify-center">
-                    <Calendar className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium">{training.title}</h3>
-                    <p className="text-sm text-gray-500">
-                      {format(training.date, "EEEE, MMMM d")} • {training.time}
-                    </p>
-                    <div className="text-sm text-gray-500 flex items-center gap-1">
-                      <Badge variant="outline" className="text-xs">
-                        {training.type}
-                      </Badge>
-                      <span className="mx-1">•</span>
-                      {training.location}
-                    </div>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm">Add to Calendar</Button>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{stats.totalCourses}</div>
+                <div className="text-sm text-gray-500">Total Courses</div>
               </div>
-            ))}
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{stats.completedCount}</div>
+                <div className="text-sm text-gray-500">Completed</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">{stats.inProgressCount}</div>
+                <div className="text-sm text-gray-500">In Progress</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-600">{stats.pendingCount}</div>
+                <div className="text-sm text-gray-500">Not Started</div>
+              </div>
+            </div>
             
-            {mockScheduledTraining.length === 0 && (
-              <div className="text-center py-4">
-                <p className="text-gray-500">No upcoming training scheduled.</p>
+            {stats.expiredCount > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-red-600" />
+                  <span className="font-medium text-red-800">
+                    {stats.expiredCount} training course{stats.expiredCount !== 1 ? 's' : ''} expired
+                  </span>
+                </div>
+                <p className="text-sm text-red-600 mt-1">
+                  Please renew expired training to maintain compliance.
+                </p>
               </div>
             )}
           </CardContent>
@@ -255,80 +283,121 @@ const CarerTraining: React.FC = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredTrainings.length > 0 ? (
-          filteredTrainings.map((training) => (
-            <Card 
-              key={training.id} 
-              className="flex flex-col cursor-pointer hover:shadow-md transition-shadow" 
-              onClick={() => setSelectedTraining(training)}
-            >
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{training.title}</CardTitle>
-                  <div className="flex-shrink-0">
-                    <TrainingStatusCell 
-                      data={{
-                        status: training.status,
-                        completionDate: training.completionDate,
-                        expiryDate: training.expiryDate,
-                        score: training.score,
-                        maxScore: training.maxScore
-                      }}
-                      title={training.title}
-                    />
+          filteredTrainings.map((record) => {
+            const training = record.training_course;
+            return (
+              <Card 
+                key={record.id} 
+                className="flex flex-col cursor-pointer hover:shadow-md transition-shadow" 
+                onClick={() => setSelectedTraining(record)}
+              >
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-lg">{training.title}</CardTitle>
+                    <Badge 
+                      variant="outline"
+                      className={`text-xs ${getStatusColor(record.status)}`}
+                    >
+                      {record.status.replace('-', ' ')}
+                    </Badge>
                   </div>
-                </div>
-                <Badge variant="outline" className="w-fit mt-1">
-                  {training.category.charAt(0).toUpperCase() + training.category.slice(1)}
-                </Badge>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <p className="text-sm text-gray-500 mb-3">{training.description}</p>
-                
-                <div className="space-y-3">
-                  <div>
-                    <div className="text-sm text-gray-500 mb-1">Progress</div>
-                    <div className="flex items-center gap-2">
-                      <Progress value={calculateTrainingProgress(training)} className="h-2 flex-grow" />
-                      <span className="text-sm font-medium">{calculateTrainingProgress(training)}%</span>
-                    </div>
+                  <div className="flex gap-2">
+                    <Badge variant="outline" className={getCategoryColor(training.category)}>
+                      {training.category.charAt(0).toUpperCase() + training.category.slice(1)}
+                    </Badge>
+                    {training.is_mandatory && (
+                      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                        Required
+                      </Badge>
+                    )}
                   </div>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <p className="text-sm text-gray-500 mb-3 line-clamp-2">
+                    {training.description || 'No description available'}
+                  </p>
                   
-                  {training.completionDate && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span>Completed on {formatDate(training.completionDate)}</span>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">Progress</div>
+                      <div className="flex items-center gap-2">
+                        <Progress value={calculateTrainingProgress(record)} className="h-2 flex-grow" />
+                        <span className="text-sm font-medium">{calculateTrainingProgress(record)}%</span>
+                      </div>
                     </div>
-                  )}
-                  
-                  {training.expiryDate && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="h-4 w-4 text-gray-500" />
-                      <span className={isExpiringSoon(training.expiryDate) ? "text-amber-600 font-medium" : ""}>
-                        {isExpiringSoon(training.expiryDate) ? "Expires soon: " : "Valid until: "}
-                        {formatDate(training.expiryDate)}
-                      </span>
-                    </div>
-                  )}
+                    
+                    {record.completion_date && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span>Completed on {formatDate(record.completion_date)}</span>
+                      </div>
+                    )}
+                    
+                    {record.expiry_date && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="h-4 w-4 text-gray-500" />
+                        <span className={isExpiringSoon(record.expiry_date) ? "text-amber-600 font-medium" : ""}>
+                          {isExpiringSoon(record.expiry_date) ? "Expires soon: " : "Valid until: "}
+                          {formatDate(record.expiry_date)}
+                        </span>
+                      </div>
+                    )}
 
-                  {training.validFor && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-gray-500" />
-                      <span>Valid for {training.validFor} months</span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter className="pt-0 border-t">
-                <div className="flex justify-between items-center w-full">
-                  <div className="flex items-center text-sm text-gray-500">
-                    <Clock className="h-4 w-4 mr-1" />
-                    <span>{training.validFor ? `${training.validFor} months` : "No expiry"}</span>
+                    {training.valid_for_months && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <span>Valid for {training.valid_for_months} months</span>
+                      </div>
+                    )}
+
+                    {record.score && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Award className="h-4 w-4 text-blue-500" />
+                        <span>Score: {record.score}/{training.max_score}</span>
+                      </div>
+                    )}
                   </div>
-                  <ChevronRight className="h-4 w-4 text-gray-500" />
-                </div>
-              </CardFooter>
-            </Card>
-          ))
+                </CardContent>
+                <CardFooter className="pt-0 border-t">
+                  <div className="flex justify-between items-center w-full">
+                    <div className="flex items-center text-sm text-gray-500">
+                      <BookOpen className="h-4 w-4 mr-1" />
+                      <span>Assigned {formatDate(record.assigned_date)}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      {record.status === 'not-started' && (
+                        <Button 
+                          size="sm" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openActionDialog(record, 'start');
+                          }}
+                          disabled={isUpdating}
+                        >
+                          <PlayCircle className="h-4 w-4 mr-1" />
+                          Start
+                        </Button>
+                      )}
+                      {record.status === 'in-progress' && (
+                        <Button 
+                          size="sm" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openActionDialog(record, 'complete');
+                          }}
+                          disabled={isUpdating}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Complete
+                        </Button>
+                      )}
+                      <ChevronRight className="h-4 w-4 text-gray-500" />
+                    </div>
+                  </div>
+                </CardFooter>
+              </Card>
+            );
+          })
         ) : (
           <div className="col-span-1 md:col-span-3 py-12 text-center bg-white border border-gray-200 rounded-lg">
             <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
@@ -342,157 +411,57 @@ const CarerTraining: React.FC = () => {
         )}
       </div>
       
-      {/* Training Details Dialog */}
-      <Dialog open={!!selectedTraining && !showCertificateDialog} onOpenChange={(open) => !open && setSelectedTraining(null)}>
-        <DialogContent className="sm:max-w-lg">
+      {/* Action Dialog */}
+      <Dialog open={showActionDialog} onOpenChange={setShowActionDialog}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Training Course Details</DialogTitle>
+            <DialogTitle>
+              {actionType === 'start' ? 'Start Training' : 'Complete Training'}
+            </DialogTitle>
           </DialogHeader>
           {selectedTraining && (
             <div className="space-y-4">
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-start">
-                  <h2 className="text-xl font-semibold">{selectedTraining.title}</h2>
-                  <TrainingStatusCell 
-                    data={{
-                      status: selectedTraining.status,
-                      completionDate: selectedTraining.completionDate,
-                      expiryDate: selectedTraining.expiryDate,
-                      score: selectedTraining.score,
-                      maxScore: selectedTraining.maxScore
-                    }}
-                    title={selectedTraining.title}
-                  />
-                </div>
-                <p className="text-gray-600">{selectedTraining.description}</p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <div className="text-gray-500">Category</div>
-                  <div className="font-medium capitalize">{selectedTraining.category}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Valid For</div>
-                  <div className="font-medium">{selectedTraining.validFor || "N/A"} {selectedTraining.validFor ? "months" : ""}</div>
-                </div>
-                {selectedTraining.completionDate && (
-                  <div>
-                    <div className="text-gray-500">Completed On</div>
-                    <div className="font-medium">{formatDate(selectedTraining.completionDate)}</div>
-                  </div>
-                )}
-                {selectedTraining.expiryDate && (
-                  <div>
-                    <div className="text-gray-500">Valid Until</div>
-                    <div className={`font-medium ${isExpiringSoon(selectedTraining.expiryDate) ? "text-amber-600" : ""}`}>
-                      {formatDate(selectedTraining.expiryDate)}
-                    </div>
-                  </div>
-                )}
-                {selectedTraining.score !== undefined && (
-                  <div>
-                    <div className="text-gray-500">Score</div>
-                    <div className="font-medium">{selectedTraining.score} / {selectedTraining.maxScore}</div>
-                  </div>
-                )}
-              </div>
-              
               <div>
-                <div className="text-sm text-gray-500 mb-1">Completion Progress</div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Progress value={calculateTrainingProgress(selectedTraining)} className="h-2 flex-grow" />
-                  <span className="text-sm font-medium">{calculateTrainingProgress(selectedTraining)}%</span>
-                </div>
+                <h3 className="font-semibold">{selectedTraining.training_course.title}</h3>
+                <p className="text-sm text-gray-600">{selectedTraining.training_course.description}</p>
               </div>
               
-              <DialogFooter className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setSelectedTraining(null)}>Close</Button>
-                
-                {selectedTraining.status === 'completed' && (
-                  <Button 
-                    className="gap-2"
-                    onClick={() => handleViewCertificate(selectedTraining)}
-                  >
-                    <Award className="h-4 w-4" />
-                    View Certificate
-                  </Button>
-                )}
-                
-                {selectedTraining.status === 'expired' && (
-                  <Button className="gap-2">
-                    <Clock className="h-4 w-4" />
-                    Renew Training
-                  </Button>
-                )}
-                
-                {(selectedTraining.status === 'not-started' || selectedTraining.status === 'in-progress') && (
-                  <Button 
-                    className="gap-2"
-                    onClick={() => handleEnrollInTraining(selectedTraining)}
-                  >
-                    {selectedTraining.status === 'in-progress' ? (
-                      <>
-                        <Clock className="h-4 w-4" />
-                        Continue Training
-                      </>
-                    ) : (
-                      <>
-                        <GraduationCap className="h-4 w-4" />
-                        Start Training
-                      </>
-                    )}
-                  </Button>
-                )}
-              </DialogFooter>
+              {actionType === 'complete' && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Score (Optional)</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max={selectedTraining.training_course.max_score}
+                    placeholder={`Enter score (0-${selectedTraining.training_course.max_score})`}
+                    value={completionScore}
+                    onChange={(e) => setCompletionScore(e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Minimum required score: {selectedTraining.training_course.required_score}
+                  </p>
+                </div>
+              )}
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-      
-      {/* Certificate Dialog */}
-      <Dialog open={showCertificateDialog} onOpenChange={(open) => {
-        if (!open) {
-          setShowCertificateDialog(false);
-        }
-      }}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Training Certificate</DialogTitle>
-          </DialogHeader>
-          {selectedTraining && (
-            <div className="space-y-4">
-              <TrainingCertificateView
-                training={selectedTraining}
-                staffName={currentStaffMember.name}
-                staffId={currentStaffMember.id}
-              />
-              
-              <DialogFooter className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowCertificateDialog(false)}>Close</Button>
-                <Button 
-                  className="gap-2"
-                  onClick={() => {
-                    if (selectedTraining) {
-                      try {
-                        // Import dynamically to avoid loading jsPDF on initial page load
-                        import('@/utils/trainingCertificateGenerator').then(module => {
-                          module.generateTrainingCertificate(selectedTraining, currentStaffMember);
-                          toast.success("Certificate downloaded successfully");
-                        });
-                      } catch (error) {
-                        console.error("Failed to download certificate:", error);
-                        toast.error("Failed to download certificate");
-                      }
-                    }
-                  }}
-                >
-                  <Download className="h-4 w-4" />
-                  Download Certificate
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowActionDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleTrainingAction}
+              disabled={isUpdating}
+            >
+              {isUpdating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  {actionType === 'start' ? 'Starting...' : 'Completing...'}
+                </>
+              ) : (
+                actionType === 'start' ? 'Start Training' : 'Mark Complete'
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
