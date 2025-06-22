@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   Dialog, 
@@ -53,7 +54,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   const [editMode, setEditMode] = useState(false);
   const [title, setTitle] = useState(task?.title || "");
   const [description, setDescription] = useState(task?.description || "");
-  const [priority, setPriority] = useState(task?.priority || "Medium");
+  const [priority, setPriority] = useState(task?.priority || "medium");
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [client, setClient] = useState(task?.client || "");
   const [category, setCategory] = useState(task?.category || "");
@@ -68,7 +69,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
     if (task) {
       setTitle(task.title || "");
       setDescription(task.description || "");
-      setPriority(task.priority || "Medium");
+      setPriority(task.priority?.toLowerCase() || "medium");
       setClient(task.client || "");
       setCategory(task.category || "");
       setAssignee(task.assignee || "");
@@ -196,7 +197,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="priority">Priority</Label>
-                <Select value={priority} onValueChange={setPriority}>
+                <Select value={priority || "medium"} onValueChange={setPriority}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
