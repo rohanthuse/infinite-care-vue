@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Activity, AlertTriangle, ArrowDown, ArrowUp, Clock, Filter, Search, FileText } from "lucide-react";
+import { Activity, AlertTriangle, ArrowDown, ArrowUp, Clock, Filter, Search, FileText, BarChart3, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNews2Patients } from "@/hooks/useNews2Data";
+import { News2AnalyticsDashboard } from "./News2AnalyticsDashboard";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { generateNews2PDF } from "@/utils/pdfGenerator";
@@ -21,6 +23,7 @@ interface News2DashboardProps {
 export const News2Dashboard = ({ branchId, branchName }: News2DashboardProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [riskFilter, setRiskFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState("overview");
   
   const { data: patients = [], isLoading, error } = useNews2Patients(branchId);
   
@@ -142,124 +145,166 @@ export const News2Dashboard = ({ branchId, branchName }: News2DashboardProps) =>
         </Card>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-grow">
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-          <Input 
-            className="pl-8"
-            placeholder="Search patients by name or ID" 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        
-        <Select value={riskFilter} onValueChange={setRiskFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Filter by risk level" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Patients</SelectItem>
-            <SelectItem value="high">High Risk (7+)</SelectItem>
-            <SelectItem value="medium">Medium Risk (5-6)</SelectItem>
-            <SelectItem value="low">Low Risk (0-4)</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Tabs for Different Views */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Analytics Overview
+          </TabsTrigger>
+          <TabsTrigger value="patients" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Patient List
+          </TabsTrigger>
+          <TabsTrigger value="alerts" className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            Clinical Alerts
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Patients Table */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Patient NEWS2 Scores</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="py-8 text-center">
-              <div className="w-8 h-8 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin mx-auto mb-4"></div>
-              <p>Loading patient data...</p>
+        <TabsContent value="overview" className="mt-6">
+          <News2AnalyticsDashboard branchId={branchId} />
+        </TabsContent>
+
+        <TabsContent value="patients" className="mt-6">
+          {/* Filters */}
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="relative flex-grow">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+              <Input 
+                className="pl-8"
+                placeholder="Search patients by name or ID" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-          ) : filteredPatients.length === 0 ? (
-            <div className="py-8 text-center">
-              <p className="text-gray-500">
-                {patients.length === 0 ? "No patients found in NEWS2 monitoring" : "No patients match the current filters"}
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Patient</TableHead>
-                    <TableHead>Latest Score</TableHead>
-                    <TableHead>Risk Level</TableHead>
-                    <TableHead>Trend</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredPatients.map((patient) => {
-                    const score = patient.latest_observation?.total_score || 0;
-                    const patientName = `${patient.client?.first_name || ''} ${patient.client?.last_name || ''}`.trim() || 'Unknown Patient';
-                    const lastUpdated = patient.latest_observation?.recorded_at || patient.updated_at;
-                    
-                    return (
-                      <TableRow key={patient.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{patientName}</div>
-                            <div className="text-sm text-gray-500">ID: {patient.id.slice(0, 8)}...</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-medium ${
-                            score >= 7 
-                              ? "bg-red-500" 
-                              : score >= 5 
-                                ? "bg-orange-500" 
-                                : "bg-green-500"
-                          }`}>
-                            {score}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {getRiskBadge(score)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            {getTrendIcon()}
-                            <span className="text-sm">Stable</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3 text-gray-400" />
-                            <span className="text-sm">
-                              {format(new Date(lastUpdated), "dd MMM, HH:mm")}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleExportPatient(patient)}
-                            >
-                              <FileText className="h-4 w-4 mr-1" />
-                              Export
-                            </Button>
-                          </div>
-                        </TableCell>
+            
+            <Select value={riskFilter} onValueChange={setRiskFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filter by risk level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Patients</SelectItem>
+                <SelectItem value="high">High Risk (7+)</SelectItem>
+                <SelectItem value="medium">Medium Risk (5-6)</SelectItem>
+                <SelectItem value="low">Low Risk (0-4)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Patients Table */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Patient NEWS2 Scores</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="py-8 text-center">
+                  <div className="w-8 h-8 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p>Loading patient data...</p>
+                </div>
+              ) : filteredPatients.length === 0 ? (
+                <div className="py-8 text-center">
+                  <p className="text-gray-500">
+                    {patients.length === 0 ? "No patients found in NEWS2 monitoring" : "No patients match the current filters"}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Patient</TableHead>
+                        <TableHead>Latest Score</TableHead>
+                        <TableHead>Risk Level</TableHead>
+                        <TableHead>Trend</TableHead>
+                        <TableHead>Last Updated</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredPatients.map((patient) => {
+                        const score = patient.latest_observation?.total_score || 0;
+                        const patientName = `${patient.client?.first_name || ''} ${patient.client?.last_name || ''}`.trim() || 'Unknown Patient';
+                        const lastUpdated = patient.latest_observation?.recorded_at || patient.updated_at;
+                        
+                        return (
+                          <TableRow key={patient.id}>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{patientName}</div>
+                                <div className="text-sm text-gray-500">ID: {patient.id.slice(0, 8)}...</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-medium ${
+                                score >= 7 
+                                  ? "bg-red-500" 
+                                  : score >= 5 
+                                    ? "bg-orange-500" 
+                                    : "bg-green-500"
+                              }`}>
+                                {score}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {getRiskBadge(score)}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                {getTrendIcon()}
+                                <span className="text-sm">Stable</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3 text-gray-400" />
+                                <span className="text-sm">
+                                  {format(new Date(lastUpdated), "dd MMM, HH:mm")}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => handleExportPatient(patient)}
+                                >
+                                  <FileText className="h-4 w-4 mr-1" />
+                                  Export
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="alerts" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-orange-500" />
+                Clinical Alerts & Escalations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-gray-500">
+                <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <p>No active clinical alerts at this time</p>
+                <p className="text-sm mt-2">Alerts will appear here when patients require immediate attention</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
