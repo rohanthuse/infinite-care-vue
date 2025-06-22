@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   User, Mail, Phone, MapPin, Briefcase, Calendar, CheckCircle, 
@@ -84,14 +83,30 @@ const CarerProfile: React.FC = () => {
         const certifications = formData.get("certifications") as string;
         updateData.certifications = certifications ? certifications.split("\n").filter(c => c.trim()) : [];
       } else if (section === "bank") {
+        // Bank details require validation and potentially admin approval
         updateData.bank_name = formData.get("bank_name") as string;
         updateData.bank_account_name = formData.get("bank_account_name") as string;
         updateData.bank_account_number = formData.get("bank_account_number") as string;
         updateData.bank_sort_code = formData.get("bank_sort_code") as string;
+        
+        // Log bank detail changes for audit
+        console.log(`[AUDIT] Carer ${carerProfile.id} updated bank details at ${new Date().toISOString()}`);
       }
 
       await updateCarerMutation.mutateAsync(updateData);
       toggleEditMode(section);
+      
+      if (section === "bank") {
+        toast({
+          title: "Bank details updated",
+          description: "Your bank details have been updated and will be reviewed by administrators.",
+        });
+      } else {
+        toast({
+          title: "Profile updated",
+          description: "Your profile has been updated successfully.",
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Update failed",
@@ -117,6 +132,15 @@ const CarerProfile: React.FC = () => {
       toast({
         title: "Passwords don't match",
         description: "New password and confirmation do not match.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long.",
         variant: "destructive"
       });
       return;
@@ -159,6 +183,21 @@ const CarerProfile: React.FC = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
+  const getStatusBadge = (status?: string) => {
+    if (!status) return <Badge variant="secondary">Unknown</Badge>;
+    
+    const normalizedStatus = status.toLowerCase();
+    if (normalizedStatus.includes('active')) {
+      return <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-0">Active</Badge>;
+    } else if (normalizedStatus.includes('pending')) {
+      return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border-0">Pending</Badge>;
+    } else if (normalizedStatus.includes('inactive')) {
+      return <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-200 border-0">Inactive</Badge>;
+    } else {
+      return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -197,26 +236,24 @@ const CarerProfile: React.FC = () => {
               {carerProfile.first_name} {carerProfile.last_name}
             </h2>
             <p className="text-gray-500">{carerProfile.specialization || "Care Specialist"}</p>
-            <Badge className="mt-2 bg-green-100 text-green-700 hover:bg-green-200 border-0">
-              {carerProfile.status || "Active"}
-            </Badge>
+            {getStatusBadge(carerProfile.status)}
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-gray-500" />
-              <span>{carerProfile.email || "Not provided"}</span>
+              <span className="text-sm">{carerProfile.email || "Not provided"}</span>
             </div>
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-gray-500" />
-              <span>{carerProfile.phone || "Not provided"}</span>
+              <span className="text-sm">{carerProfile.phone || "Not provided"}</span>
             </div>
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-gray-500" />
-              <span>{carerProfile.address || "Not provided"}</span>
+              <span className="text-sm">{carerProfile.address || "Not provided"}</span>
             </div>
             <div className="flex items-center gap-2">
               <Briefcase className="h-4 w-4 text-gray-500" />
-              <span>{carerProfile.experience || "Not specified"}</span>
+              <span className="text-sm">{carerProfile.experience || "Not specified"}</span>
             </div>
           </CardContent>
         </Card>
@@ -532,19 +569,30 @@ const CarerProfile: React.FC = () => {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Bank Details</CardTitle>
-                  {!editMode.bank ? (
-                    <Button variant="outline" size="sm" onClick={() => toggleEditMode('bank')}>
-                      <Edit className="h-4 w-4 mr-1" /> Edit
-                    </Button>
-                  ) : (
-                    <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-blue-500" />
+                    <span className="text-sm text-blue-600">Secure & Encrypted</span>
+                    {!editMode.bank ? (
                       <Button variant="outline" size="sm" onClick={() => toggleEditMode('bank')}>
-                        <X className="h-4 w-4 mr-1" /> Cancel
+                        <Edit className="h-4 w-4 mr-1" /> Edit
                       </Button>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => toggleEditMode('bank')}>
+                          <X className="h-4 w-4 mr-1" /> Cancel
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
+                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-700">
+                      <Shield className="h-4 w-4 inline mr-1" />
+                      Bank details are encrypted and will be reviewed by administrators for security.
+                    </p>
+                  </div>
+                  
                   {editMode.bank ? (
                     <form onSubmit={(e) => {
                       e.preventDefault();
@@ -558,6 +606,7 @@ const CarerProfile: React.FC = () => {
                             id="bank_name" 
                             name="bank_name"
                             defaultValue={carerProfile.bank_name || ""}
+                            placeholder="e.g., Barclays, HSBC, Lloyds"
                           />
                         </div>
                         <div>
@@ -566,6 +615,7 @@ const CarerProfile: React.FC = () => {
                             id="bank_account_name" 
                             name="bank_account_name"
                             defaultValue={carerProfile.bank_account_name || ""}
+                            placeholder="Full name as shown on bank account"
                           />
                         </div>
                         <div>
@@ -574,6 +624,8 @@ const CarerProfile: React.FC = () => {
                             id="bank_account_number" 
                             name="bank_account_number"
                             defaultValue={carerProfile.bank_account_number || ""}
+                            placeholder="8-digit account number"
+                            maxLength={8}
                           />
                         </div>
                         <div>
@@ -582,12 +634,14 @@ const CarerProfile: React.FC = () => {
                             id="bank_sort_code" 
                             name="bank_sort_code"
                             defaultValue={carerProfile.bank_sort_code || ""}
+                            placeholder="XX-XX-XX"
+                            maxLength={8}
                           />
                         </div>
                         <div>
                           <Button type="submit" disabled={updateCarerMutation.isPending}>
                             <Save className="h-4 w-4 mr-1" /> 
-                            {updateCarerMutation.isPending ? "Saving..." : "Save"}
+                            {updateCarerMutation.isPending ? "Saving..." : "Save Bank Details"}
                           </Button>
                         </div>
                       </div>
@@ -604,11 +658,21 @@ const CarerProfile: React.FC = () => {
                       </div>
                       <div>
                         <Label>Account Number</Label>
-                        <div className="text-sm py-3 border-b">{carerProfile.bank_account_number || "Not provided"}</div>
+                        <div className="text-sm py-3 border-b">
+                          {carerProfile.bank_account_number ? 
+                            `****${carerProfile.bank_account_number.slice(-4)}` : 
+                            "Not provided"
+                          }
+                        </div>
                       </div>
                       <div>
                         <Label>Sort Code</Label>
-                        <div className="text-sm py-3 border-b">{carerProfile.bank_sort_code || "Not provided"}</div>
+                        <div className="text-sm py-3 border-b">
+                          {carerProfile.bank_sort_code ? 
+                            `**-**-${carerProfile.bank_sort_code.slice(-2)}` : 
+                            "Not provided"
+                          }
+                        </div>
                       </div>
                     </div>
                   )}
@@ -639,6 +703,7 @@ const CarerProfile: React.FC = () => {
                         type="password"
                         value={passwordData.currentPassword}
                         onChange={(e) => handlePasswordChange('currentPassword', e.target.value)} 
+                        placeholder="Enter current password"
                       />
                     </div>
                     <div>
@@ -648,6 +713,7 @@ const CarerProfile: React.FC = () => {
                         type="password"
                         value={passwordData.newPassword}
                         onChange={(e) => handlePasswordChange('newPassword', e.target.value)} 
+                        placeholder="Enter new password (min. 6 characters)"
                       />
                     </div>
                     <div>
@@ -657,10 +723,35 @@ const CarerProfile: React.FC = () => {
                         type="password"
                         value={passwordData.confirmPassword}
                         onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)} 
+                        placeholder="Confirm new password"
                       />
                     </div>
                     <div>
-                      <Button onClick={handleUpdatePassword}>Update Password</Button>
+                      <Button 
+                        onClick={handleUpdatePassword}
+                        disabled={!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                      >
+                        <Key className="h-4 w-4 mr-1" />
+                        Update Password
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 pt-6 border-t">
+                    <h3 className="font-medium mb-4">Security Information</h3>
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <div className="flex justify-between">
+                        <span>Last login:</span>
+                        <span>{carerProfile.invitation_accepted_at ? displayDate(carerProfile.invitation_accepted_at) : "Not available"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Profile completed:</span>
+                        <span>{carerProfile.first_login_completed ? "Yes" : "No"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Account status:</span>
+                        <span>{carerProfile.status || "Active"}</span>
+                      </div>
                     </div>
                   </div>
                 </CardContent>

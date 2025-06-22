@@ -6,38 +6,56 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
+import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useUpdateCarer } from "@/data/hooks/useBranchCarers";
 import { toast } from "sonner";
 
 export default function CarerOnboarding() {
   const [profileData, setProfileData] = useState({
     phone: "",
-    emergency_contact: "",
-    bio: "",
-    specializations: "",
-    availability_notes: ""
+    emergency_contact_name: "",
+    emergency_contact_phone: "",
+    specialization: "",
+    availability: ""
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { carerProfile } = useCarerAuthSafe();
+  const { carerProfile } = useCarerAuth();
+  const updateCarerMutation = useUpdateCarer();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // For now, we'll just simulate completion and redirect
-      // In the future, this could call an API to update the profile
-      console.log("Profile completion data:", profileData);
+      if (!carerProfile?.id) {
+        throw new Error("No carer profile found");
+      }
+
+      // Update the carer profile with onboarding data
+      await updateCarerMutation.mutateAsync({
+        id: carerProfile.id,
+        phone: profileData.phone || carerProfile.phone,
+        emergency_contact_name: profileData.emergency_contact_name,
+        emergency_contact_phone: profileData.emergency_contact_phone,
+        specialization: profileData.specialization || carerProfile.specialization,
+        availability: profileData.availability || carerProfile.availability,
+        first_login_completed: true,
+        profile_completed: true
+      });
       
       toast.success("Profile completed successfully!");
       navigate("/carer-dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Profile completion error:", error);
-      toast.error("Failed to complete profile. Please try again.");
+      toast.error(error.message || "Failed to complete profile. Please try again.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setProfileData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -67,52 +85,52 @@ export default function CarerOnboarding() {
             <Input
               id="phone"
               type="tel"
-              placeholder="Enter your phone number"
+              placeholder={carerProfile?.phone || "Enter your phone number"}
               value={profileData.phone}
-              onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
+              onChange={(e) => handleInputChange('phone', e.target.value)}
             />
           </div>
 
           <div>
-            <Label htmlFor="emergency_contact">Emergency Contact</Label>
+            <Label htmlFor="emergency_contact_name">Emergency Contact Name</Label>
             <Input
-              id="emergency_contact"
+              id="emergency_contact_name"
               type="text"
-              placeholder="Emergency contact name and number"
-              value={profileData.emergency_contact}
-              onChange={(e) => setProfileData(prev => ({ ...prev, emergency_contact: e.target.value }))}
+              placeholder={carerProfile?.emergency_contact_name || "Emergency contact name"}
+              value={profileData.emergency_contact_name}
+              onChange={(e) => handleInputChange('emergency_contact_name', e.target.value)}
             />
           </div>
 
           <div>
-            <Label htmlFor="bio">Brief Bio</Label>
-            <Textarea
-              id="bio"
-              placeholder="Tell us a bit about yourself and your experience"
-              value={profileData.bio}
-              onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
-              rows={3}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="specializations">Specializations</Label>
+            <Label htmlFor="emergency_contact_phone">Emergency Contact Phone</Label>
             <Input
-              id="specializations"
-              type="text"
-              placeholder="e.g., Elderly care, Mental health, Mobility assistance"
-              value={profileData.specializations}
-              onChange={(e) => setProfileData(prev => ({ ...prev, specializations: e.target.value }))}
+              id="emergency_contact_phone"
+              type="tel"
+              placeholder={carerProfile?.emergency_contact_phone || "Emergency contact phone"}
+              value={profileData.emergency_contact_phone}
+              onChange={(e) => handleInputChange('emergency_contact_phone', e.target.value)}
             />
           </div>
 
           <div>
-            <Label htmlFor="availability_notes">Availability Notes</Label>
+            <Label htmlFor="specialization">Specialization</Label>
+            <Input
+              id="specialization"
+              type="text"
+              placeholder={carerProfile?.specialization || "e.g., Elderly care, Mental health, Mobility assistance"}
+              value={profileData.specialization}
+              onChange={(e) => handleInputChange('specialization', e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="availability">Availability</Label>
             <Textarea
-              id="availability_notes"
-              placeholder="Any specific availability preferences or restrictions"
-              value={profileData.availability_notes}
-              onChange={(e) => setProfileData(prev => ({ ...prev, availability_notes: e.target.value }))}
+              id="availability"
+              placeholder={carerProfile?.availability || "Your availability preferences"}
+              value={profileData.availability}
+              onChange={(e) => handleInputChange('availability', e.target.value)}
               rows={2}
             />
           </div>
@@ -121,9 +139,9 @@ export default function CarerOnboarding() {
             <CustomButton
               type="submit"
               className="w-full bg-blue-600 hover:bg-blue-700"
-              disabled={loading}
+              disabled={loading || updateCarerMutation.isPending}
             >
-              {loading ? "Completing Profile..." : "Complete Profile"}
+              {loading || updateCarerMutation.isPending ? "Completing Profile..." : "Complete Profile"}
               <CheckCircle className="ml-2 h-4 w-4" />
             </CustomButton>
           </div>
