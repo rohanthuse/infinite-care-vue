@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Search, Filter, Calendar, Download, ChevronDown, Wallet, Clock, CreditCard, Plus, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -202,32 +201,21 @@ const CarerPayments: React.FC = () => {
       </div>
       
       <div className="bg-white border border-gray-200 rounded-lg mb-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="border-b border-gray-200">
-            <TabsList className="h-auto p-0 bg-transparent border-b border-transparent">
-              <TabsTrigger 
-                value="payments" 
-                className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 data-[state=active]:shadow-none py-3 px-6 rounded-none font-medium border-b-2 border-transparent"
-              >
-                Payments History
-              </TabsTrigger>
-              <TabsTrigger 
-                value="expenses" 
-                className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 data-[state=active]:shadow-none py-3 px-6 rounded-none font-medium border-b-2 border-transparent"
-              >
-                Expense Claims
-              </TabsTrigger>
-              <TabsTrigger 
-                value="documents" 
-                className="data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-700 data-[state=active]:shadow-none py-3 px-6 rounded-none font-medium border-b-2 border-transparent"
-              >
-                Payment Documents
-              </TabsTrigger>
-            </TabsList>
-          </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="payments">
+              Payments History
+            </TabsTrigger>
+            <TabsTrigger value="expenses">
+              Expense Claims
+            </TabsTrigger>
+            <TabsTrigger value="documents">
+              Payment Documents
+            </TabsTrigger>
+          </TabsList>
           
-          <div className="p-4">
-            <TabsContent value="payments" className="mt-0 p-0">
+          <div className="p-6">
+            <TabsContent value="payments" className="mt-0">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                 <h2 className="text-lg font-semibold">Payment History</h2>
                 <div className="flex gap-2">
@@ -293,7 +281,7 @@ const CarerPayments: React.FC = () => {
               </div>
             </TabsContent>
             
-            <TabsContent value="expenses" className="mt-0 p-0">
+            <TabsContent value="expenses" className="mt-0">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                 <h2 className="text-lg font-semibold">Expense Claims</h2>
                 <div className="flex gap-2">
@@ -352,7 +340,7 @@ const CarerPayments: React.FC = () => {
               </div>
             </TabsContent>
             
-            <TabsContent value="documents" className="mt-0 p-0">
+            <TabsContent value="documents" className="mt-0">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                 <h2 className="text-lg font-semibold">Payment Documents</h2>
                 <div className="relative w-full sm:w-[250px]">
