@@ -4,13 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Activity, AlertTriangle, ArrowDown, ArrowUp, Clock, Filter, Search, FileText, BarChart3, Users } from "lucide-react";
+import { Activity, AlertTriangle, ArrowDown, ArrowUp, Clock, Filter, Search, FileText, BarChart3, Users, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNews2Patients } from "@/hooks/useNews2Data";
 import { News2AnalyticsDashboard } from "./News2AnalyticsDashboard";
+import { IndividualPatientCharts } from "./IndividualPatientCharts";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { generateNews2PDF } from "@/utils/pdfGenerator";
@@ -147,10 +148,14 @@ export const News2Dashboard = ({ branchId, branchName }: News2DashboardProps) =>
 
       {/* Tabs for Different Views */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Analytics Overview
+          </TabsTrigger>
+          <TabsTrigger value="individual" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            Individual Charts
           </TabsTrigger>
           <TabsTrigger value="patients" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -164,6 +169,10 @@ export const News2Dashboard = ({ branchId, branchName }: News2DashboardProps) =>
 
         <TabsContent value="overview" className="mt-6">
           <News2AnalyticsDashboard branchId={branchId} />
+        </TabsContent>
+
+        <TabsContent value="individual" className="mt-6">
+          <IndividualPatientCharts branchId={branchId} />
         </TabsContent>
 
         <TabsContent value="patients" className="mt-6">
