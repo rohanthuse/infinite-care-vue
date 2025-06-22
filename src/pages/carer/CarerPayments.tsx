@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Search, Filter, Calendar, Download, ChevronDown, Wallet, Clock, CreditCard, Plus, FileText, Loader2 } from "lucide-react";
+import { Search, Filter, Calendar, Download, ChevronDown, Wallet, Clock, CreditCard, Plus, FileText, Loader2, Eye, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,14 +9,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { format, addDays, subMonths } from "date-fns";
 import { useCarerPayments } from "@/hooks/useCarerPayments";
 import { useCarerExpenseManagement } from "@/hooks/useCarerExpenseManagement";
+import { useCarerExpenseEdit } from "@/hooks/useCarerExpenseEdit";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
 import { formatCurrency } from "@/utils/currencyFormatter";
 import { toast } from "sonner";
+import { ViewExpenseDialog } from "@/components/accounting/ViewExpenseDialog";
+import EditExpenseDialog from "@/components/carer/EditExpenseDialog";
 
 const CarerPayments: React.FC = () => {
   const [activeTab, setActiveTab] = useState("payments");
   const [periodFilter, setPeriodFilter] = useState("all");
   const [showAddExpense, setShowAddExpense] = useState(false);
+  const [showViewExpense, setShowViewExpense] = useState(false);
+  const [showEditExpense, setShowEditExpense] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<any>(null);
   const [expenseForm, setExpenseForm] = useState({
     description: "",
     category: "",
@@ -29,6 +35,7 @@ const CarerPayments: React.FC = () => {
   const { carerProfile } = useCarerAuth();
   const { data: paymentData, isLoading, error } = useCarerPayments();
   const { submitExpense, isSubmitting } = useCarerExpenseManagement();
+  const { updateExpense, isUpdating } = useCarerExpenseEdit();
 
   // Loading state
   if (isLoading) {
@@ -166,6 +173,25 @@ const CarerPayments: React.FC = () => {
       default:
         return 'Payment';
     }
+  };
+
+  const handleViewExpense = (expense: any) => {
+    setSelectedExpense(expense);
+    setShowViewExpense(true);
+  };
+
+  const handleEditExpense = (expense: any) => {
+    setSelectedExpense(expense);
+    setShowEditExpense(true);
+  };
+
+  const handleViewExpenseEdit = () => {
+    setShowViewExpense(false);
+    setShowEditExpense(true);
+  };
+
+  const handleUpdateExpense = async (expenseData: any) => {
+    await updateExpense.mutateAsync(expenseData);
   };
 
   return (
@@ -328,9 +354,28 @@ const CarerPayments: React.FC = () => {
                           </span>
                         </td>
                         <td className="py-4 px-4">
-                          <Button variant="ghost" size="sm">
-                            View
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleViewExpense(expense)}
+                              className="flex items-center gap-2"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              <span>View</span>
+                            </Button>
+                            {expense.status === 'pending' && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleEditExpense(expense)}
+                                className="flex items-center gap-2"
+                              >
+                                <Edit className="h-3.5 w-3.5" />
+                                <span>Edit</span>
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -515,6 +560,27 @@ const CarerPayments: React.FC = () => {
           </form>
         </DialogContent>
       </Dialog>
+      
+      {/* View Expense Dialog */}
+      {selectedExpense && (
+        <ViewExpenseDialog
+          open={showViewExpense}
+          onClose={() => setShowViewExpense(false)}
+          onEdit={handleViewExpenseEdit}
+          expense={selectedExpense}
+        />
+      )}
+      
+      {/* Edit Expense Dialog */}
+      {selectedExpense && (
+        <EditExpenseDialog
+          open={showEditExpense}
+          onClose={() => setShowEditExpense(false)}
+          expense={selectedExpense}
+          onUpdate={handleUpdateExpense}
+          isUpdating={isUpdating}
+        />
+      )}
     </div>
   );
 };
