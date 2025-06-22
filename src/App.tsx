@@ -26,30 +26,28 @@ function App() {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/super-admin" element={<SuperAdminLogin />} />
-            <Route path="/carer-login" element={<CarerLoginSafe />} />
-            <Route path="/carer-invitation" element={<CarerInvitation />} />
-            <Route path="/carer-onboarding" element={<CarerOnboarding />} />
-            <Route path="/client-login" element={<ClientLogin />} />
-            
-            {/* Wrap carer routes with TaskProvider */}
-            <Route path="/carer/*" element={
-              <TaskProvider>
-                {CarerRoutes()}
-              </TaskProvider>
-            } />
-            
-            {/* Include all client routes */}
-            {ClientRoutes()}
-            
-            {/* Admin routes - includes all branch dashboard specific routes */}
-            {AdminRoutes}
-            
-            {/* Fallback route for branch dashboard */}
-            <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
-          </Routes>
+          <TaskProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/super-admin" element={<SuperAdminLogin />} />
+              <Route path="/carer-login" element={<CarerLoginSafe />} />
+              <Route path="/carer-invitation" element={<CarerInvitation />} />
+              <Route path="/carer-onboarding" element={<CarerOnboarding />} />
+              <Route path="/client-login" element={<ClientLogin />} />
+              
+              {/* Include all carer routes with TaskProvider already wrapping them */}
+              {CarerRoutes()}
+              
+              {/* Include all client routes */}
+              {ClientRoutes()}
+              
+              {/* Admin routes - includes all branch dashboard specific routes */}
+              {AdminRoutes}
+              
+              {/* Fallback route for branch dashboard */}
+              <Route path="/branch-dashboard/:id/:branchName/*" element={<BranchDashboard />} />
+            </Routes>
+          </TaskProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
