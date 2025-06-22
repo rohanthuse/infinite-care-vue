@@ -36,8 +36,8 @@ export const useAdminSetPassword = () => {
         throw new Error(error.message || 'Failed to set password');
       }
 
-      // Type guard to ensure data is an object with the expected structure
-      const response = data as AdminSetPasswordResponse;
+      // Safe type conversion: Json -> unknown -> AdminSetPasswordResponse
+      const response = data as unknown as AdminSetPasswordResponse;
       
       if (!response || typeof response !== 'object' || !('success' in response)) {
         console.error('[useAdminSetPassword] Invalid response format:', data);
