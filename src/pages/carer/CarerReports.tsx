@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { FileBarChart, Calendar, Download, ChevronRight, Filter, FileText, BarChart, PieChart, LineChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +17,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ReportExporter } from "@/utils/reportExporter";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { CarerAttendanceReports } from "@/components/reports/attendance/CarerAttendanceReports";
 
 type ReportType = 
   | "clinical"
@@ -228,6 +228,78 @@ const CarerReports: React.FC = () => {
                 </Button>
               </div>
             </div>
+          ) : activeReport === "attendance" ? (
+            <div id="attendance-reports-content">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full sm:w-auto">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      {dateRange?.from ? (
+                        dateRange.to ? (
+                          <>
+                            {format(dateRange.from, "LLL dd, y")} -{" "}
+                            {format(dateRange.to, "LLL dd, y")}
+                          </>
+                        ) : (
+                          format(dateRange.from, "LLL dd, y")
+                        )
+                      ) : (
+                        <span>Select date range</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      initialFocus
+                      mode="range"
+                      defaultMonth={dateRange?.from}
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    <span>Filter Reports</span>
+                  </Button>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button className="flex items-center gap-2">
+                        <Download className="h-4 w-4" />
+                        <span>Generate Report</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleExport("PDF")}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        <span>Generate PDF Report</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExport("CSV")}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        <span>Generate CSV Report</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExport("Excel")}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        <span>Generate Excel Report</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handleExport("Print")}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        <span>Print Current View</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+
+              <CarerAttendanceReports 
+                dateRange={dateRange?.from && dateRange?.to ? { from: dateRange.from, to: dateRange.to } : undefined}
+              />
+            </div>
           ) : (
             <div id={`${activeReport}-reports-content`}>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -302,10 +374,7 @@ const CarerReports: React.FC = () => {
                 </div>
                 <h3 className="text-lg font-medium text-gray-900">Report Coming Soon</h3>
                 <p className="text-gray-500 mt-2">
-                  {activeReport === "activity" ? 
-                    "Activity reports will show your care activities and client interactions." :
-                    "Attendance reports will show your working hours and attendance patterns."
-                  }
+                  Activity reports will show your care activities and client interactions.
                 </p>
                 <p className="text-gray-500 text-sm mt-1">Export functionality is available above.</p>
               </div>
