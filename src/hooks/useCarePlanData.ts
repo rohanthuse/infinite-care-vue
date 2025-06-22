@@ -129,6 +129,45 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
   return transformedData;
 };
 
+const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWithDetails[]> => {
+  console.log(`[fetchCarerAssignedCarePlans] Input carer ID: ${carerId}`);
+
+  const { data, error } = await supabase
+    .from('client_care_plans')
+    .select(`
+      *,
+      client:clients(
+        id,
+        first_name,
+        last_name,
+        avatar_initials
+      ),
+      goals:client_care_plan_goals(*),
+      activities:client_activities(*),
+      medications:client_medications(*),
+      staff:staff!staff_id(
+        id,
+        first_name,
+        last_name
+      )
+    `)
+    .eq('staff_id', carerId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching carer assigned care plans:', error);
+    throw error;
+  }
+
+  // Transform the data to handle potential null staff relations
+  const transformedData: CarePlanWithDetails[] = (data || []).map(item => ({
+    ...item,
+    staff: item.staff || null
+  }));
+
+  return transformedData;
+};
+
 export const useCarePlanData = (carePlanId: string) => {
   return useQuery({
     queryKey: ['care-plan', carePlanId],
@@ -142,5 +181,13 @@ export const useClientCarePlansWithDetails = (clientId: string) => {
     queryKey: ['client-care-plans-with-details', clientId],
     queryFn: () => fetchClientCarePlansWithDetails(clientId),
     enabled: Boolean(clientId),
+  });
+};
+
+export const useCarerAssignedCarePlans = (carerId: string) => {
+  return useQuery({
+    queryKey: ['carer-assigned-care-plans', carerId],
+    queryFn: () => fetchCarerAssignedCarePlans(carerId),
+    enabled: Boolean(carerId),
   });
 };

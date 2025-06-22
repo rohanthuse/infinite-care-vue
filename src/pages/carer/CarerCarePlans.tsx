@@ -8,17 +8,19 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { CarerCarePlanDetail } from "@/components/carer/CarerCarePlanDetail";
-import { useClientCarePlansWithDetails } from "@/hooks/useCarePlanData";
+import { useCarerAssignedCarePlans } from "@/hooks/useCarePlanData";
+import { useCarerAuth } from "@/hooks/useCarerAuth";
 
 const CarerCarePlans: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCarePlan, setSelectedCarePlan] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("all");
   
-  const clientId = "76394b1f-d2e3-43f2-b0ae-4605dcb75551"; // John Michael's client ID
-  const { data: carePlans, isLoading, error } = useClientCarePlansWithDetails(clientId);
+  const { user, carerProfile, isAuthenticated, loading } = useCarerAuth();
+  const { data: carePlans, isLoading, error } = useCarerAssignedCarePlans(user?.id || '');
 
-  if (isLoading) {
+  // Show loading state while checking authentication or loading care plans
+  if (loading || isLoading) {
     return (
       <div>
         <h1 className="text-2xl font-bold mb-6">My Care Plans</h1>
@@ -30,6 +32,11 @@ const CarerCarePlans: React.FC = () => {
         </div>
       </div>
     );
+  }
+
+  // Don't render if not authenticated
+  if (!isAuthenticated || !user) {
+    return null;
   }
 
   if (error) {
@@ -48,7 +55,7 @@ const CarerCarePlans: React.FC = () => {
   // Transform Supabase data to match the expected format
   const transformedCarePlans = carePlans?.map(plan => ({
     id: plan.id,
-    clientName: "John Michael", // We know this from the client ID
+    clientName: plan.client ? `${plan.client.first_name} ${plan.client.last_name}` : 'Unknown Client',
     dateCreated: new Date(plan.created_at),
     lastUpdated: new Date(plan.updated_at),
     status: plan.status === 'approved' ? 'Active' : plan.status,
@@ -169,7 +176,7 @@ const CarerCarePlans: React.FC = () => {
             <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
               <FileText className="h-6 w-6 text-gray-500" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900">No care plans found</h3>
+            <h3 className="text-lg font-medium text-gray-900">No care plans assigned</h3>
             <p className="text-gray-500 mt-2">
               {searchQuery ? "Try a different search term" : "You have no care plans assigned at this time"}
             </p>
