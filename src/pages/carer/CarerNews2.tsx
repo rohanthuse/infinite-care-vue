@@ -1,24 +1,23 @@
 
 import React, { useState, useEffect } from "react";
-import { Search, Filter, UserRound, AlertTriangle, ArrowUp, ArrowDown, Activity, Clock, RefreshCw, Calendar, Download, FileText, FileSpreadsheet, Printer, SlidersHorizontal } from "lucide-react";
+import { Search, Filter, UserRound, AlertTriangle, ArrowUp, ArrowDown, Activity, Clock, RefreshCw, Calendar, Download, FileText, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import { NewObservationDialog } from "@/components/reports/news2/NewObservationDialog";
 import { PatientDetailsDialog } from "@/components/reports/news2/PatientDetailsDialog";
-import { getNews2Patients } from "@/components/reports/news2/news2Data";
-import { News2Patient } from "@/components/reports/news2/news2Types";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DateRange } from "react-day-picker";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { addDays, format, isWithinInterval, parseISO } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { generateNews2PDF } from "@/utils/pdfGenerator";
+import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useNews2Patients, useNews2Alerts, News2Patient } from "@/hooks/useNews2Data";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type SortField = "name" | "score" | "lastUpdated";
 type SortDirection = "asc" | "desc";
@@ -26,10 +25,8 @@ type SortDirection = "asc" | "desc";
 const CarerNews2: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [urgencyFilter, setUrgencyFilter] = useState("all");
-  const [selectedPatient, setSelectedPatient] = useState<News2Patient | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [isNewObservationOpen, setIsNewObservationOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [patients, setPatients] = useState<News2Patient[]>([]);
   const [sortField, setSortField] = useState<SortField>("score");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -37,101 +34,55 @@ const CarerNews2: React.FC = () => {
     to: new Date(),
   });
   
-  // Load patients data from the same source as the admin dashboard
-  useEffect(() => {
-    loadPatientData();
-  }, []);
+  const { user, carerProfile, isAuthenticated, loading } = useCarerAuth();
+  const { data: news2Patients, isLoading: patientsLoading, refetch } = useNews2Patients(carerProfile?.branch_id);
+  const { data: alerts } = useNews2Alerts(carerProfile?.branch_id);
 
-  const loadPatientData = () => {
-    setIsLoading(true);
-    
-    setTimeout(() => {
-      const data = getNews2Patients();
-      setPatients(data);
-      setIsLoading(false);
-    }, 600);
-  };
+  // Show loading state while checking authentication or loading patients
+  if (loading || patientsLoading) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold mb-6">NEWS2 Monitoring</h1>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-24" />
+            ))}
+          </div>
+          <Skeleton className="h-96" />
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated
+  if (!isAuthenticated || !user || !carerProfile) {
+    return null;
+  }
 
   const handleRefresh = () => {
     toast.info("Refreshing data...");
-    loadPatientData();
+    refetch();
   };
 
-  // Handle exporting data in different formats
-  const handleExport = (format: string) => {
-    try {
-      if (format === "PDF") {
-        if (selectedPatient) {
-          generateNews2PDF(selectedPatient, "Med-Infinite Branch");
-          toast.success("PDF exported successfully", {
-            description: `NEWS2 report for ${selectedPatient.name} has been downloaded`
-          });
-        } else {
-          toast.error("Please select a patient first", {
-            description: "You must select a patient to export their report"
-          });
-        }
-      } else if (format === "CSV") {
-        if (selectedPatient) {
-          exportToCSV(selectedPatient);
-          toast.success("CSV exported successfully", {
-            description: `NEWS2 data for ${selectedPatient.name} has been downloaded`
-          });
-        } else {
-          toast.error("Please select a patient first", {
-            description: "You must select a patient to export their data"
-          });
-        }
-      } else if (format === "Print") {
-        window.print();
-        toast.success("Print dialog opened");
-      }
-    } catch (error) {
-      console.error("Export error:", error);
-      toast.error("Export failed", {
-        description: "There was a problem exporting the report"
-      });
-    }
-  };
+  // Transform NEWS2 patients to match the expected format for UI components
+  const transformedPatients = news2Patients?.map(patient => ({
+    id: patient.id,
+    name: patient.client ? `${patient.client.first_name} ${patient.client.last_name}` : 'Unknown Patient',
+    age: patient.client?.date_of_birth ? 
+      Math.floor((new Date().getTime() - new Date(patient.client.date_of_birth).getTime()) / (1000 * 60 * 60 * 24 * 365)) : 
+      'Unknown',
+    latestScore: patient.latest_observation?.total_score || 0,
+    lastUpdated: patient.latest_observation?.recorded_at || patient.updated_at,
+    trend: 'stable', // TODO: Calculate trend from observation history
+    riskLevel: patient.latest_observation?.risk_level || 'low',
+    observations: patient.observation_count || 0,
+    // Add the raw patient data for detailed view
+    _raw: patient
+  })) || [];
 
-  // Export patient data to CSV
-  const exportToCSV = (patient: News2Patient) => {
-    // Build CSV headers and format data
-    const headers = ["Date,Time,Patient ID,Patient Name,Score,Risk Level"];
-    const rows = patient.observations?.map(obs => {
-      const date = new Date(obs.dateTime);
-      let riskLevel = "Low Risk";
-      if (obs.score >= 7) riskLevel = "High Risk";
-      else if (obs.score >= 5) riskLevel = "Medium Risk";
-      
-      return [
-        format(date, "yyyy-MM-dd"), 
-        format(date, "HH:mm"), 
-        patient.id, 
-        patient.name, 
-        obs.score,
-        riskLevel
-      ].join(',');
-    }) || [];
-    
-    const csvContent = headers.concat(rows).join('\n');
-
-    // Create and download the file
-    const blob = new Blob([csvContent], {
-      type: 'text/csv;charset=utf-8;'
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `NEWS2_${patient.name.replace(/\s+/g, "_")}_${format(new Date(), "yyyy-MM-dd")}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-  
   // Filter patients based on search query, urgency, and date range
-  const filteredPatients = patients.filter(patient => {
+  const filteredPatients = transformedPatients.filter(patient => {
     // Text search
     const searchMatches = patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       patient.id.toLowerCase().includes(searchQuery.toLowerCase());
@@ -172,9 +123,9 @@ const CarerNews2: React.FC = () => {
   
   // Calculate counts for risk categories
   const patientsByRisk = {
-    high: patients.filter(p => p.latestScore >= 7).length,
-    medium: patients.filter(p => p.latestScore >= 5 && p.latestScore < 7).length,
-    low: patients.filter(p => p.latestScore < 5).length
+    high: transformedPatients.filter(p => p.latestScore >= 7).length,
+    medium: transformedPatients.filter(p => p.latestScore >= 5 && p.latestScore < 7).length,
+    low: transformedPatients.filter(p => p.latestScore < 5).length
   };
   
   // Utility functions for UI display
@@ -190,12 +141,6 @@ const CarerNews2: React.FC = () => {
     if (trend === "down") return <ArrowDown className="h-4 w-4 text-green-500" />;
     return <span className="h-4 w-4">–</span>;
   };
-  
-  const getVitalStatusColor = (status: string) => {
-    if (status === "high") return "text-red-500";
-    if (status === "medium") return "text-orange-500";
-    return "text-green-500";
-  };
 
   // Handle sorting change
   const handleSort = (field: SortField) => {
@@ -208,7 +153,7 @@ const CarerNews2: React.FC = () => {
   };
 
   // Handle new observation for a specific patient
-  const handleNewObservation = (patient?: News2Patient) => {
+  const handleNewObservation = (patient?: any) => {
     if (patient) {
       setSelectedPatient(patient);
     }
@@ -269,9 +214,9 @@ const CarerNews2: React.FC = () => {
             size="icon" 
             className="h-10 w-10"
             onClick={handleRefresh}
-            disabled={isLoading}
+            disabled={patientsLoading}
           >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 ${patientsLoading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
         
@@ -377,7 +322,7 @@ const CarerNews2: React.FC = () => {
       <NewObservationDialog
         open={isNewObservationOpen}
         onOpenChange={setIsNewObservationOpen}
-        patients={patients}
+        patients={transformedPatients}
         defaultPatientId={selectedPatient?.id}
       />
       
@@ -393,16 +338,7 @@ const CarerNews2: React.FC = () => {
   );
   
   // Helper function to render patient list
-  function renderPatientList(patients: News2Patient[]) {
-    if (isLoading) {
-      return (
-        <div className="py-12 text-center bg-white border border-gray-200 rounded-lg">
-          <div className="w-12 h-12 rounded-full border-4 border-t-blue-500 border-b-blue-500 border-l-transparent border-r-transparent animate-spin mx-auto mb-3"></div>
-          <h3 className="text-lg font-medium text-gray-900">Loading patients...</h3>
-        </div>
-      );
-    }
-    
+  function renderPatientList(patients: any[]) {
     if (patients.length === 0) {
       return (
         <div className="py-12 text-center bg-white border border-gray-200 rounded-lg">
@@ -423,7 +359,7 @@ const CarerNews2: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-medium">
-                {patient.name.split(" ").map(name => name[0]).join("")}
+                {patient.name.split(" ").map((name: string) => name[0]).join("")}
               </div>
               
               <div>
@@ -438,7 +374,7 @@ const CarerNews2: React.FC = () => {
                     <span>Last updated: {format(new Date(patient.lastUpdated), "dd MMM, HH:mm")}</span>
                   </div>
                   <div className="flex items-center">
-                    <div>ID: {patient.id}</div>
+                    <div>ID: {patient.id.slice(0, 8)}...</div>
                   </div>
                 </div>
               </div>
@@ -460,17 +396,6 @@ const CarerNews2: React.FC = () => {
               </div>
               
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleExport("PDF");
-                  }}
-                >
-                  <FileText className="h-4 w-4 mr-1" />
-                  Export
-                </Button>
                 <Button 
                   size="sm"
                   onClick={(e) => {

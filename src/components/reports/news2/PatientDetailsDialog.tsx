@@ -1,161 +1,288 @@
 
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { News2Patient } from "./news2Types";
-import { format } from "date-fns";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { FileText, Printer } from "lucide-react";
-import { generateNews2PDF } from "@/utils/pdfGenerator";
-import { toast } from "sonner";
+import { 
+  User, 
+  Calendar, 
+  TrendingUp, 
+  AlertTriangle, 
+  Activity,
+  Clock,
+  Download,
+  Thermometer,
+  Heart,
+  Gauge,
+  Zap,
+  Brain,
+  Stethoscope
+} from "lucide-react";
+import { format } from "date-fns";
+import { usePatientObservations } from "@/hooks/useNews2Data";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ObservationChart } from "./ObservationChart";
 
 interface PatientDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  patient: News2Patient;
+  patient: any;
 }
 
-export const PatientDetailsDialog: React.FC<PatientDetailsDialogProps> = ({
-  open,
-  onOpenChange,
-  patient,
-}) => {
-  const handleExport = () => {
-    try {
-      generateNews2PDF(patient, "Med-Infinite Branch");
-      toast.success("PDF exported successfully", {
-        description: `NEWS2 report for ${patient.name} has been downloaded`
-      });
-    } catch (error) {
-      toast.error("Export failed", {
-        description: "There was a problem exporting the report"
-      });
+export function PatientDetailsDialog({ open, onOpenChange, patient }: PatientDetailsDialogProps) {
+  const { data: observations, isLoading } = usePatientObservations(patient?._raw?.id);
+
+  if (!patient) return null;
+
+  const getScoreColor = (score: number) => {
+    if (score >= 7) return "text-red-600 bg-red-50";
+    if (score >= 5) return "text-orange-600 bg-orange-50";
+    if (score >= 3) return "text-yellow-600 bg-yellow-50";
+    return "text-green-600 bg-green-50";
+  };
+
+  const getRiskBadgeVariant = (risk: string) => {
+    switch (risk) {
+      case 'high': return 'destructive';
+      case 'medium': return 'default';
+      default: return 'secondary';
     }
   };
-  
-  // Function to get color based on score
-  const getScoreColor = (score: number) => {
-    if (score >= 7) return "bg-red-500 text-white";
-    if (score >= 5) return "bg-orange-500 text-white";
-    if (score >= 3) return "bg-yellow-500 text-white";
-    return "bg-green-500 text-white";
+
+  const getVitalIcon = (vital: string) => {
+    switch (vital) {
+      case 'respiratory_rate': return <Stethoscope className="h-4 w-4" />;
+      case 'oxygen_saturation': return <Zap className="h-4 w-4" />;
+      case 'systolic_bp': return <Gauge className="h-4 w-4" />;
+      case 'pulse_rate': return <Heart className="h-4 w-4" />;
+      case 'temperature': return <Thermometer className="h-4 w-4" />;
+      case 'consciousness_level': return <Brain className="h-4 w-4" />;
+      default: return <Activity className="h-4 w-4" />;
+    }
   };
+
+  const latestObservation = observations?.[0];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Patient NEWS2 Details</DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-6 mt-4">
-          {/* Patient Info */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b">
-            <div>
-              <h2 className="text-xl font-semibold">{patient.name}</h2>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 mt-1 text-gray-500">
-                <div>ID: {patient.id}</div>
-                <div>Age: {patient.age} years</div>
-                <div>Last updated: {format(new Date(patient.lastUpdated), "dd MMM yyyy, HH:mm")}</div>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col items-center">
-                <div className="text-sm text-gray-500 mb-1">Latest Score</div>
-                <div className={`w-10 h-10 rounded-full ${getScoreColor(patient.latestScore)} flex items-center justify-center font-bold text-lg`}>
-                  {patient.latestScore}
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={handleExport}>
-                  <FileText className="h-4 w-4 mr-1" />
-                  Export PDF
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => window.print()}>
-                  <Printer className="h-4 w-4 mr-1" />
-                  Print
-                </Button>
-              </div>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              {patient.name} - NEWS2 Monitoring
+            </DialogTitle>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export Report
+              </Button>
             </div>
           </div>
-          
-          {/* Clinical Action Based on Score */}
-          <Card className={`border-l-4 ${
-            patient.latestScore >= 7 
-              ? "border-l-red-500 bg-red-50" 
-              : patient.latestScore >= 5 
-                ? "border-l-amber-500 bg-amber-50" 
-                : "border-l-green-500 bg-green-50"
-          }`}>
-            <CardContent className="p-4">
-              <h3 className="font-medium mb-2">
-                {patient.latestScore >= 7 
-                  ? "Urgent Clinical Response Required" 
-                  : patient.latestScore >= 5 
-                    ? "Urgent Ward-Based Response Required" 
-                    : "Routine Monitoring"}
-              </h3>
-              <p className="text-sm">
-                {patient.latestScore >= 7 
-                  ? "Continuous monitoring, urgent assessment by a clinician with critical care competencies." 
-                  : patient.latestScore >= 5 
-                    ? "Urgent assessment by a clinician, increased frequency of monitoring." 
-                    : "Continue routine monitoring as per care plan."}
-              </p>
-            </CardContent>
-          </Card>
-          
-          {/* Observation History Table */}
-          {patient.observations && patient.observations.length > 0 ? (
-            <div>
-              <h3 className="text-lg font-medium mb-3">Observation History</h3>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date & Time</TableHead>
-                      <TableHead>Resp Rate</TableHead>
-                      <TableHead>SpO₂</TableHead>
-                      <TableHead>O₂ Therapy</TableHead>
-                      <TableHead>BP</TableHead>
-                      <TableHead>Pulse</TableHead>
-                      <TableHead>Consciousness</TableHead>
-                      <TableHead>Temp</TableHead>
-                      <TableHead>Score</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {patient.observations.map((obs) => (
-                      <TableRow key={obs.id}>
-                        <TableCell>{format(new Date(obs.dateTime), "dd MMM, HH:mm")}</TableCell>
-                        <TableCell>{obs.respRate}</TableCell>
-                        <TableCell>{obs.spo2}%</TableCell>
-                        <TableCell>{obs.o2Therapy ? "Yes" : "No"}</TableCell>
-                        <TableCell>{obs.systolicBP} mmHg</TableCell>
-                        <TableCell>{obs.pulse}</TableCell>
-                        <TableCell>{obs.consciousness}</TableCell>
-                        <TableCell>{obs.temperature}°C</TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor(obs.score)}`}>
-                            {obs.score}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {/* Patient Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-blue-600">{patient.age}</div>
+                <div className="text-sm text-gray-500">Years Old</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className={`text-2xl font-bold w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-1 ${getScoreColor(patient.latestScore)}`}>
+                  {patient.latestScore}
+                </div>
+                <div className="text-sm text-gray-500">Latest Score</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Badge variant={getRiskBadgeVariant(patient.riskLevel)} className="mb-2">
+                  {patient.riskLevel?.toUpperCase()} RISK
+                </Badge>
+                <div className="text-sm text-gray-500">Risk Level</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-purple-600">{patient.observations}</div>
+                <div className="text-sm text-gray-500">Total Observations</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Tabs defaultValue="observations" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="observations">Recent Observations</TabsTrigger>
+              <TabsTrigger value="trends">Trends & Charts</TabsTrigger>
+              <TabsTrigger value="alerts">Alerts & Actions</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="observations" className="space-y-4">
+              {isLoading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-32" />
+                  ))}
+                </div>
+              ) : observations && observations.length > 0 ? (
+                <div className="space-y-4">
+                  {observations.slice(0, 10).map((obs) => (
+                    <Card key={obs.id}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-gray-500" />
+                            <span className="font-medium">
+                              {format(new Date(obs.recorded_at), "PPP 'at' p")}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(obs.total_score)}`}>
+                              Score: {obs.total_score}
+                            </div>
+                            <Badge variant={getRiskBadgeVariant(obs.risk_level)}>
+                              {obs.risk_level.toUpperCase()}
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                          <div className="flex items-center gap-2">
+                            {getVitalIcon('respiratory_rate')}
+                            <div>
+                              <div className="text-sm font-medium">Resp. Rate</div>
+                              <div className="text-sm text-gray-600">
+                                {obs.respiratory_rate || 'N/A'} 
+                                {obs.respiratory_rate && <span className="ml-1 text-xs">({obs.respiratory_rate_score})</span>}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            {getVitalIcon('oxygen_saturation')}
+                            <div>
+                              <div className="text-sm font-medium">O₂ Sat</div>
+                              <div className="text-sm text-gray-600">
+                                {obs.oxygen_saturation || 'N/A'}
+                                {obs.oxygen_saturation && <span className="ml-1 text-xs">({obs.oxygen_saturation_score})</span>}
+                                {obs.supplemental_oxygen && <span className="ml-1 text-red-600 text-xs">(+O₂)</span>}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            {getVitalIcon('systolic_bp')}
+                            <div>
+                              <div className="text-sm font-medium">Sys BP</div>
+                              <div className="text-sm text-gray-600">
+                                {obs.systolic_bp || 'N/A'}
+                                {obs.systolic_bp && <span className="ml-1 text-xs">({obs.systolic_bp_score})</span>}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            {getVitalIcon('pulse_rate')}
+                            <div>
+                              <div className="text-sm font-medium">Pulse</div>
+                              <div className="text-sm text-gray-600">
+                                {obs.pulse_rate || 'N/A'}
+                                {obs.pulse_rate && <span className="ml-1 text-xs">({obs.pulse_rate_score})</span>}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div className="flex items-center gap-2">
+                            {getVitalIcon('temperature')}
+                            <div>
+                              <div className="text-sm font-medium">Temperature</div>
+                              <div className="text-sm text-gray-600">
+                                {obs.temperature || 'N/A'}°C
+                                {obs.temperature && <span className="ml-1 text-xs">({obs.temperature_score})</span>}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            {getVitalIcon('consciousness_level')}
+                            <div>
+                              <div className="text-sm font-medium">Consciousness</div>
+                              <div className="text-sm text-gray-600">
+                                {obs.consciousness_level} - {
+                                  obs.consciousness_level === 'A' ? 'Alert' :
+                                  obs.consciousness_level === 'V' ? 'Voice' :
+                                  obs.consciousness_level === 'P' ? 'Pain' : 'Unresponsive'
+                                }
+                                <span className="ml-1 text-xs">({obs.consciousness_level_score})</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {obs.clinical_notes && (
+                          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                            <div className="text-sm font-medium mb-1">Clinical Notes</div>
+                            <div className="text-sm text-gray-600">{obs.clinical_notes}</div>
+                          </div>
+                        )}
+
+                        {obs.action_taken && (
+                          <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+                            <div className="text-sm font-medium mb-1">Actions Taken</div>
+                            <div className="text-sm text-gray-600">{obs.action_taken}</div>
+                          </div>
+                        )}
+
+                        <div className="mt-3 text-xs text-gray-500">
+                          Recorded by: {obs.recorded_by ? `${obs.recorded_by.first_name} ${obs.recorded_by.last_name}` : 'Unknown'}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Activity className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <h3 className="text-lg font-medium text-gray-900">No observations recorded</h3>
+                  <p className="text-gray-500">Start monitoring by recording the first observation</p>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="trends" className="space-y-4">
+              {observations && observations.length > 0 ? (
+                <ObservationChart observations={observations} />
+              ) : (
+                <div className="text-center py-12">
+                  <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <h3 className="text-lg font-medium text-gray-900">No trend data available</h3>
+                  <p className="text-gray-500">Charts will appear once more observations are recorded</p>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="alerts" className="space-y-4">
+              <div className="text-center py-12">
+                <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                <h3 className="text-lg font-medium text-gray-900">Alert system coming soon</h3>
+                <p className="text-gray-500">Automated alerts and escalation protocols will be available here</p>
               </div>
-            </div>
-          ) : (
-            <div className="text-center py-6 bg-gray-50 rounded-md">
-              <p className="text-gray-500">No observation history available</p>
-            </div>
-          )}
+            </TabsContent>
+          </Tabs>
         </div>
       </DialogContent>
     </Dialog>
   );
-};
+}

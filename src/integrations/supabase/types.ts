@@ -3164,6 +3164,233 @@ export type Database = {
           },
         ]
       }
+      news2_alerts: {
+        Row: {
+          acknowledged: boolean
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_type: string
+          created_at: string
+          id: string
+          message: string
+          news2_observation_id: string
+          news2_patient_id: string
+          resolved: boolean
+          resolved_at: string | null
+          severity: string
+        }
+        Insert: {
+          acknowledged?: boolean
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type: string
+          created_at?: string
+          id?: string
+          message: string
+          news2_observation_id: string
+          news2_patient_id: string
+          resolved?: boolean
+          resolved_at?: string | null
+          severity?: string
+        }
+        Update: {
+          acknowledged?: boolean
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type?: string
+          created_at?: string
+          id?: string
+          message?: string
+          news2_observation_id?: string
+          news2_patient_id?: string
+          resolved?: boolean
+          resolved_at?: string | null
+          severity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news2_alerts_acknowledged_by_fkey"
+            columns: ["acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news2_alerts_news2_observation_id_fkey"
+            columns: ["news2_observation_id"]
+            isOneToOne: false
+            referencedRelation: "news2_observations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news2_alerts_news2_patient_id_fkey"
+            columns: ["news2_patient_id"]
+            isOneToOne: false
+            referencedRelation: "news2_patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      news2_observations: {
+        Row: {
+          action_taken: string | null
+          clinical_notes: string | null
+          consciousness_level: string
+          consciousness_level_score: number
+          created_at: string
+          id: string
+          news2_patient_id: string
+          next_review_time: string | null
+          oxygen_saturation: number | null
+          oxygen_saturation_score: number
+          pulse_rate: number | null
+          pulse_rate_score: number
+          recorded_at: string
+          recorded_by_staff_id: string
+          respiratory_rate: number | null
+          respiratory_rate_score: number
+          risk_level: string
+          supplemental_oxygen: boolean
+          supplemental_oxygen_score: number
+          systolic_bp: number | null
+          systolic_bp_score: number
+          temperature: number | null
+          temperature_score: number
+          total_score: number
+          updated_at: string
+        }
+        Insert: {
+          action_taken?: string | null
+          clinical_notes?: string | null
+          consciousness_level?: string
+          consciousness_level_score?: number
+          created_at?: string
+          id?: string
+          news2_patient_id: string
+          next_review_time?: string | null
+          oxygen_saturation?: number | null
+          oxygen_saturation_score?: number
+          pulse_rate?: number | null
+          pulse_rate_score?: number
+          recorded_at?: string
+          recorded_by_staff_id: string
+          respiratory_rate?: number | null
+          respiratory_rate_score?: number
+          risk_level?: string
+          supplemental_oxygen?: boolean
+          supplemental_oxygen_score?: number
+          systolic_bp?: number | null
+          systolic_bp_score?: number
+          temperature?: number | null
+          temperature_score?: number
+          total_score?: number
+          updated_at?: string
+        }
+        Update: {
+          action_taken?: string | null
+          clinical_notes?: string | null
+          consciousness_level?: string
+          consciousness_level_score?: number
+          created_at?: string
+          id?: string
+          news2_patient_id?: string
+          next_review_time?: string | null
+          oxygen_saturation?: number | null
+          oxygen_saturation_score?: number
+          pulse_rate?: number | null
+          pulse_rate_score?: number
+          recorded_at?: string
+          recorded_by_staff_id?: string
+          respiratory_rate?: number | null
+          respiratory_rate_score?: number
+          risk_level?: string
+          supplemental_oxygen?: boolean
+          supplemental_oxygen_score?: number
+          systolic_bp?: number | null
+          systolic_bp_score?: number
+          temperature?: number | null
+          temperature_score?: number
+          total_score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news2_observations_news2_patient_id_fkey"
+            columns: ["news2_patient_id"]
+            isOneToOne: false
+            referencedRelation: "news2_patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news2_observations_recorded_by_staff_id_fkey"
+            columns: ["recorded_by_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      news2_patients: {
+        Row: {
+          assigned_carer_id: string | null
+          branch_id: string
+          client_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          monitoring_frequency: string
+          notes: string | null
+          risk_category: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_carer_id?: string | null
+          branch_id: string
+          client_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          monitoring_frequency?: string
+          notes?: string | null
+          risk_category?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_carer_id?: string | null
+          branch_id?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          monitoring_frequency?: string
+          notes?: string | null
+          risk_category?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news2_patients_assigned_carer_id_fkey"
+            columns: ["assigned_carer_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news2_patients_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news2_patients_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           created_at: string
@@ -4661,6 +4888,28 @@ export type Database = {
       calculate_invoice_total: {
         Args: { invoice_id: string }
         Returns: number
+      }
+      calculate_news2_score: {
+        Args: {
+          resp_rate: number
+          o2_sat: number
+          supp_o2: boolean
+          sys_bp: number
+          pulse: number
+          consciousness: string
+          temp: number
+        }
+        Returns: {
+          resp_score: number
+          o2_score: number
+          supp_o2_score: number
+          bp_score: number
+          pulse_score: number
+          consciousness_score: number
+          temp_score: number
+          total: number
+          risk: string
+        }[]
       }
       can_access_thread: {
         Args: { thread_id_param: string; user_id_param: string }
