@@ -1,14 +1,18 @@
 
 import React, { useState, useMemo } from "react";
-import { Plus, Search, MoreHorizontal, Edit, Trash2, Shield, UserCheck, Eye } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Edit, Trash2, Shield, UserCheck, Eye, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { AddCarerDialog } from "./AddCarerDialog";
 import { EditCarerDialog } from "./EditCarerDialog";
 import { SetCarerPasswordDialog } from "./SetCarerPasswordDialog";
+import { StatusChangeDialog } from "./StatusChangeDialog";
+import { BulkActionsBar } from "./BulkActionsBar";
+import { StatusFilterStats } from "./StatusFilterStats";
 import { CarerFilters } from "./CarerFilters";
-import { useBranchCarers, CarerDB, useDeleteCarer } from "@/data/hooks/useBranchCarers";
+import { useBranchCarers, CarerDB, useDeleteCarer, useUpdateCarer } from "@/data/hooks/useBranchCarers";
 import {
   Table,
   TableBody,
@@ -42,6 +46,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 interface TeamManagementSectionProps {
   branchId: string;
@@ -59,9 +64,12 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
   const [editingCarer, setEditingCarer] = useState<CarerDB | null>(null);
   const [settingPasswordCarer, setSettingPasswordCarer] = useState<CarerDB | null>(null);
   const [deletingCarer, setDeletingCarer] = useState<CarerDB | null>(null);
+  const [selectedCarers, setSelectedCarers] = useState<CarerDB[]>([]);
+  const [showStatusChangeDialog, setShowStatusChangeDialog] = useState(false);
 
   const { data: carers = [], isLoading } = useBranchCarers(branchId);
   const deleteMutation = useDeleteCarer();
+  const updateCarerMutation = useUpdateCarer();
 
   const filteredCarers = useMemo(() => {
     return carers.filter(carer => {
@@ -88,9 +96,54 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
     try {
       await deleteMutation.mutateAsync(deletingCarer.id);
       setDeletingCarer(null);
+      // Remove from selection if selected
+      setSelectedCarers(prev => prev.filter(c => c.id !== deletingCarer.id));
     } catch (error) {
       // Error is handled by the mutation
     }
+  };
+
+  const handleBulkStatusChange = async (carerIds: string[], newStatus: string, reason?: string) => {
+    try {
+      // Update each carer's status
+      for (const carerId of carerIds) {
+        await updateCarerMutation.mutateAsync({
+          id: carerId,
+          status: newStatus
+        });
+      }
+      
+      toast.success(`Status updated for ${carerIds.length} carer${carerIds.length > 1 ? 's' : ''}`, {
+        description: reason ? `Reason: ${reason}` : undefined
+      });
+      
+      // Clear selection
+      setSelectedCarers([]);
+    } catch (error) {
+      toast.error("Failed to update status", {
+        description: "Some carers may not have been updated successfully."
+      });
+    }
+  };
+
+  const handleCarerSelection = (carer: CarerDB, checked: boolean) => {
+    if (checked) {
+      setSelectedCarers(prev => [...prev, carer]);
+    } else {
+      setSelectedCarers(prev => prev.filter(c => c.id !== carer.id));
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedCarers(paginatedCarers);
+    } else {
+      setSelectedCarers([]);
+    }
+  };
+
+  const isCarerSelected = (carer: CarerDB) => {
+    return selectedCarers.some(c => c.id === carer.id);
   };
 
   const getStatusColor = (status: string) => {
@@ -101,6 +154,10 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         return 'bg-red-100 text-red-800 border-red-200';
       case 'pending invitation':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'on leave':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'training':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -156,6 +213,9 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         </Button>
       </div>
 
+      {/* Status Stats */}
+      <StatusFilterStats carers={carers} currentFilter={statusFilter} />
+
       {/* Search and Filters */}
       <div className="flex flex-col lg:flex-row gap-4">
         <div className="relative flex-1">
@@ -181,6 +241,12 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[50px]">
+                <Checkbox
+                  checked={paginatedCarers.length > 0 && paginatedCarers.every(carer => isCarerSelected(carer))}
+                  onCheckedChange={handleSelectAll}
+                />
+              </TableHead>
               <TableHead>Name</TableHead>
               <TableHead className="hidden md:table-cell">Email</TableHead>
               <TableHead className="hidden lg:table-cell">Phone</TableHead>
@@ -193,6 +259,12 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
           <TableBody>
             {paginatedCarers.map((carer) => (
               <TableRow key={carer.id}>
+                <TableCell>
+                  <Checkbox
+                    checked={isCarerSelected(carer)}
+                    onCheckedChange={(checked) => handleCarerSelection(carer, checked as boolean)}
+                  />
+                </TableCell>
                 <TableCell className="font-medium">
                   <div>
                     <div className="font-semibold">{carer.first_name} {carer.last_name}</div>
@@ -231,6 +303,15 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
                       <DropdownMenuItem onClick={() => setEditingCarer(carer)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          setSelectedCarers([carer]);
+                          setShowStatusChangeDialog(true);
+                        }}
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Change Status
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setSettingPasswordCarer(carer)}>
                         <Shield className="h-4 w-4 mr-2" />
@@ -300,6 +381,13 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         )}
       </div>
 
+      {/* Bulk Actions Bar */}
+      <BulkActionsBar
+        selectedCarers={selectedCarers}
+        onClearSelection={() => setSelectedCarers([])}
+        onBulkStatusChange={() => setShowStatusChangeDialog(true)}
+      />
+
       {/* Dialogs */}
       <AddCarerDialog 
         open={showAddDialog} 
@@ -317,6 +405,13 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         open={!!settingPasswordCarer}
         onOpenChange={(open) => !open && setSettingPasswordCarer(null)}
         carer={settingPasswordCarer}
+      />
+
+      <StatusChangeDialog
+        open={showStatusChangeDialog}
+        onOpenChange={setShowStatusChangeDialog}
+        carers={selectedCarers}
+        onStatusChange={handleBulkStatusChange}
       />
 
       <AlertDialog open={!!deletingCarer} onOpenChange={(open) => !open && setDeletingCarer(null)}>
