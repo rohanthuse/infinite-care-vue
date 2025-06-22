@@ -9,6 +9,13 @@ interface SetPasswordData {
   password: string;
 }
 
+interface DatabaseResponse {
+  success: boolean;
+  error?: string;
+  message?: string;
+  auth_user_id?: string;
+}
+
 export const useSetCarerPassword = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -25,11 +32,13 @@ export const useSetCarerPassword = () => {
 
       if (error) throw error;
       
-      if (data && !data.success) {
-        throw new Error(data.error || 'Failed to set password');
+      const response = data as DatabaseResponse;
+      
+      if (response && !response.success) {
+        throw new Error(response.error || 'Failed to set password');
       }
       
-      return data;
+      return response;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['branch-carers'] });
@@ -48,11 +57,11 @@ export const useSetCarerPassword = () => {
 
 export const useGenerateTemporaryPassword = () => {
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<string> => {
       const { data, error } = await supabase.rpc('generate_temporary_password');
       
       if (error) throw error;
-      return data;
+      return data as string;
     },
     onError: (error: any) => {
       console.error('Error generating temporary password:', error);
