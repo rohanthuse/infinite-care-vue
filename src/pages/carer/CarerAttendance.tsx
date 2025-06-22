@@ -21,7 +21,6 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
 import { useCarerBranch } from "@/hooks/useCarerBranch";
 import { useAttendanceRecords } from "@/hooks/useAttendanceRecords";
-import { useAutomaticAttendance, useGetTodayAttendance } from "@/hooks/useAutomaticAttendance";
 import { AttendanceStatusWidget } from "@/components/attendance/AttendanceStatusWidget";
 
 const CarerAttendance: React.FC = () => {
@@ -63,29 +62,31 @@ const CarerAttendance: React.FC = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {/* Today's Attendance Widget */}
-        <Card className="md:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle>Today's Attendance</CardTitle>
-            <CardDescription>
-              {format(new Date(), "EEEE, MMMM d, yyyy")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {user && carerBranch ? (
-              <AttendanceStatusWidget
-                personId={user.id}
-                personType="staff"
-                branchId={carerBranch.branch_id}
-                personName={`${carerBranch.first_name} ${carerBranch.last_name}`}
-                showActions={true}
-              />
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500">Loading your attendance status...</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <div className="md:col-span-2">
+          {user && carerBranch ? (
+            <AttendanceStatusWidget
+              personId={user.id}
+              personType="staff"
+              branchId={carerBranch.branch_id}
+              personName={`${carerBranch.first_name} ${carerBranch.last_name}`}
+              showActions={true}
+            />
+          ) : (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle>Today's Attendance</CardTitle>
+                <CardDescription>
+                  {format(new Date(), "EEEE, MMMM d, yyyy")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Loading your attendance status...</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
         
         <Card>
           <CardHeader className="pb-2">

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, MapPin, User, AlertCircle } from "lucide-react";
-import { useAutomaticAttendance, useGetTodayAttendance, AutoAttendanceData } from "@/hooks/useAutomaticAttendance";
+import { useAutomaticAttendance, useTodayAttendance, AutoAttendanceData } from "@/hooks/useAutomaticAttendance";
 import { format } from "date-fns";
 
 interface AttendanceStatusWidgetProps {
@@ -22,59 +22,8 @@ export function AttendanceStatusWidget({
   personName,
   showActions = true 
 }: AttendanceStatusWidgetProps) {
-  const [attendanceStatus, setAttendanceStatus] = React.useState<any>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [retryCount, setRetryCount] = React.useState(0);
-  
   const automaticAttendance = useAutomaticAttendance();
-  const getTodayAttendance = useGetTodayAttendance(personId);
-
-  const loadTodayAttendance = React.useCallback(async () => {
-    try {
-      console.log('[AttendanceStatusWidget] Loading attendance for:', personId);
-      setIsLoading(true);
-      setError(null);
-      
-      const today = await getTodayAttendance();
-      console.log('[AttendanceStatusWidget] Attendance data:', today);
-      setAttendanceStatus(today);
-      setRetryCount(0);
-    } catch (error: any) {
-      console.error('[AttendanceStatusWidget] Error loading attendance:', error);
-      setError(error.message || 'Failed to load attendance data');
-      
-      // Retry with exponential backoff (max 3 retries)
-      if (retryCount < 3) {
-        const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
-        setTimeout(() => {
-          setRetryCount(prev => prev + 1);
-          loadTodayAttendance();
-        }, delay);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [getTodayAttendance, retryCount, personId]);
-
-  React.useEffect(() => {
-    if (personId && branchId) {
-      loadTodayAttendance();
-    }
-  }, [loadTodayAttendance, personId, branchId]);
-
-  // Add loading timeout
-  React.useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (isLoading) {
-        console.warn('[AttendanceStatusWidget] Loading timeout reached');
-        setIsLoading(false);
-        setError('Loading timeout - please try refreshing');
-      }
-    }, 10000); // 10 second timeout
-
-    return () => clearTimeout(timeout);
-  }, [isLoading]);
+  const { data: attendanceStatus, isLoading, error, refetch } = useTodayAttendance(personId);
 
   const handleCheckIn = async () => {
     const attendanceData: AutoAttendanceData = {
@@ -86,7 +35,6 @@ export function AttendanceStatusWidget({
 
     try {
       await automaticAttendance.mutateAsync(attendanceData);
-      await loadTodayAttendance();
     } catch (error) {
       console.error('Check-in error:', error);
     }
@@ -102,7 +50,6 @@ export function AttendanceStatusWidget({
 
     try {
       await automaticAttendance.mutateAsync(attendanceData);
-      await loadTodayAttendance();
     } catch (error) {
       console.error('Check-out error:', error);
     }
@@ -135,15 +82,12 @@ export function AttendanceStatusWidget({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-sm text-red-600">
-            {error}
+            {error.message || 'Failed to load attendance data'}
           </div>
           <Button 
             size="sm" 
             variant="outline"
-            onClick={() => {
-              setRetryCount(0);
-              loadTodayAttendance();
-            }}
+            onClick={() => refetch()}
             className="w-full"
           >
             Retry

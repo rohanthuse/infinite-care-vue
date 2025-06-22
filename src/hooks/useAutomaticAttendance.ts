@@ -1,5 +1,4 @@
-
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -122,6 +121,7 @@ export const useAutomaticAttendance = () => {
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['attendance-records'] });
+      queryClient.invalidateQueries({ queryKey: ['today-attendance', variables.personId] });
       
       if (variables.action === 'check_in') {
         toast.success("Checked in successfully");
@@ -136,6 +136,37 @@ export const useAutomaticAttendance = () => {
   });
 };
 
+export const useTodayAttendance = (personId: string) => {
+  const today = format(new Date(), 'yyyy-MM-dd');
+  
+  return useQuery({
+    queryKey: ['today-attendance', personId, today],
+    queryFn: async () => {
+      console.log('[useTodayAttendance] Fetching attendance for:', personId, 'on:', today);
+      
+      const { data, error } = await supabase
+        .from('attendance_records')
+        .select('*')
+        .eq('person_id', personId)
+        .eq('attendance_date', today)
+        .maybeSingle();
+
+      if (error) {
+        console.error('[useTodayAttendance] Error:', error);
+        throw error;
+      }
+
+      console.log('[useTodayAttendance] Result:', data);
+      return data;
+    },
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 30000, // 30 seconds
+    enabled: !!personId
+  });
+};
+
+// Keep the old function for backward compatibility
 export const useGetTodayAttendance = (personId: string) => {
   return async () => {
     const today = format(new Date(), 'yyyy-MM-dd');
