@@ -4654,6 +4654,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_set_staff_password: {
+        Args: { p_staff_id: string; p_new_password: string; p_admin_id: string }
+        Returns: Json
+      }
       calculate_invoice_total: {
         Args: { invoice_id: string }
         Returns: number
@@ -4688,6 +4692,10 @@ export type Database = {
         Returns: undefined
       }
       generate_invite_token: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_temporary_password: {
         Args: Record<PropertyKey, never>
         Returns: string
       }

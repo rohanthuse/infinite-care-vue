@@ -1,305 +1,270 @@
 
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { 
-  SearchIcon, Filter, UserCheck, Download, RefreshCw, 
-  Edit, EyeIcon, HelpCircle, CheckCircle, 
-  ChevronLeft, ChevronRight, Trash2
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
+import React, { useState, useMemo } from "react";
+import { Plus, Search, MoreHorizontal, Eye, Edit, Trash2, Shield, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { CarerFilters } from "./CarerFilters";
 import { AddCarerDialog } from "./AddCarerDialog";
 import { EditCarerDialog } from "./EditCarerDialog";
-import RecruitmentSection from "./RecruitmentSection";
-import { useToast } from "@/hooks/use-toast";
-import { useBranchCarers, useDeleteCarer } from "@/data/hooks/useBranchCarers";
+import { SetCarerPasswordDialog } from "./SetCarerPasswordDialog";
+import { CarerFilters } from "./CarerFilters";
+import { useBranchCarers, CarerDB, useDeleteCarer } from "@/data/hooks/useBranchCarers";
+import { useLocation } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-export interface CarersTabProps {
-  branchId?: string;
-  branchName?: string;
-}
-
-export const CarersTab = ({ branchId, branchName }: CarersTabProps) => {
-  const { id, branchName: paramBranchName } = useParams();
-  const navigate = useNavigate();
-  const { toast } = useToast();
+export function CarersTab() {
+  const location = useLocation();
+  const branchId = location.pathname.split('/')[2];
   
-  const [searchValue, setSearchValue] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [specializationFilter, setSpecializationFilter] = useState("all");
-  const [availabilityFilter, setAvailabilityFilter] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [activeView, setActiveView] = useState("carers");
-  const itemsPerPage = 5;
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingCarer, setEditingCarer] = useState<CarerDB | null>(null);
+  const [settingPasswordCarer, setSettingPasswordCarer] = useState<CarerDB | null>(null);
+  const [deletingCarer, setDeletingCarer] = useState<CarerDB | null>(null);
 
-  // Use the actual branch ID from params or props
-  const currentBranchId = branchId || id;
-  
-  // Fetch carers data from Supabase
-  const { data: carers = [], isLoading, error, refetch } = useBranchCarers(currentBranchId);
-  const deleteCarerMutation = useDeleteCarer();
+  const { data: carers = [], isLoading } = useBranchCarers(branchId);
+  const deleteMutation = useDeleteCarer();
 
-  console.log('[CarersTab] Branch ID:', currentBranchId);
-  console.log('[CarersTab] Carers data:', carers);
+  const filteredCarers = useMemo(() => {
+    return carers.filter(carer => {
+      const matchesSearch = 
+        `${carer.first_name} ${carer.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        carer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        carer.specialization?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === "all" || carer.status === statusFilter;
+      const matchesSpecialization = specializationFilter === "all" || carer.specialization === specializationFilter;
+      
+      return matchesSearch && matchesStatus && matchesSpecialization;
+    });
+  }, [carers, searchTerm, statusFilter, specializationFilter]);
 
-  useEffect(() => {
-    if (error) {
-      console.error('[CarersTab] Error loading carers:', error);
-      toast({
-        title: "Error loading carers",
-        description: "Failed to load carers data. Please try again.",
-        variant: "destructive",
-      });
-    }
-  }, [error, toast]);
-
-  const filteredCarers = carers.filter((carer: any) => {
-    const fullName = `${carer.first_name} ${carer.last_name}`.toLowerCase();
-    const matchesSearch = 
-      fullName.includes(searchValue.toLowerCase()) ||
-      (carer.email && carer.email.toLowerCase().includes(searchValue.toLowerCase())) ||
-      carer.id.toLowerCase().includes(searchValue.toLowerCase());
+  const handleDelete = async () => {
+    if (!deletingCarer) return;
     
-    const matchesStatus = statusFilter === "all" || carer.status === statusFilter;
-    const matchesSpecialization = specializationFilter === "all" || carer.specialization === specializationFilter;
-    const matchesAvailability = availabilityFilter === "all" || carer.availability === availabilityFilter;
-    
-    return matchesSearch && matchesStatus && matchesSpecialization && matchesAvailability;
-  });
-
-  const totalPages = Math.ceil(filteredCarers.length / itemsPerPage);
-  const paginatedCarers = filteredCarers.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+    try {
+      await deleteMutation.mutateAsync(deletingCarer.id);
+      setDeletingCarer(null);
+    } catch (error) {
+      // Error is handled by the mutation
     }
   };
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'active':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'inactive':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'pending invitation':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const handleViewCarer = (carerId: string) => {
-    // Fixed navigation URL to include /carers/ segment
-    navigate(`/branch-dashboard/${id}/${branchName}/carers/${carerId}`);
+  const hasAuthAccount = (carer: CarerDB) => {
+    // Check if carer has completed invitation process or has been assigned a password
+    return carer.invitation_accepted_at || carer.first_login_completed;
   };
-
-  const handleDeleteCarer = async (carerId: string, carerName: string) => {
-    if (window.confirm(`Are you sure you want to delete ${carerName}? This action cannot be undone.`)) {
-      try {
-        await deleteCarerMutation.mutateAsync(carerId);
-      } catch (error) {
-        console.error('[CarersTab] Delete error:', error);
-      }
-    }
-  };
-
-  const handleRefresh = () => {
-    console.log('[CarersTab] Refreshing carers data');
-    refetch();
-  };
-
-  const getAvatarInitials = (firstName: string, lastName: string) => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  };
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [statusFilter, specializationFilter, availabilityFilter, searchValue]);
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div className="p-6 border-b border-gray-100">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-              <p className="text-muted-foreground">Loading carers...</p>
-            </div>
-          </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading carers...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-      <div className="p-6 border-b border-gray-100">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">Carers</h2>
-            <p className="text-gray-500 text-sm mt-1">
-              Manage carers and care staff, view their details, and track assignments
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isLoading}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            <AddCarerDialog branchId={currentBranchId} />
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Carers</h2>
+          <p className="text-gray-600">Manage your care team members</p>
         </div>
-        
-        <Tabs defaultValue="carers" value={activeView} onValueChange={setActiveView}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="carers">Active Carers ({carers.length})</TabsTrigger>
-            <TabsTrigger value="recruitment">Recruitment</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="carers" className="mt-0">
-            <CarerFilters 
-              searchValue={searchValue}
-              setSearchValue={setSearchValue}
-              statusFilter={statusFilter}
-              setStatusFilter={setStatusFilter}
-              specializationFilter={specializationFilter}
-              setSpecializationFilter={setSpecializationFilter}
-              availabilityFilter={availabilityFilter}
-              setAvailabilityFilter={setAvailabilityFilter}
-            />
-          </TabsContent>
-          
-          <TabsContent value="recruitment" className="mt-0">
-            {/* Recruitment section is empty - RecruitmentSection component handles its own filtering */}
-          </TabsContent>
-        </Tabs>
+        <Button onClick={() => setShowAddDialog(true)} className="bg-blue-600 hover:bg-blue-700">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Carer
+        </Button>
       </div>
-      
-      {activeView === "carers" ? (
-        <>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-white hover:bg-gray-50/90">
-                  <TableHead className="text-gray-600 font-medium w-[100px]">Carer ID</TableHead>
-                  <TableHead className="text-gray-600 font-medium">Carer Name</TableHead>
-                  <TableHead className="text-gray-600 font-medium">Email Address</TableHead>
-                  <TableHead className="text-gray-600 font-medium">Specialization</TableHead>
-                  <TableHead className="text-gray-600 font-medium">Experience</TableHead>
-                  <TableHead className="text-gray-600 font-medium">Availability</TableHead>
-                  <TableHead className="text-gray-600 font-medium">Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedCarers.length > 0 ? (
-                  paginatedCarers.map((carer: any) => (
-                    <TableRow key={carer.id} className="hover:bg-gray-50 border-t border-gray-100">
-                      <TableCell className="font-medium">{carer.id.slice(0, 8)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm">
-                            {getAvatarInitials(carer.first_name, carer.last_name)}
-                          </div>
-                          <span>{carer.last_name}, {carer.first_name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{carer.email || 'Not provided'}</TableCell>
-                      <TableCell>{carer.specialization || 'General Care'}</TableCell>
-                      <TableCell>{carer.experience || 'Not specified'}</TableCell>
-                      <TableCell>{carer.availability}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="outline" 
-                          className={`
-                            ${carer.status === "Active" ? "bg-green-50 text-green-700 border-0" : ""}
-                            ${carer.status === "Inactive" ? "bg-red-50 text-red-700 border-0" : ""}
-                            ${carer.status === "On Leave" ? "bg-amber-50 text-amber-700 border-0" : ""}
-                            ${carer.status === "Training" ? "bg-purple-50 text-purple-700 border-0" : ""}
-                            px-4 py-1 rounded-full
-                          `}
-                        >
-                          {carer.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8"
-                            onClick={() => handleViewCarer(carer.id)}
-                          >
-                            <EyeIcon className="h-4 w-4" />
-                          </Button>
-                          <EditCarerDialog carer={carer} />
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => handleDeleteCarer(carer.id, `${carer.first_name} ${carer.last_name}`)}
-                            disabled={deleteCarerMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-6 text-gray-500">
-                      {isLoading ? "Loading carers..." : "No carers found matching your search criteria."}
-                    </TableCell>
-                  </TableRow>
+
+      {/* Search and Filters */}
+      <div className="flex flex-col lg:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search carers by name, email, or specialization..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <CarerFilters
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          specializationFilter={specializationFilter}
+          onSpecializationFilterChange={setSpecializationFilter}
+          carers={carers}
+        />
+      </div>
+
+      {/* Carers Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredCarers.map((carer) => (
+          <Card key={carer.id} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900">
+                    {carer.first_name} {carer.last_name}
+                  </h3>
+                  <p className="text-sm text-gray-600">{carer.email}</p>
+                  <p className="text-sm text-gray-600">{carer.phone}</p>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setEditingCarer(carer)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSettingPasswordCarer(carer)}>
+                      <Shield className="h-4 w-4 mr-2" />
+                      Set Password
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => setDeletingCarer(carer)}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Status:</span>
+                  <Badge variant="outline" className={getStatusColor(carer.status)}>
+                    {carer.status}
+                  </Badge>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Auth Account:</span>
+                  <div className="flex items-center gap-1">
+                    {hasAuthAccount(carer) ? (
+                      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                        <UserCheck className="h-3 w-3 mr-1" />
+                        Set up
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                        <Shield className="h-3 w-3 mr-1" />
+                        Pending
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                {carer.specialization && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Specialization:</span>
+                    <span className="text-sm font-medium">{carer.specialization}</span>
+                  </div>
                 )}
-              </TableBody>
-            </Table>
-          </div>
-          
-          {paginatedCarers.length > 0 && (
-            <div className="flex items-center justify-between p-4 border-t border-gray-100">
-              <div className="text-sm text-gray-500">
-                Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredCarers.length)} of {filteredCarers.length} carers
+
+                {carer.availability && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Availability:</span>
+                    <span className="text-sm font-medium">{carer.availability}</span>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handlePreviousPage}
-                  disabled={currentPage === 1}
-                  className="h-8"
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Previous
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleNextPage}
-                  disabled={currentPage === totalPages}
-                  className="h-8"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="p-6">
-          <RecruitmentSection />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredCarers.length === 0 && (
+        <div className="text-center py-12">
+          <div className="text-gray-400 text-lg mb-2">No carers found</div>
+          <p className="text-gray-600">
+            {searchTerm || statusFilter !== "all" || specializationFilter !== "all"
+              ? "Try adjusting your search criteria"
+              : "Get started by adding your first carer"}
+          </p>
         </div>
       )}
+
+      {/* Dialogs */}
+      <AddCarerDialog 
+        open={showAddDialog} 
+        onOpenChange={setShowAddDialog}
+        branchId={branchId}
+      />
+
+      <EditCarerDialog
+        open={!!editingCarer}
+        onOpenChange={(open) => !open && setEditingCarer(null)}
+        carer={editingCarer}
+      />
+
+      <SetCarerPasswordDialog
+        open={!!settingPasswordCarer}
+        onOpenChange={(open) => !open && setSettingPasswordCarer(null)}
+        carer={settingPasswordCarer}
+      />
+
+      <AlertDialog open={!!deletingCarer} onOpenChange={(open) => !open && setDeletingCarer(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Carer</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {deletingCarer?.first_name} {deletingCarer?.last_name}? 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
-};
+}
