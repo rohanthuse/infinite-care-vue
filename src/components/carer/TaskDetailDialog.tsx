@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   Dialog, 
@@ -242,12 +241,12 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="client">Client</Label>
-                <Select value={client || "none"} onValueChange={(value) => setClient(value === "none" ? "" : value)}>
+                <Select value={client || "no-client"} onValueChange={(value) => setClient(value === "no-client" ? "" : value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select client" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="no-client">No Client</SelectItem>
                     {clients.map((c) => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
@@ -257,14 +256,14 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
               
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
-                <Select value={category || "general"} onValueChange={(value) => setCategory(value === "general" ? "" : value)}>
+                <Select value={category || "general"} onValueChange={(value) => setCategory(value === "general" ? "General" : value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="general">General</SelectItem>
-                    {categories.map((c) => (
-                      <SelectItem key={c} value={c.toLowerCase()}>{c}</SelectItem>
+                    {categories.filter(c => c !== "General").map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
