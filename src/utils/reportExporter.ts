@@ -9,7 +9,7 @@ export interface ExportOptions {
   columns: string[];
   fileName?: string;
   branchName?: string;
-  dateRange?: { from: Date; to: Date };
+  dateRange?: { from: Date; to: Date } | null;
 }
 
 export class ReportExporter {

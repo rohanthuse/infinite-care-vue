@@ -69,9 +69,9 @@ const CarerReports: React.FC = () => {
   ];
 
   // Handle exporting data
-  const handleExport = (format: string, patientId?: string) => {
+  const handleExport = (exportFormat: string, patientId?: string) => {
     try {
-      if (format === "PDF") {
+      if (exportFormat === "PDF") {
         if (activeReport === "clinical") {
           // For clinical data, use the NEWS2 PDF export
           if (patientId) {
@@ -87,7 +87,7 @@ const CarerReports: React.FC = () => {
             // Export summary of all patients
             const safeRange = dateRange && dateRange.from && dateRange.to 
               ? { from: dateRange.from, to: dateRange.to } 
-              : undefined;
+              : null;
               
             generateNews2SummaryPDF(
               patients, 
@@ -104,20 +104,24 @@ const CarerReports: React.FC = () => {
           const mockData = [
             { type: activeReport, name: "Sample Data", value: 100, date: format(new Date(), 'yyyy-MM-dd') }
           ];
+
+          const exportDateRange = dateRange?.from && dateRange?.to 
+            ? { from: dateRange.from, to: dateRange.to }
+            : null;
           
           ReportExporter.exportToPDF({
             title: `${reportOptions.find(r => r.id === activeReport)?.title} Report`,
             data: mockData,
             columns: ['type', 'name', 'value', 'date'],
             branchName: carerProfile?.branch_id || 'Med-Infinite Branch',
-            dateRange
+            dateRange: exportDateRange
           });
           
-          toast.success(`${format} export initiated`, {
+          toast.success(`${exportFormat} export initiated`, {
             description: "Your report will download shortly"
           });
         }
-      } else if (format === "CSV") {
+      } else if (exportFormat === "CSV") {
         const mockData = [
           { type: activeReport, name: "Sample Data", value: 100, date: format(new Date(), 'yyyy-MM-dd') }
         ];
@@ -128,10 +132,10 @@ const CarerReports: React.FC = () => {
           columns: ['type', 'name', 'value', 'date']
         });
         
-        toast.success(`${format} export initiated`, {
+        toast.success(`${exportFormat} export initiated`, {
           description: "Your data will download as a CSV file"
         });
-      } else if (format === "Excel") {
+      } else if (exportFormat === "Excel") {
         const mockData = [
           { type: activeReport, name: "Sample Data", value: 100, date: format(new Date(), 'yyyy-MM-dd') }
         ];
@@ -142,10 +146,10 @@ const CarerReports: React.FC = () => {
           columns: ['type', 'name', 'value', 'date']
         });
         
-        toast.success(`${format} export initiated`, {
+        toast.success(`${exportFormat} export initiated`, {
           description: "Your data will download as an Excel file"
         });
-      } else if (format === "Print") {
+      } else if (exportFormat === "Print") {
         const contentId = activeReport === "clinical" ? "news2-dashboard" : `${activeReport}-reports-content`;
         ReportExporter.printReport(contentId);
         toast.success("Print dialog opened");

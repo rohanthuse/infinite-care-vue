@@ -57,12 +57,16 @@ export function ComplianceReports({ branchId, branchName }: ComplianceReportsPro
         }))
       ];
 
+      const exportDateRange = dateRange?.from && dateRange?.to 
+        ? { from: dateRange.from, to: dateRange.to }
+        : null;
+
       const options = {
         title: 'Compliance Reports',
         data: exportData,
         columns: ['type', 'name', 'compliant', 'noncompliant', 'value'],
         branchName,
-        dateRange,
+        dateRange: exportDateRange,
         fileName: `Compliance_Report_${branchName}_${format(new Date(), 'yyyyMMdd')}`
       };
 

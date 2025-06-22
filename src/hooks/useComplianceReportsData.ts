@@ -45,7 +45,7 @@ export const useComplianceReportsData = ({ branchId, startDate, endDate }: Compl
         throw error;
       }
 
-      return data as ComplianceReportsData;
+      return (data as unknown) as ComplianceReportsData;
     },
     refetchInterval: 300000, // Refetch every 5 minutes
   });

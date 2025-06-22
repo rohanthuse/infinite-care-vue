@@ -48,7 +48,7 @@ export const useServiceReportsData = ({ branchId, startDate, endDate }: ServiceR
         throw error;
       }
 
-      return data as ServiceReportsData;
+      return (data as unknown) as ServiceReportsData;
     },
     refetchInterval: 300000, // Refetch every 5 minutes
   });
