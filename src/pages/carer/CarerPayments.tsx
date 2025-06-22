@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Search, Filter, Calendar, Download, ChevronDown, Wallet, Clock, CreditCard, Plus, FileText, Loader2, Eye, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { useCarerExpenseEdit } from "@/hooks/useCarerExpenseEdit";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
 import { formatCurrency } from "@/utils/currencyFormatter";
 import { toast } from "sonner";
-import { ViewExpenseDialog } from "@/components/accounting/ViewExpenseDialog";
+import ViewExpenseDialog from "@/components/accounting/ViewExpenseDialog";
 import EditExpenseDialog from "@/components/carer/EditExpenseDialog";
 
 const CarerPayments: React.FC = () => {
