@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { TaskProvider } from "@/contexts/TaskContext";
 import Index from "./pages/Index";
 import BranchDashboard from "./pages/BranchDashboard";
 import CarerLogin from "./pages/CarerLogin";
@@ -33,8 +34,12 @@ function App() {
             <Route path="/carer-onboarding" element={<CarerOnboarding />} />
             <Route path="/client-login" element={<ClientLogin />} />
             
-            {/* Include all carer routes */}
-            {CarerRoutes()}
+            {/* Wrap carer routes with TaskProvider */}
+            <Route path="/carer/*" element={
+              <TaskProvider>
+                {CarerRoutes()}
+              </TaskProvider>
+            } />
             
             {/* Include all client routes */}
             {ClientRoutes()}
