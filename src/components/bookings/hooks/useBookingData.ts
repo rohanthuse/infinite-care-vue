@@ -17,7 +17,12 @@ export function useBookingData(branchId?: string) {
   const {
     data: clientsResponse,
     isLoading: isLoadingClients
-  } = useBranchClients(branchId);
+  } = useBranchClients({
+    branchId,
+    searchTerm: "",
+    page: 1,
+    itemsPerPage: 100
+  });
   const { data: carersData = [], isLoading: isLoadingCarers } = useBranchCarers(branchId);
 
   const { clients, carers, bookings } = useMemo(() => {
@@ -29,7 +34,7 @@ export function useBookingData(branchId?: string) {
 
     // Extract clients from the response - the hook returns { clients: [], count: number }
     let clientsRaw = [];
-    if (clientsResponse && clientsResponse.clients && Array.isArray(clientsResponse.clients)) {
+    if (clientsResponse && Array.isArray(clientsResponse.clients)) {
       clientsRaw = clientsResponse.clients;
     }
 

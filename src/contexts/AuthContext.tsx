@@ -32,7 +32,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
     });
 
     // Cleanup subscription on unmount
@@ -52,6 +51,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signOut,
   };
 
-  // Always render children - don't block the UI during loading
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  // Render children only when not loading to prevent flicker
+  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 };

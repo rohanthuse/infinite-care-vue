@@ -10,13 +10,8 @@ interface UseBranchClientsParams {
     searchTerm?: string;
     statusFilter?: string;
     regionFilter?: string;
-    page?: number;
-    itemsPerPage?: number;
-}
-
-interface UseBranchClientsResponse {
-    clients: ClientFromDB[];
-    count: number;
+    page: number;
+    itemsPerPage: number;
 }
 
 const fetchBranchClients = async ({
@@ -24,9 +19,9 @@ const fetchBranchClients = async ({
     searchTerm,
     statusFilter,
     regionFilter,
-    page = 1,
-    itemsPerPage = 50,
-}: UseBranchClientsParams): Promise<UseBranchClientsResponse> => {
+    page,
+    itemsPerPage,
+}: UseBranchClientsParams) => {
     if (!branchId) {
         return { clients: [], count: 0 };
     }
@@ -64,19 +59,9 @@ const fetchBranchClients = async ({
     return { clients: data as ClientFromDB[], count: count ?? 0 };
 };
 
-// Simple version for basic usage
-export const useBranchClients = (branchId: string | undefined) => {
+export const useBranchClients = (params: UseBranchClientsParams) => {
     return useQuery({
-        queryKey: ['branch-clients', branchId],
-        queryFn: () => fetchBranchClients({ branchId }),
-        enabled: !!branchId,
-    });
-};
-
-// Enhanced version for advanced usage
-export const useBranchClientsAdvanced = (params: UseBranchClientsParams) => {
-    return useQuery({
-        queryKey: ['branch-clients-advanced', params],
+        queryKey: ['branch-clients', params],
         queryFn: () => fetchBranchClients(params),
         enabled: !!params.branchId,
     });

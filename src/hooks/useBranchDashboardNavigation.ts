@@ -10,7 +10,7 @@ export const useBranchDashboardNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Define valid tab names
+  // Define valid tab names to distinguish from branch names
   const validTabs = [
     'dashboard', 'key-parameters', 'workflow', 'task-matrix', 'training-matrix',
     'bookings', 'carers', 'clients', 'reviews', 'communication', 'medication',
@@ -21,15 +21,16 @@ export const useBranchDashboardNavigation = () => {
   const pathParts = location.pathname.split('/').filter(Boolean);
   let activeTab = 'dashboard'; // Default to dashboard
 
-  // Find the branch dashboard pattern and extract the tab
-  const branchDashboardIndex = pathParts.findIndex(part => part === 'branch-dashboard');
-  
-  if (branchDashboardIndex !== -1) {
-    // The tab should be at branchDashboardIndex + 3 (after id and branchName)
-    const potentialTab = pathParts[branchDashboardIndex + 3];
-    
+  // Find the index of the branch name in the path
+  const branchNameIndex = pathParts.findIndex(part => 
+    decodeURIComponent(part) === decodeURIComponent(branchName || '')
+  );
+
+  // If we found the branch name, check what comes after it
+  if (branchNameIndex !== -1 && branchNameIndex < pathParts.length - 1) {
+    const potentialTab = pathParts[branchNameIndex + 1];
     // Only use it as activeTab if it's a valid tab name
-    if (potentialTab && validTabs.includes(potentialTab)) {
+    if (validTabs.includes(potentialTab)) {
       activeTab = potentialTab;
     }
   }

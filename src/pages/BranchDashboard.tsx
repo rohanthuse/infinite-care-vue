@@ -212,6 +212,9 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         {activeTab === "clients" && (
           <ClientsManagementSection
             branchId={id}
+            onNewClient={handleNewClient}
+            onViewClient={handleViewClient}
+            onEditClient={handleEditClient}
           />
         )}
         {activeTab === "reviews" && <ReviewsTab branchId={id} branchName={branchName} />}

@@ -1898,13 +1898,11 @@ export type Database = {
           gender: string | null
           gp_details: string | null
           id: string
-          invitation_sent_at: string | null
           last_name: string
           middle_name: string | null
           mobile_number: string | null
           mobility_status: string | null
           other_identifier: string | null
-          password_set_by: string | null
           phone: string | null
           preferred_name: string | null
           pronouns: string | null
@@ -1913,7 +1911,6 @@ export type Database = {
           registered_on: string | null
           status: string | null
           telephone_number: string | null
-          temporary_password: string | null
           title: string | null
         }
         Insert: {
@@ -1932,13 +1929,11 @@ export type Database = {
           gender?: string | null
           gp_details?: string | null
           id?: string
-          invitation_sent_at?: string | null
           last_name: string
           middle_name?: string | null
           mobile_number?: string | null
           mobility_status?: string | null
           other_identifier?: string | null
-          password_set_by?: string | null
           phone?: string | null
           preferred_name?: string | null
           pronouns?: string | null
@@ -1947,7 +1942,6 @@ export type Database = {
           registered_on?: string | null
           status?: string | null
           telephone_number?: string | null
-          temporary_password?: string | null
           title?: string | null
         }
         Update: {
@@ -1966,13 +1960,11 @@ export type Database = {
           gender?: string | null
           gp_details?: string | null
           id?: string
-          invitation_sent_at?: string | null
           last_name?: string
           middle_name?: string | null
           mobile_number?: string | null
           mobility_status?: string | null
           other_identifier?: string | null
-          password_set_by?: string | null
           phone?: string | null
           preferred_name?: string | null
           pronouns?: string | null
@@ -1981,7 +1973,6 @@ export type Database = {
           registered_on?: string | null
           status?: string | null
           telephone_number?: string | null
-          temporary_password?: string | null
           title?: string | null
         }
         Relationships: [
@@ -4890,14 +4881,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      admin_set_client_password: {
-        Args: {
-          p_client_id: string
-          p_new_password: string
-          p_admin_id: string
-        }
-        Returns: Json
-      }
       admin_set_staff_password: {
         Args: { p_staff_id: string; p_new_password: string; p_admin_id: string }
         Returns: Json
