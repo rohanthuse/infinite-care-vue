@@ -4932,6 +4932,10 @@ export type Database = {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: boolean
       }
+      check_auth_schema_health: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       create_carer_with_invitation: {
         Args: { p_carer_data: Json; p_branch_id: string }
         Returns: string

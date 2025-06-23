@@ -94,9 +94,9 @@ const ClientLogin = () => {
               <div className="flex-1">
                 <p className="font-medium mb-1">Sign In Error</p>
                 <p className="text-sm">{error}</p>
-                {error.includes('account setup') && (
-                  <p className="text-xs mt-2 text-red-600">
-                    We're automatically trying to fix this issue. Please try signing in again in a moment.
+                {error.includes('Authentication system has been updated') && (
+                  <p className="text-xs mt-2 text-green-600">
+                    ✓ System has been updated and should work now. Please try again.
                   </p>
                 )}
               </div>

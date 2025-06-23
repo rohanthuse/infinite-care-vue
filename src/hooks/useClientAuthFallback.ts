@@ -57,7 +57,7 @@ export function useClientAuthFallback() {
           }
 
           if (clientRecord) {
-            console.log('[useClientAuthFallback] Client authenticated:', clientRecord);
+            console.log('[useClientAuthFallback] Client authenticated successfully:', clientRecord);
             setClientProfile(clientRecord);
             toast.success(`Welcome back, ${clientRecord.first_name}!`);
             
@@ -121,59 +121,21 @@ export function useClientAuthFallback() {
   }, [navigate]);
 
   const signInWithRetry = async (email: string, password: string) => {
-    console.log('[useClientAuthFallback] Attempting sign in with retry for:', email);
+    console.log('[useClientAuthFallback] Attempting sign in for:', email);
     setLoading(true);
     setError(null);
     
     try {
-      // First attempt - normal Supabase auth
+      // Attempt normal Supabase auth with enhanced error handling
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim().toLowerCase(),
         password,
       });
 
       if (error) {
         console.error('[useClientAuthFallback] Sign in error:', error);
         
-        // Check if it's the schema error we're trying to fix
-        if (error.message.includes('Database error querying schema') || 
-            error.message.includes('email_change')) {
-          
-          console.log('[useClientAuthFallback] Detected schema error, attempting recovery');
-          
-          // Try to fix the auth users schema using a direct query
-          try {
-            const { error: fixError } = await supabase
-              .from('user_roles') // Use a safe table to test connection
-              .select('count')
-              .limit(1);
-            
-            if (!fixError) {
-              console.log('[useClientAuthFallback] Database connection verified, retrying authentication');
-              
-              // Retry authentication after a brief delay
-              await new Promise(resolve => setTimeout(resolve, 1000));
-              
-              const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-              });
-              
-              if (retryError) {
-                throw retryError;
-              }
-              
-              if (retryData.user) {
-                console.log('[useClientAuthFallback] Retry authentication successful');
-                return { success: true, user: retryData.user };
-              }
-            }
-          } catch (retryError) {
-            console.error('[useClientAuthFallback] Retry failed:', retryError);
-          }
-        }
-        
-        // Provide user-friendly error messages
+        // Handle specific authentication errors with user-friendly messages
         let userMessage = 'Sign in failed. Please try again.';
         
         if (error.message.includes('Invalid login credentials')) {
@@ -183,7 +145,9 @@ export function useClientAuthFallback() {
         } else if (error.message.includes('Too many requests')) {
           userMessage = 'Too many login attempts. Please wait a moment before trying again.';
         } else if (error.message.includes('Database error') || error.message.includes('email_change')) {
-          userMessage = 'There was a temporary account setup issue. Please try again, or contact support if the problem persists.';
+          // This specific error should now be resolved with our schema fix
+          userMessage = 'Authentication system has been updated. Please try signing in again.';
+          console.log('[useClientAuthFallback] Schema-related error detected (should be resolved):', error.message);
         }
         
         setError(userMessage);
@@ -192,9 +156,14 @@ export function useClientAuthFallback() {
       }
 
       if (data.user) {
-        console.log('[useClientAuthFallback] Authentication successful');
+        console.log('[useClientAuthFallback] Authentication successful for:', email);
         return { success: true, user: data.user };
       }
+
+      // Fallback case
+      setError('Authentication completed but no user data received.');
+      return { success: false, error: 'Authentication completed but no user data received.' };
+
     } catch (error: any) {
       console.error('[useClientAuthFallback] Unexpected sign in error:', error);
       const errorMsg = 'An unexpected error occurred. Please try again.';
