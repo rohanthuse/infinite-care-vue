@@ -1,25 +1,18 @@
 
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, FileText, CreditCard, Clock } from "lucide-react";
+import { Calendar, FileText, CreditCard, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClientCarePlanDetailDialog } from "@/components/client/ClientCarePlanDetailDialog";
 import { RescheduleAppointmentDialog } from "@/components/client/RescheduleAppointmentDialog";
-import { useClientProfile, useClientCarePlans, useClientAppointments } from "@/hooks/useClientData";
-import { useAuth } from "@/hooks/useAuth";
-import { useParams } from "react-router-dom";
-import { format, parseISO, differenceInDays } from "date-fns";
+import { useClientProfile, useClientCarePlans, useClientAppointments, useClientBilling } from "@/hooks/useClientData";
+import { format, parseISO, differenceInDays, isValid } from "date-fns";
 
 const ClientOverview = () => {
-  const { user } = useAuth();
-  const params = useParams();
-  
-  // Get client ID from URL params or use user ID as fallback for self-service context
-  const clientId = params.clientId || user?.id || '';
-  
-  const { data: clientProfile, isLoading: profileLoading } = useClientProfile(clientId);
-  const { data: carePlans, isLoading: carePlansLoading } = useClientCarePlans(clientId);
-  const { data: appointments, isLoading: appointmentsLoading } = useClientAppointments(clientId);
+  const { data: clientProfile, isLoading: profileLoading, error: profileError } = useClientProfile();
+  const { data: carePlans, isLoading: carePlansLoading, error: carePlansError } = useClientCarePlans();
+  const { data: appointments, isLoading: appointmentsLoading, error: appointmentsError } = useClientAppointments();
+  const { data: billing, isLoading: billingLoading, error: billingError } = useClientBilling();
   
   const [carePlanDialogOpen, setCarePlanDialogOpen] = useState(false);
   const [isRescheduling, setIsRescheduling] = useState(false);
@@ -31,7 +24,19 @@ const ClientOverview = () => {
     setIsRescheduling(true);
   };
 
-  if (profileLoading || carePlansLoading || appointmentsLoading) {
+  // Helper function to safely parse dates
+  const safeParseDateString = (dateString: string | null | undefined) => {
+    if (!dateString) return null;
+    try {
+      const parsed = parseISO(dateString);
+      return isValid(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Show loading state
+  if (profileLoading || carePlansLoading || appointmentsLoading || billingLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -39,23 +44,41 @@ const ClientOverview = () => {
     );
   }
 
+  // Show error state
+  if (profileError || carePlansError || appointmentsError || billingError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to load data</h3>
+          <p className="text-gray-500">Please try refreshing the page or contact support if the problem persists.</p>
+        </div>
+      </div>
+    );
+  }
+
   // Get upcoming appointments (next 30 days)
   const upcomingAppointments = appointments?.filter(apt => {
-    const appointmentDate = parseISO(apt.appointment_date);
+    const appointmentDate = safeParseDateString(apt.appointment_date);
+    if (!appointmentDate) return false;
     const today = new Date();
     const daysDiff = differenceInDays(appointmentDate, today);
     return daysDiff >= 0 && daysDiff <= 30;
   }) || [];
 
   // Get active care plans
-  const activeCarePlans = carePlans?.filter(plan => plan.status === 'active') || [];
+  const activeCarePlans = carePlans?.filter(plan => plan.status?.toLowerCase() === 'active') || [];
 
   // Calculate next review date
   const nextReview = activeCarePlans.find(plan => plan.review_date)?.review_date;
-  const daysUntilReview = nextReview ? differenceInDays(parseISO(nextReview), new Date()) : null;
+  const daysUntilReview = nextReview ? (() => {
+    const reviewDate = safeParseDateString(nextReview);
+    return reviewDate ? differenceInDays(reviewDate, new Date()) : null;
+  })() : null;
 
-  // Mock payment data (this would come from client_billing table)
-  const mockPaymentDue = 150.00;
+  // Calculate total amount due from billing
+  const totalAmountDue = billing?.reduce((sum, bill) => sum + (bill.amount || 0), 0) || 0;
+  const nextDueDate = billing?.[0]?.due_date;
 
   return (
     <div className="space-y-8">
@@ -81,10 +104,10 @@ const ClientOverview = () => {
               <Calendar className="h-5 w-5 text-blue-600" />
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              {upcomingAppointments.length > 0 
-                ? `Next: ${format(parseISO(upcomingAppointments[0].appointment_date), 'MMM d')}`
-                : 'No upcoming appointments'
-              }
+              {upcomingAppointments.length > 0 ? (() => {
+                const nextDate = safeParseDateString(upcomingAppointments[0].appointment_date);
+                return nextDate ? `Next: ${format(nextDate, 'MMM d')}` : 'Date pending';
+              })() : 'No upcoming appointments'}
             </p>
           </CardContent>
         </Card>
@@ -99,10 +122,10 @@ const ClientOverview = () => {
               <FileText className="h-5 w-5 text-blue-600" />
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              {activeCarePlans.length > 0 
-                ? `Updated: ${format(parseISO(activeCarePlans[0].updated_at), 'MMM d')}`
-                : 'No active care plans'
-              }
+              {activeCarePlans.length > 0 ? (() => {
+                const updatedDate = safeParseDateString(activeCarePlans[0].updated_at);
+                return updatedDate ? `Updated: ${format(updatedDate, 'MMM d')}` : 'Recently updated';
+              })() : 'No active care plans'}
             </p>
           </CardContent>
         </Card>
@@ -113,10 +136,15 @@ const ClientOverview = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">${mockPaymentDue.toFixed(2)}</div>
+              <div className="text-2xl font-bold">£{totalAmountDue.toFixed(2)}</div>
               <CreditCard className="h-5 w-5 text-blue-600" />
             </div>
-            <p className="text-xs text-gray-500 mt-2">Due: May 15, 2025</p>
+            <p className="text-xs text-gray-500 mt-2">
+              {nextDueDate ? (() => {
+                const dueDate = safeParseDateString(nextDueDate);
+                return dueDate ? `Due: ${format(dueDate, 'MMM d, yyyy')}` : 'Due date pending';
+              })() : totalAmountDue > 0 ? 'Payment pending' : 'No outstanding payments'}
+            </p>
           </CardContent>
         </Card>
         
@@ -132,7 +160,10 @@ const ClientOverview = () => {
               <Clock className="h-5 w-5 text-blue-600" />
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              {nextReview ? `Care Plan Review: ${format(parseISO(nextReview), 'MMM d')}` : 'No review scheduled'}
+              {nextReview ? (() => {
+                const reviewDate = safeParseDateString(nextReview);
+                return reviewDate ? `Care Plan Review: ${format(reviewDate, 'MMM d')}` : 'Review date pending';
+              })() : 'No review scheduled'}
             </p>
           </CardContent>
         </Card>
@@ -145,34 +176,40 @@ const ClientOverview = () => {
         </div>
         <div className="divide-y divide-gray-200">
           {upcomingAppointments.length > 0 ? (
-            upcomingAppointments.slice(0, 3).map((appointment) => (
-              <div key={appointment.id} className="p-6 flex justify-between items-center">
-                <div>
-                  <p className="font-medium">{appointment.appointment_type}</p>
-                  <p className="text-sm text-gray-500">{appointment.provider_name}</p>
-                  <div className="flex items-center mt-2 text-xs text-gray-500">
-                    <Calendar className="h-3 w-3 mr-1" />
-                    <span>
-                      {format(parseISO(appointment.appointment_date), 'MMM d, yyyy')} • {appointment.appointment_time}
-                    </span>
+            upcomingAppointments.slice(0, 3).map((appointment) => {
+              const appointmentDate = safeParseDateString(appointment.appointment_date);
+              return (
+                <div key={appointment.id} className="p-6 flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">{appointment.appointment_type}</p>
+                    <p className="text-sm text-gray-500">{appointment.provider_name}</p>
+                    <div className="flex items-center mt-2 text-xs text-gray-500">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      <span>
+                        {appointmentDate 
+                          ? `${format(appointmentDate, 'MMM d, yyyy')} • ${appointment.appointment_time}`
+                          : 'Date and time pending'
+                        }
+                      </span>
+                    </div>
                   </div>
+                  <Button 
+                    size="sm" 
+                    onClick={() => handleReschedule({
+                      id: appointment.id,
+                      type: appointment.appointment_type,
+                      provider: appointment.provider_name,
+                      date: appointmentDate ? format(appointmentDate, 'MMM d, yyyy') : 'Date pending',
+                      time: appointment.appointment_time,
+                      location: appointment.location,
+                      status: appointment.status
+                    })}
+                  >
+                    Reschedule
+                  </Button>
                 </div>
-                <Button 
-                  size="sm" 
-                  onClick={() => handleReschedule({
-                    id: appointment.id,
-                    type: appointment.appointment_type,
-                    provider: appointment.provider_name,
-                    date: format(parseISO(appointment.appointment_date), 'MMM d, yyyy'),
-                    time: appointment.appointment_time,
-                    location: appointment.location,
-                    status: appointment.status
-                  })}
-                >
-                  Reschedule
-                </Button>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="p-6 text-center text-gray-500">
               No upcoming appointments scheduled
@@ -219,10 +256,12 @@ const ClientOverview = () => {
               <div>
                 <h4 className="font-medium text-gray-900">Next Steps</h4>
                 <p className="mt-1 text-sm text-gray-600">
-                  {nextReview 
-                    ? `Your next care plan review is scheduled for ${format(parseISO(nextReview), 'MMM d, yyyy')}. Please complete your weekly self-assessment forms before this date.`
-                    : 'Continue following your care plan. Contact your provider if you have any questions.'
-                  }
+                  {nextReview ? (() => {
+                    const reviewDate = safeParseDateString(nextReview);
+                    return reviewDate 
+                      ? `Your next care plan review is scheduled for ${format(reviewDate, 'MMM d, yyyy')}. Please complete your weekly self-assessment forms before this date.`
+                      : 'Your care plan review is being scheduled. Please complete your weekly self-assessment forms.';
+                  })() : 'Continue following your care plan. Contact your provider if you have any questions.'}
                 </p>
               </div>
             </div>
