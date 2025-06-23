@@ -100,7 +100,7 @@ const fetchCarerSchedule = async (carerId: string): Promise<CarerScheduleData> =
         const firstClient = clientData[0];
         return firstClient ? `${firstClient.first_name || ''} ${firstClient.last_name || ''}`.trim() : 'Unknown Client';
       } else {
-        return `${clientData.first_name || ''} ${clientData.last_name || ''}`.trim();
+        return `${(clientData as any)?.first_name || ''} ${(clientData as any)?.last_name || ''}`.trim();
       }
     })()
   } : null;
