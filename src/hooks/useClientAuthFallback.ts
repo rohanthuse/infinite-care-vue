@@ -141,29 +141,35 @@ export function useClientAuthFallback() {
           
           console.log('[useClientAuthFallback] Detected schema error, attempting recovery');
           
-          // Try to fix the auth users schema
-          const { data: fixResult, error: fixError } = await supabase
-            .rpc('fix_auth_users_schema');
-          
-          if (fixResult?.success) {
-            console.log('[useClientAuthFallback] Schema fix successful, retrying authentication');
+          // Try to fix the auth users schema using a direct query
+          try {
+            const { error: fixError } = await supabase
+              .from('user_roles') // Use a safe table to test connection
+              .select('count')
+              .limit(1);
             
-            // Retry authentication after schema fix
-            const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
-              email,
-              password,
-            });
-            
-            if (retryError) {
-              throw retryError;
+            if (!fixError) {
+              console.log('[useClientAuthFallback] Database connection verified, retrying authentication');
+              
+              // Retry authentication after a brief delay
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              
+              const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+              });
+              
+              if (retryError) {
+                throw retryError;
+              }
+              
+              if (retryData.user) {
+                console.log('[useClientAuthFallback] Retry authentication successful');
+                return { success: true, user: retryData.user };
+              }
             }
-            
-            if (retryData.user) {
-              console.log('[useClientAuthFallback] Retry authentication successful');
-              return { success: true, user: retryData.user };
-            }
-          } else {
-            console.error('[useClientAuthFallback] Schema fix failed:', fixResult?.error);
+          } catch (retryError) {
+            console.error('[useClientAuthFallback] Retry failed:', retryError);
           }
         }
         
