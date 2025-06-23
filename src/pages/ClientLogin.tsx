@@ -41,8 +41,13 @@ const ClientLogin = () => {
 
       console.log('[ClientLogin] Client check result:', { clientCheck, clientCheckError });
 
-      if (clientCheckError || !clientCheck) {
+      if (clientCheckError) {
         console.error('[ClientLogin] Client not found in database:', clientCheckError);
+        setError("No client account found with this email address. Please contact support.");
+        return;
+      }
+
+      if (!clientCheck) {
         setError("No client account found with this email address. Please contact support.");
         return;
       }

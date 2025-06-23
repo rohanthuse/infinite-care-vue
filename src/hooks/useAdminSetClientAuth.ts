@@ -27,8 +27,13 @@ const setupClientAuth = async ({ clientId, password, adminId }: SetupClientAuthP
       .eq('id', clientId)
       .single();
 
-    if (clientError || !client) {
+    if (clientError) {
+      console.error('[setupClientAuth] Client lookup error:', clientError);
       throw new Error('Client not found');
+    }
+
+    if (!client || !client.email) {
+      throw new Error('Client not found or missing email');
     }
 
     // Check if auth user already exists
