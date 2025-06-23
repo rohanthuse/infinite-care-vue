@@ -58,6 +58,14 @@ export function useClientAuthFallback() {
 
           if (clientRecord) {
             console.log('[useClientAuthFallback] Client authenticated successfully:', clientRecord);
+            
+            // Fix: Add case-insensitive status check
+            if (clientRecord.status?.toLowerCase() !== 'active') {
+              setError('Your account is not active. Please contact your administrator.');
+              await supabase.auth.signOut();
+              return;
+            }
+            
             setClientProfile(clientRecord);
             toast.success(`Welcome back, ${clientRecord.first_name}!`);
             

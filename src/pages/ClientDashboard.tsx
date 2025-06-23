@@ -105,7 +105,8 @@ const ClientDashboard = () => {
           return;
         }
 
-        if (clientData.status !== 'active') {
+        // Fix: Use case-insensitive comparison for status check
+        if (clientData.status?.toLowerCase() !== 'active') {
           await supabase.auth.signOut();
           localStorage.removeItem("userType");
           localStorage.removeItem("clientName");
