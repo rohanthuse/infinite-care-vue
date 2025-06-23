@@ -68,7 +68,27 @@ const AdminRoutes = () => [
     <Route path="/training-matrix" element={<TrainingMatrix branchId="main" branchName="Main Branch" />} />
     <Route path="/key-parameters" element={<KeyParameters />} />
     <Route path="/booking-approvals" element={<BookingApprovals />} />
+    
+    {/* Branch Dashboard Routes */}
     <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/dashboard" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/key-parameters" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/workflow" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/training-matrix" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/bookings" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/carers" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/clients" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/reviews" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/communication" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/medication" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/accounting" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/care-plan" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/agreements" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/forms" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/notifications" element={<BranchDashboard />} />
+    
+    {/* Specific Branch Dashboard Sub-routes */}
     <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
     <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
     <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
@@ -76,7 +96,6 @@ const AdminRoutes = () => [
     <Route path="/branch-dashboard/:id/:branchName/clients/:clientId/edit" element={<ClientEdit />} />
     <Route path="/branch-dashboard/:id/:branchName/events-logs" element={<EventsLogs />} />
     <Route path="/branch-dashboard/:id/:branchName/attendance" element={<Attendance />} />
-    <Route path="/branch-dashboard/:id/:branchName/forms" element={<BranchDashboard />} />
     <Route path="/branch-dashboard/:id/:branchName/form-builder" element={<FormBuilder />} />
     <Route path="/branch-dashboard/:id/:branchName/form-builder/:formId" element={<FormBuilder />} />
     <Route path="/branch-dashboard/:id/:branchName/documents" element={<Documents />} />
