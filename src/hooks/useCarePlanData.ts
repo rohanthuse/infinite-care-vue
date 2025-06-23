@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { resolveCarePlanId } from '@/utils/carePlanIdMapping';
@@ -49,11 +48,13 @@ export interface CarePlanWithDetails extends CarePlanData {
     dosage: string;
     frequency: string;
     start_date: string;
+    end_date?: string;
     status: string;
   }>;
   care_plan_type?: string;
   review_date?: string;
   goals_progress?: number;
+  notes?: string;
 }
 
 const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {

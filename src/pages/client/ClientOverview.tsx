@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ClientCarePlanDetailDialog } from "@/components/client/ClientCarePlanDetailDialog";
 import { RescheduleAppointmentDialog } from "@/components/client/RescheduleAppointmentDialog";
 import { useClientProfile, useClientCarePlans, useClientAppointments, useClientBilling } from "@/hooks/useClientData";
+import { useClientCarePlansWithDetails } from "@/hooks/useCarePlanData";
 import { format, parseISO, differenceInDays, isValid } from "date-fns";
 
 const ClientOverview = () => {
@@ -21,6 +22,7 @@ const ClientOverview = () => {
   const clientId = getClientId();
   const { data: clientProfile, isLoading: profileLoading, error: profileError } = useClientProfile(clientId);
   const { data: carePlans, isLoading: carePlansLoading, error: carePlansError } = useClientCarePlans(clientId);
+  const { data: carePlansWithDetails, isLoading: carePlansDetailsLoading } = useClientCarePlansWithDetails(clientId || '');
   const { data: appointments, isLoading: appointmentsLoading, error: appointmentsError } = useClientAppointments(clientId);
   const { data: billing, isLoading: billingLoading, error: billingError } = useClientBilling(clientId);
   
@@ -59,7 +61,7 @@ const ClientOverview = () => {
   }
 
   // Show loading state
-  if (profileLoading || carePlansLoading || appointmentsLoading || billingLoading) {
+  if (profileLoading || carePlansLoading || appointmentsLoading || billingLoading || carePlansDetailsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -89,8 +91,9 @@ const ClientOverview = () => {
     return daysDiff >= 0 && daysDiff <= 30;
   }) || [];
 
-  // Get active care plans
+  // Get active care plans - use the detailed version for the dialog
   const activeCarePlans = carePlans?.filter(plan => plan.status?.toLowerCase() === 'active') || [];
+  const activeCarePlansWithDetails = carePlansWithDetails?.filter(plan => plan.status?.toLowerCase() === 'active') || [];
 
   // Calculate next review date
   const nextReview = activeCarePlans.find(plan => plan.review_date)?.review_date;
@@ -249,7 +252,7 @@ const ClientOverview = () => {
             variant="outline" 
             size="sm"
             onClick={() => setCarePlanDialogOpen(true)}
-            disabled={activeCarePlans.length === 0}
+            disabled={activeCarePlansWithDetails.length === 0}
           >
             View Full Plan
           </Button>
@@ -298,11 +301,11 @@ const ClientOverview = () => {
       </div>
 
       {/* Care Plan Detail Dialog */}
-      {activeCarePlans.length > 0 && (
+      {activeCarePlansWithDetails.length > 0 && (
         <ClientCarePlanDetailDialog
           open={carePlanDialogOpen}
           onOpenChange={setCarePlanDialogOpen}
-          carePlan={activeCarePlans[0]}
+          carePlan={activeCarePlansWithDetails[0]}
         />
       )}
 
