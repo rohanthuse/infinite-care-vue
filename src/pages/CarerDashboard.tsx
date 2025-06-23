@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation, Link } from "react-router-dom";
 import { CarerHeader } from "@/components/carer/CarerHeader";
 import { 
   Menu, 
@@ -24,6 +24,7 @@ import { useCarerAuth } from "@/hooks/useCarerAuth";
 const CarerDashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated, loading, carerProfile, signOut } = useCarerAuth();
 
   // Menu items for mobile view
@@ -141,9 +142,9 @@ const CarerDashboard: React.FC = () => {
               {/* Mobile navigation links */}
               <div className="space-y-1">
                 {menuItems.map((item) => (
-                  <a
+                  <Link
                     key={item.name}
-                    href={item.path}
+                    to={item.path}
                     className={cn(
                       "flex items-center px-3 py-2 text-sm font-medium rounded-md",
                       location.pathname === item.path || (item.path === "/carer-dashboard" && location.pathname === "/carer-dashboard")
@@ -154,7 +155,7 @@ const CarerDashboard: React.FC = () => {
                   >
                     <item.icon className="h-4 w-4 mr-3" />
                     {item.name}
-                  </a>
+                  </Link>
                 ))}
               </div>
               
