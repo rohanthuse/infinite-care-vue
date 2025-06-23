@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -76,8 +77,11 @@ export const useBranchReviews = ({
         }
 
         const filtered = allReviews?.filter(review => {
-          const clientName = review.clients ? `${review.clients.first_name} ${review.clients.last_name}` : '';
-          const staffName = review.staff ? `${review.staff.first_name} ${review.staff.last_name}` : '';
+          const clientData = Array.isArray(review.clients) ? review.clients[0] : review.clients;
+          const staffData = Array.isArray(review.staff) ? review.staff[0] : review.staff;
+          
+          const clientName = clientData ? `${clientData.first_name} ${clientData.last_name}` : '';
+          const staffName = staffData ? `${staffData.first_name} ${staffData.last_name}` : '';
           const comment = review.comment || '';
           
           const searchLower = searchQuery.toLowerCase();
@@ -130,10 +134,13 @@ export const useBranchReviews = ({
 };
 
 const transformReview = (review: any): BranchReview => {
-  const clientFirstName = review.clients?.first_name || 'Unknown';
-  const clientLastName = review.clients?.last_name || 'Client';
-  const staffFirstName = review.staff?.first_name || 'Unknown';
-  const staffLastName = review.staff?.last_name || 'Staff';
+  const clientData = Array.isArray(review.clients) ? review.clients[0] : review.clients;
+  const staffData = Array.isArray(review.staff) ? review.staff[0] : review.staff;
+  
+  const clientFirstName = clientData?.first_name || 'Unknown';
+  const clientLastName = clientData?.last_name || 'Client';
+  const staffFirstName = staffData?.first_name || 'Unknown';
+  const staffLastName = staffData?.last_name || 'Staff';
 
   return {
     id: review.id,

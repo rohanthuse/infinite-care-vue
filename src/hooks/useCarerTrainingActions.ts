@@ -40,9 +40,13 @@ export const useCarerTrainingActions = () => {
           .eq('id', recordId)
           .single();
 
-        if (courseData?.training_course?.valid_for_months) {
+        const trainingCourse = Array.isArray(courseData?.training_course) 
+          ? courseData.training_course[0] 
+          : courseData?.training_course;
+
+        if (trainingCourse?.valid_for_months) {
           const expiryDate = new Date();
-          expiryDate.setMonth(expiryDate.getMonth() + courseData.training_course.valid_for_months);
+          expiryDate.setMonth(expiryDate.getMonth() + trainingCourse.valid_for_months);
           updateData.expiry_date = expiryDate.toISOString().split('T')[0];
         }
       }

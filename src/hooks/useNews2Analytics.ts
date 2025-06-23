@@ -158,9 +158,10 @@ export const useNews2Analytics = (branchId?: string) => {
 
           // Only include deteriorating patients or high-risk patients
           if (trend === 'deteriorating' || current.total_score >= 7) {
+            const clientData = Array.isArray(patient.client) ? patient.client[0] : patient.client;
             deteriorationData.push({
               patientId: patient.id,
-              patientName: `${patient.client?.first_name || ''} ${patient.client?.last_name || ''}`.trim(),
+              patientName: `${clientData?.first_name || ''} ${clientData?.last_name || ''}`.trim(),
               currentScore: current.total_score,
               previousScore: previous.total_score,
               trend,

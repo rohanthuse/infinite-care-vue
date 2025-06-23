@@ -93,7 +93,9 @@ const fetchCarerSchedule = async (carerId: string): Promise<CarerScheduleData> =
     date: new Date(upcomingBookings[0].start_time).toLocaleDateString(),
     time: new Date(upcomingBookings[0].start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     client: upcomingBookings[0].clients 
-      ? `${upcomingBookings[0].clients.first_name} ${upcomingBookings[0].clients.last_name}`
+      ? Array.isArray(upcomingBookings[0].clients) 
+        ? `${upcomingBookings[0].clients[0]?.first_name} ${upcomingBookings[0].clients[0]?.last_name}`
+        : `${upcomingBookings[0].clients.first_name} ${upcomingBookings[0].clients.last_name}`
       : 'Unknown Client'
   } : null;
 
