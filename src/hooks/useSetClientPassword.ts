@@ -9,6 +9,13 @@ interface SetClientPasswordData {
   password: string;
 }
 
+interface SetPasswordResponse {
+  success: boolean;
+  error?: string;
+  message?: string;
+  auth_user_id?: string;
+}
+
 export const useSetClientPassword = () => {
   const { session } = useAuth();
 
@@ -29,11 +36,13 @@ export const useSetClientPassword = () => {
         throw error;
       }
 
-      if (!data?.success) {
-        throw new Error(data?.error || 'Failed to set password');
+      const response = data as SetPasswordResponse;
+      
+      if (!response?.success) {
+        throw new Error(response?.error || 'Failed to set password');
       }
 
-      return data;
+      return response;
     },
     onSuccess: (data) => {
       toast.success('Client password set successfully');

@@ -23,6 +23,7 @@ interface ClientsManagementSectionProps {
 export const ClientsManagementSection: React.FC<ClientsManagementSectionProps> = ({ branchId }) => {
   const { data: clients, isLoading } = useBranchClients(branchId);
   const [searchTerm, setSearchTerm] = useState("");
+  const [addClientDialogOpen, setAddClientDialogOpen] = useState(false);
 
   const filteredClients = clients?.filter(client =>
     client.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -62,7 +63,10 @@ export const ClientsManagementSection: React.FC<ClientsManagementSectionProps> =
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Clients Management</CardTitle>
-          <AddClientDialog branchId={branchId} />
+          <Button onClick={() => setAddClientDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Client
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -147,6 +151,16 @@ export const ClientsManagementSection: React.FC<ClientsManagementSectionProps> =
           </div>
         </div>
       </CardContent>
+
+      <AddClientDialog
+        open={addClientDialogOpen}
+        onOpenChange={setAddClientDialogOpen}
+        branchId={branchId}
+        onSuccess={() => {
+          setAddClientDialogOpen(false);
+          // Optionally trigger refetch here
+        }}
+      />
     </Card>
   );
 };

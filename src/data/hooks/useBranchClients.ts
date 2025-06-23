@@ -10,8 +10,8 @@ interface UseBranchClientsParams {
     searchTerm?: string;
     statusFilter?: string;
     regionFilter?: string;
-    page: number;
-    itemsPerPage: number;
+    page?: number;
+    itemsPerPage?: number;
 }
 
 const fetchBranchClients = async ({
@@ -19,16 +19,16 @@ const fetchBranchClients = async ({
     searchTerm,
     statusFilter,
     regionFilter,
-    page,
-    itemsPerPage,
+    page = 1,
+    itemsPerPage = 50,
 }: UseBranchClientsParams) => {
     if (!branchId) {
-        return { clients: [], count: 0 };
+        return [];
     }
 
     let query = supabase
         .from('clients')
-        .select('*', { count: 'exact' })
+        .select('*')
         .eq('branch_id', branchId);
 
     if (searchTerm) {
@@ -49,20 +49,20 @@ const fetchBranchClients = async ({
 
     query = query.range(from, to).order('created_at', { ascending: false });
 
-    const { data, error, count } = await query;
+    const { data, error } = await query;
 
     if (error) {
         console.error('Error fetching clients:', error);
         throw error;
     }
 
-    return { clients: data as ClientFromDB[], count: count ?? 0 };
+    return data as ClientFromDB[];
 };
 
-export const useBranchClients = (params: UseBranchClientsParams) => {
+export const useBranchClients = (branchId: string | undefined) => {
     return useQuery({
-        queryKey: ['branch-clients', params],
-        queryFn: () => fetchBranchClients(params),
-        enabled: !!params.branchId,
+        queryKey: ['branch-clients', branchId],
+        queryFn: () => fetchBranchClients({ branchId }),
+        enabled: !!branchId,
     });
 };
