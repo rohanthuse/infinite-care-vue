@@ -68,9 +68,15 @@ export function useCarerAuth() {
         if (profile) {
           toast.success(`Welcome back, ${profile.first_name}!`);
           
-          // Check if this is first login and profile needs completion
-          if (!profile.first_login_completed) {
-            navigate('/carer-onboarding');
+          // Only navigate on actual sign in, not during normal app usage
+          // Check if this is a fresh sign in (not just a page refresh/navigation)
+          const currentPath = window.location.pathname;
+          if (currentPath === '/carer-login' || currentPath === '/carer-invitation') {
+            if (!profile.first_login_completed) {
+              navigate('/carer-onboarding');
+            } else {
+              navigate('/carer-dashboard');
+            }
           }
         } else {
           console.error('[useCarerAuth] Could not load carer profile');

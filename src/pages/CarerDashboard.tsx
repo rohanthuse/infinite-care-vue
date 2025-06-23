@@ -86,7 +86,7 @@ const CarerDashboard: React.FC = () => {
     }
   ];
 
-  // Check authentication status
+  // Check authentication status - only redirect if truly unauthenticated
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       console.log('[CarerDashboard] User not authenticated, redirecting to login');
@@ -147,7 +147,7 @@ const CarerDashboard: React.FC = () => {
                     to={item.path}
                     className={cn(
                       "flex items-center px-3 py-2 text-sm font-medium rounded-md",
-                      location.pathname === item.path || (item.path === "/carer-dashboard" && location.pathname === "/carer-dashboard")
+                      location.pathname === item.path
                         ? "bg-blue-100 text-blue-700"
                         : "text-gray-700 hover:bg-gray-100"
                     )}

@@ -61,11 +61,14 @@ export function useCarerAuthSafe() {
             setCarerProfile(staffRecord);
             toast.success(`Welcome back, ${staffRecord.first_name}!`);
             
-            // Check if this is first login and profile needs completion
-            if (!staffRecord.first_login_completed) {
-              navigate('/carer-onboarding');
-            } else {
-              navigate('/carer-dashboard');
+            // Only navigate on actual sign in, not during normal app usage
+            const currentPath = window.location.pathname;
+            if (currentPath === '/carer-login' || currentPath === '/carer-invitation') {
+              if (!staffRecord.first_login_completed) {
+                navigate('/carer-onboarding');
+              } else {
+                navigate('/carer-dashboard');
+              }
             }
           } else {
             setError('No carer profile found for this account.');
