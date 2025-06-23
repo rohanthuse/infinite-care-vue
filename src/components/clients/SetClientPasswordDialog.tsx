@@ -4,8 +4,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Copy, RefreshCw } from "lucide-react";
+import { Eye, EyeOff, Copy, RefreshCw, User } from "lucide-react";
 import { useAdminSetClientPassword } from "@/hooks/useAdminSetClientPassword";
+import { useAdminSetClientAuth } from "@/hooks/useAdminSetClientAuth";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -37,10 +38,12 @@ export const SetClientPasswordDialog: React.FC<SetClientPasswordDialogProps> = (
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [setupAuthAccount, setSetupAuthAccount] = useState(true);
   
   const { session } = useAuth();
   const { toast } = useToast();
   const setClientPasswordMutation = useAdminSetClientPassword();
+  const setClientAuthMutation = useAdminSetClientAuth();
 
   const handleGeneratePassword = () => {
     const newPassword = generateRandomPassword();
@@ -80,15 +83,26 @@ export const SetClientPasswordDialog: React.FC<SetClientPasswordDialogProps> = (
     setIsSubmitting(true);
     
     try {
-      await setClientPasswordMutation.mutateAsync({
-        clientId: client.id,
-        password: password.trim(),
-        adminId: session.user.id,
-      });
+      if (setupAuthAccount) {
+        // Set up complete authentication account
+        await setClientAuthMutation.mutateAsync({
+          clientId: client.id,
+          password: password.trim(),
+          adminId: session.user.id,
+        });
+      } else {
+        // Just set password in billing system
+        await setClientPasswordMutation.mutateAsync({
+          clientId: client.id,
+          password: password.trim(),
+          adminId: session.user.id,
+        });
+      }
       
       // Close dialog on success
       onOpenChange(false);
       setPassword('');
+      setSetupAuthAccount(true);
     } catch (error) {
       console.error('Error setting client password:', error);
     } finally {
@@ -100,6 +114,7 @@ export const SetClientPasswordDialog: React.FC<SetClientPasswordDialogProps> = (
     onOpenChange(false);
     setPassword('');
     setShowPassword(false);
+    setSetupAuthAccount(true);
   };
 
   if (!client) return null;
@@ -108,7 +123,7 @@ export const SetClientPasswordDialog: React.FC<SetClientPasswordDialogProps> = (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Set Client Password</DialogTitle>
+          <DialogTitle>Set Client Password & Authentication</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
@@ -118,6 +133,28 @@ export const SetClientPasswordDialog: React.FC<SetClientPasswordDialogProps> = (
               <p className="font-medium">{client.first_name} {client.last_name}</p>
               <p className="text-sm text-gray-600">{client.email}</p>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Authentication Setup</Label>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="setupAuth"
+                checked={setupAuthAccount}
+                onChange={(e) => setSetupAuthAccount(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="setupAuth" className="text-sm text-gray-700">
+                Set up complete authentication account (recommended)
+              </label>
+            </div>
+            <p className="text-xs text-gray-500">
+              {setupAuthAccount 
+                ? "This will create or update the client's login account and enable portal access"
+                : "This will only set the password in the billing system"
+              }
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -181,7 +218,11 @@ export const SetClientPasswordDialog: React.FC<SetClientPasswordDialogProps> = (
                 type="submit"
                 disabled={isSubmitting || !password.trim() || password.length < 8}
               >
-                {isSubmitting ? "Setting Password..." : "Set Password"}
+                {isSubmitting ? (
+                  setupAuthAccount ? "Setting up Authentication..." : "Setting Password..."
+                ) : (
+                  setupAuthAccount ? "Setup Authentication" : "Set Password"
+                )}
               </Button>
             </div>
           </form>

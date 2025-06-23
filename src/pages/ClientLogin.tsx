@@ -29,65 +29,103 @@ const ClientLogin = () => {
     }
 
     setIsLoading(true);
+    console.log('[ClientLogin] Attempting login for:', email);
     
     try {
+      // First, check if the client exists in our database
+      const { data: clientCheck, error: clientCheckError } = await supabase
+        .from('clients')
+        .select('id, first_name, last_name, status, temporary_password')
+        .eq('email', email.trim().toLowerCase())
+        .single();
+
+      console.log('[ClientLogin] Client check result:', { clientCheck, clientCheckError });
+
+      if (clientCheckError || !clientCheck) {
+        console.error('[ClientLogin] Client not found in database:', clientCheckError);
+        setError("No client account found with this email address. Please contact support.");
+        return;
+      }
+
+      if (clientCheck.status !== 'active') {
+        console.error('[ClientLogin] Client account not active:', clientCheck.status);
+        setError("Your account is not active. Please contact support.");
+        return;
+      }
+
+      // Log temporary password info for debugging (remove in production)
+      console.log('[ClientLogin] Client found with temp password set:', !!clientCheck.temporary_password);
+
       // Attempt to sign in with Supabase Auth
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password: password,
       });
 
+      console.log('[ClientLogin] Auth attempt result:', { 
+        user: authData?.user?.id, 
+        error: authError?.message 
+      });
+
       if (authError) {
-        console.error('Authentication error:', authError);
+        console.error('[ClientLogin] Authentication error:', authError);
         
-        // Handle specific error cases
+        // Provide more specific error messages
         if (authError.message.includes('Invalid login credentials')) {
-          setError("Invalid email or password. Please check your credentials and try again.");
+          // Check if this might be because auth account doesn't exist yet
+          const { data: authUsers } = await supabase.auth.admin.listUsers();
+          const authUserExists = authUsers?.users?.some(u => u.email === email.trim().toLowerCase());
+          
+          if (!authUserExists) {
+            setError("Authentication account not created. Please contact support to activate your account.");
+          } else {
+            setError("Invalid email or password. Please check your credentials and try again.");
+          }
         } else if (authError.message.includes('Email not confirmed')) {
           setError("Please check your email and click the confirmation link before signing in.");
+        } else if (authError.message.includes('Too many requests')) {
+          setError("Too many login attempts. Please wait a moment before trying again.");
         } else {
-          setError("Login failed. Please try again.");
+          setError(authError.message || "Login failed. Please try again.");
         }
         return;
       }
 
-      if (data.user) {
-        // Check if this user is a client by looking up in clients table
-        const { data: clientData, error: clientError } = await supabase
+      if (authData.user) {
+        console.log('[ClientLogin] Authentication successful for user:', authData.user.id);
+        
+        // Double-check client data with auth user ID
+        const { data: finalClientData, error: finalClientError } = await supabase
           .from('clients')
           .select('id, first_name, last_name, status')
           .eq('email', email.trim().toLowerCase())
           .single();
 
-        if (clientError || !clientData) {
-          // Sign out the user since they're not a valid client
+        if (finalClientError || !finalClientData) {
+          console.error('[ClientLogin] Final client check failed:', finalClientError);
           await supabase.auth.signOut();
-          setError("Access denied. This login is only for registered clients.");
-          return;
-        }
-
-        if (clientData.status !== 'active') {
-          await supabase.auth.signOut();
-          setError("Your account is not active. Please contact support.");
+          setError("Account verification failed. Please contact support.");
           return;
         }
 
         // Set user type in local storage for client dashboard
         localStorage.setItem("userType", "client");
-        localStorage.setItem("clientName", clientData.first_name);
-        localStorage.setItem("clientId", clientData.id);
+        localStorage.setItem("clientName", finalClientData.first_name);
+        localStorage.setItem("clientId", finalClientData.id);
+        
+        console.log('[ClientLogin] Login successful, navigating to dashboard');
         
         toast({
           title: "Login successful",
-          description: `Welcome back, ${clientData.first_name}!`,
+          description: `Welcome back, ${finalClientData.first_name}!`,
         });
         
         // Navigate to the client dashboard
         navigate("/client-dashboard");
       }
     } catch (err) {
-      console.error('Login error:', err);
-      setError("An unexpected error occurred. Please try again.");
+      console.error('[ClientLogin] Unexpected error:', err);
+      setError("An unexpected error occurred. Please try again or contact support.");
     } finally {
       setIsLoading(false);
     }
