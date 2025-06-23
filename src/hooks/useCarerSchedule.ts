@@ -92,11 +92,17 @@ const fetchCarerSchedule = async (carerId: string): Promise<CarerScheduleData> =
   const nextShift = upcomingBookings && upcomingBookings.length > 0 ? {
     date: new Date(upcomingBookings[0].start_time).toLocaleDateString(),
     time: new Date(upcomingBookings[0].start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    client: upcomingBookings[0].clients 
-      ? Array.isArray(upcomingBookings[0].clients) 
-        ? `${upcomingBookings[0].clients[0]?.first_name || ''} ${upcomingBookings[0].clients[0]?.last_name || ''}`.trim()
-        : `${upcomingBookings[0].clients.first_name || ''} ${upcomingBookings[0].clients.last_name || ''}`.trim()
-      : 'Unknown Client'
+    client: (() => {
+      const clientData = upcomingBookings[0].clients;
+      if (!clientData) return 'Unknown Client';
+      
+      if (Array.isArray(clientData)) {
+        const firstClient = clientData[0];
+        return firstClient ? `${firstClient.first_name || ''} ${firstClient.last_name || ''}`.trim() : 'Unknown Client';
+      } else {
+        return `${clientData.first_name || ''} ${clientData.last_name || ''}`.trim();
+      }
+    })()
   } : null;
 
   return {
