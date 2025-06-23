@@ -9,6 +9,13 @@ interface SetClientPasswordParams {
   adminId: string;
 }
 
+interface AdminSetClientPasswordResponse {
+  success: boolean;
+  error?: string;
+  message?: string;
+  auth_user_id?: string;
+}
+
 const setClientPassword = async ({ clientId, password, adminId }: SetClientPasswordParams) => {
   console.log('[setClientPassword] Setting password for client:', clientId);
   
@@ -35,7 +42,10 @@ export const useAdminSetClientPassword = () => {
     onSuccess: (data) => {
       console.log('[useAdminSetClientPassword] Password set successfully:', data);
       
-      if (data?.success) {
+      // Safe type conversion: Json -> unknown -> AdminSetClientPasswordResponse
+      const response = data as unknown as AdminSetClientPasswordResponse;
+      
+      if (response?.success) {
         toast({
           title: "Success",
           description: "Client password has been set successfully",
@@ -47,7 +57,7 @@ export const useAdminSetClientPassword = () => {
       } else {
         toast({
           title: "Error",
-          description: data?.error || "Failed to set client password",
+          description: response?.error || "Failed to set client password",
           variant: "destructive",
         });
       }
