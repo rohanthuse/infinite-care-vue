@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/Dashboard";
@@ -36,22 +37,13 @@ const RequireAdminAuth = () => {
   const { session, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
   if (!session) {
-    console.log('No session found, redirecting to super-admin login');
     return <Navigate to="/super-admin" replace />;
   }
 
-  console.log('Session found, rendering admin routes for:', session.user?.email);
   return <Outlet />;
 };
 

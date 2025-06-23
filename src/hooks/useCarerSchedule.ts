@@ -1,7 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { getClientName } from '@/utils/clientDataHelpers';
 
 export interface CarerScheduleData {
   availableHours: {
@@ -89,11 +88,13 @@ const fetchCarerSchedule = async (carerId: string): Promise<CarerScheduleData> =
       return total;
     }, 0);
 
-  // Get next shift info using the utility function
+  // Get next shift info
   const nextShift = upcomingBookings && upcomingBookings.length > 0 ? {
     date: new Date(upcomingBookings[0].start_time).toLocaleDateString(),
     time: new Date(upcomingBookings[0].start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    client: getClientName(upcomingBookings[0].clients)
+    client: upcomingBookings[0].clients 
+      ? `${upcomingBookings[0].clients.first_name} ${upcomingBookings[0].clients.last_name}`
+      : 'Unknown Client'
   } : null;
 
   return {

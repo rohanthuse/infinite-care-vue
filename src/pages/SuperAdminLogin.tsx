@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Lock, AlertCircle, Eye, EyeOff, Mail } from "lucide-react";
@@ -16,61 +17,19 @@ const SuperAdminLogin = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [roleChecked, setRoleChecked] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { session, loading } = useAuthSafe();
 
-  // Check user role and redirect if authenticated
+  // Redirect if already authenticated
   useEffect(() => {
-    const checkUserRoleAndRedirect = async () => {
-      if (loading || !session?.user || roleChecked) return;
-
-      try {
-        console.log('Checking user role for:', session.user.email);
-        
-        // Check if user has super_admin role
-        const { data: roleData, error: roleError } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .eq('role', 'super_admin')
-          .single();
-
-        if (roleError) {
-          console.error('Role check error:', roleError);
-          if (roleError.code === 'PGRST116') {
-            // No role found
-            setError("Access denied: You don't have super admin privileges.");
-            await supabase.auth.signOut();
-          } else {
-            setError("Error checking user permissions. Please try again.");
-          }
-          setRoleChecked(true);
-          return;
-        }
-
-        if (roleData && roleData.role === 'super_admin') {
-          console.log('Super admin role confirmed, navigating to dashboard');
-          setRoleChecked(true);
-          navigate("/dashboard", { replace: true });
-        } else {
-          setError("Access denied: You don't have super admin privileges.");
-          await supabase.auth.signOut();
-          setRoleChecked(true);
-        }
-      } catch (err) {
-        console.error('Role verification error:', err);
-        setError("Error verifying user role. Please try again.");
-        setRoleChecked(true);
-      }
-    };
-
-    checkUserRoleAndRedirect();
-  }, [session, loading, navigate, roleChecked]);
+    if (!loading && session) {
+      navigate("/dashboard");
+    }
+  }, [session, loading, navigate]);
 
   // Show loading while checking auth state
-  if (loading && !roleChecked) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -93,28 +52,23 @@ const SuperAdminLogin = () => {
     setIsLoading(true);
     
     try {
-      console.log('Attempting login for:', email);
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        console.error('Login error:', error);
         setError(error.message);
-      } else if (data.user) {
-        console.log('Login successful for:', data.user.email);
+      } else {
         toast({
           title: "Login successful",
-          description: "Verifying permissions...",
+          description: "Welcome back, Super Admin!",
         });
-        // Role check and navigation will be handled by the useEffect
-        setRoleChecked(false); // Reset to trigger role check
+        // Navigation will be handled by the useEffect hook when session updates
       }
     } catch (err: any) {
-      console.error('Login exception:', err);
       setError("An unexpected error occurred during login. Please try again.");
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
