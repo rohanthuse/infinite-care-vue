@@ -2,6 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { User } from '@supabase/supabase-js';
 
 interface SetupClientAuthParams {
   clientId: string;
@@ -48,10 +49,10 @@ const setupClientAuth = async ({ clientId, password, adminId }: SetupClientAuthP
     // Check if auth user already exists
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
     
-    // Add proper type guards and null checks
+    // Add proper type guards and null checks with explicit typing
     let existingUser = null;
     if (existingUsers && existingUsers.users && Array.isArray(existingUsers.users)) {
-      existingUser = existingUsers.users.find(u => u && u.email === client.email) || null;
+      existingUser = existingUsers.users.find((u: User) => u && u.email === client.email) || null;
     }
 
     let authUserId;

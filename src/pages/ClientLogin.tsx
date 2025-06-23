@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Lock, User, AlertCircle, Eye, EyeOff } from "lucide-react";
@@ -8,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface ClientRecord {
   id: string;
@@ -97,10 +97,10 @@ const ClientLogin = () => {
           // Check if this might be because auth account doesn't exist yet
           const { data: authUsers } = await supabase.auth.admin.listUsers();
           
-          // Add proper type guards and null checks
+          // Add proper type guards and null checks with explicit typing
           let authUserExists = false;
           if (authUsers && authUsers.users && Array.isArray(authUsers.users)) {
-            authUserExists = authUsers.users.some(u => u && u.email === email.trim().toLowerCase());
+            authUserExists = authUsers.users.some((u: SupabaseUser) => u && u.email === email.trim().toLowerCase());
           }
           
           if (!authUserExists) {
