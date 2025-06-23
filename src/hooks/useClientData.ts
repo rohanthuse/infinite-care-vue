@@ -78,6 +78,8 @@ export interface ClientPersonalInfo {
   language_preferences?: string;
   cultural_preferences?: string;
   preferred_communication?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ClientMedicalInfo {
@@ -92,6 +94,8 @@ export interface ClientMedicalInfo {
   sensory_impairments?: string[];
   communication_needs?: string;
   cognitive_status?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ClientDietaryRequirements {
@@ -108,6 +112,8 @@ export interface ClientDietaryRequirements {
   fluid_restrictions?: string;
   texture_modifications?: string;
   special_equipment_needed?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ClientPersonalCare {
@@ -123,6 +129,8 @@ export interface ClientPersonalCare {
   comfort_measures?: string;
   sleep_patterns?: string;
   behavioral_notes?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ClientAssessment {
@@ -139,6 +147,8 @@ export interface ClientAssessment {
   recommendations?: string;
   next_review_date?: string;
   status: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ClientEquipment {
@@ -156,6 +166,8 @@ export interface ClientEquipment {
   location?: string;
   status: string;
   notes?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ClientServiceAction {
@@ -175,6 +187,8 @@ export interface ClientServiceAction {
   goals?: string[];
   progress_status: string;
   notes?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Get authenticated client ID from localStorage
@@ -256,11 +270,12 @@ const fetchClientBilling = async (): Promise<ClientBilling[]> => {
 };
 
 // Main hooks
-export const useClientProfile = () => {
+export const useClientProfile = (clientId?: string) => {
   return useQuery({
-    queryKey: ['client-profile'],
+    queryKey: ['client-profile', clientId],
     queryFn: fetchClientProfile,
     retry: 1,
+    enabled: !!clientId || !!localStorage.getItem("clientId"),
   });
 };
 
@@ -289,108 +304,122 @@ export const useClientBilling = () => {
 };
 
 // Placeholder hooks for care plan system (these would need full implementation)
-export const useClientPersonalInfo = () => {
+export const useClientPersonalInfo = (clientId?: string) => {
   return useQuery({
-    queryKey: ['client-personal-info'],
+    queryKey: ['client-personal-info', clientId],
     queryFn: async () => null,
     enabled: false,
   });
 };
 
-export const useClientMedicalInfo = () => {
+export const useClientMedicalInfo = (clientId?: string) => {
   return useQuery({
-    queryKey: ['client-medical-info'],
+    queryKey: ['client-medical-info', clientId],
     queryFn: async () => null,
     enabled: false,
   });
 };
 
-export const useClientDietaryRequirements = () => {
+export const useClientDietaryRequirements = (clientId?: string) => {
   return useQuery({
-    queryKey: ['client-dietary-requirements'],
+    queryKey: ['client-dietary-requirements', clientId],
     queryFn: async () => null,
     enabled: false,
   });
 };
 
-export const useClientPersonalCare = () => {
+export const useClientPersonalCare = (clientId?: string) => {
   return useQuery({
-    queryKey: ['client-personal-care'],
+    queryKey: ['client-personal-care', clientId],
     queryFn: async () => null,
     enabled: false,
   });
 };
 
-export const useClientAssessments = () => {
+export const useClientAssessments = (clientId?: string) => {
   return useQuery({
-    queryKey: ['client-assessments'],
+    queryKey: ['client-assessments', clientId],
     queryFn: async () => [],
     enabled: false,
   });
 };
 
-export const useClientEquipment = () => {
+export const useClientEquipment = (clientId?: string) => {
   return useQuery({
-    queryKey: ['client-equipment'],
+    queryKey: ['client-equipment', clientId],
     queryFn: async () => [],
     enabled: false,
   });
 };
 
-export const useClientServiceActions = () => {
+export const useClientServiceActions = (clientId?: string) => {
   return useQuery({
-    queryKey: ['client-service-actions'],
+    queryKey: ['client-service-actions', clientId],
     queryFn: async () => [],
     enabled: false,
   });
 };
 
-// Placeholder mutation hooks
+// Placeholder mutation hooks with proper structure
 export const useCreateClientNote = () => {
   return {
     mutate: () => {},
+    mutateAsync: async () => {},
     isLoading: false,
+    isPending: false,
   };
 };
 
 export const useCreateClientEvent = () => {
   return {
     mutate: () => {},
+    mutateAsync: async () => {},
     isLoading: false,
+    isPending: false,
   };
 };
 
 export const useCreateGoal = () => {
   return {
     mutate: () => {},
+    mutateAsync: async () => {},
     isLoading: false,
+    isPending: false,
   };
 };
 
 export const useCreateClientActivity = () => {
   return {
     mutate: () => {},
+    mutateAsync: async () => {},
     isLoading: false,
+    isPending: false,
   };
 };
 
 export const useCreateClientEquipment = () => {
   return {
     mutate: () => {},
+    mutateAsync: async () => {},
     isLoading: false,
+    isPending: false,
   };
 };
 
 export const useCreateClientAssessment = () => {
   return {
     mutate: () => {},
+    mutateAsync: async () => {},
     isLoading: false,
+    isPending: false,
   };
 };
 
 export const useUpdateClientProfile = () => {
   return {
     mutate: () => {},
+    mutateAsync: async () => {},
     isLoading: false,
+    isPending: false,
   };
 };
