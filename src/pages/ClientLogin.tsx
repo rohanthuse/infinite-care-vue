@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface ClientRecord {
   id: string;
@@ -94,20 +93,7 @@ const ClientLogin = () => {
         
         // Provide more specific error messages
         if (authError.message.includes('Invalid login credentials')) {
-          // Check if this might be because auth account doesn't exist yet
-          const { data: authUsers } = await supabase.auth.admin.listUsers();
-          
-          // Add proper type guards and null checks with explicit typing
-          let authUserExists = false;
-          if (authUsers && authUsers.users && Array.isArray(authUsers.users)) {
-            authUserExists = authUsers.users.some((u: SupabaseUser) => u && u.email === email.trim().toLowerCase());
-          }
-          
-          if (!authUserExists) {
-            setError("Authentication account not created. Please contact support to activate your account.");
-          } else {
-            setError("Invalid email or password. Please check your credentials and try again.");
-          }
+          setError("Invalid email or password. Please check your credentials and try again. If this is your first time logging in, please contact support to activate your account.");
         } else if (authError.message.includes('Email not confirmed')) {
           setError("Please check your email and click the confirmation link before signing in.");
         } else if (authError.message.includes('Too many requests')) {

@@ -2,7 +2,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import type { User } from '@supabase/supabase-js';
 
 interface SetupClientAuthParams {
   clientId: string;
@@ -17,110 +16,31 @@ interface AdminSetupClientAuthResponse {
   auth_user_id?: string;
 }
 
-interface ClientRecord {
-  email: string;
-  first_name: string;
-  last_name: string;
-}
-
-const setupClientAuth = async ({ clientId, password, adminId }: SetupClientAuthParams) => {
+const setupClientAuth = async ({ clientId, password, adminId }: SetupClientAuthParams): Promise<AdminSetupClientAuthResponse> => {
   console.log('[setupClientAuth] Setting up auth for client:', clientId);
   
   try {
-    // Get client details first
-    const { data: clientData, error: clientError } = await supabase
-      .from('clients')
-      .select('email, first_name, last_name')
-      .eq('id', clientId)
-      .single();
-
-    if (clientError) {
-      console.error('[setupClientAuth] Client lookup error:', clientError);
-      throw new Error('Client not found');
-    }
-
-    if (!clientData || !clientData.email) {
-      throw new Error('Client not found or missing email');
-    }
-
-    // Type assertion to ensure TypeScript knows the structure
-    const client = clientData as ClientRecord;
-
-    // Check if auth user already exists
-    const { data: existingUsers } = await supabase.auth.admin.listUsers();
-    
-    // Add proper type guards and null checks with explicit typing
-    let existingUser = null;
-    if (existingUsers && existingUsers.users && Array.isArray(existingUsers.users)) {
-      existingUser = existingUsers.users.find((u: User) => u && u.email === client.email) || null;
-    }
-
-    let authUserId;
-
-    if (existingUser) {
-      // Update existing user's password
-      const { data: updateData, error: updateError } = await supabase.auth.admin.updateUserById(
-        existingUser.id,
-        { password }
-      );
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      authUserId = existingUser.id;
-      console.log('[setupClientAuth] Updated existing auth user:', authUserId);
-    } else {
-      // Create new auth user
-      const { data: createData, error: createError } = await supabase.auth.admin.createUser({
-        email: client.email,
+    // Call the edge function to handle client authentication setup
+    const { data, error } = await supabase.functions.invoke('setup-client-auth', {
+      body: {
+        clientId,
         password,
-        email_confirm: true,
-        user_metadata: {
-          first_name: client.first_name,
-          last_name: client.last_name,
-          role: 'client'
-        }
-      });
-
-      if (createError) {
-        throw createError;
+        adminId
       }
+    });
 
-      authUserId = createData.user?.id;
-      console.log('[setupClientAuth] Created new auth user:', authUserId);
-
-      // Assign client role
-      if (authUserId) {
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({ user_id: authUserId, role: 'client' });
-
-        if (roleError) {
-          console.warn('[setupClientAuth] Could not assign role:', roleError);
-        }
-      }
+    if (error) {
+      console.error('[setupClientAuth] Edge function error:', error);
+      throw new Error(error.message || 'Failed to setup client authentication');
     }
 
-    // Update client record with password info
-    const { error: updateClientError } = await supabase
-      .from('clients')
-      .update({
-        temporary_password: password,
-        invitation_sent_at: new Date().toISOString(),
-        password_set_by: adminId
-      })
-      .eq('id', clientId);
-
-    if (updateClientError) {
-      console.warn('[setupClientAuth] Could not update client record:', updateClientError);
+    if (!data?.success) {
+      console.error('[setupClientAuth] Setup failed:', data?.error);
+      throw new Error(data?.error || 'Authentication setup failed');
     }
 
-    return {
-      success: true,
-      message: 'Client authentication setup successfully',
-      auth_user_id: authUserId
-    };
+    console.log('[setupClientAuth] Authentication setup successful:', data);
+    return data;
 
   } catch (error: any) {
     console.error('[setupClientAuth] Error:', error);
@@ -150,7 +70,7 @@ export const useAdminSetClientAuth = () => {
       console.error('[useAdminSetClientAuth] Error:', error);
       toast({
         title: "Error",
-        description: "Failed to set up client authentication. Please try again.",
+        description: error.message || "Failed to set up client authentication. Please try again.",
         variant: "destructive",
       });
     },
