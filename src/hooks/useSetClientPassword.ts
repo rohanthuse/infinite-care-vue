@@ -36,7 +36,7 @@ export const useSetClientPassword = () => {
         throw error;
       }
 
-      const response = data as SetPasswordResponse;
+      const response = data as unknown as SetPasswordResponse;
       
       if (!response?.success) {
         throw new Error(response?.error || 'Failed to set password');

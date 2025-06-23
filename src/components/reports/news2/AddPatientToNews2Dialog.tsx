@@ -35,14 +35,10 @@ export function AddPatientToNews2Dialog({
   const createNews2Patient = useCreateNews2Patient();
 
   // Fetch clients from the current branch
-  const { data: clientsData, isLoading: clientsLoading } = useBranchClients({
-    branchId: carerProfile?.branch_id || "",
-    page: 1,
-    itemsPerPage: 100,
-  });
+  const { data: clientsResponse, isLoading: clientsLoading } = useBranchClients(carerProfile?.branch_id || "");
 
   // Filter out clients who are already enrolled in NEWS2
-  const availableClients = clientsData?.clients?.filter(
+  const availableClients = clientsResponse?.clients?.filter(
     client => !existingPatientIds.includes(client.id)
   ) || [];
 

@@ -21,15 +21,17 @@ interface ClientsManagementSectionProps {
 }
 
 export const ClientsManagementSection: React.FC<ClientsManagementSectionProps> = ({ branchId }) => {
-  const { data: clients, isLoading } = useBranchClients(branchId);
+  const { data: clientsResponse, isLoading } = useBranchClients(branchId);
   const [searchTerm, setSearchTerm] = useState("");
   const [addClientDialogOpen, setAddClientDialogOpen] = useState(false);
 
-  const filteredClients = clients?.filter(client =>
+  const clients = clientsResponse?.clients || [];
+
+  const filteredClients = clients.filter(client =>
     client.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  );
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
