@@ -6,10 +6,11 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 const ClientLogin = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -22,37 +23,71 @@ const ClientLogin = () => {
     e.preventDefault();
     setError("");
     
-    if (!username || !password) {
-      setError("Please enter both username and password.");
+    if (!email || !password) {
+      setError("Please enter both email and password.");
       return;
     }
 
     setIsLoading(true);
     
     try {
-      // This is where you would normally integrate with your authentication system
-      // For now, we'll simulate a login with a timeout
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Check against hardcoded client credentials - this is for testing purposes only
-      if (username === "clientPrasad" && password === "Shariwaa$3690") {
-        // Set user type in local storage for role-based access
+      // Attempt to sign in with Supabase Auth
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password: password,
+      });
+
+      if (authError) {
+        console.error('Authentication error:', authError);
+        
+        // Handle specific error cases
+        if (authError.message.includes('Invalid login credentials')) {
+          setError("Invalid email or password. Please check your credentials and try again.");
+        } else if (authError.message.includes('Email not confirmed')) {
+          setError("Please check your email and click the confirmation link before signing in.");
+        } else {
+          setError("Login failed. Please try again.");
+        }
+        return;
+      }
+
+      if (data.user) {
+        // Check if this user is a client by looking up in clients table
+        const { data: clientData, error: clientError } = await supabase
+          .from('clients')
+          .select('id, first_name, last_name, status')
+          .eq('email', email.trim().toLowerCase())
+          .single();
+
+        if (clientError || !clientData) {
+          // Sign out the user since they're not a valid client
+          await supabase.auth.signOut();
+          setError("Access denied. This login is only for registered clients.");
+          return;
+        }
+
+        if (clientData.status !== 'active') {
+          await supabase.auth.signOut();
+          setError("Your account is not active. Please contact support.");
+          return;
+        }
+
+        // Set user type in local storage for client dashboard
         localStorage.setItem("userType", "client");
-        localStorage.setItem("clientName", "Prasad");
+        localStorage.setItem("clientName", clientData.first_name);
+        localStorage.setItem("clientId", clientData.id);
         
         toast({
           title: "Login successful",
-          description: "Welcome back, Prasad!",
+          description: `Welcome back, ${clientData.first_name}!`,
         });
         
-        // Navigate to the client dashboard after successful login
+        // Navigate to the client dashboard
         navigate("/client-dashboard");
-      } else {
-        setError("Invalid credentials. Please try again.");
       }
     } catch (err) {
-      setError("An error occurred during login. Please try again.");
-      console.error(err);
+      console.error('Login error:', err);
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -113,18 +148,19 @@ const ClientLogin = () => {
           
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="email">Email Address</Label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <User className="h-5 w-5 text-gray-400" />
                 </div>
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder="Enter your username"
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email address"
                   className="pl-10"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
               </div>
             </div>
@@ -147,6 +183,7 @@ const ClientLogin = () => {
                   className="pl-10 pr-10"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
                 />
                 <button
                   type="button"
