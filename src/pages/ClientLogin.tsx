@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Lock, User, AlertCircle, Eye, EyeOff } from "lucide-react";
@@ -77,7 +78,7 @@ const ClientLogin = () => {
       // Log temporary password info for debugging (remove in production)
       console.log('[ClientLogin] Client found with temp password set:', !!client.temporary_password);
 
-      // Attempt to sign in with Supabase Auth
+      // Enhanced authentication attempt with better error handling
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password: password,
@@ -91,13 +92,25 @@ const ClientLogin = () => {
       if (authError) {
         console.error('[ClientLogin] Authentication error:', authError);
         
-        // Provide more specific error messages
+        // Enhanced error handling for common authentication issues
         if (authError.message.includes('Invalid login credentials')) {
           setError("Invalid email or password. Please check your credentials and try again. If this is your first time logging in, please contact support to activate your account.");
         } else if (authError.message.includes('Email not confirmed')) {
           setError("Please check your email and click the confirmation link before signing in.");
         } else if (authError.message.includes('Too many requests')) {
           setError("Too many login attempts. Please wait a moment before trying again.");
+        } else if (authError.message.includes('Database error') || authError.message.includes('non-2xx')) {
+          // Handle the specific database schema issue
+          console.error('[ClientLogin] Database schema error detected:', authError);
+          setError("There's a temporary issue with your account setup. Please contact support for immediate assistance.");
+          
+          // Log detailed error for support debugging
+          console.error('[ClientLogin] Full auth error details:', {
+            message: authError.message,
+            status: authError.status,
+            email: email,
+            timestamp: new Date().toISOString()
+          });
         } else {
           setError(authError.message || "Login failed. Please try again.");
         }

@@ -1,5 +1,5 @@
 
--- Create a function to safely handle client authentication setup without using Auth Admin API
+-- Enhanced function to safely handle client authentication setup without modifying auth schema
 CREATE OR REPLACE FUNCTION public.safe_setup_client_auth(
   p_client_id uuid,
   p_password text,
@@ -29,15 +29,12 @@ BEGIN
     RETURN json_build_object('success', false, 'error', 'Client not found');
   END IF;
   
-  -- Try to find existing auth user by email using a safer approach
-  -- We'll check if a user exists by trying to match email in auth.users
-  -- but avoid the problematic listUsers functionality
+  -- Enhanced approach to handle auth user creation more safely
   BEGIN
     -- Generate a new UUID for potential new user
     auth_user_id := gen_random_uuid();
     
-    -- Try to insert a new auth user directly
-    -- This approach avoids the problematic Auth Admin API calls
+    -- Try to insert a new auth user with all required fields properly set
     INSERT INTO auth.users (
       instance_id,
       id,
@@ -51,7 +48,9 @@ BEGIN
       confirmation_token,
       recovery_token,
       email_change_token_new,
-      email_change_token_current
+      email_change_token_current,
+      email_change,
+      email_change_confirm_status
     ) VALUES (
       '00000000-0000-0000-0000-000000000000',
       auth_user_id,
@@ -64,8 +63,10 @@ BEGIN
       now(),
       '',
       '',
-      '',
-      ''
+      '', -- Set empty string instead of leaving NULL
+      '', -- Set empty string instead of leaving NULL
+      '', -- Set empty string instead of leaving NULL
+      0   -- Set 0 instead of leaving NULL
     );
     
     -- If we get here, the user was created successfully
@@ -99,10 +100,14 @@ BEGIN
         LIMIT 1;
         
         IF auth_user_id IS NOT NULL THEN
-          -- Update existing user's password
+          -- Update existing user's password and ensure email_change fields are properly set
           UPDATE auth.users 
           SET encrypted_password = crypt(p_password, gen_salt('bf')),
-              updated_at = now()
+              updated_at = now(),
+              email_change_token_new = COALESCE(email_change_token_new, ''),
+              email_change_token_current = COALESCE(email_change_token_current, ''),
+              email_change = COALESCE(email_change, ''),
+              email_change_confirm_status = COALESCE(email_change_confirm_status, 0)
           WHERE id = auth_user_id;
           
           -- Ensure client role exists
