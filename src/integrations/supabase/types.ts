@@ -5105,6 +5105,10 @@ export type Database = {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: boolean
       }
+      safe_setup_client_auth: {
+        Args: { p_client_id: string; p_password: string; p_admin_id: string }
+        Returns: Json
+      }
       update_resource_stats: {
         Args: { resource_id: string; stat_type: string }
         Returns: undefined
