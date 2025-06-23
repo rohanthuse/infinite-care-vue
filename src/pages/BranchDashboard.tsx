@@ -47,7 +47,6 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const {
     id,
     branchName,
-    restPath,
     activeTab,
     handleTabChange,
     handleWorkflowNavigation
@@ -241,18 +240,11 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         })()}
         
         {/* Notifications Tab */}
-        {activeTab === "notifications" && restPath === "notifications" && (
+        {activeTab === "notifications" && (
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
             <h2 className="text-2xl font-bold mb-4">Notifications</h2>
             <p className="text-gray-500 mb-6">Branch: {displayBranchName} (ID: {id})</p>
             <NotificationsOverview branchId={id} branchName={branchName} />
-          </div>
-        )}
-        
-        {activeTab === "notifications" && restPath !== "notifications" && (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-            <h2 className="text-2xl font-bold mb-4">Notifications</h2>
-            <p className="text-gray-500">Branch: {branchName} (ID: {id})</p>
             
             <div className="mt-6 space-y-4">
               <div className="p-4 border border-blue-200 rounded-lg bg-blue-50 flex items-start">
