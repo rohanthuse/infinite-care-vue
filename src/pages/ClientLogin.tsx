@@ -1,15 +1,16 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, Lock, User, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Heart, Lock, User, AlertCircle, Eye, EyeOff, Mail } from "lucide-react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useClientAuthSafe } from "@/hooks/useClientAuth";
 
 const ClientLogin = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -17,41 +18,76 @@ const ClientLogin = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { session, loading, isClient } = useClientAuthSafe();
+
+  // Redirect if already authenticated as client
+  useEffect(() => {
+    if (!loading && session && isClient) {
+      navigate("/client-dashboard");
+    }
+  }, [session, loading, isClient, navigate]);
+
+  // Show loading while checking auth state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     
-    if (!username || !password) {
-      setError("Please enter both username and password.");
+    if (!email || !password) {
+      setError("Please enter both email and password.");
       return;
     }
 
     setIsLoading(true);
     
     try {
-      // This is where you would normally integrate with your authentication system
-      // For now, we'll simulate a login with a timeout
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Check against hardcoded client credentials - this is for testing purposes only
-      if (username === "clientPrasad" && password === "Shariwaa$3690") {
-        // Set user type in local storage for role-based access
-        localStorage.setItem("userType", "client");
-        localStorage.setItem("clientName", "Prasad");
-        
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setError(error.message);
+      } else if (data.user) {
+        // Check if user has client role
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.user.id)
+          .eq('role', 'client');
+
+        if (!roles || roles.length === 0) {
+          setError("Access denied. This login is for clients only.");
+          await supabase.auth.signOut();
+          return;
+        }
+
+        // Get client information
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('first_name, last_name')
+          .eq('email', email)
+          .single();
+
         toast({
           title: "Login successful",
-          description: "Welcome back, Prasad!",
+          description: `Welcome back, ${clientData?.first_name || 'Client'}!`,
         });
         
-        // Navigate to the client dashboard after successful login
-        navigate("/client-dashboard");
-      } else {
-        setError("Invalid credentials. Please try again.");
+        // Navigation will be handled by the useEffect hook when session updates
       }
-    } catch (err) {
-      setError("An error occurred during login. Please try again.");
+    } catch (err: any) {
+      setError("An unexpected error occurred during login. Please try again.");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -113,18 +149,19 @@ const ClientLogin = () => {
           
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="email">Email</Label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
+                  <Mail className="h-5 w-5 text-gray-400" />
                 </div>
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder="Enter your username"
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
                   className="pl-10"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
                 />
               </div>
             </div>
