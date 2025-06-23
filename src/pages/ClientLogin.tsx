@@ -47,7 +47,8 @@ const ClientLogin = () => {
         return;
       }
 
-      if (clientCheck.status !== 'active') {
+      // Fix case sensitivity issue with status check
+      if (clientCheck.status?.toLowerCase() !== 'active') {
         console.error('[ClientLogin] Client account not active:', clientCheck.status);
         setError("Your account is not active. Please contact support.");
         return;
