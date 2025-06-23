@@ -6,157 +6,39 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-
-interface ClientRecord {
-  id: string;
-  first_name: string;
-  last_name: string;
-  status: string;
-  temporary_password?: string;
-}
+import { useClientAuthFallback } from "@/hooks/useClientAuthFallback";
 
 const ClientLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  const { signIn, loading, error, clearError } = useClientAuthFallback();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    clearError();
     
     if (!email || !password) {
-      setError("Please enter both email and password.");
+      toast({
+        title: "Missing Information",
+        description: "Please enter both email and password.",
+        variant: "destructive",
+      });
       return;
     }
 
-    setIsLoading(true);
     console.log('[ClientLogin] Attempting login for:', email);
     
-    try {
-      // First, check if the client exists in our database
-      const { data: clientData, error: clientCheckError } = await supabase
-        .from('clients')
-        .select('id, first_name, last_name, status, temporary_password')
-        .eq('email', email.trim().toLowerCase())
-        .single();
-
-      console.log('[ClientLogin] Client check result:', { clientData, clientCheckError });
-
-      if (clientCheckError) {
-        console.error('[ClientLogin] Client not found in database:', clientCheckError);
-        
-        if (clientCheckError.code === 'PGRST116') {
-          setError("No client account found with this email address. Please contact support.");
-        } else {
-          setError("Unable to verify client account. Please try again or contact support.");
-        }
-        return;
-      }
-
-      if (!clientData) {
-        setError("No client account found with this email address. Please contact support.");
-        return;
-      }
-
-      // Type assertion to ensure TypeScript knows the structure
-      const client = clientData as ClientRecord;
-
-      // Fix case sensitivity issue with status check
-      if (client.status?.toLowerCase() !== 'active') {
-        console.error('[ClientLogin] Client account not active:', client.status);
-        setError("Your account is not active. Please contact support.");
-        return;
-      }
-
-      // Log temporary password info for debugging (remove in production)
-      console.log('[ClientLogin] Client found with temp password set:', !!client.temporary_password);
-
-      // Enhanced authentication attempt with better error handling
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password: password,
-      });
-
-      console.log('[ClientLogin] Auth attempt result:', { 
-        user: authData?.user?.id, 
-        error: authError?.message 
-      });
-
-      if (authError) {
-        console.error('[ClientLogin] Authentication error:', authError);
-        
-        // Enhanced error handling for common authentication issues
-        if (authError.message.includes('Invalid login credentials')) {
-          setError("Invalid email or password. Please check your credentials and try again. If this is your first time logging in, please contact support to activate your account.");
-        } else if (authError.message.includes('Email not confirmed')) {
-          setError("Please check your email and click the confirmation link before signing in.");
-        } else if (authError.message.includes('Too many requests')) {
-          setError("Too many login attempts. Please wait a moment before trying again.");
-        } else if (authError.message.includes('Database error') || authError.message.includes('non-2xx')) {
-          // Handle the specific database schema issue
-          console.error('[ClientLogin] Database schema error detected:', authError);
-          setError("There's a temporary issue with your account setup. Please contact support for immediate assistance.");
-          
-          // Log detailed error for support debugging
-          console.error('[ClientLogin] Full auth error details:', {
-            message: authError.message,
-            status: authError.status,
-            email: email,
-            timestamp: new Date().toISOString()
-          });
-        } else {
-          setError(authError.message || "Login failed. Please try again.");
-        }
-        return;
-      }
-
-      if (authData.user) {
-        console.log('[ClientLogin] Authentication successful for user:', authData.user.id);
-        
-        // Double-check client data with auth user ID
-        const { data: finalClientData, error: finalClientError } = await supabase
-          .from('clients')
-          .select('id, first_name, last_name, status')
-          .eq('email', email.trim().toLowerCase())
-          .single();
-
-        if (finalClientError || !finalClientData) {
-          console.error('[ClientLogin] Final client check failed:', finalClientError);
-          await supabase.auth.signOut();
-          setError("Account verification failed. Please contact support.");
-          return;
-        }
-
-        // Type assertion for final client data
-        const finalClient = finalClientData as ClientRecord;
-
-        // Set user type in local storage for client dashboard
-        localStorage.setItem("userType", "client");
-        localStorage.setItem("clientName", finalClient.first_name);
-        localStorage.setItem("clientId", finalClient.id);
-        
-        console.log('[ClientLogin] Login successful, navigating to dashboard');
-        
-        toast({
-          title: "Login successful",
-          description: `Welcome back, ${finalClient.first_name}!`,
-        });
-        
-        // Navigate to the client dashboard
-        navigate("/client-dashboard");
-      }
-    } catch (err) {
-      console.error('[ClientLogin] Unexpected error:', err);
-      setError("An unexpected error occurred. Please try again or contact support.");
-    } finally {
-      setIsLoading(false);
+    const result = await signIn(email.trim().toLowerCase(), password);
+    
+    if (result.success) {
+      console.log('[ClientLogin] Login successful, navigating to dashboard');
+      navigate("/client-dashboard");
     }
   };
 
@@ -207,9 +89,17 @@ const ClientLogin = () => {
           </div>
 
           {error && (
-            <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start">
-              <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-              <span>{error}</span>
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start">
+              <AlertCircle className="h-5 w-5 mr-3 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="font-medium mb-1">Sign In Error</p>
+                <p className="text-sm">{error}</p>
+                {error.includes('account setup') && (
+                  <p className="text-xs mt-2 text-red-600">
+                    We're automatically trying to fix this issue. Please try signing in again in a moment.
+                  </p>
+                )}
+              </div>
             </div>
           )}
           
@@ -227,6 +117,7 @@ const ClientLogin = () => {
                   className="pl-10"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
                   required
                 />
               </div>
@@ -250,12 +141,14 @@ const ClientLogin = () => {
                   className="pl-10 pr-10"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
                   required
                 />
                 <button
                   type="button"
                   onClick={togglePasswordVisibility}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  disabled={loading}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5 text-gray-400" />
@@ -274,6 +167,7 @@ const ClientLogin = () => {
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
+                disabled={loading}
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
                 Remember me
@@ -285,16 +179,30 @@ const ClientLogin = () => {
                 type="submit"
                 className={cn(
                   "w-full bg-blue-600 hover:bg-blue-700 transition-all",
-                  isLoading && "opacity-70 cursor-not-allowed"
+                  loading && "opacity-70 cursor-not-allowed"
                 )}
-                disabled={isLoading}
+                disabled={loading || !email || !password}
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                {loading ? "Signing in..." : "Sign In"}
               </CustomButton>
             </div>
           </form>
           
-          <div className="mt-6 text-center">
+          <div className="mt-8 text-center">
+            <div className="text-sm text-gray-600 mb-4">
+              Having trouble signing in?{" "}
+              <button 
+                onClick={() => {
+                  toast({
+                    title: "Support Contact",
+                    description: "Please contact your care administrator for assistance with your account.",
+                  });
+                }}
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
+                Contact Support
+              </button>
+            </div>
             <a href="/" className="text-sm font-medium text-gray-600 hover:text-gray-900">
               Return to homepage
             </a>
