@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Lock, User, AlertCircle, Eye, EyeOff } from "lucide-react";
@@ -95,7 +96,7 @@ const ClientLogin = () => {
         if (authError.message.includes('Invalid login credentials')) {
           // Check if this might be because auth account doesn't exist yet
           const { data: authUsers } = await supabase.auth.admin.listUsers();
-          const authUserExists = authUsers?.users?.some(u => u.email === email.trim().toLowerCase());
+          const authUserExists = authUsers?.users?.some(u => u.email === email.trim().toLowerCase()) || false;
           
           if (!authUserExists) {
             setError("Authentication account not created. Please contact support to activate your account.");
