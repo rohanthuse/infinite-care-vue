@@ -37,9 +37,15 @@ function App() {
                 <Route path="/carer-login-safe" element={<CarerLoginSafe />} />
                 <Route path="/carer-invitation/:token" element={<CarerInvitation />} />
                 <Route path="/carer-onboarding" element={<CarerOnboarding />} />
-                {AdminRoutes}
-                {CarerRoutes}
-                {ClientRoutes}
+                <>
+                  {AdminRoutes}
+                </>
+                <>
+                  {CarerRoutes}
+                </>
+                <>
+                  {ClientRoutes}
+                </>
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
