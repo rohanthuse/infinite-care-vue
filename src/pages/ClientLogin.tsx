@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Lock, User, AlertCircle, Eye, EyeOff } from "lucide-react";
@@ -8,6 +7,14 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+
+interface ClientRecord {
+  id: string;
+  first_name: string;
+  last_name: string;
+  status: string;
+  temporary_password?: string;
+}
 
 const ClientLogin = () => {
   const [email, setEmail] = useState("");
@@ -43,7 +50,12 @@ const ClientLogin = () => {
 
       if (clientCheckError) {
         console.error('[ClientLogin] Client not found in database:', clientCheckError);
-        setError("No client account found with this email address. Please contact support.");
+        
+        if (clientCheckError.code === 'PGRST116') {
+          setError("No client account found with this email address. Please contact support.");
+        } else {
+          setError("Unable to verify client account. Please try again or contact support.");
+        }
         return;
       }
 
@@ -52,15 +64,18 @@ const ClientLogin = () => {
         return;
       }
 
+      // Type assertion to ensure TypeScript knows the structure
+      const client = clientData as ClientRecord;
+
       // Fix case sensitivity issue with status check
-      if (clientData.status?.toLowerCase() !== 'active') {
-        console.error('[ClientLogin] Client account not active:', clientData.status);
+      if (client.status?.toLowerCase() !== 'active') {
+        console.error('[ClientLogin] Client account not active:', client.status);
         setError("Your account is not active. Please contact support.");
         return;
       }
 
       // Log temporary password info for debugging (remove in production)
-      console.log('[ClientLogin] Client found with temp password set:', !!clientData.temporary_password);
+      console.log('[ClientLogin] Client found with temp password set:', !!client.temporary_password);
 
       // Attempt to sign in with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -114,16 +129,19 @@ const ClientLogin = () => {
           return;
         }
 
+        // Type assertion for final client data
+        const finalClient = finalClientData as ClientRecord;
+
         // Set user type in local storage for client dashboard
         localStorage.setItem("userType", "client");
-        localStorage.setItem("clientName", finalClientData.first_name);
-        localStorage.setItem("clientId", finalClientData.id);
+        localStorage.setItem("clientName", finalClient.first_name);
+        localStorage.setItem("clientId", finalClient.id);
         
         console.log('[ClientLogin] Login successful, navigating to dashboard');
         
         toast({
           title: "Login successful",
-          description: `Welcome back, ${finalClientData.first_name}!`,
+          description: `Welcome back, ${finalClient.first_name}!`,
         });
         
         // Navigate to the client dashboard

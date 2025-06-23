@@ -16,6 +16,12 @@ interface AdminSetupClientAuthResponse {
   auth_user_id?: string;
 }
 
+interface ClientRecord {
+  email: string;
+  first_name: string;
+  last_name: string;
+}
+
 const setupClientAuth = async ({ clientId, password, adminId }: SetupClientAuthParams) => {
   console.log('[setupClientAuth] Setting up auth for client:', clientId);
   
@@ -36,9 +42,12 @@ const setupClientAuth = async ({ clientId, password, adminId }: SetupClientAuthP
       throw new Error('Client not found or missing email');
     }
 
+    // Type assertion to ensure TypeScript knows the structure
+    const client = clientData as ClientRecord;
+
     // Check if auth user already exists
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find(u => u.email === clientData.email);
+    const existingUser = existingUsers?.users?.find(u => u.email === client.email);
 
     let authUserId;
 
@@ -58,12 +67,12 @@ const setupClientAuth = async ({ clientId, password, adminId }: SetupClientAuthP
     } else {
       // Create new auth user
       const { data: createData, error: createError } = await supabase.auth.admin.createUser({
-        email: clientData.email,
+        email: client.email,
         password,
         email_confirm: true,
         user_metadata: {
-          first_name: clientData.first_name,
-          last_name: clientData.last_name,
+          first_name: client.first_name,
+          last_name: client.last_name,
           role: 'client'
         }
       });
