@@ -38,66 +38,78 @@ serve(async (req) => {
 
     console.log('[setup-client-auth] Client found:', clientData.email);
 
-    // Check if auth user already exists
-    const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-    
-    if (listError) {
-      console.error('[setup-client-auth] Error listing users:', listError);
-      throw new Error('Failed to check existing users');
-    }
-
-    let existingUser = null;
-    if (existingUsers && existingUsers.users && Array.isArray(existingUsers.users)) {
-      existingUser = existingUsers.users.find((u: any) => u && u.email === clientData.email) || null;
-    }
-
     let authUserId;
+    let userCreated = false;
 
-    if (existingUser) {
-      // Update existing user's password
-      console.log('[setup-client-auth] Updating existing user:', existingUser.id);
-      const { data: updateData, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-        existingUser.id,
-        { password }
-      );
-
-      if (updateError) {
-        console.error('[setup-client-auth] Password update error:', updateError);
-        throw new Error('Failed to update user password');
+    // Try to create a new user first - this avoids the problematic listUsers() call
+    console.log('[setup-client-auth] Attempting to create new auth user for:', clientData.email);
+    const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      email: clientData.email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        first_name: clientData.first_name,
+        last_name: clientData.last_name,
+        role: 'client'
       }
+    });
 
-      authUserId = existingUser.id;
-    } else {
-      // Create new auth user
-      console.log('[setup-client-auth] Creating new auth user for:', clientData.email);
-      const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email: clientData.email,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          first_name: clientData.first_name,
-          last_name: clientData.last_name,
-          role: 'client'
+    if (createError) {
+      // Check if the error is because user already exists
+      if (createError.message && createError.message.includes('already registered')) {
+        console.log('[setup-client-auth] User already exists, attempting to update password');
+        
+        // User exists, we need to find them and update their password
+        // We'll use a different approach to find the user by email through the database
+        const { data: authUserData } = await supabaseAdmin
+          .from('auth.users')
+          .select('id')
+          .eq('email', clientData.email)
+          .single();
+
+        if (authUserData) {
+          authUserId = authUserData.id;
+          console.log('[setup-client-auth] Found existing user:', authUserId);
+
+          // Update existing user's password
+          const { data: updateData, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+            authUserId,
+            { password }
+          );
+
+          if (updateError) {
+            console.error('[setup-client-auth] Password update error:', updateError);
+            throw new Error('Failed to update user password: ' + updateError.message);
+          }
+
+          console.log('[setup-client-auth] Successfully updated password for existing user');
+        } else {
+          // If we can't find the user, throw the original error
+          console.error('[setup-client-auth] User creation failed and cannot find existing user:', createError);
+          throw new Error('Failed to create or find auth user: ' + createError.message);
         }
-      });
-
-      if (createError) {
+      } else {
         console.error('[setup-client-auth] User creation error:', createError);
         throw new Error('Failed to create auth user: ' + createError.message);
       }
-
+    } else {
+      // User was created successfully
       authUserId = createData.user?.id;
+      userCreated = true;
       console.log('[setup-client-auth] Created new auth user:', authUserId);
+    }
 
-      // Assign client role
-      if (authUserId) {
-        const { error: roleError } = await supabaseAdmin
-          .from('user_roles')
-          .insert({ user_id: authUserId, role: 'client' });
+    // Assign client role if user was just created
+    if (userCreated && authUserId) {
+      const { error: roleError } = await supabaseAdmin
+        .from('user_roles')
+        .insert({ user_id: authUserId, role: 'client' });
 
-        if (roleError) {
-          console.warn('[setup-client-auth] Role assignment warning:', roleError);
-        }
+      if (roleError) {
+        console.warn('[setup-client-auth] Role assignment warning:', roleError);
+        // Don't fail the entire operation for role assignment issues
+      } else {
+        console.log('[setup-client-auth] Successfully assigned client role');
       }
     }
 
@@ -113,6 +125,9 @@ serve(async (req) => {
 
     if (updateClientError) {
       console.warn('[setup-client-auth] Client record update warning:', updateClientError);
+      // Don't fail the entire operation for client record update issues
+    } else {
+      console.log('[setup-client-auth] Successfully updated client record');
     }
 
     console.log('[setup-client-auth] Successfully set up authentication for client');
@@ -120,7 +135,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Client authentication setup successfully',
+        message: userCreated ? 'Client authentication created successfully' : 'Client authentication updated successfully',
         auth_user_id: authUserId
       }),
       {
