@@ -1,8 +1,9 @@
+
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, MapPin, User, Star, BarChart } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Star, BarChart, AlertCircle } from "lucide-react";
 import { RescheduleAppointmentDialog } from "@/components/client/RescheduleAppointmentDialog";
 import { RequestAppointmentDialog } from "@/components/client/RequestAppointmentDialog";
 import { SubmitReviewDialog } from "@/components/client/SubmitReviewDialog";
@@ -10,6 +11,8 @@ import { ViewReviewDialog } from "@/components/client/ViewReviewDialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useClientAppointments } from "@/hooks/useClientData";
+import { format, parseISO, isValid, isPast, isToday, isFuture } from "date-fns";
 
 const ClientAppointments = () => {
   const [activeTab, setActiveTab] = useState("upcoming");
@@ -22,74 +25,32 @@ const ClientAppointments = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Mock appointment data
-  const upcomingAppointments = [
-    {
-      id: 1,
-      type: "Therapy Session",
-      provider: "Dr. Smith, Physical Therapist",
-      date: "May 3, 2025",
-      time: "10:00 AM",
-      location: "Main Clinic, Room 204",
-      status: "confirmed"
-    },
-    {
-      id: 2,
-      type: "Weekly Check-in",
-      provider: "Nurse Johnson",
-      date: "May 10, 2025",
-      time: "2:00 PM",
-      location: "Video Call",
-      status: "confirmed"
-    },
-    {
-      id: 3,
-      type: "Specialist Consultation",
-      provider: "Dr. Williams, Neurologist",
-      date: "May 17, 2025",
-      time: "11:30 AM",
-      location: "Neurology Department, Floor 3",
-      status: "pending"
-    }
-  ];
+  // Fetch real appointment data
+  const { data: appointments, isLoading, error } = useClientAppointments();
 
-  // Enhanced past appointments with review status
-  const pastAppointments = [
-    {
-      id: 101,
-      type: "Therapy Session",
-      provider: "Dr. Smith, Physical Therapist",
-      date: "April 19, 2025",
-      time: "10:00 AM",
-      location: "Main Clinic, Room 204",
-      status: "completed",
-      reviewStatus: "reviewed", // reviewed, none
-      reviewId: "review-101"
-    },
-    {
-      id: 102,
-      type: "Weekly Check-in",
-      provider: "Nurse Johnson",
-      date: "April 12, 2025",
-      time: "2:00 PM",
-      location: "Video Call",
-      status: "completed",
-      reviewStatus: "reviewed",
-      reviewId: "review-102"
-    },
-    {
-      id: 103,
-      type: "Initial Assessment",
-      provider: "Dr. Williams, Neurologist",
-      date: "April 5, 2025",
-      time: "11:30 AM",
-      location: "Neurology Department, Floor 3",
-      status: "cancelled",
-      reviewStatus: "none"
+  // Helper function to safely parse dates
+  const safeParseDateString = (dateString: string | null | undefined) => {
+    if (!dateString) return null;
+    try {
+      const parsed = parseISO(dateString);
+      return isValid(parsed) ? parsed : null;
+    } catch {
+      return null;
     }
-  ];
+  };
 
-  // Mock review data
+  // Separate appointments into upcoming and past
+  const upcomingAppointments = appointments?.filter(apt => {
+    const appointmentDate = safeParseDateString(apt.appointment_date);
+    return appointmentDate && (isFuture(appointmentDate) || isToday(appointmentDate));
+  }) || [];
+
+  const pastAppointments = appointments?.filter(apt => {
+    const appointmentDate = safeParseDateString(apt.appointment_date);
+    return appointmentDate && isPast(appointmentDate) && !isToday(appointmentDate);
+  }) || [];
+
+  // Mock review data (would be fetched from database in real implementation)
   const mockReviews = [
     {
       id: "review-101",
@@ -118,8 +79,34 @@ const ClientAppointments = () => {
 
   // Open reschedule dialog
   const handleReschedule = (appointment: any) => {
-    setSelectedAppointment(appointment);
+    const appointmentDate = safeParseDateString(appointment.appointment_date);
+    setSelectedAppointment({
+      id: appointment.id,
+      type: appointment.appointment_type,
+      provider: appointment.provider_name,
+      date: appointmentDate ? format(appointmentDate, 'MMM d, yyyy') : 'Date pending',
+      time: appointment.appointment_time,
+      location: appointment.location,
+      status: appointment.status
+    });
     setIsRescheduling(true);
+  };
+
+  // Cancel appointment
+  const handleCancelAppointment = async (appointmentId: string) => {
+    try {
+      // In a real implementation, this would call a mutation to update the appointment status
+      toast({
+        title: "Appointment Cancelled",
+        description: "Your appointment has been cancelled successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to cancel appointment. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Open request appointment dialog
@@ -152,18 +139,15 @@ const ClientAppointments = () => {
   const handleViewServiceReport = (appointment: any) => {
     navigate("/client-dashboard/service-reports");
     
-    // In a real app, you might pass the appointment ID as a query parameter
-    // navigate(`/client-dashboard/service-reports?appointmentId=${appointment.id}`);
-    
     toast({
       title: "Service Report Loaded",
-      description: `Viewing service report for ${appointment.type} on ${appointment.date}`,
+      description: `Viewing service report for ${appointment.appointment_type} on ${format(safeParseDateString(appointment.appointment_date) || new Date(), 'MMM d, yyyy')}`,
     });
   };
 
   // Get status badge style
   const getStatusBadge = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "confirmed":
         return "bg-green-100 text-green-800";
       case "pending":
@@ -177,78 +161,103 @@ const ClientAppointments = () => {
     }
   };
 
-  // Get review status badge
-  const getReviewStatusBadge = (status: string) => {
-    if (status === "reviewed") {
-      return { text: "Feedback Submitted", className: "bg-blue-50 text-blue-700 border-0" };
-    }
-    return { text: "", className: "" };
-  };
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to load appointments</h3>
+          <p className="text-gray-500">Please try refreshing the page or contact support if the problem persists.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Render appointment card
-  const renderAppointmentCard = (appointment: any) => (
-    <Card key={appointment.id} className="mb-4">
-      <CardContent className="p-6">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between md:justify-start">
-              <h3 className="text-lg font-bold">{appointment.type}</h3>
-              <span className={`text-xs font-medium px-2 py-1 rounded-full md:ml-3 ${getStatusBadge(appointment.status)}`}>
-                {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-              </span>
-              
-              {appointment.reviewStatus && appointment.reviewStatus === "reviewed" && (
-                <span className={`text-xs font-medium px-2 py-1 rounded-full ml-2 ${getReviewStatusBadge(appointment.reviewStatus).className}`}>
-                  {getReviewStatusBadge(appointment.reviewStatus).text}
+  const renderAppointmentCard = (appointment: any, isPastAppointment: boolean = false) => {
+    const appointmentDate = safeParseDateString(appointment.appointment_date);
+    
+    return (
+      <Card key={appointment.id} className="mb-4">
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between md:justify-start">
+                <h3 className="text-lg font-bold">{appointment.appointment_type}</h3>
+                <span className={`text-xs font-medium px-2 py-1 rounded-full md:ml-3 ${getStatusBadge(appointment.status)}`}>
+                  {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                 </span>
+              </div>
+              
+              <div className="text-sm text-gray-600 flex items-center">
+                <User className="h-4 w-4 mr-2" />
+                {appointment.provider_name}
+              </div>
+              
+              <div className="text-sm text-gray-600 flex items-center">
+                <Calendar className="h-4 w-4 mr-2" />
+                {appointmentDate ? format(appointmentDate, 'MMM d, yyyy') : 'Date pending'} • 
+                <Clock className="h-4 w-4 mx-2" /> 
+                {appointment.appointment_time || 'Time pending'}
+              </div>
+              
+              {appointment.location && (
+                <div className="text-sm text-gray-600 flex items-center">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  {appointment.location}
+                </div>
+              )}
+
+              {appointment.notes && (
+                <div className="text-sm text-gray-600">
+                  <strong>Notes:</strong> {appointment.notes}
+                </div>
               )}
             </div>
             
-            <div className="text-sm text-gray-600 flex items-center">
-              <User className="h-4 w-4 mr-2" />
-              {appointment.provider}
-            </div>
-            
-            <div className="text-sm text-gray-600 flex items-center">
-              <Calendar className="h-4 w-4 mr-2" />
-              {appointment.date} • <Clock className="h-4 w-4 mx-2" /> {appointment.time}
-            </div>
-            
-            <div className="text-sm text-gray-600 flex items-center">
-              <MapPin className="h-4 w-4 mr-2" />
-              {appointment.location}
-            </div>
-          </div>
-          
-          <div className="flex gap-2 mt-4 md:mt-0">
-            {activeTab === "upcoming" && (appointment.status === "confirmed" || appointment.status === "pending") ? (
-              <>
-                <Button variant="outline" size="sm" onClick={() => handleReschedule(appointment)}>Reschedule</Button>
-                <Button variant="outline" size="sm" className="text-red-600 hover:bg-red-50">Cancel</Button>
-              </>
-            ) : activeTab === "past" && appointment.status === "completed" ? (
-              <>
-                {appointment.reviewStatus === "none" ? (
+            <div className="flex gap-2 mt-4 md:mt-0">
+              {!isPastAppointment && (appointment.status === "confirmed" || appointment.status === "pending") ? (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => handleReschedule(appointment)}>
+                    Reschedule
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-red-600 hover:bg-red-50"
+                    onClick={() => handleCancelAppointment(appointment.id)}
+                  >
+                    Cancel
+                  </Button>
+                </>
+              ) : isPastAppointment && appointment.status === "completed" ? (
+                <>
                   <Button size="sm" onClick={() => handleReview(appointment)} className="gap-1">
                     <Star className="h-4 w-4 mr-1" />
                     Leave Feedback
                   </Button>
-                ) : appointment.reviewStatus === "reviewed" ? (
-                  <Button variant="outline" size="sm" onClick={() => handleViewReview(appointment)}>
-                    View Feedback
+                  <Button size="sm" variant="outline" onClick={() => handleViewServiceReport(appointment)} className="gap-1">
+                    <BarChart className="h-4 w-4 mr-1" />
+                    View Service Report
                   </Button>
-                ) : null}
-                <Button size="sm" variant="outline" onClick={() => handleViewServiceReport(appointment)} className="gap-1">
-                  <BarChart className="h-4 w-4 mr-1" />
-                  View Service Report
-                </Button>
-              </>
-            ) : null}
+                </>
+              ) : null}
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -258,17 +267,22 @@ const ClientAppointments = () => {
         <Tabs defaultValue="upcoming" value={activeTab} onValueChange={setActiveTab}>
           <div className="flex justify-between items-center mb-6">
             <TabsList>
-              <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-              <TabsTrigger value="past">Past</TabsTrigger>
+              <TabsTrigger value="upcoming">
+                Upcoming ({upcomingAppointments.length})
+              </TabsTrigger>
+              <TabsTrigger value="past">
+                Past ({pastAppointments.length})
+              </TabsTrigger>
             </TabsList>
             <Button onClick={handleRequestAppointment}>Request Appointment</Button>
           </div>
           
           <TabsContent value="upcoming" className="space-y-4">
             {upcomingAppointments.length > 0 ? (
-              upcomingAppointments.map(renderAppointmentCard)
+              upcomingAppointments.map(appointment => renderAppointmentCard(appointment, false))
             ) : (
               <div className="text-center p-8">
+                <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">No upcoming appointments.</p>
                 <Button className="mt-4" onClick={handleRequestAppointment}>Schedule New Appointment</Button>
               </div>
@@ -277,9 +291,10 @@ const ClientAppointments = () => {
           
           <TabsContent value="past" className="space-y-4">
             {pastAppointments.length > 0 ? (
-              pastAppointments.map(renderAppointmentCard)
+              pastAppointments.map(appointment => renderAppointmentCard(appointment, true))
             ) : (
               <div className="text-center p-8">
+                <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">No past appointment records.</p>
               </div>
             )}

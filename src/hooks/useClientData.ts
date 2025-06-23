@@ -13,10 +13,23 @@ export interface ClientProfile {
   status: string;
   date_of_birth?: string;
   registered_on?: string;
+  title?: string;
+  middle_name?: string;
+  mobile_number?: string;
+  telephone_number?: string;
+  country_code?: string;
+  region?: string;
+  gender?: string;
+  pronouns?: string;
+  referral_route?: string;
+  other_identifier?: string;
+  additional_information?: string;
+  avatar_initials?: string;
 }
 
 export interface ClientCarePlan {
   id: string;
+  display_id: string;
   title: string;
   provider_name: string;
   status: string;
@@ -45,6 +58,123 @@ export interface ClientBilling {
   due_date: string;
   status: string;
   invoice_date: string;
+}
+
+// Additional interfaces for the care plan system
+export interface ClientPersonalInfo {
+  id: string;
+  client_id: string;
+  next_of_kin_name?: string;
+  next_of_kin_phone?: string;
+  next_of_kin_relationship?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_relationship?: string;
+  gp_name?: string;
+  gp_practice?: string;
+  gp_phone?: string;
+  marital_status?: string;
+  religion?: string;
+  language_preferences?: string;
+  cultural_preferences?: string;
+  preferred_communication?: string;
+}
+
+export interface ClientMedicalInfo {
+  id: string;
+  client_id: string;
+  medical_conditions?: string[];
+  current_medications?: string[];
+  allergies?: string[];
+  medical_history?: string;
+  mobility_status?: string;
+  mental_health_status?: string;
+  sensory_impairments?: string[];
+  communication_needs?: string;
+  cognitive_status?: string;
+}
+
+export interface ClientDietaryRequirements {
+  id: string;
+  client_id: string;
+  dietary_restrictions?: string[];
+  food_allergies?: string[];
+  food_preferences?: string[];
+  nutritional_needs?: string;
+  supplements?: string[];
+  meal_schedule?: any;
+  feeding_assistance_required?: boolean;
+  weight_monitoring?: boolean;
+  fluid_restrictions?: string;
+  texture_modifications?: string;
+  special_equipment_needed?: string;
+}
+
+export interface ClientPersonalCare {
+  id: string;
+  client_id: string;
+  bathing_preferences?: string;
+  dressing_assistance_level?: string;
+  toileting_assistance_level?: string;
+  continence_status?: string;
+  personal_hygiene_needs?: string;
+  skin_care_needs?: string;
+  pain_management?: string;
+  comfort_measures?: string;
+  sleep_patterns?: string;
+  behavioral_notes?: string;
+}
+
+export interface ClientAssessment {
+  id: string;
+  client_id: string;
+  care_plan_id?: string;
+  assessment_name: string;
+  assessment_type: string;
+  assessment_date: string;
+  performed_by: string;
+  performed_by_id?: string;
+  score?: number;
+  results?: string;
+  recommendations?: string;
+  next_review_date?: string;
+  status: string;
+}
+
+export interface ClientEquipment {
+  id: string;
+  client_id: string;
+  equipment_name: string;
+  equipment_type: string;
+  manufacturer?: string;
+  model_number?: string;
+  serial_number?: string;
+  installation_date?: string;
+  last_maintenance_date?: string;
+  next_maintenance_date?: string;
+  maintenance_schedule?: string;
+  location?: string;
+  status: string;
+  notes?: string;
+}
+
+export interface ClientServiceAction {
+  id: string;
+  client_id: string;
+  care_plan_id?: string;
+  service_name: string;
+  service_category: string;
+  provider_name: string;
+  frequency: string;
+  duration: string;
+  start_date: string;
+  end_date?: string;
+  next_scheduled_date?: string;
+  last_completed_date?: string;
+  schedule_details?: string;
+  goals?: string[];
+  progress_status: string;
+  notes?: string;
 }
 
 // Get authenticated client ID from localStorage
@@ -125,6 +255,7 @@ const fetchClientBilling = async (): Promise<ClientBilling[]> => {
   return data || [];
 };
 
+// Main hooks
 export const useClientProfile = () => {
   return useQuery({
     queryKey: ['client-profile'],
@@ -155,4 +286,111 @@ export const useClientBilling = () => {
     queryFn: fetchClientBilling,
     retry: 1,
   });
+};
+
+// Placeholder hooks for care plan system (these would need full implementation)
+export const useClientPersonalInfo = () => {
+  return useQuery({
+    queryKey: ['client-personal-info'],
+    queryFn: async () => null,
+    enabled: false,
+  });
+};
+
+export const useClientMedicalInfo = () => {
+  return useQuery({
+    queryKey: ['client-medical-info'],
+    queryFn: async () => null,
+    enabled: false,
+  });
+};
+
+export const useClientDietaryRequirements = () => {
+  return useQuery({
+    queryKey: ['client-dietary-requirements'],
+    queryFn: async () => null,
+    enabled: false,
+  });
+};
+
+export const useClientPersonalCare = () => {
+  return useQuery({
+    queryKey: ['client-personal-care'],
+    queryFn: async () => null,
+    enabled: false,
+  });
+};
+
+export const useClientAssessments = () => {
+  return useQuery({
+    queryKey: ['client-assessments'],
+    queryFn: async () => [],
+    enabled: false,
+  });
+};
+
+export const useClientEquipment = () => {
+  return useQuery({
+    queryKey: ['client-equipment'],
+    queryFn: async () => [],
+    enabled: false,
+  });
+};
+
+export const useClientServiceActions = () => {
+  return useQuery({
+    queryKey: ['client-service-actions'],
+    queryFn: async () => [],
+    enabled: false,
+  });
+};
+
+// Placeholder mutation hooks
+export const useCreateClientNote = () => {
+  return {
+    mutate: () => {},
+    isLoading: false,
+  };
+};
+
+export const useCreateClientEvent = () => {
+  return {
+    mutate: () => {},
+    isLoading: false,
+  };
+};
+
+export const useCreateGoal = () => {
+  return {
+    mutate: () => {},
+    isLoading: false,
+  };
+};
+
+export const useCreateClientActivity = () => {
+  return {
+    mutate: () => {},
+    isLoading: false,
+  };
+};
+
+export const useCreateClientEquipment = () => {
+  return {
+    mutate: () => {},
+    isLoading: false,
+  };
+};
+
+export const useCreateClientAssessment = () => {
+  return {
+    mutate: () => {},
+    isLoading: false,
+  };
+};
+
+export const useUpdateClientProfile = () => {
+  return {
+    mutate: () => {},
+    isLoading: false,
+  };
 };
