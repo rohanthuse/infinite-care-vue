@@ -96,7 +96,12 @@ const ClientLogin = () => {
         if (authError.message.includes('Invalid login credentials')) {
           // Check if this might be because auth account doesn't exist yet
           const { data: authUsers } = await supabase.auth.admin.listUsers();
-          const authUserExists = authUsers?.users?.some(u => u.email === email.trim().toLowerCase()) || false;
+          
+          // Add proper type guards and null checks
+          let authUserExists = false;
+          if (authUsers && authUsers.users && Array.isArray(authUsers.users)) {
+            authUserExists = authUsers.users.some(u => u && u.email === email.trim().toLowerCase());
+          }
           
           if (!authUserExists) {
             setError("Authentication account not created. Please contact support to activate your account.");

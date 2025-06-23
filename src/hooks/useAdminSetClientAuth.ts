@@ -47,7 +47,12 @@ const setupClientAuth = async ({ clientId, password, adminId }: SetupClientAuthP
 
     // Check if auth user already exists
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find(u => u.email === client.email) || null;
+    
+    // Add proper type guards and null checks
+    let existingUser = null;
+    if (existingUsers && existingUsers.users && Array.isArray(existingUsers.users)) {
+      existingUser = existingUsers.users.find(u => u && u.email === client.email) || null;
+    }
 
     let authUserId;
 
