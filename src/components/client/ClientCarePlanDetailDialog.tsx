@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { X, Download } from "lucide-react";
+import { X, Download, Printer } from "lucide-react";
 import { 
   Dialog, 
   DialogContent, 
@@ -11,11 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { CarePlanWithDetails } from "@/hooks/useCarePlanData";
+import { useToast } from "@/hooks/use-toast";
 
 interface ClientCarePlanDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  carePlan: any; // We'll use the mock care plan data
+  carePlan: CarePlanWithDetails;
 }
 
 export const ClientCarePlanDetailDialog: React.FC<ClientCarePlanDetailDialogProps> = ({
@@ -24,6 +26,23 @@ export const ClientCarePlanDetailDialog: React.FC<ClientCarePlanDetailDialogProp
   carePlan,
 }) => {
   const [activeTab, setActiveTab] = useState("goals");
+  const { toast } = useToast();
+  
+  const handleExport = () => {
+    toast({
+      title: "Export Care Plan",
+      description: "Your care plan has been prepared for download.",
+    });
+    // Here you would implement actual export functionality
+  };
+
+  const handlePrint = () => {
+    window.print();
+    toast({
+      title: "Print Care Plan",
+      description: "Print dialog opened.",
+    });
+  };
   
   // Function to render goal status badge
   const renderGoalStatus = (status: string) => {
@@ -35,7 +54,7 @@ export const ClientCarePlanDetailDialog: React.FC<ClientCarePlanDetailDialogProp
       case "not-started":
         return <span className="text-xs font-medium bg-gray-100 text-gray-800 px-2 py-1 rounded-full">Not Started</span>;
       default:
-        return null;
+        return <span className="text-xs font-medium bg-gray-100 text-gray-800 px-2 py-1 rounded-full">Unknown</span>;
     }
   };
 
@@ -54,13 +73,20 @@ export const ClientCarePlanDetailDialog: React.FC<ClientCarePlanDetailDialogProp
             <div>
               <DialogTitle className="text-xl">{carePlan.title}</DialogTitle>
               <p className="text-sm text-gray-500 mt-1">
-                Last updated: {carePlan.updatedAt} • Care Provider: {carePlan.provider}
+                Last updated: {new Date(carePlan.updated_at).toLocaleDateString()} • Care Provider: {carePlan.provider_name}
               </p>
+              {carePlan.display_id && (
+                <p className="text-sm text-gray-500">Plan ID: {carePlan.display_id}</p>
+              )}
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="gap-1">
+              <Button variant="outline" size="sm" className="gap-1" onClick={handleExport}>
                 <Download className="h-4 w-4" />
                 <span>Export</span>
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1" onClick={handlePrint}>
+                <Printer className="h-4 w-4" />
+                <span>Print</span>
               </Button>
               <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
                 <X className="h-4 w-4" />
@@ -72,13 +98,15 @@ export const ClientCarePlanDetailDialog: React.FC<ClientCarePlanDetailDialogProp
             <div className="flex items-center gap-3">
               <span className="text-sm font-medium">Goals progress:</span>
               <div className="flex-1 md:w-48">
-                <Progress value={carePlan.goalsProgress} className="h-2" />
+                <Progress value={carePlan.goals_progress || 0} className="h-2" />
               </div>
-              <span className="text-sm font-medium">{carePlan.goalsProgress}%</span>
+              <span className="text-sm font-medium">{carePlan.goals_progress || 0}%</span>
             </div>
-            <div>
-              <Badge>Review Date: {carePlan.reviewDate}</Badge>
-            </div>
+            {carePlan.review_date && (
+              <div>
+                <Badge>Review Date: {new Date(carePlan.review_date).toLocaleDateString()}</Badge>
+              </div>
+            )}
           </div>
         </DialogHeader>
         
@@ -90,7 +118,6 @@ export const ClientCarePlanDetailDialog: React.FC<ClientCarePlanDetailDialogProp
                 <TabsTrigger value="medications">Medications</TabsTrigger>
                 <TabsTrigger value="activities">Activities</TabsTrigger>
                 <TabsTrigger value="notes">Notes</TabsTrigger>
-                <TabsTrigger value="assessments">Assessments</TabsTrigger>
               </TabsList>
             </div>
             
@@ -103,28 +130,34 @@ export const ClientCarePlanDetailDialog: React.FC<ClientCarePlanDetailDialogProp
                   Track your progress and work with your care team to meet these targets.
                 </p>
                 
-                {carePlan.goals.map((goal: any) => (
-                  <div key={goal.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h4 className="font-medium">{goal.description}</h4>
-                          {renderGoalStatus(goal.status)}
-                        </div>
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="flex-1">
-                            <Progress 
-                              value={goal.progress} 
-                              className={`h-2 ${getProgressColor(goal.progress)}`} 
-                            />
+                {carePlan.goals && carePlan.goals.length > 0 ? (
+                  carePlan.goals.map((goal) => (
+                    <div key={goal.id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-medium">{goal.description}</h4>
+                            {renderGoalStatus(goal.status)}
                           </div>
-                          <span className="text-sm font-medium">{goal.progress}%</span>
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="flex-1">
+                              <Progress 
+                                value={goal.progress || 0} 
+                                className={`h-2`}
+                              />
+                            </div>
+                            <span className="text-sm font-medium">{goal.progress || 0}%</span>
+                          </div>
+                          {goal.notes && (
+                            <p className="text-sm text-gray-600 mt-2">{goal.notes}</p>
+                          )}
                         </div>
-                        <p className="text-sm text-gray-600 mt-2">{goal.notes}</p>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-8">No goals have been set for this care plan yet.</p>
+                )}
               </div>
             </TabsContent>
             
@@ -138,19 +171,27 @@ export const ClientCarePlanDetailDialog: React.FC<ClientCarePlanDetailDialogProp
                 </p>
                 
                 <div className="space-y-4">
-                  {carePlan.medications.map((med: any) => (
-                    <div key={med.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                        <div>
-                          <h4 className="font-medium">{med.name}</h4>
-                          <p className="text-sm text-gray-600">{med.dosage}, {med.frequency}</p>
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          Started: {med.startDate} • End: {med.endDate}
+                  {carePlan.medications && carePlan.medications.length > 0 ? (
+                    carePlan.medications.map((med) => (
+                      <div key={med.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                          <div>
+                            <h4 className="font-medium">{med.name}</h4>
+                            <p className="text-sm text-gray-600">{med.dosage}, {med.frequency}</p>
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            Started: {new Date(med.start_date).toLocaleDateString()}
+                            {med.end_date && (
+                              <span> • Ends: {new Date(med.end_date).toLocaleDateString()}</span>
+                            )}
+                            <span> • Status: {med.status}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-8">No medications have been prescribed in this care plan yet.</p>
+                  )}
                 </div>
               </div>
             </TabsContent>
@@ -165,20 +206,26 @@ export const ClientCarePlanDetailDialog: React.FC<ClientCarePlanDetailDialogProp
                 </p>
                 
                 <div className="space-y-4">
-                  {carePlan.activities.map((activity: any) => (
-                    <div key={activity.id} className="border border-gray-200 rounded-lg p-4">
-                      <h4 className="font-medium">{activity.name}</h4>
-                      <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
-                      <div className="flex items-center mt-2 gap-2">
-                        <span className="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                          {activity.frequency}
-                        </span>
-                        <span className="text-xs font-medium bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                          {activity.status}
-                        </span>
+                  {carePlan.activities && carePlan.activities.length > 0 ? (
+                    carePlan.activities.map((activity) => (
+                      <div key={activity.id} className="border border-gray-200 rounded-lg p-4">
+                        <h4 className="font-medium">{activity.name}</h4>
+                        {activity.description && (
+                          <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
+                        )}
+                        <div className="flex items-center mt-2 gap-2">
+                          <span className="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                            {activity.frequency}
+                          </span>
+                          <span className="text-xs font-medium bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                            {activity.status}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-8">No activities have been scheduled in this care plan yet.</p>
+                  )}
                 </div>
               </div>
             </TabsContent>
@@ -192,71 +239,19 @@ export const ClientCarePlanDetailDialog: React.FC<ClientCarePlanDetailDialogProp
                 </p>
                 
                 <div className="space-y-4">
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium">Progress Update</h4>
-                        <p className="text-sm text-gray-500">Dr. Emily Smith, May 1, 2025</p>
+                  {carePlan.notes ? (
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-medium">Care Plan Notes</h4>
+                          <p className="text-sm text-gray-500">Last updated: {new Date(carePlan.updated_at).toLocaleDateString()}</p>
+                        </div>
                       </div>
+                      <p className="mt-2 text-gray-700 whitespace-pre-wrap">{carePlan.notes}</p>
                     </div>
-                    <p className="mt-2 text-gray-700">
-                      Client is showing good progress with mobility exercises. We're seeing about 15% improvement 
-                      in range of motion. Will continue with current regimen and reassess in 2 weeks.
-                    </p>
-                  </div>
-                  
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium">Dietary Recommendations</h4>
-                        <p className="text-sm text-gray-500">Nutritionist Jane Wilson, April 22, 2025</p>
-                      </div>
-                    </div>
-                    <p className="mt-2 text-gray-700">
-                      Client is responding well to the low-sodium meal plan. Blood pressure readings have improved. 
-                      Recommend continuing current diet with minor modifications to increase protein intake.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-            
-            {/* Assessments Tab */}
-            <TabsContent value="assessments" className="p-6">
-              <div className="space-y-6">
-                <h3 className="text-lg font-medium">Your Assessments</h3>
-                <p className="text-gray-600">
-                  These are the assessments performed by your care team to evaluate your health and progress.
-                </p>
-                
-                <div className="space-y-4">
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium">Mobility Assessment</h4>
-                        <p className="text-sm text-gray-500">Physical Therapist, April 25, 2025</p>
-                      </div>
-                      <Badge>Completed</Badge>
-                    </div>
-                    <p className="mt-2 text-gray-700">
-                      Assessment showed improved mobility in left leg. Range of motion increased by 15 degrees since last assessment.
-                      Client can now walk unassisted for 12 minutes before requiring rest.
-                    </p>
-                  </div>
-                  
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium">Nutritional Assessment</h4>
-                        <p className="text-sm text-gray-500">Dietician, April 18, 2025</p>
-                      </div>
-                      <Badge>Completed</Badge>
-                    </div>
-                    <p className="mt-2 text-gray-700">
-                      Client is maintaining good adherence to dietary recommendations. Blood sugar levels show improvement.
-                      Weight has stabilized at target range.
-                    </p>
-                  </div>
+                  ) : (
+                    <p className="text-gray-500 text-center py-8">No notes have been added to this care plan yet.</p>
+                  )}
                 </div>
               </div>
             </TabsContent>

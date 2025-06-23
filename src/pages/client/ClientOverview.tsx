@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, FileText, CreditCard, Clock, AlertCircle } from "lucide-react";
@@ -9,10 +8,21 @@ import { useClientProfile, useClientCarePlans, useClientAppointments, useClientB
 import { format, parseISO, differenceInDays, isValid } from "date-fns";
 
 const ClientOverview = () => {
-  const { data: clientProfile, isLoading: profileLoading, error: profileError } = useClientProfile();
-  const { data: carePlans, isLoading: carePlansLoading, error: carePlansError } = useClientCarePlans();
-  const { data: appointments, isLoading: appointmentsLoading, error: appointmentsError } = useClientAppointments();
-  const { data: billing, isLoading: billingLoading, error: billingError } = useClientBilling();
+  // Get authenticated client ID from localStorage
+  const getClientId = () => {
+    const clientId = localStorage.getItem("clientId");
+    if (!clientId) {
+      console.error("No authenticated client ID found");
+      return null;
+    }
+    return clientId;
+  };
+
+  const clientId = getClientId();
+  const { data: clientProfile, isLoading: profileLoading, error: profileError } = useClientProfile(clientId);
+  const { data: carePlans, isLoading: carePlansLoading, error: carePlansError } = useClientCarePlans(clientId);
+  const { data: appointments, isLoading: appointmentsLoading, error: appointmentsError } = useClientAppointments(clientId);
+  const { data: billing, isLoading: billingLoading, error: billingError } = useClientBilling(clientId);
   
   const [carePlanDialogOpen, setCarePlanDialogOpen] = useState(false);
   const [isRescheduling, setIsRescheduling] = useState(false);
@@ -34,6 +44,19 @@ const ClientOverview = () => {
       return null;
     }
   };
+
+  // Show authentication error if no client ID
+  if (!clientId) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
+          <p className="text-gray-500">Please log in to view your dashboard.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Show loading state
   if (profileLoading || carePlansLoading || appointmentsLoading || billingLoading) {

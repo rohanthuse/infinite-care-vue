@@ -97,6 +97,11 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {
 };
 
 const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePlanWithDetails[]> => {
+  if (!clientId) {
+    console.error('[fetchClientCarePlansWithDetails] No client ID provided');
+    return [];
+  }
+
   console.log(`[fetchClientCarePlansWithDetails] Input client ID: ${clientId}`);
 
   const { data, error } = await supabase
