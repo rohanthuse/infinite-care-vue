@@ -61,28 +61,20 @@ serve(async (req) => {
         createError.message.includes('User already registered') ||
         createError.message.includes('already exists')
       )) {
-        console.log('[setup-client-auth] User already exists, attempting to update password');
+        console.log('[setup-client-auth] User already exists, attempting to find and update password');
         
-        // For existing users, we'll use the admin API to update password by email
-        // First, let's try to get the user by email using the admin API
+        // Try to get user by email using the admin getUserByEmail method (if available)
+        // If not available, we'll use a different approach
         try {
-          const { data: usersData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
-            page: 1,
-            perPage: 1000 // We'll search through users to find by email
-          });
-
-          if (listError) {
-            console.error('[setup-client-auth] List users error:', listError);
-            // If we can't list users due to the schema issue, try a different approach
-            // We'll create a temporary user and then update, or use RPC if available
-            throw new Error('Cannot access user list to update existing user: ' + listError.message);
-          }
-
-          // Find the user by email
-          const existingUser = usersData.users?.find(user => user.email === clientData.email);
+          // First try to update by email - this is a simpler approach
+          console.log('[setup-client-auth] Attempting to update existing user password by email');
           
-          if (existingUser) {
-            authUserId = existingUser.id;
+          // Use the admin updateUserByEmail method if available, otherwise fall back to creating temp user approach
+          const { data: getUserData, error: getUserError } = await supabaseAdmin.auth.admin.getUserByEmail?.(clientData.email) || 
+            await supabaseAdmin.rpc('get_user_by_email', { user_email: clientData.email }).catch(() => ({ data: null, error: null }));
+
+          if (getUserData && getUserData.user) {
+            authUserId = getUserData.user.id;
             console.log('[setup-client-auth] Found existing user:', authUserId);
 
             // Update existing user's password
@@ -98,33 +90,50 @@ serve(async (req) => {
 
             console.log('[setup-client-auth] Successfully updated password for existing user');
           } else {
-            throw new Error('User email exists but could not find user record');
+            // If we can't find the user by email, try alternative approach
+            // Create a temporary user to get the auth user ID, then delete and recreate properly
+            console.log('[setup-client-auth] Could not find user by email, using alternative approach');
+            
+            // Generate a temporary email to create a new user and get an ID
+            const tempEmail = `temp_${Date.now()}_${Math.random()}@temp.local`;
+            const { data: tempUserData, error: tempUserError } = await supabaseAdmin.auth.admin.createUser({
+              email: tempEmail,
+              password: 'temp_password',
+              email_confirm: true
+            });
+
+            if (tempUserData?.user) {
+              authUserId = tempUserData.user.id;
+              
+              // Now update this user with the correct email and password
+              const { error: finalUpdateError } = await supabaseAdmin.auth.admin.updateUserById(
+                authUserId,
+                { 
+                  email: clientData.email,
+                  password,
+                  user_metadata: {
+                    first_name: clientData.first_name,
+                    last_name: clientData.last_name,
+                    role: 'client'
+                  }
+                }
+              );
+
+              if (finalUpdateError) {
+                // Clean up the temp user
+                await supabaseAdmin.auth.admin.deleteUser(authUserId);
+                throw new Error('Failed to update user with correct credentials: ' + finalUpdateError.message);
+              }
+
+              console.log('[setup-client-auth] Successfully created and updated user via alternative method');
+            } else {
+              throw new Error('Could not create temporary user for update: ' + (tempUserError?.message || 'Unknown error'));
+            }
           }
 
-        } catch (listUsersError) {
-          console.error('[setup-client-auth] Could not handle existing user:', listUsersError);
-          
-          // If we can't list users due to schema issues, try alternative approach
-          // Try to sign in the user to see if they exist, then update via admin API
-          console.log('[setup-client-auth] Attempting alternative approach for existing user');
-          
-          // Generate a temporary password to try sign in
-          const { data: signInData, error: signInError } = await supabaseAdmin.auth.signInWithPassword({
-            email: clientData.email,
-            password: 'temporary-test-password'
-          });
-          
-          if (signInError && signInError.message.includes('Invalid login credentials')) {
-            // User exists but password is wrong, which is expected
-            // Now we need to reset their password using admin API
-            console.log('[setup-client-auth] User exists, attempting password reset approach');
-            
-            // Try to generate a password reset and then update
-            // For now, let's just throw an error with a helpful message
-            throw new Error('User already exists but cannot update password due to database schema issues. Please contact system administrator.');
-          } else {
-            throw new Error('Could not determine user existence: ' + (listUsersError as Error).message);
-          }
+        } catch (alternativeError) {
+          console.error('[setup-client-auth] Alternative user handling failed:', alternativeError);
+          throw new Error('User already exists but cannot update password. Please contact system administrator.');
         }
       } else {
         console.error('[setup-client-auth] User creation error:', createError);
