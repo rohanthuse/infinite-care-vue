@@ -1,5 +1,5 @@
 
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Route, Navigate, Outlet } from "react-router-dom";
 import ClientDashboard from "@/pages/ClientDashboard";
 import ClientOverview from "@/pages/client/ClientOverview";
 import ClientAppointments from "@/pages/client/ClientAppointments";
@@ -11,10 +11,10 @@ import ClientMessages from "@/pages/client/ClientMessages";
 import ClientReviews from "@/pages/client/ClientReviews";
 import ClientSupport from "@/pages/client/ClientSupport";
 import ClientServiceReports from "@/pages/client/ClientServiceReports";
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 
 // Higher-order component to check client authentication
-const RequireClientAuth = ({ children }: { children: React.ReactNode }) => {
+const RequireClientAuth = () => {
   const isClient = localStorage.getItem("userType") === "client";
   
   if (!isClient) {
@@ -22,23 +22,20 @@ const RequireClientAuth = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/client-login" replace />;
   }
   
-  return <>{children}</>;
+  return <Outlet />;
 };
 
 // Use suspense to lazy load non-essential components
-const LoadingFallback = () => <div className="p-4">Loading...</div>;
+const LoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+);
 
-// Client routes definition for use in App.tsx
-const ClientRoutes = () => {
-  return [
-    <Route key="client-dashboard" 
-      path="/client-dashboard" 
-      element={
-        <RequireClientAuth>
-          <ClientDashboard />
-        </RequireClientAuth>
-      }
-    >
+// Client routes definition for use in App.tsx - returns array for consistency
+const ClientRoutes = () => [
+  <Route key="client-auth" element={<RequireClientAuth />}>
+    <Route path="/client-dashboard" element={<ClientDashboard />}>
       <Route index element={<ClientOverview />} />
       <Route path="appointments" element={<ClientAppointments />} />
       <Route path="care-plans" element={<ClientCarePlans />} />
@@ -54,7 +51,7 @@ const ClientRoutes = () => {
       <Route path="profile" element={<ClientProfile />} />
       <Route path="support" element={<ClientSupport />} />
     </Route>
-  ];
-};
+  </Route>
+];
 
 export default ClientRoutes;

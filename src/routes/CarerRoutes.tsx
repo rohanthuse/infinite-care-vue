@@ -1,5 +1,6 @@
 
-import { Route } from "react-router-dom";
+import { Route, Navigate, Outlet } from "react-router-dom";
+import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
 import CarerDashboard from "@/pages/CarerDashboard";
 import CarerOverview from "@/pages/carer/CarerOverview";
 import CarerProfile from "@/pages/carer/CarerProfile";
@@ -16,16 +17,31 @@ import CarerAttendance from "@/pages/carer/CarerAttendance";
 import CarerDocuments from "@/pages/carer/CarerDocuments";
 import CarerVisitWorkflow from "@/pages/carer/CarerVisitWorkflow";
 
+const RequireCarerAuth = () => {
+  const { isAuthenticated, loading } = useCarerAuthSafe();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/carer-login" replace />;
+  }
+
+  return <Outlet />;
+};
+
 /**
  * CarerRoutes component containing all routes related to the carer dashboard
- * This allows us to keep carer routes separate from other parts of the application
- * 
- * Note: This component returns an array of Route elements to be used directly within
- * a parent Routes component, not a Routes component itself.
+ * Returns an array of Route elements for consistent usage in App.tsx
  */
-const CarerRoutes = () => {
-  return [
-    <Route key="carer-dashboard" path="/carer-dashboard" element={<CarerDashboard />}>
+const CarerRoutes = () => [
+  <Route key="carer-auth" element={<RequireCarerAuth />}>
+    <Route path="/carer-dashboard" element={<CarerDashboard />}>
       <Route index element={<CarerOverview />} />
       <Route path="profile" element={<CarerProfile />} />
       <Route path="schedule" element={<CarerSchedule />} />
@@ -41,7 +57,7 @@ const CarerRoutes = () => {
       <Route path="documents" element={<CarerDocuments />} />
       <Route path="visit/:appointmentId" element={<CarerVisitWorkflow />} />
     </Route>
-  ];
-};
+  </Route>
+];
 
 export default CarerRoutes;
