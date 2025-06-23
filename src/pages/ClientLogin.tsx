@@ -33,13 +33,13 @@ const ClientLogin = () => {
     
     try {
       // First, check if the client exists in our database
-      const { data: clientCheck, error: clientCheckError } = await supabase
+      const { data: clientData, error: clientCheckError } = await supabase
         .from('clients')
         .select('id, first_name, last_name, status, temporary_password')
         .eq('email', email.trim().toLowerCase())
         .single();
 
-      console.log('[ClientLogin] Client check result:', { clientCheck, clientCheckError });
+      console.log('[ClientLogin] Client check result:', { clientData, clientCheckError });
 
       if (clientCheckError) {
         console.error('[ClientLogin] Client not found in database:', clientCheckError);
@@ -47,20 +47,20 @@ const ClientLogin = () => {
         return;
       }
 
-      if (!clientCheck) {
+      if (!clientData) {
         setError("No client account found with this email address. Please contact support.");
         return;
       }
 
       // Fix case sensitivity issue with status check
-      if (clientCheck.status?.toLowerCase() !== 'active') {
-        console.error('[ClientLogin] Client account not active:', clientCheck.status);
+      if (clientData.status?.toLowerCase() !== 'active') {
+        console.error('[ClientLogin] Client account not active:', clientData.status);
         setError("Your account is not active. Please contact support.");
         return;
       }
 
       // Log temporary password info for debugging (remove in production)
-      console.log('[ClientLogin] Client found with temp password set:', !!clientCheck.temporary_password);
+      console.log('[ClientLogin] Client found with temp password set:', !!clientData.temporary_password);
 
       // Attempt to sign in with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({

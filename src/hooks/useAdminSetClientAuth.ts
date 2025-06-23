@@ -21,7 +21,7 @@ const setupClientAuth = async ({ clientId, password, adminId }: SetupClientAuthP
   
   try {
     // Get client details first
-    const { data: client, error: clientError } = await supabase
+    const { data: clientData, error: clientError } = await supabase
       .from('clients')
       .select('email, first_name, last_name')
       .eq('id', clientId)
@@ -32,13 +32,13 @@ const setupClientAuth = async ({ clientId, password, adminId }: SetupClientAuthP
       throw new Error('Client not found');
     }
 
-    if (!client || !client.email) {
+    if (!clientData || !clientData.email) {
       throw new Error('Client not found or missing email');
     }
 
     // Check if auth user already exists
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find(u => u.email === client.email);
+    const existingUser = existingUsers?.users?.find(u => u.email === clientData.email);
 
     let authUserId;
 
@@ -58,12 +58,12 @@ const setupClientAuth = async ({ clientId, password, adminId }: SetupClientAuthP
     } else {
       // Create new auth user
       const { data: createData, error: createError } = await supabase.auth.admin.createUser({
-        email: client.email,
+        email: clientData.email,
         password,
         email_confirm: true,
         user_metadata: {
-          first_name: client.first_name,
-          last_name: client.last_name,
+          first_name: clientData.first_name,
+          last_name: clientData.last_name,
           role: 'client'
         }
       });
