@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TaskProvider } from "@/contexts/TaskContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ClientAuthProvider } from "@/contexts/ClientAuthContext";
 import Index from "./pages/Index";
 import CarerLogin from "./pages/CarerLogin";
 import CarerLoginSafe from "./pages/CarerLoginSafe";
@@ -57,12 +58,20 @@ function App() {
                   <Route path="/carer-login" element={<CarerLoginSafe />} />
                   <Route path="/carer-invitation" element={<CarerInvitation />} />
                   <Route path="/carer-onboarding" element={<CarerOnboarding />} />
+                  
+                  {/* Client Login - Outside of ClientAuthProvider */}
                   <Route path="/client-login" element={<ClientLogin />} />
+                  
+                  {/* Client Routes - Wrapped with ClientAuthProvider */}
+                  <Route path="/client-dashboard/*" element={
+                    <ClientAuthProvider>
+                      <ClientRoutes />
+                    </ClientAuthProvider>
+                  } />
                   
                   {/* Protected Routes - All now consistently return arrays */}
                   {AdminRoutes()}
                   {CarerRoutes()}
-                  {ClientRoutes()}
                   
                   {/* Fallback route for unmatched paths */}
                   <Route path="*" element={<RoutingErrorFallback />} />
