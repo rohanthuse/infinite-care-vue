@@ -62,7 +62,7 @@ const createReview = async (reviewData: CreateReviewData): Promise<ClientReview>
   const { data, error } = await supabase
     .from('reviews')
     .insert([reviewData])
-    .select()
+    .select('*')
     .single();
 
   if (error) {
@@ -80,7 +80,7 @@ const updateReview = async (reviewId: string, updateData: UpdateReviewData): Pro
     .from('reviews')
     .update(updateData)
     .eq('id', reviewId)
-    .select()
+    .select('*')
     .single();
 
   if (error) {
