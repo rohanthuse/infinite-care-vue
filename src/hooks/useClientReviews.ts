@@ -14,7 +14,7 @@ export interface ClientReview {
   comment?: string;
   service_type?: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string; // Make this optional since it might not always be returned
   can_edit_until: string;
 }
 
@@ -53,7 +53,10 @@ const fetchClientReviews = async (clientId: string): Promise<ClientReview[]> => 
     throw error;
   }
 
-  return data || [];
+  return (data || []).map(review => ({
+    ...review,
+    updated_at: review.updated_at || review.created_at // Fallback to created_at if updated_at is missing
+  }));
 };
 
 const createReview = async (reviewData: CreateReviewData): Promise<ClientReview> => {
@@ -70,7 +73,10 @@ const createReview = async (reviewData: CreateReviewData): Promise<ClientReview>
     throw error;
   }
 
-  return data;
+  return {
+    ...data,
+    updated_at: data.updated_at || data.created_at // Ensure updated_at is present
+  };
 };
 
 const updateReview = async (reviewId: string, updateData: UpdateReviewData): Promise<ClientReview> => {
@@ -88,7 +94,10 @@ const updateReview = async (reviewId: string, updateData: UpdateReviewData): Pro
     throw error;
   }
 
-  return data;
+  return {
+    ...data,
+    updated_at: data.updated_at || data.created_at // Ensure updated_at is present
+  };
 };
 
 const checkExistingReview = async (clientId: string, appointmentId: string): Promise<ClientReview | null> => {
@@ -106,7 +115,12 @@ const checkExistingReview = async (clientId: string, appointmentId: string): Pro
     throw error;
   }
 
-  return data;
+  if (!data) return null;
+
+  return {
+    ...data,
+    updated_at: data.updated_at || data.created_at // Ensure updated_at is present
+  };
 };
 
 export const useClientReviews = (clientId: string) => {
