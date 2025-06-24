@@ -32,6 +32,8 @@ const ClientMessages = () => {
     setSelectedContactId(contactId);
     // Reset selected message when changing contacts
     setSelectedMessageId(null);
+    // Show composer when selecting a contact
+    setShowComposer(true);
   };
   
   const handleMessageSelect = (messageId: string) => {
@@ -47,6 +49,14 @@ const ClientMessages = () => {
   
   const handleSendMessage = () => {
     setShowComposer(false);
+    // Refresh message list by clearing selected contact temporarily
+    const currentContact = selectedContactId;
+    setSelectedContactId(null);
+    setTimeout(() => setSelectedContactId(currentContact), 100);
+  };
+
+  const handleReply = () => {
+    setShowComposer(true);
   };
   
   if (!isLoaded) {
@@ -91,20 +101,27 @@ const ClientMessages = () => {
           {showComposer ? (
             <MemoizedMessageComposer
               selectedContactId={selectedContactId}
+              selectedThreadId={selectedMessageId}
               onClose={() => setShowComposer(false)}
               onSend={handleSendMessage}
             />
           ) : selectedMessageId ? (
             <MemoizedMessageView 
               messageId={selectedMessageId}
-              onReply={handleComposeClick}
+              onReply={handleReply}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full bg-gray-50">
               <div className="text-gray-400 text-lg mb-2">No message selected</div>
               <p className="text-sm text-gray-500 max-w-md text-center">
-                Select a message from the list to view it, or start a new conversation.
+                Select a message from the list to view it, or start a new conversation with your care team.
               </p>
+              <button 
+                onClick={handleComposeClick}
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Start New Conversation
+              </button>
             </div>
           )}
         </div>
