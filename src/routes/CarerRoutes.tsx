@@ -1,5 +1,5 @@
 
-import { Route, Navigate, Outlet } from "react-router-dom";
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
 import CarerDashboard from "@/pages/CarerDashboard";
 import CarerOverview from "@/pages/carer/CarerOverview";
@@ -35,29 +35,29 @@ const RequireCarerAuth = () => {
   return <Outlet />;
 };
 
-/**
- * CarerRoutes component containing all routes related to the carer dashboard
- * Returns an array of Route elements for consistent usage in App.tsx
- */
-const CarerRoutes = () => [
-  <Route key="carer-auth" element={<RequireCarerAuth />}>
-    <Route path="/carer-dashboard" element={<CarerDashboard />}>
-      <Route index element={<CarerOverview />} />
-      <Route path="profile" element={<CarerProfile />} />
-      <Route path="schedule" element={<CarerSchedule />} />
-      <Route path="appointments" element={<CarerAppointments />} />
-      <Route path="careplans" element={<CarerCarePlans />} />
-      <Route path="tasks" element={<CarerTasks />} />
-      <Route path="news2" element={<CarerNews2 />} />
-      <Route path="reports" element={<CarerReports />} />
-      <Route path="payments" element={<CarerPayments />} />
-      <Route path="training" element={<CarerTraining />} />
-      <Route path="clients" element={<CarerClients />} />
-      <Route path="attendance" element={<CarerAttendance />} />
-      <Route path="documents" element={<CarerDocuments />} />
-      <Route path="visit/:appointmentId" element={<CarerVisitWorkflow />} />
-    </Route>
-  </Route>
-];
+const CarerRoutes = () => {
+  return (
+    <Routes>
+      <Route element={<RequireCarerAuth />}>
+        <Route path="/" element={<CarerDashboard />}>
+          <Route index element={<CarerOverview />} />
+          <Route path="profile" element={<CarerProfile />} />
+          <Route path="schedule" element={<CarerSchedule />} />
+          <Route path="appointments" element={<CarerAppointments />} />
+          <Route path="careplans" element={<CarerCarePlans />} />
+          <Route path="tasks" element={<CarerTasks />} />
+          <Route path="news2" element={<CarerNews2 />} />
+          <Route path="reports" element={<CarerReports />} />
+          <Route path="payments" element={<CarerPayments />} />
+          <Route path="training" element={<CarerTraining />} />
+          <Route path="clients" element={<CarerClients />} />
+          <Route path="attendance" element={<CarerAttendance />} />
+          <Route path="documents" element={<CarerDocuments />} />
+          <Route path="visit/:appointmentId" element={<CarerVisitWorkflow />} />
+        </Route>
+      </Route>
+    </Routes>
+  );
+};
 
 export default CarerRoutes;
