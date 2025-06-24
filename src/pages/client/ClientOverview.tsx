@@ -1,53 +1,46 @@
-import React, { useState } from "react";
+
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, FileText, CreditCard, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ClientCarePlanDetailDialog } from "@/components/client/ClientCarePlanDetailDialog";
-import { RescheduleAppointmentDialog } from "@/components/client/RescheduleAppointmentDialog";
-import { useClientProfile, useClientCarePlans, useClientAppointments, useClientBilling } from "@/hooks/useClientData";
-import { useClientCarePlansWithDetails } from "@/hooks/useCarePlanData";
-import { format, parseISO, differenceInDays, isValid } from "date-fns";
+import { Calendar, Clock, CreditCard, Star, FileText, User, AlertCircle } from "lucide-react";
+import { useClientAppointments } from "@/hooks/useClientAppointments";
+import { useEnhancedClientBilling } from "@/hooks/useEnhancedClientBilling";
+import { useClientReviews } from "@/hooks/useClientReviews";
+import { formatCurrency } from "@/utils/currencyFormatter";
+import { format, parseISO } from "date-fns";
+import { Link } from "react-router-dom";
 
 const ClientOverview = () => {
   // Get authenticated client ID from localStorage
   const getClientId = () => {
     const clientId = localStorage.getItem("clientId");
-    if (!clientId) {
-      console.error("No authenticated client ID found");
-      return null;
-    }
-    return clientId;
+    return clientId || '';
   };
 
   const clientId = getClientId();
-  const { data: clientProfile, isLoading: profileLoading, error: profileError } = useClientProfile(clientId);
-  const { data: carePlans, isLoading: carePlansLoading, error: carePlansError } = useClientCarePlans(clientId);
-  const { data: carePlansWithDetails, isLoading: carePlansDetailsLoading } = useClientCarePlansWithDetails(clientId || '');
-  const { data: appointments, isLoading: appointmentsLoading, error: appointmentsError } = useClientAppointments(clientId);
-  const { data: billing, isLoading: billingLoading, error: billingError } = useClientBilling(clientId);
+  const { data: appointments } = useClientAppointments(clientId);
+  const { data: invoices } = useEnhancedClientBilling(clientId);
+  const { data: reviews } = useClientReviews(clientId);
+
+  // Calculate summaries
+  const upcomingAppointments = appointments?.filter(app => 
+    app.status === 'confirmed' || app.status === 'scheduled'
+  ) || [];
   
-  const [carePlanDialogOpen, setCarePlanDialogOpen] = useState(false);
-  const [isRescheduling, setIsRescheduling] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const pendingInvoices = invoices?.filter(inv => 
+    inv.status === 'pending' || inv.status === 'sent'
+  ) || [];
+  
+  const totalOutstanding = pendingInvoices.reduce((sum, inv) => 
+    sum + (inv.total_amount || inv.amount), 0
+  );
 
-  // Handle reschedule button click
-  const handleReschedule = (appointment: any) => {
-    setSelectedAppointment(appointment);
-    setIsRescheduling(true);
-  };
+  const nextAppointment = upcomingAppointments.sort((a, b) => 
+    new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime()
+  )[0];
 
-  // Helper function to safely parse dates
-  const safeParseDateString = (dateString: string | null | undefined) => {
-    if (!dateString) return null;
-    try {
-      const parsed = parseISO(dateString);
-      return isValid(parsed) ? parsed : null;
-    } catch {
-      return null;
-    }
-  };
+  const recentReviews = reviews?.slice(0, 3) || [];
 
-  // Show authentication error if no client ID
   if (!clientId) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -60,263 +53,171 @@ const ClientOverview = () => {
     );
   }
 
-  // Show loading state
-  if (profileLoading || carePlansLoading || appointmentsLoading || billingLoading || carePlansDetailsLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  // Show error state
-  if (profileError || carePlansError || appointmentsError || billingError) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to load data</h3>
-          <p className="text-gray-500">Please try refreshing the page or contact support if the problem persists.</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Get upcoming appointments (next 30 days)
-  const upcomingAppointments = appointments?.filter(apt => {
-    const appointmentDate = safeParseDateString(apt.appointment_date);
-    if (!appointmentDate) return false;
-    const today = new Date();
-    const daysDiff = differenceInDays(appointmentDate, today);
-    return daysDiff >= 0 && daysDiff <= 30;
-  }) || [];
-
-  // Get active care plans - use the detailed version for the dialog
-  const activeCarePlans = carePlans?.filter(plan => plan.status?.toLowerCase() === 'active') || [];
-  const activeCarePlansWithDetails = carePlansWithDetails?.filter(plan => plan.status?.toLowerCase() === 'active') || [];
-
-  // Calculate next review date
-  const nextReview = activeCarePlans.find(plan => plan.review_date)?.review_date;
-  const daysUntilReview = nextReview ? (() => {
-    const reviewDate = safeParseDateString(nextReview);
-    return reviewDate ? differenceInDays(reviewDate, new Date()) : null;
-  })() : null;
-
-  // Calculate total amount due from billing
-  const totalAmountDue = billing?.reduce((sum, bill) => sum + (bill.amount || 0), 0) || 0;
-  const nextDueDate = billing?.[0]?.due_date;
-
   return (
-    <div className="space-y-8">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-xl">
-        <h2 className="text-2xl font-bold">
-          Welcome back, {clientProfile?.preferred_name || clientProfile?.first_name || 'Client'}
-        </h2>
-        <p className="mt-2 text-blue-100">
-          Welcome to your personal health dashboard. Here's a summary of your care plan and upcoming appointments.
-        </p>
+    <div className="space-y-6">
+      {/* Welcome Section */}
+      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-xl">
+        <h1 className="text-2xl font-bold mb-2">Welcome back!</h1>
+        <p className="text-blue-100">Here's an overview of your care services and recent activity.</p>
       </div>
-      
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Upcoming Appointments</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">{upcomingAppointments.length}</div>
-              <Calendar className="h-5 w-5 text-blue-600" />
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              {upcomingAppointments.length > 0 ? (() => {
-                const nextDate = safeParseDateString(upcomingAppointments[0].appointment_date);
-                return nextDate ? `Next: ${format(nextDate, 'MMM d')}` : 'Date pending';
-              })() : 'No upcoming appointments'}
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Active Care Plans</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">{activeCarePlans.length}</div>
-              <FileText className="h-5 w-5 text-blue-600" />
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              {activeCarePlans.length > 0 ? (() => {
-                const updatedDate = safeParseDateString(activeCarePlans[0].updated_at);
-                return updatedDate ? `Updated: ${format(updatedDate, 'MMM d')}` : 'Recently updated';
-              })() : 'No active care plans'}
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Payment Due</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">£{totalAmountDue.toFixed(2)}</div>
-              <CreditCard className="h-5 w-5 text-blue-600" />
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              {nextDueDate ? (() => {
-                const dueDate = safeParseDateString(nextDueDate);
-                return dueDate ? `Due: ${format(dueDate, 'MMM d, yyyy')}` : 'Due date pending';
-              })() : totalAmountDue > 0 ? 'Payment pending' : 'No outstanding payments'}
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Next Review</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">
-                {daysUntilReview !== null ? `${daysUntilReview} Days` : 'N/A'}
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Calendar className="h-8 w-8 text-blue-500" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Upcoming</p>
+                <p className="text-2xl font-bold">{upcomingAppointments.length}</p>
               </div>
-              <Clock className="h-5 w-5 text-blue-600" />
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              {nextReview ? (() => {
-                const reviewDate = safeParseDateString(nextReview);
-                return reviewDate ? `Care Plan Review: ${format(reviewDate, 'MMM d')}` : 'Review date pending';
-              })() : 'No review scheduled'}
-            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <CreditCard className="h-8 w-8 text-green-500" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Outstanding</p>
+                <p className="text-2xl font-bold">{formatCurrency(totalOutstanding)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Star className="h-8 w-8 text-yellow-500" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Reviews</p>
+                <p className="text-2xl font-bold">{reviews?.length || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <FileText className="h-8 w-8 text-purple-500" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Invoices</p>
+                <p className="text-2xl font-bold">{invoices?.length || 0}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
-      
-      {/* Upcoming Appointments */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-bold">Upcoming Appointments</h3>
-        </div>
-        <div className="divide-y divide-gray-200">
-          {upcomingAppointments.length > 0 ? (
-            upcomingAppointments.slice(0, 3).map((appointment) => {
-              const appointmentDate = safeParseDateString(appointment.appointment_date);
-              return (
-                <div key={appointment.id} className="p-6 flex justify-between items-center">
+
+      {/* Next Appointment */}
+      {nextAppointment && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Calendar className="h-5 w-5 mr-2" />
+              Next Appointment
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold">{nextAppointment.appointment_type}</h3>
+                <div className="flex items-center text-gray-600 mt-1">
+                  <User className="h-4 w-4 mr-1" />
+                  <span className="text-sm">{nextAppointment.provider_name}</span>
+                </div>
+                <div className="flex items-center text-gray-600 mt-1">
+                  <Clock className="h-4 w-4 mr-1" />
+                  <span className="text-sm">
+                    {format(parseISO(nextAppointment.appointment_date), 'MMM d, yyyy')} at {nextAppointment.appointment_time}
+                  </span>
+                </div>
+              </div>
+              <Link to="/client-dashboard/appointments">
+                <Button>View All</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Outstanding Payments */}
+      {pendingInvoices.length > 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="flex items-center text-orange-800">
+              <CreditCard className="h-5 w-5 mr-2" />
+              Outstanding Payments
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-orange-800">{formatCurrency(totalOutstanding)}</p>
+                <p className="text-orange-600 text-sm">
+                  {pendingInvoices.length} pending {pendingInvoices.length === 1 ? 'invoice' : 'invoices'}
+                </p>
+              </div>
+              <Link to="/client-dashboard/payments">
+                <Button>Pay Now</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recent Reviews */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center">
+              <Star className="h-5 w-5 mr-2" />
+              Recent Reviews
+            </CardTitle>
+            <Link to="/client-dashboard/reviews">
+              <Button variant="outline" size="sm">View All</Button>
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {recentReviews.length > 0 ? (
+            <div className="space-y-4">
+              {recentReviews.map((review) => (
+                <div key={review.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
                   <div>
-                    <p className="font-medium">{appointment.appointment_type}</p>
-                    <p className="text-sm text-gray-500">{appointment.provider_name}</p>
-                    <div className="flex items-center mt-2 text-xs text-gray-500">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      <span>
-                        {appointmentDate 
-                          ? `${format(appointmentDate, 'MMM d, yyyy')} • ${appointment.appointment_time}`
-                          : 'Date and time pending'
-                        }
+                    <div className="flex items-center">
+                      {Array(5).fill(0).map((_, i) => (
+                        <Star 
+                          key={i} 
+                          className={`h-4 w-4 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
+                        />
+                      ))}
+                      <span className="ml-2 text-sm text-gray-600">
+                        {review.service_type || 'Care Service'}
                       </span>
                     </div>
+                    <p className="text-sm text-gray-700 mt-1">
+                      {review.comment ? review.comment.substring(0, 100) + (review.comment.length > 100 ? '...' : '') : 'No comment provided'}
+                    </p>
                   </div>
-                  <Button 
-                    size="sm" 
-                    onClick={() => handleReschedule({
-                      id: appointment.id,
-                      type: appointment.appointment_type,
-                      provider: appointment.provider_name,
-                      date: appointmentDate ? format(appointmentDate, 'MMM d, yyyy') : 'Date pending',
-                      time: appointment.appointment_time,
-                      location: appointment.location,
-                      status: appointment.status
-                    })}
-                  >
-                    Reschedule
-                  </Button>
+                  <div className="text-xs text-gray-500">
+                    {format(new Date(review.created_at), 'MMM d')}
+                  </div>
                 </div>
-              );
-            })
-          ) : (
-            <div className="p-6 text-center text-gray-500">
-              No upcoming appointments scheduled
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Care Plan Summary */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h3 className="text-lg font-bold">Care Plan Summary</h3>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setCarePlanDialogOpen(true)}
-            disabled={activeCarePlansWithDetails.length === 0}
-          >
-            View Full Plan
-          </Button>
-        </div>
-        <div className="p-6">
-          {activeCarePlans.length > 0 ? (
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-medium text-gray-900">Active Care Plan</h4>
-                <p className="text-sm text-gray-600 mt-1">{activeCarePlans[0].title}</p>
-                <p className="text-sm text-gray-500">Provider: {activeCarePlans[0].provider_name}</p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium text-gray-900">Progress</h4>
-                <div className="mt-2 bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full" 
-                    style={{ width: `${activeCarePlans[0].goals_progress || 0}%` }}
-                  ></div>
-                </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  {activeCarePlans[0].goals_progress || 0}% complete
-                </p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium text-gray-900">Next Steps</h4>
-                <p className="mt-1 text-sm text-gray-600">
-                  {nextReview ? (() => {
-                    const reviewDate = safeParseDateString(nextReview);
-                    return reviewDate 
-                      ? `Your next care plan review is scheduled for ${format(reviewDate, 'MMM d, yyyy')}. Please complete your weekly self-assessment forms before this date.`
-                      : 'Your care plan review is being scheduled. Please complete your weekly self-assessment forms.';
-                  })() : 'Continue following your care plan. Contact your provider if you have any questions.'}
-                </p>
-              </div>
+              ))}
             </div>
           ) : (
-            <div className="text-center text-gray-500 py-8">
-              <p>No active care plans found.</p>
-              <p className="text-sm mt-1">Contact your provider to set up a care plan.</p>
+            <div className="text-center py-8">
+              <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No reviews yet</h3>
+              <p className="text-gray-600">Your feedback on completed services will appear here.</p>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Care Plan Detail Dialog */}
-      {activeCarePlansWithDetails.length > 0 && (
-        <ClientCarePlanDetailDialog
-          open={carePlanDialogOpen}
-          onOpenChange={setCarePlanDialogOpen}
-          carePlan={activeCarePlansWithDetails[0]}
-        />
-      )}
-
-      {/* Reschedule Appointment Dialog */}
-      {selectedAppointment && (
-        <RescheduleAppointmentDialog
-          open={isRescheduling}
-          onOpenChange={setIsRescheduling}
-          appointment={selectedAppointment}
-        />
-      )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

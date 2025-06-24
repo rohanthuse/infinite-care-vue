@@ -1,346 +1,284 @@
 
 import React, { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, MapPin, User, Star, BarChart, AlertCircle } from "lucide-react";
-import { RescheduleAppointmentDialog } from "@/components/client/RescheduleAppointmentDialog";
-import { RequestAppointmentDialog } from "@/components/client/RequestAppointmentDialog";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Clock, MapPin, User, Star, MessageSquare } from "lucide-react";
+import { useClientAppointments } from "@/hooks/useClientAppointments";
 import { SubmitReviewDialog } from "@/components/client/SubmitReviewDialog";
 import { ViewReviewDialog } from "@/components/client/ViewReviewDialog";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/components/ui/use-toast";
-import { useNavigate } from "react-router-dom";
-import { useClientAppointments } from "@/hooks/useClientData";
-import { useClientReviews } from "@/hooks/useClientReviews";
-import { format, parseISO, isValid, isPast, isToday, isFuture } from "date-fns";
+import { useCheckExistingReview } from "@/hooks/useClientReviews";
+import { ReviewPrompt } from "@/components/client/ReviewPrompt";
+import { format, parseISO } from "date-fns";
 
 const ClientAppointments = () => {
-  const [activeTab, setActiveTab] = useState("upcoming");
-  const [isRescheduling, setIsRescheduling] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
-  const [isRequesting, setIsRequesting] = useState(false);
-  const [isReviewing, setIsReviewing] = useState(false);
-  const [isViewingReview, setIsViewingReview] = useState(false);
-  const [selectedReview, setSelectedReview] = useState<any>(null);
-  const { toast } = useToast();
-  const navigate = useNavigate();
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [viewReviewDialogOpen, setViewReviewDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [selectedReview, setSelectedReview] = useState(null);
 
-  // Get client ID from localStorage
+  // Get authenticated client ID from localStorage
   const getClientId = () => {
     const clientId = localStorage.getItem("clientId");
-    return clientId || '';
+    if (!clientId) {
+      console.error("No authenticated client ID found");
+      return null;
+    }
+    return clientId;
   };
 
   const clientId = getClientId();
+  const { data: appointments, isLoading, error } = useClientAppointments(clientId || '');
 
-  // Fetch real appointment and review data
-  const { data: appointments, isLoading, error } = useClientAppointments();
-  const { data: reviews, isLoading: reviewsLoading } = useClientReviews(clientId);
+  // Filter appointments by status
+  const upcomingAppointments = appointments?.filter(app => 
+    app.status === 'confirmed' || app.status === 'scheduled'
+  ) || [];
+  
+  const completedAppointments = appointments?.filter(app => 
+    app.status === 'completed'
+  ) || [];
 
-  // Helper function to safely parse dates
-  const safeParseDateString = (dateString: string | null | undefined) => {
-    if (!dateString) return null;
-    try {
-      const parsed = parseISO(dateString);
-      return isValid(parsed) ? parsed : null;
-    } catch {
-      return null;
-    }
-  };
-
-  // Helper function to check if appointment has a review
-  const getReviewForAppointment = (appointmentId: string) => {
-    return reviews?.find(review => review.appointment_id === appointmentId);
-  };
-
-  // Separate appointments into upcoming and past
-  const upcomingAppointments = appointments?.filter(apt => {
-    const appointmentDate = safeParseDateString(apt.appointment_date);
-    return appointmentDate && (isFuture(appointmentDate) || isToday(appointmentDate));
-  }) || [];
-
-  const pastAppointments = appointments?.filter(apt => {
-    const appointmentDate = safeParseDateString(apt.appointment_date);
-    return appointmentDate && isPast(appointmentDate) && !isToday(appointmentDate);
-  }) || [];
-
-  // Open reschedule dialog
-  const handleReschedule = (appointment: any) => {
-    const appointmentDate = safeParseDateString(appointment.appointment_date);
-    setSelectedAppointment({
-      id: appointment.id,
-      type: appointment.appointment_type,
-      provider: appointment.provider_name,
-      date: appointmentDate ? format(appointmentDate, 'MMM d, yyyy') : 'Date pending',
-      time: appointment.appointment_time,
-      location: appointment.location,
-      status: appointment.status
-    });
-    setIsRescheduling(true);
-  };
-
-  // Cancel appointment
-  const handleCancelAppointment = async (appointmentId: string) => {
-    try {
-      // In a real implementation, this would call a mutation to update the appointment status
-      toast({
-        title: "Appointment Cancelled",
-        description: "Your appointment has been cancelled successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to cancel appointment. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Open request appointment dialog
-  const handleRequestAppointment = () => {
-    setIsRequesting(true);
-  };
-
-  // Open submit review dialog
-  const handleReview = (appointment: any) => {
-    setSelectedAppointment({
-      id: appointment.id,
-      type: appointment.appointment_type,
-      provider: appointment.provider_name,
-      date: appointment.appointment_date ? format(safeParseDateString(appointment.appointment_date) || new Date(), 'MMM d, yyyy') : 'Date pending',
-      time: appointment.appointment_time,
-      staff_id: appointment.staff_id,
-      client_id: clientId
-    });
-    setIsReviewing(true);
-  };
-
-  // Open view review dialog
-  const handleViewReview = (appointmentId: string) => {
-    const review = getReviewForAppointment(appointmentId);
-    if (review) {
-      setSelectedReview(review);
-      setIsViewingReview(true);
-    } else {
-      toast({
-        title: "Review not found",
-        description: "Unable to load review details. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Handle view service report
-  const handleViewServiceReport = (appointment: any) => {
-    navigate("/client-dashboard/service-reports");
-    
-    toast({
-      title: "Service Report Loaded",
-      description: `Viewing service report for ${appointment.appointment_type} on ${format(safeParseDateString(appointment.appointment_date) || new Date(), 'MMM d, yyyy')}`,
-    });
-  };
-
-  // Get status badge style
-  const getStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "confirmed":
-        return "bg-green-100 text-green-800";
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
-      case "completed":
-        return "bg-gray-100 text-gray-800";
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmed':
+      case 'scheduled':
+        return 'bg-green-100 text-green-800';
+      case 'completed':
+        return 'bg-blue-100 text-blue-800';
+      case 'cancelled':
+        return 'bg-gray-100 text-gray-800';
+      case 'rescheduled':
+        return 'bg-yellow-100 text-yellow-800';
       default:
-        return "bg-blue-100 text-blue-800";
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  // Show loading state
-  if (isLoading || reviewsLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  const handleLeaveReview = (appointment: any) => {
+    setSelectedAppointment({
+      id: appointment.id,
+      type: appointment.appointment_type,
+      provider: appointment.provider_name,
+      date: appointment.appointment_date,
+      time: appointment.appointment_time,
+      client_id: appointment.client_id
+    });
+    setReviewDialogOpen(true);
+  };
 
-  // Show error state
-  if (error) {
+  if (!clientId) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to load appointments</h3>
-          <p className="text-gray-500">Please try refreshing the page or contact support if the problem persists.</p>
+          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
+          <p className="text-gray-500">Please log in to view your appointments.</p>
         </div>
       </div>
     );
   }
 
-  // Render appointment card
-  const renderAppointmentCard = (appointment: any, isPastAppointment: boolean = false) => {
-    const appointmentDate = safeParseDateString(appointment.appointment_date);
-    const existingReview = getReviewForAppointment(appointment.id);
-    
+  if (isLoading) {
     return (
-      <Card key={appointment.id} className="mb-4">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-start">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between md:justify-start">
-                <h3 className="text-lg font-bold">{appointment.appointment_type}</h3>
-                <span className={`text-xs font-medium px-2 py-1 rounded-full md:ml-3 ${getStatusBadge(appointment.status)}`}>
-                  {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                </span>
-              </div>
-              
-              <div className="text-sm text-gray-600 flex items-center">
-                <User className="h-4 w-4 mr-2" />
-                {appointment.provider_name}
-              </div>
-              
-              <div className="text-sm text-gray-600 flex items-center">
-                <Calendar className="h-4 w-4 mr-2" />
-                {appointmentDate ? format(appointmentDate, 'MMM d, yyyy') : 'Date pending'} • 
-                <Clock className="h-4 w-4 mx-2" /> 
-                {appointment.appointment_time || 'Time pending'}
-              </div>
-              
-              {appointment.location && (
-                <div className="text-sm text-gray-600 flex items-center">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  {appointment.location}
-                </div>
-              )}
-
-              {appointment.notes && (
-                <div className="text-sm text-gray-600">
-                  <strong>Notes:</strong> {appointment.notes}
-                </div>
-              )}
-
-              {existingReview && (
-                <div className="flex items-center text-sm text-green-600">
-                  <Star className="h-4 w-4 mr-1 fill-current" />
-                  Review submitted ({existingReview.rating}/5 stars)
-                </div>
-              )}
-            </div>
-            
-            <div className="flex gap-2 mt-4 md:mt-0">
-              {!isPastAppointment && (appointment.status === "confirmed" || appointment.status === "pending") ? (
-                <>
-                  <Button variant="outline" size="sm" onClick={() => handleReschedule(appointment)}>
-                    Reschedule
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-red-600 hover:bg-red-50"
-                    onClick={() => handleCancelAppointment(appointment.id)}
-                  >
-                    Cancel
-                  </Button>
-                </>
-              ) : isPastAppointment && appointment.status === "completed" ? (
-                <>
-                  {existingReview ? (
-                    <Button size="sm" variant="outline" onClick={() => handleViewReview(appointment.id)} className="gap-1">
-                      <Star className="h-4 w-4 mr-1" />
-                      View Feedback
-                    </Button>
-                  ) : (
-                    <Button size="sm" onClick={() => handleReview(appointment)} className="gap-1">
-                      <Star className="h-4 w-4 mr-1" />
-                      Leave Feedback
-                    </Button>
-                  )}
-                  <Button size="sm" variant="outline" onClick={() => handleViewServiceReport(appointment)} className="gap-1">
-                    <BarChart className="h-4 w-4 mr-1" />
-                    View Service Report
-                  </Button>
-                </>
-              ) : null}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your appointments...</p>
+        </div>
+      </div>
     );
-  };
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <Calendar className="h-12 w-12 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading appointments</h3>
+        <p className="text-gray-600">Unable to load your appointments. Please try refreshing the page.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {/* Review Prompt for completed appointments */}
+      <ReviewPrompt completedAppointments={completedAppointments.map(app => ({
+        id: app.id,
+        type: app.appointment_type,
+        provider: app.provider_name,
+        date: app.appointment_date,
+        time: app.appointment_time,
+        client_id: app.client_id,
+        completed_at: app.updated_at
+      }))} />
+
+      {/* Upcoming Appointments */}
       <div className="bg-white p-6 rounded-xl border border-gray-200">
-        <h2 className="text-xl font-bold mb-6">Your Appointments</h2>
+        <h2 className="text-xl font-bold mb-6">Upcoming Appointments</h2>
         
-        <Tabs defaultValue="upcoming" value={activeTab} onValueChange={setActiveTab}>
-          <div className="flex justify-between items-center mb-6">
-            <TabsList>
-              <TabsTrigger value="upcoming">
-                Upcoming ({upcomingAppointments.length})
-              </TabsTrigger>
-              <TabsTrigger value="past">
-                Past ({pastAppointments.length})
-              </TabsTrigger>
-            </TabsList>
-            <Button onClick={handleRequestAppointment}>Request Appointment</Button>
+        {upcomingAppointments.length > 0 ? (
+          <div className="grid gap-4">
+            {upcomingAppointments.map((appointment) => (
+              <Card key={appointment.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg">{appointment.appointment_type}</CardTitle>
+                      <div className="flex items-center text-gray-600 mt-1">
+                        <User className="h-4 w-4 mr-1" />
+                        <span className="text-sm">{appointment.provider_name}</span>
+                      </div>
+                    </div>
+                    <Badge className={getStatusColor(appointment.status)}>
+                      {appointment.status}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="flex items-center text-gray-600">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      <span>{format(parseISO(appointment.appointment_date), 'MMM d, yyyy')}</span>
+                    </div>
+                    <div className="flex items-center text-gray-600">
+                      <Clock className="h-4 w-4 mr-2" />
+                      <span>{appointment.appointment_time}</span>
+                    </div>
+                    <div className="flex items-center text-gray-600">
+                      <MapPin className="h-4 w-4 mr-2" />
+                      <span>{appointment.location}</span>
+                    </div>
+                  </div>
+                  {appointment.notes && (
+                    <div className="mt-3 p-3 bg-gray-50 rounded border-l-4 border-blue-200">
+                      <p className="text-sm text-gray-700">{appointment.notes}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
           </div>
-          
-          <TabsContent value="upcoming" className="space-y-4">
-            {upcomingAppointments.length > 0 ? (
-              upcomingAppointments.map(appointment => renderAppointmentCard(appointment, false))
-            ) : (
-              <div className="text-center p-8">
-                <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No upcoming appointments.</p>
-                <Button className="mt-4" onClick={handleRequestAppointment}>Schedule New Appointment</Button>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="past" className="space-y-4">
-            {pastAppointments.length > 0 ? (
-              pastAppointments.map(appointment => renderAppointmentCard(appointment, true))
-            ) : (
-              <div className="text-center p-8">
-                <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No past appointment records.</p>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+        ) : (
+          <div className="text-center py-8">
+            <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No upcoming appointments</h3>
+            <p className="text-gray-600">Your scheduled appointments will appear here.</p>
+          </div>
+        )}
       </div>
 
-      {/* Dialogs */}
-      {selectedAppointment && (
-        <RescheduleAppointmentDialog
-          open={isRescheduling}
-          onOpenChange={setIsRescheduling}
-          appointment={selectedAppointment}
-        />
-      )}
+      {/* Past Appointments */}
+      <div className="bg-white p-6 rounded-xl border border-gray-200">
+        <h2 className="text-xl font-bold mb-6">Past Appointments</h2>
+        
+        {completedAppointments.length > 0 ? (
+          <div className="grid gap-4">
+            {completedAppointments.map((appointment) => (
+              <AppointmentWithReview 
+                key={appointment.id} 
+                appointment={appointment}
+                onLeaveReview={handleLeaveReview}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No past appointments</h3>
+            <p className="text-gray-600">Your completed appointments will appear here.</p>
+          </div>
+        )}
+      </div>
 
-      <RequestAppointmentDialog
-        open={isRequesting}
-        onOpenChange={setIsRequesting}
+      {/* Review Dialogs */}
+      <SubmitReviewDialog
+        open={reviewDialogOpen}
+        onOpenChange={setReviewDialogOpen}
+        appointment={selectedAppointment}
       />
-      
-      {selectedAppointment && (
-        <SubmitReviewDialog
-          open={isReviewing}
-          onOpenChange={setIsReviewing}
-          appointment={selectedAppointment}
-        />
-      )}
-      
+
       <ViewReviewDialog
-        open={isViewingReview}
-        onOpenChange={setIsViewingReview}
+        open={viewReviewDialogOpen}
+        onOpenChange={setViewReviewDialogOpen}
         review={selectedReview}
       />
     </div>
+  );
+};
+
+// Component to handle individual appointment with review functionality
+const AppointmentWithReview = ({ appointment, onLeaveReview }: any) => {
+  const clientId = localStorage.getItem("clientId") || '';
+  const { data: existingReview } = useCheckExistingReview(clientId, appointment.id);
+
+  return (
+    <Card className="hover:shadow-md transition-shadow">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-lg">{appointment.appointment_type}</CardTitle>
+            <div className="flex items-center text-gray-600 mt-1">
+              <User className="h-4 w-4 mr-1" />
+              <span className="text-sm">{appointment.provider_name}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge className="bg-blue-100 text-blue-800">
+              {appointment.status}
+            </Badge>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-4">
+          <div className="flex items-center text-gray-600">
+            <Calendar className="h-4 w-4 mr-2" />
+            <span>{format(parseISO(appointment.appointment_date), 'MMM d, yyyy')}</span>
+          </div>
+          <div className="flex items-center text-gray-600">
+            <Clock className="h-4 w-4 mr-2" />
+            <span>{appointment.appointment_time}</span>
+          </div>
+          <div className="flex items-center text-gray-600">
+            <MapPin className="h-4 w-4 mr-2" />
+            <span>{appointment.location}</span>
+          </div>
+        </div>
+        
+        {appointment.notes && (
+          <div className="mb-4 p-3 bg-gray-50 rounded border-l-4 border-blue-200">
+            <p className="text-sm text-gray-700">{appointment.notes}</p>
+          </div>
+        )}
+
+        {/* Review Section */}
+        <div className="pt-3 border-t border-gray-100">
+          {existingReview ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center text-green-600">
+                <Star className="h-4 w-4 mr-1 fill-current" />
+                <span className="text-sm">Review submitted ({existingReview.rating}/5 stars)</span>
+              </div>
+              <Button variant="outline" size="sm" disabled>
+                <MessageSquare className="h-4 w-4 mr-1" />
+                View Review
+              </Button>
+            </div>
+          ) : (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => onLeaveReview(appointment)}
+              className="w-full"
+            >
+              <Star className="h-4 w-4 mr-1" />
+              Leave a Review
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

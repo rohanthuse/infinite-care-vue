@@ -3,54 +3,37 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CreditCard, Download, CheckCircle, AlertCircle, Calendar } from "lucide-react";
+import { CreditCard, Download, CheckCircle, AlertCircle, Calendar, Plus } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from "@/utils/currencyFormatter";
+import { useEnhancedClientBilling } from "@/hooks/useEnhancedClientBilling";
+import { generateInvoicePDF } from "@/utils/invoicePdfGenerator";
+import { format } from "date-fns";
+import { AddPaymentDialog } from "@/components/clients/dialogs/AddPaymentDialog";
+import { useToast } from "@/hooks/use-toast";
 
 const ClientPayments = () => {
   const [activeTab, setActiveTab] = useState("invoices");
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const { toast } = useToast();
 
-  // Mock data
-  const invoices = [
-    {
-      id: "INV-2025-0003",
-      date: "May 1, 2025",
-      dueDate: "May 15, 2025",
-      amount: 150.00,
-      status: "pending",
-      description: "Weekly therapy sessions (4)"
-    },
-    {
-      id: "INV-2025-0002",
-      date: "April 1, 2025",
-      dueDate: "April 15, 2025",
-      amount: 150.00,
-      status: "paid",
-      description: "Weekly therapy sessions (4)",
-      paidDate: "April 10, 2025"
-    },
-    {
-      id: "INV-2025-0001",
-      date: "March 1, 2025",
-      dueDate: "March 15, 2025",
-      amount: 175.00,
-      status: "paid",
-      description: "Initial assessment and therapy sessions (3)",
-      paidDate: "March 12, 2025"
+  // Get authenticated client ID from localStorage
+  const getClientId = () => {
+    const clientId = localStorage.getItem("clientId");
+    if (!clientId) {
+      console.error("No authenticated client ID found");
+      return null;
     }
-  ];
+    return clientId;
+  };
 
-  const paymentMethods = [
-    {
-      id: 1,
-      type: "credit_card",
-      last4: "4242",
-      expMonth: 12,
-      expYear: 26,
-      cardholderName: "Prasad K",
-      isDefault: true
-    }
-  ];
+  const clientId = getClientId();
+  const { data: invoices, isLoading, error } = useEnhancedClientBilling(clientId || '');
+
+  // Calculate totals for summary
+  const pendingInvoices = invoices?.filter(inv => inv.status === 'pending' || inv.status === 'sent') || [];
+  const totalPending = pendingInvoices.reduce((sum, inv) => sum + (inv.total_amount || inv.amount), 0);
 
   // Get status badge style
   const getStatusBadge = (status: string) => {
@@ -63,6 +46,7 @@ const ClientPayments = () => {
           </div>
         );
       case "pending":
+      case "sent":
         return (
           <div className="flex items-center text-yellow-600">
             <AlertCircle className="h-4 w-4 mr-1" />
@@ -81,6 +65,78 @@ const ClientPayments = () => {
     }
   };
 
+  const handleDownloadInvoice = (invoice: any) => {
+    try {
+      generateInvoicePDF({
+        invoice,
+        clientName: localStorage.getItem("clientName") || "Client",
+        clientAddress: localStorage.getItem("clientAddress") || "",
+        clientEmail: localStorage.getItem("clientEmail") || "",
+        companyInfo: {
+          name: "Care Service Provider",
+          address: "123 Care Street, City, Country",
+          phone: "+1 (555) 123-4567",
+          email: "billing@careservice.com"
+        }
+      });
+      toast({
+        title: "Invoice Downloaded",
+        description: `Invoice ${invoice.invoice_number} has been downloaded successfully.`,
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Download Failed",
+        description: "Unable to download invoice. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePayInvoice = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setPaymentDialogOpen(true);
+  };
+
+  const calculateRemainingBalance = (invoice: any) => {
+    const total = invoice.total_amount || invoice.amount;
+    const paid = invoice.payment_records?.reduce((sum: number, payment: any) => sum + payment.payment_amount, 0) || 0;
+    return Math.max(0, total - paid);
+  };
+
+  if (!clientId) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
+          <p className="text-gray-500">Please log in to view your payments and billing information.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your billing information...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading billing information</h3>
+        <p className="text-gray-600">Unable to load your billing data. Please try refreshing the page.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-xl border border-gray-200">
@@ -96,126 +152,176 @@ const ClientPayments = () => {
           
           {/* Invoices Tab */}
           <TabsContent value="invoices" className="pt-6 space-y-4">
-            {/* Upcoming Payments Summary */}
-            {invoices.some(inv => inv.status === "pending") && (
+            {/* Summary Cards */}
+            {pendingInvoices.length > 0 && (
               <Card className="mb-6 bg-blue-50 border-blue-100">
                 <CardContent className="p-6">
-                  <h3 className="font-medium text-blue-900 mb-2">Upcoming Payments</h3>
+                  <h3 className="font-medium text-blue-900 mb-2">Outstanding Balance</h3>
+                  <p className="text-2xl font-bold text-blue-900 mb-2">{formatCurrency(totalPending)}</p>
                   <p className="text-blue-700 text-sm mb-4">
-                    You have {invoices.filter(inv => inv.status === "pending").length} pending {invoices.filter(inv => inv.status === "pending").length === 1 ? 'invoice' : 'invoices'} that require action.
+                    You have {pendingInvoices.length} pending {pendingInvoices.length === 1 ? 'invoice' : 'invoices'}.
                   </p>
-                  <Button>Pay All</Button>
+                  <Button onClick={() => {
+                    // Handle pay all functionality
+                    toast({
+                      title: "Feature Coming Soon",
+                      description: "Bulk payment functionality will be available soon.",
+                    });
+                  }}>
+                    Pay All Outstanding
+                  </Button>
                 </CardContent>
               </Card>
             )}
             
             {/* Invoices List */}
             <div className="space-y-4">
-              {invoices.map(invoice => (
-                <div key={invoice.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                  <div className="p-4 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <div>
-                      <div className="flex items-center">
-                        <h4 className="font-medium">{invoice.id}</h4>
-                        <span className="mx-2 text-gray-400">•</span>
-                        {getStatusBadge(invoice.status)}
+              {invoices && invoices.length > 0 ? invoices.map(invoice => {
+                const remainingBalance = calculateRemainingBalance(invoice);
+                const isPaid = invoice.status === 'paid' || remainingBalance <= 0;
+                
+                return (
+                  <div key={invoice.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="p-4 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div>
+                        <div className="flex items-center">
+                          <h4 className="font-medium">{invoice.invoice_number}</h4>
+                          <span className="mx-2 text-gray-400">•</span>
+                          {getStatusBadge(invoice.status)}
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">{invoice.description}</p>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">{invoice.description}</p>
+                      <div className="text-lg font-bold">
+                        {formatCurrency(invoice.total_amount || invoice.amount)}
+                      </div>
                     </div>
-                    <div className="text-lg font-bold">{formatCurrency(invoice.amount)}</div>
-                  </div>
-                  <div className="p-4 flex flex-col sm:flex-row justify-between gap-4">
-                    <div className="space-y-2">
-                      <div className="text-sm">
-                        <span className="text-gray-500">Invoice Date:</span> {invoice.date}
+                    <div className="p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div className="space-y-2">
+                          <div className="text-sm">
+                            <span className="text-gray-500">Invoice Date:</span> {format(new Date(invoice.invoice_date), 'MMM d, yyyy')}
+                          </div>
+                          <div className="text-sm">
+                            <span className="text-gray-500">Due Date:</span> {format(new Date(invoice.due_date), 'MMM d, yyyy')}
+                          </div>
+                          {invoice.service_provided_date && (
+                            <div className="text-sm">
+                              <span className="text-gray-500">Service Date:</span> {format(new Date(invoice.service_provided_date), 'MMM d, yyyy')}
+                            </div>
+                          )}
+                          {isPaid && invoice.paid_date && (
+                            <div className="text-sm">
+                              <span className="text-gray-500">Paid Date:</span> {format(new Date(invoice.paid_date), 'MMM d, yyyy')}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          {invoice.payment_records && invoice.payment_records.length > 0 && (
+                            <>
+                              <div className="text-sm">
+                                <span className="text-gray-500">Amount Paid:</span> {formatCurrency(
+                                  invoice.payment_records.reduce((sum: number, payment: any) => sum + payment.payment_amount, 0)
+                                )}
+                              </div>
+                              {remainingBalance > 0 && (
+                                <div className="text-sm">
+                                  <span className="text-gray-500">Remaining Balance:</span> 
+                                  <span className="font-medium text-red-600 ml-1">{formatCurrency(remainingBalance)}</span>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-sm">
-                        <span className="text-gray-500">Due Date:</span> {invoice.dueDate}
-                      </div>
-                      {invoice.status === "paid" && (
-                        <div className="text-sm">
-                          <span className="text-gray-500">Paid Date:</span> {invoice.paidDate}
+                      
+                      {/* Line Items */}
+                      {invoice.line_items && invoice.line_items.length > 0 && (
+                        <div className="mb-4">
+                          <h5 className="text-sm font-medium text-gray-700 mb-2">Services Provided:</h5>
+                          <div className="bg-gray-50 rounded p-3 space-y-1">
+                            {invoice.line_items.map((item: any, index: number) => (
+                              <div key={index} className="flex justify-between text-sm">
+                                <span>{item.description} (x{item.quantity})</span>
+                                <span>{formatCurrency(item.line_total)}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
-                    </div>
-                    <div className="flex gap-2">
-                      {invoice.status === "pending" && (
-                        <Button>Pay Now</Button>
+                      
+                      {/* Payment History */}
+                      {invoice.payment_records && invoice.payment_records.length > 0 && (
+                        <div className="mb-4">
+                          <h5 className="text-sm font-medium text-gray-700 mb-2">Payment History:</h5>
+                          <div className="bg-green-50 rounded p-3 space-y-1">
+                            {invoice.payment_records.map((payment: any, index: number) => (
+                              <div key={index} className="flex justify-between text-sm">
+                                <span>{format(new Date(payment.payment_date), 'MMM d, yyyy')} - {payment.payment_method}</span>
+                                <span className="text-green-600 font-medium">{formatCurrency(payment.payment_amount)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
-                      <Button variant="outline" size="icon" title="Download Invoice">
-                        <Download className="h-4 w-4" />
-                      </Button>
+                      
+                      <div className="flex gap-2 pt-2">
+                        {!isPaid && remainingBalance > 0 && (
+                          <Button onClick={() => handlePayInvoice(invoice)}>
+                            Pay {remainingBalance < (invoice.total_amount || invoice.amount) ? 'Balance' : 'Now'}
+                          </Button>
+                        )}
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          title="Download Invoice"
+                          onClick={() => handleDownloadInvoice(invoice)}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
+                );
+              }) : (
+                <div className="text-center py-12">
+                  <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No invoices yet</h3>
+                  <p className="text-gray-600">Your billing history will appear here once you start receiving services.</p>
                 </div>
-              ))}
+              )}
             </div>
           </TabsContent>
           
           {/* Payment Methods Tab */}
           <TabsContent value="payment-methods" className="pt-6">
             <div className="space-y-6">
-              {/* Saved Payment Methods */}
-              <div>
-                <h3 className="text-lg font-medium mb-4">Saved Payment Methods</h3>
-                {paymentMethods.length > 0 ? (
-                  <div className="space-y-4">
-                    {paymentMethods.map(method => (
-                      <div key={method.id} className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className="bg-blue-600 text-white p-2 rounded mr-4">
-                              <CreditCard className="h-5 w-5" />
-                            </div>
-                            <div>
-                              <p className="font-medium">
-                                •••• {method.last4} 
-                                {method.isDefault && (
-                                  <span className="ml-2 text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-0.5">
-                                    Default
-                                  </span>
-                                )}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                {method.cardholderName} • Expires {method.expMonth}/{method.expYear}
-                              </p>
-                            </div>
-                          </div>
-                          <div>
-                            <Button variant="outline" size="sm">Edit</Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center p-8 border border-dashed border-gray-300 rounded-lg">
-                    <p className="text-gray-500 mb-4">No payment methods saved.</p>
-                    <Button>Add Payment Method</Button>
-                  </div>
-                )}
-              </div>
-              
-              {/* Add New Payment Method */}
-              <div className="mt-8">
-                <Button>Add New Payment Method</Button>
+              <div className="text-center p-8 border border-dashed border-gray-300 rounded-lg">
+                <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Payment Methods</h3>
+                <p className="text-gray-500 mb-4">
+                  Payment method management will be available soon. For now, you can pay invoices individually.
+                </p>
+                <Button disabled>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Payment Method
+                </Button>
               </div>
               
               <Separator className="my-6" />
               
-              {/* Billing Address */}
               <div className="mt-8">
-                <h3 className="text-lg font-medium mb-4">Billing Address</h3>
+                <h3 className="text-lg font-medium mb-4">Billing Information</h3>
                 <div className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-start">
                     <div>
-                      <p>Prasad K</p>
-                      <p className="text-gray-600">123 Main Street</p>
-                      <p className="text-gray-600">Apartment 4B</p>
-                      <p className="text-gray-600">New York, NY 10001</p>
-                      <p className="text-gray-600">United States</p>
+                      <p className="font-medium">{localStorage.getItem("clientName") || "Client Name"}</p>
+                      <p className="text-gray-600">{localStorage.getItem("clientAddress") || "Address not available"}</p>
+                      <p className="text-gray-600">{localStorage.getItem("clientEmail") || "Email not available"}</p>
                     </div>
-                    <Button variant="outline" size="sm">Edit</Button>
+                    <Button variant="outline" size="sm" disabled>
+                      Edit
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -223,6 +329,13 @@ const ClientPayments = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Payment Dialog */}
+      <AddPaymentDialog
+        open={paymentDialogOpen}
+        onOpenChange={setPaymentDialogOpen}
+        invoice={selectedInvoice}
+      />
     </div>
   );
 };
