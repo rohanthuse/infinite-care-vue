@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { useClientAuth } from "@/contexts/ClientAuthContext";
+import { useClientAuthFallback } from "@/hooks/useClientAuthFallback";
 
 const ClientLogin = () => {
   const [email, setEmail] = useState("");
@@ -17,7 +17,7 @@ const ClientLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const { signIn, loading, error, clearError } = useClientAuth();
+  const { signIn, loading, error, clearError } = useClientAuthFallback();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,6 +94,11 @@ const ClientLogin = () => {
               <div className="flex-1">
                 <p className="font-medium mb-1">Sign In Error</p>
                 <p className="text-sm">{error}</p>
+                {error.includes('Authentication system has been updated') && (
+                  <p className="text-xs mt-2 text-green-600">
+                    ✓ System has been updated and should work now. Please try again.
+                  </p>
+                )}
               </div>
             </div>
           )}

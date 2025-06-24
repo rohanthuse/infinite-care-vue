@@ -2,14 +2,17 @@
 import React, { useState, useEffect } from "react";
 import { Bell, Search, Heart, Menu, X, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { useClientAuth } from "@/contexts/ClientAuthContext";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
-  const { signOut, clientProfile } = useClientAuth();
-  const clientName = clientProfile?.first_name || "Client";
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const clientName = localStorage.getItem("clientName") || "Client";
   const notificationCount = 2; // For demonstration
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -26,7 +29,15 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
   }, [mobileMenuOpen]);
 
   const handleLogout = () => {
-    signOut();
+    localStorage.removeItem("userType");
+    localStorage.removeItem("clientName");
+    
+    toast({
+      title: "Logged out successfully",
+      description: "You have been logged out of your account",
+    });
+    
+    navigate("/client-login");
   };
   
   return (
