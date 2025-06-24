@@ -4,47 +4,96 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { 
   LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ResponsiveContainer 
 } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
-import { Calendar, Clock, BarChart as BarChartIcon, Users, TrendingUp, CheckSquare } from "lucide-react";
+import { Calendar, Clock, BarChart as BarChartIcon, Users, TrendingUp, CheckSquare, Download, Loader2 } from "lucide-react";
+import { useClientServiceReports } from "@/hooks/useClientServiceReports";
+import { useClientAppointments } from "@/hooks/useClientAppointments";
+import { useClientServiceActions } from "@/hooks/useClientServiceActions";
+import { format } from "date-fns";
 
 const ClientServiceReports = () => {
   const [timeFilter, setTimeFilter] = useState("month");
   const [serviceFilter, setServiceFilter] = useState("all");
   
-  // Mock data for service reports
-  const serviceUtilizationData = [
-    { date: "May 1", duration: 60, type: "Therapy", goals: 3, completed: 2 },
-    { date: "May 8", duration: 45, type: "Check-in", goals: 2, completed: 2 },
-    { date: "May 15", duration: 60, type: "Therapy", goals: 4, completed: 3 },
-    { date: "May 22", duration: 45, type: "Check-in", goals: 2, completed: 2 },
-    { date: "May 29", duration: 60, type: "Specialist", goals: 5, completed: 4 },
-  ];
+  // Get client ID from localStorage (or context in a real implementation)
+  const clientId = localStorage.getItem("clientId") || "";
   
-  const progressData = [
-    { month: "Jan", progress: 65 },
-    { month: "Feb", progress: 70 },
-    { month: "Mar", progress: 75 },
-    { month: "Apr", progress: 80 },
-    { month: "May", progress: 85 },
-  ];
+  const { data: reportData, isLoading, error } = useClientServiceReports(clientId, timeFilter, serviceFilter);
+  const { data: appointments } = useClientAppointments(clientId);
+  const { data: serviceActions } = useClientServiceActions(clientId);
   
-  const serviceTypeData = [
-    { name: "Therapy", value: 45 },
-    { name: "Check-in", value: 30 },
-    { name: "Specialist", value: 15 },
-    { name: "Other", value: 10 },
-  ];
-  
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
   
   const formatDate = (dateStr: string) => {
-    return dateStr; // In real app, would format based on locale
+    try {
+      return format(new Date(dateStr), 'MMM dd, yyyy');
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const handleExport = () => {
+    // Create a simple CSV export
+    if (!reportData) return;
+    
+    const csvData = [
+      ['Service Reports Export'],
+      ['Generated on:', new Date().toLocaleDateString()],
+      ['Time Filter:', timeFilter],
+      ['Service Filter:', serviceFilter],
+      [''],
+      ['Service Type Distribution:'],
+      ['Service Type', 'Count'],
+      ...reportData.serviceTypeData.map(item => [item.name, item.value.toString()]),
+      [''],
+      ['Progress Data:'],
+      ['Month', 'Progress %'],
+      ...reportData.progressData.map(item => [item.month, item.progress.toString()]),
+    ];
+    
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `service_reports_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
   
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin mr-2" />
+        <span>Loading your service reports...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-500">Error loading service reports</p>
+        <Button onClick={() => window.location.reload()} className="mt-2">
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  if (!reportData) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">No service data available</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -72,10 +121,15 @@ const ClientServiceReports = () => {
             <SelectContent>
               <SelectItem value="all">All Services</SelectItem>
               <SelectItem value="therapy">Therapy</SelectItem>
-              <SelectItem value="checkin">Check-ins</SelectItem>
+              <SelectItem value="check-in">Check-ins</SelectItem>
               <SelectItem value="specialist">Specialist</SelectItem>
             </SelectContent>
           </Select>
+
+          <Button onClick={handleExport} variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
         </div>
       </div>
       
@@ -92,7 +146,7 @@ const ClientServiceReports = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Service Type Distribution</CardTitle>
-                <CardDescription>Breakdown of services by type</CardDescription>
+                <CardDescription>Breakdown of services by type ({timeFilter})</CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="h-[300px] w-full">
@@ -104,7 +158,7 @@ const ClientServiceReports = () => {
                     >
                       <PieChart>
                         <Pie
-                          data={serviceTypeData}
+                          data={reportData.serviceTypeData}
                           cx="50%"
                           cy="50%"
                           labelLine={true}
@@ -113,11 +167,11 @@ const ClientServiceReports = () => {
                           dataKey="value"
                           label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                         >
-                          {serviceTypeData.map((entry, index) => (
+                          {reportData.serviceTypeData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip formatter={(value) => [`${value} hours`, 'Hours']} />
+                        <Tooltip formatter={(value) => [`${value} services`, 'Count']} />
                         <Legend />
                       </PieChart>
                     </ChartContainer>
@@ -141,7 +195,7 @@ const ClientServiceReports = () => {
                       }}
                     >
                       <AreaChart
-                        data={progressData}
+                        data={reportData.progressData}
                         margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" />
@@ -180,11 +234,11 @@ const ClientServiceReports = () => {
                     }}
                   >
                     <BarChart
-                      data={serviceUtilizationData}
+                      data={reportData.serviceUtilization}
                       margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
+                      <XAxis dataKey="date" tickFormatter={(value) => formatDate(value)} />
                       <YAxis />
                       <Tooltip />
                       <Legend />
@@ -206,67 +260,74 @@ const ClientServiceReports = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {serviceUtilizationData.map((service, i) => (
-                  <div key={i} className="p-4 border rounded-lg hover:shadow-sm transition-all">
-                    <div className="flex flex-col md:flex-row justify-between mb-4">
-                      <div className="flex items-center">
-                        <div className="bg-blue-100 p-2 rounded-full mr-3">
-                          {service.type === "Therapy" ? (
-                            <Users className="h-5 w-5 text-blue-600" />
-                          ) : service.type === "Check-in" ? (
-                            <Clock className="h-5 w-5 text-blue-600" />
-                          ) : (
-                            <BarChartIcon className="h-5 w-5 text-blue-600" />
-                          )}
-                        </div>
-                        <div>
-                          <h3 className="font-medium">{service.type} Session</h3>
-                          <p className="text-sm text-gray-500 flex items-center">
-                            <Calendar className="inline h-3.5 w-3.5 mr-1.5" />
-                            {formatDate(service.date)}
-                            <Clock className="inline h-3.5 w-3.5 mx-1.5" />
-                            {service.duration} minutes
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-2 md:mt-0">
-                        <Badge className="bg-green-100 text-green-800 border-0">
-                          {service.completed}/{service.goals} Goals Completed
-                        </Badge>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                      <div className="bg-gray-50 p-3 rounded-md">
-                        <div className="font-medium text-gray-700">Progress</div>
-                        <div className="flex items-center mt-1">
-                          <TrendingUp className="h-4 w-4 mr-2 text-green-600" />
-                          {Math.round((service.completed / service.goals) * 100)}% of goals achieved
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gray-50 p-3 rounded-md">
-                        <div className="font-medium text-gray-700">Focus Areas</div>
-                        <div className="flex items-center mt-1">
-                          <CheckSquare className="h-4 w-4 mr-2 text-blue-600" />
-                          {service.type === "Therapy" ? "Mobility & Strength" : 
-                           service.type === "Check-in" ? "Vital Signs & Wellness" : 
-                           "Specialized Assessment"}
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gray-50 p-3 rounded-md">
-                        <div className="font-medium text-gray-700">Outcome</div>
-                        <div className="flex items-center mt-1">
-                          <CheckSquare className="h-4 w-4 mr-2 text-green-600" />
-                          {service.completed === service.goals ? "All goals met" : 
-                           service.completed > (service.goals / 2) ? "Good progress" : 
-                           "In progress"}
-                        </div>
-                      </div>
-                    </div>
+                {reportData.serviceUtilization.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <BarChartIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                    <p className="text-sm">No service data available for the selected period</p>
                   </div>
-                ))}
+                ) : (
+                  reportData.serviceUtilization.map((service, i) => (
+                    <div key={i} className="p-4 border rounded-lg hover:shadow-sm transition-all">
+                      <div className="flex flex-col md:flex-row justify-between mb-4">
+                        <div className="flex items-center">
+                          <div className="bg-blue-100 p-2 rounded-full mr-3">
+                            {service.type === "Therapy" ? (
+                              <Users className="h-5 w-5 text-blue-600" />
+                            ) : service.type === "Check-in" ? (
+                              <Clock className="h-5 w-5 text-blue-600" />
+                            ) : (
+                              <BarChartIcon className="h-5 w-5 text-blue-600" />
+                            )}
+                          </div>
+                          <div>
+                            <h3 className="font-medium">{service.type} Session</h3>
+                            <p className="text-sm text-gray-500 flex items-center">
+                              <Calendar className="inline h-3.5 w-3.5 mr-1.5" />
+                              {formatDate(service.date)}
+                              <Clock className="inline h-3.5 w-3.5 mx-1.5" />
+                              {service.duration} minutes
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-2 md:mt-0">
+                          <Badge className="bg-green-100 text-green-800 border-0">
+                            {service.completed}/{service.goals} Goals {service.goals === 1 ? 'Completed' : 'Completed'}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div className="bg-gray-50 p-3 rounded-md">
+                          <div className="font-medium text-gray-700">Progress</div>
+                          <div className="flex items-center mt-1">
+                            <TrendingUp className="h-4 w-4 mr-2 text-green-600" />
+                            {service.goals > 0 ? Math.round((service.completed / service.goals) * 100) : 0}% of goals achieved
+                          </div>
+                        </div>
+                        
+                        <div className="bg-gray-50 p-3 rounded-md">
+                          <div className="font-medium text-gray-700">Focus Areas</div>
+                          <div className="flex items-center mt-1">
+                            <CheckSquare className="h-4 w-4 mr-2 text-blue-600" />
+                            {service.type === "Therapy" ? "Mobility & Strength" : 
+                             service.type === "Check-in" ? "Vital Signs & Wellness" : 
+                             "Specialized Assessment"}
+                          </div>
+                        </div>
+                        
+                        <div className="bg-gray-50 p-3 rounded-md">
+                          <div className="font-medium text-gray-700">Outcome</div>
+                          <div className="flex items-center mt-1">
+                            <CheckSquare className="h-4 w-4 mr-2 text-green-600" />
+                            {service.completed === service.goals ? "All goals met" : 
+                             service.completed > (service.goals / 2) ? "Good progress" : 
+                             "In progress"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
