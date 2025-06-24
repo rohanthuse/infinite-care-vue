@@ -38,6 +38,18 @@ export interface ClientMessageThread {
   updatedAt: string;
 }
 
+// Helper function to safely parse attachments
+const parseAttachments = (attachments: any): any[] => {
+  if (!attachments) return [];
+  if (Array.isArray(attachments)) return attachments;
+  try {
+    const parsed = typeof attachments === 'string' ? JSON.parse(attachments) : attachments;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 // Get client's care team (carers and admins assigned to their branch)
 export const useClientCareTeam = () => {
   const { data: currentUser } = useUserRole();
@@ -217,7 +229,7 @@ export const useClientMessageThreads = () => {
               timestamp: new Date(latestMessage.created_at),
               isRead: readMessages?.some(r => r.message_id === latestMessage.id) || false,
               hasAttachments: latestMessage.has_attachments,
-              attachments: latestMessage.attachments
+              attachments: parseAttachments(latestMessage.attachments)
             } : undefined,
             unreadCount,
             createdAt: thread.created_at,
@@ -289,7 +301,7 @@ export const useClientThreadMessages = (threadId: string) => {
           timestamp: new Date(message.created_at),
           isRead,
           hasAttachments: message.has_attachments,
-          attachments: message.attachments
+          attachments: parseAttachments(message.attachments)
         };
       }) || [];
     },
