@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Bell, Search, Heart, Menu, X, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -6,10 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { useClientAuthFallback } from "@/hooks/useClientAuthFallback";
+import { useClientAuth } from "@/contexts/ClientAuthContext";
 
 const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
-  const { clientProfile, signOut, loading } = useClientAuthFallback();
+  const { clientProfile, signOut, loading } = useClientAuth();
   const clientName = clientProfile?.first_name || localStorage.getItem("clientName") || "Client";
   const notificationCount = 2; // For demonstration
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

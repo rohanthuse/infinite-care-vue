@@ -9,13 +9,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
-import { useClientAuthFallback } from "@/hooks/useClientAuthFallback";
+import { useClientAuth } from "@/contexts/ClientAuthContext";
 
 const ClientDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [pageTitle, setPageTitle] = useState("Overview");
-  const { isAuthenticated, isClientRole, loading, clientProfile } = useClientAuthFallback();
+  const { isAuthenticated, isClientRole, loading } = useClientAuth();
   
   // Menu items for top navigation
   const menuItems = [
