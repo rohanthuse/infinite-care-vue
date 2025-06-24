@@ -55,7 +55,7 @@ const fetchClientReviews = async (clientId: string): Promise<ClientReview[]> => 
 
   return (data || []).map(review => ({
     ...review,
-    updated_at: review.updated_at || review.created_at // Fallback to created_at if updated_at is missing
+    updated_at: (review as any).updated_at || review.created_at // Safe access with fallback
   }));
 };
 
@@ -75,7 +75,7 @@ const createReview = async (reviewData: CreateReviewData): Promise<ClientReview>
 
   return {
     ...data,
-    updated_at: data.updated_at || data.created_at // Ensure updated_at is present
+    updated_at: (data as any).updated_at || data.created_at // Safe access with fallback
   };
 };
 
@@ -96,7 +96,7 @@ const updateReview = async (reviewId: string, updateData: UpdateReviewData): Pro
 
   return {
     ...data,
-    updated_at: data.updated_at || data.created_at // Ensure updated_at is present
+    updated_at: (data as any).updated_at || data.created_at // Safe access with fallback
   };
 };
 
@@ -119,7 +119,7 @@ const checkExistingReview = async (clientId: string, appointmentId: string): Pro
 
   return {
     ...data,
-    updated_at: data.updated_at || data.created_at // Ensure updated_at is present
+    updated_at: (data as any).updated_at || data.created_at // Safe access with fallback
   };
 };
 
