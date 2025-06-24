@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Bell, Search, Heart, Menu, X, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -8,6 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
   const navigate = useNavigate();
@@ -28,16 +28,42 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, [mobileMenuOpen]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("userType");
-    localStorage.removeItem("clientName");
-    
-    toast({
-      title: "Logged out successfully",
-      description: "You have been logged out of your account",
-    });
-    
-    navigate("/client-login");
+  const handleLogout = async () => {
+    try {
+      // Sign out from Supabase first
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Logout error:', error);
+        toast({
+          title: "Logout Error",
+          description: "There was an issue logging you out. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Clear localStorage after successful Supabase signout
+      localStorage.removeItem("userType");
+      localStorage.removeItem("clientName");
+      localStorage.removeItem("clientId");
+      
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account",
+      });
+      
+      // The navigation will be handled by the auth state listener in ClientDashboard
+      // But we'll also manually navigate as a fallback
+      navigate("/client-login");
+    } catch (error) {
+      console.error('Unexpected logout error:', error);
+      toast({
+        title: "Logout Error",
+        description: "An unexpected error occurred during logout.",
+        variant: "destructive",
+      });
+    }
   };
   
   return (
