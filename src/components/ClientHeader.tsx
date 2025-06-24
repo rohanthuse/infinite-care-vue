@@ -6,13 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { useClientAuthFallback } from "@/hooks/useClientAuthFallback";
 
 const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const clientName = localStorage.getItem("clientName") || "Client";
+  const { clientProfile, signOut, loading } = useClientAuthFallback();
+  const clientName = clientProfile?.first_name || localStorage.getItem("clientName") || "Client";
   const notificationCount = 2; // For demonstration
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -28,16 +26,17 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, [mobileMenuOpen]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("userType");
-    localStorage.removeItem("clientName");
+  const handleLogout = async () => {
+    if (loading) return; // Prevent multiple logout attempts
     
-    toast({
-      title: "Logged out successfully",
-      description: "You have been logged out of your account",
-    });
-    
-    navigate("/client-login");
+    try {
+      await signOut();
+      // signOut already handles navigation to login page and localStorage cleanup
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force navigation even if signOut fails
+      window.location.href = '/client-login';
+    }
   };
   
   return (
@@ -93,7 +92,13 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
               <div className="text-gray-500 text-xs font-medium">Client</div>
             </div>
             <div className="h-8 border-r border-gray-200/80 mx-1"></div>
-            <CustomButton variant="ghost" size="icon" className="flex items-center p-1.5 hover:bg-gray-100/80 text-gray-700 rounded-full transition-all" onClick={handleLogout}>
+            <CustomButton 
+              variant="ghost" 
+              size="icon" 
+              className="flex items-center p-1.5 hover:bg-gray-100/80 text-gray-700 rounded-full transition-all" 
+              onClick={handleLogout}
+              disabled={loading}
+            >
               <LogOut className="h-5 w-5" />
             </CustomButton>
           </div>
@@ -151,8 +156,13 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
               <p className="text-xs text-gray-500">Client</p>
             </div>
           </div>
-          <Button variant="ghost" className="w-full flex justify-between items-center text-gray-700 hover:bg-gray-50/80 rounded-lg py-3" onClick={handleLogout}>
-            <span className="font-medium">Logout</span>
+          <Button 
+            variant="ghost" 
+            className="w-full flex justify-between items-center text-gray-700 hover:bg-gray-50/80 rounded-lg py-3" 
+            onClick={handleLogout}
+            disabled={loading}
+          >
+            <span className="font-medium">{loading ? 'Signing out...' : 'Logout'}</span>
             <LogOut className="h-5 w-5" />
           </Button>
         </div>
