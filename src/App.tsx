@@ -49,29 +49,35 @@ function App() {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <ClientAuthProvider>
-              <TaskProvider>
-                <ErrorBoundary fallback={<RoutingErrorFallback />}>
-                  <Routes>
-                    {/* Public Routes */}
-                    <Route path="/" element={<Index />} />
-                    <Route path="/super-admin" element={<SuperAdminLogin />} />
-                    <Route path="/carer-login" element={<CarerLoginSafe />} />
-                    <Route path="/carer-invitation" element={<CarerInvitation />} />
-                    <Route path="/carer-onboarding" element={<CarerOnboarding />} />
-                    <Route path="/client-login" element={<ClientLogin />} />
-                    
-                    {/* Protected Routes - All now consistently return arrays */}
-                    {AdminRoutes()}
-                    {CarerRoutes()}
-                    {ClientRoutes()}
-                    
-                    {/* Fallback route for unmatched paths */}
-                    <Route path="*" element={<RoutingErrorFallback />} />
-                  </Routes>
-                </ErrorBoundary>
-              </TaskProvider>
-            </ClientAuthProvider>
+            <TaskProvider>
+              <ErrorBoundary fallback={<RoutingErrorFallback />}>
+                <Routes>
+                  {/* Public Routes - No auth providers */}
+                  <Route path="/" element={<Index />} />
+                  <Route path="/super-admin" element={<SuperAdminLogin />} />
+                  <Route path="/carer-login" element={<CarerLoginSafe />} />
+                  <Route path="/carer-invitation" element={<CarerInvitation />} />
+                  <Route path="/carer-onboarding" element={<CarerOnboarding />} />
+                  <Route path="/client-login" element={<ClientLogin />} />
+                  
+                  {/* Admin Routes - Only wrapped by AuthProvider */}
+                  {AdminRoutes()}
+                  
+                  {/* Carer Routes - Only wrapped by AuthProvider */}
+                  {CarerRoutes()}
+                  
+                  {/* Client Routes - Wrapped by ClientAuthProvider */}
+                  <Route path="/client-dashboard/*" element={
+                    <ClientAuthProvider>
+                      {ClientRoutes()}
+                    </ClientAuthProvider>
+                  } />
+                  
+                  {/* Fallback route for unmatched paths */}
+                  <Route path="*" element={<RoutingErrorFallback />} />
+                </Routes>
+              </ErrorBoundary>
+            </TaskProvider>
           </BrowserRouter>
         </AuthProvider>
       </TooltipProvider>

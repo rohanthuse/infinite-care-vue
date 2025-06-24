@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
@@ -27,6 +27,7 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
   const [clientProfile, setClientProfile] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     let mounted = true;
@@ -78,9 +79,8 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
             localStorage.setItem("clientName", clientRecord.first_name);
             localStorage.setItem("clientId", clientRecord.id);
             
-            // Only navigate on actual sign in, not during normal app usage
-            const currentPath = window.location.pathname;
-            if (currentPath === '/client-login') {
+            // Only navigate on actual sign in from login page
+            if (location.pathname === '/client-login') {
               navigate('/client-dashboard');
             }
           } else {
@@ -104,7 +104,10 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("clientName");
         localStorage.removeItem("clientId");
         
-        navigate('/client-login');
+        // Only navigate to login if we're in a client route
+        if (location.pathname.startsWith('/client-dashboard')) {
+          navigate('/client-login');
+        }
       }
 
       setLoading(false);
@@ -130,7 +133,7 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   const signInWithRetry = async (email: string, password: string) => {
     console.log('[ClientAuthContext] Attempting sign in for:', email);
