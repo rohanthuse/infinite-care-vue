@@ -3695,33 +3695,62 @@ export type Database = {
       }
       reviews: {
         Row: {
+          appointment_id: string | null
+          booking_id: string | null
           branch_id: string | null
+          can_edit_until: string
           client_id: string | null
           comment: string | null
           created_at: string | null
           id: string
           rating: number
+          service_date: string
+          service_type: string | null
           staff_id: string | null
         }
         Insert: {
+          appointment_id?: string | null
+          booking_id?: string | null
           branch_id?: string | null
+          can_edit_until?: string
           client_id?: string | null
           comment?: string | null
           created_at?: string | null
           id?: string
           rating: number
+          service_date?: string
+          service_type?: string | null
           staff_id?: string | null
         }
         Update: {
+          appointment_id?: string | null
+          booking_id?: string | null
           branch_id?: string | null
+          can_edit_until?: string
           client_id?: string | null
           comment?: string | null
           created_at?: string | null
           id?: string
           rating?: number
+          service_date?: string
+          service_type?: string | null
           staff_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "reviews_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "client_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reviews_branch_id_fkey"
             columns: ["branch_id"]

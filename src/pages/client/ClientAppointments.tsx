@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useClientAppointments } from "@/hooks/useClientData";
+import { useClientReviews } from "@/hooks/useClientReviews";
 import { format, parseISO, isValid, isPast, isToday, isFuture } from "date-fns";
 
 const ClientAppointments = () => {
@@ -25,8 +26,17 @@ const ClientAppointments = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Fetch real appointment data
+  // Get client ID from localStorage
+  const getClientId = () => {
+    const clientId = localStorage.getItem("clientId");
+    return clientId || '';
+  };
+
+  const clientId = getClientId();
+
+  // Fetch real appointment and review data
   const { data: appointments, isLoading, error } = useClientAppointments();
+  const { data: reviews, isLoading: reviewsLoading } = useClientReviews(clientId);
 
   // Helper function to safely parse dates
   const safeParseDateString = (dateString: string | null | undefined) => {
@@ -39,6 +49,11 @@ const ClientAppointments = () => {
     }
   };
 
+  // Helper function to check if appointment has a review
+  const getReviewForAppointment = (appointmentId: string) => {
+    return reviews?.find(review => review.appointment_id === appointmentId);
+  };
+
   // Separate appointments into upcoming and past
   const upcomingAppointments = appointments?.filter(apt => {
     const appointmentDate = safeParseDateString(apt.appointment_date);
@@ -49,33 +64,6 @@ const ClientAppointments = () => {
     const appointmentDate = safeParseDateString(apt.appointment_date);
     return appointmentDate && isPast(appointmentDate) && !isToday(appointmentDate);
   }) || [];
-
-  // Mock review data (would be fetched from database in real implementation)
-  const mockReviews = [
-    {
-      id: "review-101",
-      appointmentId: 101,
-      carerName: "Dr. Smith, Physical Therapist",
-      date: "April 19, 2025",
-      rating: 4,
-      comment: "Very professional and thorough. Explained everything clearly and gave me helpful exercises to do at home.",
-      submittedAt: "April 20, 2025"
-    },
-    {
-      id: "review-102",
-      appointmentId: 102,
-      carerName: "Nurse Johnson",
-      date: "April 12, 2025",
-      rating: 5,
-      comment: "Excellent service! Very caring and attentive to all my concerns.",
-      submittedAt: "April 13, 2025"
-    }
-  ];
-
-  // Function to find review by ID
-  const getReviewById = (reviewId: string) => {
-    return mockReviews.find(review => review.id === reviewId);
-  };
 
   // Open reschedule dialog
   const handleReschedule = (appointment: any) => {
@@ -116,13 +104,21 @@ const ClientAppointments = () => {
 
   // Open submit review dialog
   const handleReview = (appointment: any) => {
-    setSelectedAppointment(appointment);
+    setSelectedAppointment({
+      id: appointment.id,
+      type: appointment.appointment_type,
+      provider: appointment.provider_name,
+      date: appointment.appointment_date ? format(safeParseDateString(appointment.appointment_date) || new Date(), 'MMM d, yyyy') : 'Date pending',
+      time: appointment.appointment_time,
+      staff_id: appointment.staff_id,
+      client_id: clientId
+    });
     setIsReviewing(true);
   };
 
   // Open view review dialog
-  const handleViewReview = (appointment: any) => {
-    const review = getReviewById(appointment.reviewId);
+  const handleViewReview = (appointmentId: string) => {
+    const review = getReviewForAppointment(appointmentId);
     if (review) {
       setSelectedReview(review);
       setIsViewingReview(true);
@@ -162,7 +158,7 @@ const ClientAppointments = () => {
   };
 
   // Show loading state
-  if (isLoading) {
+  if (isLoading || reviewsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -186,6 +182,7 @@ const ClientAppointments = () => {
   // Render appointment card
   const renderAppointmentCard = (appointment: any, isPastAppointment: boolean = false) => {
     const appointmentDate = safeParseDateString(appointment.appointment_date);
+    const existingReview = getReviewForAppointment(appointment.id);
     
     return (
       <Card key={appointment.id} className="mb-4">
@@ -223,6 +220,13 @@ const ClientAppointments = () => {
                   <strong>Notes:</strong> {appointment.notes}
                 </div>
               )}
+
+              {existingReview && (
+                <div className="flex items-center text-sm text-green-600">
+                  <Star className="h-4 w-4 mr-1 fill-current" />
+                  Review submitted ({existingReview.rating}/5 stars)
+                </div>
+              )}
             </div>
             
             <div className="flex gap-2 mt-4 md:mt-0">
@@ -242,10 +246,17 @@ const ClientAppointments = () => {
                 </>
               ) : isPastAppointment && appointment.status === "completed" ? (
                 <>
-                  <Button size="sm" onClick={() => handleReview(appointment)} className="gap-1">
-                    <Star className="h-4 w-4 mr-1" />
-                    Leave Feedback
-                  </Button>
+                  {existingReview ? (
+                    <Button size="sm" variant="outline" onClick={() => handleViewReview(appointment.id)} className="gap-1">
+                      <Star className="h-4 w-4 mr-1" />
+                      View Feedback
+                    </Button>
+                  ) : (
+                    <Button size="sm" onClick={() => handleReview(appointment)} className="gap-1">
+                      <Star className="h-4 w-4 mr-1" />
+                      Leave Feedback
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" onClick={() => handleViewServiceReport(appointment)} className="gap-1">
                     <BarChart className="h-4 w-4 mr-1" />
                     View Service Report
@@ -324,13 +335,11 @@ const ClientAppointments = () => {
         />
       )}
       
-      {selectedReview && (
-        <ViewReviewDialog
-          open={isViewingReview}
-          onOpenChange={setIsViewingReview}
-          review={selectedReview}
-        />
-      )}
+      <ViewReviewDialog
+        open={isViewingReview}
+        onOpenChange={setIsViewingReview}
+        review={selectedReview}
+      />
     </div>
   );
 };

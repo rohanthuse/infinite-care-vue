@@ -1,132 +1,227 @@
 
 import React, { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Star, Calendar, User } from "lucide-react";
-import { ViewReviewDialog } from "@/components/client/ViewReviewDialog";
+import { Star, Calendar, User, AlertCircle, Edit } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useClientReviews, useUpdateReview } from "@/hooks/useClientReviews";
+import { format } from "date-fns";
 
 const ClientReviews = () => {
-  const [isViewingReview, setIsViewingReview] = useState(false);
-  const [selectedReview, setSelectedReview] = useState<any>(null);
+  const [editingReview, setEditingReview] = useState<string | null>(null);
+  const [editRating, setEditRating] = useState(0);
+  const [editComment, setEditComment] = useState("");
 
-  // Mock reviews data
-  const mockReviews = [
-    {
-      id: "review-101",
-      appointmentId: 101,
-      appointmentType: "Therapy Session",
-      carerName: "Dr. Smith, Physical Therapist",
-      date: "April 19, 2025",
-      rating: 4,
-      comment: "Very professional and thorough. Explained everything clearly and gave me helpful exercises to do at home.",
-      submittedAt: "April 20, 2025"
-    },
-    {
-      id: "review-102",
-      appointmentId: 102,
-      appointmentType: "Weekly Check-in",
-      carerName: "Nurse Johnson",
-      date: "April 12, 2025",
-      rating: 5,
-      comment: "Excellent service! Very caring and attentive to all my concerns.",
-      submittedAt: "April 13, 2025"
-    },
-    {
-      id: "review-103",
-      appointmentId: 104,
-      appointmentType: "Home Visit",
-      carerName: "Dr. Williams, GP",
-      date: "March 27, 2025",
-      rating: 3,
-      comment: "Service was okay, but arrived late and seemed rushed.",
-      submittedAt: "March 28, 2025"
+  // Get authenticated client ID from localStorage
+  const getClientId = () => {
+    const clientId = localStorage.getItem("clientId");
+    if (!clientId) {
+      console.error("No authenticated client ID found");
+      return null;
     }
-  ];
-
-  // Handle view review
-  const handleViewReview = (review: any) => {
-    setSelectedReview(review);
-    setIsViewingReview(true);
+    return clientId;
   };
 
-  // Render stars for a rating
-  const renderStars = (rating: number) => {
+  const clientId = getClientId();
+  const { data: reviews, isLoading, error } = useClientReviews(clientId || '');
+  const updateReviewMutation = useUpdateReview();
+
+  const handleEditStart = (review: any) => {
+    setEditingReview(review.id);
+    setEditRating(review.rating);
+    setEditComment(review.comment || "");
+  };
+
+  const handleEditSave = async (reviewId: string) => {
+    try {
+      await updateReviewMutation.mutateAsync({
+        reviewId,
+        updateData: {
+          rating: editRating,
+          comment: editComment.trim() || undefined,
+        }
+      });
+      setEditingReview(null);
+      setEditRating(0);
+      setEditComment("");
+    } catch (error) {
+      console.error('Error updating review:', error);
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditingReview(null);
+    setEditRating(0);
+    setEditComment("");
+  };
+
+  const renderStars = (rating: number, editable: boolean = false, onRatingChange?: (rating: number) => void) => {
     return Array(5).fill(0).map((_, i) => (
-      <Star 
-        key={i} 
-        className={`h-4 w-4 ${i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
-      />
+      <button
+        key={i}
+        type="button"
+        onClick={() => editable && onRatingChange && onRatingChange(i + 1)}
+        className={`h-5 w-5 ${editable ? 'cursor-pointer' : 'cursor-default'}`}
+        disabled={!editable}
+      >
+        <Star 
+          className={`h-5 w-5 ${i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
+        />
+      </button>
     ));
   };
+
+  if (!clientId) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
+          <p className="text-gray-500">Please log in to view your reviews.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your reviews...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading reviews</h3>
+        <p className="text-gray-600">Unable to load your reviews. Please try refreshing the page.</p>
+      </div>
+    );
+  }
+
+  if (!reviews || reviews.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No reviews yet</h3>
+        <p className="text-gray-600">You haven't submitted any reviews yet. After completing appointments, you'll be able to leave feedback about your care experience.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-xl border border-gray-200">
-        <h2 className="text-xl font-bold mb-6">My Feedback History</h2>
+        <h2 className="text-xl font-bold mb-6">Your Reviews & Feedback</h2>
+        <p className="text-gray-600 mb-6">
+          Here are all the reviews you've submitted for your care services. You can edit recent reviews if needed.
+        </p>
 
         <div className="space-y-4">
-          {mockReviews.length > 0 ? (
-            mockReviews.map((review) => (
-              <Card key={review.id} className="mb-4">
-                <CardContent className="p-6">
-                  <div className="flex flex-col md:flex-row md:justify-between md:items-start">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between md:justify-start">
-                        <h3 className="text-lg font-medium">{review.appointmentType}</h3>
-                      </div>
-                      
-                      <div className="text-sm text-gray-600 flex items-center">
-                        <User className="h-4 w-4 mr-2" />
-                        {review.carerName}
-                      </div>
-                      
-                      <div className="text-sm text-gray-600 flex items-center">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        Service on {review.date}
-                      </div>
-                      
-                      <div className="flex items-center mt-2">
-                        {renderStars(review.rating)}
-                      </div>
-                      
-                      <div className="text-sm mt-2 bg-gray-50 p-3 rounded border border-gray-100">
-                        {review.comment}
-                      </div>
-                      
-                      <div className="text-xs text-gray-500 mt-2">
-                        Submitted on {review.submittedAt}
+          {reviews.map((review) => {
+            const isEditing = editingReview === review.id;
+            const canEdit = new Date(review.can_edit_until) > new Date();
+            
+            return (
+              <Card key={review.id}>
+                <CardHeader className="pb-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg">{review.service_type || 'Care Service'}</CardTitle>
+                      <div className="flex items-center text-sm text-gray-500 mt-1">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        Service Date: {format(new Date(review.service_date), 'MMM d, yyyy')}
                       </div>
                     </div>
-                    
-                    <div className="flex gap-2 mt-4 md:mt-0">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleViewReview(review)}
-                      >
-                        View Details
-                      </Button>
+                    <div className="flex items-center gap-2">
+                      {canEdit && !isEditing && (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleEditStart(review)}
+                          className="gap-1"
+                        >
+                          <Edit className="h-4 w-4" />
+                          Edit
+                        </Button>
+                      )}
+                      <Badge variant="secondary">
+                        Submitted {format(new Date(review.created_at), 'MMM d, yyyy')}
+                      </Badge>
                     </div>
                   </div>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="text-sm font-medium text-gray-500 mb-2">Your Rating</div>
+                    <div className="flex items-center">
+                      {renderStars(
+                        isEditing ? editRating : review.rating, 
+                        isEditing, 
+                        setEditRating
+                      )}
+                      <span className="ml-2 text-sm text-gray-600">
+                        ({isEditing ? editRating : review.rating}/5 stars)
+                      </span>
+                    </div>
+                  </div>
+
+                  {(review.comment || isEditing) && (
+                    <div>
+                      <div className="text-sm font-medium text-gray-500 mb-2">Your Comments</div>
+                      {isEditing ? (
+                        <textarea
+                          value={editComment}
+                          onChange={(e) => setEditComment(e.target.value)}
+                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          rows={3}
+                          placeholder="Share your experience..."
+                        />
+                      ) : (
+                        <div className="text-sm text-gray-700 p-3 bg-gray-50 rounded border border-gray-100">
+                          {review.comment}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {canEdit && (
+                    <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                      You can edit this review until {format(new Date(review.can_edit_until), 'MMM d, yyyy \'at\' h:mm a')}
+                    </div>
+                  )}
+
+                  {isEditing && (
+                    <div className="flex gap-2 pt-2">
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleEditSave(review.id)}
+                        disabled={updateReviewMutation.isPending || editRating === 0}
+                      >
+                        {updateReviewMutation.isPending ? "Saving..." : "Save Changes"}
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={handleEditCancel}
+                        disabled={updateReviewMutation.isPending}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            ))
-          ) : (
-            <div className="text-center p-8">
-              <p className="text-gray-500">You haven't submitted any feedback yet.</p>
-            </div>
-          )}
+            );
+          })}
         </div>
       </div>
-
-      {/* View Review Dialog */}
-      {selectedReview && (
-        <ViewReviewDialog
-          open={isViewingReview}
-          onOpenChange={setIsViewingReview}
-          review={selectedReview}
-        />
-      )}
     </div>
   );
 };
