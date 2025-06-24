@@ -51,25 +51,45 @@ export const useClientMessageThreads = (contactId?: string | null) => {
     queryFn: async () => {
       if (!clientProfile?.id) return [];
       
-      // Mock data for now
+      // Mock data with correct structure
       return [
         {
           id: "thread-1",
           subject: "Care Plan Review",
-          lastMessage: "I've reviewed your care plan and have some updates...",
-          lastMessageAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-          participantName: "Dr. Sarah Johnson",
-          participantAvatar: "SJ",
+          participants: [
+            {
+              id: "1",
+              name: "Dr. Sarah Johnson",
+              avatar: "SJ",
+              type: "admin"
+            }
+          ],
+          lastMessage: {
+            content: "I've reviewed your care plan and have some updates...",
+            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+            senderName: "Dr. Sarah Johnson",
+            hasAttachments: false
+          },
           unreadCount: 1,
           status: "active"
         },
         {
           id: "thread-2", 
           subject: "Appointment Confirmation",
-          lastMessage: "Your appointment has been confirmed for tomorrow at 2 PM",
-          lastMessageAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-          participantName: "Michael Chen",
-          participantAvatar: "MC", 
+          participants: [
+            {
+              id: "2",
+              name: "Michael Chen",
+              avatar: "MC",
+              type: "admin"
+            }
+          ],
+          lastMessage: {
+            content: "Your appointment has been confirmed for tomorrow at 2 PM",
+            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+            senderName: "Michael Chen",
+            hasAttachments: false
+          },
           unreadCount: 0,
           status: "active"
         }
@@ -88,34 +108,43 @@ export const useClientThreadMessages = (threadId: string | null) => {
     queryFn: async () => {
       if (!threadId || !clientProfile?.id) return [];
       
-      // Mock data for now
+      // Mock data with correct structure
       return [
         {
           id: "msg-1",
           content: "Hello! I wanted to discuss your upcoming care plan review. Are you available this week?",
-          sentAt: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
+          timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
           sentBy: "admin",
+          senderType: "admin",
           senderName: "Dr. Sarah Johnson",
           senderAvatar: "SJ",
-          isRead: true
+          isRead: true,
+          hasAttachments: false,
+          attachments: []
         },
         {
           id: "msg-2",
           content: "Yes, I'm available Tuesday or Wednesday afternoon. What time works best?",
-          sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
           sentBy: "client",
+          senderType: "client",
           senderName: clientProfile.first_name,
           senderAvatar: clientProfile.first_name.charAt(0),
-          isRead: true
+          isRead: true,
+          hasAttachments: false,
+          attachments: []
         },
         {
           id: "msg-3",
           content: "Perfect! Let's schedule for Wednesday at 2 PM. I'll send you the meeting link shortly.",
-          sentAt: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
-          sentBy: "admin", 
+          timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
+          sentBy: "admin",
+          senderType: "admin", 
           senderName: "Dr. Sarah Johnson",
           senderAvatar: "SJ",
-          isRead: false
+          isRead: false,
+          hasAttachments: false,
+          attachments: []
         }
       ];
     },
