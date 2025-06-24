@@ -31,6 +31,7 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let navigatedAfterAuth = false;
 
     const handleAuthStateChange = async (event: string, session: Session | null) => {
       if (!mounted) return;
@@ -79,9 +80,10 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
             localStorage.setItem("clientName", clientRecord.first_name);
             localStorage.setItem("clientId", clientRecord.id);
             
-            // Only navigate on actual sign in from login page
-            if (location.pathname === '/client-login') {
-              navigate('/client-dashboard');
+            // Only navigate if we're on the login page and haven't already navigated
+            if (location.pathname === '/client-login' && !navigatedAfterAuth) {
+              navigatedAfterAuth = true;
+              navigate('/client-dashboard', { replace: true });
             }
           } else {
             setError('No client profile found for this account.');
@@ -98,15 +100,17 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
         console.log('[ClientAuthContext] User signed out');
         setClientProfile(null);
         setError(null);
+        navigatedAfterAuth = false;
         
         // Clear localStorage
         localStorage.removeItem("userType");
         localStorage.removeItem("clientName");
         localStorage.removeItem("clientId");
         
-        // Only navigate to login if we're in a client route
-        if (location.pathname.startsWith('/client-dashboard')) {
-          navigate('/client-login');
+        // Only navigate if we're in a client route
+        if (location.pathname.startsWith('/client-dashboard') && !navigatedAfterAuth) {
+          navigatedAfterAuth = true;
+          navigate('/client-login', { replace: true });
         }
       }
 
@@ -161,15 +165,18 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
         
         setError(userMessage);
         toast.error('Sign in failed', { description: userMessage });
+        setLoading(false);
         return { success: false, error: userMessage };
       }
 
       if (data.user) {
         console.log('[ClientAuthContext] Authentication successful for:', email);
+        // Don't set loading to false here - let the auth state change handler do it
         return { success: true, user: data.user };
       }
 
       setError('Authentication completed but no user data received.');
+      setLoading(false);
       return { success: false, error: 'Authentication completed but no user data received.' };
 
     } catch (error: any) {
@@ -177,9 +184,8 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
       const errorMsg = 'An unexpected error occurred. Please try again.';
       setError(errorMsg);
       toast.error('Sign in failed', { description: errorMsg });
-      return { success: false, error: errorMsg };
-    } finally {
       setLoading(false);
+      return { success: false, error: errorMsg };
     }
   };
 
@@ -191,21 +197,12 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      setClientProfile(null);
-      setError(null);
-      
-      // Clear localStorage
-      localStorage.removeItem("userType");
-      localStorage.removeItem("clientName");
-      localStorage.removeItem("clientId");
-      
+      // State cleanup is handled by the auth state change listener
       toast.success('Signed out successfully');
-      navigate('/client-login');
     } catch (error: any) {
       console.error('[ClientAuthContext] Sign out error:', error);
       setError('Sign out failed. Please try again.');
       toast.error('Sign out failed', { description: error.message });
-    } finally {
       setLoading(false);
     }
   };
