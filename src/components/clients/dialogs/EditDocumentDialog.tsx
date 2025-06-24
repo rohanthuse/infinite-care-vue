@@ -1,11 +1,5 @@
 
-import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Edit } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,146 +9,141 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ClientDocument } from "@/hooks/useClientDocuments";
-
-const formSchema = z.object({
-  name: z.string().min(1, "Document name is required"),
-  type: z.string().min(1, "Document type is required"),
-  uploaded_by: z.string().min(1, "Uploader name is required"),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface EditDocumentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (document: { id: string; name: string; type: string; uploaded_by: string }) => void;
-  document: ClientDocument | null;
+  onSave: (data: {
+    id: string;
+    name: string;
+    type: string;
+    uploaded_by: string;
+  }) => void;
+  document: any;
 }
 
-export function EditDocumentDialog({ open, onOpenChange, onSave, document }: EditDocumentDialogProps) {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      type: "",
-      uploaded_by: "",
-    },
+export function EditDocumentDialog({
+  open,
+  onOpenChange,
+  onSave,
+  document,
+}: EditDocumentDialogProps) {
+  const [formData, setFormData] = useState({
+    name: "",
+    type: "",
+    uploaded_by: "",
   });
 
   useEffect(() => {
-    if (document && open) {
-      form.setValue("name", document.name);
-      form.setValue("type", document.type);
-      form.setValue("uploaded_by", document.uploaded_by);
+    if (document) {
+      setFormData({
+        name: document.name || "",
+        type: document.type || "",
+        uploaded_by: document.uploaded_by || "",
+      });
     }
-  }, [document, open, form]);
+  }, [document]);
 
-  function onSubmit(data: FormValues) {
-    if (!document) return;
-    
-    onSave({
-      id: document.id,
-      name: data.name,
-      type: data.type,
-      uploaded_by: data.uploaded_by
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (document && formData.name && formData.type) {
+      onSave({
+        id: document.id,
+        ...formData,
+      });
+      handleClose();
+    }
+  };
+
+  const handleClose = () => {
+    setFormData({
+      name: "",
+      type: "",
+      uploaded_by: "",
     });
     onOpenChange(false);
-  }
-
-  if (!document) return null;
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-blue-600">
-            <Edit className="h-5 w-5" />
-            Edit Document
-          </DialogTitle>
+          <DialogTitle>Edit Document</DialogTitle>
           <DialogDescription>
-            Modify the document details below
+            Update the document information below.
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Document Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Document name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Document Type</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select document type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Medical Report">Medical Report</SelectItem>
-                      <SelectItem value="Care Plan">Care Plan</SelectItem>
-                      <SelectItem value="Legal Document">Legal Document</SelectItem>
-                      <SelectItem value="Insurance">Insurance</SelectItem>
-                      <SelectItem value="Assessment">Assessment</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Document Name */}
+          <div className="space-y-2">
+            <Label htmlFor="name">Document Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter document name"
+              required
             />
+          </div>
 
-            <FormField
-              control={form.control}
-              name="uploaded_by"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Uploaded By</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Uploader name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          {/* Document Type */}
+          <div className="space-y-2">
+            <Label htmlFor="type">Document Type</Label>
+            <Select 
+              value={formData.type} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select document type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Medical Report">Medical Report</SelectItem>
+                <SelectItem value="Care Plan">Care Plan</SelectItem>
+                <SelectItem value="Assessment">Assessment</SelectItem>
+                <SelectItem value="Legal Document">Legal Document</SelectItem>
+                <SelectItem value="Insurance">Insurance</SelectItem>
+                <SelectItem value="Consent Form">Consent Form</SelectItem>
+                <SelectItem value="Photo">Photo</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Uploaded By */}
+          <div className="space-y-2">
+            <Label htmlFor="uploaded_by">Uploaded By</Label>
+            <Input
+              id="uploaded_by"
+              value={formData.uploaded_by}
+              onChange={(e) => setFormData(prev => ({ ...prev, uploaded_by: e.target.value }))}
+              placeholder="Who uploaded this document?"
+              required
             />
+          </div>
 
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">Save Changes</Button>
-            </DialogFooter>
-          </form>
-        </Form>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={!formData.name || !formData.type}
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

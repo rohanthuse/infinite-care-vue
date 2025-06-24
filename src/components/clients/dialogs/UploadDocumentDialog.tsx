@@ -1,11 +1,5 @@
 
 import React, { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Upload, FileText } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -15,194 +9,238 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
-
-const formSchema = z.object({
-  name: z.string().min(1, "Document name is required"),
-  type: z.string().min(1, "Document type is required"),
-  uploaded_by: z.string().min(1, "Uploader name is required"),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Upload, FileText, X } from "lucide-react";
 
 interface UploadDocumentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (document: FormValues & { file: File }) => Promise<void>;
+  onSave: (data: {
+    name: string;
+    type: string;
+    uploaded_by: string;
+    file: File;
+  }) => void;
 }
 
-export function UploadDocumentDialog({ 
-  open, 
-  onOpenChange, 
-  onSave 
+export function UploadDocumentDialog({
+  open,
+  onOpenChange,
+  onSave,
 }: UploadDocumentDialogProps) {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      type: "",
-      uploaded_by: "",
-    },
+  const [formData, setFormData] = useState({
+    name: "",
+    type: "",
+    uploaded_by: "Client",
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [dragActive, setDragActive] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      // Auto-fill document name from filename
-      if (!form.getValues('name')) {
-        form.setValue('name', file.name);
-      }
+  const handleFileSelect = (file: File) => {
+    setSelectedFile(file);
+    if (!formData.name) {
+      setFormData(prev => ({ ...prev, name: file.name }));
     }
   };
 
-  async function onSubmit(data: FormValues) {
-    if (!selectedFile) {
-      toast.error("No file selected", {
-        description: "Please select a file to upload"
-      });
-      return;
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
     }
+  };
 
-    setIsUploading(true);
-    try {
-      await onSave({
-        ...data,
-        file: selectedFile
-      });
-      
-      // Reset form and close dialog on success
-      form.reset();
-      setSelectedFile(null);
-      onOpenChange(false);
-    } catch (error) {
-      console.error('Upload error in dialog:', error);
-      // Error handling is done in the parent component via mutations
-    } finally {
-      setIsUploading(false);
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files[0]) {
+      handleFileSelect(files[0]);
     }
-  }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files[0]) {
+      handleFileSelect(files[0]);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedFile && formData.name && formData.type) {
+      onSave({
+        ...formData,
+        file: selectedFile,
+      });
+      handleClose();
+    }
+  };
+
+  const handleClose = () => {
+    setFormData({
+      name: "",
+      type: "",
+      uploaded_by: "Client",
+    });
+    setSelectedFile(null);
+    setDragActive(false);
+    onOpenChange(false);
+  };
+
+  const removeFile = () => {
+    setSelectedFile(null);
+    setFormData(prev => ({ ...prev, name: "" }));
+  };
+
+  const formatFileSize = (bytes: number) => {
+    return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-blue-600">
-            <FileText className="h-5 w-5" />
-            Upload Document
-          </DialogTitle>
+          <DialogTitle>Upload Document</DialogTitle>
           <DialogDescription>
-            Upload a new document for this client
+            Upload a new document to your personal library.
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Select File</label>
-              <div className="flex items-center justify-center w-full">
-                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <Upload className="w-8 h-8 mb-4 text-gray-500" />
-                    <p className="mb-2 text-sm text-gray-500">
-                      <span className="font-semibold">Click to upload</span> or drag and drop
-                    </p>
-                    <p className="text-xs text-gray-500">PDF, DOC, DOCX, JPG, PNG (MAX. 10MB)</p>
-                  </div>
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    onChange={handleFileChange}
-                  />
-                </label>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* File Upload Area */}
+          <div className="space-y-2">
+            <Label>Select File</Label>
+            {!selectedFile ? (
+              <div
+                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                  dragActive 
+                    ? "border-blue-400 bg-blue-50" 
+                    : "border-gray-300 hover:border-gray-400"
+                }`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
+                <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                <p className="text-sm text-gray-600 mb-2">
+                  Drag and drop your file here, or click to browse
+                </p>
+                <input
+                  type="file"
+                  id="file-upload"
+                  className="hidden"
+                  onChange={handleInputChange}
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById('file-upload')?.click()}
+                >
+                  Choose File
+                </Button>
               </div>
-              {selectedFile && (
-                <p className="text-sm text-green-600">Selected: {selectedFile.name}</p>
-              )}
-            </div>
+            ) : (
+              <div className="border rounded-lg p-4 bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <FileText className="h-8 w-8 text-blue-500" />
+                    <div>
+                      <p className="font-medium text-sm">{selectedFile.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {formatFileSize(selectedFile.size)}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={removeFile}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
 
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Document Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Document name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          {/* Document Name */}
+          <div className="space-y-2">
+            <Label htmlFor="name">Document Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter document name"
+              required
             />
+          </div>
 
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Document Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select document type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Medical Report">Medical Report</SelectItem>
-                      <SelectItem value="Care Plan">Care Plan</SelectItem>
-                      <SelectItem value="Legal Document">Legal Document</SelectItem>
-                      <SelectItem value="Insurance">Insurance</SelectItem>
-                      <SelectItem value="Assessment">Assessment</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+          {/* Document Type */}
+          <div className="space-y-2">
+            <Label htmlFor="type">Document Type</Label>
+            <Select 
+              value={formData.type} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select document type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Medical Report">Medical Report</SelectItem>
+                <SelectItem value="Care Plan">Care Plan</SelectItem>
+                <SelectItem value="Assessment">Assessment</SelectItem>
+                <SelectItem value="Legal Document">Legal Document</SelectItem>
+                <SelectItem value="Insurance">Insurance</SelectItem>
+                <SelectItem value="Consent Form">Consent Form</SelectItem>
+                <SelectItem value="Photo">Photo</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Uploaded By */}
+          <div className="space-y-2">
+            <Label htmlFor="uploaded_by">Uploaded By</Label>
+            <Input
+              id="uploaded_by"
+              value={formData.uploaded_by}
+              onChange={(e) => setFormData(prev => ({ ...prev, uploaded_by: e.target.value }))}
+              placeholder="Who is uploading this document?"
+              required
             />
+          </div>
 
-            <FormField
-              control={form.control}
-              name="uploaded_by"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Uploaded By</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Your name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isUploading}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isUploading}>
-                {isUploading ? "Uploading..." : "Upload Document"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={!selectedFile || !formData.name || !formData.type}
+            >
+              Upload Document
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
