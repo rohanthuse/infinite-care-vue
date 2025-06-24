@@ -61,15 +61,15 @@ function App() {
                   <Route path="/client-login" element={<ClientLogin />} />
                   
                   {/* Admin Routes - Only wrapped by AuthProvider */}
-                  {AdminRoutes()}
+                  <Route path="/admin/*" element={<AdminRoutes />} />
                   
                   {/* Carer Routes - Only wrapped by AuthProvider */}
-                  {CarerRoutes()}
+                  <Route path="/carer-dashboard/*" element={<CarerRoutes />} />
                   
                   {/* Client Routes - Wrapped by ClientAuthProvider */}
                   <Route path="/client-dashboard/*" element={
                     <ClientAuthProvider>
-                      {ClientRoutes()}
+                      <ClientRoutes />
                     </ClientAuthProvider>
                   } />
                   

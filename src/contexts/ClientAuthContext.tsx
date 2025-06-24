@@ -31,7 +31,8 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    let navigatedAfterAuth = false;
+
+    console.log('[ClientAuthContext] Initializing auth context');
 
     const handleAuthStateChange = async (event: string, session: Session | null) => {
       if (!mounted) return;
@@ -43,6 +44,8 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
 
       if (event === 'SIGNED_IN' && session?.user) {
         try {
+          console.log('[ClientAuthContext] Checking client profile for:', session.user.email);
+          
           // Check if user is a client by looking at clients table
           const { data: clientRecord, error: clientError } = await supabase
             .from('clients')
@@ -80,9 +83,9 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
             localStorage.setItem("clientName", clientRecord.first_name);
             localStorage.setItem("clientId", clientRecord.id);
             
-            // Only navigate if we're on the login page and haven't already navigated
-            if (location.pathname === '/client-login' && !navigatedAfterAuth) {
-              navigatedAfterAuth = true;
+            // Navigate to client dashboard if currently on login page
+            if (location.pathname === '/client-login') {
+              console.log('[ClientAuthContext] Navigating to client dashboard');
               navigate('/client-dashboard', { replace: true });
             }
           } else {
@@ -100,7 +103,6 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
         console.log('[ClientAuthContext] User signed out');
         setClientProfile(null);
         setError(null);
-        navigatedAfterAuth = false;
         
         // Clear localStorage
         localStorage.removeItem("userType");
@@ -108,8 +110,8 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("clientId");
         
         // Only navigate if we're in a client route
-        if (location.pathname.startsWith('/client-dashboard') && !navigatedAfterAuth) {
-          navigatedAfterAuth = true;
+        if (location.pathname.startsWith('/client-dashboard')) {
+          console.log('[ClientAuthContext] Navigating to client login');
           navigate('/client-login', { replace: true });
         }
       }
@@ -139,7 +141,7 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
     };
   }, [navigate, location.pathname]);
 
-  const signInWithRetry = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string) => {
     console.log('[ClientAuthContext] Attempting sign in for:', email);
     setLoading(true);
     setError(null);
@@ -171,8 +173,8 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
 
       if (data.user) {
         console.log('[ClientAuthContext] Authentication successful for:', email);
-        // Don't set loading to false here - let the auth state change handler do it
-        return { success: true, user: data.user };
+        // Auth state change handler will take care of the rest
+        return { success: true };
       }
 
       setError('Authentication completed but no user data received.');
@@ -197,7 +199,6 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      // State cleanup is handled by the auth state change listener
       toast.success('Signed out successfully');
     } catch (error: any) {
       console.error('[ClientAuthContext] Sign out error:', error);
@@ -209,6 +210,16 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
 
   const clearError = () => setError(null);
 
+  // Protect client routes - redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && location.pathname.startsWith('/client-dashboard')) {
+      if (!user || !clientProfile) {
+        console.log('[ClientAuthContext] Redirecting unauthenticated user to login');
+        navigate('/client-login', { replace: true });
+      }
+    }
+  }, [user, clientProfile, loading, location.pathname, navigate]);
+
   const value = {
     user,
     session,
@@ -217,7 +228,7 @@ export function ClientAuthProvider({ children }: { children: ReactNode }) {
     isClientRole: !!clientProfile,
     clientProfile,
     error,
-    signIn: signInWithRetry,
+    signIn,
     signOut,
     clearError,
   };
