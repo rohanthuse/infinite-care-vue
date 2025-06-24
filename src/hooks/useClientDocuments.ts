@@ -266,25 +266,3 @@ export const useDownloadClientDocument = () => {
     },
   });
 };
-
-// Check existing review for appointment (reused from existing hook)
-export const useCheckExistingReview = (clientId: string, appointmentId: string) => {
-  return useQuery({
-    queryKey: ['existing-review', clientId, appointmentId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('client_reviews')
-        .select('*')
-        .eq('client_id', clientId)
-        .eq('appointment_id', appointmentId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      return data;
-    },
-    enabled: Boolean(clientId && appointmentId),
-  });
-};
