@@ -14,7 +14,7 @@ const MemoizedMessageComposer = memo(ClientMessageComposer);
 const ClientMessages = () => {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
-  const [contactType, setContactType] = useState<"all" | "carers" | "admins">("all");
+  const [contactType, setContactType] = useState<"all" | "carers" | "admins">("all"); // Keep for compatibility but will only show admins
   const [searchTerm, setSearchTerm] = useState("");
   const [showComposer, setShowComposer] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -114,13 +114,13 @@ const ClientMessages = () => {
             <div className="flex flex-col items-center justify-center h-full bg-gray-50">
               <div className="text-gray-400 text-lg mb-2">No message selected</div>
               <p className="text-sm text-gray-500 max-w-md text-center">
-                Select a message from the list to view it, or start a new conversation with your care team.
+                Select a message from the list to view it, or start a new conversation with your care coordinators.
               </p>
               <button 
                 onClick={handleComposeClick}
                 className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
-                Start New Conversation
+                Message Care Coordinator
               </button>
             </div>
           )}

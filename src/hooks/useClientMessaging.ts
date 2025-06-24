@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from './useUserRole';
@@ -50,7 +49,7 @@ const parseAttachments = (attachments: any): any[] => {
   }
 };
 
-// Get client's care team (carers and admins assigned to their branch)
+// Get client's care administrators (only admins assigned to their branch)
 export const useClientCareTeam = () => {
   const { data: currentUser } = useUserRole();
   
@@ -71,14 +70,7 @@ export const useClientCareTeam = () => {
 
       if (!client?.branch_id) return [];
 
-      // Get staff members from the same branch
-      const { data: staff } = await supabase
-        .from('staff')
-        .select('id, first_name, last_name, email, status')
-        .eq('branch_id', client.branch_id)
-        .eq('status', 'active');
-
-      // Get admins for this branch
+      // Get only admins for this branch (removed staff fetching)
       const { data: adminBranches } = await supabase
         .from('admin_branches')
         .select(`
@@ -94,23 +86,7 @@ export const useClientCareTeam = () => {
 
       const contacts: ClientContact[] = [];
 
-      // Add staff members
-      if (staff) {
-        staff.forEach(member => {
-          contacts.push({
-            id: member.id,
-            name: `${member.first_name} ${member.last_name}`,
-            avatar: `${member.first_name?.charAt(0) || ''}${member.last_name?.charAt(0) || ''}`,
-            type: 'carer',
-            status: member.status === 'active' ? 'online' : 'offline',
-            unread: 0, // Will be calculated separately
-            email: member.email,
-            role: 'carer'
-          });
-        });
-      }
-
-      // Add admins
+      // Add only admins
       if (adminBranches) {
         adminBranches.forEach(admin => {
           if (admin.profiles) {
