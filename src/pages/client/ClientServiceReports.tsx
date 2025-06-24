@@ -10,7 +10,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ResponsiveContainer 
 } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
-import { Calendar, Clock, BarChart as BarChartIcon, Users, TrendingUp, CheckSquare, Download, Loader2 } from "lucide-react";
+import { Calendar, Clock, BarChart as BarChartIcon, Users, TrendingUp, CheckSquare, Download, Loader2, Info } from "lucide-react";
 import { useClientServiceReports } from "@/hooks/useClientServiceReports";
 import { useClientAppointments } from "@/hooks/useClientAppointments";
 import { useClientServiceActions } from "@/hooks/useClientServiceActions";
@@ -52,7 +52,7 @@ const ClientServiceReports = () => {
       ...reportData.serviceTypeData.map(item => [item.name, item.value.toString()]),
       [''],
       ['Progress Data:'],
-      ['Month', 'Progress %'],
+      ['Period', 'Progress %'],
       ...reportData.progressData.map(item => [item.month, item.progress.toString()]),
     ];
     
@@ -64,6 +64,16 @@ const ClientServiceReports = () => {
     a.download = `service_reports_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  // Helper function to determine if progress data is based on real goals
+  const hasRealProgressData = () => {
+    if (!reportData?.progressData) return false;
+    // Check if progress values show realistic goal-based progression
+    const progressValues = reportData.progressData.map(item => item.progress);
+    const hasVariation = Math.max(...progressValues) - Math.min(...progressValues) > 5;
+    const hasReasonableValues = progressValues.some(val => val > 0 && val < 100);
+    return hasVariation && hasReasonableValues;
   };
   
   if (isLoading) {
@@ -183,8 +193,22 @@ const ClientServiceReports = () => {
             {/* Overall Progress */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Care Plan Progress</CardTitle>
-                <CardDescription>Monthly progress on your care plan goals</CardDescription>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  Care Plan Progress
+                  {!hasRealProgressData() && (
+                    <Info className="h-4 w-4 text-amber-500" title="Limited progress data available" />
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  {timeFilter === 'week' ? 'Daily' : 
+                   timeFilter === 'quarter' ? 'Monthly' : 
+                   timeFilter === 'year' ? 'Monthly' : 'Daily'} progress on your care plan goals
+                  {!hasRealProgressData() && (
+                    <span className="text-amber-600 text-xs block mt-1">
+                      * Limited goal data - showing estimated progression
+                    </span>
+                  )}
+                </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="h-[300px] w-full">
@@ -200,8 +224,8 @@ const ClientServiceReports = () => {
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip />
+                        <YAxis domain={[0, 100]} />
+                        <Tooltip formatter={(value) => [`${value}%`, 'Progress']} />
                         <Area 
                           type="monotone" 
                           dataKey="progress" 
@@ -267,7 +291,7 @@ const ClientServiceReports = () => {
                   </div>
                 ) : (
                   reportData.serviceUtilization.map((service, i) => (
-                    <div key={i} className="p-4 border rounded-lg hover:shadow-sm transition-all">
+                    <div key={i} className="p-4 border rounded-lg hover:shadow-md transition-all">
                       <div className="flex flex-col md:flex-row justify-between mb-4">
                         <div className="flex items-center">
                           <div className="bg-blue-100 p-2 rounded-full mr-3">
