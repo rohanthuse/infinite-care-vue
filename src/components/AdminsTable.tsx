@@ -35,43 +35,97 @@ export function AdminsTable() {
   const { data: admins, isLoading, error } = useQuery({
     queryKey: ['branchAdmins'],
     queryFn: async () => {
+      console.log('[AdminsTable] Starting admin query...');
+      
+      // Step 1: Get all users with branch_admin role
       const { data: adminRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id')
         .eq('role', 'branch_admin');
 
-      if (rolesError) throw rolesError;
+      if (rolesError) {
+        console.error('[AdminsTable] Error fetching admin roles:', rolesError);
+        throw rolesError;
+      }
+
+      console.log('[AdminsTable] Found admin role users:', adminRoles);
+
+      if (!adminRoles || adminRoles.length === 0) {
+        console.log('[AdminsTable] No admin roles found');
+        return [];
+      }
+
       const adminIds = adminRoles.map(r => r.user_id);
+      console.log('[AdminsTable] Admin IDs:', adminIds);
 
-      if (adminIds.length === 0) return [];
-
+      // Step 2: Get profiles for these admin users
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          email,
-          phone,
-          status,
-          admin_branches(branches(id, name))
-        `)
+        .select('id, first_name, last_name, email, phone, status')
         .in('id', adminIds);
       
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('[AdminsTable] Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
 
-      return profiles.map((p): AdminData => {
-        const branches = p.admin_branches as any[] | null;
-        return {
-            id: p.id,
-            name: p.first_name && p.last_name ? `${p.last_name}, ${p.first_name}` : 'N/A',
-            email: p.email ?? 'N/A',
-            phone: p.phone ?? 'N/A',
-            branch: branches && branches.length > 0 ? branches.map((ab: any) => ab.branches.name).join(', ') : 'Unassigned',
-            branchId: branches && branches.length > 0 ? branches[0].branches.id : null,
-            status: capitalize(p.status) as AdminData['status'],
+      console.log('[AdminsTable] Found profiles:', profiles);
+
+      // Step 3: Get branch assignments for these admins
+      const { data: branchAssignments, error: branchError } = await supabase
+        .from('admin_branches')
+        .select('admin_id, branch_id')
+        .in('admin_id', adminIds);
+
+      if (branchError) {
+        console.error('[AdminsTable] Error fetching branch assignments:', branchError);
+        throw branchError;
+      }
+
+      console.log('[AdminsTable] Found branch assignments:', branchAssignments);
+
+      // Step 4: Get branch information
+      let branchInfo: any[] = [];
+      if (branchAssignments && branchAssignments.length > 0) {
+        const branchIds = branchAssignments.map(ba => ba.branch_id);
+        const { data: branches, error: branchInfoError } = await supabase
+          .from('branches')
+          .select('id, name')
+          .in('id', branchIds);
+
+        if (branchInfoError) {
+          console.error('[AdminsTable] Error fetching branch info:', branchInfoError);
+          throw branchInfoError;
         }
+
+        branchInfo = branches || [];
+        console.log('[AdminsTable] Found branch info:', branchInfo);
+      }
+
+      // Step 5: Combine all data
+      const adminData: AdminData[] = (profiles || []).map((profile): AdminData => {
+        // Find branch assignments for this admin
+        const adminBranches = branchAssignments?.filter(ba => ba.admin_id === profile.id) || [];
+        
+        // Get branch names
+        const branchNames = adminBranches.map(ab => {
+          const branch = branchInfo.find(b => b.id === ab.branch_id);
+          return branch?.name || 'Unknown Branch';
+        });
+
+        return {
+          id: profile.id,
+          name: profile.first_name && profile.last_name ? `${profile.last_name}, ${profile.first_name}` : 'N/A',
+          email: profile.email ?? 'N/A',
+          phone: profile.phone ?? 'N/A',
+          branch: branchNames.length > 0 ? branchNames.join(', ') : 'Unassigned',
+          branchId: adminBranches.length > 0 ? adminBranches[0].branch_id : null,
+          status: capitalize(profile.status || 'pending') as AdminData['status'],
+        };
       });
+
+      console.log('[AdminsTable] Final admin data:', adminData);
+      return adminData;
     }
   });
 
