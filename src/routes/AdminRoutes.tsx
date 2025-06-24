@@ -51,67 +51,64 @@ const RequireAdminAuth = () => {
   return <Outlet />;
 };
 
-const AdminRoutes = () => {
-  return (
-    <Routes>
-      <Route element={<RequireAdminAuth />}>
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="notifications" element={<Notifications />} />
-        <Route path="notifications/:categoryId" element={<Notifications />} />
-        <Route path="services" element={<Services />} />
-        <Route path="settings" element={<Settings />} />
-        <Route path="agreement" element={<Agreement />} />
-        <Route path="hobbies" element={<Hobbies />} />
-        <Route path="skills" element={<Skills />} />
-        <Route path="medical-mental" element={<MedicalMental />} />
-        <Route path="type-of-work" element={<TypeOfWork />} />
-        <Route path="body-map-points" element={<BodyMapPoints />} />
-        <Route path="branch" element={<Branch />} />
-        <Route path="branch-details/:id" element={<BranchDetails />} />
-        <Route path="branch-admins" element={<BranchAdmins />} />
-        <Route path="workflow" element={<Workflow />} />
-        <Route path="task-matrix" element={<TaskMatrix branchId="main" branchName="Main Branch" />} />
-        <Route path="training-matrix" element={<TrainingMatrix branchId="main" branchName="Main Branch" />} />
-        <Route path="key-parameters" element={<KeyParameters />} />
-        <Route path="booking-approvals" element={<BookingApprovals />} />
-        
-        {/* Branch Dashboard Routes - Simplified and URL-based */}
-        <Route path="branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
-        <Route path="branch-dashboard/:id/:branchName/dashboard" element={<BranchDashboard />} />
-        <Route path="branch-dashboard/:id/:branchName/key-parameters" element={<BranchDashboard />} />
-        <Route path="branch-dashboard/:id/:branchName/workflow" element={<BranchDashboard />} />
-        <Route path="branch-dashboard/:id/:branchName/task-matrix" element={<BranchDashboard />} />
-        <Route path="branch-dashboard/:id/:branchName/training-matrix" element={<BranchDashboard />} />
-        <Route path="branch-dashboard/:id/:branchName/bookings" element={<BranchDashboard />} />
-        <Route path="branch-dashboard/:id/:branchName/carers" element={<BranchDashboard />} />
-        <Route path="branch-dashboard/:id/:branchName/clients" element={<BranchDashboard />} />
-        <Route path="branch-dashboard/:id/:branchName/reviews" element={<BranchDashboard />} />
-        <Route path="branch-dashboard/:id/:branchName/communication" element={<BranchDashboard />} />
-        <Route path="branch-dashboard/:id/:branchName/medication" element={<BranchDashboard />} />
-        <Route path="branch-dashboard/:id/:branchName/accounting" element={<BranchDashboard />} />
-        <Route path="branch-dashboard/:id/:branchName/care-plan" element={<BranchDashboard />} />
-        <Route path="branch-dashboard/:id/:branchName/agreements" element={<BranchDashboard />} />
-        <Route path="branch-dashboard/:id/:branchName/forms" element={<BranchDashboard />} />
-        <Route path="branch-dashboard/:id/:branchName/notifications" element={<BranchDashboard />} />
-        
-        {/* Specific Branch Dashboard Sub-pages */}
-        <Route path="branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
-        <Route path="branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
-        <Route path="branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
-        <Route path="branch-dashboard/:id/:branchName/care-plan/:carePlanId" element={<CarePlanView />} />
-        <Route path="branch-dashboard/:id/:branchName/clients/:clientId/edit" element={<ClientEdit />} />
-        <Route path="branch-dashboard/:id/:branchName/events-logs" element={<EventsLogs />} />
-        <Route path="branch-dashboard/:id/:branchName/attendance" element={<Attendance />} />
-        <Route path="branch-dashboard/:id/:branchName/form-builder" element={<FormBuilder />} />
-        <Route path="branch-dashboard/:id/:branchName/form-builder/:formId" element={<FormBuilder />} />
-        <Route path="branch-dashboard/:id/:branchName/documents" element={<Documents />} />
-        <Route path="branch-dashboard/:id/:branchName/library" element={<Library />} />
-        <Route path="branch-dashboard/:id/:branchName/third-party" element={<ThirdPartyAccess />} />
-        <Route path="branch-dashboard/:id/:branchName/reports" element={<Reports />} />
-        <Route path="branch-dashboard/:id/:branchName/booking-approvals" element={<BookingApprovals />} />
-      </Route>
-    </Routes>
-  );
-};
+// Export as function that returns Route array for consistency
+const AdminRoutes = () => [
+  <Route key="admin-auth" element={<RequireAdminAuth />}>
+    <Route path="/dashboard" element={<Dashboard />} />
+    <Route path="/notifications" element={<Notifications />} />
+    <Route path="/notifications/:categoryId" element={<Notifications />} />
+    <Route path="/services" element={<Services />} />
+    <Route path="/settings" element={<Settings />} />
+    <Route path="/agreement" element={<Agreement />} />
+    <Route path="/hobbies" element={<Hobbies />} />
+    <Route path="/skills" element={<Skills />} />
+    <Route path="/medical-mental" element={<MedicalMental />} />
+    <Route path="/type-of-work" element={<TypeOfWork />} />
+    <Route path="/body-map-points" element={<BodyMapPoints />} />
+    <Route path="/branch" element={<Branch />} />
+    <Route path="/branch-details/:id" element={<BranchDetails />} />
+    <Route path="/branch-admins" element={<BranchAdmins />} />
+    <Route path="/workflow" element={<Workflow />} />
+    <Route path="/task-matrix" element={<TaskMatrix branchId="main" branchName="Main Branch" />} />
+    <Route path="/training-matrix" element={<TrainingMatrix branchId="main" branchName="Main Branch" />} />
+    <Route path="/key-parameters" element={<KeyParameters />} />
+    <Route path="/booking-approvals" element={<BookingApprovals />} />
+    
+    {/* Branch Dashboard Routes - Simplified and URL-based */}
+    <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/dashboard" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/key-parameters" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/workflow" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/task-matrix" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/training-matrix" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/bookings" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/carers" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/clients" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/reviews" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/communication" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/medication" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/accounting" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/care-plan" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/agreements" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/forms" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/notifications" element={<BranchDashboard />} />
+    
+    {/* Specific Branch Dashboard Sub-pages */}
+    <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
+    <Route path="/branch-dashboard/:id/:branchName/recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
+    <Route path="/branch-dashboard/:id/:branchName/recruitment/post-job" element={<PostJobPage />} />
+    <Route path="/branch-dashboard/:id/:branchName/care-plan/:carePlanId" element={<CarePlanView />} />
+    <Route path="/branch-dashboard/:id/:branchName/clients/:clientId/edit" element={<ClientEdit />} />
+    <Route path="/branch-dashboard/:id/:branchName/events-logs" element={<EventsLogs />} />
+    <Route path="/branch-dashboard/:id/:branchName/attendance" element={<Attendance />} />
+    <Route path="/branch-dashboard/:id/:branchName/form-builder" element={<FormBuilder />} />
+    <Route path="/branch-dashboard/:id/:branchName/form-builder/:formId" element={<FormBuilder />} />
+    <Route path="/branch-dashboard/:id/:branchName/documents" element={<Documents />} />
+    <Route path="/branch-dashboard/:id/:branchName/library" element={<Library />} />
+    <Route path="/branch-dashboard/:id/:branchName/third-party" element={<ThirdPartyAccess />} />
+    <Route path="/branch-dashboard/:id/:branchName/reports" element={<Reports />} />
+    <Route path="/branch-dashboard/:id/:branchName/booking-approvals" element={<BookingApprovals />} />
+  </Route>
+];
 
 export default AdminRoutes;

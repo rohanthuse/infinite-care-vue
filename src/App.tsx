@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TaskProvider } from "@/contexts/TaskContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { ClientAuthProvider } from "@/contexts/ClientAuthContext";
 import Index from "./pages/Index";
 import CarerLogin from "./pages/CarerLogin";
 import CarerLoginSafe from "./pages/CarerLoginSafe";
@@ -52,7 +51,7 @@ function App() {
             <TaskProvider>
               <ErrorBoundary fallback={<RoutingErrorFallback />}>
                 <Routes>
-                  {/* Public Routes - No auth providers */}
+                  {/* Public Routes */}
                   <Route path="/" element={<Index />} />
                   <Route path="/super-admin" element={<SuperAdminLogin />} />
                   <Route path="/carer-login" element={<CarerLoginSafe />} />
@@ -60,18 +59,10 @@ function App() {
                   <Route path="/carer-onboarding" element={<CarerOnboarding />} />
                   <Route path="/client-login" element={<ClientLogin />} />
                   
-                  {/* Admin Routes - Only wrapped by AuthProvider */}
-                  <Route path="/admin/*" element={<AdminRoutes />} />
-                  
-                  {/* Carer Routes - Only wrapped by AuthProvider */}
-                  <Route path="/carer-dashboard/*" element={<CarerRoutes />} />
-                  
-                  {/* Client Routes - Wrapped by ClientAuthProvider */}
-                  <Route path="/client-dashboard/*" element={
-                    <ClientAuthProvider>
-                      <ClientRoutes />
-                    </ClientAuthProvider>
-                  } />
+                  {/* Protected Routes - All now consistently return arrays */}
+                  {AdminRoutes()}
+                  {CarerRoutes()}
+                  {ClientRoutes()}
                   
                   {/* Fallback route for unmatched paths */}
                   <Route path="*" element={<RoutingErrorFallback />} />

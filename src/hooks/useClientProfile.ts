@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useClientAuth } from '@/contexts/ClientAuthContext';
+import { useClientAuth } from './useClientAuth';
 import { toast } from 'sonner';
 
 export interface ClientProfileData {
