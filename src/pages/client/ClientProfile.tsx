@@ -1,114 +1,158 @@
-import React, { useState, useRef, useEffect } from "react";
+
+import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Lock, Shield, Bell, Eye, EyeOff, Upload } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useClientProfile, useUpdateClientProfile } from "@/hooks/useClientData";
-import { useAuth } from "@/hooks/useAuth";
-import { useParams } from "react-router-dom";
+import { Upload, Save, Eye, EyeOff, User, Heart, Phone, Lock } from "lucide-react";
+import { toast } from "sonner";
+import { useClientAuth } from "@/hooks/useClientAuth";
+import {
+  useClientProfile,
+  useClientPersonalInfo,
+  useClientMedicalInfo,
+  useUpdateClientProfile,
+  useUpdateClientPersonalInfo,
+  useUpdateClientMedicalInfo,
+  useChangeClientPassword
+} from "@/hooks/useClientProfile";
 
 const ClientProfile = () => {
-  const { toast } = useToast();
-  const { user } = useAuth();
-  const params = useParams();
+  const { clientProfile: authProfile, isAuthenticated, loading: authLoading } = useClientAuth();
+  const { data: profile, isLoading: profileLoading } = useClientProfile();
+  const { data: personalInfo, isLoading: personalLoading } = useClientPersonalInfo();
+  const { data: medicalInfo, isLoading: medicalLoading } = useClientMedicalInfo();
+  
+  const updateProfile = useUpdateClientProfile();
+  const updatePersonalInfo = useUpdateClientPersonalInfo();
+  const updateMedicalInfo = useUpdateClientMedicalInfo();
+  const changePassword = useChangeClientPassword();
+
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  // Get client ID from URL params or use user ID as fallback
-  const clientId = params.clientId || user?.id || '';
-  
-  const { data: clientProfile, isLoading } = useClientProfile(clientId);
-  const updateClientMutation = useUpdateClientProfile();
-  
-  // Complete form state with all database fields
-  const [profile, setProfile] = useState({
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Form states
+  const [profileData, setProfileData] = useState({
     first_name: "",
     last_name: "",
-    title: "",
-    middle_name: "",
-    preferred_name: "",
     email: "",
     phone: "",
     mobile_number: "",
     telephone_number: "",
-    country_code: "",
     address: "",
-    region: "",
     date_of_birth: "",
     gender: "",
+    preferred_name: "",
+    title: "",
+    middle_name: "",
     pronouns: "",
-    status: "",
-    referral_route: "",
-    other_identifier: "",
-    additional_information: "",
-    avatar_initials: "",
-    registered_on: ""
+    communication_preferences: "",
+    additional_information: ""
   });
 
-  // Photo state
-  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [personalData, setPersonalData] = useState({
+    emergency_contact_name: "",
+    emergency_contact_phone: "",
+    emergency_contact_relationship: "",
+    next_of_kin_name: "",
+    next_of_kin_phone: "",
+    next_of_kin_relationship: "",
+    gp_name: "",
+    gp_practice: "",
+    gp_phone: "",
+    preferred_communication: "",
+    cultural_preferences: "",
+    language_preferences: "",
+    religion: "",
+    marital_status: ""
+  });
 
-  // Update local state when client profile loads
-  useEffect(() => {
-    if (clientProfile) {
-      setProfile({
-        first_name: clientProfile.first_name || "",
-        last_name: clientProfile.last_name || "",
-        title: clientProfile.title || "",
-        middle_name: clientProfile.middle_name || "",
-        preferred_name: clientProfile.preferred_name || "",
-        email: clientProfile.email || "",
-        phone: clientProfile.phone || "",
-        mobile_number: clientProfile.mobile_number || "",
-        telephone_number: clientProfile.telephone_number || "",
-        country_code: clientProfile.country_code || "",
-        address: clientProfile.address || "",
-        region: clientProfile.region || "",
-        date_of_birth: clientProfile.date_of_birth || "",
-        gender: clientProfile.gender || "",
-        pronouns: clientProfile.pronouns || "",
-        status: clientProfile.status || "",
-        referral_route: clientProfile.referral_route || "",
-        other_identifier: clientProfile.other_identifier || "",
-        additional_information: clientProfile.additional_information || "",
-        avatar_initials: clientProfile.avatar_initials || "",
-        registered_on: clientProfile.registered_on || ""
-      });
-    }
-  }, [clientProfile]);
+  const [medicalData, setMedicalData] = useState({
+    allergies: [] as string[],
+    current_medications: [] as string[],
+    medical_conditions: [] as string[],
+    medical_history: "",
+    mobility_status: "",
+    cognitive_status: "",
+    communication_needs: "",
+    sensory_impairments: [] as string[],
+    mental_health_status: ""
+  });
 
-  // Form state for password change
-  const [passwordForm, setPasswordForm] = useState({
+  const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: ""
   });
-  
-  // Notification settings
-  const [notificationSettings, setNotificationSettings] = useState({
-    email: true,
-    sms: true,
-    appointments: true,
-    careUpdates: true,
-    billing: true
-  });
-  
-  // Password visibility state
-  const [showPassword, setShowPassword] = useState({
-    current: false,
-    new: false,
-    confirm: false
-  });
 
-  // Handle photo upload
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  // Update form data when profile data loads
+  React.useEffect(() => {
+    if (profile) {
+      setProfileData({
+        first_name: profile.first_name || "",
+        last_name: profile.last_name || "",
+        email: profile.email || "",
+        phone: profile.phone || "",
+        mobile_number: profile.mobile_number || "",
+        telephone_number: profile.telephone_number || "",
+        address: profile.address || "",
+        date_of_birth: profile.date_of_birth || "",
+        gender: profile.gender || "",
+        preferred_name: profile.preferred_name || "",
+        title: profile.title || "",
+        middle_name: profile.middle_name || "",
+        pronouns: profile.pronouns || "",
+        communication_preferences: profile.communication_preferences || "",
+        additional_information: profile.additional_information || ""
+      });
+    }
+  }, [profile]);
+
+  React.useEffect(() => {
+    if (personalInfo) {
+      setPersonalData({
+        emergency_contact_name: personalInfo.emergency_contact_name || "",
+        emergency_contact_phone: personalInfo.emergency_contact_phone || "",
+        emergency_contact_relationship: personalInfo.emergency_contact_relationship || "",
+        next_of_kin_name: personalInfo.next_of_kin_name || "",
+        next_of_kin_phone: personalInfo.next_of_kin_phone || "",
+        next_of_kin_relationship: personalInfo.next_of_kin_relationship || "",
+        gp_name: personalInfo.gp_name || "",
+        gp_practice: personalInfo.gp_practice || "",
+        gp_phone: personalInfo.gp_phone || "",
+        preferred_communication: personalInfo.preferred_communication || "",
+        cultural_preferences: personalInfo.cultural_preferences || "",
+        language_preferences: personalInfo.language_preferences || "",
+        religion: personalInfo.religion || "",
+        marital_status: personalInfo.marital_status || ""
+      });
+    }
+  }, [personalInfo]);
+
+  React.useEffect(() => {
+    if (medicalInfo) {
+      setMedicalData({
+        allergies: medicalInfo.allergies || [],
+        current_medications: medicalInfo.current_medications || [],
+        medical_conditions: medicalInfo.medical_conditions || [],
+        medical_history: medicalInfo.medical_history || "",
+        mobility_status: medicalInfo.mobility_status || "",
+        cognitive_status: medicalInfo.cognitive_status || "",
+        communication_needs: medicalInfo.communication_needs || "",
+        sensory_impairments: medicalInfo.sensory_impairments || [],
+        mental_health_status: medicalInfo.mental_health_status || ""
+      });
+    }
+  }, [medicalInfo]);
+
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -116,104 +160,82 @@ const ClientProfile = () => {
     const reader = new FileReader();
     reader.onloadend = () => {
       const result = reader.result as string;
-      setProfilePhoto(file.name);
       setPhotoPreview(result);
-      
-      toast({
-        title: "Photo uploaded",
-        description: "Your profile photo has been updated.",
-      });
+      toast.success("Photo preview updated. Click 'Save Changes' to apply.");
     };
     reader.readAsDataURL(file);
   };
 
-  // Trigger file input click
-  const handleClickChangePhoto = () => {
-    fileInputRef.current?.click();
+  const handleSaveProfile = async () => {
+    try {
+      await updateProfile.mutateAsync(profileData);
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+    }
   };
 
-  // Handle profile form submission
-  const handleProfileUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!clientId) {
-      toast({
-        title: "Error",
-        description: "Client ID is required to update profile.",
-        variant: "destructive"
-      });
+  const handleSavePersonalInfo = async () => {
+    try {
+      await updatePersonalInfo.mutateAsync(personalData);
+    } catch (error) {
+      console.error('Failed to save personal info:', error);
+    }
+  };
+
+  const handleSaveMedicalInfo = async () => {
+    try {
+      await updateMedicalInfo.mutateAsync(medicalData);
+    } catch (error) {
+      console.error('Failed to save medical info:', error);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error("New passwords don't match");
       return;
     }
-    
+
+    if (passwordData.newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters long");
+      return;
+    }
+
     try {
-      await updateClientMutation.mutateAsync({
-        clientId: clientId,
-        updates: profile
+      await changePassword.mutateAsync({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
       });
       
-      toast({
-        title: "Profile updated",
-        description: "Your profile information has been saved.",
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
       });
     } catch (error) {
-      console.error('Profile update error:', error);
-      toast({
-        title: "Error updating profile",
-        description: "There was an error saving your profile. Please try again.",
-        variant: "destructive"
-      });
+      console.error('Failed to change password:', error);
     }
   };
-  
-  // Handle password change form submission
-  const handlePasswordChange = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate password
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "New password and confirm password must match.",
-        variant: "destructive"
-      });
-      return;
+
+  const addArrayItem = (field: keyof typeof medicalData, value: string) => {
+    if (value.trim() && Array.isArray(medicalData[field])) {
+      setMedicalData(prev => ({
+        ...prev,
+        [field]: [...(prev[field] as string[]), value.trim()]
+      }));
     }
-    
-    // Reset form
-    setPasswordForm({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: ""
-    });
-    
-    toast({
-      title: "Password changed",
-      description: "Your password has been updated successfully.",
-    });
-  };
-  
-  // Toggle notification setting
-  const toggleNotification = (key: keyof typeof notificationSettings) => {
-    setNotificationSettings(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-    
-    toast({
-      title: "Notification settings updated",
-      description: `${key} notifications ${notificationSettings[key] ? 'disabled' : 'enabled'}.`,
-    });
   };
 
-  // Toggle password visibility
-  const togglePasswordVisibility = (field: keyof typeof showPassword) => {
-    setShowPassword(prev => ({
-      ...prev,
-      [field]: !prev[field]
-    }));
+  const removeArrayItem = (field: keyof typeof medicalData, index: number) => {
+    if (Array.isArray(medicalData[field])) {
+      setMedicalData(prev => ({
+        ...prev,
+        [field]: (prev[field] as string[]).filter((_, i) => i !== index)
+      }));
+    }
   };
 
-  if (isLoading) {
+  if (authLoading || profileLoading || personalLoading || medicalLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -221,22 +243,28 @@ const ClientProfile = () => {
     );
   }
 
-  const displayName = profile.preferred_name || profile.first_name || "Client";
+  if (!isAuthenticated || !authProfile) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-red-500">Please log in to view your profile.</div>
+      </div>
+    );
+  }
+
+  const displayName = profileData.preferred_name || profileData.first_name || "Client";
+  const avatarInitials = profile?.avatar_initials || `${profileData.first_name?.charAt(0) || 'C'}${profileData.last_name?.charAt(0) || 'L'}`;
 
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-xl border border-gray-200">
-        <h2 className="text-xl font-bold mb-6">Client Profile</h2>
-        
         <div className="flex flex-col md:flex-row gap-6 items-start">
-          {/* Avatar and basic info */}
           <div className="w-full md:w-64 flex flex-col items-center text-center">
             <Avatar className="h-24 w-24">
               {photoPreview ? (
                 <AvatarImage src={photoPreview} alt={displayName} />
               ) : (
                 <AvatarFallback className="bg-blue-100 text-blue-800 text-3xl">
-                  {profile.avatar_initials || displayName.charAt(0)}
+                  {avatarInitials}
                 </AvatarFallback>
               )}
             </Avatar>
@@ -253,466 +281,532 @@ const ClientProfile = () => {
               <Button 
                 variant="outline" 
                 className="w-full flex items-center justify-center gap-2"
-                onClick={handleClickChangePhoto}
+                onClick={() => fileInputRef.current?.click()}
               >
                 <Upload className="w-4 h-4" /> Change Photo
               </Button>
             </div>
           </div>
           
-          {/* Tabs for different settings */}
           <div className="flex-1">
-            <Tabs defaultValue="personal">
-              <TabsList className="grid w-full grid-cols-3">
+            <Tabs defaultValue="basic" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="basic">
+                  <User className="w-4 h-4 mr-2" />
+                  Basic Info
+                </TabsTrigger>
                 <TabsTrigger value="personal">
-                  <User className="h-4 w-4 mr-2" />
+                  <Phone className="w-4 h-4 mr-2" />
                   Personal
                 </TabsTrigger>
+                <TabsTrigger value="medical">
+                  <Heart className="w-4 h-4 mr-2" />
+                  Medical
+                </TabsTrigger>
                 <TabsTrigger value="security">
-                  <Lock className="h-4 w-4 mr-2" />
+                  <Lock className="w-4 h-4 mr-2" />
                   Security
                 </TabsTrigger>
-                <TabsTrigger value="notifications">
-                  <Bell className="h-4 w-4 mr-2" />
-                  Notifications
-                </TabsTrigger>
               </TabsList>
-              
-              {/* Personal Info Tab */}
-              <TabsContent value="personal" className="pt-6">
+
+              {/* Basic Information Tab */}
+              <TabsContent value="basic">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Personal Information</CardTitle>
-                    <CardDescription>
-                      Update personal details and contact information.
-                    </CardDescription>
+                    <CardTitle>Basic Information</CardTitle>
+                    <CardDescription>Update your basic profile information</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleProfileUpdate} className="space-y-6">
-                      {/* Basic Information */}
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <h3 className="text-lg font-medium mb-4">Basic Information</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="title">Title</Label>
-                            <Input
-                              id="title"
-                              value={profile.title}
-                              onChange={(e) => setProfile({...profile, title: e.target.value})}
-                              placeholder="Mr, Mrs, Dr, etc."
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="first_name">First Name *</Label>
-                            <Input
-                              id="first_name"
-                              value={profile.first_name}
-                              onChange={(e) => setProfile({...profile, first_name: e.target.value})}
-                              required
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="middle_name">Middle Name</Label>
-                            <Input
-                              id="middle_name"
-                              value={profile.middle_name}
-                              onChange={(e) => setProfile({...profile, middle_name: e.target.value})}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="last_name">Last Name *</Label>
-                            <Input
-                              id="last_name"
-                              value={profile.last_name}
-                              onChange={(e) => setProfile({...profile, last_name: e.target.value})}
-                              required
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="preferred_name">Preferred Name</Label>
-                            <Input
-                              id="preferred_name"
-                              value={profile.preferred_name}
-                              onChange={(e) => setProfile({...profile, preferred_name: e.target.value})}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="pronouns">Pronouns</Label>
-                            <Input
-                              id="pronouns"
-                              value={profile.pronouns}
-                              onChange={(e) => setProfile({...profile, pronouns: e.target.value})}
-                              placeholder="he/him, she/her, they/them"
-                            />
-                          </div>
-                        </div>
+                        <Label htmlFor="title">Title</Label>
+                        <Input
+                          id="title"
+                          value={profileData.title}
+                          onChange={(e) => setProfileData({...profileData, title: e.target.value})}
+                          placeholder="Mr, Mrs, Dr, etc."
+                        />
                       </div>
-
-                      <Separator />
-
-                      {/* Contact Information */}
                       <div>
-                        <h3 className="text-lg font-medium mb-4">Contact Information</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                              id="email"
-                              type="email"
-                              value={profile.email}
-                              onChange={(e) => setProfile({...profile, email: e.target.value})}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="phone">Phone</Label>
-                            <Input
-                              id="phone"
-                              value={profile.phone}
-                              onChange={(e) => setProfile({...profile, phone: e.target.value})}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="mobile_number">Mobile Number</Label>
-                            <Input
-                              id="mobile_number"
-                              value={profile.mobile_number}
-                              onChange={(e) => setProfile({...profile, mobile_number: e.target.value})}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="telephone_number">Telephone</Label>
-                            <Input
-                              id="telephone_number"
-                              value={profile.telephone_number}
-                              onChange={(e) => setProfile({...profile, telephone_number: e.target.value})}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="country_code">Country Code</Label>
-                            <Input
-                              id="country_code"
-                              value={profile.country_code}
-                              onChange={(e) => setProfile({...profile, country_code: e.target.value})}
-                              placeholder="+44, +1, etc."
-                            />
-                          </div>
+                        <Label htmlFor="first_name">First Name</Label>
+                        <Input
+                          id="first_name"
+                          value={profileData.first_name}
+                          onChange={(e) => setProfileData({...profileData, first_name: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="middle_name">Middle Name</Label>
+                        <Input
+                          id="middle_name"
+                          value={profileData.middle_name}
+                          onChange={(e) => setProfileData({...profileData, middle_name: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="last_name">Last Name</Label>
+                        <Input
+                          id="last_name"
+                          value={profileData.last_name}
+                          onChange={(e) => setProfileData({...profileData, last_name: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="preferred_name">Preferred Name</Label>
+                        <Input
+                          id="preferred_name"
+                          value={profileData.preferred_name}
+                          onChange={(e) => setProfileData({...profileData, preferred_name: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="pronouns">Pronouns</Label>
+                        <Input
+                          id="pronouns"
+                          value={profileData.pronouns}
+                          onChange={(e) => setProfileData({...profileData, pronouns: e.target.value})}
+                          placeholder="he/him, she/her, they/them"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={profileData.email}
+                          onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+                          disabled
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="phone">Phone</Label>
+                        <Input
+                          id="phone"
+                          value={profileData.phone}
+                          onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="mobile_number">Mobile Number</Label>
+                        <Input
+                          id="mobile_number"
+                          value={profileData.mobile_number}
+                          onChange={(e) => setProfileData({...profileData, mobile_number: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="telephone_number">Telephone</Label>
+                        <Input
+                          id="telephone_number"
+                          value={profileData.telephone_number}
+                          onChange={(e) => setProfileData({...profileData, telephone_number: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="date_of_birth">Date of Birth</Label>
+                        <Input
+                          id="date_of_birth"
+                          type="date"
+                          value={profileData.date_of_birth}
+                          onChange={(e) => setProfileData({...profileData, date_of_birth: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="gender">Gender</Label>
+                        <Select value={profileData.gender} onValueChange={(value) => setProfileData({...profileData, gender: value})}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select gender" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Male">Male</SelectItem>
+                            <SelectItem value="Female">Female</SelectItem>
+                            <SelectItem value="Non-binary">Non-binary</SelectItem>
+                            <SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="address">Address</Label>
+                      <Textarea
+                        id="address"
+                        value={profileData.address}
+                        onChange={(e) => setProfileData({...profileData, address: e.target.value})}
+                        rows={3}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="additional_information">Additional Information</Label>
+                      <Textarea
+                        id="additional_information"
+                        value={profileData.additional_information}
+                        onChange={(e) => setProfileData({...profileData, additional_information: e.target.value})}
+                        rows={3}
+                        placeholder="Any additional information you'd like to share..."
+                      />
+                    </div>
+                    
+                    <div className="flex justify-end">
+                      <Button 
+                        onClick={handleSaveProfile}
+                        disabled={updateProfile.isPending}
+                        className="flex items-center gap-2"
+                      >
+                        <Save className="w-4 h-4" />
+                        {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Personal Information Tab */}
+              <TabsContent value="personal">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Personal & Emergency Information</CardTitle>
+                    <CardDescription>Update your emergency contacts and personal details</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Emergency Contact</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor="emergency_contact_name">Name</Label>
+                          <Input
+                            id="emergency_contact_name"
+                            value={personalData.emergency_contact_name}
+                            onChange={(e) => setPersonalData({...personalData, emergency_contact_name: e.target.value})}
+                          />
                         </div>
-                        
-                        <div className="mt-4 space-y-2">
-                          <Label htmlFor="address">Address</Label>
-                          <Textarea
-                            id="address"
-                            value={profile.address}
-                            onChange={(e) => setProfile({...profile, address: e.target.value})}
-                            rows={3}
+                        <div>
+                          <Label htmlFor="emergency_contact_phone">Phone</Label>
+                          <Input
+                            id="emergency_contact_phone"
+                            value={personalData.emergency_contact_phone}
+                            onChange={(e) => setPersonalData({...personalData, emergency_contact_phone: e.target.value})}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="emergency_contact_relationship">Relationship</Label>
+                          <Input
+                            id="emergency_contact_relationship"
+                            value={personalData.emergency_contact_relationship}
+                            onChange={(e) => setPersonalData({...personalData, emergency_contact_relationship: e.target.value})}
                           />
                         </div>
                       </div>
+                    </div>
 
-                      <Separator />
-
-                      {/* Personal Details */}
-                      <div>
-                        <h3 className="text-lg font-medium mb-4">Personal Details</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="date_of_birth">Date of Birth</Label>
-                            <Input
-                              id="date_of_birth"
-                              type="date"
-                              value={profile.date_of_birth}
-                              onChange={(e) => setProfile({...profile, date_of_birth: e.target.value})}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="gender">Gender</Label>
-                            <Select value={profile.gender} onValueChange={(value) => setProfile({...profile, gender: value})}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select gender" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Male">Male</SelectItem>
-                                <SelectItem value="Female">Female</SelectItem>
-                                <SelectItem value="Non-binary">Non-binary</SelectItem>
-                                <SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
-                                <SelectItem value="Other">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="region">Region</Label>
-                            <Select value={profile.region} onValueChange={(value) => setProfile({...profile, region: value})}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select region" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="North">North</SelectItem>
-                                <SelectItem value="South">South</SelectItem>
-                                <SelectItem value="East">East</SelectItem>
-                                <SelectItem value="West">West</SelectItem>
-                                <SelectItem value="Central">Central</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="status">Status</Label>
-                            <Select value={profile.status} onValueChange={(value) => setProfile({...profile, status: value})}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select status" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Active">Active</SelectItem>
-                                <SelectItem value="New Enquiries">New Enquiries</SelectItem>
-                                <SelectItem value="Actively Assessing">Actively Assessing</SelectItem>
-                                <SelectItem value="Closed Enquiries">Closed Enquiries</SelectItem>
-                                <SelectItem value="Former">Former</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="registered_on">Registered On</Label>
-                            <Input
-                              id="registered_on"
-                              type="date"
-                              value={profile.registered_on}
-                              onChange={(e) => setProfile({...profile, registered_on: e.target.value})}
-                            />
-                          </div>
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Next of Kin</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor="next_of_kin_name">Name</Label>
+                          <Input
+                            id="next_of_kin_name"
+                            value={personalData.next_of_kin_name}
+                            onChange={(e) => setPersonalData({...personalData, next_of_kin_name: e.target.value})}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="next_of_kin_phone">Phone</Label>
+                          <Input
+                            id="next_of_kin_phone"
+                            value={personalData.next_of_kin_phone}
+                            onChange={(e) => setPersonalData({...personalData, next_of_kin_phone: e.target.value})}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="next_of_kin_relationship">Relationship</Label>
+                          <Input
+                            id="next_of_kin_relationship"
+                            value={personalData.next_of_kin_relationship}
+                            onChange={(e) => setPersonalData({...personalData, next_of_kin_relationship: e.target.value})}
+                          />
                         </div>
                       </div>
+                    </div>
 
-                      <Separator />
-
-                      {/* Additional Information */}
-                      <div>
-                        <h3 className="text-lg font-medium mb-4">Additional Information</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="referral_route">Referral Route</Label>
-                            <Input
-                              id="referral_route"
-                              value={profile.referral_route}
-                              onChange={(e) => setProfile({...profile, referral_route: e.target.value})}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="other_identifier">Other Identifier</Label>
-                            <Input
-                              id="other_identifier"
-                              value={profile.other_identifier}
-                              onChange={(e) => setProfile({...profile, other_identifier: e.target.value})}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="avatar_initials">Avatar Initials</Label>
-                            <Input
-                              id="avatar_initials"
-                              value={profile.avatar_initials}
-                              onChange={(e) => setProfile({...profile, avatar_initials: e.target.value.slice(0, 2).toUpperCase()})}
-                              maxLength={2}
-                              placeholder="e.g., JD"
-                            />
-                          </div>
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">GP Information</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor="gp_name">GP Name</Label>
+                          <Input
+                            id="gp_name"
+                            value={personalData.gp_name}
+                            onChange={(e) => setPersonalData({...personalData, gp_name: e.target.value})}
+                          />
                         </div>
-                        
-                        <div className="mt-4 space-y-2">
-                          <Label htmlFor="additional_information">Additional Information</Label>
-                          <Textarea
-                            id="additional_information"
-                            value={profile.additional_information}
-                            onChange={(e) => setProfile({...profile, additional_information: e.target.value})}
-                            rows={4}
-                            placeholder="Any additional notes or information about the client..."
+                        <div>
+                          <Label htmlFor="gp_practice">Practice</Label>
+                          <Input
+                            id="gp_practice"
+                            value={personalData.gp_practice}
+                            onChange={(e) => setPersonalData({...personalData, gp_practice: e.target.value})}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="gp_phone">Phone</Label>
+                          <Input
+                            id="gp_phone"
+                            value={personalData.gp_phone}
+                            onChange={(e) => setPersonalData({...personalData, gp_phone: e.target.value})}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Personal Preferences</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="preferred_communication">Preferred Communication</Label>
+                          <Select value={personalData.preferred_communication} onValueChange={(value) => setPersonalData({...personalData, preferred_communication: value})}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select preference" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="phone">Phone</SelectItem>
+                              <SelectItem value="email">Email</SelectItem>
+                              <SelectItem value="text">Text Message</SelectItem>
+                              <SelectItem value="in_person">In Person</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="marital_status">Marital Status</Label>
+                          <Select value={personalData.marital_status} onValueChange={(value) => setPersonalData({...personalData, marital_status: value})}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="single">Single</SelectItem>
+                              <SelectItem value="married">Married</SelectItem>
+                              <SelectItem value="divorced">Divorced</SelectItem>
+                              <SelectItem value="widowed">Widowed</SelectItem>
+                              <SelectItem value="separated">Separated</SelectItem>
+                              <SelectItem value="domestic_partnership">Domestic Partnership</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="religion">Religion</Label>
+                          <Input
+                            id="religion"
+                            value={personalData.religion}
+                            onChange={(e) => setPersonalData({...personalData, religion: e.target.value})}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="language_preferences">Language Preferences</Label>
+                          <Input
+                            id="language_preferences"
+                            value={personalData.language_preferences}
+                            onChange={(e) => setPersonalData({...personalData, language_preferences: e.target.value})}
                           />
                         </div>
                       </div>
                       
-                      <div className="flex justify-end">
-                        <Button 
-                          type="submit" 
-                          disabled={updateClientMutation.isPending}
-                        >
-                          {updateClientMutation.isPending ? 'Saving...' : 'Save Changes'}
-                        </Button>
+                      <div className="mt-4">
+                        <Label htmlFor="cultural_preferences">Cultural Preferences</Label>
+                        <Textarea
+                          id="cultural_preferences"
+                          value={personalData.cultural_preferences}
+                          onChange={(e) => setPersonalData({...personalData, cultural_preferences: e.target.value})}
+                          rows={3}
+                          placeholder="Any cultural considerations or preferences..."
+                        />
                       </div>
-                    </form>
+                    </div>
+                    
+                    <div className="flex justify-end">
+                      <Button 
+                        onClick={handleSavePersonalInfo}
+                        disabled={updatePersonalInfo.isPending}
+                        className="flex items-center gap-2"
+                      >
+                        <Save className="w-4 h-4" />
+                        {updatePersonalInfo.isPending ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
-              
-              {/* Security Tab */}
-              <TabsContent value="security" className="pt-6">
+
+              {/* Medical Information Tab */}
+              <TabsContent value="medical">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Password & Security</CardTitle>
-                    <CardDescription>
-                      Manage your password and security settings.
-                    </CardDescription>
+                    <CardTitle>Medical Information</CardTitle>
+                    <CardDescription>Update your medical history and health information</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handlePasswordChange} className="space-y-6">
+                  <CardContent className="space-y-6">
+                    {/* Note: This is a simplified version. In a real implementation, 
+                         you'd want proper array management for allergies, medications, etc. */}
+                    <div>
+                      <Label htmlFor="medical_history">Medical History</Label>
+                      <Textarea
+                        id="medical_history"
+                        value={medicalData.medical_history}
+                        onChange={(e) => setMedicalData({...medicalData, medical_history: e.target.value})}
+                        rows={4}
+                        placeholder="Please provide your medical history..."
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="mobility_status">Mobility Status</Label>
+                        <Select value={medicalData.mobility_status} onValueChange={(value) => setMedicalData({...medicalData, mobility_status: value})}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select mobility status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="independent">Independent</SelectItem>
+                            <SelectItem value="assistance_needed">Assistance Needed</SelectItem>
+                            <SelectItem value="wheelchair_user">Wheelchair User</SelectItem>
+                            <SelectItem value="limited_mobility">Limited Mobility</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="cognitive_status">Cognitive Status</Label>
+                        <Input
+                          id="cognitive_status"
+                          value={medicalData.cognitive_status}
+                          onChange={(e) => setMedicalData({...medicalData, cognitive_status: e.target.value})}
+                          placeholder="e.g., Normal, Mild impairment, etc."
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="communication_needs">Communication Needs</Label>
+                      <Textarea
+                        id="communication_needs"
+                        value={medicalData.communication_needs}
+                        onChange={(e) => setMedicalData({...medicalData, communication_needs: e.target.value})}
+                        rows={3}
+                        placeholder="Any special communication requirements..."
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="mental_health_status">Mental Health Status</Label>
+                      <Textarea
+                        id="mental_health_status"
+                        value={medicalData.mental_health_status}
+                        onChange={(e) => setMedicalData({...medicalData, mental_health_status: e.target.value})}
+                        rows={3}
+                        placeholder="Any mental health considerations..."
+                      />
+                    </div>
+                    
+                    <div className="flex justify-end">
+                      <Button 
+                        onClick={handleSaveMedicalInfo}
+                        disabled={updateMedicalInfo.isPending}
+                        className="flex items-center gap-2"
+                      >
+                        <Save className="w-4 h-4" />
+                        {updateMedicalInfo.isPending ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Security Tab */}
+              <TabsContent value="security">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Security Settings</CardTitle>
+                    <CardDescription>Change your password and security preferences</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Change Password</h3>
                       <div className="space-y-4">
-                        <div className="space-y-2">
+                        <div>
                           <Label htmlFor="currentPassword">Current Password</Label>
                           <div className="relative">
                             <Input
                               id="currentPassword"
-                              type={showPassword.current ? "text" : "password"}
-                              value={passwordForm.currentPassword}
-                              onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                              type={showCurrentPassword ? "text" : "password"}
+                              value={passwordData.currentPassword}
+                              onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
                             />
-                            <button
+                            <Button
                               type="button"
-                              onClick={() => togglePasswordVisibility('current')}
-                              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                              onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                             >
-                              {showPassword.current ? (
-                                <EyeOff className="h-4 w-4 text-gray-400" />
-                              ) : (
-                                <Eye className="h-4 w-4 text-gray-400" />
-                              )}
-                            </button>
+                              {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </Button>
                           </div>
                         </div>
                         
-                        <div className="space-y-2">
+                        <div>
                           <Label htmlFor="newPassword">New Password</Label>
                           <div className="relative">
                             <Input
                               id="newPassword"
-                              type={showPassword.new ? "text" : "password"}
-                              value={passwordForm.newPassword}
-                              onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                              type={showNewPassword ? "text" : "password"}
+                              value={passwordData.newPassword}
+                              onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
                             />
-                            <button
+                            <Button
                               type="button"
-                              onClick={() => togglePasswordVisibility('new')}
-                              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                              onClick={() => setShowNewPassword(!showNewPassword)}
                             >
-                              {showPassword.new ? (
-                                <EyeOff className="h-4 w-4 text-gray-400" />
-                              ) : (
-                                <Eye className="h-4 w-4 text-gray-400" />
-                              )}
-                            </button>
+                              {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </Button>
                           </div>
                         </div>
                         
-                        <div className="space-y-2">
+                        <div>
                           <Label htmlFor="confirmPassword">Confirm New Password</Label>
                           <div className="relative">
                             <Input
                               id="confirmPassword"
-                              type={showPassword.confirm ? "text" : "password"}
-                              value={passwordForm.confirmPassword}
-                              onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                              type={showConfirmPassword ? "text" : "password"}
+                              value={passwordData.confirmPassword}
+                              onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
                             />
-                            <button
+                            <Button
                               type="button"
-                              onClick={() => togglePasswordVisibility('confirm')}
-                              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                             >
-                              {showPassword.confirm ? (
-                                <EyeOff className="h-4 w-4 text-gray-400" />
-                              ) : (
-                                <Eye className="h-4 w-4 text-gray-400" />
-                              )}
-                            </button>
+                              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </Button>
                           </div>
                         </div>
-                      </div>
-                      
-                      <div className="flex justify-end">
-                        <Button type="submit">Update Password</Button>
-                      </div>
-                    </form>
-                    
-                    <Separator className="my-6" />
-                    
-                    <div>
-                      <h3 className="font-medium text-lg mb-4">Two-Factor Authentication</h3>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">Enable Two-Factor Authentication</p>
-                          <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
+                        
+                        <div className="flex justify-end">
+                          <Button 
+                            onClick={handleChangePassword}
+                            disabled={changePassword.isPending || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                            className="flex items-center gap-2"
+                          >
+                            <Lock className="w-4 h-4" />
+                            {changePassword.isPending ? 'Changing...' : 'Change Password'}
+                          </Button>
                         </div>
-                        <Button variant="outline" className="flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          <span>Setup</span>
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              {/* Notifications Tab */}
-              <TabsContent value="notifications" className="pt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Notification Preferences</CardTitle>
-                    <CardDescription>
-                      Manage how we contact you with updates and notifications.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <h3 className="font-medium">Communication Channels</h3>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">Email Notifications</p>
-                          <p className="text-sm text-gray-500">Receive notifications via email</p>
-                        </div>
-                        <Switch 
-                          checked={notificationSettings.email} 
-                          onCheckedChange={() => toggleNotification('email')} 
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">SMS Notifications</p>
-                          <p className="text-sm text-gray-500">Receive notifications via text message</p>
-                        </div>
-                        <Switch 
-                          checked={notificationSettings.sms} 
-                          onCheckedChange={() => toggleNotification('sms')} 
-                        />
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="space-y-4">
-                      <h3 className="font-medium">Notification Types</h3>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">Appointment Reminders</p>
-                          <p className="text-sm text-gray-500">Notifications about your upcoming appointments</p>
-                        </div>
-                        <Switch 
-                          checked={notificationSettings.appointments} 
-                          onCheckedChange={() => toggleNotification('appointments')} 
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">Care Plan Updates</p>
-                          <p className="text-sm text-gray-500">Notifications when your care plan is updated</p>
-                        </div>
-                        <Switch 
-                          checked={notificationSettings.careUpdates} 
-                          onCheckedChange={() => toggleNotification('careUpdates')} 
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">Billing and Payments</p>
-                          <p className="text-sm text-gray-500">Receive invoices and payment reminders</p>
-                        </div>
-                        <Switch 
-                          checked={notificationSettings.billing} 
-                          onCheckedChange={() => toggleNotification('billing')} 
-                        />
                       </div>
                     </div>
                   </CardContent>
