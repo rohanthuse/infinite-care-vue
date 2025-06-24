@@ -1885,6 +1885,7 @@ export type Database = {
         Row: {
           additional_information: string | null
           address: string | null
+          auth_user_id: string | null
           avatar_initials: string | null
           branch_id: string | null
           communication_preferences: string | null
@@ -1919,6 +1920,7 @@ export type Database = {
         Insert: {
           additional_information?: string | null
           address?: string | null
+          auth_user_id?: string | null
           avatar_initials?: string | null
           branch_id?: string | null
           communication_preferences?: string | null
@@ -1953,6 +1955,7 @@ export type Database = {
         Update: {
           additional_information?: string | null
           address?: string | null
+          auth_user_id?: string | null
           avatar_initials?: string | null
           branch_id?: string | null
           communication_preferences?: string | null
