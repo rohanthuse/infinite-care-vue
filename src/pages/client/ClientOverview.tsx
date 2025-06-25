@@ -7,7 +7,7 @@ import { useClientAppointments } from "@/hooks/useClientAppointments";
 import { useEnhancedClientBilling } from "@/hooks/useEnhancedClientBilling";
 import { useClientReviews } from "@/hooks/useClientReviews";
 import { formatCurrency } from "@/utils/currencyFormatter";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isAfter, isSameDay } from "date-fns";
 import { Link } from "react-router-dom";
 
 const ClientOverview = () => {
@@ -22,10 +22,13 @@ const ClientOverview = () => {
   const { data: invoices } = useEnhancedClientBilling(clientId);
   const { data: reviews } = useClientReviews(clientId);
 
-  // Calculate summaries
-  const upcomingAppointments = appointments?.filter(app => 
-    app.status === 'confirmed' || app.status === 'scheduled'
-  ) || [];
+  // Calculate summaries with proper date filtering
+  const now = new Date();
+  const upcomingAppointments = appointments?.filter(app => {
+    const appointmentDate = parseISO(app.appointment_date);
+    const isFutureOrToday = isAfter(appointmentDate, now) || isSameDay(appointmentDate, now);
+    return (app.status === 'confirmed' || app.status === 'scheduled') && isFutureOrToday;
+  }) || [];
   
   const pendingInvoices = invoices?.filter(inv => 
     inv.status === 'pending' || inv.status === 'sent'
