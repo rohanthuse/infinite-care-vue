@@ -45,18 +45,24 @@ const rescheduleAppointment = async ({ appointmentId, newDate, newTimeSlot, reas
     throw new Error(`Invalid time slot selected: ${newTimeSlot}`);
   }
 
-  // Create new start_time and end_time
+  // Create new start_time and end_time using UTC to avoid timezone conversion issues
   const newStartTime = new Date(newDate);
   const [hours, minutes] = time24.split(':');
-  newStartTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+  
+  // Use setUTCHours to set the time directly in UTC, avoiding local timezone conversion
+  newStartTime.setUTCHours(parseInt(hours), parseInt(minutes), 0, 0);
   
   // Assume 1-hour appointments
   const newEndTime = new Date(newStartTime);
-  newEndTime.setHours(newEndTime.getHours() + 1);
+  newEndTime.setUTCHours(newEndTime.getUTCHours() + 1);
 
-  console.log('[rescheduleAppointment] Calculated times:', {
+  console.log('[rescheduleAppointment] Calculated times (UTC):', {
+    selectedTimeSlot: newTimeSlot,
+    time24Format: time24,
     newStartTime: newStartTime.toISOString(),
-    newEndTime: newEndTime.toISOString()
+    newEndTime: newEndTime.toISOString(),
+    startTimeUTCHours: newStartTime.getUTCHours(),
+    startTimeUTCMinutes: newStartTime.getUTCMinutes()
   });
 
   const { data, error } = await supabase
