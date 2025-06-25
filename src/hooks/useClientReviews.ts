@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -6,7 +7,7 @@ export interface ClientReview {
   id: string;
   client_id: string;
   staff_id: string;
-  appointment_id: string;
+  booking_id: string; // Changed from appointment_id to booking_id
   service_date: string;
   rating: number;
   comment?: string;
@@ -18,7 +19,7 @@ export interface ClientReview {
 export interface CreateReviewData {
   client_id: string;
   staff_id: string;
-  appointment_id: string;
+  booking_id: string; // Changed from appointment_id to booking_id
   service_date: string;
   rating: number;
   comment?: string | null;
@@ -52,8 +53,8 @@ const fetchClientReviews = async (clientId: string): Promise<ClientReview[]> => 
   return data || [];
 };
 
-const checkExistingReview = async (clientId: string, appointmentId: string): Promise<ClientReview | null> => {
-  if (!clientId || !appointmentId) {
+const checkExistingReview = async (clientId: string, bookingId: string): Promise<ClientReview | null> => {
+  if (!clientId || !bookingId) {
     return null;
   }
 
@@ -61,7 +62,7 @@ const checkExistingReview = async (clientId: string, appointmentId: string): Pro
     .from('reviews')
     .select('*')
     .eq('client_id', clientId)
-    .eq('appointment_id', appointmentId)
+    .eq('booking_id', bookingId) // Changed from appointment_id to booking_id
     .maybeSingle();
 
   if (error) {
@@ -80,11 +81,11 @@ export const useClientReviews = (clientId: string) => {
   });
 };
 
-export const useCheckExistingReview = (clientId: string, appointmentId: string, options?: { enabled?: boolean }) => {
+export const useCheckExistingReview = (clientId: string, bookingId: string, options?: { enabled?: boolean }) => {
   return useQuery({
-    queryKey: ['existing-review', clientId, appointmentId],
-    queryFn: () => checkExistingReview(clientId, appointmentId),
-    enabled: Boolean(clientId && appointmentId) && (options?.enabled !== false),
+    queryKey: ['existing-review', clientId, bookingId], // Changed from appointmentId to bookingId
+    queryFn: () => checkExistingReview(clientId, bookingId),
+    enabled: Boolean(clientId && bookingId) && (options?.enabled !== false),
   });
 };
 

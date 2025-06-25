@@ -35,10 +35,10 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
 
   const clientId = getClientId();
   
-  // Check if review already exists for this appointment - only call when appointment exists
+  // Check if review already exists for this booking - only call when appointment exists
   const { data: existingReview } = useCheckExistingReview(
     clientId, 
-    appointment?.id || '', 
+    appointment?.id || '', // This is the booking ID
     { enabled: Boolean(appointment?.id) }
   );
 
@@ -66,7 +66,7 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
       await createReviewMutation.mutateAsync({
         client_id: clientId,
         staff_id: appointment.staff_id || '', // We'll need to get this from appointment data
-        appointment_id: appointment.id,
+        booking_id: appointment.id, // Changed from appointment_id to booking_id
         service_date: serviceDate,
         rating: rating,
         comment: comment.trim() || null,

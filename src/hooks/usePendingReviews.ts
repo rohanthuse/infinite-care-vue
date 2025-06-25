@@ -21,9 +21,9 @@ export const usePendingReviews = (clientId: string) => {
   const pendingReviews = useMemo(() => {
     if (!completedAppointments || !existingReviews) return [];
 
-    // Get appointment IDs that already have reviews
-    const reviewedAppointmentIds = new Set(
-      existingReviews.map(review => review.appointment_id)
+    // Get booking IDs that already have reviews (changed from appointment_id to booking_id)
+    const reviewedBookingIds = new Set(
+      existingReviews.map(review => review.booking_id)
     );
 
     // Filter completed appointments that don't have reviews and are within the last 30 days
@@ -32,8 +32,8 @@ export const usePendingReviews = (clientId: string) => {
 
     return completedAppointments
       .filter(appointment => {
-        // Check if appointment doesn't have a review
-        const hasNoReview = !reviewedAppointmentIds.has(appointment.id);
+        // Check if appointment doesn't have a review (using booking ID)
+        const hasNoReview = !reviewedBookingIds.has(appointment.id);
         
         // Check if appointment was completed within the last 30 days
         const appointmentDate = new Date(appointment.appointment_date);
