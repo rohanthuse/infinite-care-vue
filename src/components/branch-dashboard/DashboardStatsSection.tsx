@@ -1,10 +1,11 @@
-
 import React from "react";
 import { motion } from "framer-motion";
 import { Calendar, Users, BarChart4, Plus, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardStat } from "@/components/dashboard/DashboardStat";
 import { useBranchDashboardStats } from "@/data/hooks/useBranchDashboardStats";
+import { useBookingNavigation } from "@/hooks/useBookingNavigation";
+import { useBranchDashboardNavigation } from "@/hooks/useBranchDashboardNavigation";
 
 interface DashboardStatsSectionProps {
   branchId: string | undefined;
@@ -18,6 +19,18 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
   onTabChange
 }) => {
   const { data: dashboardStats, isLoading: isLoadingDashboardStats } = useBranchDashboardStats(branchId);
+  const { navigateToBookings } = useBookingNavigation();
+  const { branchName } = useBranchDashboardNavigation();
+
+  const handleTodaysBookingsClick = () => {
+    if (branchId && branchName) {
+      navigateToBookings({
+        branchId,
+        branchName,
+        date: new Date(), // Today's date
+      });
+    }
+  };
 
   return (
     <motion.div
@@ -92,14 +105,16 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
           positive={true} 
           isLoading={isLoadingDashboardStats}
         />
-        <DashboardStat 
-          title="Today's Bookings" 
-          value={dashboardStats?.todaysBookingsCount?.toString() ?? "0"} 
-          change="+8%" 
-          icon={<Calendar className="h-5 w-5 text-green-600" />} 
-          positive={true} 
-          isLoading={isLoadingDashboardStats}
-        />
+        <div onClick={handleTodaysBookingsClick} className="cursor-pointer">
+          <DashboardStat 
+            title="Today's Bookings" 
+            value={dashboardStats?.todaysBookingsCount?.toString() ?? "0"} 
+            change="+8%" 
+            icon={<Calendar className="h-5 w-5 text-green-600" />} 
+            positive={true} 
+            isLoading={isLoadingDashboardStats}
+          />
+        </div>
         <DashboardStat 
           title="Pending Reviews" 
           value={dashboardStats?.pendingReviewsCount?.toString() ?? "0"} 

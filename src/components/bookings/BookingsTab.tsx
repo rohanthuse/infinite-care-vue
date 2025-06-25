@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -19,6 +18,8 @@ import { useServices } from "@/data/hooks/useServices";
 import { toast } from "sonner";
 import { useRealTimeBookingSync } from "./hooks/useRealTimeBookingSync";
 import { BookingValidationAlert } from "./BookingValidationAlert";
+import { useSearchParams } from "react-router-dom";
+import { parseISO, isValid } from "date-fns";
 
 interface BookingsTabProps {
   branchId?: string;
@@ -26,12 +27,47 @@ interface BookingsTabProps {
 
 export function BookingsTab({ branchId }: BookingsTabProps) {
   const { user } = useAuthSafe();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Get initial values from URL parameters
+  const dateParam = searchParams.get('date');
+  const clientParam = searchParams.get('client');
+  
+  // Parse date parameter or default to today
+  const initialDate = useMemo(() => {
+    if (dateParam) {
+      const parsedDate = parseISO(dateParam);
+      if (isValid(parsedDate)) {
+        return parsedDate;
+      }
+    }
+    return new Date();
+  }, [dateParam]);
+  
+  const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
   const [viewType, setViewType] = useState<"daily" | "weekly">("daily");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedClientId, setSelectedClientId] = useState<string>("all-clients");
+  const [selectedClientId, setSelectedClientId] = useState<string>(clientParam || "all-clients");
   const [selectedCarerId, setSelectedCarerId] = useState<string>("all-carers");
   const [activeView, setActiveView] = useState<string>("calendar");
+
+  // Update URL parameters when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    
+    if (selectedDate) {
+      params.set('date', selectedDate.toISOString().split('T')[0]);
+    }
+    
+    if (selectedClientId !== "all-clients") {
+      params.set('client', selectedClientId);
+    }
+    
+    // Only update URL if there are meaningful parameters to avoid cluttering
+    if (params.toString()) {
+      setSearchParams(params, { replace: true });
+    }
+  }, [selectedDate, selectedClientId, setSearchParams]);
 
   const { data: services = [], isLoading: isLoadingServices } = useServices();
   const { clients, carers, bookings, isLoading } = useBookingData(branchId);

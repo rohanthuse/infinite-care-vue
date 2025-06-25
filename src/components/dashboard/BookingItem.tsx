@@ -8,12 +8,14 @@ export const BookingItem = ({
   client,
   time,
   status,
+  onClick,
 }: {
   number: string;
   staff: string;
   client: string;
   time: string;
   status: string;
+  onClick?: () => void;
 }) => {
   let statusColor = 'bg-gray-100 text-gray-600';
   if (status === 'Done') statusColor = 'bg-green-100 text-green-700';
@@ -21,7 +23,12 @@ export const BookingItem = ({
   else if (status === 'Waiting') statusColor = 'bg-amber-100 text-amber-700';
 
   return (
-    <div className="py-2 border-b last:border-0 flex items-center justify-between">
+    <div 
+      className={`py-2 border-b last:border-0 flex items-center justify-between ${
+        onClick ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''
+      }`}
+      onClick={onClick}
+    >
       <div className="flex items-center">
         <div className="w-5 text-xs text-gray-500 mr-2">{number}.</div>
         <div>

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,8 @@ import { BookingItem } from "@/components/dashboard/BookingItem";
 import { ReviewItem, ReviewItemSkeleton } from "@/components/dashboard/ReviewItem";
 import { ActionItem } from "@/components/dashboard/ActionItem";
 import { useBranchStatistics } from "@/data/hooks/useBranchStatistics";
+import { useBookingNavigation } from "@/hooks/useBookingNavigation";
+import { useBranchDashboardNavigation } from "@/hooks/useBranchDashboardNavigation";
 import { format, formatDistanceToNow } from "date-fns";
 
 interface DashboardActivitySectionProps {
@@ -15,6 +16,29 @@ interface DashboardActivitySectionProps {
 
 export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> = ({ branchId }) => {
   const { data: branchStats, isLoading: isLoadingBranchStats, error: branchStatsError } = useBranchStatistics(branchId);
+  const { navigateToBookings } = useBookingNavigation();
+  const { branchName } = useBranchDashboardNavigation();
+
+  const handleBookingClick = (clientId?: string) => {
+    if (branchId && branchName) {
+      navigateToBookings({
+        branchId,
+        branchName,
+        date: new Date(), // Today's date
+        clientId: clientId || undefined,
+      });
+    }
+  };
+
+  const handleViewAllBookings = () => {
+    if (branchId && branchName) {
+      navigateToBookings({
+        branchId,
+        branchName,
+        date: new Date(),
+      });
+    }
+  };
 
   return (
     <>
@@ -26,7 +50,12 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
                 <CardTitle className="text-base md:text-lg font-semibold">Today's Bookings</CardTitle>
                 <CardDescription>Appointments for today</CardDescription>
               </div>
-              <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                onClick={handleViewAllBookings}
+              >
                 View All
                 <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
               </Button>
@@ -72,6 +101,7 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
                       client={`${booking.client?.first_name || 'N/A'} ${booking.client?.last_name || ''}`}
                       time={`${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}`}
                       status={status}
+                      onClick={() => handleBookingClick(booking.client_id)}
                     />
                   );
                 })
