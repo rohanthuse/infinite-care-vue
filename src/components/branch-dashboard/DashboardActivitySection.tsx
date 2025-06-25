@@ -19,13 +19,14 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
   const { navigateToBookings } = useBookingNavigation();
   const { branchName } = useBranchDashboardNavigation();
 
-  const handleBookingClick = (clientId?: string) => {
-    if (branchId && branchName) {
+  const handleBookingClick = (clientName?: string) => {
+    if (branchId && branchName && clientName) {
+      // For individual booking clicks, we'll navigate to today's bookings
+      // Since we don't have client_id in BookingWithDetails, we'll just navigate to today's view
       navigateToBookings({
         branchId,
         branchName,
         date: new Date(), // Today's date
-        clientId: clientId || undefined,
       });
     }
   };
@@ -93,15 +94,17 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
                     status = "Waiting";
                   }
 
+                  const clientName = booking.client ? `${booking.client.first_name} ${booking.client.last_name}` : 'N/A';
+
                   return (
                     <BookingItem
                       key={booking.id}
                       number={`${index + 1}`}
                       staff={`${booking.staff?.first_name || 'N/A'} ${booking.staff?.last_name || ''}`}
-                      client={`${booking.client?.first_name || 'N/A'} ${booking.client?.last_name || ''}`}
+                      client={clientName}
                       time={`${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}`}
                       status={status}
-                      onClick={() => handleBookingClick(booking.client_id)}
+                      onClick={() => handleBookingClick(clientName)}
                     />
                   );
                 })
