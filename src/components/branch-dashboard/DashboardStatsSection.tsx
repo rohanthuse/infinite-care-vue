@@ -1,4 +1,3 @@
-
 import React from "react";
 import { motion } from "framer-motion";
 import { Calendar, Users, BarChart4, Plus, FileText } from "lucide-react";
@@ -102,35 +101,35 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
         <DashboardStat 
           title="Total Clients" 
           value={dashboardStats?.clientsCount?.toString() ?? "0"} 
-          change="+12%" 
+          change={dashboardStats?.clientsChange ?? "0%"} 
           icon={<Users className="h-5 w-5 text-blue-600" />} 
-          positive={true} 
+          positive={dashboardStats?.clientsChangePositive ?? true} 
           isLoading={isLoadingDashboardStats}
         />
         <div onClick={handleTodaysBookingsClick} className="cursor-pointer">
           <DashboardStat 
             title="Today's Bookings" 
             value={dashboardStats?.todaysBookingsCount?.toString() ?? "0"} 
-            change="+8%" 
+            change={dashboardStats?.todaysBookingsChange ?? "0%"} 
             icon={<Calendar className="h-5 w-5 text-green-600" />} 
-            positive={true} 
+            positive={dashboardStats?.todaysBookingsChangePositive ?? true} 
             isLoading={isLoadingDashboardStats}
           />
         </div>
         <DashboardStat 
           title="Pending Reviews" 
           value={dashboardStats?.pendingReviewsCount?.toString() ?? "0"} 
-          change="-3%" 
+          change={dashboardStats?.pendingReviewsChange ?? "0%"} 
           icon={<FileText className="h-5 w-5 text-amber-600" />} 
-          positive={false} 
+          positive={dashboardStats?.pendingReviewsChangePositive ?? true} 
           isLoading={isLoadingDashboardStats}
         />
         <DashboardStat 
           title="Monthly Revenue" 
           value={`£${(dashboardStats?.monthlyRevenue ?? 0).toLocaleString()}`} 
-          change="+15.3%" 
+          change={dashboardStats?.monthlyRevenueChange ?? "0%"} 
           icon={<BarChart4 className="h-5 w-5 text-purple-600" />} 
-          positive={true} 
+          positive={dashboardStats?.monthlyRevenueChangePositive ?? true} 
           isLoading={isLoadingDashboardStats}
         />
       </div>
