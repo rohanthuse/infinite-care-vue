@@ -19,7 +19,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
+import { useRescheduleAppointment } from "@/hooks/useRescheduleAppointment";
 
 interface RescheduleAppointmentDialogProps {
   open: boolean;
@@ -42,7 +42,8 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
   const [date, setDate] = useState<Date | undefined>(appointment ? new Date(appointment.appointment_date) : undefined);
   const [timeSlot, setTimeSlot] = useState<string>(appointment?.appointment_time || "");
   const [reason, setReason] = useState<string>("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const rescheduleAppointmentMutation = useRescheduleAppointment();
 
   const availableTimeSlots = [
     "9:00 AM",
@@ -54,24 +55,33 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
     "4:00 PM",
   ];
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!date || !timeSlot || !appointment) {
-      toast.error("Please select a date and time for rescheduling.");
       return;
     }
 
-    setIsSubmitting(true);
+    try {
+      await rescheduleAppointmentMutation.mutateAsync({
+        appointmentId: appointment.id,
+        newDate: date,
+        newTimeSlot: timeSlot,
+        reason: reason.trim() || undefined,
+      });
 
-    // Simulate API call - in real implementation, this would call a reschedule mutation
-    setTimeout(() => {
-      setIsSubmitting(false);
-      onOpenChange(false);
-      
-      toast.success(`Your ${appointment.appointment_type} appointment has been rescheduled for ${format(date, "MMMM d, yyyy")} at ${timeSlot}.`);
-      
-      // Reset form
+      // Reset form and close dialog
       setReason("");
-    }, 1000);
+      onOpenChange(false);
+    } catch (error) {
+      // Error handling is done in the mutation
+      console.error('Reschedule error:', error);
+    }
+  };
+
+  const handleClose = () => {
+    if (!rescheduleAppointmentMutation.isPending) {
+      setReason("");
+      onOpenChange(false);
+    }
   };
 
   if (!appointment) {
@@ -79,7 +89,7 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Reschedule Appointment</DialogTitle>
@@ -150,16 +160,25 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
+              disabled={rescheduleAppointmentMutation.isPending}
             />
           </div>
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button 
+            variant="outline" 
+            onClick={handleClose}
+            disabled={rescheduleAppointmentMutation.isPending}
+          >
             Cancel
           </Button>
-          <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Confirm Reschedule"}
+          <Button 
+            type="button" 
+            onClick={handleSubmit} 
+            disabled={rescheduleAppointmentMutation.isPending || !date || !timeSlot}
+          >
+            {rescheduleAppointmentMutation.isPending ? "Rescheduling..." : "Confirm Reschedule"}
           </Button>
         </DialogFooter>
       </DialogContent>

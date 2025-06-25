@@ -1,6 +1,6 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
 
 export interface ClientAppointment {
   id: string;
@@ -45,7 +45,7 @@ const fetchClientAppointments = async (clientId: string): Promise<ClientAppointm
       )
     `)
     .eq('client_id', clientId)
-    .order('start_time', { ascending: false });
+    .order('start_time', { ascending: true }); // Changed to ascending for chronological order
 
   if (error) {
     console.error('Error fetching client appointments:', error);
@@ -56,7 +56,8 @@ const fetchClientAppointments = async (clientId: string): Promise<ClientAppointm
   const transformedData: ClientAppointment[] = (data || []).map((booking: any) => {
     const startTime = new Date(booking.start_time);
     const appointmentDate = startTime.toISOString().split('T')[0]; // YYYY-MM-DD format
-    const appointmentTime = startTime.toTimeString().split(' ')[0].substring(0, 5); // HH:MM format
+    // Format time properly for display (12-hour format with AM/PM)
+    const appointmentTime = format(startTime, 'h:mm a');
     
     // Map booking status to appointment status
     let appointmentStatus = booking.status;
