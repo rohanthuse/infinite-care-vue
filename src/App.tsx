@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TaskProvider } from "@/contexts/TaskContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LoadingScreen } from "@/components/LoadingScreen";
+import { AuthErrorBoundary } from "@/components/AuthErrorBoundary";
 import Index from "./pages/Index";
 import CarerLogin from "./pages/CarerLogin";
 import CarerLoginSafe from "./pages/CarerLoginSafe";
@@ -17,6 +19,7 @@ import AdminRoutes from "./routes/AdminRoutes";
 import CarerRoutes from "./routes/CarerRoutes";
 import ClientRoutes from "./routes/ClientRoutes";
 import { ErrorBoundary } from "@/components/care/ErrorBoundary";
+import { useAuth } from "@/hooks/useAuth";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +43,53 @@ const RoutingErrorFallback = () => (
   </div>
 );
 
+// Inner app component that uses auth context
+const AppContent = () => {
+  const { loading, error } = useAuth();
+
+  // Show loading screen only for protected routes, not public routes
+  const isPublicRoute = [
+    '/', 
+    '/super-admin', 
+    '/carer-login', 
+    '/client-login', 
+    '/carer-invitation', 
+    '/carer-onboarding'
+  ].includes(window.location.pathname);
+
+  if (loading && !isPublicRoute) {
+    return <LoadingScreen />;
+  }
+
+  return (
+    <AuthErrorBoundary error={error}>
+      <BrowserRouter>
+        <TaskProvider>
+          <ErrorBoundary fallback={<RoutingErrorFallback />}>
+            <Routes>
+              {/* Public Routes - Always accessible */}
+              <Route path="/" element={<Index />} />
+              <Route path="/super-admin" element={<SuperAdminLogin />} />
+              <Route path="/carer-login" element={<CarerLoginSafe />} />
+              <Route path="/carer-invitation" element={<CarerInvitation />} />
+              <Route path="/carer-onboarding" element={<CarerOnboarding />} />
+              <Route path="/client-login" element={<ClientLogin />} />
+              
+              {/* Protected Routes */}
+              {AdminRoutes()}
+              {CarerRoutes()}
+              {ClientRoutes()}
+              
+              {/* Fallback route for unmatched paths */}
+              <Route path="*" element={<RoutingErrorFallback />} />
+            </Routes>
+          </ErrorBoundary>
+        </TaskProvider>
+      </BrowserRouter>
+    </AuthErrorBoundary>
+  );
+};
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -47,29 +97,7 @@ function App() {
         <AuthProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
-            <TaskProvider>
-              <ErrorBoundary fallback={<RoutingErrorFallback />}>
-                <Routes>
-                  {/* Public Routes */}
-                  <Route path="/" element={<Index />} />
-                  <Route path="/super-admin" element={<SuperAdminLogin />} />
-                  <Route path="/carer-login" element={<CarerLoginSafe />} />
-                  <Route path="/carer-invitation" element={<CarerInvitation />} />
-                  <Route path="/carer-onboarding" element={<CarerOnboarding />} />
-                  <Route path="/client-login" element={<ClientLogin />} />
-                  
-                  {/* Protected Routes - All now consistently return arrays */}
-                  {AdminRoutes()}
-                  {CarerRoutes()}
-                  {ClientRoutes()}
-                  
-                  {/* Fallback route for unmatched paths */}
-                  <Route path="*" element={<RoutingErrorFallback />} />
-                </Routes>
-              </ErrorBoundary>
-            </TaskProvider>
-          </BrowserRouter>
+          <AppContent />
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>

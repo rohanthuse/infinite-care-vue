@@ -11,6 +11,7 @@ export const useAuthSafe = () => {
       user: null,
       session: null,
       loading: false,
+      error: null,
       signOut: async () => {},
     };
   }

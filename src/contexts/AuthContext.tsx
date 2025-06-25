@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  error: string | null;
   signOut: () => Promise<void>;
 }
 
@@ -16,27 +17,62 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+    
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Auth session error:', error);
+          setError(error.message);
+        }
+        
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setError(null);
+        }
+      } catch (err) {
+        console.error('Failed to get session:', err);
+        if (mounted) {
+          setError('Failed to load authentication');
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
     };
 
-    // Run once on mount
-    getSession();
-
-    // Listen for auth state changes
+    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      if (mounted) {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setError(null);
+        setLoading(false);
+      }
     });
 
-    // Cleanup subscription on unmount
+    // Then get initial session
+    getSession();
+
+    // Set a timeout to ensure we don't stay loading forever
+    const timeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('Auth loading timed out, proceeding without authentication');
+        setLoading(false);
+      }
+    }, 5000);
+
     return () => {
+      mounted = false;
       subscription.unsubscribe();
+      clearTimeout(timeout);
     };
   }, []);
 
@@ -48,9 +84,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     user,
     session,
     loading,
+    error,
     signOut,
   };
 
-  // Render children only when not loading to prevent flicker
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  // Always render children, but show loading state when needed
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
