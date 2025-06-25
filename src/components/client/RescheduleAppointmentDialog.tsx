@@ -45,22 +45,45 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
   
   const rescheduleAppointmentMutation = useRescheduleAppointment();
 
+  // Expanded available time slots including half-hour increments
   const availableTimeSlots = [
     "9:00 AM",
+    "9:30 AM",
     "10:00 AM",
+    "10:30 AM",
     "11:00 AM",
+    "11:30 AM",
+    "12:00 PM",
+    "12:30 PM",
     "1:00 PM",
+    "1:30 PM",
     "2:00 PM",
+    "2:30 PM",
     "3:00 PM",
+    "3:30 PM",
     "4:00 PM",
+    "4:30 PM",
+    "5:00 PM",
   ];
 
   const handleSubmit = async () => {
     if (!date || !timeSlot || !appointment) {
+      console.warn('[RescheduleAppointmentDialog] Missing required fields:', {
+        date: !!date,
+        timeSlot: !!timeSlot,
+        appointment: !!appointment
+      });
       return;
     }
 
     try {
+      console.log('[RescheduleAppointmentDialog] Submitting reschedule request:', {
+        appointmentId: appointment.id,
+        newDate: date,
+        newTimeSlot: timeSlot,
+        reason: reason.trim()
+      });
+
       await rescheduleAppointmentMutation.mutateAsync({
         appointmentId: appointment.id,
         newDate: date,
@@ -73,7 +96,7 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
       onOpenChange(false);
     } catch (error) {
       // Error handling is done in the mutation
-      console.error('Reschedule error:', error);
+      console.error('[RescheduleAppointmentDialog] Reschedule error:', error);
     }
   };
 
@@ -134,7 +157,7 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
             <label className="text-sm font-medium">
               Select a New Time
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
               {availableTimeSlots.map((slot) => (
                 <Button
                   key={slot}

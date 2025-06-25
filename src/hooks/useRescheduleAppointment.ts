@@ -11,20 +11,38 @@ interface RescheduleAppointmentData {
 }
 
 const rescheduleAppointment = async ({ appointmentId, newDate, newTimeSlot, reason }: RescheduleAppointmentData) => {
+  console.log('[rescheduleAppointment] Starting reschedule process:', {
+    appointmentId,
+    newDate: newDate.toISOString(),
+    newTimeSlot,
+    reason
+  });
+
   // Convert time slot to 24-hour format for database storage
   const timeMapping: { [key: string]: string } = {
     '9:00 AM': '09:00',
+    '9:30 AM': '09:30',
     '10:00 AM': '10:00',
+    '10:30 AM': '10:30',
     '11:00 AM': '11:00',
+    '11:30 AM': '11:30',
+    '12:00 PM': '12:00',
+    '12:30 PM': '12:30',
     '1:00 PM': '13:00',
+    '1:30 PM': '13:30',
     '2:00 PM': '14:00',
+    '2:30 PM': '14:30',
     '3:00 PM': '15:00',
+    '3:30 PM': '15:30',
     '4:00 PM': '16:00',
+    '4:30 PM': '16:30',
+    '5:00 PM': '17:00',
   };
 
   const time24 = timeMapping[newTimeSlot];
   if (!time24) {
-    throw new Error('Invalid time slot selected');
+    console.error('[rescheduleAppointment] Invalid time slot:', newTimeSlot);
+    throw new Error(`Invalid time slot selected: ${newTimeSlot}`);
   }
 
   // Create new start_time and end_time
@@ -35,6 +53,11 @@ const rescheduleAppointment = async ({ appointmentId, newDate, newTimeSlot, reas
   // Assume 1-hour appointments
   const newEndTime = new Date(newStartTime);
   newEndTime.setHours(newEndTime.getHours() + 1);
+
+  console.log('[rescheduleAppointment] Calculated times:', {
+    newStartTime: newStartTime.toISOString(),
+    newEndTime: newEndTime.toISOString()
+  });
 
   const { data, error } = await supabase
     .from('bookings')
@@ -48,10 +71,11 @@ const rescheduleAppointment = async ({ appointmentId, newDate, newTimeSlot, reas
     .single();
 
   if (error) {
-    console.error('Error rescheduling appointment:', error);
-    throw error;
+    console.error('[rescheduleAppointment] Database error:', error);
+    throw new Error(`Failed to reschedule appointment: ${error.message}`);
   }
 
+  console.log('[rescheduleAppointment] Successfully rescheduled:', data);
   return data;
 };
 
@@ -61,6 +85,7 @@ export const useRescheduleAppointment = () => {
   return useMutation({
     mutationFn: rescheduleAppointment,
     onSuccess: (data) => {
+      console.log('[useRescheduleAppointment] Reschedule successful:', data);
       toast.success('Appointment rescheduled successfully!');
       
       // Invalidate and refetch appointments
@@ -68,8 +93,9 @@ export const useRescheduleAppointment = () => {
       queryClient.invalidateQueries({ queryKey: ['completed-appointments'] });
     },
     onError: (error: any) => {
-      console.error('Failed to reschedule appointment:', error);
-      toast.error('Failed to reschedule appointment. Please try again.');
+      console.error('[useRescheduleAppointment] Reschedule failed:', error);
+      const errorMessage = error.message || 'An unexpected error occurred';
+      toast.error(`Failed to reschedule appointment: ${errorMessage}`);
     },
   });
 };
