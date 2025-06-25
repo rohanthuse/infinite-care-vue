@@ -12,6 +12,7 @@ export interface ClientAppointment {
   status: string;
   notes?: string;
   client_id: string;
+  staff_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -25,17 +26,67 @@ const fetchClientAppointments = async (clientId: string): Promise<ClientAppointm
   console.log(`[fetchClientAppointments] Fetching appointments for client: ${clientId}`);
 
   const { data, error } = await supabase
-    .from('client_appointments')
-    .select('*')
+    .from('bookings')
+    .select(`
+      id,
+      start_time,
+      end_time,
+      status,
+      client_id,
+      staff_id,
+      created_at,
+      revenue,
+      services:service_id (
+        title
+      ),
+      staff:staff_id (
+        first_name,
+        last_name
+      )
+    `)
     .eq('client_id', clientId)
-    .order('appointment_date', { ascending: false });
+    .order('start_time', { ascending: false });
 
   if (error) {
     console.error('Error fetching client appointments:', error);
     throw error;
   }
 
-  return data || [];
+  // Transform the data to match the expected ClientAppointment interface
+  const transformedData: ClientAppointment[] = (data || []).map((booking: any) => {
+    const startTime = new Date(booking.start_time);
+    const appointmentDate = startTime.toISOString().split('T')[0]; // YYYY-MM-DD format
+    const appointmentTime = startTime.toTimeString().split(' ')[0].substring(0, 5); // HH:MM format
+    
+    // Map booking status to appointment status
+    let appointmentStatus = booking.status;
+    if (booking.status === 'assigned') {
+      appointmentStatus = 'confirmed';
+    }
+
+    // Get service title and provider name
+    const serviceTitle = booking.services?.title || 'General Care';
+    const providerName = booking.staff 
+      ? `${booking.staff.first_name} ${booking.staff.last_name}`
+      : 'Assigned Staff';
+
+    return {
+      id: booking.id,
+      appointment_type: serviceTitle,
+      provider_name: providerName,
+      appointment_date: appointmentDate,
+      appointment_time: appointmentTime,
+      location: 'Home Visit', // Default location - could be enhanced with actual location data
+      status: appointmentStatus,
+      notes: undefined, // Notes not available in bookings table
+      client_id: booking.client_id,
+      staff_id: booking.staff_id,
+      created_at: booking.created_at,
+      updated_at: booking.created_at // Using created_at as fallback for updated_at
+    };
+  });
+
+  return transformedData;
 };
 
 export const useClientAppointments = (clientId: string) => {

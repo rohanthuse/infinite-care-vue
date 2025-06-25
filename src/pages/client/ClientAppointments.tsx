@@ -9,7 +9,7 @@ import { SubmitReviewDialog } from "@/components/client/SubmitReviewDialog";
 import { ViewReviewDialog } from "@/components/client/ViewReviewDialog";
 import { useCheckExistingReview } from "@/hooks/useClientReviews";
 import { ReviewPrompt } from "@/components/client/ReviewPrompt";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isAfter, isSameDay } from "date-fns";
 
 interface AppointmentData {
   id: string;
@@ -40,14 +40,19 @@ const ClientAppointments = () => {
   const clientId = getClientId();
   const { data: appointments, isLoading, error } = useClientAppointments(clientId || '');
 
-  // Filter appointments by status
-  const upcomingAppointments = appointments?.filter(app => 
-    app.status === 'confirmed' || app.status === 'scheduled'
-  ) || [];
+  // Filter appointments by status and date
+  const now = new Date();
+  const upcomingAppointments = appointments?.filter(app => {
+    const appointmentDate = parseISO(app.appointment_date);
+    const isFutureOrToday = isAfter(appointmentDate, now) || isSameDay(appointmentDate, now);
+    return (app.status === 'confirmed' || app.status === 'scheduled') && isFutureOrToday;
+  }) || [];
   
-  const completedAppointments = appointments?.filter(app => 
-    app.status === 'completed'
-  ) || [];
+  const completedAppointments = appointments?.filter(app => {
+    const appointmentDate = parseISO(app.appointment_date);
+    const isPastDate = !isAfter(appointmentDate, now) && !isSameDay(appointmentDate, now);
+    return app.status === 'completed' || (isPastDate && app.status === 'confirmed');
+  }) || [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
