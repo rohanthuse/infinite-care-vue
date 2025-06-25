@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
 import { useCreateReview, useCheckExistingReview } from "@/hooks/useClientReviews";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SubmitReviewDialogProps {
   open: boolean;
@@ -24,6 +25,7 @@ interface SubmitReviewDialogProps {
 export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitReviewDialogProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [clientBranchId, setClientBranchId] = useState<string | null>(null);
   
   const createReviewMutation = useCreateReview();
   
@@ -41,6 +43,33 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
     appointment?.id || '', // This is the booking ID
     { enabled: Boolean(appointment?.id) }
   );
+
+  // Fetch client's branch_id when dialog opens
+  useEffect(() => {
+    const fetchClientBranchId = async () => {
+      if (!clientId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('clients')
+          .select('branch_id')
+          .eq('id', clientId)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching client branch:', error);
+        } else {
+          setClientBranchId(data?.branch_id || null);
+        }
+      } catch (error) {
+        console.error('Error fetching client branch:', error);
+      }
+    };
+
+    if (open && clientId) {
+      fetchClientBranchId();
+    }
+  }, [open, clientId]);
 
   useEffect(() => {
     if (existingReview) {
@@ -71,6 +100,7 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
         rating: rating,
         comment: comment.trim() || null,
         service_type: appointment.type,
+        branch_id: clientBranchId || undefined, // Include branch_id in review creation
       });
 
       // Reset form and close dialog

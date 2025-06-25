@@ -14,6 +14,7 @@ export interface ClientReview {
   service_type: string;
   created_at: string;
   can_edit_until: string;
+  branch_id?: string; // Add branch_id to the interface
 }
 
 export interface CreateReviewData {
@@ -24,6 +25,7 @@ export interface CreateReviewData {
   rating: number;
   comment?: string | null;
   service_type: string;
+  branch_id?: string; // Add branch_id to creation data
 }
 
 export interface UpdateReviewData {
@@ -94,6 +96,8 @@ export const useCreateReview = () => {
   
   return useMutation({
     mutationFn: async (reviewData: CreateReviewData) => {
+      console.log('[useCreateReview] Creating review with data:', reviewData);
+      
       const { data, error } = await supabase
         .from('reviews')
         .insert([reviewData])
@@ -105,6 +109,7 @@ export const useCreateReview = () => {
         throw error;
       }
 
+      console.log('[useCreateReview] Review created successfully:', data);
       return data;
     },
     onSuccess: (data) => {
@@ -113,6 +118,8 @@ export const useCreateReview = () => {
       // Invalidate and refetch reviews
       queryClient.invalidateQueries({ queryKey: ['client-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['existing-review'] });
+      // Also invalidate branch reviews so admin can see the new review
+      queryClient.invalidateQueries({ queryKey: ['branch-reviews'] });
     },
     onError: (error) => {
       console.error('Failed to submit review:', error);
@@ -146,6 +153,8 @@ export const useUpdateReview = () => {
       // Invalidate and refetch reviews
       queryClient.invalidateQueries({ queryKey: ['client-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['existing-review'] });
+      // Also invalidate branch reviews so admin can see the updated review
+      queryClient.invalidateQueries({ queryKey: ['branch-reviews'] });
     },
     onError: (error) => {
       console.error('Failed to update review:', error);
