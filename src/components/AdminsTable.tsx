@@ -47,53 +47,56 @@ export const AdminsTable = () => {
   const [selectedAdmin, setSelectedAdmin] = useState<AdminData | null>(null);
   const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
 
-  // Fetch all branch admins with proper joins
+  // Fetch all branch admins using the proven working pattern from client messaging
   const { data: admins = [], isLoading, error, refetch } = useQuery({
     queryKey: ['branch-admins'],
     queryFn: async () => {
       console.log('Fetching branch admins...');
       
-      const { data, error } = await supabase
-        .from('user_roles')
+      // Use the same proven pattern as in useClientMessaging.ts
+      const { data: adminBranches, error } = await supabase
+        .from('admin_branches')
         .select(`
-          user_id,
-          role,
+          admin_id,
+          branch_id,
+          branches(
+            id,
+            name
+          ),
           profiles!inner(
             id,
             email,
             first_name,
             last_name
-          ),
-          admin_branches(
-            branch_id,
-            branches(
-              id,
-              name
-            )
-          ),
-          admin_permissions(
-            id
           )
-        `)
-        .eq('role', 'branch_admin');
+        `);
 
       if (error) {
-        console.error('Error fetching admins:', error);
+        console.error('Error fetching admin branches:', error);
         throw error;
       }
 
-      console.log('Raw admin data:', data);
+      console.log('Raw admin branches data:', adminBranches);
 
-      const transformedData: AdminData[] = data.map((item: any) => ({
-        id: item.user_id,
+      // Get admin permissions for each admin
+      const adminIds = adminBranches?.map(ab => ab.admin_id) || [];
+      const { data: permissions } = await supabase
+        .from('admin_permissions')
+        .select('admin_id')
+        .in('admin_id', adminIds);
+
+      console.log('Admin permissions data:', permissions);
+
+      const transformedData: AdminData[] = (adminBranches || []).map((item: any) => ({
+        id: item.admin_id,
         email: item.profiles.email,
         first_name: item.profiles.first_name,
         last_name: item.profiles.last_name,
-        role: item.role,
-        branch_name: item.admin_branches?.[0]?.branches?.name || 'No Branch',
-        branch_id: item.admin_branches?.[0]?.branch_id,
+        role: 'branch_admin', // We know they're branch admins since they're in admin_branches
+        branch_name: item.branches?.name || 'No Branch',
+        branch_id: item.branch_id,
         created_at: new Date().toISOString(), // We don't have this field, using current date
-        has_permissions: item.admin_permissions?.length > 0,
+        has_permissions: permissions?.some(p => p.admin_id === item.admin_id) || false,
       }));
 
       console.log('Transformed admin data:', transformedData);
