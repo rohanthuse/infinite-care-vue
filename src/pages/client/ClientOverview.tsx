@@ -6,9 +6,11 @@ import { Calendar, Clock, CreditCard, Star, FileText, User, AlertCircle } from "
 import { useClientAppointments } from "@/hooks/useClientAppointments";
 import { useEnhancedClientBilling } from "@/hooks/useEnhancedClientBilling";
 import { useClientReviews } from "@/hooks/useClientReviews";
+import { usePendingReviews } from "@/hooks/usePendingReviews";
 import { formatCurrency } from "@/utils/currencyFormatter";
 import { format, parseISO, isAfter, isSameDay } from "date-fns";
 import { Link } from "react-router-dom";
+import { ReviewPrompt } from "@/components/client/ReviewPrompt";
 
 const ClientOverview = () => {
   // Get authenticated client ID from localStorage
@@ -21,6 +23,7 @@ const ClientOverview = () => {
   const { data: appointments } = useClientAppointments(clientId);
   const { data: invoices } = useEnhancedClientBilling(clientId);
   const { data: reviews } = useClientReviews(clientId);
+  const { data: pendingReviews, count: pendingReviewsCount } = usePendingReviews(clientId);
 
   // Calculate summaries with proper date filtering
   const now = new Date();
@@ -41,8 +44,6 @@ const ClientOverview = () => {
   const nextAppointment = upcomingAppointments.sort((a, b) => 
     new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime()
   )[0];
-
-  const recentReviews = reviews?.slice(0, 3) || [];
 
   if (!clientId) {
     return (
@@ -95,8 +96,8 @@ const ClientOverview = () => {
             <div className="flex items-center">
               <Star className="h-8 w-8 text-yellow-500" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Reviews</p>
-                <p className="text-2xl font-bold">{reviews?.length || 0}</p>
+                <p className="text-sm font-medium text-gray-600">Pending Reviews</p>
+                <p className="text-2xl font-bold">{pendingReviewsCount}</p>
               </div>
             </div>
           </CardContent>
@@ -172,55 +173,73 @@ const ClientOverview = () => {
         </Card>
       )}
 
-      {/* Recent Reviews */}
+      {/* Pending Reviews */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center">
               <Star className="h-5 w-5 mr-2" />
-              Recent Reviews
+              Leave Reviews
             </CardTitle>
             <Link to="/client-dashboard/reviews">
-              <Button variant="outline" size="sm">View All</Button>
+              <Button variant="outline" size="sm">View All Reviews</Button>
             </Link>
           </div>
         </CardHeader>
         <CardContent>
-          {recentReviews.length > 0 ? (
+          {pendingReviews && pendingReviews.length > 0 ? (
             <div className="space-y-4">
-              {recentReviews.map((review) => (
-                <div key={review.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                  <div>
-                    <div className="flex items-center">
-                      {Array(5).fill(0).map((_, i) => (
-                        <Star 
-                          key={i} 
-                          className={`h-4 w-4 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
-                        />
-                      ))}
-                      <span className="ml-2 text-sm text-gray-600">
-                        {review.service_type || 'Care Service'}
-                      </span>
+              <p className="text-sm text-gray-600 mb-4">
+                Please share your feedback on these completed appointments:
+              </p>
+              {pendingReviews.slice(0, 3).map((appointment) => (
+                <div key={appointment.id} className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-blue-100 p-2 rounded-full">
+                      <User className="h-4 w-4 text-blue-600" />
                     </div>
-                    <p className="text-sm text-gray-700 mt-1">
-                      {review.comment ? review.comment.substring(0, 100) + (review.comment.length > 100 ? '...' : '') : 'No comment provided'}
-                    </p>
+                    <div>
+                      <div className="font-medium text-sm">{appointment.type}</div>
+                      <div className="text-sm text-gray-600">{appointment.provider}</div>
+                      <div className="text-xs text-gray-500 flex items-center mt-1">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        {appointment.date} at {appointment.time}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500">
-                    {format(new Date(review.created_at), 'MMM d')}
+                  <div className="flex items-center space-x-2">
+                    <div className="flex">
+                      {Array(5).fill(0).map((_, i) => (
+                        <Star key={i} className="h-4 w-4 text-gray-300" />
+                      ))}
+                    </div>
+                    <Button size="sm" className="ml-2">
+                      Leave Review
+                    </Button>
                   </div>
                 </div>
               ))}
+              {pendingReviews.length > 3 && (
+                <p className="text-sm text-gray-500 text-center">
+                  +{pendingReviews.length - 3} more appointment{pendingReviews.length - 3 > 1 ? 's' : ''} awaiting review
+                </p>
+              )}
             </div>
           ) : (
             <div className="text-center py-8">
               <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No reviews yet</h3>
-              <p className="text-gray-600">Your feedback on completed services will appear here.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">All caught up!</h3>
+              <p className="text-gray-600">You don't have any completed appointments that need reviews right now.</p>
+              <Link to="/client-dashboard/reviews">
+                <Button variant="outline" className="mt-3">View Your Reviews</Button>
+              </Link>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Review Prompt Component */}
+      <ReviewPrompt completedAppointments={pendingReviews || []} />
     </div>
   );
 };
