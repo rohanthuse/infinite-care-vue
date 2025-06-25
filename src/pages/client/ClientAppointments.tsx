@@ -3,10 +3,11 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, User, Star, MessageSquare } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Star, MessageSquare, RotateCcw } from "lucide-react";
 import { useClientAppointments } from "@/hooks/useClientAppointments";
 import { SubmitReviewDialog } from "@/components/client/SubmitReviewDialog";
 import { ViewReviewDialog } from "@/components/client/ViewReviewDialog";
+import { RescheduleAppointmentDialog } from "@/components/client/RescheduleAppointmentDialog";
 import { useCheckExistingReview } from "@/hooks/useClientReviews";
 import { ReviewPrompt } from "@/components/client/ReviewPrompt";
 import { format, parseISO, isAfter, isSameDay } from "date-fns";
@@ -21,10 +22,21 @@ interface AppointmentData {
   staff_id?: string;
 }
 
+interface RescheduleAppointmentData {
+  id: string;
+  appointment_type: string;
+  provider_name: string;
+  appointment_date: string;
+  appointment_time: string;
+  location: string;
+}
+
 const ClientAppointments = () => {
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [viewReviewDialogOpen, setViewReviewDialogOpen] = useState(false);
+  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentData | null>(null);
+  const [selectedRescheduleAppointment, setSelectedRescheduleAppointment] = useState<RescheduleAppointmentData | null>(null);
   const [selectedReview, setSelectedReview] = useState(null);
 
   // Get authenticated client ID from localStorage
@@ -82,6 +94,19 @@ const ClientAppointments = () => {
     };
     setSelectedAppointment(appointmentData);
     setReviewDialogOpen(true);
+  };
+
+  const handleRescheduleAppointment = (appointment: any) => {
+    const rescheduleData: RescheduleAppointmentData = {
+      id: appointment.id,
+      appointment_type: appointment.appointment_type,
+      provider_name: appointment.provider_name,
+      appointment_date: appointment.appointment_date,
+      appointment_time: appointment.appointment_time,
+      location: appointment.location
+    };
+    setSelectedRescheduleAppointment(rescheduleData);
+    setRescheduleDialogOpen(true);
   };
 
   if (!clientId) {
@@ -153,7 +178,7 @@ const ClientAppointments = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-4">
                     <div className="flex items-center text-gray-600">
                       <Calendar className="h-4 w-4 mr-2" />
                       <span>{format(parseISO(appointment.appointment_date), 'MMM d, yyyy')}</span>
@@ -167,11 +192,25 @@ const ClientAppointments = () => {
                       <span>{appointment.location}</span>
                     </div>
                   </div>
+                  
                   {appointment.notes && (
-                    <div className="mt-3 p-3 bg-gray-50 rounded border-l-4 border-blue-200">
+                    <div className="mb-4 p-3 bg-gray-50 rounded border-l-4 border-blue-200">
                       <p className="text-sm text-gray-700">{appointment.notes}</p>
                     </div>
                   )}
+
+                  {/* Reschedule Button */}
+                  <div className="pt-3 border-t border-gray-100">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleRescheduleAppointment(appointment)}
+                      className="w-full"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-1" />
+                      Reschedule Appointment
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -208,7 +247,7 @@ const ClientAppointments = () => {
         )}
       </div>
 
-      {/* Review Dialogs */}
+      {/* Dialogs */}
       <SubmitReviewDialog
         open={reviewDialogOpen}
         onOpenChange={setReviewDialogOpen}
@@ -219,6 +258,12 @@ const ClientAppointments = () => {
         open={viewReviewDialogOpen}
         onOpenChange={setViewReviewDialogOpen}
         review={selectedReview}
+      />
+
+      <RescheduleAppointmentDialog
+        open={rescheduleDialogOpen}
+        onOpenChange={setRescheduleDialogOpen}
+        appointment={selectedRescheduleAppointment}
       />
     </div>
   );

@@ -19,19 +19,19 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface RescheduleAppointmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   appointment: {
-    id: number;
-    type: string;
-    provider: string;
-    date: string;
-    time: string;
+    id: string;
+    appointment_type: string;
+    provider_name: string;
+    appointment_date: string;
+    appointment_time: string;
     location: string;
-  };
+  } | null;
 }
 
 export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogProps> = ({
@@ -39,11 +39,10 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
   onOpenChange,
   appointment,
 }) => {
-  const [date, setDate] = useState<Date | undefined>(new Date(appointment.date));
-  const [timeSlot, setTimeSlot] = useState<string>(appointment.time);
+  const [date, setDate] = useState<Date | undefined>(appointment ? new Date(appointment.appointment_date) : undefined);
+  const [timeSlot, setTimeSlot] = useState<string>(appointment?.appointment_time || "");
   const [reason, setReason] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
 
   const availableTimeSlots = [
     "9:00 AM",
@@ -56,28 +55,28 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
   ];
 
   const handleSubmit = () => {
-    if (!date || !timeSlot) {
-      toast({
-        title: "Error",
-        description: "Please select a date and time for rescheduling.",
-        variant: "destructive",
-      });
+    if (!date || !timeSlot || !appointment) {
+      toast.error("Please select a date and time for rescheduling.");
       return;
     }
 
     setIsSubmitting(true);
 
-    // Simulate API call
+    // Simulate API call - in real implementation, this would call a reschedule mutation
     setTimeout(() => {
       setIsSubmitting(false);
       onOpenChange(false);
       
-      toast({
-        title: "Appointment Rescheduled",
-        description: `Your ${appointment.type} appointment has been rescheduled for ${format(date, "MMMM d, yyyy")} at ${timeSlot}.`,
-      });
+      toast.success(`Your ${appointment.appointment_type} appointment has been rescheduled for ${format(date, "MMMM d, yyyy")} at ${timeSlot}.`);
+      
+      // Reset form
+      setReason("");
     }, 1000);
   };
+
+  if (!appointment) {
+    return null;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -85,7 +84,7 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
         <DialogHeader>
           <DialogTitle>Reschedule Appointment</DialogTitle>
           <DialogDescription>
-            Please select a new date and time for your {appointment.type} appointment with {appointment.provider}.
+            Please select a new date and time for your {appointment.appointment_type} appointment with {appointment.provider_name}.
           </DialogDescription>
         </DialogHeader>
         
