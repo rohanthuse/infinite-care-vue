@@ -4,14 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Activity, AlertTriangle, ArrowDown, ArrowUp, Clock, Filter, Search, FileText, BarChart3, Users, User } from "lucide-react";
+import { Activity, AlertTriangle, ArrowDown, ArrowUp, Clock, Filter, Search, FileText, BarChart3, Users, User, CheckCircle, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useNews2Patients } from "@/hooks/useNews2Data";
+import { useNews2Patients, useNews2Alerts } from "@/hooks/useNews2Data";
 import { News2AnalyticsDashboard } from "./News2AnalyticsDashboard";
 import { IndividualPatientCharts } from "./IndividualPatientCharts";
+import { AlertManagementDialog } from "./AlertManagementDialog";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { generateNews2PDF } from "@/utils/pdfGenerator";
@@ -24,9 +25,12 @@ interface News2DashboardProps {
 export const News2Dashboard = ({ branchId, branchName }: News2DashboardProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [riskFilter, setRiskFilter] = useState("all");
+  const [alertFilter, setAlertFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("overview");
+  const [selectedAlert, setSelectedAlert] = useState<any>(null);
   
   const { data: patients = [], isLoading, error } = useNews2Patients(branchId);
+  const { data: alerts = [], isLoading: alertsLoading } = useNews2Alerts(branchId);
   
   // Filter patients based on search and risk level
   const filteredPatients = patients.filter(patient => {
@@ -41,6 +45,12 @@ export const News2Dashboard = ({ branchId, branchName }: News2DashboardProps) =>
       (riskFilter === "low" && latestScore < 5);
     
     return matchesSearch && matchesRisk;
+  });
+
+  // Filter alerts based on severity
+  const filteredAlerts = alerts.filter(alert => {
+    if (alertFilter === "all") return true;
+    return alert.severity === alertFilter;
   });
   
   const handleExportPatient = (patient: any) => {
@@ -76,6 +86,34 @@ export const News2Dashboard = ({ branchId, branchName }: News2DashboardProps) =>
     }
     return <Badge variant="outline" className="bg-green-100 text-green-800 whitespace-nowrap">Low Risk</Badge>;
   };
+
+  const getSeverityBadge = (severity: string) => {
+    switch (severity) {
+      case 'critical':
+        return <Badge variant="destructive" className="bg-red-600">Critical</Badge>;
+      case 'high':
+        return <Badge variant="destructive">High</Badge>;
+      case 'medium':
+        return <Badge variant="warning" className="bg-orange-500">Medium</Badge>;
+      case 'low':
+        return <Badge variant="outline">Low</Badge>;
+      default:
+        return <Badge variant="outline">{severity}</Badge>;
+    }
+  };
+
+  const getAlertTypeLabel = (type: string) => {
+    switch (type) {
+      case 'high_score':
+        return 'High Score Alert';
+      case 'deteriorating':
+        return 'Deteriorating Condition';
+      case 'overdue_observation':
+        return 'Overdue Observation';
+      default:
+        return type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+  };
   
   const getTrendIcon = () => {
     // For now, show stable. Could be enhanced to calculate actual trends from observation history
@@ -89,6 +127,11 @@ export const News2Dashboard = ({ branchId, branchName }: News2DashboardProps) =>
     return score >= 5 && score < 7;
   }).length;
   const lowRiskCount = patients.filter(p => (p.latest_observation?.total_score || 0) < 5).length;
+
+  // Calculate alert counts
+  const criticalAlerts = alerts.filter(a => a.severity === 'critical').length;
+  const highAlerts = alerts.filter(a => a.severity === 'high').length;
+  const unacknowledgedAlerts = alerts.filter(a => !a.acknowledged).length;
   
   if (error) {
     return (
@@ -161,9 +204,14 @@ export const News2Dashboard = ({ branchId, branchName }: News2DashboardProps) =>
             <Users className="h-4 w-4" />
             Patient List
           </TabsTrigger>
-          <TabsTrigger value="alerts" className="flex items-center gap-2">
+          <TabsTrigger value="alerts" className="flex items-center gap-2 relative">
             <AlertTriangle className="h-4 w-4" />
             Clinical Alerts
+            {unacknowledgedAlerts > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {unacknowledgedAlerts}
+              </span>
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -297,23 +345,177 @@ export const News2Dashboard = ({ branchId, branchName }: News2DashboardProps) =>
         </TabsContent>
 
         <TabsContent value="alerts" className="mt-6">
+          {/* Alert Statistics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <Card className="border-l-4 border-l-red-600">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Critical Alerts</h3>
+                    <p className="text-2xl font-bold text-red-600">{criticalAlerts}</p>
+                  </div>
+                  <AlertTriangle className="h-8 w-8 text-red-600" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-l-4 border-l-orange-500">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">High Priority</h3>
+                    <p className="text-2xl font-bold text-orange-500">{highAlerts}</p>
+                  </div>
+                  <AlertTriangle className="h-8 w-8 text-orange-500" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-l-4 border-l-blue-500">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Unacknowledged</h3>
+                    <p className="text-2xl font-bold text-blue-600">{unacknowledgedAlerts}</p>
+                  </div>
+                  <Clock className="h-8 w-8 text-blue-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Alert Filters */}
+          <div className="flex gap-4 mb-6">
+            <Select value={alertFilter} onValueChange={setAlertFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by severity" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Severities</SelectItem>
+                <SelectItem value="critical">Critical</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Alerts Display */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-orange-500" />
-                Clinical Alerts & Escalations
+                Active Clinical Alerts
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-gray-500">
-                <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <p>No active clinical alerts at this time</p>
-                <p className="text-sm mt-2">Alerts will appear here when patients require immediate attention</p>
-              </div>
+              {alertsLoading ? (
+                <div className="py-8 text-center">
+                  <div className="w-8 h-8 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p>Loading alerts...</p>
+                </div>
+              ) : filteredAlerts.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-lg font-medium">No active alerts</p>
+                  <p className="text-sm mt-2">
+                    {alerts.length === 0 
+                      ? "All patients are stable with no clinical alerts"
+                      : "No alerts match the current filter"
+                    }
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredAlerts.map((alert) => {
+                    // Find the patient for this alert
+                    const patient = patients.find(p => p.id === alert.news2_patient_id);
+                    const patientName = patient?.client ? 
+                      `${patient.client.first_name} ${patient.client.last_name}` : 
+                      'Unknown Patient';
+
+                    return (
+                      <Card key={alert.id} className={`border-l-4 ${
+                        alert.severity === 'critical' ? 'border-l-red-600 bg-red-50' :
+                        alert.severity === 'high' ? 'border-l-red-500 bg-red-50' :
+                        alert.severity === 'medium' ? 'border-l-orange-500 bg-orange-50' :
+                        'border-l-yellow-500 bg-yellow-50'
+                      }`}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <AlertTriangle className={`h-5 w-5 ${
+                                  alert.severity === 'critical' || alert.severity === 'high' ? 'text-red-500' :
+                                  alert.severity === 'medium' ? 'text-orange-500' : 'text-yellow-500'
+                                }`} />
+                                <div>
+                                  <h4 className="font-semibold text-gray-900">{patientName}</h4>
+                                  <p className="text-sm text-gray-600">{getAlertTypeLabel(alert.alert_type)}</p>
+                                </div>
+                              </div>
+                              
+                              <p className="text-sm text-gray-800 mb-3">{alert.message}</p>
+                              
+                              <div className="flex items-center gap-4 text-xs text-gray-500">
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  <span>{format(new Date(alert.created_at), "dd MMM, HH:mm")}</span>
+                                </div>
+                                {alert.acknowledged && (
+                                  <div className="flex items-center gap-1 text-green-600">
+                                    <CheckCircle className="h-3 w-3" />
+                                    <span>Acknowledged</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="flex flex-col items-end gap-2">
+                              {getSeverityBadge(alert.severity)}
+                              
+                              <div className="flex gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => setSelectedAlert(alert)}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  Details
+                                </Button>
+                                
+                                {!alert.acknowledged && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    className="text-green-600 border-green-600 hover:bg-green-50"
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-1" />
+                                    Acknowledge
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Alert Management Dialog */}
+      {selectedAlert && (
+        <AlertManagementDialog
+          alert={selectedAlert}
+          patient={patients.find(p => p.id === selectedAlert.news2_patient_id)}
+          onClose={() => setSelectedAlert(null)}
+        />
+      )}
     </div>
   );
 };

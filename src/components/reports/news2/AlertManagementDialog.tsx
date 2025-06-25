@@ -1,371 +1,259 @@
 
-import React, { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import React from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { AlertTriangle, Clock, User, Activity, CheckCircle, X } from "lucide-react";
+import { format } from "date-fns";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AlertManagementDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  alert: any;
+  patient: any;
+  onClose: () => void;
 }
 
-// Local interface for the dialog's alert settings
-interface LocalAlertSettings {
-  highThreshold: number;
-  mediumThreshold: number;
-  rapidIncreaseThreshold: number;
-  notifyClinicianOnDuty: boolean;
-  notifyAssignedNurse: boolean;
-  notifyMedicalDirector: boolean;
-  notifyRapidResponseTeam: boolean;
-  useSystemNotifications: boolean;
-  useEmail: boolean;
-  useSMS: boolean;
-  useMobileApp: boolean;
-  reminderInterval: number;
-  escalationTime: number;
-  overrideEmail: string;
-}
+export const AlertManagementDialog = ({ alert, patient, onClose }: AlertManagementDialogProps) => {
+  const queryClient = useQueryClient();
 
-export function AlertManagementDialog({
-  open,
-  onOpenChange,
-}: AlertManagementDialogProps) {
-  // Default alert settings
-  const defaultSettings: LocalAlertSettings = {
-    highThreshold: 7,
-    mediumThreshold: 5,
-    rapidIncreaseThreshold: 3,
-    notifyClinicianOnDuty: true,
-    notifyAssignedNurse: true,
-    notifyMedicalDirector: false,
-    notifyRapidResponseTeam: true,
-    useSystemNotifications: true,
-    useEmail: true,
-    useSMS: false,
-    useMobileApp: true,
-    reminderInterval: 60, // minutes
-    escalationTime: 120, // minutes
-    overrideEmail: "",
+  const getSeverityBadge = (severity: string) => {
+    switch (severity) {
+      case 'critical':
+        return <Badge variant="destructive" className="bg-red-600">Critical</Badge>;
+      case 'high':
+        return <Badge variant="destructive">High</Badge>;
+      case 'medium':
+        return <Badge variant="warning" className="bg-orange-500">Medium</Badge>;
+      case 'low':
+        return <Badge variant="outline">Low</Badge>;
+      default:
+        return <Badge variant="outline">{severity}</Badge>;
+    }
   };
 
-  const [settings, setSettings] = useState<LocalAlertSettings>(defaultSettings);
-  const [activeTab, setActiveTab] = useState("thresholds");
-
-  const handleSave = () => {
-    // In a real application, this would save to an API
-    // For now, we just show a success toast
-    toast.success("Alert settings saved successfully", {
-      description: "Your NEWS2 alert configuration has been updated",
-    });
-    onOpenChange(false);
+  const getAlertTypeLabel = (type: string) => {
+    switch (type) {
+      case 'high_score':
+        return 'High Score Alert';
+      case 'deteriorating':
+        return 'Deteriorating Condition';
+      case 'overdue_observation':
+        return 'Overdue Observation';
+      default:
+        return type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
   };
+
+  const handleAcknowledge = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Authentication required');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('news2_alerts')
+        .update({
+          acknowledged: true,
+          acknowledged_by: user.id,
+          acknowledged_at: new Date().toISOString()
+        })
+        .eq('id', alert.id);
+
+      if (error) throw error;
+
+      // Invalidate and refetch alerts
+      queryClient.invalidateQueries({ queryKey: ['news2-alerts'] });
+      
+      toast.success('Alert acknowledged successfully');
+      onClose();
+    } catch (error) {
+      console.error('Error acknowledging alert:', error);
+      toast.error('Failed to acknowledge alert');
+    }
+  };
+
+  const handleResolve = async () => {
+    try {
+      const { error } = await supabase
+        .from('news2_alerts')
+        .update({
+          resolved: true,
+          resolved_at: new Date().toISOString()
+        })
+        .eq('id', alert.id);
+
+      if (error) throw error;
+
+      // Invalidate and refetch alerts
+      queryClient.invalidateQueries({ queryKey: ['news2-alerts'] });
+      
+      toast.success('Alert resolved successfully');
+      onClose();
+    } catch (error) {
+      console.error('Error resolving alert:', error);
+      toast.error('Failed to resolve alert');
+    }
+  };
+
+  const patientName = patient?.client ? 
+    `${patient.client.first_name} ${patient.client.last_name}` : 
+    'Unknown Patient';
+
+  const latestScore = patient?.latest_observation?.total_score || 0;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl">Alert Management</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className={`h-5 w-5 ${
+              alert.severity === 'critical' || alert.severity === 'high' ? 'text-red-500' :
+              alert.severity === 'medium' ? 'text-orange-500' : 'text-yellow-500'
+            }`} />
+            Clinical Alert Details
+          </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="thresholds" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-3">
-            <TabsTrigger value="thresholds">Alert Thresholds</TabsTrigger>
-            <TabsTrigger value="recipients">Recipients</TabsTrigger>
-            <TabsTrigger value="channels">Notification Channels</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="thresholds" className="space-y-4 mt-4">
-            <div>
-              <Label className="mb-2 block">
-                High Risk Threshold (NEWS2 Score)
-              </Label>
-              <div className="flex items-center space-x-4">
-                <Slider
-                  defaultValue={[settings.highThreshold]}
-                  max={10}
-                  min={1}
-                  step={1}
-                  value={[settings.highThreshold]}
-                  onValueChange={(value) =>
-                    setSettings({ ...settings, highThreshold: value[0] })
-                  }
-                  className="w-full"
-                />
-                <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full">
-                  {settings.highThreshold}+
-                </span>
-              </div>
+        <div className="space-y-6">
+          {/* Alert Overview */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Alert Information</h3>
+              {getSeverityBadge(alert.severity)}
             </div>
-
-            <div>
-              <Label className="mb-2 block">
-                Medium Risk Threshold (NEWS2 Score)
-              </Label>
-              <div className="flex items-center space-x-4">
-                <Slider
-                  defaultValue={[settings.mediumThreshold]}
-                  max={settings.highThreshold - 1}
-                  min={1}
-                  step={1}
-                  value={[settings.mediumThreshold]}
-                  onValueChange={(value) =>
-                    setSettings({ ...settings, mediumThreshold: value[0] })
-                  }
-                  className="w-full"
-                />
-                <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full">
-                  {settings.mediumThreshold}-{settings.highThreshold - 1}
-                </span>
+            
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="font-medium text-gray-500">Alert Type:</span>
+                <p>{getAlertTypeLabel(alert.alert_type)}</p>
               </div>
-            </div>
-
-            <div>
-              <Label className="mb-2 block">
-                Rapid Increase Threshold (Points in 24hrs)
-              </Label>
-              <div className="flex items-center space-x-4">
-                <Slider
-                  defaultValue={[settings.rapidIncreaseThreshold]}
-                  max={5}
-                  min={1}
-                  step={1}
-                  value={[settings.rapidIncreaseThreshold]}
-                  onValueChange={(value) =>
-                    setSettings({ ...settings, rapidIncreaseThreshold: value[0] })
-                  }
-                  className="w-full"
-                />
-                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
-                  +{settings.rapidIncreaseThreshold}
-                </span>
+              <div>
+                <span className="font-medium text-gray-500">Created:</span>
+                <p>{format(new Date(alert.created_at), "dd MMM yyyy, HH:mm")}</p>
               </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="recipients" className="space-y-4 mt-4">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="clinicianOnDuty"
-                  checked={settings.notifyClinicianOnDuty}
-                  onCheckedChange={(checked) =>
-                    setSettings({
-                      ...settings,
-                      notifyClinicianOnDuty: checked as boolean,
-                    })
-                  }
-                />
-                <Label htmlFor="clinicianOnDuty">Clinician On Duty</Label>
+              <div>
+                <span className="font-medium text-gray-500">Status:</span>
+                <p className="flex items-center gap-1">
+                  {alert.acknowledged ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      Acknowledged
+                    </>
+                  ) : (
+                    <>
+                      <Clock className="h-4 w-4 text-orange-500" />
+                      Pending
+                    </>
+                  )}
+                </p>
               </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="assignedNurse"
-                  checked={settings.notifyAssignedNurse}
-                  onCheckedChange={(checked) =>
-                    setSettings({
-                      ...settings,
-                      notifyAssignedNurse: checked as boolean,
-                    })
-                  }
-                />
-                <Label htmlFor="assignedNurse">Assigned Nurse</Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="medicalDirector"
-                  checked={settings.notifyMedicalDirector}
-                  onCheckedChange={(checked) =>
-                    setSettings({
-                      ...settings,
-                      notifyMedicalDirector: checked as boolean,
-                    })
-                  }
-                />
-                <Label htmlFor="medicalDirector">Medical Director</Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="rapidResponseTeam"
-                  checked={settings.notifyRapidResponseTeam}
-                  onCheckedChange={(checked) =>
-                    setSettings({
-                      ...settings,
-                      notifyRapidResponseTeam: checked as boolean,
-                    })
-                  }
-                />
-                <Label htmlFor="rapidResponseTeam">Rapid Response Team</Label>
-              </div>
-
-              <div className="pt-4">
-                <Label htmlFor="overrideEmail" className="mb-2 block">
-                  Override Email (Optional)
-                </Label>
-                <Input
-                  id="overrideEmail"
-                  type="email"
-                  placeholder="Enter email address"
-                  value={settings.overrideEmail}
-                  onChange={(e) =>
-                    setSettings({ ...settings, overrideEmail: e.target.value })
-                  }
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  If provided, this email will receive all notifications
-                  regardless of other settings.
+              <div>
+                <span className="font-medium text-gray-500">Patient:</span>
+                <p className="flex items-center gap-1">
+                  <User className="h-4 w-4" />
+                  {patientName}
                 </p>
               </div>
             </div>
-          </TabsContent>
+          </div>
 
-          <TabsContent value="channels" className="space-y-6 mt-4">
-            <div>
-              <h3 className="text-sm font-medium mb-3">Notification Channels</h3>
+          <Separator />
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Label htmlFor="systemNotifications">
-                      System Notifications
-                    </Label>
-                  </div>
-                  <Switch
-                    id="systemNotifications"
-                    checked={settings.useSystemNotifications}
-                    onCheckedChange={(checked) =>
-                      setSettings({
-                        ...settings,
-                        useSystemNotifications: checked,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Label htmlFor="emailNotifications">Email</Label>
-                  </div>
-                  <Switch
-                    id="emailNotifications"
-                    checked={settings.useEmail}
-                    onCheckedChange={(checked) =>
-                      setSettings({
-                        ...settings,
-                        useEmail: checked,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Label htmlFor="smsNotifications">SMS</Label>
-                  </div>
-                  <Switch
-                    id="smsNotifications"
-                    checked={settings.useSMS}
-                    onCheckedChange={(checked) =>
-                      setSettings({
-                        ...settings,
-                        useSMS: checked,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Label htmlFor="mobileAppNotifications">Mobile App</Label>
-                  </div>
-                  <Switch
-                    id="mobileAppNotifications"
-                    checked={settings.useMobileApp}
-                    onCheckedChange={(checked) =>
-                      setSettings({
-                        ...settings,
-                        useMobileApp: checked,
-                      })
-                    }
-                  />
-                </div>
-              </div>
+          {/* Alert Message */}
+          <div>
+            <h4 className="font-medium text-gray-900 mb-2">Alert Message</h4>
+            <div className={`p-3 rounded-lg border-l-4 ${
+              alert.severity === 'critical' || alert.severity === 'high' ? 'border-l-red-500 bg-red-50' :
+              alert.severity === 'medium' ? 'border-l-orange-500 bg-orange-50' :
+              'border-l-yellow-500 bg-yellow-50'
+            }`}>
+              <p className="text-gray-800">{alert.message}</p>
             </div>
+          </div>
 
-            <div className="border-t pt-4">
-              <h3 className="text-sm font-medium mb-3">Reminder Settings</h3>
-
-              <div className="space-y-4">
-                <div>
-                  <Label className="mb-2 block">
-                    Reminder Interval (minutes)
-                  </Label>
-                  <div className="flex items-center space-x-4">
-                    <Slider
-                      defaultValue={[settings.reminderInterval]}
-                      max={120}
-                      min={15}
-                      step={15}
-                      value={[settings.reminderInterval]}
-                      onValueChange={(value) =>
-                        setSettings({ ...settings, reminderInterval: value[0] })
-                      }
-                      className="w-full"
-                    />
-                    <span className="bg-gray-100 px-3 py-1 rounded-full min-w-[60px] text-center">
-                      {settings.reminderInterval} min
-                    </span>
+          {/* Patient Context */}
+          {patient && (
+            <>
+              <Separator />
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Patient Context</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-500">Latest NEWS2 Score:</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-medium ${
+                        latestScore >= 7 ? "bg-red-500" : 
+                        latestScore >= 5 ? "bg-orange-500" : "bg-green-500"
+                      }`}>
+                        {latestScore}
+                      </div>
+                      <span className="text-gray-600">
+                        ({latestScore >= 7 ? 'High Risk' : latestScore >= 5 ? 'Medium Risk' : 'Low Risk'})
+                      </span>
+                    </div>
                   </div>
-                </div>
-
-                <div>
-                  <Label className="mb-2 block">
-                    Escalation Time (minutes)
-                  </Label>
-                  <div className="flex items-center space-x-4">
-                    <Slider
-                      defaultValue={[settings.escalationTime]}
-                      max={240}
-                      min={30}
-                      step={30}
-                      value={[settings.escalationTime]}
-                      onValueChange={(value) =>
-                        setSettings({ ...settings, escalationTime: value[0] })
+                  <div>
+                    <span className="font-medium text-gray-500">Risk Category:</span>
+                    <p className="mt-1">{patient.risk_category?.charAt(0).toUpperCase() + patient.risk_category?.slice(1)}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-500">Monitoring Frequency:</span>
+                    <p className="mt-1">{patient.monitoring_frequency}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-500">Last Observation:</span>
+                    <p className="mt-1">
+                      {patient.latest_observation?.recorded_at ? 
+                        format(new Date(patient.latest_observation.recorded_at), "dd MMM, HH:mm") :
+                        'No observations recorded'
                       }
-                      className="w-full"
-                    />
-                    <span className="bg-gray-100 px-3 py-1 rounded-full min-w-[60px] text-center">
-                      {settings.escalationTime} min
-                    </span>
+                    </p>
                   </div>
                 </div>
               </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+            </>
+          )}
 
-        <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+          {/* Acknowledgment Info */}
+          {alert.acknowledged && (
+            <>
+              <Separator />
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Acknowledgment</h4>
+                <div className="text-sm text-gray-600">
+                  <p>Acknowledged on {format(new Date(alert.acknowledged_at), "dd MMM yyyy, HH:mm")}</p>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose}>
+            <X className="h-4 w-4 mr-2" />
+            Close
           </Button>
-          <Button onClick={handleSave}>Save Settings</Button>
+          
+          {!alert.acknowledged && (
+            <Button onClick={handleAcknowledge} className="bg-green-600 hover:bg-green-700">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Acknowledge Alert
+            </Button>
+          )}
+          
+          {alert.acknowledged && !alert.resolved && (
+            <Button onClick={handleResolve} variant="outline" className="text-blue-600 border-blue-600 hover:bg-blue-50">
+              <Activity className="h-4 w-4 mr-2" />
+              Resolve Alert
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-}
+};
