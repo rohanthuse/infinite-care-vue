@@ -144,7 +144,7 @@ const fetchBranchDashboardStats = async (branchId: string): Promise<BranchDashbo
         monthlyRevenue,
         clientsChange: clientsChangeData.change,
         todaysBookingsChange: bookingsChangeData.change,
-        pendingRevenuesChange: reviewsChangeData.change,
+        pendingReviewsChange: reviewsChangeData.change,
         monthlyRevenueChange: revenueChangeData.change,
         clientsChangePositive: clientsChangeData.isPositive,
         todaysBookingsChangePositive: bookingsChangeData.isPositive,
