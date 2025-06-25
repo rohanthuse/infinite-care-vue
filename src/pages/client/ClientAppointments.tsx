@@ -11,10 +11,20 @@ import { useCheckExistingReview } from "@/hooks/useClientReviews";
 import { ReviewPrompt } from "@/components/client/ReviewPrompt";
 import { format, parseISO } from "date-fns";
 
+interface AppointmentData {
+  id: string;
+  type: string;
+  provider: string;
+  date: string;
+  time: string;
+  client_id: string;
+  staff_id?: string;
+}
+
 const ClientAppointments = () => {
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [viewReviewDialogOpen, setViewReviewDialogOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentData | null>(null);
   const [selectedReview, setSelectedReview] = useState(null);
 
   // Get authenticated client ID from localStorage
@@ -56,14 +66,16 @@ const ClientAppointments = () => {
   };
 
   const handleLeaveReview = (appointment: any) => {
-    setSelectedAppointment({
+    const appointmentData: AppointmentData = {
       id: appointment.id,
       type: appointment.appointment_type,
       provider: appointment.provider_name,
       date: appointment.appointment_date,
       time: appointment.appointment_time,
-      client_id: appointment.client_id
-    });
+      client_id: appointment.client_id,
+      staff_id: appointment.staff_id
+    };
+    setSelectedAppointment(appointmentData);
     setReviewDialogOpen(true);
   };
 

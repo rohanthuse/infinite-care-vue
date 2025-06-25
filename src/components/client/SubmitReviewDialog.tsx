@@ -18,7 +18,7 @@ interface SubmitReviewDialogProps {
     time: string;
     staff_id?: string;
     client_id?: string;
-  };
+  } | null;
 }
 
 export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitReviewDialogProps) {
@@ -35,8 +35,12 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
 
   const clientId = getClientId();
   
-  // Check if review already exists for this appointment
-  const { data: existingReview } = useCheckExistingReview(clientId, appointment.id);
+  // Check if review already exists for this appointment - only call when appointment exists
+  const { data: existingReview } = useCheckExistingReview(
+    clientId, 
+    appointment?.id || '', 
+    { enabled: Boolean(appointment?.id) }
+  );
 
   useEffect(() => {
     if (existingReview) {
@@ -46,7 +50,7 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
   }, [existingReview]);
 
   const handleSubmit = async () => {
-    if (rating === 0) {
+    if (rating === 0 || !appointment) {
       return;
     }
 
@@ -86,6 +90,27 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
     }
   };
 
+  // Don't render dialog content if no appointment is selected
+  if (!appointment) {
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>No Appointment Selected</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-gray-500">Please select an appointment to leave a review.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleClose}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
@@ -98,12 +123,12 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
         <div className="py-4 space-y-4">
           <div className="space-y-2">
             <Label>Carer</Label>
-            <div className="text-sm font-medium">{appointment?.provider}</div>
+            <div className="text-sm font-medium">{appointment.provider}</div>
           </div>
           
           <div className="space-y-2">
             <Label>Service Date</Label>
-            <div className="text-sm">{appointment?.date} at {appointment?.time}</div>
+            <div className="text-sm">{appointment.date} at {appointment.time}</div>
           </div>
           
           <div className="space-y-2">
