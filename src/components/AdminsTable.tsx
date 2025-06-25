@@ -301,7 +301,11 @@ export const AdminsTable = () => {
             setIsPermissionsDialogOpen(false);
             setSelectedAdmin(null);
           }}
-          admin={selectedAdmin}
+          adminId={selectedAdmin.id}
+          branchId={selectedAdmin.branch_id || ''}
+          adminName={selectedAdmin.first_name && selectedAdmin.last_name 
+            ? `${selectedAdmin.first_name} ${selectedAdmin.last_name}` 
+            : selectedAdmin.email}
           onPermissionsUpdated={() => {
             refetch();
             setIsPermissionsDialogOpen(false);
