@@ -1,21 +1,26 @@
 
 import React, { useState } from "react";
-import { Calendar, Clock, User, MapPin, Phone, Plus, Filter } from "lucide-react";
+import { Calendar, Clock, User, MapPin, Phone, Plus, Filter, Play, Eye, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format, isToday, isTomorrow, isYesterday, isThisWeek } from "date-fns";
+import { format, isToday, isTomorrow, isYesterday, isThisWeek, differenceInMinutes } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate } from "react-router-dom";
+import { useBookingAttendance } from "@/hooks/useBookingAttendance";
+import { toast } from "sonner";
 
 const CarerAppointments: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const { user } = useCarerAuth();
+  const navigate = useNavigate();
+  const bookingAttendance = useBookingAttendance();
 
   // Get appointments from database
   const { data: appointments = [], isLoading } = useQuery({
@@ -77,6 +82,99 @@ const CarerAppointments: React.FC = () => {
     if (isYesterday(date)) return "Yesterday";
     if (isThisWeek(date)) return format(date, "EEEE");
     return format(date, "MMM dd, yyyy");
+  };
+
+  // Check if appointment can be started (within 30 minutes of start time)
+  const canStartAppointment = (appointment: any) => {
+    const now = new Date();
+    const startTime = new Date(appointment.start_time);
+    const minutesDiff = differenceInMinutes(startTime, now);
+    
+    return (
+      (appointment.status === 'assigned' || appointment.status === 'scheduled') &&
+      minutesDiff <= 30 && minutesDiff >= -30 // Within 30 minutes before or after
+    );
+  };
+
+  const handleStartVisit = async (appointment: any) => {
+    try {
+      // Navigate to visit workflow
+      navigate(`/carer-dashboard/visit/${appointment.id}`);
+    } catch (error) {
+      console.error('Error starting visit:', error);
+      toast.error('Failed to start visit');
+    }
+  };
+
+  const getActionButton = (appointment: any) => {
+    const status = appointment.status?.toLowerCase();
+    
+    if (status === 'completed') {
+      return (
+        <Button variant="outline" size="sm" className="flex items-center gap-2">
+          <Eye className="h-4 w-4" />
+          View Details
+        </Button>
+      );
+    }
+    
+    if (status === 'in-progress') {
+      return (
+        <Button 
+          size="sm" 
+          className="flex items-center gap-2"
+          onClick={() => navigate(`/carer-dashboard/visit/${appointment.id}`)}
+        >
+          <ArrowRight className="h-4 w-4" />
+          Continue Visit
+        </Button>
+      );
+    }
+    
+    if (canStartAppointment(appointment)) {
+      return (
+        <Button 
+          size="sm" 
+          className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+          onClick={() => handleStartVisit(appointment)}
+        >
+          <Play className="h-4 w-4" />
+          Start Visit
+        </Button>
+      );
+    }
+    
+    return null;
+  };
+
+  const getTimeInfo = (appointment: any) => {
+    const now = new Date();
+    const startTime = new Date(appointment.start_time);
+    const minutesDiff = differenceInMinutes(startTime, now);
+    
+    if (Math.abs(minutesDiff) <= 30 && appointment.status !== 'completed') {
+      if (minutesDiff > 0) {
+        return (
+          <div className="text-xs text-amber-600 font-medium">
+            Starts in {minutesDiff} minutes
+          </div>
+        );
+      } else if (minutesDiff < 0) {
+        return (
+          <div className="text-xs text-red-600 font-medium">
+            Started {Math.abs(minutesDiff)} minutes ago
+          </div>
+        );
+      } else {
+        return (
+          <div className="text-xs text-green-600 font-medium">
+            Starting now
+          </div>
+        );
+      }
+    }
+    
+    return null;
   };
 
   if (isLoading) {
@@ -170,6 +268,8 @@ const CarerAppointments: React.FC = () => {
                         <span>{appointment.clients.phone}</span>
                       </div>
                     )}
+                    
+                    {getTimeInfo(appointment)}
                   </div>
                   
                   <div className="flex flex-col items-end gap-2">
@@ -181,6 +281,7 @@ const CarerAppointments: React.FC = () => {
                         £{appointment.revenue}
                       </div>
                     )}
+                    {getActionButton(appointment)}
                   </div>
                 </div>
               </CardContent>
