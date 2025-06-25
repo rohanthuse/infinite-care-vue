@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -24,6 +23,11 @@ export interface CreateReviewData {
   rating: number;
   comment?: string | null;
   service_type: string;
+}
+
+export interface UpdateReviewData {
+  rating: number;
+  comment?: string;
 }
 
 const fetchClientReviews = async (clientId: string): Promise<ClientReview[]> => {
@@ -112,6 +116,39 @@ export const useCreateReview = () => {
     onError: (error) => {
       console.error('Failed to submit review:', error);
       toast.error('Failed to submit review. Please try again.');
+    },
+  });
+};
+
+export const useUpdateReview = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ reviewId, updateData }: { reviewId: string; updateData: UpdateReviewData }) => {
+      const { data, error } = await supabase
+        .from('reviews')
+        .update(updateData)
+        .eq('id', reviewId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating review:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success('Review updated successfully!');
+      
+      // Invalidate and refetch reviews
+      queryClient.invalidateQueries({ queryKey: ['client-reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['existing-review'] });
+    },
+    onError: (error) => {
+      console.error('Failed to update review:', error);
+      toast.error('Failed to update review. Please try again.');
     },
   });
 };
