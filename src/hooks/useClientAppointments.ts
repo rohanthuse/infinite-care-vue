@@ -1,6 +1,6 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
 
 export interface ClientAppointment {
   id: string;
@@ -16,6 +16,26 @@ export interface ClientAppointment {
   created_at: string;
   updated_at: string;
 }
+
+// Helper function to format time from UTC timestamp without timezone conversion
+const formatTimeFromUTC = (utcTimestamp: string): string => {
+  const date = new Date(utcTimestamp);
+  const hours = date.getUTCHours();
+  const minutes = date.getUTCMinutes();
+  
+  // Convert to 12-hour format
+  let displayHours = hours;
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  
+  if (hours === 0) {
+    displayHours = 12;
+  } else if (hours > 12) {
+    displayHours = hours - 12;
+  }
+  
+  const formattedMinutes = minutes.toString().padStart(2, '0');
+  return `${displayHours}:${formattedMinutes} ${ampm}`;
+};
 
 const fetchClientAppointments = async (clientId: string): Promise<ClientAppointment[]> => {
   if (!clientId) {
@@ -56,8 +76,8 @@ const fetchClientAppointments = async (clientId: string): Promise<ClientAppointm
   const transformedData: ClientAppointment[] = (data || []).map((booking: any) => {
     const startTime = new Date(booking.start_time);
     const appointmentDate = startTime.toISOString().split('T')[0]; // YYYY-MM-DD format
-    // Format time properly for display (12-hour format with AM/PM)
-    const appointmentTime = format(startTime, 'h:mm a');
+    // Use our custom function to format time without timezone conversion
+    const appointmentTime = formatTimeFromUTC(booking.start_time);
     
     // Map booking status to appointment status
     let appointmentStatus = booking.status;
