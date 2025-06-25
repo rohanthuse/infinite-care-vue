@@ -300,17 +300,13 @@ export const AdminsTable = () => {
           onClose={() => {
             setIsPermissionsDialogOpen(false);
             setSelectedAdmin(null);
+            refetch(); // Refetch data when dialog closes
           }}
           adminId={selectedAdmin.id}
           branchId={selectedAdmin.branch_id || ''}
           adminName={selectedAdmin.first_name && selectedAdmin.last_name 
             ? `${selectedAdmin.first_name} ${selectedAdmin.last_name}` 
             : selectedAdmin.email}
-          onPermissionsUpdated={() => {
-            refetch();
-            setIsPermissionsDialogOpen(false);
-            setSelectedAdmin(null);
-          }}
         />
       )}
     </div>
