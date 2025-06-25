@@ -1,373 +1,314 @@
-import { ArrowUpDown, MoreHorizontal, Search, ChevronLeft, ChevronRight, UserPlus, Loader2, Users, Shield } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { useState, useMemo, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { motion } from "framer-motion";
-import { AddAdminForm } from "@/components/AddAdminForm";
-import { EditAdminPermissionsDialog } from "@/components/EditAdminPermissionsDialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { AddAdminForm } from "./AddAdminForm";
+import { EditAdminPermissionsDialog } from "./EditAdminPermissionsDialog";
+import { Search, Plus, Settings, Trash2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface AdminData {
   id: string;
-  name: string;
   email: string;
-  phone: string;
-  branch: string;
-  branchId: string | null;
-  status: "Active" | "Inactive" | "Pending";
+  first_name?: string;
+  last_name?: string;
+  role: string;
+  branch_name?: string;
+  branch_id?: string;
+  created_at: string;
+  has_permissions: boolean;
 }
 
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
-export function AdminsTable() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showAddAdminModal, setShowAddAdminModal] = useState(false);
-  const [showInactive, setShowInactive] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+export const AdminsTable = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<AdminData | null>(null);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
 
-  const { data: admins, isLoading, error } = useQuery({
-    queryKey: ['branchAdmins'],
+  // Fetch all branch admins with proper joins
+  const { data: admins = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['branch-admins'],
     queryFn: async () => {
-      console.log('[AdminsTable] Starting admin query...');
+      console.log('Fetching branch admins...');
       
-      // Step 1: Get all users with branch_admin role
-      const { data: adminRoles, error: rolesError } = await supabase
+      const { data, error } = await supabase
         .from('user_roles')
-        .select('user_id')
+        .select(`
+          user_id,
+          role,
+          profiles!inner(
+            id,
+            email,
+            first_name,
+            last_name
+          ),
+          admin_branches(
+            branch_id,
+            branches(
+              id,
+              name
+            )
+          ),
+          admin_permissions(
+            id
+          )
+        `)
         .eq('role', 'branch_admin');
 
-      if (rolesError) {
-        console.error('[AdminsTable] Error fetching admin roles:', rolesError);
-        throw rolesError;
+      if (error) {
+        console.error('Error fetching admins:', error);
+        throw error;
       }
 
-      console.log('[AdminsTable] Found admin role users:', adminRoles);
+      console.log('Raw admin data:', data);
 
-      if (!adminRoles || adminRoles.length === 0) {
-        console.log('[AdminsTable] No admin roles found');
-        return [];
-      }
+      const transformedData: AdminData[] = data.map((item: any) => ({
+        id: item.user_id,
+        email: item.profiles.email,
+        first_name: item.profiles.first_name,
+        last_name: item.profiles.last_name,
+        role: item.role,
+        branch_name: item.admin_branches?.[0]?.branches?.name || 'No Branch',
+        branch_id: item.admin_branches?.[0]?.branch_id,
+        created_at: new Date().toISOString(), // We don't have this field, using current date
+        has_permissions: item.admin_permissions?.length > 0,
+      }));
 
-      const adminIds = adminRoles.map(r => r.user_id);
-      console.log('[AdminsTable] Admin IDs:', adminIds);
-
-      // Step 2: Get profiles for these admin users
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, email, phone, status')
-        .in('id', adminIds);
-      
-      if (profilesError) {
-        console.error('[AdminsTable] Error fetching profiles:', profilesError);
-        throw profilesError;
-      }
-
-      console.log('[AdminsTable] Found profiles:', profiles);
-
-      // Step 3: Get branch assignments for these admins
-      const { data: branchAssignments, error: branchError } = await supabase
-        .from('admin_branches')
-        .select('admin_id, branch_id')
-        .in('admin_id', adminIds);
-
-      if (branchError) {
-        console.error('[AdminsTable] Error fetching branch assignments:', branchError);
-        throw branchError;
-      }
-
-      console.log('[AdminsTable] Found branch assignments:', branchAssignments);
-
-      // Step 4: Get branch information
-      let branchInfo: any[] = [];
-      if (branchAssignments && branchAssignments.length > 0) {
-        const branchIds = branchAssignments.map(ba => ba.branch_id);
-        const { data: branches, error: branchInfoError } = await supabase
-          .from('branches')
-          .select('id, name')
-          .in('id', branchIds);
-
-        if (branchInfoError) {
-          console.error('[AdminsTable] Error fetching branch info:', branchInfoError);
-          throw branchInfoError;
-        }
-
-        branchInfo = branches || [];
-        console.log('[AdminsTable] Found branch info:', branchInfo);
-      }
-
-      // Step 5: Combine all data
-      const adminData: AdminData[] = (profiles || []).map((profile): AdminData => {
-        // Find branch assignments for this admin
-        const adminBranches = branchAssignments?.filter(ba => ba.admin_id === profile.id) || [];
-        
-        // Get branch names
-        const branchNames = adminBranches.map(ab => {
-          const branch = branchInfo.find(b => b.id === ab.branch_id);
-          return branch?.name || 'Unknown Branch';
-        });
-
-        return {
-          id: profile.id,
-          name: profile.first_name && profile.last_name ? `${profile.last_name}, ${profile.first_name}` : 'N/A',
-          email: profile.email ?? 'N/A',
-          phone: profile.phone ?? 'N/A',
-          branch: branchNames.length > 0 ? branchNames.join(', ') : 'Unassigned',
-          branchId: adminBranches.length > 0 ? adminBranches[0].branch_id : null,
-          status: capitalize(profile.status || 'pending') as AdminData['status'],
-        };
-      });
-
-      console.log('[AdminsTable] Final admin data:', adminData);
-      return adminData;
-    }
+      console.log('Transformed admin data:', transformedData);
+      return transformedData;
+    },
   });
 
-  const filteredData = useMemo(() => {
-    if (!admins) return [];
-    return admins.filter(item => {
-      const matchesSearch = !searchQuery.trim() ||
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.branch.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesStatus = showInactive ? item.status === "Inactive" : true;
-      
-      return matchesSearch && matchesStatus;
-    });
-  }, [admins, searchQuery, showInactive]);
+  const handleDeleteAdmin = async (adminId: string) => {
+    try {
+      // Delete admin permissions first
+      const { error: permissionsError } = await supabase
+        .from('admin_permissions')
+        .delete()
+        .eq('admin_id', adminId);
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-  
-  const toggleInactiveAdmins = () => {
-    setShowInactive(!showInactive);
+      if (permissionsError) {
+        console.error('Error deleting admin permissions:', permissionsError);
+      }
+
+      // Delete admin-branch association
+      const { error: branchError } = await supabase
+        .from('admin_branches')
+        .delete()
+        .eq('admin_id', adminId);
+
+      if (branchError) {
+        console.error('Error deleting admin-branch association:', branchError);
+      }
+
+      // Delete user role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', adminId)
+        .eq('role', 'branch_admin');
+
+      if (roleError) {
+        console.error('Error deleting user role:', roleError);
+        throw roleError;
+      }
+
+      toast.success("Admin deleted successfully");
+      refetch();
+    } catch (error: any) {
+      console.error('Delete admin error:', error);
+      toast.error("Failed to delete admin: " + error.message);
+    }
   };
 
-  const onAdminAdded = () => {
-    queryClient.invalidateQueries({ queryKey: ['branchAdmins'] });
-    setShowAddAdminModal(false);
+  const filteredAdmins = admins.filter((admin) =>
+    admin.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    `${admin.first_name} ${admin.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    admin.branch_name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (error) {
+    return (
+      <div className="p-4 text-center">
+        <p className="text-red-600">Error loading admins: {error.message}</p>
+        <Button onClick={() => refetch()} className="mt-2">
+          Try Again
+        </Button>
+      </div>
+    );
   }
 
-  const handleEditPermissions = (admin: AdminData) => {
-    if (!admin.branchId) {
-      toast({
-        title: "Cannot Edit Permissions",
-        description: "This admin is not assigned to a branch.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setSelectedAdmin(admin);
-    setIsEditModalOpen(true);
-  };
-
-  const getStatusBadgeClass = (status: AdminData['status']) => {
-    switch (status) {
-      case 'Active':
-        return 'bg-green-100 text-green-800';
-      case 'Inactive':
-        return 'bg-red-100 text-red-800';
-      case 'Pending':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-  
   return (
-    <div className="w-full p-6">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6 mb-8">
-        <h2 className="text-xl font-bold text-gray-800 flex items-center">
-          Branch Admins
-        </h2>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input 
-              type="text" 
-              value={searchQuery}
-              onChange={handleSearch}
-              placeholder="Search admins..." 
-              className="pl-10 pr-4 py-2 border border-gray-200/80 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300 h-10 bg-white/90 w-full sm:w-[280px]"
-            />
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className={`font-medium border-gray-200/80 hover:bg-gray-50/80 rounded-full px-6 ${showInactive ? 'text-blue-600' : ''}`}
-            onClick={toggleInactiveAdmins}
-          >
-            {showInactive ? "Hide Inactive Admins" : "Show Inactive Admins"}
-          </Button>
-          <Button 
-            variant="default" 
-            size="sm" 
-            className="flex items-center hover:bg-blue-700 text-white font-medium rounded-full px-6"
-            onClick={() => setShowAddAdminModal(true)}
-          >
-            <UserPlus className="h-4 w-4 mr-2" /> New Admin
-          </Button>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search admins..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
+        <Button
+          onClick={() => setIsAddFormOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Admin
+        </Button>
       </div>
-      
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-100/60 overflow-hidden"
-      >
-        <div className="overflow-x-auto p-1">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50/80 text-gray-700">
-              <tr>
-                <th className="text-left p-4 font-semibold">
-                  <Button variant="ghost" size="sm" className="font-semibold flex items-center -ml-3 hover:bg-gray-100/80">
-                    Full Name
-                    <ArrowUpDown className="ml-1 h-4 w-4 text-gray-500" />
-                  </Button>
-                </th>
-                <th className="text-left p-4 font-semibold hidden md:table-cell">
-                  <Button variant="ghost" size="sm" className="font-semibold flex items-center -ml-3 hover:bg-gray-100/80">
-                    Email
-                    <ArrowUpDown className="ml-1 h-4 w-4 text-gray-500" />
-                  </Button>
-                </th>
-                <th className="text-left p-4 font-semibold hidden md:table-cell">
-                  <Button variant="ghost" size="sm" className="font-semibold flex items-center -ml-3 hover:bg-gray-100/80">
-                    Number
-                    <ArrowUpDown className="ml-1 h-4 w-4 text-gray-500" />
-                  </Button>
-                </th>
-                <th className="text-left p-4 font-semibold hidden lg:table-cell">
-                  <Button variant="ghost" size="sm" className="font-semibold flex items-center -ml-3 hover:bg-gray-100/80">
-                    Branches
-                    <ArrowUpDown className="ml-1 h-4 w-4 text-gray-500" />
-                  </Button>
-                </th>
-                <th className="text-left p-4 font-semibold">
-                  <Button variant="ghost" size="sm" className="font-semibold flex items-center -ml-3 hover:bg-gray-100/80">
-                    Status
-                    <ArrowUpDown className="ml-1 h-4 w-4 text-gray-500" />
-                  </Button>
-                </th>
-                <th className="text-center p-4 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="text-center p-8">
-                    <div className="flex justify-center items-center">
-                      <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                      <span className="ml-2 text-gray-600">Loading Admins...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : error ? (
-                 <tr>
-                  <td colSpan={6} className="text-center p-8 text-red-600">
-                    Error fetching admins: {(error as Error).message}
-                  </td>
-                </tr>
-              ) : filteredData.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center p-16 text-gray-500">
-                    <div className="flex flex-col items-center gap-4">
-                      <Users className="w-16 h-16 text-gray-300" />
-                      <h3 className="text-xl font-semibold text-gray-700 mt-2">No Admins Found</h3>
-                      <p className="max-w-sm text-center">There are currently no branch admins in the system. Get started by adding your first administrator.</p>
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        className="flex items-center hover:bg-blue-700 text-white font-medium rounded-full px-6 mt-4"
-                        onClick={() => setShowAddAdminModal(true)}
-                      >
-                        <UserPlus className="h-4 w-4 mr-2" /> New Admin
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredData.map((admin, index) => (
-                  <motion.tr 
-                    key={admin.id} 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="border-t border-gray-100/60 hover:bg-gray-50/30 transition-colors"
-                  >
-                    <td className="p-4 font-medium text-gray-800">{admin.name}</td>
-                    <td className="p-4 text-gray-700 hidden md:table-cell">{admin.email}</td>
-                    <td className="p-4 text-gray-700 hidden md:table-cell">{admin.phone}</td>
-                    <td className="p-4 text-gray-700 hidden lg:table-cell">{admin.branch}</td>
-                    <td className="p-4">
-                      <Badge className={`${getStatusBadgeClass(admin.status)} hover:bg-opacity-80 font-medium border-0 rounded-full px-3`}>
-                        {admin.status}
-                      </Badge>
-                    </td>
-                    <td className="p-4 text-center">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100/80">
-                            <MoreHorizontal className="h-4 w-4 text-gray-600" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View Details</DropdownMenuItem>
-                          <DropdownMenuItem>Edit Details</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditPermissions(admin)}>
-                            <Shield className="mr-2 h-4 w-4" />
-                            Edit Permissions
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">Deactivate</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </motion.tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        <div className="border-t border-gray-100/60 px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-gray-50/50">
-          <div className="text-gray-600 font-medium text-sm">Showing 1 to {filteredData.length} of {filteredData.length} entries</div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled className="font-medium border-gray-200/80 rounded-full">
-              <ChevronLeft className="h-4 w-4 mr-1" /> Previous
-            </Button>
-            <Button variant="outline" size="sm" className="bg-blue-50/80 border-blue-200/80 text-blue-700 font-medium rounded-full">1</Button>
-            <Button variant="outline" size="sm" disabled className="font-medium border-gray-200/80 rounded-full">
-              Next <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
-          </div>
-        </div>
-      </motion.div>
 
-      <AddAdminForm 
-        isOpen={showAddAdminModal} 
-        onClose={() => setShowAddAdminModal(false)}
-        onAdminAdded={onAdminAdded}
+      {/* Table */}
+      <div className="border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Branch</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Permissions</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8">
+                  <div className="flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                    Loading admins...
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : filteredAdmins.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                  {searchTerm ? "No admins match your search." : "No admins found."}
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredAdmins.map((admin) => (
+                <TableRow key={admin.id}>
+                  <TableCell className="font-medium">
+                    {admin.first_name && admin.last_name
+                      ? `${admin.first_name} ${admin.last_name}`
+                      : 'N/A'}
+                  </TableCell>
+                  <TableCell>{admin.email}</TableCell>
+                  <TableCell>
+                    <span className="text-sm font-medium">
+                      {admin.branch_name}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="capitalize">
+                      {admin.role.replace('_', ' ')}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge 
+                      variant={admin.has_permissions ? "default" : "destructive"}
+                      className="text-xs"
+                    >
+                      {admin.has_permissions ? "Configured" : "Not Set"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedAdmin(admin);
+                          setIsPermissionsDialogOpen(true);
+                        }}
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Admin</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this admin? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteAdmin(admin.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Add Admin Form */}
+      <AddAdminForm
+        isOpen={isAddFormOpen}
+        onClose={() => setIsAddFormOpen(false)}
+        onAdminAdded={() => {
+          refetch();
+          setIsAddFormOpen(false);
+        }}
       />
 
-      {selectedAdmin && selectedAdmin.branchId && (
+      {/* Edit Permissions Dialog */}
+      {selectedAdmin && (
         <EditAdminPermissionsDialog
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          adminId={selectedAdmin.id}
-          branchId={selectedAdmin.branchId}
-          adminName={selectedAdmin.name}
+          isOpen={isPermissionsDialogOpen}
+          onClose={() => {
+            setIsPermissionsDialogOpen(false);
+            setSelectedAdmin(null);
+          }}
+          admin={selectedAdmin}
+          onPermissionsUpdated={() => {
+            refetch();
+            setIsPermissionsDialogOpen(false);
+            setSelectedAdmin(null);
+          }}
         />
       )}
     </div>
   );
-}
+};
