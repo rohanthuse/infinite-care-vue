@@ -26,13 +26,13 @@ const BranchDetails = () => {
 
   const handleNavigateToBranchAdmins = () => {
     toast.success("Navigating to Branch Admins dashboard");
-    navigate('/branch-admins');
+    navigate('/admin/branch-admins');
   };
 
   const handleNavigateToBranchDashboard = () => {
     toast.success("Navigating to Branch Dashboard");
     if (branchData) {
-      navigate(`/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.name)}`);
+      navigate(`/admin/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.name)}`);
     }
   };
 
@@ -82,7 +82,7 @@ const BranchDetails = () => {
                 <Button 
                   variant="outline" 
                   className="mt-6"
-                  onClick={() => navigate('/branch')}
+                  onClick={() => navigate('/admin/branch')}
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Branches
@@ -96,7 +96,7 @@ const BranchDetails = () => {
                   variant="outline" 
                   size="icon"
                   className="rounded-full border-gray-200"
-                  onClick={() => navigate('/branch')}
+                  onClick={() => navigate('/admin/branch')}
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
@@ -325,7 +325,7 @@ const BranchDetails = () => {
                 <Button 
                   variant="outline" 
                   className="mt-6"
-                  onClick={() => navigate('/branch')}
+                  onClick={() => navigate('/admin/branch')}
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Branches

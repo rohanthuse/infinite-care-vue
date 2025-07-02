@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import AdminRoutes from "./routes/AdminRoutes";
@@ -49,6 +49,11 @@ const App = () => (
               <Route path="/super-admin" element={<SuperAdminLogin />} />
               <Route path="/client-login" element={<ClientLogin />} />
               
+              {/* Legacy route redirects - handle the current problematic route */}
+              <Route path="/branch-details/:id" element={<Navigate to="/admin/branch-details/:id" replace />} />
+              <Route path="/branch" element={<Navigate to="/admin/branch" replace />} />
+              <Route path="/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
+              
               {/* Carer Authentication Routes */}
               <Route path="/carer-login" element={<CarerLogin />} />
               <Route path="/carer-onboarding" element={<CarerOnboarding />} />
@@ -71,7 +76,7 @@ const App = () => (
               {/* Carer Dashboard Routes */}
               <Route path="/carer-dashboard/*" element={<CarerRoutes />} />
               
-              {/* Admin Routes */}
+              {/* Admin Routes - All admin routes are now properly nested */}
               <Route path="/admin/*" element={<AdminRoutes />} />
             </Routes>
           </BrowserRouter>

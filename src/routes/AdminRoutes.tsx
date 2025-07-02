@@ -36,6 +36,8 @@ import ClientEdit from "@/pages/client/ClientEdit";
 const RequireAdminAuth = () => {
   const { session, loading } = useAuth();
 
+  console.log('RequireAdminAuth - Auth state:', { session: !!session, loading });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -45,6 +47,7 @@ const RequireAdminAuth = () => {
   }
 
   if (!session) {
+    console.log('RequireAdminAuth - No session, redirecting to super-admin');
     return <Navigate to="/super-admin" replace />;
   }
 
@@ -52,6 +55,8 @@ const RequireAdminAuth = () => {
 };
 
 const AdminRoutes = () => {
+  console.log('AdminRoutes - Rendering admin routes');
+  
   return (
     <Routes>
       <Route element={<RequireAdminAuth />}>

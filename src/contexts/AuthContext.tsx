@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout | null = null;
     
     console.log('AuthProvider - Setting up authentication...');
     
@@ -31,15 +32,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (error) {
           console.error('AuthProvider - Session error:', error);
-          setError(error.message);
+          if (mounted) {
+            setError(error.message);
+          }
         } else {
           console.log('AuthProvider - Initial session:', session ? 'Found' : 'None');
-        }
-        
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          if (!error) {
+          if (mounted) {
+            setSession(session);
+            setUser(session?.user ?? null);
             setError(null);
           }
         }
@@ -65,32 +65,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
         setError(null);
         setLoading(false);
+        
+        // Clear timeout when we get a successful auth state change
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
       }
     });
 
     // Then get initial session
     getSession();
 
-    // Set a timeout to ensure we don't stay loading forever
-    const timeout = setTimeout(() => {
-      if (mounted && loading) {
-        console.warn('AuthProvider - Auth loading timed out, proceeding without authentication');
+    // Set a timeout only if we don't have a session after reasonable time
+    timeoutId = setTimeout(() => {
+      if (mounted && loading && !session) {
+        console.warn('AuthProvider - Auth loading timed out');
         setLoading(false);
-        setError('Authentication timeout');
+        setError('Authentication timeout - please try logging in again');
       }
-    }, 8000); // Reduced timeout to 8 seconds
+    }, 10000); // 10 second timeout
 
     return () => {
       console.log('AuthProvider - Cleaning up...');
       mounted = false;
       subscription.unsubscribe();
-      clearTimeout(timeout);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     };
   }, []);
 
   const signOut = async () => {
     try {
       console.log('AuthProvider - Signing out...');
+      setError(null);
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('AuthProvider - Sign out error:', error);
@@ -118,7 +127,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     error 
   });
 
-  // Always render children, but show loading state when needed
   return (
     <AuthContext.Provider value={value}>
       {children}
