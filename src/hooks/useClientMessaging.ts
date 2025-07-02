@@ -1,7 +1,7 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from './useUserRole';
+import { useClientAuth } from '@/contexts/ClientAuthContext';
 import { toast } from 'sonner';
 
 export interface ClientContact {
@@ -50,8 +50,8 @@ const parseAttachments = (attachments: any): any[] => {
   }
 };
 
-// Enhanced session validation helper
-const validateSession = async () => {
+// Simplified session validation for client messaging
+const validateClientSession = async () => {
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   
@@ -65,16 +65,10 @@ const validateSession = async () => {
     throw new Error('Not authenticated - please log in again');
   }
   
-  // Check if session is expired
-  if (session.expires_at && new Date(session.expires_at * 1000) <= new Date()) {
-    console.error('[useClientMessaging] Session expired');
-    throw new Error('Session expired - please log in again');
-  }
-  
-  console.log('[useClientMessaging] Session validated:', {
+  console.log('[useClientMessaging] Session validated for client messaging:', {
     userId: user.id,
     email: user.email,
-    expiresAt: session.expires_at ? new Date(session.expires_at * 1000) : 'never'
+    hasSession: !!session
   });
   
   return { session, user };
@@ -82,52 +76,83 @@ const validateSession = async () => {
 
 // Get client's care administrators (only admins assigned to their branch)
 export const useClientCareTeam = () => {
-  const { data: currentUser } = useUserRole();
+  const { user, session, isAuthenticated, clientProfile } = useClientAuth();
   
   return useQuery({
-    queryKey: ['client-care-team'],
+    queryKey: ['client-care-team', user?.id, clientProfile?.id],
     queryFn: async (): Promise<ClientContact[]> => {
-      if (!currentUser) {
-        console.log('[useClientCareTeam] No current user');
+      console.log('[useClientCareTeam] Starting query with auth state:', {
+        hasUser: !!user,
+        hasSession: !!session,
+        isAuthenticated,
+        hasClientProfile: !!clientProfile,
+        clientId: clientProfile?.id,
+        userEmail: user?.email
+      });
+
+      if (!isAuthenticated || !user || !session) {
+        console.log('[useClientCareTeam] Not authenticated, returning empty array');
         return [];
       }
 
       // Validate session before making database queries
       try {
-        await validateSession();
+        await validateClientSession();
       } catch (error: any) {
         console.error('[useClientCareTeam] Session validation failed:', error);
+        toast.error('Authentication issue. Please try refreshing the page.');
         return [];
       }
 
-      // Get current client info from localStorage and verify with database
-      const clientId = localStorage.getItem("clientId");
-      const clientEmail = localStorage.getItem("clientEmail") || currentUser.email;
+      // Get client info - prioritize clientProfile from context, fallback to localStorage
+      const clientId = clientProfile?.id || localStorage.getItem("clientId");
+      const clientEmail = clientProfile?.email || user.email || localStorage.getItem("clientEmail");
       
-      console.log('[useClientCareTeam] Client info:', { clientId, clientEmail, currentUserId: currentUser.id });
+      console.log('[useClientCareTeam] Client identification:', { 
+        clientId, 
+        clientEmail,
+        profileId: clientProfile?.id,
+        userEmail: user.email
+      });
 
       if (!clientId && !clientEmail) {
         console.log('[useClientCareTeam] No client identification available');
+        toast.error('Client information not found. Please try logging out and back in.');
         return [];
       }
 
-      // Get client record to find branch
-      let clientQuery = supabase.from('clients').select('id, branch_id, email');
+      // Get client record to find branch - handle both ID and email lookup
+      let clientQuery = supabase.from('clients').select('id, branch_id, email, first_name, last_name');
       
       if (clientId) {
         clientQuery = clientQuery.eq('id', clientId);
-      } else {
+      } else if (clientEmail) {
         clientQuery = clientQuery.eq('email', clientEmail);
       }
 
       const { data: client, error: clientError } = await clientQuery.single();
 
-      if (clientError || !client?.branch_id) {
+      if (clientError) {
         console.error('[useClientCareTeam] Client lookup error:', clientError);
+        if (clientError.code === 'PGRST116') {
+          toast.error('Client profile not found. Please contact support.');
+        } else {
+          toast.error('Error loading client information.');
+        }
         return [];
       }
 
-      console.log('[useClientCareTeam] Found client:', client);
+      if (!client?.branch_id) {
+        console.error('[useClientCareTeam] Client has no branch assigned');
+        toast.error('No branch assigned to your account. Please contact support.');
+        return [];
+      }
+
+      console.log('[useClientCareTeam] Found client:', {
+        id: client.id,
+        branchId: client.branch_id,
+        name: `${client.first_name} ${client.last_name}`
+      });
 
       // Get only admins for this branch
       const { data: adminBranches, error: adminError } = await supabase
@@ -145,19 +170,24 @@ export const useClientCareTeam = () => {
 
       if (adminError) {
         console.error('[useClientCareTeam] Admin lookup error:', adminError);
+        toast.error('Error loading care coordinators.');
         return [];
       }
 
       const contacts: ClientContact[] = [];
 
       // Add only admins
-      if (adminBranches) {
+      if (adminBranches && adminBranches.length > 0) {
         adminBranches.forEach(admin => {
           if (admin.profiles) {
+            const firstName = admin.profiles.first_name || '';
+            const lastName = admin.profiles.last_name || '';
+            const fullName = `${firstName} ${lastName}`.trim() || 'Care Coordinator';
+            
             contacts.push({
               id: admin.admin_id,
-              name: `${admin.profiles.first_name || ''} ${admin.profiles.last_name || ''}`.trim() || 'Admin',
-              avatar: `${admin.profiles.first_name?.charAt(0) || 'A'}${admin.profiles.last_name?.charAt(0) || 'D'}`,
+              name: fullName,
+              avatar: `${firstName.charAt(0) || 'C'}${lastName.charAt(0) || 'C'}`,
               type: 'admin',
               status: 'online',
               unread: 0,
@@ -168,11 +198,27 @@ export const useClientCareTeam = () => {
         });
       }
 
-      console.log('[useClientCareTeam] Found contacts:', contacts);
+      console.log('[useClientCareTeam] Successfully loaded contacts:', {
+        count: contacts.length,
+        contacts: contacts.map(c => ({ id: c.id, name: c.name, email: c.email }))
+      });
+
+      if (contacts.length === 0) {
+        console.warn('[useClientCareTeam] No care coordinators found for branch:', client.branch_id);
+        toast.error('No care coordinators found. Please contact support.');
+      }
+
       return contacts;
     },
-    enabled: !!currentUser,
+    enabled: isAuthenticated && !!user && !!session,
     staleTime: 300000, // 5 minutes
+    retry: (failureCount, error) => {
+      // Don't retry on authentication errors
+      if (error.message?.includes('not authenticated') || error.message?.includes('Session validation failed')) {
+        return false;
+      }
+      return failureCount < 2; // Retry up to 2 times for other errors
+    },
   });
 };
 
@@ -353,7 +399,7 @@ export const useClientThreadMessages = (threadId: string) => {
 // Send a message to existing thread with enhanced validation
 export const useClientSendMessage = () => {
   const queryClient = useQueryClient();
-  const { data: currentUser } = useUserRole();
+  const { user } = useClientAuth();
 
   return useMutation({
     mutationFn: async ({ 
@@ -364,13 +410,13 @@ export const useClientSendMessage = () => {
       content: string; 
     }) => {
       // Enhanced session validation
-      const { session, user } = await validateSession();
+      const { session, user: validatedUser } = await validateClientSession();
 
       const { data, error } = await supabase
         .from('messages')
         .insert({
           thread_id: threadId,
-          sender_id: user.id,
+          sender_id: validatedUser.id,
           sender_type: 'client',
           content,
           has_attachments: false,
@@ -409,7 +455,7 @@ export const useClientSendMessage = () => {
 // Create a new message thread with enhanced validation
 export const useClientCreateThread = () => {
   const queryClient = useQueryClient();
-  const { data: currentUser } = useUserRole();
+  const { user, clientProfile } = useClientAuth();
 
   return useMutation({
     mutationFn: async ({ 
@@ -428,15 +474,15 @@ export const useClientCreateThread = () => {
       console.log('[useClientCreateThread] Starting thread creation...');
       
       // Enhanced session validation
-      const { session, user } = await validateSession();
+      const { session, user: validatedUser } = await validateClientSession();
       
-      console.log('[useClientCreateThread] Session validated for user:', user.id, user.email);
+      console.log('[useClientCreateThread] Session validated for user:', validatedUser.id, validatedUser.email);
 
       // Verify user has client role
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
+        .eq('user_id', validatedUser.id)
         .single();
 
       if (roleError || roleData?.role !== 'client') {
@@ -447,8 +493,8 @@ export const useClientCreateThread = () => {
       console.log('[useClientCreateThread] Role verified:', roleData.role);
 
       // Get client information
-      const clientId = localStorage.getItem("clientId");
-      const clientName = localStorage.getItem("clientName") || user.email?.split('@')[0] || 'Client';
+      const clientId = clientProfile?.id || localStorage.getItem("clientId");
+      const clientName = clientProfile?.first_name || localStorage.getItem("clientName") || validatedUser.email?.split('@')[0] || 'Client';
       
       if (!clientId) {
         console.error('[useClientCreateThread] No client ID found');
@@ -473,15 +519,10 @@ export const useClientCreateThread = () => {
       const threadData = {
         subject,
         branch_id: client.branch_id,
-        created_by: user.id
+        created_by: validatedUser.id
       };
 
       console.log('[useClientCreateThread] Creating thread with data:', threadData);
-      console.log('[useClientCreateThread] Current session context:', {
-        userId: user.id,
-        email: user.email,
-        sessionValid: session.expires_at ? new Date(session.expires_at * 1000) > new Date() : true
-      });
 
       const { data: thread, error: threadError } = await supabase
         .from('message_threads')
@@ -495,7 +536,7 @@ export const useClientCreateThread = () => {
         // Enhanced error handling for RLS violations
         if (threadError.message?.includes('row-level security')) {
           console.error('[useClientCreateThread] RLS violation - auth context:', {
-            authUid: user.id,
+            authUid: validatedUser.id,
             threadCreatedBy: threadData.created_by,
             sessionExpiry: session.expires_at
           });
@@ -511,7 +552,7 @@ export const useClientCreateThread = () => {
       const participants = [
         {
           thread_id: thread.id,
-          user_id: user.id,
+          user_id: validatedUser.id,
           user_type: 'client',
           user_name: clientName
         },
@@ -541,7 +582,7 @@ export const useClientCreateThread = () => {
         .from('messages')
         .insert({
           thread_id: thread.id,
-          sender_id: user.id,
+          sender_id: validatedUser.id,
           sender_type: 'client',
           content: initialMessage
         });
