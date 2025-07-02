@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { 
   X, Send, Clock, ChevronDown, Save, BadgeCheck, Building2, 
@@ -21,37 +22,20 @@ import {
   DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
 import { Paperclip } from "lucide-react";
-
-const mockCarers = [
-  { id: "carer-1", name: "Charuma, Charmaine", avatar: "CC", type: "carer" },
-  { id: "carer-2", name: "Warren, Susan", avatar: "WS", type: "carer" },
-  { id: "carer-3", name: "Ayo-Famure, Opeyemi", avatar: "AF", type: "carer" },
-  { id: "carer-4", name: "Smith, John", avatar: "SJ", type: "carer" },
-];
-
-const mockClients = [
-  { id: "client-1", name: "Pender, Eva", avatar: "EP", type: "client" },
-  { id: "client-2", name: "Fulcher, Patricia", avatar: "FP", type: "client" },
-  { id: "client-3", name: "Baulch, Ursula", avatar: "BU", type: "client" },
-  { id: "client-4", name: "Ren, Victoria", avatar: "RV", type: "client" },
-];
-
-const mockTemplates = [
-  { id: "template-1", name: "Appointment Confirmation", content: "Dear [Name],\n\nThis is to confirm your appointment scheduled for [Date] at [Time].\n\nPlease let us know if you need to reschedule.\n\nBest regards,\nMed-Infinite Team" },
-  { id: "template-2", name: "Schedule Change", content: "Dear [Name],\n\nWe would like to inform you about a change in your schedule.\n\nOriginal schedule: [Original Date/Time]\nNew schedule: [New Date/Time]\n\nPlease confirm if this works for you.\n\nBest regards,\nMed-Infinite Team" },
-  { id: "template-3", name: "Medication Reminder", content: "Dear [Name],\n\nThis is a friendly reminder about your medication schedule.\n\nPlease ensure you follow the prescribed dosage and timing for optimal health benefits.\n\nBest regards,\nMed-Infinite Team" },
-];
+import { useAvailableContacts, useUnifiedCreateThread, useUnifiedSendMessage } from "@/hooks/useUnifiedMessaging";
 
 interface MessageComposerProps {
   branchId: string;
   onClose: () => void;
   selectedContactId?: string | null;
+  selectedThreadId?: string | null;
 }
 
 export const MessageComposer = ({ 
   branchId, 
   onClose,
-  selectedContactId 
+  selectedContactId,
+  selectedThreadId 
 }: MessageComposerProps) => {
   const [subject, setSubject] = useState("");
   const [content, setContent] = useState("");
@@ -59,9 +43,6 @@ export const MessageComposer = ({
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [files, setFiles] = useState<File[]>([]);
   const [messageType, setMessageType] = useState("");
-  const [branchAdmin, setBranchAdmin] = useState("");
-  const [staff, setStaff] = useState("");
-  const [client, setClient] = useState("");
   const [actionRequired, setActionRequired] = useState(false);
   const [adminEyesOnly, setAdminEyesOnly] = useState(false);
   const [notificationMethods, setNotificationMethods] = useState({
@@ -74,9 +55,11 @@ export const MessageComposer = ({
   const [selectedContacts, setSelectedContacts] = useState<{
     carers: string[];
     clients: string[];
+    admins: string[];
   }>({
     carers: [],
-    clients: []
+    clients: [],
+    admins: []
   });
 
   const [fontFamily, setFontFamily] = useState("Sans Serif");
@@ -85,38 +68,38 @@ export const MessageComposer = ({
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
 
+  const { data: availableContacts = [] } = useAvailableContacts();
+  const createThread = useUnifiedCreateThread();
+  const sendMessage = useUnifiedSendMessage();
+  
+  const isReply = !!selectedThreadId;
+
   useEffect(() => {
     if (selectedContactId) {
-      const isCarer = mockCarers.some(carer => carer.id === selectedContactId);
-      const isClient = mockClients.some(client => client.id === selectedContactId);
-      
-      if (isCarer) {
-        setSelectedContacts(prev => ({
-          ...prev,
-          carers: [selectedContactId]
-        }));
-      } else if (isClient) {
-        setSelectedContacts(prev => ({
-          ...prev,
-          clients: [selectedContactId]
-        }));
+      const contact = availableContacts.find(c => c.id === selectedContactId);
+      if (contact) {
+        if (contact.type === 'carer') {
+          setSelectedContacts(prev => ({
+            ...prev,
+            carers: [selectedContactId]
+          }));
+        } else if (contact.type === 'client') {
+          setSelectedContacts(prev => ({
+            ...prev,
+            clients: [selectedContactId]
+          }));
+        } else if (contact.type === 'admin') {
+          setSelectedContacts(prev => ({
+            ...prev,
+            admins: [selectedContactId]
+          }));
+        }
+        setRecipients([selectedContactId]);
       }
-      
-      setRecipients([selectedContactId]);
     }
-  }, [selectedContactId]);
+  }, [selectedContactId, availableContacts]);
 
-  const handleApplyTemplate = (templateId: string) => {
-    const template = mockTemplates.find(t => t.id === templateId);
-    if (template) {
-      setContent(template.content);
-      toast.success("Template applied", {
-        description: `Applied template: ${template.name}`
-      });
-    }
-  };
-
-  const handleContactToggle = (contactId: string, contactType: "carers" | "clients") => {
+  const handleContactToggle = (contactId: string, contactType: "carers" | "clients" | "admins") => {
     setSelectedContacts(prev => {
       const newSelected = { ...prev };
       if (newSelected[contactType].includes(contactId)) {
@@ -129,22 +112,16 @@ export const MessageComposer = ({
   };
 
   const handleApplyContacts = () => {
-    const allSelectedIds = [...selectedContacts.carers, ...selectedContacts.clients];
+    const allSelectedIds = [...selectedContacts.carers, ...selectedContacts.clients, ...selectedContacts.admins];
     setRecipients(allSelectedIds);
     setShowContactSelector(false);
   };
 
   const getContactDetails = (contactId: string) => {
-    const carer = mockCarers.find(c => c.id === contactId);
-    if (carer) return carer;
-    
-    const client = mockClients.find(c => c.id === contactId);
-    if (client) return client;
-    
-    return null;
+    return availableContacts.find(c => c.id === contactId);
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!messageType.trim()) {
       toast.error("Please select a message type");
       return;
@@ -165,19 +142,46 @@ export const MessageComposer = ({
       return;
     }
     
-    console.log("Sending message:", {
-      type: messageType,
-      subject,
-      content,
-      recipients,
-      priority,
-      adminEyesOnly,
-      actionRequired,
-      notificationMethods
-    });
-    
-    toast.success("Message sent successfully");
-    onClose();
+    try {
+      if (isReply && selectedThreadId) {
+        // Send reply to existing thread
+        await sendMessage.mutateAsync({
+          threadId: selectedThreadId,
+          content: content.trim()
+        });
+      } else {
+        // Create new thread
+        const recipientData = recipients.map(recipientId => {
+          const contact = availableContacts.find(c => c.id === recipientId);
+          return {
+            id: recipientId,
+            name: contact?.name || 'Unknown',
+            type: contact?.type || 'admin'
+          };
+        });
+
+        await createThread.mutateAsync({
+          recipientIds: recipientData.map(r => r.id),
+          recipientNames: recipientData.map(r => r.name),
+          recipientTypes: recipientData.map(r => r.type),
+          subject: subject.trim(),
+          initialMessage: content.trim()
+        });
+      }
+      
+      // Reset form
+      setContent("");
+      if (!isReply) {
+        setSubject("");
+        setRecipients([]);
+        setSelectedContacts({ carers: [], clients: [], admins: [] });
+      }
+      
+      onClose();
+    } catch (error: any) {
+      console.error('Send message error:', error);
+      toast.error(`Failed to send message: ${error.message || 'Unknown error'}`);
+    }
   };
 
   const handleSaveAsDraft = () => {
@@ -206,6 +210,8 @@ export const MessageComposer = ({
     }
   };
 
+  const isLoading = createThread.isPending || sendMessage.isPending;
+
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-gray-200 flex items-center justify-between">
@@ -213,7 +219,9 @@ export const MessageComposer = ({
           <Button variant="ghost" size="icon" className="md:hidden" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
-          <h2 className="text-lg font-semibold">New Message</h2>
+          <h2 className="text-lg font-semibold">
+            {isReply ? "Reply to Message" : "New Message"}
+          </h2>
           {adminEyesOnly && (
             <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">
               Admin Eyes Only
@@ -266,38 +274,124 @@ export const MessageComposer = ({
             </select>
           </div>
 
-          <div>
-            <Label htmlFor="branchAdmin" className="block text-sm font-medium mb-1">Branch Admin</Label>
-            <Input
-              id="branchAdmin"
-              value={branchAdmin}
-              onChange={(e) => setBranchAdmin(e.target.value)}
-            />
-          </div>
+          {!isReply && (
+            <>
+              <div>
+                <Label className="block text-sm font-medium mb-2">Recipients *</Label>
+                <div className="space-y-2">
+                  {recipients.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {recipients.map(recipientId => {
+                        const contact = getContactDetails(recipientId);
+                        return contact ? (
+                          <Badge key={recipientId} variant="secondary" className="flex items-center gap-1">
+                            {contact.name}
+                            <button
+                              onClick={() => setRecipients(prev => prev.filter(id => id !== recipientId))}
+                              className="ml-1 hover:text-red-600"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">No recipients selected</p>
+                  )}
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowContactSelector(!showContactSelector)}
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    {showContactSelector ? "Hide Contacts" : "Select Recipients"}
+                  </Button>
+                  
+                  {showContactSelector && (
+                    <div className="border rounded-md p-3 space-y-3 max-h-48 overflow-y-auto">
+                      {availableContacts.length > 0 ? (
+                        <>
+                          {availableContacts.filter(c => c.type === 'client').length > 0 && (
+                            <div>
+                              <Label className="text-sm font-medium">Clients</Label>
+                              <div className="space-y-1 mt-1">
+                                {availableContacts.filter(c => c.type === 'client').map(contact => (
+                                  <div key={contact.id} className="flex items-center space-x-2">
+                                    <Checkbox
+                                      checked={selectedContacts.clients.includes(contact.id)}
+                                      onCheckedChange={() => handleContactToggle(contact.id, 'clients')}
+                                    />
+                                    <Label className="text-sm">{contact.name}</Label>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {availableContacts.filter(c => c.type === 'carer').length > 0 && (
+                            <div>
+                              <Label className="text-sm font-medium">Carers</Label>
+                              <div className="space-y-1 mt-1">
+                                {availableContacts.filter(c => c.type === 'carer').map(contact => (
+                                  <div key={contact.id} className="flex items-center space-x-2">
+                                    <Checkbox
+                                      checked={selectedContacts.carers.includes(contact.id)}
+                                      onCheckedChange={() => handleContactToggle(contact.id, 'carers')}
+                                    />
+                                    <Label className="text-sm">{contact.name}</Label>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {availableContacts.filter(c => c.type === 'admin').length > 0 && (
+                            <div>
+                              <Label className="text-sm font-medium">Administrators</Label>
+                              <div className="space-y-1 mt-1">
+                                {availableContacts.filter(c => c.type === 'admin').map(contact => (
+                                  <div key={contact.id} className="flex items-center space-x-2">
+                                    <Checkbox
+                                      checked={selectedContacts.admins.includes(contact.id)}
+                                      onCheckedChange={() => handleContactToggle(contact.id, 'admins')}
+                                    />
+                                    <Label className="text-sm">{contact.name}</Label>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          <Button size="sm" onClick={handleApplyContacts}>
+                            Apply Selection
+                          </Button>
+                        </>
+                      ) : (
+                        <p className="text-sm text-gray-500">No contacts available</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="subject" className="block text-sm font-medium mb-1">Subject *</Label>
+                <Input
+                  id="subject"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder={messageType === "incident" ? "Incident Report - Brief Description" : "Enter subject"}
+                  className="w-full"
+                  required
+                />
+              </div>
+            </>
+          )}
 
           <div>
-            <Label htmlFor="staff" className="block text-sm font-medium mb-1">Carer</Label>
-            <Input
-              id="staff"
-              value={staff}
-              onChange={(e) => setStaff(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="subject" className="block text-sm font-medium mb-1">Subject *</Label>
-            <Input
-              id="subject"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder={messageType === "incident" ? "Incident Report - Brief Description" : "Enter subject"}
-              className="w-full"
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="content" className="block text-sm font-medium mb-1">Details *</Label>
+            <Label htmlFor="content" className="block text-sm font-medium mb-1">Message *</Label>
             <div className="mb-2 flex items-center gap-2 border border-gray-200 p-2 rounded-t-md bg-gray-50">
               <select 
                 value={fontFamily}
@@ -487,9 +581,21 @@ export const MessageComposer = ({
             <Button 
               size="sm"
               onClick={handleSendMessage}
+              disabled={
+                isLoading || 
+                !content.trim() || 
+                !messageType.trim() ||
+                (!isReply && (!subject.trim() || recipients.length === 0))
+              }
             >
-              <Send className="h-4 w-4 mr-2" />
-              Send Message
+              {isLoading ? (
+                <>Sending...</>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Send Message
+                </>
+              )}
             </Button>
           </div>
         </div>

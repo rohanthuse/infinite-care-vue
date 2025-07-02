@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from './useUserRole';
@@ -131,7 +132,7 @@ export const useClientCareTeam = () => {
   });
 };
 
-// Get client's message threads
+// Get client's message threads - now integrated with unified messaging system
 export const useClientMessageThreads = () => {
   const { data: currentUser } = useUserRole();
   
@@ -305,7 +306,7 @@ export const useClientThreadMessages = (threadId: string) => {
   });
 };
 
-// Send a message to existing thread
+// Send a message to existing thread - now using unified system
 export const useClientSendMessage = () => {
   const queryClient = useQueryClient();
   const { data: currentUser } = useUserRole();
@@ -346,6 +347,8 @@ export const useClientSendMessage = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['client-message-threads'] });
       queryClient.invalidateQueries({ queryKey: ['client-thread-messages', data.thread_id] });
+      queryClient.invalidateQueries({ queryKey: ['unified-message-threads'] });
+      queryClient.invalidateQueries({ queryKey: ['unified-thread-messages', data.thread_id] });
       toast.success('Message sent successfully');
     },
     onError: (error) => {
@@ -355,7 +358,7 @@ export const useClientSendMessage = () => {
   });
 };
 
-// Create a new message thread
+// Create a new message thread - now using unified system
 export const useClientCreateThread = () => {
   const queryClient = useQueryClient();
   const { data: currentUser } = useUserRole();
@@ -472,6 +475,7 @@ export const useClientCreateThread = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-message-threads'] });
+      queryClient.invalidateQueries({ queryKey: ['unified-message-threads'] });
       toast.success('Message sent successfully');
     },
     onError: (error: any) => {
