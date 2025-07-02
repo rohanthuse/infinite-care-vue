@@ -107,13 +107,16 @@ export const MessageComposer = ({
       } else {
         newSelected[contactType] = [...newSelected[contactType], contactId];
       }
+      
+      // Immediately update recipients when contacts are toggled
+      const allSelectedIds = [...newSelected.carers, ...newSelected.clients, ...newSelected.admins];
+      setRecipients(allSelectedIds);
+      
       return newSelected;
     });
   };
 
   const handleApplyContacts = () => {
-    const allSelectedIds = [...selectedContacts.carers, ...selectedContacts.clients, ...selectedContacts.admins];
-    setRecipients(allSelectedIds);
     setShowContactSelector(false);
   };
 
@@ -306,7 +309,7 @@ export const MessageComposer = ({
                     onClick={() => setShowContactSelector(!showContactSelector)}
                   >
                     <Users className="h-4 w-4 mr-2" />
-                    {showContactSelector ? "Hide Contacts" : "Select Recipients"}
+                    {showContactSelector ? "Hide Contacts" : `Select Recipients ${recipients.length > 0 ? `(${recipients.length} selected)` : ""}`}
                   </Button>
                   
                   {showContactSelector && (
@@ -364,9 +367,14 @@ export const MessageComposer = ({
                             </div>
                           )}
                           
-                          <Button size="sm" onClick={handleApplyContacts}>
-                            Apply Selection
-                          </Button>
+                          <div className="flex items-center justify-between pt-2">
+                            <span className="text-xs text-gray-500">
+                              {recipients.length} recipient{recipients.length !== 1 ? 's' : ''} selected
+                            </span>
+                            <Button size="sm" onClick={handleApplyContacts}>
+                              Done
+                            </Button>
+                          </div>
                         </>
                       ) : (
                         <p className="text-sm text-gray-500">No contacts available</p>
