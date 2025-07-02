@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import AdminRoutes from "./routes/AdminRoutes";
 import Index from "./pages/Index";
-import SuperAdminLogin from "./pages/SuperAdminLogin";
 import ClientLogin from "./pages/ClientLogin";
 import ClientDashboard from "./pages/ClientDashboard";
 import ClientOverview from "./pages/client/ClientOverview";
@@ -32,7 +31,6 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/super-admin" element={<SuperAdminLogin />} />
             <Route path="/client-login" element={<ClientLogin />} />
             
             {/* Client Dashboard Routes */}
