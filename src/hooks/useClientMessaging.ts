@@ -56,22 +56,42 @@ export const useClientCareTeam = () => {
   return useQuery({
     queryKey: ['client-care-team'],
     queryFn: async (): Promise<ClientContact[]> => {
-      if (!currentUser) return [];
+      if (!currentUser) {
+        console.log('[useClientCareTeam] No current user');
+        return [];
+      }
 
-      // Get current client info
+      // Get current client info from localStorage and verify with database
       const clientId = localStorage.getItem("clientId");
-      if (!clientId) return [];
+      const clientEmail = localStorage.getItem("clientEmail") || currentUser.email;
+      
+      console.log('[useClientCareTeam] Client info:', { clientId, clientEmail, currentUserId: currentUser.id });
 
-      const { data: client } = await supabase
-        .from('clients')
-        .select('branch_id')
-        .eq('id', clientId)
-        .single();
+      if (!clientId && !clientEmail) {
+        console.log('[useClientCareTeam] No client identification available');
+        return [];
+      }
 
-      if (!client?.branch_id) return [];
+      // Get client record to find branch
+      let clientQuery = supabase.from('clients').select('id, branch_id, email');
+      
+      if (clientId) {
+        clientQuery = clientQuery.eq('id', clientId);
+      } else {
+        clientQuery = clientQuery.eq('email', clientEmail);
+      }
 
-      // Get only admins for this branch (removed staff fetching)
-      const { data: adminBranches } = await supabase
+      const { data: client, error: clientError } = await clientQuery.single();
+
+      if (clientError || !client?.branch_id) {
+        console.error('[useClientCareTeam] Client lookup error:', clientError);
+        return [];
+      }
+
+      console.log('[useClientCareTeam] Found client:', client);
+
+      // Get only admins for this branch
+      const { data: adminBranches, error: adminError } = await supabase
         .from('admin_branches')
         .select(`
           admin_id,
@@ -84,6 +104,11 @@ export const useClientCareTeam = () => {
         `)
         .eq('branch_id', client.branch_id);
 
+      if (adminError) {
+        console.error('[useClientCareTeam] Admin lookup error:', adminError);
+        return [];
+      }
+
       const contacts: ClientContact[] = [];
 
       // Add only admins
@@ -92,7 +117,7 @@ export const useClientCareTeam = () => {
           if (admin.profiles) {
             contacts.push({
               id: admin.admin_id,
-              name: `${admin.profiles.first_name || ''} ${admin.profiles.last_name || ''}`,
+              name: `${admin.profiles.first_name || ''} ${admin.profiles.last_name || ''}`.trim() || 'Admin',
               avatar: `${admin.profiles.first_name?.charAt(0) || 'A'}${admin.profiles.last_name?.charAt(0) || 'D'}`,
               type: 'admin',
               status: 'online',
@@ -104,6 +129,7 @@ export const useClientCareTeam = () => {
         });
       }
 
+      console.log('[useClientCareTeam] Found contacts:', contacts);
       return contacts;
     },
     enabled: !!currentUser,
@@ -354,40 +380,81 @@ export const useClientCreateThread = () => {
       subject: string; 
       initialMessage: string 
     }) => {
-      if (!currentUser) throw new Error('Not authenticated');
-
-      const clientId = localStorage.getItem("clientId");
-      const clientName = localStorage.getItem("clientName");
+      console.log('[useClientCreateThread] Starting thread creation...');
       
-      if (!clientId || !clientName) throw new Error('Client information not found');
+      // Enhanced authentication check
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        console.error('[useClientCreateThread] Authentication error:', authError);
+        throw new Error('Not authenticated - please log in again');
+      }
+
+      console.log('[useClientCreateThread] Authenticated user:', user.id, user.email);
+
+      // Verify user has client role
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (roleError || roleData?.role !== 'client') {
+        console.error('[useClientCreateThread] Role verification failed:', { roleError, role: roleData?.role });
+        throw new Error('Access denied - client role required');
+      }
+
+      console.log('[useClientCreateThread] Role verified:', roleData.role);
+
+      // Get client information
+      const clientId = localStorage.getItem("clientId");
+      const clientName = localStorage.getItem("clientName") || user.email?.split('@')[0] || 'Client';
+      
+      if (!clientId) {
+        console.error('[useClientCreateThread] No client ID found');
+        throw new Error('Client information not found - please log in again');
+      }
 
       // Get client's branch
-      const { data: client } = await supabase
+      const { data: client, error: clientError } = await supabase
         .from('clients')
-        .select('branch_id')
+        .select('id, branch_id, first_name, last_name')
         .eq('id', clientId)
         .single();
 
-      if (!client?.branch_id) throw new Error('Client branch not found');
+      if (clientError || !client?.branch_id) {
+        console.error('[useClientCreateThread] Client lookup failed:', clientError);
+        throw new Error('Client profile not found');
+      }
 
-      // Create thread
+      console.log('[useClientCreateThread] Client data:', client);
+
+      // Create thread with explicit user context
+      const threadData = {
+        subject,
+        branch_id: client.branch_id,
+        created_by: user.id
+      };
+
+      console.log('[useClientCreateThread] Creating thread with data:', threadData);
+
       const { data: thread, error: threadError } = await supabase
         .from('message_threads')
-        .insert({
-          subject,
-          branch_id: client.branch_id,
-          created_by: currentUser.id
-        })
+        .insert(threadData)
         .select()
         .single();
 
-      if (threadError) throw threadError;
+      if (threadError) {
+        console.error('[useClientCreateThread] Thread creation failed:', threadError);
+        throw new Error(`Failed to create message thread: ${threadError.message}`);
+      }
+
+      console.log('[useClientCreateThread] Thread created:', thread);
 
       // Add participants
       const participants = [
         {
           thread_id: thread.id,
-          user_id: currentUser.id,
+          user_id: user.id,
           user_type: 'client',
           user_name: clientName
         },
@@ -399,33 +466,44 @@ export const useClientCreateThread = () => {
         }
       ];
 
+      console.log('[useClientCreateThread] Adding participants:', participants);
+
       const { error: participantsError } = await supabase
         .from('message_participants')
         .insert(participants);
 
-      if (participantsError) throw participantsError;
+      if (participantsError) {
+        console.error('[useClientCreateThread] Participants creation failed:', participantsError);
+        throw new Error(`Failed to add participants: ${participantsError.message}`);
+      }
 
       // Send initial message
+      console.log('[useClientCreateThread] Sending initial message...');
+      
       const { error: messageError } = await supabase
         .from('messages')
         .insert({
           thread_id: thread.id,
-          sender_id: currentUser.id,
+          sender_id: user.id,
           sender_type: 'client',
           content: initialMessage
         });
 
-      if (messageError) throw messageError;
+      if (messageError) {
+        console.error('[useClientCreateThread] Initial message failed:', messageError);
+        throw new Error(`Failed to send initial message: ${messageError.message}`);
+      }
 
+      console.log('[useClientCreateThread] Thread creation completed successfully');
       return thread;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-message-threads'] });
       toast.success('Message sent successfully');
     },
-    onError: (error) => {
-      console.error('Create thread error:', error);
-      toast.error('Failed to send message');
+    onError: (error: any) => {
+      console.error('[useClientCreateThread] Final error:', error);
+      toast.error(`Failed to send message: ${error.message}`);
     }
   });
 };

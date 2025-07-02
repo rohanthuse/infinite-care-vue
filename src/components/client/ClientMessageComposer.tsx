@@ -1,11 +1,13 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Send, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useClientCareTeam, useClientCreateThread, useClientSendMessage } from "@/hooks/useClientMessaging";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ClientMessageComposerProps {
   selectedContactId?: string | null;
@@ -23,6 +25,7 @@ export const ClientMessageComposer = ({
   const [recipientId, setRecipientId] = useState(selectedContactId || "");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [authDebugInfo, setAuthDebugInfo] = useState<any>(null);
   
   const { data: careTeam = [] } = useClientCareTeam();
   const createThread = useClientCreateThread();
@@ -30,9 +33,72 @@ export const ClientMessageComposer = ({
   
   const isReply = !!selectedThreadId;
   const selectedRecipient = careTeam.find(contact => contact.id === recipientId);
+
+  // Debug authentication on component mount
+  useEffect(() => {
+    const debugAuth = async () => {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        console.log('[ClientMessageComposer] Auth Debug:', {
+          session: session?.user?.id,
+          user: user?.id,
+          email: user?.email,
+          sessionError,
+          userError
+        });
+
+        // Check user role
+        if (user) {
+          const { data: roleData, error: roleError } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id)
+            .single();
+          
+          console.log('[ClientMessageComposer] Role Check:', {
+            userId: user.id,
+            role: roleData?.role,
+            roleError
+          });
+
+          setAuthDebugInfo({
+            userId: user.id,
+            email: user.email,
+            role: roleData?.role,
+            hasSession: !!session,
+            errors: { sessionError, userError, roleError }
+          });
+        }
+      } catch (error) {
+        console.error('[ClientMessageComposer] Auth debug error:', error);
+        toast.error('Authentication check failed. Please try logging in again.');
+      }
+    };
+
+    debugAuth();
+  }, []);
   
   const handleSend = async () => {
-    if (!message.trim()) return;
+    if (!message.trim()) {
+      toast.error('Please enter a message');
+      return;
+    }
+
+    // Verify authentication before sending
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error('Please log in to send messages');
+      return;
+    }
+
+    console.log('[ClientMessageComposer] Sending message with auth:', {
+      userId: user.id,
+      isReply,
+      recipientId,
+      threadId: selectedThreadId
+    });
     
     try {
       if (isReply && selectedThreadId) {
@@ -43,10 +109,24 @@ export const ClientMessageComposer = ({
         });
       } else {
         // Create new thread
-        if (!recipientId || !subject.trim()) return;
+        if (!recipientId || !subject.trim()) {
+          toast.error('Please select a recipient and enter a subject');
+          return;
+        }
         
         const recipient = careTeam.find(contact => contact.id === recipientId);
-        if (!recipient) return;
+        if (!recipient) {
+          toast.error('Selected recipient not found');
+          return;
+        }
+        
+        console.log('[ClientMessageComposer] Creating thread with recipient:', {
+          recipientId: recipient.id,
+          recipientName: recipient.name,
+          recipientType: recipient.type,
+          subject: subject.trim(),
+          messageLength: message.trim().length
+        });
         
         await createThread.mutateAsync({
           recipientId: recipient.id,
@@ -65,8 +145,17 @@ export const ClientMessageComposer = ({
       }
       
       onSend();
-    } catch (error) {
-      console.error('Failed to send message:', error);
+    } catch (error: any) {
+      console.error('[ClientMessageComposer] Send error:', error);
+      
+      // Provide specific error messages based on the error type
+      if (error.message?.includes('row-level security')) {
+        toast.error('Permission denied. Please ensure you are properly logged in as a client.');
+      } else if (error.message?.includes('not authenticated')) {
+        toast.error('Authentication expired. Please log in again.');
+      } else {
+        toast.error(`Failed to send message: ${error.message || 'Unknown error'}`);
+      }
     }
   };
   
@@ -83,6 +172,13 @@ export const ClientMessageComposer = ({
           <X className="h-4 w-4" />
         </Button>
       </div>
+      
+      {/* Debug info for development */}
+      {authDebugInfo && process.env.NODE_ENV === 'development' && (
+        <div className="p-2 bg-yellow-50 text-xs border-b">
+          Auth: {authDebugInfo.email} | Role: {authDebugInfo.role} | Session: {authDebugInfo.hasSession ? 'Yes' : 'No'}
+        </div>
+      )}
       
       {/* Content - Scrollable */}
       <div className="flex-1 overflow-y-auto p-4">
@@ -161,7 +257,7 @@ export const ClientMessageComposer = ({
               }
             >
               {isLoading ? (
-                <>Loading...</>
+                <>Sending...</>
               ) : (
                 <>
                   <Send className="h-4 w-4 mr-2" />
