@@ -59,7 +59,7 @@ const App = () => (
             </Route>
             
             {/* Carer Dashboard Routes */}
-            {CarerRoutes()}
+            <CarerRoutes />
             
             {/* Admin Routes */}
             <Route path="/admin/*" element={<AdminRoutes />} />
