@@ -60,16 +60,13 @@ const ClientDashboard = () => {
     }
   }, [location]);
   
-  // Enhanced client authentication verification
+  // Verify client authentication
   useEffect(() => {
     const checkClientAuth = async () => {
       try {
-        console.log('[ClientDashboard] Checking client authentication...');
-        
         // Check if user type is client (for backward compatibility)
         const userType = localStorage.getItem("userType");
         if (userType !== "client") {
-          console.log('[ClientDashboard] User type is not client:', userType);
           navigate("/client-login", { replace: true });
           return;
         }
@@ -78,34 +75,27 @@ const ClientDashboard = () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
-          console.log('[ClientDashboard] No session found');
           // No session, redirect to login
           localStorage.removeItem("userType");
           localStorage.removeItem("clientName");
           localStorage.removeItem("clientId");
-          localStorage.removeItem("userRole");
-          localStorage.removeItem("userId");
           navigate("/client-login", { replace: true });
           return;
         }
 
-        console.log('[ClientDashboard] Session found for user:', session.user.email);
-
         // Verify the user is actually a client in our database
         const { data: clientData, error } = await supabase
           .from('clients')
-          .select('id, first_name, last_name, status, branch_id')
+          .select('id, first_name, last_name, status')
           .eq('email', session.user.email)
           .single();
 
         if (error || !clientData) {
-          console.error('[ClientDashboard] Client verification failed:', error);
+          console.error('Client verification failed:', error);
           await supabase.auth.signOut();
           localStorage.removeItem("userType");
           localStorage.removeItem("clientName");
           localStorage.removeItem("clientId");
-          localStorage.removeItem("userRole");
-          localStorage.removeItem("userId");
           toast({
             title: "Access Denied",
             description: "You are not authorized to access this area.",
@@ -115,15 +105,12 @@ const ClientDashboard = () => {
           return;
         }
 
-        // Check client status
+        // Fix: Use case-insensitive comparison for status check
         if (clientData.status?.toLowerCase() !== 'active') {
-          console.log('[ClientDashboard] Client account not active:', clientData.status);
           await supabase.auth.signOut();
           localStorage.removeItem("userType");
           localStorage.removeItem("clientName");
           localStorage.removeItem("clientId");
-          localStorage.removeItem("userRole");
-          localStorage.removeItem("userId");
           toast({
             title: "Account Inactive",
             description: "Your account is not active. Please contact support.",
@@ -133,40 +120,12 @@ const ClientDashboard = () => {
           return;
         }
 
-        // Ensure client has proper role assignment
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .eq('role', 'client')
-          .single();
-
-        if (!roleData) {
-          console.log('[ClientDashboard] Adding missing client role for user:', session.user.id);
-          
-          // Add client role
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .insert({
-              user_id: session.user.id,
-              role: 'client'
-            });
-
-          if (roleError) {
-            console.error('[ClientDashboard] Error adding client role:', roleError);
-          }
-        }
-
         // Update local storage with current client info
         localStorage.setItem("clientName", clientData.first_name);
         localStorage.setItem("clientId", clientData.id);
-        localStorage.setItem("userRole", "client");
-        localStorage.setItem("userId", session.user.id);
-        
-        console.log('[ClientDashboard] Client authentication verified successfully');
         
       } catch (error) {
-        console.error('[ClientDashboard] Auth check error:', error);
+        console.error('Auth check error:', error);
         navigate("/client-login", { replace: true });
       } finally {
         setIsLoading(false);
@@ -179,14 +138,10 @@ const ClientDashboard = () => {
   // Set up auth state listener
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('[ClientDashboard] Auth state change:', event);
-      
       if (event === 'SIGNED_OUT') {
         localStorage.removeItem("userType");
         localStorage.removeItem("clientName");
         localStorage.removeItem("clientId");
-        localStorage.removeItem("userRole");
-        localStorage.removeItem("userId");
         navigate("/client-login", { replace: true });
       }
     });
