@@ -51,8 +51,9 @@ export const useAdminContacts = () => {
     queryFn: async (): Promise<AdminContact[]> => {
       console.log('[useAdminContacts] Current user:', currentUser);
       
-      if (!currentUser || (currentUser.role !== 'branch_admin' && currentUser.role !== 'super_admin')) {
-        console.log('[useAdminContacts] User not authorized for admin contacts');
+      // Remove strict role check - allow any authenticated user to fetch contacts
+      if (!currentUser) {
+        console.log('[useAdminContacts] No current user found');
         return [];
       }
 
@@ -63,17 +64,33 @@ export const useAdminContacts = () => {
       
       if (currentUser.role === 'super_admin') {
         // Super admin can see all branches
+        const { data: branches, error: branchError } = await supabase
+          .from('branches')
+          .select('id, name');
+        
+        if (branchError) {
+          console.error('[useAdminContacts] Error fetching branches:', branchError);
+          return [];
+        }
+        branchIds = branches?.map(b => b.id) || [];
+      } else if (currentUser.role === 'branch_admin') {
+        // Regular admin - get their assigned branches
+        const { data: adminBranches, error: adminBranchError } = await supabase
+          .from('admin_branches')
+          .select('branch_id')
+          .eq('admin_id', currentUser.id);
+        
+        if (adminBranchError) {
+          console.error('[useAdminContacts] Error fetching admin branches:', adminBranchError);
+          return [];
+        }
+        branchIds = adminBranches?.map(ab => ab.branch_id) || [];
+      } else {
+        // For other user types, try to get all branches as fallback
         const { data: branches } = await supabase
           .from('branches')
           .select('id, name');
         branchIds = branches?.map(b => b.id) || [];
-      } else {
-        // Regular admin - get their assigned branches
-        const { data: adminBranches } = await supabase
-          .from('admin_branches')
-          .select('branch_id')
-          .eq('admin_id', currentUser.id);
-        branchIds = adminBranches?.map(ab => ab.branch_id) || [];
       }
 
       console.log('[useAdminContacts] Branch IDs found:', branchIds);
@@ -82,8 +99,8 @@ export const useAdminContacts = () => {
         return [];
       }
 
-      // Get clients for these branches - handle multiple active status values
-      const { data: clients } = await supabase
+      // Get clients for these branches - simplified query with NULL status handling
+      const { data: clients, error: clientError } = await supabase
         .from('clients')
         .select(`
           id, 
@@ -91,11 +108,14 @@ export const useAdminContacts = () => {
           last_name, 
           email,
           branch_id,
-          status,
-          branches!inner(name)
+          status
         `)
         .in('branch_id', branchIds)
-        .not('status', 'in', '("Former","Closed Enquiries","Inactive")');
+        .or('status.is.null,status.not.in.("Former","Closed Enquiries","Inactive")');
+
+      if (clientError) {
+        console.error('[useAdminContacts] Error fetching clients:', clientError);
+      }
 
       console.log('[useAdminContacts] Clients found:', clients?.length || 0);
       if (clients) {
@@ -116,13 +136,13 @@ export const useAdminContacts = () => {
             unread: 0,
             email: client.email,
             role: 'client',
-            branchName: client.branches?.name
+            branchName: undefined // Remove branch name reference for now
           });
         });
       }
 
-      // Get carers for these branches - handle case insensitive status
-      const { data: carers } = await supabase
+      // Get carers for these branches - simplified query with error handling
+      const { data: carers, error: carerError } = await supabase
         .from('staff')
         .select(`
           id, 
@@ -130,11 +150,14 @@ export const useAdminContacts = () => {
           last_name, 
           email,
           branch_id,
-          status,
-          branches!inner(name)
+          status
         `)
         .in('branch_id', branchIds)
-        .ilike('status', 'active');
+        .or('status.is.null,status.ilike.active');
+
+      if (carerError) {
+        console.error('[useAdminContacts] Error fetching carers:', carerError);
+      }
 
       console.log('[useAdminContacts] Carers found:', carers?.length || 0);
       if (carers) {
@@ -155,7 +178,7 @@ export const useAdminContacts = () => {
             unread: 0,
             email: carer.email,
             role: 'carer',
-            branchName: carer.branches?.name
+            branchName: undefined // Remove branch name reference for now
           });
         });
       }
@@ -288,7 +311,7 @@ export const useAdminContacts = () => {
       console.log('[useAdminContacts] Total contacts found:', contacts.length);
       return contacts.sort((a, b) => a.name.localeCompare(b.name));
     },
-    enabled: !!currentUser && (currentUser.role === 'branch_admin' || currentUser.role === 'super_admin'),
+    enabled: !!currentUser, // Enable for all authenticated users
     staleTime: 300000, // 5 minutes
   });
 };
