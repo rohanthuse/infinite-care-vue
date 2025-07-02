@@ -57,9 +57,13 @@ export const ClientContactSidebarFixed = ({
         </div>
 
         {error && (
-          <div className="mt-2 p-2 bg-red-50 rounded-md text-xs text-red-700">
-            <p>Error loading care coordinators: {error.message}</p>
-            <p className="mt-1 text-xs">Please check your internet connection and try refreshing the page.</p>
+          <div className="mt-2 p-3 bg-red-50 rounded-md border border-red-200">
+            <div className="text-sm text-red-800 font-medium mb-1">
+              Unable to load care coordinators
+            </div>
+            <p className="text-xs text-red-700">
+              {error.message}
+            </p>
           </div>
         )}
       </div>
@@ -80,6 +84,24 @@ export const ClientContactSidebarFixed = ({
                 </div>
               </div>
             ))}
+          </div>
+        ) : error ? (
+          <div className="p-4 text-center text-gray-500">
+            <div className="space-y-3">
+              <div className="text-red-500 text-sm font-medium">
+                Configuration Issue
+              </div>
+              <p className="text-xs text-gray-600">
+                Your account needs to be properly configured with care coordinators. 
+                Please contact your administrator or support team.
+              </p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="text-xs text-blue-600 hover:text-blue-800 underline"
+              >
+                Try refreshing the page
+              </button>
+            </div>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
@@ -120,13 +142,13 @@ export const ClientContactSidebarFixed = ({
               </div>
             ))}
             
-            {filteredContacts.length === 0 && !isLoading && (
+            {filteredContacts.length === 0 && !isLoading && !error && (
               <div className="p-4 text-center text-gray-500">
                 {careTeam.length === 0 ? (
                   <div className="space-y-2">
                     <p>No care coordinators found</p>
                     <p className="text-xs text-gray-400">
-                      If you believe this is an error, please contact support.
+                      Please contact support to have care coordinators assigned to your account.
                     </p>
                   </div>
                 ) : (

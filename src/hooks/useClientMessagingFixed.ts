@@ -103,12 +103,12 @@ export const useClientCareTeamFixed = () => {
 
       if (!clientBranchId) {
         console.log('[useClientCareTeamFixed] No client branch found');
-        return [];
+        throw new Error('Client branch not found. Please contact support to ensure your account is properly configured.');
       }
 
       console.log('[useClientCareTeamFixed] Loading admins for branch:', clientBranchId);
 
-      // Get only admins for this branch
+      // Get only admins for this branch with improved error handling
       const { data: adminBranches, error } = await supabase
         .from('admin_branches')
         .select(`
@@ -124,36 +124,42 @@ export const useClientCareTeamFixed = () => {
 
       if (error) {
         console.error('[useClientCareTeamFixed] Error loading admin branches:', error);
-        return [];
+        throw new Error('Unable to load care coordinators. Please try again or contact support.');
+      }
+
+      if (!adminBranches || adminBranches.length === 0) {
+        console.log('[useClientCareTeamFixed] No admin branches found for branch:', clientBranchId);
+        throw new Error('No care coordinators are assigned to your branch. Please contact support to have care coordinators assigned.');
       }
 
       const contacts: ClientContact[] = [];
 
       // Add only admins
-      if (adminBranches) {
-        console.log('[useClientCareTeamFixed] Found admin branches:', adminBranches.length);
-        
-        adminBranches.forEach(admin => {
-          if (admin.profiles) {
-            const firstName = admin.profiles.first_name || 'Admin';
-            const lastName = admin.profiles.last_name || '';
-            const fullName = `${firstName} ${lastName}`.trim();
-            
-            contacts.push({
-              id: admin.admin_id,
-              name: fullName,
-              avatar: `${firstName.charAt(0)}${lastName.charAt(0) || 'A'}`,
-              type: 'admin',
-              status: 'online',
-              unread: 0,
-              email: admin.profiles.email,
-              role: 'admin'
-            });
-          }
-        });
-      }
+      adminBranches.forEach(admin => {
+        if (admin.profiles) {
+          const firstName = admin.profiles.first_name || 'Admin';
+          const lastName = admin.profiles.last_name || '';
+          const fullName = `${firstName} ${lastName}`.trim();
+          
+          contacts.push({
+            id: admin.admin_id,
+            name: fullName,
+            avatar: `${firstName.charAt(0)}${lastName.charAt(0) || 'A'}`,
+            type: 'admin',
+            status: 'online',
+            unread: 0,
+            email: admin.profiles.email,
+            role: 'admin'
+          });
+        }
+      });
 
       console.log('[useClientCareTeamFixed] Returning contacts:', contacts.length);
+      
+      if (contacts.length === 0) {
+        throw new Error('No care coordinators found. Please contact support.');
+      }
+      
       return contacts;
     },
     enabled: !!currentUser,
