@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from './useUserRole';
@@ -106,7 +105,7 @@ export const useClientCareTeam = () => {
 
       const contacts: ClientContact[] = [];
 
-      // Add only admins
+      // Add only admins with explicit type casting
       if (adminBranches) {
         adminBranches.forEach(admin => {
           if (admin.profiles) {
@@ -114,8 +113,8 @@ export const useClientCareTeam = () => {
               id: admin.admin_id,
               name: `${admin.profiles.first_name || ''} ${admin.profiles.last_name || ''}`.trim() || 'Admin',
               avatar: `${admin.profiles.first_name?.charAt(0) || 'A'}${admin.profiles.last_name?.charAt(0) || 'D'}`,
-              type: 'admin',
-              status: 'online',
+              type: 'admin' as const, // Explicitly cast to 'admin'
+              status: 'online' as const,
               unread: 0,
               email: admin.profiles.email,
               role: 'admin'
@@ -207,7 +206,7 @@ export const useClientMessageThreads = () => {
             id: p.user_id,
             name: p.user_name,
             avatar: p.user_name.split(' ').map(n => n.charAt(0)).join(''),
-            type: p.user_type === 'carer' ? 'carer' : 'admin',
+            type: p.user_type === 'carer' ? 'carer' as const : 'admin' as const,
             status: 'online' as const,
             unread: 0
           })).filter(p => p.id !== currentUser.id) || [];
