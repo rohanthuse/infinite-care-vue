@@ -10,7 +10,7 @@ export interface AdminContact {
   id: string;
   name: string;
   avatar: string;
-  type: 'carer' | 'client' | 'branch_admin';
+  type: 'carer' | 'client' | 'branch_admin' | 'super_admin';
   status: 'online' | 'offline' | 'away';
   unread: number;
   email?: string;
@@ -100,20 +100,24 @@ export const useAdminContacts = () => {
       console.log('[useAdminContacts] Clients found:', clients?.length || 0);
       if (clients) {
         clients.forEach(client => {
-          // Only include clients that have either an email or both first and last name
-          if (client.email || (client.first_name && client.last_name)) {
-            contacts.push({
-              id: client.id,
-              name: `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.email?.split('@')[0] || 'Client',
-              avatar: `${client.first_name?.charAt(0) || 'C'}${client.last_name?.charAt(0) || 'L'}`,
-              type: 'client' as const,
-              status: 'online' as const,
-              unread: 0,
-              email: client.email,
-              role: 'client',
-              branchName: client.branches?.name
-            });
-          }
+          // Include clients that have names, with fallback display logic
+          const firstName = client.first_name || '';
+          const lastName = client.last_name || '';
+          const displayName = `${firstName} ${lastName}`.trim() || 
+                             client.email?.split('@')[0] || 
+                             `Client ${client.id.slice(0, 8)}`;
+          
+          contacts.push({
+            id: client.id,
+            name: displayName,
+            avatar: `${firstName.charAt(0) || 'C'}${lastName.charAt(0) || 'L'}`,
+            type: 'client' as const,
+            status: 'online' as const,
+            unread: 0,
+            email: client.email,
+            role: 'client',
+            branchName: client.branches?.name
+          });
         });
       }
 
@@ -135,20 +139,24 @@ export const useAdminContacts = () => {
       console.log('[useAdminContacts] Carers found:', carers?.length || 0);
       if (carers) {
         carers.forEach(carer => {
-          // Only include carers that have either an email or both first and last name
-          if (carer.email || (carer.first_name && carer.last_name)) {
-            contacts.push({
-              id: carer.id,
-              name: `${carer.first_name || ''} ${carer.last_name || ''}`.trim() || carer.email?.split('@')[0] || 'Carer',
-              avatar: `${carer.first_name?.charAt(0) || 'C'}${carer.last_name?.charAt(0) || 'R'}`,
-              type: 'carer' as const,
-              status: 'online' as const,
-              unread: 0,
-              email: carer.email,
-              role: 'carer',
-              branchName: carer.branches?.name
-            });
-          }
+          // Include carers with fallback display logic
+          const firstName = carer.first_name || '';
+          const lastName = carer.last_name || '';
+          const displayName = `${firstName} ${lastName}`.trim() || 
+                             carer.email?.split('@')[0] || 
+                             `Carer ${carer.id.slice(0, 8)}`;
+          
+          contacts.push({
+            id: carer.id,
+            name: displayName,
+            avatar: `${firstName.charAt(0) || 'C'}${lastName.charAt(0) || 'R'}`,
+            type: 'carer' as const,
+            status: 'online' as const,
+            unread: 0,
+            email: carer.email,
+            role: 'carer',
+            branchName: carer.branches?.name
+          });
         });
       }
 
@@ -174,22 +182,26 @@ export const useAdminContacts = () => {
             .select('id, first_name, last_name, email')
             .in('id', adminUserIds);
 
-          if (adminProfiles) {
+           if (adminProfiles) {
             adminProfiles.forEach(admin => {
-              if (admin.email || (admin.first_name && admin.last_name)) {
-                const adminRole = allAdmins.find(r => r.user_id === admin.id);
-                contacts.push({
-                  id: admin.id,
-                  name: `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || admin.email?.split('@')[0] || 'Admin',
-                  avatar: `${admin.first_name?.charAt(0) || 'A'}${admin.last_name?.charAt(0) || 'D'}`,
-                  type: 'branch_admin' as const,
-                  status: 'online' as const,
-                  unread: 0,
-                  email: admin.email,
-                  role: adminRole?.role || 'branch_admin',
-                  branchName: undefined
-                });
-              }
+              const adminRole = allAdmins.find(r => r.user_id === admin.id);
+              const firstName = admin.first_name || '';
+              const lastName = admin.last_name || '';
+              const displayName = `${firstName} ${lastName}`.trim() || 
+                                 admin.email?.split('@')[0] || 
+                                 `Admin ${admin.id.slice(0, 8)}`;
+              
+              contacts.push({
+                id: admin.id,
+                name: displayName,
+                avatar: `${firstName.charAt(0) || 'A'}${lastName.charAt(0) || 'D'}`,
+                type: adminRole?.role === 'super_admin' ? 'super_admin' as const : 'branch_admin' as const,
+                status: 'online' as const,
+                unread: 0,
+                email: admin.email,
+                role: adminRole?.role || 'branch_admin',
+                branchName: undefined
+              });
             });
           }
         }
@@ -209,24 +221,28 @@ export const useAdminContacts = () => {
             .select('id, first_name, last_name, email')
             .in('id', superAdminIds);
 
-          console.log('[useAdminContacts] Super admin profiles found:', superAdminProfiles?.length || 0);
-          if (superAdminProfiles) {
-            superAdminProfiles.forEach(admin => {
-              if (admin.email || (admin.first_name && admin.last_name)) {
-                contacts.push({
-                  id: admin.id,
-                  name: `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || admin.email?.split('@')[0] || 'Super Admin',
-                  avatar: `${admin.first_name?.charAt(0) || 'S'}${admin.last_name?.charAt(0) || 'A'}`,
-                  type: 'branch_admin' as const,
-                  status: 'online' as const,
-                  unread: 0,
-                  email: admin.email,
-                  role: 'super_admin',
-                  branchName: undefined
-                });
-              }
-            });
-          }
+           console.log('[useAdminContacts] Super admin profiles found:', superAdminProfiles?.length || 0);
+           if (superAdminProfiles) {
+             superAdminProfiles.forEach(admin => {
+               const firstName = admin.first_name || '';
+               const lastName = admin.last_name || '';
+               const displayName = `${firstName} ${lastName}`.trim() || 
+                                  admin.email?.split('@')[0] || 
+                                  `Super Admin ${admin.id.slice(0, 8)}`;
+               
+               contacts.push({
+                 id: admin.id,
+                 name: displayName,
+                 avatar: `${firstName.charAt(0) || 'S'}${lastName.charAt(0) || 'A'}`,
+                 type: 'super_admin' as const,
+                 status: 'online' as const,
+                 unread: 0,
+                 email: admin.email,
+                 role: 'super_admin',
+                 branchName: undefined
+               });
+             });
+           }
         }
 
         // Get other branch admins who share at least one branch
@@ -247,19 +263,23 @@ export const useAdminContacts = () => {
           console.log('[useAdminContacts] Branch admin profiles found:', branchAdminProfiles?.length || 0);
           if (branchAdminProfiles) {
             branchAdminProfiles.forEach(admin => {
-              if (admin.email || (admin.first_name && admin.last_name)) {
-                contacts.push({
-                  id: admin.id,
-                  name: `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || admin.email?.split('@')[0] || 'Branch Admin',
-                  avatar: `${admin.first_name?.charAt(0) || 'B'}${admin.last_name?.charAt(0) || 'A'}`,
-                  type: 'branch_admin' as const,
-                  status: 'online' as const,
-                  unread: 0,
-                  email: admin.email,
-                  role: 'branch_admin',
-                  branchName: undefined
-                });
-              }
+              const firstName = admin.first_name || '';
+              const lastName = admin.last_name || '';
+              const displayName = `${firstName} ${lastName}`.trim() || 
+                                 admin.email?.split('@')[0] || 
+                                 `Branch Admin ${admin.id.slice(0, 8)}`;
+              
+              contacts.push({
+                id: admin.id,
+                name: displayName,
+                avatar: `${firstName.charAt(0) || 'B'}${lastName.charAt(0) || 'A'}`,
+                type: 'branch_admin' as const,
+                status: 'online' as const,
+                unread: 0,
+                email: admin.email,
+                role: 'branch_admin',
+                branchName: undefined
+              });
             });
           }
         }

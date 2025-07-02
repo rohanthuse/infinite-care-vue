@@ -11,13 +11,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useContacts } from "@/hooks/useContacts";
+import { useAdminContacts } from "@/hooks/useAdminMessaging";
 import { useUserRole } from "@/hooks/useUserRole";
 
 interface ContactSidebarProps {
   branchId: string;
   onContactSelect: (contactId: string) => void;
-  contactType: "all" | "carers" | "clients" | "groups";
-  onContactTypeChange: (type: "all" | "carers" | "clients" | "groups") => void;
+  contactType: "all" | "carers" | "clients" | "admins" | "groups";
+  onContactTypeChange: (type: "all" | "carers" | "clients" | "admins" | "groups") => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
 }
@@ -32,7 +33,16 @@ export const ContactSidebar = ({
 }: ContactSidebarProps) => {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const { data: currentUser, isLoading: userLoading } = useUserRole();
-  const { data: contacts = [], isLoading: contactsLoading, error: contactsError } = useContacts(branchId, contactType);
+  
+  // Use different hooks based on user role
+  const isAdmin = currentUser?.role === 'super_admin' || currentUser?.role === 'branch_admin';
+  const { data: adminContacts = [], isLoading: adminContactsLoading, error: adminContactsError } = useAdminContacts();
+  const { data: regularContacts = [], isLoading: regularContactsLoading, error: regularContactsError } = useContacts(branchId, contactType);
+  
+  // Choose the appropriate contacts and loading states
+  const contacts = isAdmin ? adminContacts : regularContacts;
+  const contactsLoading = isAdmin ? adminContactsLoading : regularContactsLoading;
+  const contactsError = isAdmin ? adminContactsError : regularContactsError;
   
   console.log('ContactSidebar - Current user:', currentUser);
   console.log('ContactSidebar - Contacts:', contacts);
@@ -47,11 +57,24 @@ export const ContactSidebar = ({
     );
   };
   
-  // Filter contacts based on search term and status filters
+  // Filter contacts based on search term, status filters, and contact type
   const filteredContacts = contacts.filter(contact => {
     const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter.length === 0 || statusFilter.includes(contact.status);
-    return matchesSearch && matchesStatus;
+    
+    // For admin users, apply contact type filtering to admin contacts
+    let matchesType = true;
+    if (isAdmin && contactType !== 'all') {
+      if (contactType === 'carers') {
+        matchesType = contact.type === 'carer';
+      } else if (contactType === 'clients') {
+        matchesType = contact.type === 'client';
+      } else if (contactType === 'admins') {
+        matchesType = contact.type === 'branch_admin' || contact.type === 'super_admin';
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesType;
   });
 
   // Show available contact types based on user role
@@ -59,7 +82,7 @@ export const ContactSidebar = ({
     if (!currentUser) return ['all'];
     
     if (currentUser.role === 'super_admin' || currentUser.role === 'branch_admin') {
-      return ['all', 'carers', 'clients'];
+      return ['all', 'carers', 'clients', 'admins'];
     } else {
       return ['all', 'admins']; // Carers and clients can only message admins
     }

@@ -24,7 +24,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [showComposer, setShowComposer] = useState(false);
-  const [filterType, setFilterType] = useState<"all" | "carers" | "clients" | "groups">("all");
+  const [filterType, setFilterType] = useState<"all" | "carers" | "clients" | "admins" | "groups">("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [readFilter, setReadFilter] = useState<string>("all");
@@ -90,7 +90,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
   // Adjust available filter types based on user role
   const getAvailableFilterTypes = () => {
     if (currentUser.role === 'super_admin' || currentUser.role === 'branch_admin') {
-      return ['all', 'carers', 'clients'];
+      return ['all', 'carers', 'clients', 'admins'];
     } else {
       return ['all', 'admins']; // Carers and clients can only see admins
     }
@@ -124,7 +124,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
             onFilterChange={(filter) => {
               const availableTypes = getAvailableFilterTypes();
               if (availableTypes.includes(filter)) {
-                setFilterType(filter as "all" | "carers" | "clients" | "groups");
+                setFilterType(filter as "all" | "carers" | "clients" | "admins" | "groups");
               }
             }}
             priorityFilter={priorityFilter}
