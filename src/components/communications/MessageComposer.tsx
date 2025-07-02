@@ -21,7 +21,8 @@ import {
   DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
 import { Paperclip } from "lucide-react";
-import { useAvailableContacts, useUnifiedCreateThread, useUnifiedSendMessage } from "@/hooks/useUnifiedMessaging";
+import { useUnifiedCreateThread, useUnifiedSendMessage } from "@/hooks/useUnifiedMessaging";
+import { useAdminContacts } from "@/hooks/useAdminMessaging";
 
 interface MessageComposerProps {
   branchId: string;
@@ -67,7 +68,7 @@ export const MessageComposer = ({
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
 
-  const { data: availableContacts = [] } = useAvailableContacts();
+  const { data: availableContacts = [] } = useAdminContacts();
   const createThread = useUnifiedCreateThread();
   const sendMessage = useUnifiedSendMessage();
   
@@ -87,7 +88,7 @@ export const MessageComposer = ({
             ...prev,
             clients: [selectedContactId]
           }));
-        } else if (contact.type === 'branch_admin') {
+        } else if (contact.type === 'branch_admin' || contact.type === 'super_admin') {
           setSelectedContacts(prev => ({
             ...prev,
             admins: [selectedContactId]
@@ -346,11 +347,11 @@ export const MessageComposer = ({
                             </div>
                           )}
                           
-                          {availableContacts.filter(c => c.type === 'branch_admin').length > 0 && (
+                          {availableContacts.filter(c => c.type === 'branch_admin' || c.type === 'super_admin').length > 0 && (
                             <div>
                               <Label className="text-sm font-medium">Administrators</Label>
                               <div className="space-y-1 mt-1">
-                                {availableContacts.filter(c => c.type === 'branch_admin').map(contact => (
+                                {availableContacts.filter(c => c.type === 'branch_admin' || c.type === 'super_admin').map(contact => (
                                   <div key={contact.id} className="flex items-center space-x-2">
                                     <Checkbox
                                       checked={selectedContacts.admins.includes(contact.id)}
