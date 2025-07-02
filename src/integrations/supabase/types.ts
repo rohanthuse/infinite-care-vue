@@ -5145,6 +5145,10 @@ export type Database = {
         Args: { p_client_id: string; p_password: string; p_admin_id: string }
         Returns: Json
       }
+      safe_setup_client_messaging_auth: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       update_resource_stats: {
         Args: { resource_id: string; stat_type: string }
         Returns: undefined

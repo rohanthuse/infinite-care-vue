@@ -1,227 +1,121 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Session } from '@supabase/supabase-js';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
-export interface ClientAuthState {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  isAuthenticated: boolean;
-  isClientRole: boolean;
-  clientProfile: any | null;
-  error: string | null;
+interface AuthResult {
+  success: boolean;
+  error?: string;
 }
 
-export function useClientAuthFallback() {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [clientProfile, setClientProfile] = useState<any | null>(null);
+export const useClientAuthFallback = () => {
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  useEffect(() => {
-    let mounted = true;
+  const clearError = () => setError(null);
 
-    const handleAuthStateChange = async (event: string, session: Session | null) => {
-      if (!mounted) return;
-
-      console.log('[useClientAuthFallback] Auth state changed:', event, session?.user?.id);
-      setSession(session);
-      setUser(session?.user ?? null);
-      setError(null);
-
-      if (event === 'SIGNED_IN' && session?.user) {
-        try {
-          // Check if user is a client by looking at clients table
-          const { data: clientRecord, error: clientError } = await supabase
-            .from('clients')
-            .select('*')
-            .eq('email', session.user.email)
-            .single();
-
-          if (clientError) {
-            console.error('[useClientAuthFallback] Client lookup error:', clientError);
-            
-            if (clientError.code === 'PGRST116') {
-              setError('Access denied: This account is not registered as a client. Please contact your administrator.');
-            } else {
-              setError('Unable to verify client account. Please try again or contact support.');
-            }
-            
-            await supabase.auth.signOut();
-            return;
-          }
-
-          if (clientRecord) {
-            console.log('[useClientAuthFallback] Client authenticated successfully:', clientRecord);
-            
-            // Fix: Add case-insensitive status check
-            if (clientRecord.status?.toLowerCase() !== 'active') {
-              setError('Your account is not active. Please contact your administrator.');
-              await supabase.auth.signOut();
-              return;
-            }
-            
-            setClientProfile(clientRecord);
-            toast.success(`Welcome back, ${clientRecord.first_name}!`);
-            
-            // Set localStorage data
-            localStorage.setItem("userType", "client");
-            localStorage.setItem("clientName", clientRecord.first_name);
-            localStorage.setItem("clientId", clientRecord.id);
-            
-            // Only navigate on actual sign in, not during normal app usage
-            const currentPath = window.location.pathname;
-            if (currentPath === '/client-login') {
-              navigate('/client-dashboard');
-            }
-          } else {
-            setError('No client profile found for this account.');
-            await supabase.auth.signOut();
-          }
-        } catch (err: any) {
-          console.error('[useClientAuthFallback] Profile fetch error:', err);
-          setError('Failed to load client profile. Please try again.');
-          await supabase.auth.signOut();
-        }
-      }
-
-      if (event === 'SIGNED_OUT') {
-        console.log('[useClientAuthFallback] User signed out');
-        setClientProfile(null);
-        setError(null);
-        
-        // Clear localStorage
-        localStorage.removeItem("userType");
-        localStorage.removeItem("clientName");
-        localStorage.removeItem("clientId");
-        
-        navigate('/client-login');
-      }
-
-      setLoading(false);
-    };
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      
-      console.log('[useClientAuthFallback] Initial session check:', session?.user?.id);
-      
-      if (session?.user) {
-        handleAuthStateChange('SIGNED_IN', session);
-      } else {
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [navigate]);
-
-  const signInWithRetry = async (email: string, password: string) => {
-    console.log('[useClientAuthFallback] Attempting sign in for:', email);
+  const signIn = async (email: string, password: string): Promise<AuthResult> => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      // Attempt normal Supabase auth with enhanced error handling
-      const { data, error } = await supabase.auth.signInWithPassword({
+      console.log('[ClientAuth] Attempting sign in for:', email);
+      
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
-        password,
+        password: password
       });
 
-      if (error) {
-        console.error('[useClientAuthFallback] Sign in error:', error);
+      if (signInError) {
+        console.error('[ClientAuth] Sign in error:', signInError);
         
-        // Handle specific authentication errors with user-friendly messages
-        let userMessage = 'Sign in failed. Please try again.';
-        
-        if (error.message.includes('Invalid login credentials')) {
-          userMessage = 'Invalid email or password. Please check your credentials and try again.';
-        } else if (error.message.includes('Email not confirmed')) {
-          userMessage = 'Please check your email and confirm your account before signing in.';
-        } else if (error.message.includes('Too many requests')) {
-          userMessage = 'Too many login attempts. Please wait a moment before trying again.';
-        } else if (error.message.includes('Database error') || error.message.includes('email_change')) {
-          // This specific error should now be resolved with our schema fix
-          userMessage = 'Authentication system has been updated. Please try signing in again.';
-          console.log('[useClientAuthFallback] Schema-related error detected (should be resolved):', error.message);
+        // Handle specific error cases
+        if (signInError.message.includes('Invalid login credentials')) {
+          const errorMsg = 'Invalid email or password. Please check your credentials and try again.';
+          setError(errorMsg);
+          return { success: false, error: errorMsg };
+        } else if (signInError.message.includes('Email not confirmed')) {
+          const errorMsg = 'Please verify your email address before signing in.';
+          setError(errorMsg);
+          return { success: false, error: errorMsg };
+        } else {
+          setError(signInError.message);
+          return { success: false, error: signInError.message };
         }
+      }
+
+      if (!data.user) {
+        const errorMsg = 'Authentication failed - no user data received.';
+        setError(errorMsg);
+        return { success: false, error: errorMsg };
+      }
+
+      console.log('[ClientAuth] Sign in successful for user:', data.user.id);
+
+      // Verify the user has a client role
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .eq('role', 'client')
+        .single();
+
+      if (roleError || !roleData) {
+        console.error('[ClientAuth] Role verification failed:', roleError);
         
-        setError(userMessage);
-        toast.error('Sign in failed', { description: userMessage });
-        return { success: false, error: userMessage };
+        // Try to find client by email for backward compatibility
+        const { data: clientData, error: clientError } = await supabase
+          .from('clients')
+          .select('id, first_name, last_name, branch_id, status')
+          .eq('email', data.user.email)
+          .single();
+
+        if (clientError || !clientData) {
+          await supabase.auth.signOut();
+          const errorMsg = 'Access denied: No client account found for this email.';
+          setError(errorMsg);
+          return { success: false, error: errorMsg };
+        }
+
+        // Check if client is active
+        if (clientData.status?.toLowerCase() !== 'active') {
+          await supabase.auth.signOut();
+          const errorMsg = 'Your account is not active. Please contact support.';
+          setError(errorMsg);
+          return { success: false, error: errorMsg };
+        }
+
+        // Store client info for compatibility
+        localStorage.setItem("clientId", clientData.id);
+        localStorage.setItem("clientName", clientData.first_name || 'Client');
+        localStorage.setItem("clientEmail", data.user.email || '');
       }
 
-      if (data.user) {
-        console.log('[useClientAuthFallback] Authentication successful for:', email);
-        return { success: true, user: data.user };
-      }
+      // Set user type for compatibility
+      localStorage.setItem("userType", "client");
 
-      // Fallback case
-      setError('Authentication completed but no user data received.');
-      return { success: false, error: 'Authentication completed but no user data received.' };
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully signed in.",
+      });
+
+      return { success: true };
 
     } catch (error: any) {
-      console.error('[useClientAuthFallback] Unexpected sign in error:', error);
-      const errorMsg = 'An unexpected error occurred. Please try again.';
+      console.error('[ClientAuth] Unexpected error:', error);
+      const errorMsg = `Sign in failed: ${error.message || 'Unknown error'}`;
       setError(errorMsg);
-      toast.error('Sign in failed', { description: errorMsg });
       return { success: false, error: errorMsg };
     } finally {
       setLoading(false);
     }
   };
 
-  const signOut = async () => {
-    console.log('[useClientAuthFallback] Signing out');
-    setLoading(true);
-    
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      setClientProfile(null);
-      setError(null);
-      
-      // Clear localStorage
-      localStorage.removeItem("userType");
-      localStorage.removeItem("clientName");
-      localStorage.removeItem("clientId");
-      
-      toast.success('Signed out successfully');
-      navigate('/client-login');
-    } catch (error: any) {
-      console.error('[useClientAuthFallback] Sign out error:', error);
-      setError('Sign out failed. Please try again.');
-      toast.error('Sign out failed', { description: error.message });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const clearError = () => setError(null);
-
   return {
-    user,
-    session,
+    signIn,
     loading,
-    isAuthenticated: !!user,
-    isClientRole: !!clientProfile,
-    clientProfile,
     error,
-    signIn: signInWithRetry,
-    signOut,
-    clearError,
+    clearError
   };
-}
+};
