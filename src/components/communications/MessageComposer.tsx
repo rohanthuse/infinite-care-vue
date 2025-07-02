@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   X, Send, Clock, ChevronDown, Save, BadgeCheck, Building2, 
@@ -88,7 +87,7 @@ export const MessageComposer = ({
             ...prev,
             clients: [selectedContactId]
           }));
-        } else if (contact.type === 'admin') {
+        } else if (contact.type === 'branch_admin') {
           setSelectedContacts(prev => ({
             ...prev,
             admins: [selectedContactId]
@@ -156,7 +155,7 @@ export const MessageComposer = ({
           return {
             id: recipientId,
             name: contact?.name || 'Unknown',
-            type: contact?.type || 'admin'
+            type: contact?.type || 'branch_admin'
           };
         });
 
@@ -347,11 +346,11 @@ export const MessageComposer = ({
                             </div>
                           )}
                           
-                          {availableContacts.filter(c => c.type === 'admin').length > 0 && (
+                          {availableContacts.filter(c => c.type === 'branch_admin').length > 0 && (
                             <div>
                               <Label className="text-sm font-medium">Administrators</Label>
                               <div className="space-y-1 mt-1">
-                                {availableContacts.filter(c => c.type === 'admin').map(contact => (
+                                {availableContacts.filter(c => c.type === 'branch_admin').map(contact => (
                                   <div key={contact.id} className="flex items-center space-x-2">
                                     <Checkbox
                                       checked={selectedContacts.admins.includes(contact.id)}

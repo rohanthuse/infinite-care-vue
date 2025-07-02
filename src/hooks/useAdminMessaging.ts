@@ -238,7 +238,7 @@ export const useSendMessage = () => {
           throw new Error('No recipients specified');
         }
 
-        // Get recipient details
+        // Get recipient details from admin contacts
         const { data: contacts } = await queryClient.fetchQuery({
           queryKey: ['admin-contacts'],
           queryFn: async () => {
