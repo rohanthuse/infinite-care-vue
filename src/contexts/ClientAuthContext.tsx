@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -39,20 +39,89 @@ export const ClientAuthProvider = ({ children }: ClientAuthProviderProps) => {
   const [clientProfile, setClientProfile] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Debug session establishment
-  const debugSession = async (context: string) => {
-    const { data: { session: currentSession } } = await supabase.auth.getSession();
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
+  // Enhanced session validation that tests actual database connectivity
+  const validateSessionWithDatabase = async (session: Session | null): Promise<boolean> => {
+    if (!session || !session.user) {
+      console.log('[ClientAuth] No session or user');
+      return false;
+    }
+
+    // Check if session is expired
+    const expiresAt = session.expires_at ? new Date(session.expires_at * 1000) : new Date(0);
+    const now = new Date();
     
-    console.log(`[ClientAuth] ${context}:`, {
-      hasSession: !!currentSession,
-      hasUser: !!currentUser,
-      userId: currentUser?.id,
-      sessionValid: currentSession && new Date(currentSession.expires_at || 0) > new Date()
-    });
+    if (expiresAt <= now) {
+      console.log('[ClientAuth] Session token expired:', {
+        expiresAt: expiresAt.toISOString(),
+        now: now.toISOString()
+      });
+      return false;
+    }
+
+    // Test actual database connectivity with a simple query
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id')
+        .limit(1);
+      
+      if (error) {
+        console.error('[ClientAuth] Database connectivity test failed:', error);
+        return false;
+      }
+      
+      console.log('[ClientAuth] Session validation successful');
+      return true;
+    } catch (error) {
+      console.error('[ClientAuth] Session validation error:', error);
+      return false;
+    }
+  };
+
+  // Automatic token refresh mechanism
+  const scheduleTokenRefresh = (session: Session) => {
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+    }
+
+    if (!session.expires_at) return;
+
+    const expiresAt = new Date(session.expires_at * 1000);
+    const now = new Date();
+    const timeUntilExpiry = expiresAt.getTime() - now.getTime();
     
-    return { session: currentSession, user: currentUser };
+    // Refresh 5 minutes before expiry
+    const refreshTime = Math.max(timeUntilExpiry - 5 * 60 * 1000, 0);
+
+    console.log('[ClientAuth] Scheduling token refresh in:', Math.round(refreshTime / 1000), 'seconds');
+
+    refreshTimeoutRef.current = setTimeout(async () => {
+      console.log('[ClientAuth] Attempting automatic token refresh...');
+      
+      try {
+        const { data, error } = await supabase.auth.refreshSession();
+        
+        if (error) {
+          console.error('[ClientAuth] Token refresh failed:', error);
+          toast.error('Session expired. Please log in again.');
+          await signOut();
+          return;
+        }
+
+        if (data.session) {
+          console.log('[ClientAuth] Token refreshed successfully');
+          setSession(data.session);
+          setUser(data.session.user);
+          scheduleTokenRefresh(data.session);
+        }
+      } catch (error) {
+        console.error('[ClientAuth] Token refresh error:', error);
+        toast.error('Session expired. Please log in again.');
+        await signOut();
+      }
+    }, refreshTime);
   };
 
   const validateClientProfile = async (user: User): Promise<any | null> => {
@@ -101,7 +170,21 @@ export const ClientAuthProvider = ({ children }: ClientAuthProviderProps) => {
 
     if (event === 'SIGNED_IN' && session?.user) {
       try {
-        await debugSession('After sign in');
+        // Validate session with database connectivity test
+        const isValidSession = await validateSessionWithDatabase(session);
+        
+        if (!isValidSession) {
+          console.error('[ClientAuth] Session validation failed - attempting refresh');
+          const { data, error } = await supabase.auth.refreshSession();
+          
+          if (error || !data.session) {
+            throw new Error('Session expired and refresh failed. Please log in again.');
+          }
+          
+          session = data.session;
+          setSession(session);
+          setUser(session.user);
+        }
         
         const profile = await validateClientProfile(session.user);
         setClientProfile(profile);
@@ -110,6 +193,10 @@ export const ClientAuthProvider = ({ children }: ClientAuthProviderProps) => {
         localStorage.setItem("userType", "client");
         localStorage.setItem("clientName", profile.first_name);
         localStorage.setItem("clientId", profile.id);
+        localStorage.setItem("clientEmail", profile.email);
+        
+        // Schedule automatic token refresh
+        scheduleTokenRefresh(session);
         
         toast.success(`Welcome back, ${profile.first_name}!`);
         
@@ -130,17 +217,24 @@ export const ClientAuthProvider = ({ children }: ClientAuthProviderProps) => {
       setClientProfile(null);
       setError(null);
       
+      // Clear refresh timeout
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+        refreshTimeoutRef.current = null;
+      }
+      
       // Clear localStorage
       localStorage.removeItem("userType");
       localStorage.removeItem("clientName");
       localStorage.removeItem("clientId");
+      localStorage.removeItem("clientEmail");
       
       navigate('/client-login');
     }
 
-    if (event === 'TOKEN_REFRESHED') {
+    if (event === 'TOKEN_REFRESHED' && session) {
       console.log('[ClientAuth] Token refreshed successfully');
-      await debugSession('After token refresh');
+      scheduleTokenRefresh(session);
     }
 
     setLoading(false);
@@ -155,7 +249,6 @@ export const ClientAuthProvider = ({ children }: ClientAuthProviderProps) => {
     // Then check for existing session
     const initializeAuth = async () => {
       try {
-        await debugSession('Initial check');
         const { data: { session } } = await supabase.auth.getSession();
         
         if (mounted) {
@@ -179,6 +272,9 @@ export const ClientAuthProvider = ({ children }: ClientAuthProviderProps) => {
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
     };
   }, [navigate]);
 
@@ -211,9 +307,6 @@ export const ClientAuthProvider = ({ children }: ClientAuthProviderProps) => {
       }
 
       if (data.user && data.session) {
-        // Debug the session immediately after sign in
-        await debugSession('Immediately after signInWithPassword');
-        
         console.log('[ClientAuth] Sign in successful:', {
           userId: data.user.id,
           email: data.user.email,
@@ -243,6 +336,12 @@ export const ClientAuthProvider = ({ children }: ClientAuthProviderProps) => {
     setLoading(true);
     
     try {
+      // Clear refresh timeout
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+        refreshTimeoutRef.current = null;
+      }
+      
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
@@ -253,6 +352,7 @@ export const ClientAuthProvider = ({ children }: ClientAuthProviderProps) => {
       localStorage.removeItem("userType");
       localStorage.removeItem("clientName");
       localStorage.removeItem("clientId");
+      localStorage.removeItem("clientEmail");
       
       toast.success('Signed out successfully');
       navigate('/client-login');

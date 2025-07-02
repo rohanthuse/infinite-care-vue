@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useUserRole } from './useUserRole';
 import { useClientAuth } from '@/contexts/ClientAuthContext';
 import { toast } from 'sonner';
 
@@ -50,7 +49,7 @@ const parseAttachments = (attachments: any): any[] => {
   }
 };
 
-// Simplified session validation for client messaging
+// Enhanced session validation with automatic refresh
 const validateClientSession = async () => {
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -64,11 +63,45 @@ const validateClientSession = async () => {
     console.error('[useClientMessaging] No valid session or user');
     throw new Error('Not authenticated - please log in again');
   }
+
+  // Check if session is expired and attempt refresh
+  const expiresAt = session.expires_at ? new Date(session.expires_at * 1000) : new Date(0);
+  const now = new Date();
   
-  console.log('[useClientMessaging] Session validated for client messaging:', {
+  if (expiresAt <= now) {
+    console.log('[useClientMessaging] Session expired, attempting refresh...');
+    
+    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+    
+    if (refreshError || !refreshData.session) {
+      console.error('[useClientMessaging] Session refresh failed:', refreshError);
+      throw new Error('Session expired. Please refresh the page and log in again.');
+    }
+    
+    console.log('[useClientMessaging] Session refreshed successfully');
+    return { session: refreshData.session, user: refreshData.user };
+  }
+
+  // Test database connectivity
+  try {
+    const { error: testError } = await supabase
+      .from('clients')
+      .select('id')
+      .limit(1);
+    
+    if (testError) {
+      console.error('[useClientMessaging] Database connectivity test failed:', testError);
+      throw new Error('Database connection failed. Please refresh the page.');
+    }
+  } catch (error) {
+    console.error('[useClientMessaging] Database test error:', error);
+    throw new Error('Database connection failed. Please refresh the page.');
+  }
+  
+  console.log('[useClientMessaging] Session validated successfully:', {
     userId: user.id,
     email: user.email,
-    hasSession: !!session
+    sessionExpires: session.expires_at
   });
   
   return { session, user };
@@ -95,12 +128,12 @@ export const useClientCareTeam = () => {
         return [];
       }
 
-      // Validate session before making database queries
+      // Enhanced session validation with refresh capability
       try {
         await validateClientSession();
       } catch (error: any) {
         console.error('[useClientCareTeam] Session validation failed:', error);
-        toast.error('Authentication issue. Please try refreshing the page.');
+        toast.error(error.message);
         return [];
       }
 
@@ -409,7 +442,7 @@ export const useClientSendMessage = () => {
       threadId: string; 
       content: string; 
     }) => {
-      // Enhanced session validation
+      // Enhanced session validation with refresh capability
       const { session, user: validatedUser } = await validateClientSession();
 
       const { data, error } = await supabase
@@ -426,8 +459,9 @@ export const useClientSendMessage = () => {
         .single();
 
       if (error) {
+        console.error('[useClientSendMessage] Send message error:', error);
         if (error.message?.includes('row-level security')) {
-          throw new Error('Permission denied: Authentication context lost. Please refresh the page and try again.');
+          throw new Error('Permission denied: Your session may have expired. Please refresh the page and try again.');
         }
         throw error;
       }
@@ -445,9 +479,9 @@ export const useClientSendMessage = () => {
       queryClient.invalidateQueries({ queryKey: ['client-thread-messages', data.thread_id] });
       toast.success('Message sent successfully');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Send message error:', error);
-      toast.error('Failed to send message');
+      toast.error(error.message || 'Failed to send message');
     }
   });
 };
@@ -473,7 +507,7 @@ export const useClientCreateThread = () => {
     }) => {
       console.log('[useClientCreateThread] Starting thread creation...');
       
-      // Enhanced session validation
+      // Enhanced session validation with refresh capability
       const { session, user: validatedUser } = await validateClientSession();
       
       console.log('[useClientCreateThread] Session validated for user:', validatedUser.id, validatedUser.email);
@@ -515,7 +549,7 @@ export const useClientCreateThread = () => {
 
       console.log('[useClientCreateThread] Client data:', client);
 
-      // Create thread with explicit user context and additional debugging
+      // Create thread with explicit user context
       const threadData = {
         subject,
         branch_id: client.branch_id,
@@ -533,14 +567,8 @@ export const useClientCreateThread = () => {
       if (threadError) {
         console.error('[useClientCreateThread] Thread creation failed:', threadError);
         
-        // Enhanced error handling for RLS violations
         if (threadError.message?.includes('row-level security')) {
-          console.error('[useClientCreateThread] RLS violation - auth context:', {
-            authUid: validatedUser.id,
-            threadCreatedBy: threadData.created_by,
-            sessionExpiry: session.expires_at
-          });
-          throw new Error('Permission denied: Authentication context lost. Please refresh the page and try again.');
+          throw new Error('Permission denied: Your session may have expired. Please refresh the page and try again.');
         }
         
         throw new Error(`Failed to create message thread: ${threadError.message}`);
@@ -601,7 +629,7 @@ export const useClientCreateThread = () => {
     },
     onError: (error: any) => {
       console.error('[useClientCreateThread] Final error:', error);
-      toast.error(`Failed to send message: ${error.message}`);
+      toast.error(error.message || 'Failed to send message');
     }
   });
 };
