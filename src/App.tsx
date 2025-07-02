@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TaskProvider } from "@/contexts/TaskContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { ClientAuthProvider } from "@/contexts/ClientAuthContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { AuthErrorBoundary } from "@/components/AuthErrorBoundary";
 import Index from "./pages/Index";
@@ -66,27 +65,25 @@ const AppContent = () => {
     <AuthErrorBoundary error={error}>
       <BrowserRouter>
         <TaskProvider>
-          <ClientAuthProvider>
-            <ErrorBoundary fallback={<RoutingErrorFallback />}>
-              <Routes>
-                {/* Public Routes - Always accessible */}
-                <Route path="/" element={<Index />} />
-                <Route path="/super-admin" element={<SuperAdminLogin />} />
-                <Route path="/carer-login" element={<CarerLoginSafe />} />
-                <Route path="/carer-invitation" element={<CarerInvitation />} />
-                <Route path="/carer-onboarding" element={<CarerOnboarding />} />
-                <Route path="/client-login" element={<ClientLogin />} />
-                
-                {/* Protected Routes */}
-                {AdminRoutes()}
-                {CarerRoutes()}
-                {ClientRoutes()}
-                
-                {/* Fallback route for unmatched paths */}
-                <Route path="*" element={<RoutingErrorFallback />} />
-              </Routes>
-            </ErrorBoundary>
-          </ClientAuthProvider>
+          <ErrorBoundary fallback={<RoutingErrorFallback />}>
+            <Routes>
+              {/* Public Routes - Always accessible */}
+              <Route path="/" element={<Index />} />
+              <Route path="/super-admin" element={<SuperAdminLogin />} />
+              <Route path="/carer-login" element={<CarerLoginSafe />} />
+              <Route path="/carer-invitation" element={<CarerInvitation />} />
+              <Route path="/carer-onboarding" element={<CarerOnboarding />} />
+              <Route path="/client-login" element={<ClientLogin />} />
+              
+              {/* Protected Routes */}
+              {AdminRoutes()}
+              {CarerRoutes()}
+              {ClientRoutes()}
+              
+              {/* Fallback route for unmatched paths */}
+              <Route path="*" element={<RoutingErrorFallback />} />
+            </Routes>
+          </ErrorBoundary>
         </TaskProvider>
       </BrowserRouter>
     </AuthErrorBoundary>

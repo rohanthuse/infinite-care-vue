@@ -1,8 +1,6 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useClientAuth } from '@/contexts/ClientAuthContext';
-import { useUserRole } from '@/hooks/useUserRole';
+import { useUserRole } from './useUserRole';
 import { toast } from 'sonner';
 
 export interface ClientContact {
@@ -51,143 +49,46 @@ const parseAttachments = (attachments: any): any[] => {
   }
 };
 
-// Enhanced session validation with automatic refresh
-const validateClientSession = async () => {
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  
-  if (sessionError || userError) {
-    console.error('[useClientMessaging] Session validation error:', sessionError || userError);
-    throw new Error('Session validation failed');
-  }
-  
-  if (!session || !user) {
-    console.error('[useClientMessaging] No valid session or user');
-    throw new Error('Not authenticated - please log in again');
-  }
-
-  // Check if session is expired and attempt refresh
-  const expiresAt = session.expires_at ? new Date(session.expires_at * 1000) : new Date(0);
-  const now = new Date();
-  
-  if (expiresAt <= now) {
-    console.log('[useClientMessaging] Session expired, attempting refresh...');
-    
-    const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-    
-    if (refreshError || !refreshData.session) {
-      console.error('[useClientMessaging] Session refresh failed:', refreshError);
-      throw new Error('Session expired. Please refresh the page and log in again.');
-    }
-    
-    console.log('[useClientMessaging] Session refreshed successfully');
-    return { session: refreshData.session, user: refreshData.user };
-  }
-
-  // Test database connectivity
-  try {
-    const { error: testError } = await supabase
-      .from('clients')
-      .select('id')
-      .limit(1);
-    
-    if (testError) {
-      console.error('[useClientMessaging] Database connectivity test failed:', testError);
-      throw new Error('Database connection failed. Please refresh the page.');
-    }
-  } catch (error) {
-    console.error('[useClientMessaging] Database test error:', error);
-    throw new Error('Database connection failed. Please refresh the page.');
-  }
-  
-  console.log('[useClientMessaging] Session validated successfully:', {
-    userId: user.id,
-    email: user.email,
-    sessionExpires: session.expires_at
-  });
-  
-  return { session, user };
-};
-
 // Get client's care administrators (only admins assigned to their branch)
 export const useClientCareTeam = () => {
-  const { user, session, isAuthenticated, clientProfile } = useClientAuth();
+  const { data: currentUser } = useUserRole();
   
   return useQuery({
-    queryKey: ['client-care-team', user?.id, clientProfile?.id],
+    queryKey: ['client-care-team'],
     queryFn: async (): Promise<ClientContact[]> => {
-      console.log('[useClientCareTeam] Starting query with auth state:', {
-        hasUser: !!user,
-        hasSession: !!session,
-        isAuthenticated,
-        hasClientProfile: !!clientProfile,
-        clientId: clientProfile?.id,
-        userEmail: user?.email
-      });
-
-      if (!isAuthenticated || !user || !session) {
-        console.log('[useClientCareTeam] Not authenticated, returning empty array');
+      if (!currentUser) {
+        console.log('[useClientCareTeam] No current user');
         return [];
       }
 
-      // Enhanced session validation with refresh capability
-      try {
-        await validateClientSession();
-      } catch (error: any) {
-        console.error('[useClientCareTeam] Session validation failed:', error);
-        toast.error(error.message);
-        return [];
-      }
-
-      // Get client info - prioritize clientProfile from context, fallback to localStorage
-      const clientId = clientProfile?.id || localStorage.getItem("clientId");
-      const clientEmail = clientProfile?.email || user.email || localStorage.getItem("clientEmail");
+      // Get current client info from localStorage and verify with database
+      const clientId = localStorage.getItem("clientId");
+      const clientEmail = localStorage.getItem("clientEmail") || currentUser.email;
       
-      console.log('[useClientCareTeam] Client identification:', { 
-        clientId, 
-        clientEmail,
-        profileId: clientProfile?.id,
-        userEmail: user.email
-      });
+      console.log('[useClientCareTeam] Client info:', { clientId, clientEmail, currentUserId: currentUser.id });
 
       if (!clientId && !clientEmail) {
         console.log('[useClientCareTeam] No client identification available');
-        toast.error('Client information not found. Please try logging out and back in.');
         return [];
       }
 
-      // Get client record to find branch - handle both ID and email lookup
-      let clientQuery = supabase.from('clients').select('id, branch_id, email, first_name, last_name');
+      // Get client record to find branch
+      let clientQuery = supabase.from('clients').select('id, branch_id, email');
       
       if (clientId) {
         clientQuery = clientQuery.eq('id', clientId);
-      } else if (clientEmail) {
+      } else {
         clientQuery = clientQuery.eq('email', clientEmail);
       }
 
       const { data: client, error: clientError } = await clientQuery.single();
 
-      if (clientError) {
+      if (clientError || !client?.branch_id) {
         console.error('[useClientCareTeam] Client lookup error:', clientError);
-        if (clientError.code === 'PGRST116') {
-          toast.error('Client profile not found. Please contact support.');
-        } else {
-          toast.error('Error loading client information.');
-        }
         return [];
       }
 
-      if (!client?.branch_id) {
-        console.error('[useClientCareTeam] Client has no branch assigned');
-        toast.error('No branch assigned to your account. Please contact support.');
-        return [];
-      }
-
-      console.log('[useClientCareTeam] Found client:', {
-        id: client.id,
-        branchId: client.branch_id,
-        name: `${client.first_name} ${client.last_name}`
-      });
+      console.log('[useClientCareTeam] Found client:', client);
 
       // Get only admins for this branch
       const { data: adminBranches, error: adminError } = await supabase
@@ -205,24 +106,19 @@ export const useClientCareTeam = () => {
 
       if (adminError) {
         console.error('[useClientCareTeam] Admin lookup error:', adminError);
-        toast.error('Error loading care coordinators.');
         return [];
       }
 
       const contacts: ClientContact[] = [];
 
       // Add only admins
-      if (adminBranches && adminBranches.length > 0) {
+      if (adminBranches) {
         adminBranches.forEach(admin => {
           if (admin.profiles) {
-            const firstName = admin.profiles.first_name || '';
-            const lastName = admin.profiles.last_name || '';
-            const fullName = `${firstName} ${lastName}`.trim() || 'Care Coordinator';
-            
             contacts.push({
               id: admin.admin_id,
-              name: fullName,
-              avatar: `${firstName.charAt(0) || 'C'}${lastName.charAt(0) || 'C'}`,
+              name: `${admin.profiles.first_name || ''} ${admin.profiles.last_name || ''}`.trim() || 'Admin',
+              avatar: `${admin.profiles.first_name?.charAt(0) || 'A'}${admin.profiles.last_name?.charAt(0) || 'D'}`,
               type: 'admin',
               status: 'online',
               unread: 0,
@@ -233,27 +129,11 @@ export const useClientCareTeam = () => {
         });
       }
 
-      console.log('[useClientCareTeam] Successfully loaded contacts:', {
-        count: contacts.length,
-        contacts: contacts.map(c => ({ id: c.id, name: c.name, email: c.email }))
-      });
-
-      if (contacts.length === 0) {
-        console.warn('[useClientCareTeam] No care coordinators found for branch:', client.branch_id);
-        toast.error('No care coordinators found. Please contact support.');
-      }
-
+      console.log('[useClientCareTeam] Found contacts:', contacts);
       return contacts;
     },
-    enabled: isAuthenticated && !!user && !!session,
+    enabled: !!currentUser,
     staleTime: 300000, // 5 minutes
-    retry: (failureCount, error) => {
-      // Don't retry on authentication errors
-      if (error.message?.includes('not authenticated') || error.message?.includes('Session validation failed')) {
-        return false;
-      }
-      return failureCount < 2; // Retry up to 2 times for other errors
-    },
   });
 };
 
@@ -431,10 +311,10 @@ export const useClientThreadMessages = (threadId: string) => {
   });
 };
 
-// Send a message to existing thread with enhanced validation
+// Send a message to existing thread
 export const useClientSendMessage = () => {
   const queryClient = useQueryClient();
-  const { user } = useClientAuth();
+  const { data: currentUser } = useUserRole();
 
   return useMutation({
     mutationFn: async ({ 
@@ -444,14 +324,13 @@ export const useClientSendMessage = () => {
       threadId: string; 
       content: string; 
     }) => {
-      // Enhanced session validation with refresh capability
-      const { session, user: validatedUser } = await validateClientSession();
+      if (!currentUser) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
         .from('messages')
         .insert({
           thread_id: threadId,
-          sender_id: validatedUser.id,
+          sender_id: currentUser.id,
           sender_type: 'client',
           content,
           has_attachments: false,
@@ -460,13 +339,7 @@ export const useClientSendMessage = () => {
         .select()
         .single();
 
-      if (error) {
-        console.error('[useClientSendMessage] Send message error:', error);
-        if (error.message?.includes('row-level security')) {
-          throw new Error('Permission denied: Your session may have expired. Please refresh the page and try again.');
-        }
-        throw error;
-      }
+      if (error) throw error;
 
       // Update thread's last_message_at
       await supabase
@@ -481,17 +354,17 @@ export const useClientSendMessage = () => {
       queryClient.invalidateQueries({ queryKey: ['client-thread-messages', data.thread_id] });
       toast.success('Message sent successfully');
     },
-    onError: (error: any) => {
+    onError: (error) => {
       console.error('Send message error:', error);
-      toast.error(error.message || 'Failed to send message');
+      toast.error('Failed to send message');
     }
   });
 };
 
-// Create a new message thread with enhanced validation
+// Create a new message thread
 export const useClientCreateThread = () => {
   const queryClient = useQueryClient();
-  const { user, clientProfile } = useClientAuth();
+  const { data: currentUser } = useUserRole();
 
   return useMutation({
     mutationFn: async ({ 
@@ -509,16 +382,20 @@ export const useClientCreateThread = () => {
     }) => {
       console.log('[useClientCreateThread] Starting thread creation...');
       
-      // Enhanced session validation with refresh capability
-      const { session, user: validatedUser } = await validateClientSession();
-      
-      console.log('[useClientCreateThread] Session validated for user:', validatedUser.id, validatedUser.email);
+      // Enhanced authentication check
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        console.error('[useClientCreateThread] Authentication error:', authError);
+        throw new Error('Not authenticated - please log in again');
+      }
+
+      console.log('[useClientCreateThread] Authenticated user:', user.id, user.email);
 
       // Verify user has client role
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', validatedUser.id)
+        .eq('user_id', user.id)
         .single();
 
       if (roleError || roleData?.role !== 'client') {
@@ -529,8 +406,8 @@ export const useClientCreateThread = () => {
       console.log('[useClientCreateThread] Role verified:', roleData.role);
 
       // Get client information
-      const clientId = clientProfile?.id || localStorage.getItem("clientId");
-      const clientName = clientProfile?.first_name || localStorage.getItem("clientName") || validatedUser.email?.split('@')[0] || 'Client';
+      const clientId = localStorage.getItem("clientId");
+      const clientName = localStorage.getItem("clientName") || user.email?.split('@')[0] || 'Client';
       
       if (!clientId) {
         console.error('[useClientCreateThread] No client ID found');
@@ -555,7 +432,7 @@ export const useClientCreateThread = () => {
       const threadData = {
         subject,
         branch_id: client.branch_id,
-        created_by: validatedUser.id
+        created_by: user.id
       };
 
       console.log('[useClientCreateThread] Creating thread with data:', threadData);
@@ -568,11 +445,6 @@ export const useClientCreateThread = () => {
 
       if (threadError) {
         console.error('[useClientCreateThread] Thread creation failed:', threadError);
-        
-        if (threadError.message?.includes('row-level security')) {
-          throw new Error('Permission denied: Your session may have expired. Please refresh the page and try again.');
-        }
-        
         throw new Error(`Failed to create message thread: ${threadError.message}`);
       }
 
@@ -582,7 +454,7 @@ export const useClientCreateThread = () => {
       const participants = [
         {
           thread_id: thread.id,
-          user_id: validatedUser.id,
+          user_id: user.id,
           user_type: 'client',
           user_name: clientName
         },
@@ -612,7 +484,7 @@ export const useClientCreateThread = () => {
         .from('messages')
         .insert({
           thread_id: thread.id,
-          sender_id: validatedUser.id,
+          sender_id: user.id,
           sender_type: 'client',
           content: initialMessage
         });
@@ -631,7 +503,7 @@ export const useClientCreateThread = () => {
     },
     onError: (error: any) => {
       console.error('[useClientCreateThread] Final error:', error);
-      toast.error(error.message || 'Failed to send message');
+      toast.error(`Failed to send message: ${error.message}`);
     }
   });
 };

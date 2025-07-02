@@ -9,13 +9,15 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
-import { useClientAuth } from "@/contexts/ClientAuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const ClientDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [pageTitle, setPageTitle] = useState("Overview");
-  const { user, loading, isAuthenticated, isClientRole } = useClientAuth();
+  const [isLoading, setIsLoading] = useState(true);
   
   // Menu items for top navigation
   const menuItems = [
@@ -58,34 +60,110 @@ const ClientDashboard = () => {
     }
   }, [location]);
   
-  // Handle authentication check
+  // Verify client authentication
   useEffect(() => {
-    if (!loading) {
-      if (!isAuthenticated || !isClientRole) {
-        console.log('[ClientDashboard] Authentication failed, redirecting to login');
+    const checkClientAuth = async () => {
+      try {
+        // Check if user type is client (for backward compatibility)
+        const userType = localStorage.getItem("userType");
+        if (userType !== "client") {
+          navigate("/client-login", { replace: true });
+          return;
+        }
+
+        // Check Supabase session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          // No session, redirect to login
+          localStorage.removeItem("userType");
+          localStorage.removeItem("clientName");
+          localStorage.removeItem("clientId");
+          navigate("/client-login", { replace: true });
+          return;
+        }
+
+        // Verify the user is actually a client in our database
+        const { data: clientData, error } = await supabase
+          .from('clients')
+          .select('id, first_name, last_name, status')
+          .eq('email', session.user.email)
+          .single();
+
+        if (error || !clientData) {
+          console.error('Client verification failed:', error);
+          await supabase.auth.signOut();
+          localStorage.removeItem("userType");
+          localStorage.removeItem("clientName");
+          localStorage.removeItem("clientId");
+          toast({
+            title: "Access Denied",
+            description: "You are not authorized to access this area.",
+            variant: "destructive",
+          });
+          navigate("/client-login", { replace: true });
+          return;
+        }
+
+        // Fix: Use case-insensitive comparison for status check
+        if (clientData.status?.toLowerCase() !== 'active') {
+          await supabase.auth.signOut();
+          localStorage.removeItem("userType");
+          localStorage.removeItem("clientName");
+          localStorage.removeItem("clientId");
+          toast({
+            title: "Account Inactive",
+            description: "Your account is not active. Please contact support.",
+            variant: "destructive",
+          });
+          navigate("/client-login", { replace: true });
+          return;
+        }
+
+        // Update local storage with current client info
+        localStorage.setItem("clientName", clientData.first_name);
+        localStorage.setItem("clientId", clientData.id);
+        
+      } catch (error) {
+        console.error('Auth check error:', error);
         navigate("/client-login", { replace: true });
-        return;
+      } finally {
+        setIsLoading(false);
       }
-      
-      console.log('[ClientDashboard] Client authenticated:', {
-        userId: user?.id,
-        email: user?.email,
-        isAuthenticated,
-        isClientRole
-      });
-    }
-  }, [loading, isAuthenticated, isClientRole, navigate, user]);
+    };
+
+    checkClientAuth();
+  }, [navigate, toast]);
+
+  // Set up auth state listener
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        localStorage.removeItem("userType");
+        localStorage.removeItem("clientName");
+        localStorage.removeItem("clientId");
+        navigate("/client-login", { replace: true });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
   
-  if (loading) {
+  // Fix: Only redirect if directly at /client-dashboard with no children routes
+  useEffect(() => {
+    // Check if we're exactly at /client-dashboard with no children routes
+    if (location.pathname === "/client-dashboard" && location.pathname.split("/").filter(Boolean).length === 1) {
+      // Navigate to the overview page
+      navigate("/client-dashboard", { replace: true });
+    }
+  }, []); // Run only once on component mount
+  
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
-  }
-
-  if (!isAuthenticated || !isClientRole) {
-    return null; // Will redirect in useEffect
   }
   
   return (
