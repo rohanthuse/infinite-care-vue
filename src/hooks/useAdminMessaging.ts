@@ -10,7 +10,7 @@ export interface AdminContact {
   id: string;
   name: string;
   avatar: string;
-  type: 'carer' | 'client' | 'admin';
+  type: 'carer' | 'client' | 'branch_admin';
   status: 'online' | 'offline' | 'away';
   unread: number;
   email?: string;
@@ -152,6 +152,119 @@ export const useAdminContacts = () => {
         });
       }
 
+      // Get admin users for messaging - super admin can message all admins
+      if (currentUser.role === 'super_admin') {
+        // Get all admin and super_admin users except self
+        const { data: allAdmins } = await supabase
+          .from('user_roles')
+          .select(`
+            user_id,
+            role
+          `)
+          .in('role', ['super_admin', 'branch_admin'])
+          .neq('user_id', currentUser.id);
+
+        console.log('[useAdminContacts] Admin roles found for super admin:', allAdmins?.length || 0);
+        
+        if (allAdmins && allAdmins.length > 0) {
+          // Get profile details for these admin users
+          const adminUserIds = allAdmins.map(a => a.user_id);
+          const { data: adminProfiles } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, email')
+            .in('id', adminUserIds);
+
+          if (adminProfiles) {
+            adminProfiles.forEach(admin => {
+              if (admin.email || (admin.first_name && admin.last_name)) {
+                const adminRole = allAdmins.find(r => r.user_id === admin.id);
+                contacts.push({
+                  id: admin.id,
+                  name: `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || admin.email?.split('@')[0] || 'Admin',
+                  avatar: `${admin.first_name?.charAt(0) || 'A'}${admin.last_name?.charAt(0) || 'D'}`,
+                  type: 'branch_admin' as const,
+                  status: 'online' as const,
+                  unread: 0,
+                  email: admin.email,
+                  role: adminRole?.role || 'branch_admin',
+                  branchName: undefined
+                });
+              }
+            });
+          }
+        }
+      } else if (currentUser.role === 'branch_admin') {
+        // Branch admin can message super admins and other branch admins with shared branches
+        
+        // Get all super admins
+        const { data: superAdminRoles } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'super_admin');
+
+        if (superAdminRoles && superAdminRoles.length > 0) {
+          const superAdminIds = superAdminRoles.map(r => r.user_id);
+          const { data: superAdminProfiles } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, email')
+            .in('id', superAdminIds);
+
+          console.log('[useAdminContacts] Super admin profiles found:', superAdminProfiles?.length || 0);
+          if (superAdminProfiles) {
+            superAdminProfiles.forEach(admin => {
+              if (admin.email || (admin.first_name && admin.last_name)) {
+                contacts.push({
+                  id: admin.id,
+                  name: `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || admin.email?.split('@')[0] || 'Super Admin',
+                  avatar: `${admin.first_name?.charAt(0) || 'S'}${admin.last_name?.charAt(0) || 'A'}`,
+                  type: 'branch_admin' as const,
+                  status: 'online' as const,
+                  unread: 0,
+                  email: admin.email,
+                  role: 'super_admin',
+                  branchName: undefined
+                });
+              }
+            });
+          }
+        }
+
+        // Get other branch admins who share at least one branch
+        const { data: sharedBranchAdmins } = await supabase
+          .from('admin_branches')
+          .select('admin_id')
+          .in('branch_id', branchIds)
+          .neq('admin_id', currentUser.id);
+
+        if (sharedBranchAdmins && sharedBranchAdmins.length > 0) {
+          // Remove duplicates and get profile details
+          const uniqueAdminIds = [...new Set(sharedBranchAdmins.map(item => item.admin_id))];
+          const { data: branchAdminProfiles } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, email')
+            .in('id', uniqueAdminIds);
+
+          console.log('[useAdminContacts] Branch admin profiles found:', branchAdminProfiles?.length || 0);
+          if (branchAdminProfiles) {
+            branchAdminProfiles.forEach(admin => {
+              if (admin.email || (admin.first_name && admin.last_name)) {
+                contacts.push({
+                  id: admin.id,
+                  name: `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || admin.email?.split('@')[0] || 'Branch Admin',
+                  avatar: `${admin.first_name?.charAt(0) || 'B'}${admin.last_name?.charAt(0) || 'A'}`,
+                  type: 'branch_admin' as const,
+                  status: 'online' as const,
+                  unread: 0,
+                  email: admin.email,
+                  role: 'branch_admin',
+                  branchName: undefined
+                });
+              }
+            });
+          }
+        }
+      }
+
       console.log('[useAdminContacts] Total contacts found:', contacts.length);
       return contacts.sort((a, b) => a.name.localeCompare(b.name));
     },
@@ -170,7 +283,8 @@ export const useAdminMessageThreads = () => {
     subject: thread.subject,
     participants: thread.participants.map(p => ({
       ...p,
-      type: p.type as 'carer' | 'client' | 'admin'
+      type: p.type === 'carer' ? 'carer' as const : 
+            p.type === 'client' ? 'client' as const : 'branch_admin' as const
     })),
     lastMessage: thread.lastMessage ? {
       ...thread.lastMessage,
