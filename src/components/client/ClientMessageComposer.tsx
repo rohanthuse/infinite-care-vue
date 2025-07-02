@@ -116,7 +116,9 @@ export const ClientMessageComposer = ({
     }
 
     // Double-check Supabase session
-    const { data: { session: currentSession, user: currentUser } } = await supabase.auth.getSession();
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    
     if (!currentSession || !currentUser) {
       toast.error('Your session has expired. Please log in again.');
       console.error('[ClientMessageComposer] Session expired:', {

@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from './useUserRole';
@@ -51,10 +52,11 @@ const parseAttachments = (attachments: any): any[] => {
 
 // Enhanced session validation helper
 const validateSession = async () => {
-  const { data: { session, user }, error } = await supabase.auth.getSession();
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
   
-  if (error) {
-    console.error('[useClientMessaging] Session validation error:', error);
+  if (sessionError || userError) {
+    console.error('[useClientMessaging] Session validation error:', sessionError || userError);
     throw new Error('Session validation failed');
   }
   
