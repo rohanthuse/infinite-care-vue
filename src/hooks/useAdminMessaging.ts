@@ -239,13 +239,13 @@ export const useSendMessage = () => {
         }
 
         // Get recipient details from admin contacts
-        const { data: contacts } = await queryClient.fetchQuery({
+        const contacts = await queryClient.fetchQuery({
           queryKey: ['admin-contacts'],
           queryFn: async () => {
             // This will be populated by useAdminContacts
             return [];
           }
-        });
+        }) || [];
 
         const recipientData = recipients.map(recipientId => {
           const contact = Array.isArray(contacts) ? contacts.find((c: any) => c.id === recipientId) : null;
