@@ -8,7 +8,7 @@ export interface UnifiedContact {
   id: string;
   name: string;
   avatar: string;
-  type: 'carer' | 'admin' | 'client';
+  type: 'carer' | 'branch_admin' | 'client';
   status: 'online' | 'offline' | 'away';
   unread: number;
   email?: string;
@@ -62,7 +62,7 @@ export const useAvailableContacts = () => {
       const contacts: UnifiedContact[] = [];
 
       // If user is admin/super_admin, get clients and carers in their branches
-      if (currentUser.role === 'admin' || currentUser.role === 'super_admin') {
+      if (currentUser.role === 'branch_admin' || currentUser.role === 'super_admin') {
         // Get branch access for admin
         let branchIds: string[] = [];
         
@@ -162,11 +162,11 @@ export const useAvailableContacts = () => {
                   id: admin.admin_id,
                   name: `${admin.profiles.first_name || ''} ${admin.profiles.last_name || ''}`.trim() || 'Admin',
                   avatar: `${admin.profiles.first_name?.charAt(0) || 'A'}${admin.profiles.last_name?.charAt(0) || 'D'}`,
-                  type: 'admin' as const,
+                  type: 'branch_admin' as const,
                   status: 'online' as const,
                   unread: 0,
                   email: admin.profiles.email,
-                  role: 'admin'
+                  role: 'branch_admin'
                 });
               }
             });
@@ -257,7 +257,7 @@ export const useUnifiedMessageThreads = () => {
             name: p.user_name,
             avatar: p.user_name.split(' ').map(n => n.charAt(0)).join(''),
             type: p.user_type === 'carer' ? 'carer' as const : 
-                  p.user_type === 'client' ? 'client' as const : 'admin' as const,
+                  p.user_type === 'client' ? 'client' as const : 'branch_admin' as const,
             status: 'online' as const,
             unread: 0
           })).filter(p => p.id !== currentUser.id) || [];
@@ -448,7 +448,7 @@ export const useUnifiedCreateThread = () => {
             .single();
           branchId = client?.branch_id || null;
         }
-      } else if (currentUser.role === 'admin' || currentUser.role === 'super_admin') {
+      } else if (currentUser.role === 'branch_admin' || currentUser.role === 'super_admin') {
         // For admins, get the first branch they have access to
         if (currentUser.role === 'super_admin') {
           const { data: firstBranch } = await supabase

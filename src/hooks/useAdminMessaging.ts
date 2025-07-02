@@ -49,7 +49,7 @@ export const useAdminContacts = () => {
   return useQuery({
     queryKey: ['admin-contacts', currentUser?.id],
     queryFn: async (): Promise<AdminContact[]> => {
-      if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'super_admin')) {
+      if (!currentUser || (currentUser.role !== 'branch_admin' && currentUser.role !== 'super_admin')) {
         return [];
       }
 
@@ -137,7 +137,7 @@ export const useAdminContacts = () => {
 
       return contacts.sort((a, b) => a.name.localeCompare(b.name));
     },
-    enabled: !!currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin'),
+    enabled: !!currentUser && (currentUser.role === 'branch_admin' || currentUser.role === 'super_admin'),
     staleTime: 300000, // 5 minutes
   });
 };
@@ -248,7 +248,7 @@ export const useSendMessage = () => {
         });
 
         const recipientData = recipients.map(recipientId => {
-          const contact = contacts.find((c: any) => c.id === recipientId);
+          const contact = Array.isArray(contacts) ? contacts.find((c: any) => c.id === recipientId) : null;
           return {
             id: recipientId,
             name: contact?.name || 'Unknown',
