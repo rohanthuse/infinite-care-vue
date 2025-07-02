@@ -49,7 +49,10 @@ export const useAdminContacts = () => {
   return useQuery({
     queryKey: ['admin-contacts', currentUser?.id],
     queryFn: async (): Promise<AdminContact[]> => {
+      console.log('[useAdminContacts] Current user:', currentUser);
+      
       if (!currentUser || (currentUser.role !== 'branch_admin' && currentUser.role !== 'super_admin')) {
+        console.log('[useAdminContacts] User not authorized for admin contacts');
         return [];
       }
 
@@ -73,9 +76,13 @@ export const useAdminContacts = () => {
         branchIds = adminBranches?.map(ab => ab.branch_id) || [];
       }
 
-      if (branchIds.length === 0) return [];
+      console.log('[useAdminContacts] Branch IDs found:', branchIds);
+      if (branchIds.length === 0) {
+        console.log('[useAdminContacts] No branches found for user');
+        return [];
+      }
 
-      // Get clients for these branches
+      // Get clients for these branches - handle multiple active status values
       const { data: clients } = await supabase
         .from('clients')
         .select(`
@@ -84,28 +91,33 @@ export const useAdminContacts = () => {
           last_name, 
           email,
           branch_id,
+          status,
           branches!inner(name)
         `)
         .in('branch_id', branchIds)
-        .eq('status', 'active');
+        .not('status', 'in', '("Former","Closed Enquiries","Inactive")');
 
+      console.log('[useAdminContacts] Clients found:', clients?.length || 0);
       if (clients) {
         clients.forEach(client => {
-          contacts.push({
-            id: client.id,
-            name: `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.email?.split('@')[0] || 'Client',
-            avatar: `${client.first_name?.charAt(0) || 'C'}${client.last_name?.charAt(0) || 'L'}`,
-            type: 'client' as const,
-            status: 'online' as const,
-            unread: 0,
-            email: client.email,
-            role: 'client',
-            branchName: client.branches?.name
-          });
+          // Only include clients that have either an email or both first and last name
+          if (client.email || (client.first_name && client.last_name)) {
+            contacts.push({
+              id: client.id,
+              name: `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.email?.split('@')[0] || 'Client',
+              avatar: `${client.first_name?.charAt(0) || 'C'}${client.last_name?.charAt(0) || 'L'}`,
+              type: 'client' as const,
+              status: 'online' as const,
+              unread: 0,
+              email: client.email,
+              role: 'client',
+              branchName: client.branches?.name
+            });
+          }
         });
       }
 
-      // Get carers for these branches
+      // Get carers for these branches - handle case insensitive status
       const { data: carers } = await supabase
         .from('staff')
         .select(`
@@ -114,27 +126,33 @@ export const useAdminContacts = () => {
           last_name, 
           email,
           branch_id,
+          status,
           branches!inner(name)
         `)
         .in('branch_id', branchIds)
-        .eq('status', 'active');
+        .ilike('status', 'active');
 
+      console.log('[useAdminContacts] Carers found:', carers?.length || 0);
       if (carers) {
         carers.forEach(carer => {
-          contacts.push({
-            id: carer.id,
-            name: `${carer.first_name || ''} ${carer.last_name || ''}`.trim() || carer.email?.split('@')[0] || 'Carer',
-            avatar: `${carer.first_name?.charAt(0) || 'C'}${carer.last_name?.charAt(0) || 'R'}`,
-            type: 'carer' as const,
-            status: 'online' as const,
-            unread: 0,
-            email: carer.email,
-            role: 'carer',
-            branchName: carer.branches?.name
-          });
+          // Only include carers that have either an email or both first and last name
+          if (carer.email || (carer.first_name && carer.last_name)) {
+            contacts.push({
+              id: carer.id,
+              name: `${carer.first_name || ''} ${carer.last_name || ''}`.trim() || carer.email?.split('@')[0] || 'Carer',
+              avatar: `${carer.first_name?.charAt(0) || 'C'}${carer.last_name?.charAt(0) || 'R'}`,
+              type: 'carer' as const,
+              status: 'online' as const,
+              unread: 0,
+              email: carer.email,
+              role: 'carer',
+              branchName: carer.branches?.name
+            });
+          }
         });
       }
 
+      console.log('[useAdminContacts] Total contacts found:', contacts.length);
       return contacts.sort((a, b) => a.name.localeCompare(b.name));
     },
     enabled: !!currentUser && (currentUser.role === 'branch_admin' || currentUser.role === 'super_admin'),
