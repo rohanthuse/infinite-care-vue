@@ -49,6 +49,35 @@ const parseAttachments = (attachments: any): any[] => {
   }
 };
 
+// Enhanced session validation helper
+const validateSession = async () => {
+  const { data: { session, user }, error } = await supabase.auth.getSession();
+  
+  if (error) {
+    console.error('[useClientMessaging] Session validation error:', error);
+    throw new Error('Session validation failed');
+  }
+  
+  if (!session || !user) {
+    console.error('[useClientMessaging] No valid session or user');
+    throw new Error('Not authenticated - please log in again');
+  }
+  
+  // Check if session is expired
+  if (session.expires_at && new Date(session.expires_at * 1000) <= new Date()) {
+    console.error('[useClientMessaging] Session expired');
+    throw new Error('Session expired - please log in again');
+  }
+  
+  console.log('[useClientMessaging] Session validated:', {
+    userId: user.id,
+    email: user.email,
+    expiresAt: session.expires_at ? new Date(session.expires_at * 1000) : 'never'
+  });
+  
+  return { session, user };
+};
+
 // Get client's care administrators (only admins assigned to their branch)
 export const useClientCareTeam = () => {
   const { data: currentUser } = useUserRole();
@@ -58,6 +87,14 @@ export const useClientCareTeam = () => {
     queryFn: async (): Promise<ClientContact[]> => {
       if (!currentUser) {
         console.log('[useClientCareTeam] No current user');
+        return [];
+      }
+
+      // Validate session before making database queries
+      try {
+        await validateSession();
+      } catch (error: any) {
+        console.error('[useClientCareTeam] Session validation failed:', error);
         return [];
       }
 
@@ -311,7 +348,7 @@ export const useClientThreadMessages = (threadId: string) => {
   });
 };
 
-// Send a message to existing thread
+// Send a message to existing thread with enhanced validation
 export const useClientSendMessage = () => {
   const queryClient = useQueryClient();
   const { data: currentUser } = useUserRole();
@@ -324,13 +361,14 @@ export const useClientSendMessage = () => {
       threadId: string; 
       content: string; 
     }) => {
-      if (!currentUser) throw new Error('Not authenticated');
+      // Enhanced session validation
+      const { session, user } = await validateSession();
 
       const { data, error } = await supabase
         .from('messages')
         .insert({
           thread_id: threadId,
-          sender_id: currentUser.id,
+          sender_id: user.id,
           sender_type: 'client',
           content,
           has_attachments: false,
@@ -339,7 +377,12 @@ export const useClientSendMessage = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes('row-level security')) {
+          throw new Error('Permission denied: Authentication context lost. Please refresh the page and try again.');
+        }
+        throw error;
+      }
 
       // Update thread's last_message_at
       await supabase
@@ -361,7 +404,7 @@ export const useClientSendMessage = () => {
   });
 };
 
-// Create a new message thread
+// Create a new message thread with enhanced validation
 export const useClientCreateThread = () => {
   const queryClient = useQueryClient();
   const { data: currentUser } = useUserRole();
@@ -382,14 +425,10 @@ export const useClientCreateThread = () => {
     }) => {
       console.log('[useClientCreateThread] Starting thread creation...');
       
-      // Enhanced authentication check
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        console.error('[useClientCreateThread] Authentication error:', authError);
-        throw new Error('Not authenticated - please log in again');
-      }
-
-      console.log('[useClientCreateThread] Authenticated user:', user.id, user.email);
+      // Enhanced session validation
+      const { session, user } = await validateSession();
+      
+      console.log('[useClientCreateThread] Session validated for user:', user.id, user.email);
 
       // Verify user has client role
       const { data: roleData, error: roleError } = await supabase
@@ -428,7 +467,7 @@ export const useClientCreateThread = () => {
 
       console.log('[useClientCreateThread] Client data:', client);
 
-      // Create thread with explicit user context
+      // Create thread with explicit user context and additional debugging
       const threadData = {
         subject,
         branch_id: client.branch_id,
@@ -436,6 +475,11 @@ export const useClientCreateThread = () => {
       };
 
       console.log('[useClientCreateThread] Creating thread with data:', threadData);
+      console.log('[useClientCreateThread] Current session context:', {
+        userId: user.id,
+        email: user.email,
+        sessionValid: session.expires_at ? new Date(session.expires_at * 1000) > new Date() : true
+      });
 
       const { data: thread, error: threadError } = await supabase
         .from('message_threads')
@@ -445,6 +489,17 @@ export const useClientCreateThread = () => {
 
       if (threadError) {
         console.error('[useClientCreateThread] Thread creation failed:', threadError);
+        
+        // Enhanced error handling for RLS violations
+        if (threadError.message?.includes('row-level security')) {
+          console.error('[useClientCreateThread] RLS violation - auth context:', {
+            authUid: user.id,
+            threadCreatedBy: threadData.created_by,
+            sessionExpiry: session.expires_at
+          });
+          throw new Error('Permission denied: Authentication context lost. Please refresh the page and try again.');
+        }
+        
         throw new Error(`Failed to create message thread: ${threadError.message}`);
       }
 

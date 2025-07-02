@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useClientCareTeam, useClientCreateThread, useClientSendMessage } from "@/hooks/useClientMessaging";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useClientAuth } from "@/contexts/ClientAuthContext";
 
 interface ClientMessageComposerProps {
   selectedContactId?: string | null;
@@ -25,8 +26,9 @@ export const ClientMessageComposer = ({
   const [recipientId, setRecipientId] = useState(selectedContactId || "");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [authDebugInfo, setAuthDebugInfo] = useState<any>(null);
+  const [sessionDebugInfo, setSessionDebugInfo] = useState<any>(null);
   
+  const { user, session, isAuthenticated, clientProfile } = useClientAuth();
   const { data: careTeam = [] } = useClientCareTeam();
   const createThread = useClientCreateThread();
   const sendMessage = useClientSendMessage();
@@ -34,51 +36,67 @@ export const ClientMessageComposer = ({
   const isReply = !!selectedThreadId;
   const selectedRecipient = careTeam.find(contact => contact.id === recipientId);
 
-  // Debug authentication on component mount
+  // Debug session and authentication state
   useEffect(() => {
-    const debugAuth = async () => {
+    const debugSessionState = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
         
-        console.log('[ClientMessageComposer] Auth Debug:', {
-          session: session?.user?.id,
-          user: user?.id,
-          email: user?.email,
-          sessionError,
-          userError
-        });
-
-        // Check user role
-        if (user) {
-          const { data: roleData, error: roleError } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', user.id)
-            .single();
-          
-          console.log('[ClientMessageComposer] Role Check:', {
-            userId: user.id,
-            role: roleData?.role,
-            roleError
-          });
-
-          setAuthDebugInfo({
-            userId: user.id,
-            email: user.email,
-            role: roleData?.role,
+        // Test database connectivity with a simple query
+        const { data: testQuery, error: testError } = await supabase
+          .from('clients')
+          .select('id')
+          .limit(1);
+        
+        const debugInfo = {
+          frontendAuth: {
+            hasUser: !!user,
             hasSession: !!session,
-            errors: { sessionError, userError, roleError }
+            userId: user?.id,
+            email: user?.email,
+            isAuthenticated,
+            hasClientProfile: !!clientProfile
+          },
+          supabaseAuth: {
+            hasCurrentSession: !!currentSession,
+            hasCurrentUser: !!currentUser,
+            currentUserId: currentUser?.id,
+            sessionExpiry: currentSession?.expires_at,
+            sessionValid: currentSession && new Date(currentSession.expires_at || 0) > new Date()
+          },
+          databaseConnectivity: {
+            canQueryDatabase: !testError,
+            testError: testError?.message,
+            authUidWorks: !!currentUser?.id
+          },
+          localStorage: {
+            userType: localStorage.getItem("userType"),
+            clientId: localStorage.getItem("clientId"),
+            clientName: localStorage.getItem("clientName")
+          }
+        };
+        
+        console.log('[ClientMessageComposer] Session Debug:', debugInfo);
+        setSessionDebugInfo(debugInfo);
+        
+        // Alert if there are authentication issues
+        if (!currentSession || !currentUser) {
+          console.error('[ClientMessageComposer] Authentication issue detected:', {
+            noSession: !currentSession,
+            noUser: !currentUser
           });
+          toast.error('Authentication issue detected. Please try logging out and back in.');
         }
+        
       } catch (error) {
-        console.error('[ClientMessageComposer] Auth debug error:', error);
-        toast.error('Authentication check failed. Please try logging in again.');
+        console.error('[ClientMessageComposer] Session debug error:', error);
+        toast.error('Failed to verify authentication status.');
       }
     };
 
-    debugAuth();
-  }, []);
+    debugSessionState();
+  }, [user, session, isAuthenticated, clientProfile]);
   
   const handleSend = async () => {
     if (!message.trim()) {
@@ -86,15 +104,31 @@ export const ClientMessageComposer = ({
       return;
     }
 
-    // Verify authentication before sending
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast.error('Please log in to send messages');
+    // Verify authentication state before attempting to send
+    if (!isAuthenticated || !user || !session) {
+      toast.error('You are not authenticated. Please log in again.');
+      console.error('[ClientMessageComposer] Not authenticated:', {
+        isAuthenticated,
+        hasUser: !!user,
+        hasSession: !!session
+      });
       return;
     }
 
-    console.log('[ClientMessageComposer] Sending message with auth:', {
-      userId: user.id,
+    // Double-check Supabase session
+    const { data: { session: currentSession, user: currentUser } } = await supabase.auth.getSession();
+    if (!currentSession || !currentUser) {
+      toast.error('Your session has expired. Please log in again.');
+      console.error('[ClientMessageComposer] Session expired:', {
+        hasCurrentSession: !!currentSession,
+        hasCurrentUser: !!currentUser
+      });
+      return;
+    }
+
+    console.log('[ClientMessageComposer] Sending message with session:', {
+      userId: currentUser.id,
+      sessionExpiry: currentSession.expires_at,
       isReply,
       recipientId,
       threadId: selectedThreadId
@@ -125,7 +159,9 @@ export const ClientMessageComposer = ({
           recipientName: recipient.name,
           recipientType: recipient.type,
           subject: subject.trim(),
-          messageLength: message.trim().length
+          messageLength: message.trim().length,
+          clientId: clientProfile?.id,
+          clientName: clientProfile?.first_name
         });
         
         await createThread.mutateAsync({
@@ -150,7 +186,7 @@ export const ClientMessageComposer = ({
       
       // Provide specific error messages based on the error type
       if (error.message?.includes('row-level security')) {
-        toast.error('Permission denied. Please ensure you are properly logged in as a client.');
+        toast.error('Permission denied. Your session may have expired. Please try logging out and back in.');
       } else if (error.message?.includes('not authenticated')) {
         toast.error('Authentication expired. Please log in again.');
       } else {
@@ -174,9 +210,10 @@ export const ClientMessageComposer = ({
       </div>
       
       {/* Debug info for development */}
-      {authDebugInfo && process.env.NODE_ENV === 'development' && (
+      {sessionDebugInfo && process.env.NODE_ENV === 'development' && (
         <div className="p-2 bg-yellow-50 text-xs border-b">
-          Auth: {authDebugInfo.email} | Role: {authDebugInfo.role} | Session: {authDebugInfo.hasSession ? 'Yes' : 'No'}
+          <div>Auth: {sessionDebugInfo.frontendAuth.email} | Authenticated: {sessionDebugInfo.frontendAuth.isAuthenticated ? 'Yes' : 'No'}</div>
+          <div>DB Session: {sessionDebugInfo.supabaseAuth.sessionValid ? 'Valid' : 'Invalid'} | DB Query: {sessionDebugInfo.databaseConnectivity.canQueryDatabase ? 'OK' : 'Failed'}</div>
         </div>
       )}
       
@@ -253,7 +290,8 @@ export const ClientMessageComposer = ({
               disabled={
                 isLoading || 
                 !message.trim() || 
-                (!isReply && (!recipientId || !subject.trim()))
+                (!isReply && (!recipientId || !subject.trim())) ||
+                !isAuthenticated
               }
             >
               {isLoading ? (
