@@ -53,17 +53,17 @@ export const UnifiedMessageList = ({
   };
 
   const getParticipantBadge = (participants: any[]) => {
-    const hasAdmin = participants.some(p => p.type === 'admin');
+    const hasBranchAdmin = participants.some(p => p.type === 'branch_admin');
     const hasCarer = participants.some(p => p.type === 'carer');
     const hasClient = participants.some(p => p.type === 'client');
 
-    if (hasAdmin && (hasCarer || hasClient)) {
+    if (hasBranchAdmin && (hasCarer || hasClient)) {
       return (
         <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-purple-50 text-purple-700 border-purple-200">
           Care Team
         </Badge>
       );
-    } else if (hasAdmin) {
+    } else if (hasBranchAdmin) {
       return (
         <Badge variant="outline" className="ml-2 px-1 py-0 text-xs bg-purple-50 text-purple-700 border-purple-200">
           Admin

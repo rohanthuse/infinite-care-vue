@@ -107,7 +107,7 @@ export const UnifiedMessageComposer = ({
                         <div className="flex items-center gap-2">
                           <span>{contact.name}</span>
                           <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">
-                            {contact.type === 'admin' ? 'Administrator' : 
+                            {contact.type === 'branch_admin' ? 'Administrator' : 
                              contact.type === 'carer' ? 'Carer' : 'Client'}
                           </span>
                         </div>

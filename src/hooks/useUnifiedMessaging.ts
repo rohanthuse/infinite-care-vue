@@ -15,7 +15,7 @@ export interface MessageContact {
   id: string;
   name: string;
   avatar: string;
-  type: 'client' | 'carer' | 'admin';
+  type: 'client' | 'carer' | 'branch_admin';
   status: 'online' | 'offline' | 'away';
   unread: number;
   email?: string;
@@ -287,12 +287,13 @@ export const useMessageThreads = () => {
 
           const unreadCount = (allMessages?.length || 0) - (readMessages?.length || 0);
 
-          // Process participants
+          // Process participants with proper role mapping
           const participants: MessageContact[] = thread.message_participants?.map(p => ({
             id: p.user_id,
             name: p.user_name,
             avatar: p.user_name.split(' ').map(n => n.charAt(0)).join(''),
-            type: p.user_type === 'carer' ? 'carer' : p.user_type === 'client' ? 'client' : 'branch_admin',
+            type: p.user_type === 'carer' ? 'carer' : 
+                  p.user_type === 'client' ? 'client' : 'branch_admin',
             status: 'online' as const,
             unread: 0
           })) || [];
@@ -635,7 +636,7 @@ export const useCreateThread = () => {
     }: { 
       recipientId: string;
       recipientName: string;
-      recipientType: 'client' | 'carer' | 'admin';
+      recipientType: 'client' | 'carer' | 'branch_admin';
       subject: string; 
       initialMessage: string 
     }) => {
@@ -680,7 +681,7 @@ export const useCreateThread = () => {
         {
           thread_id: thread.id,
           user_id: recipientId,
-          user_type: recipientType === 'admin' ? 'branch_admin' : recipientType,
+          user_type: recipientType === 'branch_admin' ? 'branch_admin' : recipientType,
           user_name: recipientName
         }
       ];
