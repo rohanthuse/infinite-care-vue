@@ -11,8 +11,28 @@ import { useAuth } from "@/hooks/useAuth";
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  // The old loading and auth check logic is now handled by the AuthProvider and protected route.
+  const { session, loading } = useAuth();
+
+  // Redirect to super admin login if not authenticated
+  useEffect(() => {
+    if (!loading && !session) {
+      navigate("/super-admin");
+    }
+  }, [session, loading, navigate]);
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated
+  if (!session) {
+    return null;
+  }
   
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
@@ -31,8 +51,6 @@ const Dashboard = () => {
             <p className="text-gray-500 mt-2 font-medium">Manage and monitor all branch administrators.</p>
           </div>
         </div>
-
-        {/* Removed Workflow section */}
         
         <AdminsTable />
       </motion.main>

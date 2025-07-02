@@ -37,10 +37,10 @@ const RequireCarerAuth = () => {
 
 /**
  * CarerRoutes component containing all routes related to the carer dashboard
- * Returns an array of Route elements for consistent usage in App.tsx
+ * Returns JSX Route elements for proper integration with main routing
  */
-const CarerRoutes = () => [
-  <Route key="carer-auth" element={<RequireCarerAuth />}>
+const CarerRoutes = () => (
+  <Route element={<RequireCarerAuth />}>
     <Route path="/carer-dashboard" element={<CarerDashboard />}>
       <Route index element={<CarerOverview />} />
       <Route path="profile" element={<CarerProfile />} />
@@ -58,6 +58,6 @@ const CarerRoutes = () => [
       <Route path="visit/:appointmentId" element={<CarerVisitWorkflow />} />
     </Route>
   </Route>
-];
+);
 
 export default CarerRoutes;

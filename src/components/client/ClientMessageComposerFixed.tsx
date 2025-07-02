@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useClientCareTeamFixed, useClientCreateThreadFixed, useClientSendMessageFixed } from "@/hooks/useClientMessagingFixed";
 
 interface ClientMessageComposerFixedProps {
@@ -74,7 +75,8 @@ export const ClientMessageComposerFixed = ({
   
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+      {/* Fixed Header */}
+      <div className="flex-shrink-0 p-4 border-b border-gray-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold">
           {isReply ? "Reply to Care Coordinator" : "Message Care Coordinator"}
         </h2>
@@ -83,65 +85,69 @@ export const ClientMessageComposerFixed = ({
         </Button>
       </div>
       
-      <div className="p-4 space-y-4">
-        {!isReply && (
-          <>
-            <div>
-              <label className="block text-sm font-medium mb-2">To:</label>
-              <Select value={recipientId} onValueChange={setRecipientId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a care coordinator" />
-                </SelectTrigger>
-                <SelectContent>
-                  {careTeam.map((contact) => (
-                    <SelectItem key={contact.id} value={contact.id}>
-                      <div className="flex items-center gap-2">
-                        <span>{contact.name}</span>
-                        <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
-                          Care Coordinator
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {careTeam.length === 0 && (
-                <p className="text-sm text-gray-500 mt-1">
-                  No care coordinators available. Please contact support if this seems incorrect.
-                </p>
-              )}
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-2">Subject:</label>
-              <Input
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="What's this message about?"
-                className="w-full"
-              />
-            </div>
-          </>
-        )}
-        
-        <div>
-          <label className="block text-sm font-medium mb-2">Message:</label>
-          <Textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type your message here..."
-            className="w-full min-h-[200px] resize-none"
-          />
+      {/* Scrollable Content Area */}
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="p-4 space-y-4">
+          {!isReply && (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-2">To:</label>
+                <Select value={recipientId} onValueChange={setRecipientId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a care coordinator" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {careTeam.map((contact) => (
+                      <SelectItem key={contact.id} value={contact.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{contact.name}</span>
+                          <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
+                            Care Coordinator
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {careTeam.length === 0 && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    No care coordinators available. Please contact support if this seems incorrect.
+                  </p>
+                )}
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Subject:</label>
+                <Input
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="What's this message about?"
+                  className="w-full"
+                />
+              </div>
+            </>
+          )}
+          
+          <div>
+            <label className="block text-sm font-medium mb-2">Message:</label>
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Type your message here..."
+              className="w-full min-h-[200px] resize-none"
+            />
+          </div>
+          
+          <div className="p-3 bg-blue-50 rounded-md">
+            <p className="text-sm text-blue-700">
+              <strong>Note:</strong> Your message will be sent to your care coordinator who will coordinate with your care team as needed. For urgent matters, please call your care provider directly.
+            </p>
+          </div>
         </div>
-        
-        <div className="p-3 bg-blue-50 rounded-md">
-          <p className="text-sm text-blue-700">
-            <strong>Note:</strong> Your message will be sent to your care coordinator who will coordinate with your care team as needed. For urgent matters, please call your care provider directly.
-          </p>
-        </div>
-      </div>
+      </ScrollArea>
       
-      <div className="mt-auto p-4 border-t border-gray-200">
+      {/* Fixed Footer */}
+      <div className="flex-shrink-0 p-4 border-t border-gray-200">
         <div className="flex items-center justify-between">
           <Button variant="ghost" size="sm" disabled>
             <Paperclip className="h-4 w-4 mr-2" />
