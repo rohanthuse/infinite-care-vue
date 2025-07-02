@@ -17,12 +17,24 @@ import { useBranchStatistics } from "@/data/hooks/useBranchStatistics";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 const BranchDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  const { data: branchData, isLoading, error } = useBranch(id);
-  const { data: stats, isLoading: isLoadingStats, error: errorStats } = useBranchStatistics(id);
+  console.log('BranchDetails - Raw id from useParams:', id);
+  console.log('BranchDetails - Current URL:', window.location.href);
+  console.log('BranchDetails - Current pathname:', window.location.pathname);
+  
+  // Validate the ID parameter
+  const isValidUuid = id && UUID_REGEX.test(id);
+  console.log('BranchDetails - Is valid UUID:', isValidUuid);
+  
+  // Don't make API calls if ID is invalid
+  const { data: branchData, isLoading, error } = useBranch(isValidUuid ? id : undefined);
+  const { data: stats, isLoading: isLoadingStats, error: errorStats } = useBranchStatistics(isValidUuid ? id : undefined);
 
   const handleNavigateToBranchAdmins = () => {
     toast.success("Navigating to Branch Admins dashboard");
@@ -31,10 +43,43 @@ const BranchDetails = () => {
 
   const handleNavigateToBranchDashboard = () => {
     toast.success("Navigating to Branch Dashboard");
-    if (branchData) {
+    if (branchData && isValidUuid) {
       navigate(`/admin/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.name)}`);
     }
   };
+
+  // Handle invalid UUID
+  if (!id || !isValidUuid) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        <DashboardNavbar />
+        
+        <motion.main 
+          className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <div className="flex flex-col items-center justify-center h-[50vh] bg-red-50 text-red-700 rounded-lg p-8">
+            <AlertCircle className="h-12 w-12 mb-4" />
+            <h2 className="text-xl font-bold mb-2">Invalid Branch ID</h2>
+            <p className="text-center mb-4">
+              The branch ID "{id}" is not valid. Please check the URL and try again.
+            </p>
+            <Button 
+              variant="outline" 
+              className="mt-6"
+              onClick={() => navigate('/admin/branch')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Branches
+            </Button>
+          </div>
+        </motion.main>
+      </div>
+    );
+  }
 
   const StatCard = ({ icon: Icon, title, value, color, isLoading }: { icon: any, title: string, value: number | string, color: string, isLoading?: boolean }) => (
     <div className={`bg-white rounded-lg shadow-sm border border-gray-100 p-5 flex flex-col`}>
@@ -78,7 +123,8 @@ const BranchDetails = () => {
            <div className="flex flex-col items-center justify-center h-[50vh] bg-red-50 text-red-700 rounded-lg p-8">
                 <AlertCircle className="h-12 w-12 mb-4" />
                 <h2 className="text-xl font-bold mb-2">Error loading branch details</h2>
-                <p>{error.message}</p>
+                <p className="text-center mb-2">{error.message}</p>
+                <p className="text-sm text-gray-600 mb-4">Branch ID: {id}</p>
                 <Button 
                   variant="outline" 
                   className="mt-6"
