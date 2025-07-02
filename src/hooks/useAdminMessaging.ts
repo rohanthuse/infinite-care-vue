@@ -99,7 +99,7 @@ export const useAdminContacts = () => {
         return [];
       }
 
-      // Get clients for these branches - simplified query with NULL status handling
+      // Get clients for these branches - now getting auth user IDs
       const { data: clients, error: clientError } = await supabase
         .from('clients')
         .select(`
@@ -120,7 +120,8 @@ export const useAdminContacts = () => {
       console.log('[useAdminContacts] Clients found:', clients?.length || 0);
       if (clients) {
         clients.forEach(client => {
-          // Include clients that have names, with fallback display logic
+          if (!client.email) return;
+          
           const firstName = client.first_name || '';
           const lastName = client.last_name || '';
           const displayName = `${firstName} ${lastName}`.trim() || 
@@ -128,7 +129,7 @@ export const useAdminContacts = () => {
                              `Client ${client.id.slice(0, 8)}`;
           
           contacts.push({
-            id: client.id,
+            id: client.id, // Using client DB ID for now - migration will fix message_participants
             name: displayName,
             avatar: `${firstName.charAt(0) || 'C'}${lastName.charAt(0) || 'L'}`,
             type: 'client' as const,
@@ -136,7 +137,7 @@ export const useAdminContacts = () => {
             unread: 0,
             email: client.email,
             role: 'client',
-            branchName: undefined // Remove branch name reference for now
+            branchName: undefined
           });
         });
       }
