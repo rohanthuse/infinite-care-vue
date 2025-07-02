@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -293,7 +292,7 @@ export const useMessageThreads = () => {
             id: p.user_id,
             name: p.user_name,
             avatar: p.user_name.split(' ').map(n => n.charAt(0)).join(''),
-            type: p.user_type === 'carer' ? 'carer' : p.user_type === 'client' ? 'client' : 'admin',
+            type: p.user_type === 'carer' ? 'carer' : p.user_type === 'client' ? 'client' : 'branch_admin',
             status: 'online' as const,
             unread: 0
           })) || [];
@@ -501,7 +500,7 @@ export const useMessagingContacts = () => {
                   id: admin.admin_id,
                   name: fullName,
                   avatar: `${firstName.charAt(0) || 'C'}${lastName.charAt(0) || 'C'}`,
-                  type: 'admin',
+                  type: 'branch_admin',
                   status: 'online',
                   unread: 0,
                   email: admin.profiles.email,
@@ -590,7 +589,7 @@ export const useMessagingContacts = () => {
                   id: admin.admin_id,
                   name: fullName,
                   avatar: `${firstName.charAt(0) || 'A'}${lastName.charAt(0) || 'D'}`,
-                  type: 'admin',
+                  type: 'branch_admin',
                   status: 'online',
                   unread: 0,
                   email: admin.profiles.email,
