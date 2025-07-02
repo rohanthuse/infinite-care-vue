@@ -25,7 +25,6 @@ export const ClientMessageComposer = ({
   const [recipientId, setRecipientId] = useState(selectedContactId || "");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [authDebugInfo, setAuthDebugInfo] = useState<any>(null);
   
   const { data: careTeam = [] } = useClientCareTeam();
   const createThread = useClientCreateThread();
@@ -61,14 +60,6 @@ export const ClientMessageComposer = ({
             userId: user.id,
             role: roleData?.role,
             roleError
-          });
-
-          setAuthDebugInfo({
-            userId: user.id,
-            email: user.email,
-            role: roleData?.role,
-            hasSession: !!session,
-            errors: { sessionError, userError, roleError }
           });
         }
       } catch (error) {
@@ -172,13 +163,6 @@ export const ClientMessageComposer = ({
           <X className="h-4 w-4" />
         </Button>
       </div>
-      
-      {/* Debug info for development */}
-      {authDebugInfo && process.env.NODE_ENV === 'development' && (
-        <div className="p-2 bg-yellow-50 text-xs border-b">
-          Auth: {authDebugInfo.email} | Role: {authDebugInfo.role} | Session: {authDebugInfo.hasSession ? 'Yes' : 'No'}
-        </div>
-      )}
       
       {/* Content - Scrollable */}
       <div className="flex-1 overflow-y-auto p-4">

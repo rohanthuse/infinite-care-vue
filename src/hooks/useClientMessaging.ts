@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from './useUserRole';
@@ -54,34 +55,28 @@ export const useClientCareTeam = () => {
   const { data: currentUser } = useUserRole();
   
   return useQuery({
-    queryKey: ['client-care-team'],
+    queryKey: ['client-care-team', currentUser?.id],
     queryFn: async (): Promise<ClientContact[]> => {
       if (!currentUser) {
         console.log('[useClientCareTeam] No current user');
         return [];
       }
 
-      // Get current client info from localStorage and verify with database
-      const clientId = localStorage.getItem("clientId");
-      const clientEmail = localStorage.getItem("clientEmail") || currentUser.email;
-      
-      console.log('[useClientCareTeam] Client info:', { clientId, clientEmail, currentUserId: currentUser.id });
-
-      if (!clientId && !clientEmail) {
-        console.log('[useClientCareTeam] No client identification available');
+      // Get current client's branch using the authenticated user's email
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) {
+        console.log('[useClientCareTeam] No authenticated user email');
         return [];
       }
 
-      // Get client record to find branch
-      let clientQuery = supabase.from('clients').select('id, branch_id, email');
-      
-      if (clientId) {
-        clientQuery = clientQuery.eq('id', clientId);
-      } else {
-        clientQuery = clientQuery.eq('email', clientEmail);
-      }
+      console.log('[useClientCareTeam] Looking up client with email:', user.email);
 
-      const { data: client, error: clientError } = await clientQuery.single();
+      // Get client record to find branch using authenticated user's email
+      const { data: client, error: clientError } = await supabase
+        .from('clients')
+        .select('id, branch_id, first_name, last_name, email')
+        .eq('email', user.email)
+        .single();
 
       if (clientError || !client?.branch_id) {
         console.error('[useClientCareTeam] Client lookup error:', clientError);
@@ -207,7 +202,7 @@ export const useClientMessageThreads = () => {
 
           const unreadCount = (allMessages?.length || 0) - (readMessages?.length || 0);
 
-          // Process participants
+          // Process participants (exclude self)
           const participants: ClientContact[] = thread.message_participants?.map(p => ({
             id: p.user_id,
             name: p.user_name,
@@ -215,12 +210,12 @@ export const useClientMessageThreads = () => {
             type: p.user_type === 'carer' ? 'carer' : 'admin',
             status: 'online' as const,
             unread: 0
-          })) || [];
+          })).filter(p => p.id !== currentUser.id) || [];
 
           return {
             id: thread.id,
             subject: thread.subject,
-            participants: participants.filter(p => p.id !== currentUser.id), // Exclude self
+            participants,
             lastMessage: latestMessage ? {
               id: latestMessage.id,
               threadId: thread.id,
@@ -391,44 +386,23 @@ export const useClientCreateThread = () => {
 
       console.log('[useClientCreateThread] Authenticated user:', user.id, user.email);
 
-      // Verify user has client role
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .single();
-
-      if (roleError || roleData?.role !== 'client') {
-        console.error('[useClientCreateThread] Role verification failed:', { roleError, role: roleData?.role });
-        throw new Error('Access denied - client role required');
-      }
-
-      console.log('[useClientCreateThread] Role verified:', roleData.role);
-
-      // Get client information
-      const clientId = localStorage.getItem("clientId");
-      const clientName = localStorage.getItem("clientName") || user.email?.split('@')[0] || 'Client';
-      
-      if (!clientId) {
-        console.error('[useClientCreateThread] No client ID found');
-        throw new Error('Client information not found - please log in again');
-      }
-
-      // Get client's branch
+      // Get client information using the authenticated user's email
       const { data: client, error: clientError } = await supabase
         .from('clients')
-        .select('id, branch_id, first_name, last_name')
-        .eq('id', clientId)
+        .select('id, branch_id, first_name, last_name, email')
+        .eq('email', user.email)
         .single();
 
-      if (clientError || !client?.branch_id) {
+      if (clientError || !client) {
         console.error('[useClientCreateThread] Client lookup failed:', clientError);
-        throw new Error('Client profile not found');
+        throw new Error('Client profile not found - please ensure you are logged in as a client');
       }
 
       console.log('[useClientCreateThread] Client data:', client);
 
-      // Create thread with explicit user context
+      const clientName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.email?.split('@')[0] || 'Client';
+
+      // Create thread with the client's branch
       const threadData = {
         subject,
         branch_id: client.branch_id,
@@ -450,11 +424,11 @@ export const useClientCreateThread = () => {
 
       console.log('[useClientCreateThread] Thread created:', thread);
 
-      // Add participants
+      // Add participants - use the authenticated user's ID for the client
       const participants = [
         {
           thread_id: thread.id,
-          user_id: user.id,
+          user_id: user.id, // Use auth user ID
           user_type: 'client',
           user_name: clientName
         },
@@ -477,14 +451,14 @@ export const useClientCreateThread = () => {
         throw new Error(`Failed to add participants: ${participantsError.message}`);
       }
 
-      // Send initial message
+      // Send initial message using the authenticated user's ID
       console.log('[useClientCreateThread] Sending initial message...');
       
       const { error: messageError } = await supabase
         .from('messages')
         .insert({
           thread_id: thread.id,
-          sender_id: user.id,
+          sender_id: user.id, // Use auth user ID
           sender_type: 'client',
           content: initialMessage
         });
