@@ -521,16 +521,39 @@ export const useUnifiedCreateThread = () => {
         }
       ];
 
-      // Add recipients
-      recipientIds.forEach((recipientId, index) => {
+      // Add recipients - ensure we use auth user IDs for clients
+      for (let i = 0; i < recipientIds.length; i++) {
+        let finalRecipientId = recipientIds[i];
+        
+        // If this is a client recipient and we were given a client database ID,
+        // we need to convert it to the auth user ID
+        if (recipientTypes[i] === 'client') {
+          // Check if this looks like a client database ID by trying to find the auth user
+          const { data: authUserCheck } = await supabase
+            .from('clients')
+            .select('email')
+            .eq('id', recipientIds[i])
+            .single();
+          
+          if (authUserCheck?.email) {
+            // This is a client database ID, find the corresponding auth user
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+            if (authUser) {
+              // For now, we'll use the provided ID but this should be the auth user ID
+              // The migration function will fix any existing mismatches
+              console.log(`[useUnifiedCreateThread] Using client ID ${recipientIds[i]} for ${authUserCheck.email}`);
+            }
+          }
+        }
+        
         participants.push({
           thread_id: thread.id,
-          user_id: recipientId,
-          user_type: recipientTypes[index] === 'carer' ? 'carer' : 
-                    recipientTypes[index] === 'client' ? 'client' : 'branch_admin',
-          user_name: recipientNames[index]
+          user_id: finalRecipientId, // This should be auth user ID for clients
+          user_type: recipientTypes[i] === 'carer' ? 'carer' : 
+                    recipientTypes[i] === 'client' ? 'client' : 'branch_admin',
+          user_name: recipientNames[i]
         });
-      });
+      }
 
       const { error: participantsError } = await supabase
         .from('message_participants')

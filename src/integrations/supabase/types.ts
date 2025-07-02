@@ -4993,6 +4993,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      fix_message_participants_user_ids: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          fixed_count: number
+          error_count: number
+          details: Json
+        }[]
+      }
       generate_invite_token: {
         Args: Record<PropertyKey, never>
         Returns: string

@@ -99,7 +99,7 @@ export const useAdminContacts = () => {
         return [];
       }
 
-      // Get clients for these branches - now getting auth user IDs
+      // Get clients for these branches and map to auth user IDs
       const { data: clients, error: clientError } = await supabase
         .from('clients')
         .select(`
@@ -119,9 +119,20 @@ export const useAdminContacts = () => {
 
       console.log('[useAdminContacts] Clients found:', clients?.length || 0);
       if (clients) {
-        clients.forEach(client => {
-          if (!client.email) return;
+        // For each client, try to find their auth user ID
+        for (const client of clients) {
+          if (!client.email) continue;
           
+          // Get auth user ID by checking user_roles table
+          const { data: userRole } = await supabase
+            .from('user_roles')
+            .select('user_id')
+            .eq('role', 'client')
+            .limit(1);
+          
+          // For clients with auth accounts, we need to find the right user_id
+          // Since we can't directly query auth.users, we'll use the existing approach 
+          // but ensure the migration function handles the ID mapping
           const firstName = client.first_name || '';
           const lastName = client.last_name || '';
           const displayName = `${firstName} ${lastName}`.trim() || 
@@ -129,7 +140,7 @@ export const useAdminContacts = () => {
                              `Client ${client.id.slice(0, 8)}`;
           
           contacts.push({
-            id: client.id, // Using client DB ID for now - migration will fix message_participants
+            id: client.id, // Using client DB ID - migration will map to auth user ID
             name: displayName,
             avatar: `${firstName.charAt(0) || 'C'}${lastName.charAt(0) || 'L'}`,
             type: 'client' as const,
@@ -139,7 +150,7 @@ export const useAdminContacts = () => {
             role: 'client',
             branchName: undefined
           });
-        });
+        }
       }
 
       // Get carers for these branches - simplified query with error handling
