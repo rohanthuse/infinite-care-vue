@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart, Lock, AlertCircle, Eye, EyeOff, Mail } from "lucide-react";
@@ -24,7 +23,7 @@ const SuperAdminLogin = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (!loading && session) {
-      navigate("/dashboard");
+      navigate("/admin/dashboard");
     }
   }, [session, loading, navigate]);
 
@@ -64,7 +63,7 @@ const SuperAdminLogin = () => {
           title: "Login successful",
           description: "Welcome back, Super Admin!",
         });
-        // Navigation will be handled by the useEffect hook when session updates
+        navigate("/admin/dashboard");
       }
     } catch (err: any) {
       setError("An unexpected error occurred during login. Please try again.");
