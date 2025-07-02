@@ -52,6 +52,18 @@ export interface Message {
   attachments?: any[];
 }
 
+// Helper function to safely parse attachments
+const parseAttachments = (attachments: any): any[] => {
+  if (!attachments) return [];
+  if (Array.isArray(attachments)) return attachments;
+  try {
+    const parsed = typeof attachments === 'string' ? JSON.parse(attachments) : attachments;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 // Enhanced session validation with automatic refresh
 const validateSession = async () => {
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -380,7 +392,7 @@ export const useThreadMessages = (threadId: string) => {
           timestamp: new Date(message.created_at),
           isRead,
           hasAttachments: message.has_attachments || false,
-          attachments: message.attachments || []
+          attachments: parseAttachments(message.attachments)
         };
       }) || [];
     },
