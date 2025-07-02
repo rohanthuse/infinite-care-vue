@@ -82,7 +82,9 @@ const Branch = () => {
   });
 
   const handleViewBranchDetails = (branchId: string) => {
-    navigate(`/branch-details/${branchId}`);
+    console.log('Branch.tsx - Navigating to branch details with ID:', branchId);
+    // Use the correct admin path directly
+    navigate(`/admin/branch-details/${branchId}`);
   };
 
   const handleEdit = (branch: Branch) => {

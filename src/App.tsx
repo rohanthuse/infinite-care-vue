@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { BranchDetailsRedirect } from "./components/BranchDetailsRedirect";
 import AdminRoutes from "./routes/AdminRoutes";
 import CarerRoutes from "./routes/CarerRoutes";
 import Index from "./pages/Index";
@@ -49,8 +50,8 @@ const App = () => (
               <Route path="/super-admin" element={<SuperAdminLogin />} />
               <Route path="/client-login" element={<ClientLogin />} />
               
-              {/* Legacy route redirects - handle the current problematic route */}
-              <Route path="/branch-details/:id" element={<Navigate to="/admin/branch-details/:id" replace />} />
+              {/* Legacy route redirects - handle with proper parameter extraction */}
+              <Route path="/branch-details/:id" element={<BranchDetailsRedirect />} />
               <Route path="/branch" element={<Navigate to="/admin/branch" replace />} />
               <Route path="/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
               
