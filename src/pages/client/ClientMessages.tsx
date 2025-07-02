@@ -73,7 +73,7 @@ const ClientMessages = () => {
   
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+      <div className="flex-1 overflow-hidden flex flex-col md:flex-row min-h-0">
         {/* Sidebar - Contact list */}
         <div className="w-full md:w-64 border-r border-gray-200 flex flex-col bg-white rounded-l-md shadow-sm">
           <MemoizedContactSidebar 
@@ -86,7 +86,7 @@ const ClientMessages = () => {
         </div>
         
         {/* Messages list column */}
-        <div className="w-full md:w-80 lg:w-96 border-r border-gray-200 flex flex-col bg-white md:flex">
+        <div className="w-full md:w-80 lg:w-96 border-r border-gray-200 flex flex-col bg-white md:flex min-h-0">
           <MemoizedMessageList 
             selectedContactId={selectedContactId}
             selectedMessageId={selectedMessageId}
@@ -97,7 +97,7 @@ const ClientMessages = () => {
         </div>
         
         {/* Message view or composer */}
-        <div className="flex-1 bg-white rounded-r-md shadow-sm flex flex-col">
+        <div className="flex-1 bg-white rounded-r-md shadow-sm flex flex-col min-h-0">
           {showComposer ? (
             <MemoizedMessageComposer
               selectedContactId={selectedContactId}
