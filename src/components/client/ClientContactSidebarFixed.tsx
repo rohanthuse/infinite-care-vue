@@ -1,9 +1,8 @@
 
 import React from "react";
-import { Search, RefreshCw } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useClientCareTeamFixed } from "@/hooks/useClientMessagingFixed";
 
 interface ClientContactSidebarFixedProps {
@@ -21,7 +20,7 @@ export const ClientContactSidebarFixed = ({
   searchTerm,
   onSearchChange 
 }: ClientContactSidebarFixedProps) => {
-  const { data: careTeam = [], isLoading, error, refetch } = useClientCareTeamFixed();
+  const { data: careTeam = [], isLoading, error } = useClientCareTeamFixed();
   
   console.log('[ClientContactSidebarFixed] Care team data:', careTeam);
   
@@ -58,32 +57,13 @@ export const ClientContactSidebarFixed = ({
         </div>
 
         {error && (
-          <div className="mt-2 p-4 bg-red-50 rounded-lg border border-red-200">
-            <div className="text-sm text-red-800 font-medium mb-2">
+          <div className="mt-2 p-3 bg-red-50 rounded-md border border-red-200">
+            <div className="text-sm text-red-800 font-medium mb-1">
               Unable to load care coordinators
             </div>
-            <p className="text-xs text-red-700 mb-3 leading-relaxed">
+            <p className="text-xs text-red-700">
               {error.message}
             </p>
-            <div className="flex gap-2">
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => refetch()}
-                className="text-xs"
-              >
-                <RefreshCw className="h-3 w-3 mr-1" />
-                Try Again
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => window.location.reload()}
-                className="text-xs"
-              >
-                Refresh Page
-              </Button>
-            </div>
           </div>
         )}
       </div>
@@ -111,15 +91,16 @@ export const ClientContactSidebarFixed = ({
               <div className="text-red-500 text-sm font-medium">
                 Configuration Issue
               </div>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                We're having trouble loading your care coordinators. This usually means:
-                <br />• Your account needs to be linked to a branch
-                <br />• No coordinators are assigned to your branch
-                <br />• There's a temporary connectivity issue
+              <p className="text-xs text-gray-600">
+                Your account needs to be properly configured with care coordinators. 
+                Please contact your administrator or support team.
               </p>
-              <div className="text-xs text-gray-500 mt-2">
-                Please contact your administrator or support team for assistance.
-              </div>
+              <button 
+                onClick={() => window.location.reload()}
+                className="text-xs text-blue-600 hover:text-blue-800 underline"
+              >
+                Try refreshing the page
+              </button>
             </div>
           </div>
         ) : (
