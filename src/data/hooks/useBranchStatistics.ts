@@ -37,14 +37,6 @@ export interface BranchStatistics {
 }
 
 const fetchBranchStatistics = async (branchId: string): Promise<BranchStatistics> => {
-    console.log('fetchBranchStatistics called with branchId:', branchId);
-    
-    // Validate UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(branchId)) {
-        throw new Error(`Invalid UUID format for branch statistics: ${branchId}`);
-    }
-
     const today = new Date();
     const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
     const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
@@ -88,7 +80,6 @@ const fetchBranchStatistics = async (branchId: string): Promise<BranchStatistics
 
     const errors = [staffError, clientsError, bookingsError, reviewsError, todaysBookingsError, expiryAlertsError, latestReviewsError].filter(Boolean);
     if (errors.length > 0) {
-        console.error('Supabase errors in fetchBranchStatistics:', errors);
         throw new Error(errors.map(e => (e as Error).message).join(', '));
     }
     
@@ -104,11 +95,9 @@ const fetchBranchStatistics = async (branchId: string): Promise<BranchStatistics
 };
 
 export const useBranchStatistics = (branchId: string | undefined) => {
-    console.log('useBranchStatistics hook called with branchId:', branchId);
-    
     return useQuery({
         queryKey: ['branch-statistics', branchId],
         queryFn: () => fetchBranchStatistics(branchId!),
-        enabled: !!branchId && branchId !== ':id', // Explicitly check for the placeholder
+        enabled: !!branchId,
     });
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   ChevronDown, ChevronUp, FileText, Home, 
@@ -145,33 +144,33 @@ export function DashboardNavbar() {
   };
 
   const mainNavItems = [
-    { label: "Home", icon: Home, path: "/admin/dashboard" },
+    { label: "Home", icon: Home, path: "/dashboard" },
     { label: "Key Parameters", icon: ListChecks, path: "#", hasSubmenu: true },
-    { label: "Settings", icon: Settings, path: "/admin/settings" },
-    { label: "Agreement", icon: FileText, path: "/admin/agreement" }
+    { label: "Settings", icon: Settings, path: "/settings" },
+    { label: "Agreement", icon: FileText, path: "/agreement" }
   ];
 
   const keyParametersSubItems = [
-    { label: "Services", icon: Briefcase, path: "/admin/services" },
-    { label: "Hobbies", icon: Heart, path: "/admin/hobbies" },
-    { label: "Skills", icon: Brain, path: "/admin/skills" },
-    { label: "Medical & Mental", icon: Stethoscope, path: "/admin/medical-mental" },
-    { label: "Type of Work", icon: ListChecks, path: "/admin/type-of-work" },
-    { label: "Body Map Injuries", icon: ActivitySquare, path: "/admin/body-map-points" },
-    { label: "Branch", icon: Building2, path: "/admin/branch" },
-    { label: "Branch Admin", icon: Users, path: "/admin/branch-admins" }
+    { label: "Services", icon: Briefcase, path: "/services" },
+    { label: "Hobbies", icon: Heart, path: "/hobbies" },
+    { label: "Skills", icon: Brain, path: "/skills" },
+    { label: "Medical & Mental", icon: Stethoscope, path: "/medical-mental" },
+    { label: "Type of Work", icon: ListChecks, path: "/type-of-work" },
+    { label: "Body Map Injuries", icon: ActivitySquare, path: "/body-map-points" },
+    { label: "Branch", icon: Building2, path: "/branch" },
+    { label: "Branch Admin", icon: Users, path: "/branch-admins" }
   ];
 
   useEffect(() => {
     const path = location.pathname;
     
-    if (path === '/admin/dashboard') {
+    if (path === '/dashboard') {
       setActiveItem("Home");
       setActiveSubItem("");
-    } else if (path === '/admin/settings') {
+    } else if (path === '/settings') {
       setActiveItem("Settings");
       setActiveSubItem("");
-    } else if (path === '/admin/agreement') {
+    } else if (path === '/agreement') {
       setActiveItem("Agreement");
       setActiveSubItem("");
     } else {

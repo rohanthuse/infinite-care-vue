@@ -21,30 +21,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let mounted = true;
-    let timeoutId: NodeJS.Timeout | null = null;
-    
-    console.log('AuthProvider - Setting up authentication...');
     
     const getSession = async () => {
       try {
-        console.log('AuthProvider - Getting initial session...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('AuthProvider - Session error:', error);
-          if (mounted) {
-            setError(error.message);
-          }
-        } else {
-          console.log('AuthProvider - Initial session:', session ? 'Found' : 'None');
-          if (mounted) {
-            setSession(session);
-            setUser(session?.user ?? null);
-            setError(null);
-          }
+          console.error('Auth session error:', error);
+          setError(error.message);
+        }
+        
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setError(null);
         }
       } catch (err) {
-        console.error('AuthProvider - Failed to get session:', err);
+        console.error('Failed to get session:', err);
         if (mounted) {
           setError('Failed to load authentication');
         }
@@ -56,60 +49,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     // Set up auth state listener first
-    console.log('AuthProvider - Setting up auth state listener...');
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('AuthProvider - Auth state changed:', event, session ? 'Session exists' : 'No session');
-      
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (mounted) {
         setSession(session);
         setUser(session?.user ?? null);
         setError(null);
         setLoading(false);
-        
-        // Clear timeout when we get a successful auth state change
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-          timeoutId = null;
-        }
       }
     });
 
     // Then get initial session
     getSession();
 
-    // Set a timeout only if we don't have a session after reasonable time
-    timeoutId = setTimeout(() => {
-      if (mounted && loading && !session) {
-        console.warn('AuthProvider - Auth loading timed out');
+    // Set a timeout to ensure we don't stay loading forever
+    const timeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('Auth loading timed out, proceeding without authentication');
         setLoading(false);
-        setError('Authentication timeout - please try logging in again');
       }
-    }, 10000); // 10 second timeout
+    }, 5000);
 
     return () => {
-      console.log('AuthProvider - Cleaning up...');
       mounted = false;
       subscription.unsubscribe();
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
+      clearTimeout(timeout);
     };
   }, []);
 
   const signOut = async () => {
-    try {
-      console.log('AuthProvider - Signing out...');
-      setError(null);
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('AuthProvider - Sign out error:', error);
-        throw error;
-      }
-      console.log('AuthProvider - Signed out successfully');
-    } catch (err) {
-      console.error('AuthProvider - Sign out failed:', err);
-      throw err;
-    }
+    await supabase.auth.signOut();
   };
 
   const value = {
@@ -120,13 +88,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signOut,
   };
 
-  console.log('AuthProvider - Current state:', { 
-    hasUser: !!user, 
-    hasSession: !!session, 
-    loading, 
-    error 
-  });
-
+  // Always render children, but show loading state when needed
   return (
     <AuthContext.Provider value={value}>
       {children}

@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRoleFixed } from './useUserRoleFixed';
@@ -56,28 +57,24 @@ export const useClientCareTeamFixed = () => {
   return useQuery({
     queryKey: ['client-care-team-fixed'],
     queryFn: async (): Promise<ClientContact[]> => {
-      console.log('[useClientCareTeamFixed] Loading care team for user:', currentUser?.id, currentUser?.email);
+      console.log('[useClientCareTeamFixed] Loading care team for user:', currentUser?.id);
       
       if (!currentUser) {
         console.log('[useClientCareTeamFixed] No current user');
         return [];
       }
 
-      // Get current client info from multiple sources with enhanced logging
+      // Get current client info from multiple sources
       let clientId = localStorage.getItem("clientId");
       let clientBranchId: string | null = null;
 
-      console.log('[useClientCareTeamFixed] Initial clientId from localStorage:', clientId);
-
       // Try to get client info from localStorage first
       if (clientId) {
-        const { data: client, error: clientError } = await supabase
+        const { data: client } = await supabase
           .from('clients')
-          .select('id, branch_id, email, first_name, last_name')
+          .select('branch_id')
           .eq('id', clientId)
           .single();
-
-        console.log('[useClientCareTeamFixed] Client lookup by ID result:', { client, clientError });
 
         if (client?.branch_id) {
           clientBranchId = client.branch_id;
@@ -88,13 +85,11 @@ export const useClientCareTeamFixed = () => {
       if (!clientId || !clientBranchId) {
         console.log('[useClientCareTeamFixed] Looking up client by email:', currentUser.email);
         
-        const { data: clientData, error: emailLookupError } = await supabase
+        const { data: clientData } = await supabase
           .from('clients')
-          .select('id, branch_id, email, first_name, last_name')
+          .select('id, branch_id')
           .eq('email', currentUser.email)
           .single();
-
-        console.log('[useClientCareTeamFixed] Client lookup by email result:', { clientData, emailLookupError });
 
         if (clientData) {
           clientId = clientData.id;
@@ -102,23 +97,22 @@ export const useClientCareTeamFixed = () => {
           
           // Update localStorage
           localStorage.setItem("clientId", clientId);
-          console.log('[useClientCareTeamFixed] Updated localStorage with clientId:', clientId);
+          console.log('[useClientCareTeamFixed] Found client data:', clientData);
         }
       }
 
       if (!clientBranchId) {
-        console.error('[useClientCareTeamFixed] No client branch found for user:', currentUser.email);
-        throw new Error('Your account is not properly configured with a branch. Please contact support to ensure your account is properly set up.');
+        console.log('[useClientCareTeamFixed] No client branch found');
+        return [];
       }
 
       console.log('[useClientCareTeamFixed] Loading admins for branch:', clientBranchId);
 
-      // Enhanced query to get admins for this branch with better error handling
+      // Get only admins for this branch
       const { data: adminBranches, error } = await supabase
         .from('admin_branches')
         .select(`
           admin_id,
-          branch_id,
           profiles!inner(
             id,
             first_name,
@@ -128,82 +122,43 @@ export const useClientCareTeamFixed = () => {
         `)
         .eq('branch_id', clientBranchId);
 
-      console.log('[useClientCareTeamFixed] Admin branches query result:', { 
-        adminBranches, 
-        error,
-        branchId: clientBranchId,
-        count: adminBranches?.length || 0 
-      });
-
       if (error) {
         console.error('[useClientCareTeamFixed] Error loading admin branches:', error);
-        throw new Error(`Unable to load care coordinators: ${error.message}. Please try again or contact support.`);
-      }
-
-      if (!adminBranches || adminBranches.length === 0) {
-        console.log('[useClientCareTeamFixed] No admin branches found for branch:', clientBranchId);
-        
-        // Additional diagnostic query to check if the branch exists
-        const { data: branchCheck } = await supabase
-          .from('branches')
-          .select('id, name')
-          .eq('id', clientBranchId)
-          .single();
-        
-        console.log('[useClientCareTeamFixed] Branch check result:', branchCheck);
-        
-        throw new Error('No care coordinators are currently assigned to your branch. Please contact support to have care coordinators assigned to your account.');
+        return [];
       }
 
       const contacts: ClientContact[] = [];
 
-      // Add only admins with enhanced data validation
-      adminBranches.forEach((admin, index) => {
-        console.log(`[useClientCareTeamFixed] Processing admin ${index + 1}:`, admin);
+      // Add only admins
+      if (adminBranches) {
+        console.log('[useClientCareTeamFixed] Found admin branches:', adminBranches.length);
         
-        if (admin.profiles) {
-          const firstName = admin.profiles.first_name || 'Admin';
-          const lastName = admin.profiles.last_name || '';
-          const fullName = `${firstName} ${lastName}`.trim();
-          const email = admin.profiles.email;
-          
-          if (!email) {
-            console.warn('[useClientCareTeamFixed] Admin without email found, skipping:', admin.admin_id);
-            return;
+        adminBranches.forEach(admin => {
+          if (admin.profiles) {
+            const firstName = admin.profiles.first_name || 'Admin';
+            const lastName = admin.profiles.last_name || '';
+            const fullName = `${firstName} ${lastName}`.trim();
+            
+            contacts.push({
+              id: admin.admin_id,
+              name: fullName,
+              avatar: `${firstName.charAt(0)}${lastName.charAt(0) || 'A'}`,
+              type: 'admin',
+              status: 'online',
+              unread: 0,
+              email: admin.profiles.email,
+              role: 'admin'
+            });
           }
-          
-          contacts.push({
-            id: admin.admin_id,
-            name: fullName,
-            avatar: `${firstName.charAt(0)}${lastName.charAt(0) || 'A'}`,
-            type: 'admin',
-            status: 'online',
-            unread: 0,
-            email: email,
-            role: 'admin'
-          });
-          
-          console.log(`[useClientCareTeamFixed] Added contact:`, { name: fullName, email });
-        } else {
-          console.warn('[useClientCareTeamFixed] Admin without profile data:', admin.admin_id);
-        }
-      });
-
-      console.log('[useClientCareTeamFixed] Final contacts list:', contacts.length, contacts);
-      
-      if (contacts.length === 0) {
-        throw new Error('No valid care coordinators found. The assigned coordinators may have incomplete profile information. Please contact support.');
+        });
       }
-      
+
+      console.log('[useClientCareTeamFixed] Returning contacts:', contacts.length);
       return contacts;
     },
     enabled: !!currentUser,
     staleTime: 300000, // 5 minutes
-    retry: (failureCount, error) => {
-      console.log(`[useClientCareTeamFixed] Retry attempt ${failureCount}:`, error?.message);
-      return failureCount < 2; // Retry up to 2 times
-    },
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retry: 2,
   });
 };
 

@@ -1,9 +1,8 @@
 
 import React from "react";
-import { Search, RefreshCw } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useClientCareTeamFixed } from "@/hooks/useClientMessagingFixed";
 
 interface ClientContactSidebarFixedProps {
@@ -21,7 +20,7 @@ export const ClientContactSidebarFixed = ({
   searchTerm,
   onSearchChange 
 }: ClientContactSidebarFixedProps) => {
-  const { data: careTeam = [], isLoading, error, refetch } = useClientCareTeamFixed();
+  const { data: careTeam = [], isLoading, error } = useClientCareTeamFixed();
   
   console.log('[ClientContactSidebarFixed] Care team data:', careTeam);
   
@@ -58,32 +57,9 @@ export const ClientContactSidebarFixed = ({
         </div>
 
         {error && (
-          <div className="mt-2 p-4 bg-red-50 rounded-lg border border-red-200">
-            <div className="text-sm text-red-800 font-medium mb-2">
-              Unable to load care coordinators
-            </div>
-            <p className="text-xs text-red-700 mb-3 leading-relaxed">
-              {error.message}
-            </p>
-            <div className="flex gap-2">
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => refetch()}
-                className="text-xs"
-              >
-                <RefreshCw className="h-3 w-3 mr-1" />
-                Try Again
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => window.location.reload()}
-                className="text-xs"
-              >
-                Refresh Page
-              </Button>
-            </div>
+          <div className="mt-2 p-2 bg-red-50 rounded-md text-xs text-red-700">
+            <p>Error loading care coordinators: {error.message}</p>
+            <p className="mt-1 text-xs">Please check your internet connection and try refreshing the page.</p>
           </div>
         )}
       </div>
@@ -104,23 +80,6 @@ export const ClientContactSidebarFixed = ({
                 </div>
               </div>
             ))}
-          </div>
-        ) : error ? (
-          <div className="p-4 text-center text-gray-500">
-            <div className="space-y-3">
-              <div className="text-red-500 text-sm font-medium">
-                Configuration Issue
-              </div>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                We're having trouble loading your care coordinators. This usually means:
-                <br />• Your account needs to be linked to a branch
-                <br />• No coordinators are assigned to your branch
-                <br />• There's a temporary connectivity issue
-              </p>
-              <div className="text-xs text-gray-500 mt-2">
-                Please contact your administrator or support team for assistance.
-              </div>
-            </div>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
@@ -161,13 +120,13 @@ export const ClientContactSidebarFixed = ({
               </div>
             ))}
             
-            {filteredContacts.length === 0 && !isLoading && !error && (
+            {filteredContacts.length === 0 && !isLoading && (
               <div className="p-4 text-center text-gray-500">
                 {careTeam.length === 0 ? (
                   <div className="space-y-2">
                     <p>No care coordinators found</p>
                     <p className="text-xs text-gray-400">
-                      Please contact support to have care coordinators assigned to your account.
+                      If you believe this is an error, please contact support.
                     </p>
                   </div>
                 ) : (

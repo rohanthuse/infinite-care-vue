@@ -15,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { AddAdminForm } from "./AddAdminForm";
 import { EditAdminPermissionsDialog } from "./EditAdminPermissionsDialog";
-import { Search, Plus, Settings, Trash2, Loader2, AlertCircle } from "lucide-react";
+import { Search, Plus, Settings, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -28,7 +28,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent } from "@/components/ui/card";
 
 interface AdminData {
   id: string;
@@ -54,82 +53,55 @@ export const AdminsTable = () => {
     queryFn: async () => {
       console.log('Fetching branch admins...');
       
-      try {
-        // Use the same proven pattern as in useClientMessaging.ts
-        const { data: adminBranches, error } = await supabase
-          .from('admin_branches')
-          .select(`
-            admin_id,
-            branch_id,
-            branches(
-              id,
-              name
-            ),
-            profiles!inner(
-              id,
-              email,
-              first_name,
-              last_name
-            )
-          `);
+      // Use the same proven pattern as in useClientMessaging.ts
+      const { data: adminBranches, error } = await supabase
+        .from('admin_branches')
+        .select(`
+          admin_id,
+          branch_id,
+          branches(
+            id,
+            name
+          ),
+          profiles!inner(
+            id,
+            email,
+            first_name,
+            last_name
+          )
+        `);
 
-        if (error) {
-          console.error('Error fetching admin branches:', error);
-          throw error;
-        }
-
-        console.log('Raw admin branches data:', adminBranches);
-
-        // Handle case where no data is returned
-        if (!adminBranches || adminBranches.length === 0) {
-          console.log('No admin branches found');
-          return [];
-        }
-
-        // Get admin permissions for each admin
-        const adminIds = adminBranches.map(ab => ab.admin_id).filter(Boolean);
-        let permissions: any[] = [];
-        
-        if (adminIds.length > 0) {
-          const { data: permissionsData } = await supabase
-            .from('admin_permissions')
-            .select('admin_id')
-            .in('admin_id', adminIds);
-          
-          permissions = permissionsData || [];
-        }
-
-        console.log('Admin permissions data:', permissions);
-
-        const transformedData: AdminData[] = adminBranches
-          .filter(item => item && item.profiles && item.admin_id) // Filter out null/invalid items
-          .map((item: any) => {
-            // Safety checks for nested objects
-            const profile = item.profiles || {};
-            const branch = item.branches || {};
-            
-            return {
-              id: item.admin_id,
-              email: profile.email || 'Unknown',
-              first_name: profile.first_name || null,
-              last_name: profile.last_name || null,
-              role: 'branch_admin', // We know they're branch admins since they're in admin_branches
-              branch_name: branch.name || 'No Branch',
-              branch_id: item.branch_id || null,
-              created_at: new Date().toISOString(), // We don't have this field, using current date
-              has_permissions: permissions.some(p => p && p.admin_id === item.admin_id) || false,
-            };
-          });
-
-        console.log('Transformed admin data:', transformedData);
-        return transformedData;
-      } catch (err) {
-        console.error('Failed to fetch admin data:', err);
-        throw err;
+      if (error) {
+        console.error('Error fetching admin branches:', error);
+        throw error;
       }
+
+      console.log('Raw admin branches data:', adminBranches);
+
+      // Get admin permissions for each admin
+      const adminIds = adminBranches?.map(ab => ab.admin_id) || [];
+      const { data: permissions } = await supabase
+        .from('admin_permissions')
+        .select('admin_id')
+        .in('admin_id', adminIds);
+
+      console.log('Admin permissions data:', permissions);
+
+      const transformedData: AdminData[] = (adminBranches || []).map((item: any) => ({
+        id: item.admin_id,
+        email: item.profiles.email,
+        first_name: item.profiles.first_name,
+        last_name: item.profiles.last_name,
+        role: 'branch_admin', // We know they're branch admins since they're in admin_branches
+        branch_name: item.branches?.name || 'No Branch',
+        branch_id: item.branch_id,
+        created_at: new Date().toISOString(), // We don't have this field, using current date
+        has_permissions: permissions?.some(p => p.admin_id === item.admin_id) || false,
+      }));
+
+      console.log('Transformed admin data:', transformedData);
+      return transformedData;
     },
-    retry: 3,
-    retryDelay: 1000,
   });
 
   const handleDeleteAdmin = async (adminId: string) => {
@@ -170,38 +142,24 @@ export const AdminsTable = () => {
       refetch();
     } catch (error: any) {
       console.error('Delete admin error:', error);
-      toast.error("Failed to delete admin: " + (error.message || 'Unknown error'));
+      toast.error("Failed to delete admin: " + error.message);
     }
   };
 
-  const filteredAdmins = admins.filter((admin) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      admin.email?.toLowerCase().includes(searchLower) ||
-      `${admin.first_name || ''} ${admin.last_name || ''}`.toLowerCase().includes(searchLower) ||
-      admin.branch_name?.toLowerCase().includes(searchLower)
-    );
-  });
+  const filteredAdmins = admins.filter((admin) =>
+    admin.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    `${admin.first_name} ${admin.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    admin.branch_name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  // Error state
   if (error) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center space-x-2 text-red-600">
-            <AlertCircle className="h-5 w-5" />
-            <div>
-              <p className="font-medium">Error loading admins</p>
-              <p className="text-sm text-gray-600 mt-1">
-                {error.message || 'An unexpected error occurred'}
-              </p>
-              <Button onClick={() => refetch()} variant="outline" size="sm" className="mt-2">
-                Try Again
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="p-4 text-center">
+        <p className="text-red-600">Error loading admins: {error.message}</p>
+        <Button onClick={() => refetch()} className="mt-2">
+          Try Again
+        </Button>
+      </div>
     );
   }
 
@@ -264,15 +222,15 @@ export const AdminsTable = () => {
                       ? `${admin.first_name} ${admin.last_name}`
                       : 'N/A'}
                   </TableCell>
-                  <TableCell>{admin.email || 'N/A'}</TableCell>
+                  <TableCell>{admin.email}</TableCell>
                   <TableCell>
                     <span className="text-sm font-medium">
-                      {admin.branch_name || 'No Branch'}
+                      {admin.branch_name}
                     </span>
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary" className="capitalize">
-                      {admin.role?.replace('_', ' ') || 'Unknown'}
+                      {admin.role.replace('_', ' ')}
                     </Badge>
                   </TableCell>
                   <TableCell>
