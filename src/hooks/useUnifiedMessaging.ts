@@ -505,7 +505,7 @@ export const useMessagingContacts = () => {
                   status: 'online',
                   unread: 0,
                   email: admin.profiles.email,
-                  role: 'admin'
+                  role: 'branch_admin'
                 });
               }
             });
@@ -594,7 +594,7 @@ export const useMessagingContacts = () => {
                   status: 'online',
                   unread: 0,
                   email: admin.profiles.email,
-                  role: 'admin'
+                  role: 'branch_admin'
                 });
               }
             });
