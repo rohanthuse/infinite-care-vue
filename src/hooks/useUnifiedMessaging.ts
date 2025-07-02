@@ -7,7 +7,7 @@ export interface UnifiedUser {
   id: string;
   email: string;
   name: string;
-  role: 'client' | 'carer' | 'branch_admin' | 'super_admin';
+  role: 'client' | 'carer' | 'branch_admin' | 'super_admin' | 'admin';
   branchId?: string;
 }
 
@@ -140,8 +140,11 @@ export const useUnifiedUser = () => {
         let name = authUser.email?.split('@')[0] || 'User';
         let branchId: string | undefined;
 
+        // Normalize the role - convert 'admin' to 'branch_admin' for consistency
+        const normalizedRole = roleData.role === 'admin' ? 'branch_admin' : roleData.role;
+
         // Get additional user info based on role
-        if (roleData.role === 'client') {
+        if (normalizedRole === 'client') {
           const { data: clientData } = await supabase
             .from('clients')
             .select('first_name, last_name, branch_id')
@@ -152,7 +155,7 @@ export const useUnifiedUser = () => {
             name = `${clientData.first_name} ${clientData.last_name}`.trim();
             branchId = clientData.branch_id;
           }
-        } else if (roleData.role === 'carer') {
+        } else if (normalizedRole === 'carer') {
           const { data: staffData } = await supabase
             .from('staff')
             .select('first_name, last_name, branch_id')
@@ -163,7 +166,7 @@ export const useUnifiedUser = () => {
             name = `${staffData.first_name} ${staffData.last_name}`.trim();
             branchId = staffData.branch_id;
           }
-        } else if (roleData.role === 'branch_admin') {
+        } else if (normalizedRole === 'branch_admin') {
           const { data: profileData } = await supabase
             .from('profiles')
             .select('first_name, last_name')
@@ -191,7 +194,7 @@ export const useUnifiedUser = () => {
           id: authUser.id,
           email: authUser.email || '',
           name,
-          role: roleData.role,
+          role: normalizedRole,
           branchId
         });
         
