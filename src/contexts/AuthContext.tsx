@@ -22,22 +22,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let mounted = true;
     
+    console.log('AuthProvider - Setting up authentication...');
+    
     const getSession = async () => {
       try {
+        console.log('AuthProvider - Getting initial session...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Auth session error:', error);
+          console.error('AuthProvider - Session error:', error);
           setError(error.message);
+        } else {
+          console.log('AuthProvider - Initial session:', session ? 'Found' : 'None');
         }
         
         if (mounted) {
           setSession(session);
           setUser(session?.user ?? null);
-          setError(null);
+          if (!error) {
+            setError(null);
+          }
         }
       } catch (err) {
-        console.error('Failed to get session:', err);
+        console.error('AuthProvider - Failed to get session:', err);
         if (mounted) {
           setError('Failed to load authentication');
         }
@@ -49,7 +56,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     // Set up auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    console.log('AuthProvider - Setting up auth state listener...');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('AuthProvider - Auth state changed:', event, session ? 'Session exists' : 'No session');
+      
       if (mounted) {
         setSession(session);
         setUser(session?.user ?? null);
@@ -64,12 +74,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Set a timeout to ensure we don't stay loading forever
     const timeout = setTimeout(() => {
       if (mounted && loading) {
-        console.warn('Auth loading timed out, proceeding without authentication');
+        console.warn('AuthProvider - Auth loading timed out, proceeding without authentication');
         setLoading(false);
+        setError('Authentication timeout');
       }
-    }, 5000);
+    }, 8000); // Reduced timeout to 8 seconds
 
     return () => {
+      console.log('AuthProvider - Cleaning up...');
       mounted = false;
       subscription.unsubscribe();
       clearTimeout(timeout);
@@ -77,7 +89,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      console.log('AuthProvider - Signing out...');
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('AuthProvider - Sign out error:', error);
+        throw error;
+      }
+      console.log('AuthProvider - Signed out successfully');
+    } catch (err) {
+      console.error('AuthProvider - Sign out failed:', err);
+      throw err;
+    }
   };
 
   const value = {
@@ -87,6 +110,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     error,
     signOut,
   };
+
+  console.log('AuthProvider - Current state:', { 
+    hasUser: !!user, 
+    hasSession: !!session, 
+    loading, 
+    error 
+  });
 
   // Always render children, but show loading state when needed
   return (
