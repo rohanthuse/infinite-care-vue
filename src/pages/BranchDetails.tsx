@@ -14,8 +14,10 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useBranch } from "@/data/hooks/branches";
 import { useBranchStatistics } from "@/data/hooks/useBranchStatistics";
+import { useBranchChartData } from "@/data/hooks/useBranchChartData";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line } from "recharts";
 
 const BranchDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +25,7 @@ const BranchDetails = () => {
   
   const { data: branchData, isLoading, error } = useBranch(id);
   const { data: stats, isLoading: isLoadingStats, error: errorStats } = useBranchStatistics(id);
+  const { data: chartData, isLoading: isLoadingChartData } = useBranchChartData(id);
 
   const handleNavigateToBranchAdmins = () => {
     toast.success("Navigating to Branch Admins dashboard");
@@ -166,8 +169,38 @@ const BranchDetails = () => {
                   <BarChart4 className="h-5 w-5 text-blue-600" />
                   <h2 className="text-lg font-bold text-gray-800">Weekly Statistics</h2>
                 </div>
-                <div className="h-[300px] flex items-center justify-center">
-                  <p className="text-gray-500">Bar chart to be implemented</p>
+                <div className="h-[300px] w-full">
+                  {isLoadingChartData ? (
+                    <div className="flex items-center justify-center h-full">
+                      <Skeleton className="h-full w-full" />
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData?.weeklyStats} margin={{
+                        top: 20,
+                        right: 30,
+                        left: 0,
+                        bottom: 5
+                      }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis dataKey="day" />
+                        <YAxis yAxisId="left" />
+                        <YAxis yAxisId="right" orientation="right" />
+                        <Tooltip contentStyle={{
+                          backgroundColor: "white",
+                          border: "1px solid #f0f0f0",
+                          borderRadius: "8px",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
+                        }} />
+                        <Legend />
+                        <Bar yAxisId="left" dataKey="visits" name="Visits" fill="#a5b4fc" radius={[4, 4, 0, 0]} />
+                        <Bar yAxisId="left" dataKey="bookings" name="Bookings" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+                        <Line yAxisId="right" type="monotone" dataKey="revenue" name="Revenue (£)" stroke="#10b981" strokeWidth={2} dot={{
+                          r: 4
+                        }} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </motion.div>
               
