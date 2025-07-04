@@ -56,6 +56,11 @@ const ClientAppointments = () => {
       </div>
     );
   }
+
+  // Filter appointments by status and date
+  const now = new Date();
+  const upcomingAppointments = appointments?.filter(app => {
+    const appointmentDate = parseISO(app.appointment_date);
     const isFutureOrToday = isAfter(appointmentDate, now) || isSameDay(appointmentDate, now);
     return (app.status === 'confirmed' || app.status === 'scheduled') && isFutureOrToday;
   }) || [];
@@ -108,18 +113,6 @@ const ClientAppointments = () => {
     setSelectedRescheduleAppointment(rescheduleData);
     setRescheduleDialogOpen(true);
   };
-
-  if (!clientId) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
-          <p className="text-gray-500">Please log in to view your appointments.</p>
-        </div>
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
