@@ -12,12 +12,17 @@ import ClientReviews from "@/pages/client/ClientReviews";
 import ClientSupport from "@/pages/client/ClientSupport";
 import ClientServiceReports from "@/pages/client/ClientServiceReports";
 import { Suspense } from "react";
+import { useUserRole } from "@/hooks/useUserRole";
 
 // Higher-order component to check client authentication
 const RequireClientAuth = () => {
-  const isClient = localStorage.getItem("userType") === "client";
+  const { data: currentUser, isLoading } = useUserRole();
   
-  if (!isClient) {
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+  
+  if (!currentUser || currentUser.role !== 'client') {
     // Redirect to login if not authenticated as client
     return <Navigate to="/client-login" replace />;
   }

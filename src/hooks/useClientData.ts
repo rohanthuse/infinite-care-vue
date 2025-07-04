@@ -191,17 +191,10 @@ export interface ClientServiceAction {
   updated_at: string;
 }
 
-// Get authenticated client ID from localStorage
-const getAuthenticatedClientId = (): string => {
-  const clientId = localStorage.getItem("clientId");
-  if (!clientId) {
-    throw new Error("Client not authenticated");
-  }
-  return clientId;
-};
+// Import the new client auth hook
+import { useClientAuth } from './useClientAuth';
 
-const fetchClientProfile = async (): Promise<ClientProfile> => {
-  const clientId = getAuthenticatedClientId();
+const fetchClientProfile = async (clientId: string): Promise<ClientProfile> => {
   
   const { data, error } = await supabase
     .from('clients')
@@ -217,8 +210,7 @@ const fetchClientProfile = async (): Promise<ClientProfile> => {
   return data;
 };
 
-const fetchClientCarePlans = async (): Promise<ClientCarePlan[]> => {
-  const clientId = getAuthenticatedClientId();
+const fetchClientCarePlans = async (clientId: string): Promise<ClientCarePlan[]> => {
   
   const { data, error } = await supabase
     .from('client_care_plans')
@@ -234,8 +226,7 @@ const fetchClientCarePlans = async (): Promise<ClientCarePlan[]> => {
   return data || [];
 };
 
-const fetchClientAppointments = async (): Promise<ClientAppointment[]> => {
-  const clientId = getAuthenticatedClientId();
+const fetchClientAppointments = async (clientId: string): Promise<ClientAppointment[]> => {
   
   const { data, error } = await supabase
     .from('client_appointments')
@@ -251,8 +242,7 @@ const fetchClientAppointments = async (): Promise<ClientAppointment[]> => {
   return data || [];
 };
 
-const fetchClientBilling = async (): Promise<ClientBilling[]> => {
-  const clientId = getAuthenticatedClientId();
+const fetchClientBilling = async (clientId: string): Promise<ClientBilling[]> => {
   
   const { data, error } = await supabase
     .from('client_billing')
@@ -271,38 +261,50 @@ const fetchClientBilling = async (): Promise<ClientBilling[]> => {
 
 // Main hooks
 export const useClientProfile = (clientId?: string) => {
+  const { clientId: authenticatedClientId } = useClientAuth();
+  const effectiveClientId = clientId || authenticatedClientId;
+  
   return useQuery({
-    queryKey: ['client-profile', clientId],
-    queryFn: fetchClientProfile,
+    queryKey: ['client-profile', effectiveClientId],
+    queryFn: () => fetchClientProfile(effectiveClientId!),
     retry: 1,
-    enabled: !!clientId || !!localStorage.getItem("clientId"),
+    enabled: !!effectiveClientId,
   });
 };
 
 export const useClientCarePlans = (clientId?: string) => {
+  const { clientId: authenticatedClientId } = useClientAuth();
+  const effectiveClientId = clientId || authenticatedClientId;
+  
   return useQuery({
-    queryKey: ['client-care-plans', clientId],
-    queryFn: fetchClientCarePlans,
+    queryKey: ['client-care-plans', effectiveClientId],
+    queryFn: () => fetchClientCarePlans(effectiveClientId!),
     retry: 1,
-    enabled: !!clientId || !!localStorage.getItem("clientId"),
+    enabled: !!effectiveClientId,
   });
 };
 
 export const useClientAppointments = (clientId?: string) => {
+  const { clientId: authenticatedClientId } = useClientAuth();
+  const effectiveClientId = clientId || authenticatedClientId;
+  
   return useQuery({
-    queryKey: ['client-appointments', clientId],
-    queryFn: fetchClientAppointments,
+    queryKey: ['client-appointments', effectiveClientId],
+    queryFn: () => fetchClientAppointments(effectiveClientId!),
     retry: 1,
-    enabled: !!clientId || !!localStorage.getItem("clientId"),
+    enabled: !!effectiveClientId,
   });
 };
 
 export const useClientBilling = (clientId?: string) => {
+  const { clientId: authenticatedClientId } = useClientAuth();
+  const effectiveClientId = clientId || authenticatedClientId;
+  
   return useQuery({
-    queryKey: ['client-billing', clientId],
-    queryFn: fetchClientBilling,
+    queryKey: ['client-billing', effectiveClientId],
+    queryFn: () => fetchClientBilling(effectiveClientId!),
     retry: 1,
-    enabled: !!clientId || !!localStorage.getItem("clientId"),
+    enabled: !!effectiveClientId,
   });
 };
 

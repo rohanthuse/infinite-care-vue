@@ -9,6 +9,11 @@ export interface UserWithRole {
   email: string;
   role: UserRole;
   branchId?: string;
+  clientId?: string;
+  staffId?: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
 }
 
 export const useUserRole = () => {
@@ -41,11 +46,82 @@ export const useUserRole = () => {
         throw new Error('User role not found');
       }
 
+      const role = roleData.role as UserRole;
+      
+      // Get additional user information based on role
+      let additionalData: Partial<UserWithRole> = {};
+      
+      if (role === 'client') {
+        // For clients, get client record by email
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('id, first_name, last_name, branch_id')
+          .eq('email', user.email)
+          .single();
+          
+        if (clientData) {
+          additionalData = {
+            clientId: clientData.id,
+            branchId: clientData.branch_id,
+            firstName: clientData.first_name,
+            lastName: clientData.last_name,
+            fullName: `${clientData.first_name || ''} ${clientData.last_name || ''}`.trim()
+          };
+        }
+      } else if (role === 'carer') {
+        // For carers, get staff record
+        const { data: staffData } = await supabase
+          .from('staff')
+          .select('id, first_name, last_name, branch_id')
+          .eq('id', user.id)
+          .single();
+          
+        if (staffData) {
+          additionalData = {
+            staffId: staffData.id,
+            branchId: staffData.branch_id,
+            firstName: staffData.first_name,
+            lastName: staffData.last_name,
+            fullName: `${staffData.first_name || ''} ${staffData.last_name || ''}`.trim()
+          };
+        }
+      } else if (role === 'branch_admin' || role === 'super_admin') {
+        // For admins, get profile data
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', user.id)
+          .single();
+          
+        if (profileData) {
+          additionalData = {
+            firstName: profileData.first_name,
+            lastName: profileData.last_name,
+            fullName: `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim()
+          };
+        }
+        
+        // For branch admins, get their branch access
+        if (role === 'branch_admin') {
+          const { data: adminBranches } = await supabase
+            .from('admin_branches')
+            .select('branch_id')
+            .eq('admin_id', user.id)
+            .limit(1)
+            .single();
+            
+          if (adminBranches) {
+            additionalData.branchId = adminBranches.branch_id;
+          }
+        }
+      }
+
       return {
         id: user.id,
         email: user.email || '',
-        role: roleData.role as UserRole,
-      };
+        role,
+        ...additionalData
+      } as UserWithRole;
     },
     enabled: true,
     retry: 1,

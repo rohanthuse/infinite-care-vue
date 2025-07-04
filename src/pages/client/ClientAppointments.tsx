@@ -11,6 +11,7 @@ import { RescheduleAppointmentDialog } from "@/components/client/RescheduleAppoi
 import { useCheckExistingReview } from "@/hooks/useClientReviews";
 import { ReviewPrompt } from "@/components/client/ReviewPrompt";
 import { format, parseISO, isAfter, isSameDay } from "date-fns";
+import { useClientAuth } from "@/hooks/useClientAuth";
 
 interface AppointmentData {
   id: string;
@@ -39,23 +40,22 @@ const ClientAppointments = () => {
   const [selectedRescheduleAppointment, setSelectedRescheduleAppointment] = useState<RescheduleAppointmentData | null>(null);
   const [selectedReview, setSelectedReview] = useState(null);
 
-  // Get authenticated client ID from localStorage
-  const getClientId = () => {
-    const clientId = localStorage.getItem("clientId");
-    if (!clientId) {
-      console.error("No authenticated client ID found");
-      return null;
-    }
-    return clientId;
-  };
+  // Get authenticated client ID using centralized auth
+  const { clientId, isAuthenticated } = useClientAuth();
 
-  const clientId = getClientId();
-  const { data: appointments, isLoading, error } = useClientAppointments(clientId || '');
+  const { data: appointments, isLoading, error } = useClientAppointments(clientId || undefined);
 
-  // Filter appointments by status and date
-  const now = new Date();
-  const upcomingAppointments = appointments?.filter(app => {
-    const appointmentDate = parseISO(app.appointment_date);
+  if (!isAuthenticated || !clientId) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
+          <p className="text-gray-500">Please log in to view your appointments.</p>
+        </div>
+      </div>
+    );
+  }
     const isFutureOrToday = isAfter(appointmentDate, now) || isSameDay(appointmentDate, now);
     return (app.status === 'confirmed' || app.status === 'scheduled') && isFutureOrToday;
   }) || [];
@@ -271,8 +271,8 @@ const ClientAppointments = () => {
 
 // Component to handle individual appointment with review functionality
 const AppointmentWithReview = ({ appointment, onLeaveReview }: any) => {
-  const clientId = localStorage.getItem("clientId") || '';
-  const { data: existingReview } = useCheckExistingReview(clientId, appointment.id);
+  const { clientId } = useClientAuth();
+  const { data: existingReview } = useCheckExistingReview(clientId || '', appointment.id);
 
   return (
     <Card className="hover:shadow-md transition-shadow">

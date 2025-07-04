@@ -11,19 +11,20 @@ import { formatCurrency } from "@/utils/currencyFormatter";
 import { format, parseISO, isAfter, isSameDay } from "date-fns";
 import { Link } from "react-router-dom";
 import { ReviewPrompt } from "@/components/client/ReviewPrompt";
+import { useClientAuth } from "@/hooks/useClientAuth";
 
 const ClientOverview = () => {
-  // Get authenticated client ID from localStorage
-  const getClientId = () => {
-    const clientId = localStorage.getItem("clientId");
-    return clientId || '';
-  };
+  // Get authenticated client ID using centralized auth
+  const { clientId, isAuthenticated } = useClientAuth();
 
-  const clientId = getClientId();
-  const { data: appointments } = useClientAppointments(clientId);
-  const { data: invoices } = useEnhancedClientBilling(clientId);
-  const { data: reviews } = useClientReviews(clientId);
-  const { data: pendingReviews, count: pendingReviewsCount } = usePendingReviews(clientId);
+  const { data: appointments } = useClientAppointments(clientId || undefined);
+  const { data: invoices } = useEnhancedClientBilling(clientId || undefined);
+  const { data: reviews } = useClientReviews(clientId || undefined);
+  const { data: pendingReviews, count: pendingReviewsCount } = usePendingReviews(clientId || undefined);
+
+  if (!isAuthenticated || !clientId) {
+    return <div>Please log in to view your overview.</div>;
+  }
 
   // Calculate summaries with proper date filtering
   const now = new Date();

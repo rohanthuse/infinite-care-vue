@@ -60,17 +60,10 @@ const ClientDashboard = () => {
     }
   }, [location]);
   
-  // Verify client authentication
+  // Verify client authentication using centralized auth
   useEffect(() => {
     const checkClientAuth = async () => {
       try {
-        // Check if user type is client (for backward compatibility)
-        const userType = localStorage.getItem("userType");
-        if (userType !== "client") {
-          navigate("/client-login", { replace: true });
-          return;
-        }
-
         // Check Supabase session
         const { data: { session } } = await supabase.auth.getSession();
         

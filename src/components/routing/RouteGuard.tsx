@@ -3,6 +3,7 @@ import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useCarerAuthSafe } from '@/hooks/useCarerAuthSafe';
+import { useUserRole } from '@/hooks/useUserRole';
 import { LoadingScreen } from '@/components/LoadingScreen';
 
 interface RouteGuardProps {
@@ -20,21 +21,28 @@ export const RouteGuard = ({
 }: RouteGuardProps) => {
   const { session: adminSession, loading: adminLoading } = useAuth();
   const { isAuthenticated: carerAuth, loading: carerLoading } = useCarerAuthSafe();
-  const clientAuth = localStorage.getItem("userType") === "client";
+  const { data: currentUser, isLoading: userRoleLoading } = useUserRole();
 
   // Determine loading state based on user type
   const isLoading = userType === 'admin' ? adminLoading : 
-                   userType === 'carer' ? carerLoading : false;
+                   userType === 'carer' ? carerLoading : 
+                   userType === 'client' ? userRoleLoading : false;
 
   // Show loading screen while checking authentication
   if (isLoading) {
     return <LoadingScreen />;
   }
 
-  // Check authentication based on user type
-  const isAuthenticated = userType === 'admin' ? !!adminSession :
-                         userType === 'carer' ? carerAuth :
-                         userType === 'client' ? clientAuth : false;
+  // Check authentication based on user type using unified auth state
+  let isAuthenticated = false;
+  
+  if (userType === 'admin') {
+    isAuthenticated = !!adminSession && currentUser?.role === 'super_admin' || currentUser?.role === 'branch_admin';
+  } else if (userType === 'carer') {
+    isAuthenticated = carerAuth && currentUser?.role === 'carer';
+  } else if (userType === 'client') {
+    isAuthenticated = !!currentUser && currentUser.role === 'client';
+  }
 
   // Redirect if authentication is required but user is not authenticated
   if (requireAuth && !isAuthenticated) {
