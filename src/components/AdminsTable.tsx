@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -47,14 +48,17 @@ export const AdminsTable = () => {
   const [selectedAdmin, setSelectedAdmin] = useState<AdminData | null>(null);
   const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
 
-  // Fetch all branch admins using the proven working pattern from client messaging
+  // Get current user authentication state
+  const { data: currentUser, isLoading: authLoading } = useUserRole();
+
+  // Fetch all branch admins with proper authentication dependency
   const { data: admins = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['branch-admins'],
+    queryKey: ['branch-admins', currentUser?.id],
     queryFn: async () => {
-      console.log('Fetching branch admins...');
+      console.log('Fetching branch admins...', { currentUser });
       
-      // Use the same proven pattern as in useClientMessaging.ts
-      const { data: adminBranches, error } = await supabase
+      // First, get admin branches - this is much simpler and avoids RLS conflicts
+      const { data: adminBranches, error: branchError } = await supabase
         .from('admin_branches')
         .select(`
           admin_id,
@@ -62,24 +66,39 @@ export const AdminsTable = () => {
           branches(
             id,
             name
-          ),
-          profiles!inner(
-            id,
-            email,
-            first_name,
-            last_name
           )
         `);
 
-      if (error) {
-        console.error('Error fetching admin branches:', error);
-        throw error;
+      if (branchError) {
+        console.error('Error fetching admin branches:', branchError);
+        throw branchError;
       }
 
-      console.log('Raw admin branches data:', adminBranches);
+      console.log('Admin branches data:', adminBranches);
 
-      // Get admin permissions for each admin
-      const adminIds = adminBranches?.map(ab => ab.admin_id) || [];
+      if (!adminBranches || adminBranches.length === 0) {
+        console.log('No admin branches found');
+        return [];
+      }
+
+      // Get admin IDs for separate profile query
+      const adminIds = adminBranches.map(ab => ab.admin_id);
+      
+      // Fetch profiles separately to avoid RLS conflicts with complex joins
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, email, first_name, last_name')
+        .in('id', adminIds);
+
+      if (profileError) {
+        console.error('Error fetching profiles:', profileError);
+        // Don't throw here, continue with available data
+        console.warn('Continuing without profile data');
+      }
+
+      console.log('Profiles data:', profiles);
+
+      // Get admin permissions
       const { data: permissions } = await supabase
         .from('admin_permissions')
         .select('admin_id')
@@ -87,21 +106,28 @@ export const AdminsTable = () => {
 
       console.log('Admin permissions data:', permissions);
 
-      const transformedData: AdminData[] = (adminBranches || []).map((item: any) => ({
-        id: item.admin_id,
-        email: item.profiles.email,
-        first_name: item.profiles.first_name,
-        last_name: item.profiles.last_name,
-        role: 'branch_admin', // We know they're branch admins since they're in admin_branches
-        branch_name: item.branches?.name || 'No Branch',
-        branch_id: item.branch_id,
-        created_at: new Date().toISOString(), // We don't have this field, using current date
-        has_permissions: permissions?.some(p => p.admin_id === item.admin_id) || false,
-      }));
+      // Transform and combine data
+      const transformedData: AdminData[] = adminBranches.map((item: any) => {
+        const profile = profiles?.find(p => p.id === item.admin_id);
+        return {
+          id: item.admin_id,
+          email: profile?.email || 'Unknown',
+          first_name: profile?.first_name,
+          last_name: profile?.last_name,
+          role: 'branch_admin',
+          branch_name: item.branches?.name || 'No Branch',
+          branch_id: item.branch_id,
+          created_at: new Date().toISOString(),
+          has_permissions: permissions?.some(p => p.admin_id === item.admin_id) || false,
+        };
+      });
 
       console.log('Transformed admin data:', transformedData);
       return transformedData;
     },
+    enabled: !!currentUser && (currentUser.role === 'super_admin' || currentUser.role === 'branch_admin'),
+    retry: 3,
+    retryDelay: 1000,
   });
 
   const handleDeleteAdmin = async (adminId: string) => {
@@ -152,6 +178,18 @@ export const AdminsTable = () => {
     admin.branch_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Show loading while authenticating or fetching data
+  const isLoadingData = authLoading || isLoading;
+
+  // Show authentication message if not authenticated
+  if (!authLoading && (!currentUser || (currentUser.role !== 'super_admin' && currentUser.role !== 'branch_admin'))) {
+    return (
+      <div className="p-4 text-center">
+        <p className="text-gray-600">You need admin privileges to view this page.</p>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div className="p-4 text-center">
@@ -199,12 +237,12 @@ export const AdminsTable = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {isLoadingData ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8">
                   <div className="flex items-center justify-center">
                     <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                    Loading admins...
+                    {authLoading ? "Authenticating..." : "Loading admins..."}
                   </div>
                 </TableCell>
               </TableRow>
