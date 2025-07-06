@@ -18,15 +18,25 @@ import { useUserRole } from "@/hooks/useUserRole";
 const RequireClientAuth = () => {
   const { data: currentUser, isLoading } = useUserRole();
   
+  console.log('[RequireClientAuth] Auth state:', { 
+    isLoading, 
+    currentUser: currentUser ? { 
+      id: currentUser.id, 
+      role: currentUser.role, 
+      email: currentUser.email 
+    } : null 
+  });
+  
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>Loading client authentication...</div>;
   }
   
   if (!currentUser || currentUser.role !== 'client') {
-    // Redirect to login if not authenticated as client
+    console.log('[RequireClientAuth] Redirecting to login - invalid client');
     return <Navigate to="/client-login" replace />;
   }
   
+  console.log('[RequireClientAuth] Client authenticated successfully');
   return <Outlet />;
 };
 
@@ -37,9 +47,9 @@ const LoadingFallback = () => (
   </div>
 );
 
-// Client routes definition for use in App.tsx - returns array for consistency
-const ClientRoutes = () => [
-  <Route key="client-auth" element={<RequireClientAuth />}>
+// Client routes definition for use in App.tsx - returns JSX components
+const ClientRoutes = () => (
+  <Route element={<RequireClientAuth />}>
     <Route path="/client-dashboard" element={<ClientDashboard />}>
       <Route index element={<ClientOverview />} />
       <Route path="appointments" element={<ClientAppointments />} />
@@ -53,6 +63,6 @@ const ClientRoutes = () => [
       <Route path="support" element={<ClientSupport />} />
     </Route>
   </Route>
-];
+);
 
 export default ClientRoutes;
