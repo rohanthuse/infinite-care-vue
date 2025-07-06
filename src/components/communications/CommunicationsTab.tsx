@@ -160,6 +160,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
             branchId={branchId || "1"}
             onClose={handleCloseComposer}
             selectedContactId={selectedContactId}
+            selectedThreadId={selectedMessageId}
           />
         ) : selectedMessageId ? (
           <MessageView 
