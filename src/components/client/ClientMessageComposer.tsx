@@ -223,7 +223,7 @@ export const ClientMessageComposer = ({
       {/* Footer - Fixed */}
       <div className="flex-shrink-0 p-4 border-t border-gray-200">
         <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm" disabled>
+          <Button variant="ghost" size="sm">
             <Paperclip className="h-4 w-4 mr-2" />
             Attach File
           </Button>
