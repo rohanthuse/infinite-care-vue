@@ -9,84 +9,43 @@ export const useClientMessageNotifications = () => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser?.id) return;
 
-    // Set up real-time subscription for new messages
+    // Consolidated real-time subscription for all message-related updates
     const channel = supabase
-      .channel('client-message-notifications')
+      .channel('client-messaging-consolidated')
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
-          table: 'messages',
-          filter: `sender_id=neq.${currentUser.id}` // Only listen to messages not sent by current user
+          table: 'messages'
         },
         (payload) => {
-          console.log('New message received:', payload);
+          console.log('Message update received:', payload);
           
-          // Check if the message is in a thread where the current user is a participant
-          const checkParticipation = async () => {
-            const { data: participants } = await supabase
-              .from('message_participants')
-              .select('user_id')
-              .eq('thread_id', payload.new.thread_id)
-              .eq('user_id', currentUser.id);
-
-            if (participants && participants.length > 0) {
-              // Get sender name for notification
-              const { data: senderInfo } = await supabase
-                .from('message_participants')
-                .select('user_name')
-                .eq('thread_id', payload.new.thread_id)
-                .eq('user_id', payload.new.sender_id)
-                .single();
-
-              const senderName = senderInfo?.user_name || 'Someone';
-              
-              // Show toast notification
-              toast.success(`New message from ${senderName}`, {
-                description: payload.new.content?.length > 50 
-                  ? payload.new.content.substring(0, 50) + '...' 
-                  : payload.new.content,
-                action: {
-                  label: 'View',
-                  onClick: () => {
-                    // Navigate to messages page
-                    window.location.href = '/client-dashboard/messages';
-                  }
-                },
-                duration: 5000,
-              });
-
-              // Show browser notification if permission granted
-              if (Notification.permission === 'granted') {
-                new Notification(`New message from ${senderName}`, {
-                  body: payload.new.content?.length > 100 
-                    ? payload.new.content.substring(0, 100) + '...' 
-                    : payload.new.content,
-                  icon: '/favicon.ico',
-                  tag: 'message-notification'
-                });
-              }
-
-              // Show prominent pulse indicator
-              const pulseIndicator = document.getElementById('message-pulse-indicator');
-              if (pulseIndicator) {
-                pulseIndicator.style.display = 'block';
-                setTimeout(() => {
-                  pulseIndicator.style.display = 'none';
-                }, 10000); // Hide after 10 seconds
-              }
-
-              // Invalidate queries to refresh message lists
-              queryClient.invalidateQueries({ queryKey: ['client-message-threads'] });
-              queryClient.invalidateQueries({ queryKey: ['client-thread-messages'] });
-              queryClient.invalidateQueries({ queryKey: ['notifications'] });
-            }
-          };
-
-          checkParticipation();
+          // Refresh message-related queries
+          queryClient.invalidateQueries({ queryKey: ['client-threads'] });
+          queryClient.invalidateQueries({ queryKey: ['client-thread-messages'] });
+          queryClient.invalidateQueries({ queryKey: ['client-message-threads'] });
+          
+          // Handle new message notifications
+          if (payload.eventType === 'INSERT' && payload.new.sender_id !== currentUser.id) {
+            handleNewMessage(payload.new, currentUser.id, queryClient);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'message_threads'
+        },
+        (payload) => {
+          console.log('Thread update received:', payload);
+          queryClient.invalidateQueries({ queryKey: ['client-threads'] });
+          queryClient.invalidateQueries({ queryKey: ['client-message-threads'] });
         }
       )
       .on(
@@ -114,7 +73,7 @@ export const useClientMessageNotifications = () => {
             });
           }
 
-          // Invalidate notifications query
+          // Refresh notifications
           queryClient.invalidateQueries({ queryKey: ['notifications'] });
         }
       )
@@ -129,4 +88,64 @@ export const useClientMessageNotifications = () => {
       supabase.removeChannel(channel);
     };
   }, [currentUser, queryClient]);
+};
+
+// Helper function to handle new message notifications
+const handleNewMessage = async (message: any, currentUserId: string, queryClient: any) => {
+  try {
+    // Check if the message is in a thread where the current user is a participant
+    const { data: participants } = await supabase
+      .from('message_participants')
+      .select('user_id')
+      .eq('thread_id', message.thread_id)
+      .eq('user_id', currentUserId);
+
+    if (participants && participants.length > 0) {
+      // Get sender name for notification
+      const { data: senderInfo } = await supabase
+        .from('message_participants')
+        .select('user_name')
+        .eq('thread_id', message.thread_id)
+        .eq('user_id', message.sender_id)
+        .single();
+
+      const senderName = senderInfo?.user_name || 'Someone';
+      
+      // Show toast notification
+      toast.success(`New message from ${senderName}`, {
+        description: message.content?.length > 50 
+          ? message.content.substring(0, 50) + '...' 
+          : message.content,
+        action: {
+          label: 'View',
+          onClick: () => {
+            window.location.href = '/client-dashboard/messages';
+          }
+        },
+        duration: 5000,
+      });
+
+      // Show browser notification if permission granted
+      if (Notification.permission === 'granted') {
+        new Notification(`New message from ${senderName}`, {
+          body: message.content?.length > 100 
+            ? message.content.substring(0, 100) + '...' 
+            : message.content,
+          icon: '/favicon.ico',
+          tag: 'message-notification'
+        });
+      }
+
+      // Show prominent pulse indicator
+      const pulseIndicator = document.getElementById('message-pulse-indicator');
+      if (pulseIndicator) {
+        pulseIndicator.style.display = 'block';
+        setTimeout(() => {
+          pulseIndicator.style.display = 'none';
+        }, 10000);
+      }
+    }
+  } catch (error) {
+    console.error('Error handling new message notification:', error);
+  }
 };

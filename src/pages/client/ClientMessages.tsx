@@ -1,79 +1,20 @@
 
-import React, { useState, useEffect, memo } from "react";
+import React, { useState, useEffect } from "react";
 import { ClientContactSidebar } from "@/components/client/ClientContactSidebar";
 import { ClientMessageList } from "@/components/client/ClientMessageList";
 import { ClientMessageView } from "@/components/client/ClientMessageView";
 import { ClientMessageComposer } from "@/components/client/ClientMessageComposer";
-import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
 import { useClientMessageNotifications } from "@/hooks/useClientMessageNotifications";
-
-// Memoize components to prevent unnecessary re-renders
-const MemoizedContactSidebar = memo(ClientContactSidebar);
-const MemoizedMessageList = memo(ClientMessageList);
-const MemoizedMessageView = memo(ClientMessageView);
-const MemoizedMessageComposer = memo(ClientMessageComposer);
 
 const ClientMessages = () => {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
-  const [contactType, setContactType] = useState<"all" | "carers" | "admins">("all"); // Keep for compatibility but will only show admins
+  const [contactType, setContactType] = useState<"all" | "carers" | "admins">("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [showComposer, setShowComposer] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const queryClient = useQueryClient();
   
-  // Enable enhanced message notifications with toast and browser alerts
+  // Enable enhanced message notifications with consolidated real-time subscriptions
   useClientMessageNotifications();
-  
-  // Delay initial loading to prevent UI blocking
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoaded(true);
-    }, 100);
-    
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Set up real-time subscriptions for message updates
-  useEffect(() => {
-    const channel = supabase
-      .channel('client-messages-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages'
-        },
-        (payload) => {
-          console.log('Message update received:', payload);
-          // Invalidate message-related queries to trigger refetch
-          queryClient.invalidateQueries({ queryKey: ['client-threads'] });
-          queryClient.invalidateQueries({ queryKey: ['client-thread-messages'] });
-          
-          // Auto-refresh notifications to show new message indicators
-          queryClient.invalidateQueries({ queryKey: ['notifications'] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'message_threads'
-        },
-        (payload) => {
-          console.log('Thread update received:', payload);
-          queryClient.invalidateQueries({ queryKey: ['client-threads'] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
   
   const handleContactSelect = (contactId: string) => {
     setSelectedContactId(contactId);
@@ -106,24 +47,13 @@ const ClientMessages = () => {
     setShowComposer(true);
   };
   
-  if (!isLoaded) {
-    return <div className="flex items-center justify-center h-full">
-      <div className="animate-pulse flex space-x-4">
-        <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
-        <div className="space-y-2">
-          <div className="h-4 bg-gray-200 rounded w-36"></div>
-          <div className="h-4 bg-gray-200 rounded w-24"></div>
-        </div>
-      </div>
-    </div>;
-  }
   
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-hidden flex flex-col md:flex-row min-h-0">
         {/* Sidebar - Contact list */}
         <div className="w-full md:w-64 border-r border-gray-200 flex flex-col bg-white rounded-l-md shadow-sm">
-          <MemoizedContactSidebar 
+          <ClientContactSidebar 
             onContactSelect={handleContactSelect}
             contactType={contactType}
             onContactTypeChange={setContactType}
@@ -134,7 +64,7 @@ const ClientMessages = () => {
         
         {/* Messages list column */}
         <div className="w-full md:w-80 lg:w-96 border-r border-gray-200 flex flex-col bg-white md:flex min-h-0">
-          <MemoizedMessageList 
+          <ClientMessageList 
             selectedContactId={selectedContactId}
             selectedMessageId={selectedMessageId}
             onMessageSelect={handleMessageSelect}
@@ -146,14 +76,14 @@ const ClientMessages = () => {
         {/* Message view or composer */}
         <div className="flex-1 bg-white rounded-r-md shadow-sm flex flex-col min-h-0">
           {showComposer ? (
-            <MemoizedMessageComposer
+            <ClientMessageComposer
               selectedContactId={selectedContactId}
               selectedThreadId={selectedMessageId}
               onClose={() => setShowComposer(false)}
               onSend={handleSendMessage}
             />
           ) : selectedMessageId ? (
-            <MemoizedMessageView 
+            <ClientMessageView 
               messageId={selectedMessageId}
               onReply={handleReply}
             />

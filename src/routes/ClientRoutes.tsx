@@ -48,11 +48,7 @@ const ClientRoutes = () => [
       <Route path="payments" element={<ClientPayments />} />
       <Route path="documents" element={<ClientDocuments />} />
       <Route path="service-reports" element={<ClientServiceReports />} />
-      <Route path="messages" element={
-        <Suspense fallback={<LoadingFallback />}>
-          <ClientMessages />
-        </Suspense>
-      } />
+      <Route path="messages" element={<ClientMessages />} />
       <Route path="profile" element={<ClientProfile />} />
       <Route path="support" element={<ClientSupport />} />
     </Route>
