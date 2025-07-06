@@ -53,8 +53,8 @@ export const useClientMessageNotifications = () => {
       )
       .subscribe();
 
-    // Request notification permission on mount
-    if (Notification.permission === 'default') {
+    // Request notification permission on mount (only if supported)
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
       Notification.requestPermission();
     }
 
@@ -100,8 +100,8 @@ const handleNewMessage = async (message: any, currentUserId: string, queryClient
         duration: 5000,
       });
 
-      // Show browser notification if permission granted
-      if (Notification.permission === 'granted') {
+      // Show browser notification if permission granted and supported
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
         new Notification(`New message from ${senderName}`, {
           body: message.content?.length > 100 
             ? message.content.substring(0, 100) + '...' 
