@@ -232,14 +232,14 @@ export const useUnifiedMessageThreads = () => {
 
         console.log('[useUnifiedMessageThreads] Raw threads:', threads.length);
 
-        // Enhanced filtering with better participant resolution
+        // Simplified filtering - more permissive approach
         const userThreads = threads.filter(thread => {
           if (!thread.message_participants || thread.message_participants.length === 0) {
             console.log(`[useUnifiedMessageThreads] Thread ${thread.id} has no participants, skipping`);
             return false;
           }
           
-          // Check if current user is a participant (direct match by user ID)
+          // Check if current user is a direct participant
           const isDirectParticipant = thread.message_participants.some(p => 
             p.user_id === currentUser.id
           );
@@ -249,55 +249,28 @@ export const useUnifiedMessageThreads = () => {
             return true;
           }
           
-          // For clients, check if there's a client participant that could be them
-          // This handles cases where the participant user_id might not match auth.uid()
-          if (currentUser.role === 'client' && currentUser.email) {
-            const hasMatchingClient = thread.message_participants.some(p => {
-              if (p.user_type !== 'client') return false;
-              
-              // Try name-based matching if available
-              if (p.user_name && currentUser.fullName) {
-                const nameParts = currentUser.fullName.toLowerCase().split(' ');
-                const participantName = p.user_name.toLowerCase();
-                const nameMatches = nameParts.some(part => 
-                  part.length > 2 && participantName.includes(part)
-                );
-                if (nameMatches) return true;
-              }
-              
-              // Try email-based matching
-              const emailPrefix = currentUser.email.split('@')[0].toLowerCase();
-              return p.user_name && p.user_name.toLowerCase().includes(emailPrefix);
-            });
-            
-            if (hasMatchingClient) {
-              console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - found matching client participant`);
-              return true;
-            }
+          // For super admins, show all threads
+          if (currentUser.role === 'super_admin') {
+            console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - super admin access`);
+            return true;
           }
           
-          // For admin/staff roles, be more inclusive - if there are messages in the thread
-          // and the user can theoretically access it, include it
-          if (currentUser.role === 'super_admin' || currentUser.role === 'branch_admin' || currentUser.role === 'carer') {
-            // If thread has participants and current user role can communicate with them, include it
-            const hasValidParticipants = thread.message_participants.some(p => 
+          // For branch admins and carers, show threads in their branch context
+          if (currentUser.role === 'branch_admin' || currentUser.role === 'carer') {
+            const hasRelevantParticipants = thread.message_participants.some(p => 
               p.user_type === 'client' || p.user_type === 'carer' || p.user_type === 'branch_admin'
             );
             
-            if (hasValidParticipants) {
-              console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - admin/staff access granted`);
+            if (hasRelevantParticipants) {
+              console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - staff access granted`);
               return true;
             }
           }
           
-          console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - no access granted`, {
+          console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - no access`, {
             currentUserId: currentUser.id,
             currentUserRole: currentUser.role,
-            participants: thread.message_participants.map(p => ({ 
-              userId: p.user_id, 
-              userType: p.user_type, 
-              userName: p.user_name 
-            }))
+            participantCount: thread.message_participants.length
           });
           
           return false;
@@ -775,6 +748,8 @@ export const useUnifiedCreateThread = () => {
                       currentUser.role === 'carer' ? 'carer' : 
                       currentUser.role === 'super_admin' ? 'super_admin' : 'branch_admin',
           content: initialMessage,
+          has_attachments: false,
+          attachments: [],
           message_type: messageType,
           priority,
           action_required: actionRequired,

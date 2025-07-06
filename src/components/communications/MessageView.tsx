@@ -6,6 +6,7 @@ import { Reply, Users, User, Clock, AlertTriangle, CheckCircle, Eye } from "luci
 import { useAdminThreadMessages } from "@/hooks/useAdminMessaging";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useMarkMessagesAsRead } from "@/hooks/useUnifiedMessaging";
+import { MessageAttachmentViewer } from "./MessageAttachmentViewer";
 
 interface MessageViewProps {
   messageId: string;
@@ -251,15 +252,30 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
                        )}
                      </div>
                      
-                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                     
-                     {isCurrentUser && (
-                       <div className="flex items-center justify-end mt-1 space-x-1">
-                         <Clock className="h-3 w-3 opacity-70" />
-                         <span className="text-xs opacity-70">{formatTimestamp(message.timestamp)}</span>
-                       </div>
-                     )}
-                   </div>
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      
+                      {/* Attachments */}
+                      {message.hasAttachments && message.attachments && (
+                        <div className="mt-2">
+                          <MessageAttachmentViewer 
+                            attachments={message.attachments}
+                            onPreview={(attachment) => {
+                              console.log('Preview attachment:', attachment);
+                            }}
+                            onDownload={(attachment) => {
+                              console.log('Download attachment:', attachment);
+                            }}
+                          />
+                        </div>
+                      )}
+                      
+                      {isCurrentUser && (
+                        <div className="flex items-center justify-end mt-1 space-x-1">
+                          <Clock className="h-3 w-3 opacity-70" />
+                          <span className="text-xs opacity-70">{formatTimestamp(message.timestamp)}</span>
+                        </div>
+                      )}
+                    </div>
                 </div>
               </div>
             </div>

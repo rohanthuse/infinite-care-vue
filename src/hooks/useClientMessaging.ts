@@ -332,10 +332,12 @@ export const useClientSendMessage = () => {
   return useMutation({
     mutationFn: async ({ 
       threadId, 
-      content 
+      content,
+      attachments = []
     }: { 
       threadId: string; 
-      content: string; 
+      content: string;
+      attachments?: any[];
     }) => {
       if (!currentUser) throw new Error('Not authenticated');
 
@@ -346,8 +348,8 @@ export const useClientSendMessage = () => {
           sender_id: currentUser.id,
           sender_type: 'client',
           content,
-          has_attachments: false,
-          attachments: []
+          has_attachments: attachments.length > 0,
+          attachments: attachments.length > 0 ? attachments : null
         })
         .select()
         .single();
@@ -387,13 +389,15 @@ export const useClientCreateThread = () => {
       recipientName,
       recipientType,
       subject, 
-      initialMessage 
+      initialMessage,
+      attachments = []
     }: { 
       recipientId: string;
       recipientName: string;
       recipientType: 'carer' | 'admin';
       subject: string; 
-      initialMessage: string 
+      initialMessage: string;
+      attachments?: any[];
     }) => {
       console.log('[useClientCreateThread] Starting thread creation...');
       
@@ -480,7 +484,9 @@ export const useClientCreateThread = () => {
           thread_id: thread.id,
           sender_id: user.id, // Use auth user ID
           sender_type: 'client',
-          content: initialMessage
+          content: initialMessage,
+          has_attachments: attachments.length > 0,
+          attachments: attachments.length > 0 ? attachments : null
         });
 
       if (messageError) {

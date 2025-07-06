@@ -170,7 +170,8 @@ export const ClientMessageComposer = ({
         // Send reply to existing thread
         await sendMessage.mutateAsync({
           threadId: selectedThreadId,
-          content: message.trim()
+          content: message.trim(),
+          attachments: uploadedFiles
         });
       } else {
         // Create new thread
@@ -199,7 +200,8 @@ export const ClientMessageComposer = ({
           recipientName: recipient.name,
           recipientType: recipient.type,
           subject: subject.trim(),
-          initialMessage: message.trim()
+          initialMessage: message.trim(),
+          attachments: uploadedFiles
         });
       }
       
