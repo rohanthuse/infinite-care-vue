@@ -1,11 +1,12 @@
 
-import React, { useState, useEffect } from "react";
-import { X, Send, Paperclip } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { X, Send, Paperclip, Upload, FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useClientCareTeam, useClientCreateThread, useClientSendMessage } from "@/hooks/useClientMessaging";
+import { useFileUpload } from "@/hooks/useFileUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -25,13 +26,49 @@ export const ClientMessageComposer = ({
   const [recipientId, setRecipientId] = useState(selectedContactId || "");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { data: careTeam = [] } = useClientCareTeam();
   const createThread = useClientCreateThread();
   const sendMessage = useClientSendMessage();
+  const { uploadFile, uploading } = useFileUpload();
   
   const isReply = !!selectedThreadId;
   const selectedRecipient = careTeam.find(contact => contact.id === recipientId);
+
+  // Handle file selection
+  const handleFileSelect = () => {
+    fileInputRef.current?.click();
+  };
+
+  // Handle file input change
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      const newFiles = Array.from(files);
+      setSelectedFiles(prev => [...prev, ...newFiles]);
+      toast.success(`${newFiles.length} file(s) selected`);
+    }
+    // Reset the input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Handle file removal
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Format file size
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
   // Debug authentication on component mount
   useEffect(() => {
@@ -88,10 +125,47 @@ export const ClientMessageComposer = ({
       userId: user.id,
       isReply,
       recipientId,
-      threadId: selectedThreadId
+      threadId: selectedThreadId,
+      hasFiles: selectedFiles.length > 0
     });
     
     try {
+      // Upload files first if any are selected
+      let uploadedFiles: any[] = [];
+      if (selectedFiles.length > 0) {
+        toast.info('Uploading files...');
+        
+        for (const file of selectedFiles) {
+          try {
+            const uploadedFile = await uploadFile(file, {
+              category: 'attachment',
+              maxSizeInMB: 10,
+              allowedTypes: [
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'image/jpeg',
+                'image/png',
+                'image/gif',
+                'text/plain'
+              ]
+            });
+            
+            uploadedFiles.push({
+              id: uploadedFile.id,
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              url: uploadedFile.storage_path
+            });
+          } catch (error) {
+            console.error('File upload failed:', error);
+            toast.error(`Failed to upload ${file.name}: ${error.message}`);
+            return; // Stop if any file upload fails
+          }
+        }
+      }
+
       if (isReply && selectedThreadId) {
         // Send reply to existing thread
         await sendMessage.mutateAsync({
@@ -116,7 +190,8 @@ export const ClientMessageComposer = ({
           recipientName: recipient.name,
           recipientType: recipient.type,
           subject: subject.trim(),
-          messageLength: message.trim().length
+          messageLength: message.trim().length,
+          attachmentsCount: uploadedFiles.length
         });
         
         await createThread.mutateAsync({
@@ -130,6 +205,7 @@ export const ClientMessageComposer = ({
       
       // Reset form
       setMessage("");
+      setSelectedFiles([]);
       if (!isReply) {
         setSubject("");
         setRecipientId("");
@@ -150,7 +226,7 @@ export const ClientMessageComposer = ({
     }
   };
   
-  const isLoading = createThread.isPending || sendMessage.isPending;
+  const isLoading = createThread.isPending || sendMessage.isPending || uploading;
   
   return (
     <div className="flex flex-col h-full max-h-screen">
@@ -211,6 +287,36 @@ export const ClientMessageComposer = ({
               className="w-full h-32 resize-none"
             />
           </div>
+
+          {/* Selected Files Display */}
+          {selectedFiles.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Attachments ({selectedFiles.length}):
+              </label>
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {selectedFiles.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <FileText className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{file.name}</p>
+                        <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFile(index)}
+                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           
           <div className="p-3 bg-blue-50 rounded-md">
             <p className="text-sm text-blue-700">
@@ -220,10 +326,20 @@ export const ClientMessageComposer = ({
         </div>
       </div>
       
+      {/* Hidden File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        onChange={handleFileChange}
+        className="hidden"
+        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt"
+      />
+      
       {/* Footer - Fixed */}
       <div className="flex-shrink-0 p-4 border-t border-gray-200">
         <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" onClick={handleFileSelect}>
             <Paperclip className="h-4 w-4 mr-2" />
             Attach File
           </Button>
