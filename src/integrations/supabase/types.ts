@@ -5193,6 +5193,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      sync_client_message_participants: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       update_resource_stats: {
         Args: { resource_id: string; stat_type: string }
         Returns: undefined

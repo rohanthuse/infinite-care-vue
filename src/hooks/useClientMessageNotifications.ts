@@ -9,16 +9,14 @@ export const useClientMessageNotifications = () => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    console.log('useClientMessageNotifications disabled temporarily to fix subscription conflicts');
-    // Temporarily disabled to prevent "tried to subscribe multiple times" error
-    return;
-    
-    /*
     if (!currentUser?.id) return;
 
+    // Use unique channel name to prevent subscription conflicts
+    const channelName = `client-messaging-${currentUser.id}-${Date.now()}`;
+    console.log('Setting up client message notifications channel:', channelName);
     // Consolidated real-time subscription for all message-related updates
     const channel = supabase
-      .channel(`client-messaging-${currentUser.id}-${Date.now()}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -53,35 +51,6 @@ export const useClientMessageNotifications = () => {
           queryClient.invalidateQueries({ queryKey: ['client-message-threads'] });
         }
       )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${currentUser.id}`
-        },
-        (payload) => {
-          console.log('New notification received:', payload);
-          
-          // Show toast for message notifications
-          if (payload.new.type === 'message') {
-            toast.info(payload.new.title, {
-              description: payload.new.message,
-              action: {
-                label: 'View',
-                onClick: () => {
-                  window.location.href = '/client-dashboard/messages';
-                }
-              },
-              duration: 5000,
-            });
-          }
-
-          // Refresh notifications
-          queryClient.invalidateQueries({ queryKey: ['notifications'] });
-        }
-      )
       .subscribe();
 
     // Request notification permission on mount
@@ -90,9 +59,9 @@ export const useClientMessageNotifications = () => {
     }
 
     return () => {
+      console.log('Cleaning up client message notifications channel:', channelName);
       supabase.removeChannel(channel);
     };
-    */
   }, [currentUser, queryClient]);
 };
 

@@ -4,6 +4,7 @@ import { ClientContactSidebar } from "@/components/client/ClientContactSidebar";
 import { ClientMessageList } from "@/components/client/ClientMessageList";
 import { ClientMessageView } from "@/components/client/ClientMessageView";
 import { ClientMessageComposer } from "@/components/client/ClientMessageComposer";
+import { useClientMessageNotifications } from "@/hooks/useClientMessageNotifications";
 
 const ClientMessages = () => {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
@@ -12,6 +13,9 @@ const ClientMessages = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showComposer, setShowComposer] = useState(false);
   const [isReplyMode, setIsReplyMode] = useState(false);
+  
+  // Enable real-time message notifications
+  useClientMessageNotifications();
   
   console.log('ClientMessages component loaded');
   
