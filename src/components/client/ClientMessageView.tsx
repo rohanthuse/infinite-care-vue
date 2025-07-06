@@ -1,7 +1,7 @@
 
 import React, { useEffect } from "react";
 import { format } from "date-fns";
-import { ArrowLeft, ArrowRight, MoreHorizontal, Reply, Download, Paperclip } from "lucide-react";
+import { ArrowLeft, ArrowRight, MoreHorizontal, Reply, Clock, AlertTriangle, Eye, Users, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useClientThreadMessages } from "@/hooks/useClientMessaging";
 import { useMarkMessagesAsRead } from "@/hooks/useUnifiedMessaging";
 import { useUserRole } from "@/hooks/useUserRole";
+import { MessageAttachmentViewer } from "@/components/communications/MessageAttachmentViewer";
 
 interface ClientMessageViewProps {
   messageId: string; // This is actually threadId
@@ -88,11 +89,42 @@ export const ClientMessageView = ({ messageId: threadId, onReply }: ClientMessag
     }
   };
 
+  const getMessageTypeColor = (type?: string) => {
+    switch (type) {
+      case 'incident':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'emergency':
+        return 'bg-red-100 text-red-800 border-red-900';
+      case 'shift':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'general':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getPriorityColor = (priority?: string) => {
+    switch (priority) {
+      case 'urgent':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'high':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'low':
+        return 'bg-green-100 text-green-800 border-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
   const getTypeBadge = (senderType: string) => {
     switch (senderType) {
       case 'carer':
         return (
           <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+            <User className="h-3 w-3 mr-1" />
             Carer
           </Badge>
         );
@@ -100,6 +132,7 @@ export const ClientMessageView = ({ messageId: threadId, onReply }: ClientMessag
       case 'branch_admin':
         return (
           <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+            <Users className="h-3 w-3 mr-1" />
             Admin
           </Badge>
         );
@@ -138,7 +171,7 @@ export const ClientMessageView = ({ messageId: threadId, onReply }: ClientMessag
       </div>
       
       {/* Messages */}
-      <div id="client-messages-container" className="flex-1 overflow-y-auto p-4 space-y-3 bg-background">
+      <div id="client-messages-container" className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.map((message, index) => {
           const isCurrentUser = message.senderType === 'client';
           const attachmentsList = parseAttachments(message.attachments);
@@ -163,7 +196,7 @@ export const ClientMessageView = ({ messageId: threadId, onReply }: ClientMessag
               )}>
                 {showAvatar && !isCurrentUser && (
                   <Avatar className="h-8 w-8 mt-auto">
-                    <AvatarFallback className="text-xs bg-muted">
+                    <AvatarFallback className="text-xs">
                       {message.senderName.split(' ').map(n => n.charAt(0)).join('').slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
@@ -175,55 +208,70 @@ export const ClientMessageView = ({ messageId: threadId, onReply }: ClientMessag
                 )}>
                   {showAvatar && !isCurrentUser && (
                     <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-sm font-medium text-foreground">{message.senderName}</span>
+                      <span className="text-sm font-medium text-gray-700">{message.senderName}</span>
                       {getTypeBadge(message.senderType)}
-                      <span className="text-xs text-muted-foreground">{formatTimestamp(message.timestamp)}</span>
+                      <span className="text-xs text-gray-500">{formatTimestamp(message.timestamp)}</span>
                     </div>
                   )}
                   
                   <div
                     className={cn(
-                      "rounded-lg px-4 py-2 shadow-sm",
+                      "rounded-lg px-4 py-2",
                       isCurrentUser
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card text-card-foreground border border-border"
+                        ? "bg-blue-600 text-white"
+                        : "bg-white text-gray-900 border border-gray-200"
                     )}
                   >
+                    {/* Message Type and Priority Badges */}
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {message.messageType && (
+                        <Badge variant="secondary" className={`text-xs ${getMessageTypeColor(message.messageType)}`}>
+                          {message.messageType.charAt(0).toUpperCase() + message.messageType.slice(1)}
+                        </Badge>
+                      )}
+                      {message.priority && message.priority !== 'normal' && (
+                        <Badge variant="secondary" className={`text-xs ${getPriorityColor(message.priority)}`}>
+                          {message.priority.charAt(0).toUpperCase() + message.priority.slice(1)} Priority
+                        </Badge>
+                      )}
+                      {message.actionRequired && (
+                        <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800 border-amber-200">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Action Required
+                        </Badge>
+                      )}
+                      {message.adminEyesOnly && (
+                        <Badge variant="secondary" className="text-xs bg-red-100 text-red-800 border-red-200">
+                          <Eye className="h-3 w-3 mr-1" />
+                          Admin Only
+                        </Badge>
+                      )}
+                    </div>
+                    
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                     
+                    {/* Attachments */}
+                    {message.hasAttachments && attachmentsList.length > 0 && (
+                      <div className="mt-2">
+                        <MessageAttachmentViewer 
+                          attachments={attachmentsList}
+                          onPreview={(attachment) => {
+                            console.log('Preview attachment:', attachment);
+                          }}
+                          onDownload={(attachment) => {
+                            console.log('Download attachment:', attachment);
+                          }}
+                        />
+                      </div>
+                    )}
+                    
                     {isCurrentUser && (
-                      <div className="flex items-center justify-end mt-1 opacity-70">
-                        <span className="text-xs">{formatTimestamp(message.timestamp)}</span>
+                      <div className="flex items-center justify-end mt-1 space-x-1">
+                        <Clock className="h-3 w-3 opacity-70" />
+                        <span className="text-xs opacity-70">{formatTimestamp(message.timestamp)}</span>
                       </div>
                     )}
                   </div>
-                  
-                  {/* Attachments */}
-                  {message.hasAttachments && attachmentsList.length > 0 && (
-                    <div className={cn(
-                      "mt-2 space-y-2",
-                      isCurrentUser ? "items-end" : "items-start"
-                    )}>
-                      {attachmentsList.map((attachment: any, attachIndex: number) => (
-                        <div 
-                          key={attachIndex}
-                          className={cn(
-                            "flex items-center p-2 border rounded-md bg-muted/50 max-w-xs",
-                            isCurrentUser ? "ml-auto" : "mr-auto"
-                          )}
-                        >
-                          <Paperclip className="h-4 w-4 text-muted-foreground mr-2" />
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium truncate">{attachment.name || 'Attachment'}</div>
-                            <div className="text-xs text-muted-foreground">{attachment.size || 'Unknown size'}</div>
-                          </div>
-                          <Button variant="ghost" size="icon" className="h-6 w-6" title="Download attachment">
-                            <Download className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -231,11 +279,17 @@ export const ClientMessageView = ({ messageId: threadId, onReply }: ClientMessag
         })}
       </div>
       
-      <div className="p-4 border-t border-border bg-background">
-        <Button className="w-full" onClick={onReply}>
-          <Reply className="h-4 w-4 mr-2" />
-          Reply
-        </Button>
+      {/* Footer */}
+      <div className="p-4 border-t border-gray-200 bg-white">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-500">
+            {messages.length} message{messages.length !== 1 ? 's' : ''}
+          </span>
+          <Button variant="default" onClick={onReply}>
+            <Reply className="h-4 w-4 mr-2" />
+            Reply to conversation
+          </Button>
+        </div>
       </div>
     </div>
   );

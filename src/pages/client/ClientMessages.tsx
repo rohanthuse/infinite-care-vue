@@ -6,6 +6,7 @@ import { ClientMessageView } from "@/components/client/ClientMessageView";
 import { ClientMessageComposer } from "@/components/client/ClientMessageComposer";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useClientMessageNotifications } from "@/hooks/useClientMessageNotifications";
 
 // Memoize components to prevent unnecessary re-renders
 const MemoizedContactSidebar = memo(ClientContactSidebar);
@@ -21,6 +22,9 @@ const ClientMessages = () => {
   const [showComposer, setShowComposer] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const queryClient = useQueryClient();
+  
+  // Enable enhanced message notifications with toast and browser alerts
+  useClientMessageNotifications();
   
   // Delay initial loading to prevent UI blocking
   useEffect(() => {

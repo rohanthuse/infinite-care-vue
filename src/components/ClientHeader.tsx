@@ -97,9 +97,16 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
           </div>
         </div>
         
-        {/* Bell notification on right for desktop view */}
+        {/* Bell notification on right for desktop view - Enhanced */}
         <div className="hidden md:flex items-center">
-          <NotificationDropdown onViewAll={handleViewAllNotifications} />
+          <div className="relative">
+            <NotificationDropdown onViewAll={handleViewAllNotifications} />
+            {/* Prominent message notification pulse indicator */}
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse border-2 border-white" 
+                 style={{ display: 'none' }} 
+                 id="message-pulse-indicator">
+            </div>
+          </div>
         </div>
         
         {/* Mobile menu button */}
