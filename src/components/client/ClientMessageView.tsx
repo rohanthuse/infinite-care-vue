@@ -10,6 +10,7 @@ import { useClientThreadMessages } from "@/hooks/useClientMessaging";
 import { useMarkMessagesAsRead } from "@/hooks/useUnifiedMessaging";
 import { useUserRole } from "@/hooks/useUserRole";
 import { MessageAttachmentViewer } from "@/components/communications/MessageAttachmentViewer";
+import { useMessageAttachments } from "@/hooks/useMessageAttachments";
 
 interface ClientMessageViewProps {
   messageId: string; // This is actually threadId
@@ -20,6 +21,7 @@ export const ClientMessageView = ({ messageId: threadId, onReply }: ClientMessag
   const { data: messages = [], isLoading, error } = useClientThreadMessages(threadId);
   const { data: currentUser } = useUserRole();
   const markMessagesAsRead = useMarkMessagesAsRead();
+  const { downloadAttachment, previewAttachment } = useMessageAttachments();
 
   // Auto-scroll to bottom when messages load
   useEffect(() => {
@@ -253,15 +255,11 @@ export const ClientMessageView = ({ messageId: threadId, onReply }: ClientMessag
                     {/* Attachments */}
                     {message.hasAttachments && attachmentsList.length > 0 && (
                       <div className="mt-2">
-                        <MessageAttachmentViewer 
-                          attachments={attachmentsList}
-                          onPreview={(attachment) => {
-                            console.log('Preview attachment:', attachment);
-                          }}
-                          onDownload={(attachment) => {
-                            console.log('Download attachment:', attachment);
-                          }}
-                        />
+                         <MessageAttachmentViewer 
+                           attachments={attachmentsList}
+                           onPreview={previewAttachment}
+                           onDownload={downloadAttachment}
+                         />
                       </div>
                     )}
                     
