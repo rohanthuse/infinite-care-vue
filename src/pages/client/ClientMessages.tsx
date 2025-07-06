@@ -1,10 +1,9 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { ClientContactSidebar } from "@/components/client/ClientContactSidebar";
 import { ClientMessageList } from "@/components/client/ClientMessageList";
 import { ClientMessageView } from "@/components/client/ClientMessageView";
 import { ClientMessageComposer } from "@/components/client/ClientMessageComposer";
-import { useClientMessageNotifications } from "@/hooks/useClientMessageNotifications";
 
 const ClientMessages = () => {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
@@ -13,8 +12,7 @@ const ClientMessages = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showComposer, setShowComposer] = useState(false);
   
-  // Enable enhanced message notifications with consolidated real-time subscriptions
-  useClientMessageNotifications();
+  console.log('ClientMessages component loaded');
   
   const handleContactSelect = (contactId: string) => {
     setSelectedContactId(contactId);

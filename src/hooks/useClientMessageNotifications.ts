@@ -9,11 +9,16 @@ export const useClientMessageNotifications = () => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    console.log('useClientMessageNotifications disabled temporarily to fix subscription conflicts');
+    // Temporarily disabled to prevent "tried to subscribe multiple times" error
+    return;
+    
+    /*
     if (!currentUser?.id) return;
 
     // Consolidated real-time subscription for all message-related updates
     const channel = supabase
-      .channel('client-messaging-consolidated')
+      .channel(`client-messaging-${currentUser.id}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
@@ -87,6 +92,7 @@ export const useClientMessageNotifications = () => {
     return () => {
       supabase.removeChannel(channel);
     };
+    */
   }, [currentUser, queryClient]);
 };
 
