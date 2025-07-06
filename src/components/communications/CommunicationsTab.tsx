@@ -100,9 +100,9 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
   // Adjust available filter types based on user role
   const getAvailableFilterTypes = () => {
     if (currentUser.role === 'super_admin' || currentUser.role === 'branch_admin') {
-      return ['all', 'carers', 'clients', 'admins'];
+      return ['all', 'carers', 'clients', 'admins', 'groups'];
     } else {
-      return ['all', 'admins']; // Carers and clients can only see admins
+      return ['all', 'admins', 'groups']; // Carers and clients can only see admins and groups
     }
   };
 
