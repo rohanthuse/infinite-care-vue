@@ -8,6 +8,8 @@ import { MessageFilters } from "./MessageFilters";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserRole } from "@/hooks/useUserRole";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 export interface CommunicationsTabProps {
   branchId?: string;
@@ -19,6 +21,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
   branchName = "Med-Infinite" 
 }) => {
   const { data: currentUser, isLoading: userLoading } = useUserRole();
+  const queryClient = useQueryClient();
   
   // State management
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
@@ -39,6 +42,46 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
       sessionStorage.removeItem('openThreadId');
     }
   }, []);
+
+  // Set up real-time subscriptions for admin messaging
+  React.useEffect(() => {
+    const channel = supabase
+      .channel('admin-messages-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages'
+        },
+        (payload) => {
+          console.log('Admin message update received:', payload);
+          // Invalidate admin message-related queries
+          queryClient.invalidateQueries({ queryKey: ['message-threads'] });
+          queryClient.invalidateQueries({ queryKey: ['admin-thread-messages'] });
+          
+          // Auto-refresh notifications to show new message indicators
+          queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'message_threads'
+        },
+        (payload) => {
+          console.log('Admin thread update received:', payload);
+          queryClient.invalidateQueries({ queryKey: ['message-threads'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   // Handler for filter changes
   const handleFilterOptionsChange = (priority?: string, readStatus?: string, date?: string) => {

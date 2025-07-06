@@ -4,6 +4,8 @@ import { ClientContactSidebar } from "@/components/client/ClientContactSidebar";
 import { ClientMessageList } from "@/components/client/ClientMessageList";
 import { ClientMessageView } from "@/components/client/ClientMessageView";
 import { ClientMessageComposer } from "@/components/client/ClientMessageComposer";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Memoize components to prevent unnecessary re-renders
 const MemoizedContactSidebar = memo(ClientContactSidebar);
@@ -18,6 +20,7 @@ const ClientMessages = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showComposer, setShowComposer] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const queryClient = useQueryClient();
   
   // Delay initial loading to prevent UI blocking
   useEffect(() => {
@@ -27,6 +30,46 @@ const ClientMessages = () => {
     
     return () => clearTimeout(timer);
   }, []);
+
+  // Set up real-time subscriptions for message updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('client-messages-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages'
+        },
+        (payload) => {
+          console.log('Message update received:', payload);
+          // Invalidate message-related queries to trigger refetch
+          queryClient.invalidateQueries({ queryKey: ['client-threads'] });
+          queryClient.invalidateQueries({ queryKey: ['client-thread-messages'] });
+          
+          // Auto-refresh notifications to show new message indicators
+          queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'message_threads'
+        },
+        (payload) => {
+          console.log('Thread update received:', payload);
+          queryClient.invalidateQueries({ queryKey: ['client-threads'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
   
   const handleContactSelect = (contactId: string) => {
     setSelectedContactId(contactId);
