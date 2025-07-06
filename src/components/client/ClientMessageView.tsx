@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { format } from "date-fns";
 import { ArrowLeft, ArrowRight, MoreHorizontal, Reply, Download, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useClientThreadMessages } from "@/hooks/useClientMessaging";
+import { useMarkMessagesAsRead } from "@/hooks/useUnifiedMessaging";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface ClientMessageViewProps {
   messageId: string; // This is actually threadId
@@ -15,6 +17,22 @@ interface ClientMessageViewProps {
 
 export const ClientMessageView = ({ messageId: threadId, onReply }: ClientMessageViewProps) => {
   const { data: messages = [], isLoading, error } = useClientThreadMessages(threadId);
+  const { data: currentUser } = useUserRole();
+  const markMessagesAsRead = useMarkMessagesAsRead();
+
+  // Mark messages as read when they load
+  useEffect(() => {
+    if (messages.length === 0 || !currentUser) return;
+    
+    // Get all message IDs that are not from the current user and are unread
+    const messageIdsToMarkAsRead = messages
+      .filter(msg => msg.senderId !== currentUser.id && !msg.isRead)
+      .map(msg => msg.id);
+    
+    if (messageIdsToMarkAsRead.length > 0) {
+      markMessagesAsRead.mutate({ messageIds: messageIdsToMarkAsRead });
+    }
+  }, [messages, currentUser, markMessagesAsRead]);
   
   if (isLoading) {
     return (

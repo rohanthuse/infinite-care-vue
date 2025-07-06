@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Reply, Users, User, Clock, AlertTriangle, CheckCircle, Eye } from "lucide-react";
 import { useAdminThreadMessages } from "@/hooks/useAdminMessaging";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useMarkMessagesAsRead } from "@/hooks/useUnifiedMessaging";
 
 interface MessageViewProps {
   messageId: string;
@@ -14,6 +15,7 @@ interface MessageViewProps {
 export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
   const { data: currentUser } = useUserRole();
   const { data: messages = [], isLoading, error } = useAdminThreadMessages(messageId);
+  const markMessagesAsRead = useMarkMessagesAsRead();
 
   // Auto-scroll to bottom when messages load
   useEffect(() => {
@@ -22,6 +24,20 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
       container.scrollTop = container.scrollHeight;
     }
   }, [messages]);
+
+  // Mark messages as read when they load
+  useEffect(() => {
+    if (messages.length === 0 || !currentUser) return;
+    
+    // Get all message IDs that are not from the current user
+    const messageIdsToMarkAsRead = messages
+      .filter(msg => msg.senderId !== currentUser.id && !msg.isRead)
+      .map(msg => msg.id);
+    
+    if (messageIdsToMarkAsRead.length > 0) {
+      markMessagesAsRead.mutate({ messageIds: messageIdsToMarkAsRead });
+    }
+  }, [messages, currentUser, markMessagesAsRead]);
 
   const getMessageTypeColor = (type?: string) => {
     switch (type) {

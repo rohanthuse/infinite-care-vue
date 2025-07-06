@@ -485,6 +485,46 @@ export const useUnifiedSendMessage = () => {
   });
 };
 
+// Mark messages as read
+export const useMarkMessagesAsRead = () => {
+  const queryClient = useQueryClient();
+  const { data: currentUser } = useUserRole();
+
+  return useMutation({
+    mutationFn: async ({ messageIds }: { messageIds: string[] }) => {
+      if (!currentUser || messageIds.length === 0) return;
+
+      // Insert read status records (upsert to avoid duplicates)
+      const readStatusRecords = messageIds.map(messageId => ({
+        user_id: currentUser.id,
+        message_id: messageId,
+        read_at: new Date().toISOString()
+      }));
+
+      const { error } = await supabase
+        .from('message_read_status')
+        .upsert(readStatusRecords, { 
+          onConflict: 'user_id,message_id',
+          ignoreDuplicates: true 
+        });
+
+      if (error) throw error;
+      return messageIds;
+    },
+    onSuccess: (messageIds) => {
+      // Invalidate all relevant queries to update unread counts
+      queryClient.invalidateQueries({ queryKey: ['unified-message-threads'] });
+      queryClient.invalidateQueries({ queryKey: ['unified-thread-messages'] });
+      queryClient.invalidateQueries({ queryKey: ['client-message-threads'] });
+      queryClient.invalidateQueries({ queryKey: ['client-thread-messages'] });
+      console.log(`Marked ${messageIds?.length || 0} messages as read`);
+    },
+    onError: (error) => {
+      console.error('Failed to mark messages as read:', error);
+    }
+  });
+};
+
 // Create a new message thread
 export const useUnifiedCreateThread = () => {
   const queryClient = useQueryClient();
