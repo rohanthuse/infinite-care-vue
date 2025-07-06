@@ -51,13 +51,14 @@ export const useAdminContacts = () => {
     queryFn: async (): Promise<AdminContact[]> => {
       console.log('[useAdminContacts] Current user:', currentUser);
       
-      // Remove strict role check - allow any authenticated user to fetch contacts
       if (!currentUser) {
         console.log('[useAdminContacts] No current user found');
         return [];
       }
 
       const contacts: AdminContact[] = [];
+
+      try {
 
       // Get branch access for admin
       let branchIds: string[] = [];
@@ -322,9 +323,16 @@ export const useAdminContacts = () => {
 
       console.log('[useAdminContacts] Total contacts found:', contacts.length);
       return contacts.sort((a, b) => a.name.localeCompare(b.name));
+      
+      } catch (error) {
+        console.error('[useAdminContacts] Error fetching contacts:', error);
+        throw new Error(`Failed to load contacts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     },
-    enabled: !!currentUser, // Enable for all authenticated users
+    enabled: !!currentUser,
     staleTime: 300000, // 5 minutes
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
   });
 };
 

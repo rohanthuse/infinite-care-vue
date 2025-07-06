@@ -68,7 +68,7 @@ export const MessageComposer = ({
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
 
-  const { data: availableContacts = [] } = useAdminContacts();
+  const { data: availableContacts = [], isLoading: contactsLoading, error: contactsError } = useAdminContacts();
   const createThread = useUnifiedCreateThread();
   const sendMessage = useUnifiedSendMessage();
   
@@ -314,7 +314,21 @@ export const MessageComposer = ({
                   
                   {showContactSelector && (
                     <div className="border rounded-md p-3 space-y-3 max-h-48 overflow-y-auto">
-                      {availableContacts.length > 0 ? (
+                      {contactsError ? (
+                        <div className="text-red-600 text-sm p-2 bg-red-50 rounded">
+                          Error loading contacts: {contactsError.message}
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="ml-2"
+                            onClick={() => window.location.reload()}
+                          >
+                            Retry
+                          </Button>
+                        </div>
+                      ) : contactsLoading ? (
+                        <div className="text-gray-500 text-sm p-2">Loading contacts...</div>
+                      ) : availableContacts.length > 0 ? (
                         <>
                           {availableContacts.filter(c => c.type === 'client').length > 0 && (
                             <div>
@@ -377,7 +391,17 @@ export const MessageComposer = ({
                           </div>
                         </>
                       ) : (
-                        <p className="text-sm text-gray-500">No contacts available</p>
+                        <div className="text-sm text-gray-500 p-2">
+                          No contacts available. 
+                          {contactsError && (
+                            <button 
+                              onClick={() => window.location.reload()}
+                              className="ml-1 text-blue-600 underline"
+                            >
+                              Refresh to try again
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}

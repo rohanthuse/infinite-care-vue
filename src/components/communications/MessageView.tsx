@@ -1,188 +1,212 @@
-
-import React, { useState } from "react";
-import { format } from "date-fns";
-import { 
-  ArrowLeft, ArrowRight, MoreHorizontal, Reply, 
-  Download, Paperclip
-} from "lucide-react";
+import React, { useEffect } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuTrigger,
-  DropdownMenuItem,
-  DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
-import { useThreadMessages } from "@/hooks/useMessages";
+import { Reply, Users, User, Clock } from "lucide-react";
+import { useAdminThreadMessages } from "@/hooks/useAdminMessaging";
 import { useUserRole } from "@/hooks/useUserRole";
 
 interface MessageViewProps {
-  messageId: string; // This is actually threadId
+  messageId: string;
   onReply: () => void;
 }
 
-// Helper function to safely parse attachments
-const parseAttachments = (attachments: any): any[] => {
-  if (!attachments) return [];
-  if (Array.isArray(attachments)) return attachments;
-  try {
-    const parsed = typeof attachments === 'string' ? JSON.parse(attachments) : attachments;
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
-
-export const MessageView = ({ messageId: threadId, onReply }: MessageViewProps) => {
-  const { data: messages = [], isLoading } = useThreadMessages(threadId);
+export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
   const { data: currentUser } = useUserRole();
-  
+  const { data: messages = [], isLoading, error } = useAdminThreadMessages(messageId);
+
+  // Auto-scroll to bottom when messages load
+  useEffect(() => {
+    const container = document.getElementById('messages-container');
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
+  }, [messages]);
+
+  const formatTimestamp = (timestamp: Date) => {
+    const now = new Date();
+    const diffInMinutes = (now.getTime() - timestamp.getTime()) / (1000 * 60);
+    
+    if (diffInMinutes < 1) {
+      return 'Just now';
+    } else if (diffInMinutes < 60) {
+      return `${Math.floor(diffInMinutes)}m ago`;
+    } else if (diffInMinutes < 1440) { // 24 hours
+      return `${Math.floor(diffInMinutes / 60)}h ago`;
+    } else {
+      return timestamp.toLocaleDateString([], { 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+  };
+
+  const getParticipants = () => {
+    if (!messages.length) return [];
+    
+    const participantMap = new Map();
+    messages.forEach(message => {
+      if (!participantMap.has(message.senderId)) {
+        participantMap.set(message.senderId, {
+          id: message.senderId,
+          name: message.senderName,
+          type: message.senderType
+        });
+      }
+    });
+    
+    return Array.from(participantMap.values());
+  };
+
+  const participants = getParticipants();
+  const isGroupChat = participants.length > 2;
+
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-gray-50">
-        <div className="text-gray-400 text-lg mb-2">Loading messages...</div>
+      <div className="flex flex-col h-full">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-gray-500">Loading conversation...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-red-500 text-center">
+            <p>Error loading messages</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="text-blue-600 underline text-sm mt-1"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (messages.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-gray-50">
-        <div className="text-gray-400 text-lg mb-2">No messages found</div>
-        <p className="text-sm text-gray-500 max-w-md text-center">
-          Start the conversation by sending a message.
-        </p>
-        <Button variant="outline" className="mt-4" onClick={onReply}>
-          Send Message
-        </Button>
+      <div className="flex flex-col h-full">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-gray-500">No messages in this conversation</div>
+        </div>
       </div>
     );
   }
 
-  const getTypeBadge = (senderType: string) => {
-    switch (senderType) {
-      case 'client':
-        return (
-          <Badge variant="outline" className="ml-2 px-1.5 py-0 text-xs bg-green-50 text-green-700 border-green-200">
-            Client
-          </Badge>
-        );
-      case 'carer':
-        return (
-          <Badge variant="outline" className="ml-2 px-1.5 py-0 text-xs bg-blue-50 text-blue-700 border-blue-200">
-            Carer
-          </Badge>
-        );
-      case 'super_admin':
-      case 'branch_admin':
-        return (
-          <Badge variant="outline" className="ml-2 px-1.5 py-0 text-xs bg-purple-50 text-purple-700 border-purple-200">
-            Admin
-          </Badge>
-        );
-      default:
-        return null;
-    }
-  };
-  
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-        <h2 className="text-lg font-semibold truncate">Conversation</h2>
-        
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" title="Previous">
-            <ArrowLeft className="h-4 w-4" />
+      {/* Header */}
+      <div className="p-4 border-b border-gray-200 bg-white">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Avatar className="h-10 w-10">
+              <AvatarFallback className={isGroupChat ? 'bg-purple-100 text-purple-700' : 'bg-gray-100'}>
+                {isGroupChat ? 'GR' : participants[0]?.name.split(' ').map(n => n.charAt(0)).join('').slice(0, 2) || 'UN'}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="font-semibold text-gray-900">
+                  {isGroupChat ? `Group Chat (${participants.length})` : participants.find(p => p.id !== currentUser?.id)?.name || 'Unknown'}
+                </h3>
+                {isGroupChat && (
+                  <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700">
+                    <Users className="h-3 w-3 mr-1" />
+                    Group
+                  </Badge>
+                )}
+              </div>
+              {isGroupChat && (
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {participants.map(p => p.name).join(', ')}
+                </p>
+              )}
+            </div>
+          </div>
+          
+          <Button variant="outline" size="sm" onClick={onReply}>
+            <Reply className="h-4 w-4 mr-2" />
+            Reply
           </Button>
-          <Button variant="ghost" size="icon" title="Next">
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>Mark as unread</DropdownMenuItem>
-              <DropdownMenuItem>Archive</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
-      
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => {
-          const attachmentsList = parseAttachments(message.attachments);
+
+      {/* Messages */}
+      <div id="messages-container" className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+        {messages.map((message, index) => {
+          const isCurrentUser = message.senderId === currentUser?.id;
+          const showAvatar = !isCurrentUser && (
+            index === 0 || 
+            messages[index - 1]?.senderId !== message.senderId ||
+            (new Date(message.timestamp).getTime() - new Date(messages[index - 1]?.timestamp).getTime()) > 300000 // 5 minutes
+          );
           
           return (
-            <div key={message.id} className="mb-6">
-              <div className="flex items-start">
-                <Avatar className="h-10 w-10 mr-3">
-                  <AvatarFallback className="bg-gray-200">
-                    {message.senderName.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
+            <div
+              key={message.id}
+              className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} ${
+                showAvatar ? 'mt-4' : 'mt-1'
+              }`}
+            >
+              <div className={`flex space-x-2 max-w-[70%] ${isCurrentUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                {showAvatar && !isCurrentUser && (
+                  <Avatar className="h-8 w-8 mt-auto">
+                    <AvatarFallback className="text-xs">
+                      {message.senderName.split(' ').map(n => n.charAt(0)).join('').slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
                 
-                <div className="flex-1">
-                  <div className="flex items-center">
-                    <div className="font-medium">
-                      {message.senderId === currentUser?.id ? "You" : message.senderName}
+                <div className={`${showAvatar && !isCurrentUser ? '' : 'ml-10'} ${isCurrentUser ? 'mr-0' : ''}`}>
+                  {showAvatar && !isCurrentUser && (
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-sm font-medium text-gray-700">{message.senderName}</span>
+                      <span className="text-xs text-gray-500">{formatTimestamp(message.timestamp)}</span>
                     </div>
-                    
-                    {getTypeBadge(message.senderType)}
-                  </div>
+                  )}
                   
-                  <div className="text-sm text-gray-500">
-                    {format(new Date(message.createdAt), "MMMM d, yyyy, h:mm a")}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-3 ml-13 text-sm whitespace-pre-line">
-                {message.content}
-              </div>
-              
-              {/* Attachments */}
-              {message.hasAttachments && attachmentsList.length > 0 && (
-                <div className="mt-3 ml-13 border-t border-gray-100 pt-3">
-                  <div className="text-sm font-medium mb-2">
-                    Attachments ({attachmentsList.length})
-                  </div>
-                  <div className="space-y-2">
-                    {attachmentsList.map((attachment: any, index: number) => (
-                      <div 
-                        key={index}
-                        className="flex items-center p-2 border border-gray-200 rounded-md bg-gray-50"
-                      >
-                        <Paperclip className="h-4 w-4 text-gray-500 mr-2" />
-                        <div className="flex-1">
-                          <div className="text-sm font-medium">{attachment.name || 'Attachment'}</div>
-                          <div className="text-xs text-gray-500">{attachment.size || 'Unknown size'}</div>
-                        </div>
-                        <Button variant="ghost" size="icon" title="Download attachment">
-                          <Download className="h-4 w-4" />
-                        </Button>
+                  <div
+                    className={`rounded-lg px-4 py-2 ${
+                      isCurrentUser
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-900 border border-gray-200'
+                    }`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    
+                    {isCurrentUser && (
+                      <div className="flex items-center justify-end mt-1 space-x-1">
+                        <Clock className="h-3 w-3 opacity-70" />
+                        <span className="text-xs opacity-70">{formatTimestamp(message.timestamp)}</span>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           );
         })}
       </div>
-      
-      <div className="p-4 border-t border-gray-200">
-        <Button className="w-full" onClick={onReply}>
-          <Reply className="h-4 w-4 mr-2" />
-          Reply
-        </Button>
+
+      {/* Footer */}
+      <div className="p-4 border-t border-gray-200 bg-white">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-500">
+            {messages.length} message{messages.length !== 1 ? 's' : ''}
+          </span>
+          <Button variant="default" onClick={onReply}>
+            <Reply className="h-4 w-4 mr-2" />
+            Reply to conversation
+          </Button>
+        </div>
       </div>
     </div>
   );
