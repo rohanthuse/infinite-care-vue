@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Reply, Users, User, Clock } from "lucide-react";
+import { Reply, Users, User, Clock, AlertTriangle, CheckCircle, Eye } from "lucide-react";
 import { useAdminThreadMessages } from "@/hooks/useAdminMessaging";
 import { useUserRole } from "@/hooks/useUserRole";
 
@@ -22,6 +22,36 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
       container.scrollTop = container.scrollHeight;
     }
   }, [messages]);
+
+  const getMessageTypeColor = (type?: string) => {
+    switch (type) {
+      case 'incident':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'emergency':
+        return 'bg-red-100 text-red-800 border-red-900';
+      case 'shift':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'general':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getPriorityColor = (priority?: string) => {
+    switch (priority) {
+      case 'urgent':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'high':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'low':
+        return 'bg-green-100 text-green-800 border-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
 
   const formatTimestamp = (timestamp: Date) => {
     const now = new Date();
@@ -173,22 +203,47 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
                     </div>
                   )}
                   
-                  <div
-                    className={`rounded-lg px-4 py-2 ${
-                      isCurrentUser
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-gray-900 border border-gray-200'
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    
-                    {isCurrentUser && (
-                      <div className="flex items-center justify-end mt-1 space-x-1">
-                        <Clock className="h-3 w-3 opacity-70" />
-                        <span className="text-xs opacity-70">{formatTimestamp(message.timestamp)}</span>
-                      </div>
-                    )}
-                  </div>
+                   <div
+                     className={`rounded-lg px-4 py-2 ${
+                       isCurrentUser
+                         ? 'bg-blue-600 text-white'
+                         : 'bg-white text-gray-900 border border-gray-200'
+                     }`}
+                   >
+                     <div className="flex flex-wrap gap-1 mb-2">
+                       {message.messageType && (
+                         <Badge variant="secondary" className={`text-xs ${getMessageTypeColor(message.messageType)}`}>
+                           {message.messageType.charAt(0).toUpperCase() + message.messageType.slice(1)}
+                         </Badge>
+                       )}
+                       {message.priority && message.priority !== 'normal' && (
+                         <Badge variant="secondary" className={`text-xs ${getPriorityColor(message.priority)}`}>
+                           {message.priority.charAt(0).toUpperCase() + message.priority.slice(1)} Priority
+                         </Badge>
+                       )}
+                       {message.actionRequired && (
+                         <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800 border-amber-200">
+                           <AlertTriangle className="h-3 w-3 mr-1" />
+                           Action Required
+                         </Badge>
+                       )}
+                       {message.adminEyesOnly && (
+                         <Badge variant="secondary" className="text-xs bg-red-100 text-red-800 border-red-200">
+                           <Eye className="h-3 w-3 mr-1" />
+                           Admin Only
+                         </Badge>
+                       )}
+                     </div>
+                     
+                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                     
+                     {isCurrentUser && (
+                       <div className="flex items-center justify-end mt-1 space-x-1">
+                         <Clock className="h-3 w-3 opacity-70" />
+                         <span className="text-xs opacity-70">{formatTimestamp(message.timestamp)}</span>
+                       </div>
+                     )}
+                   </div>
                 </div>
               </div>
             </div>

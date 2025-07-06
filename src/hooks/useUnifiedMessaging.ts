@@ -26,6 +26,11 @@ export interface UnifiedMessage {
   isRead: boolean;
   hasAttachments: boolean;
   attachments?: any[];
+  messageType?: string;
+  priority?: string;
+  actionRequired?: boolean;
+  adminEyesOnly?: boolean;
+  notificationMethods?: string[];
 }
 
 export interface UnifiedMessageThread {
@@ -36,6 +41,9 @@ export interface UnifiedMessageThread {
   unreadCount: number;
   createdAt: string;
   updatedAt: string;
+  threadType?: string;
+  requiresAction?: boolean;
+  adminOnly?: boolean;
 }
 
 // Helper function to safely parse attachments
@@ -343,20 +351,25 @@ export const useUnifiedThreadMessages = (threadId: string) => {
     queryFn: async (): Promise<UnifiedMessage[]> => {
       if (!currentUser || !threadId) return [];
 
-      const { data: messages, error } = await supabase
-        .from('messages')
-        .select(`
-          id,
-          thread_id,
-          sender_id,
-          sender_type,
-          content,
-          has_attachments,
-          attachments,
-          created_at
-        `)
-        .eq('thread_id', threadId)
-        .order('created_at', { ascending: true });
+        const { data: messages, error } = await supabase
+          .from('messages')
+          .select(`
+            id,
+            thread_id,
+            sender_id,
+            sender_type,
+            content,
+            has_attachments,
+            attachments,
+            message_type,
+            priority,
+            action_required,
+            admin_eyes_only,
+            notification_methods,
+            created_at
+          `)
+          .eq('thread_id', threadId)
+          .order('created_at', { ascending: true });
 
       if (error) {
         console.error('Error fetching thread messages:', error);
@@ -390,7 +403,12 @@ export const useUnifiedThreadMessages = (threadId: string) => {
           timestamp: new Date(message.created_at),
           isRead,
           hasAttachments: message.has_attachments,
-          attachments: parseAttachments(message.attachments)
+          attachments: parseAttachments(message.attachments),
+          messageType: message.message_type,
+          priority: message.priority,
+          actionRequired: message.action_required,
+          adminEyesOnly: message.admin_eyes_only,
+          notificationMethods: message.notification_methods
         };
       }) || [];
     },
@@ -406,10 +424,20 @@ export const useUnifiedSendMessage = () => {
   return useMutation({
     mutationFn: async ({ 
       threadId, 
-      content 
+      content,
+      messageType = 'general',
+      priority = 'normal',
+      actionRequired = false,
+      adminEyesOnly = false,
+      notificationMethods = []
     }: { 
       threadId: string; 
-      content: string; 
+      content: string;
+      messageType?: string;
+      priority?: string;
+      actionRequired?: boolean;
+      adminEyesOnly?: boolean;
+      notificationMethods?: string[];
     }) => {
       if (!currentUser) throw new Error('Not authenticated');
 
@@ -423,7 +451,12 @@ export const useUnifiedSendMessage = () => {
                       currentUser.role === 'super_admin' ? 'super_admin' : 'branch_admin',
           content,
           has_attachments: false,
-          attachments: []
+          attachments: [],
+          message_type: messageType,
+          priority,
+          action_required: actionRequired,
+          admin_eyes_only: adminEyesOnly,
+          notification_methods: notificationMethods
         })
         .select()
         .single();
@@ -463,13 +496,29 @@ export const useUnifiedCreateThread = () => {
       recipientNames,
       recipientTypes,
       subject, 
-      initialMessage 
+      initialMessage,
+      threadType = 'general',
+      requiresAction = false,
+      adminOnly = false,
+      messageType = 'general',
+      priority = 'normal',
+      actionRequired = false,
+      adminEyesOnly = false,
+      notificationMethods = []
     }: { 
       recipientIds: string[];
       recipientNames: string[];
       recipientTypes: string[];
       subject: string; 
-      initialMessage: string 
+      initialMessage: string;
+      threadType?: string;
+      requiresAction?: boolean;
+      adminOnly?: boolean;
+      messageType?: string;
+      priority?: string;
+      actionRequired?: boolean;
+      adminEyesOnly?: boolean;
+      notificationMethods?: string[];
     }) => {
       console.log('[useUnifiedCreateThread] Starting thread creation...');
       
@@ -516,7 +565,10 @@ export const useUnifiedCreateThread = () => {
         .insert({
           subject,
           branch_id: branchId,
-          created_by: currentUser.id
+          created_by: currentUser.id,
+          thread_type: threadType,
+          requires_action: requiresAction,
+          admin_only: adminOnly
         })
         .select()
         .single();
@@ -615,7 +667,12 @@ export const useUnifiedCreateThread = () => {
           sender_type: currentUser.role === 'client' ? 'client' : 
                       currentUser.role === 'carer' ? 'carer' : 
                       currentUser.role === 'super_admin' ? 'super_admin' : 'branch_admin',
-          content: initialMessage
+          content: initialMessage,
+          message_type: messageType,
+          priority,
+          action_required: actionRequired,
+          admin_eyes_only: adminEyesOnly,
+          notification_methods: notificationMethods
         });
 
       if (messageError) {

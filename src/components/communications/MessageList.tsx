@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Clock, Users, User } from "lucide-react";
+import { Clock, Users, User, AlertTriangle, Eye } from "lucide-react";
 import { useAdminMessageThreads } from "@/hooks/useAdminMessaging";
 import { useUserRole } from "@/hooks/useUserRole";
 
@@ -178,13 +178,37 @@ export const MessageList = ({
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <h4 className={`text-sm truncate ${
-                    thread.unreadCount > 0 ? 'font-semibold text-gray-900' : 'text-gray-600'
-                  }`}>
-                    {thread.subject}
-                  </h4>
-                </div>
+                 <div className="flex items-center justify-between">
+                   <h4 className={`text-sm truncate ${
+                     thread.unreadCount > 0 ? 'font-semibold text-gray-900' : 'text-gray-600'
+                   }`}>
+                     {thread.subject}
+                   </h4>
+                   
+                   {/* Message metadata badges */}
+                   <div className="flex gap-1 ml-2">
+                     {thread.lastMessage?.actionRequired && (
+                       <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800 border-amber-200 px-1">
+                         <AlertTriangle className="h-3 w-3" />
+                       </Badge>
+                     )}
+                     {thread.lastMessage?.adminEyesOnly && (
+                       <Badge variant="secondary" className="text-xs bg-red-100 text-red-800 border-red-200 px-1">
+                         <Eye className="h-3 w-3" />
+                       </Badge>
+                     )}
+                     {thread.lastMessage?.priority === 'urgent' && (
+                       <Badge variant="secondary" className="text-xs bg-red-100 text-red-800 border-red-200 px-1">
+                         !!
+                       </Badge>
+                     )}
+                     {thread.lastMessage?.priority === 'high' && (
+                       <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800 border-orange-200 px-1">
+                         !
+                       </Badge>
+                     )}
+                   </div>
+                 </div>
                 
                 {thread.lastMessage && (
                   <p className={`text-xs truncate mt-1 ${

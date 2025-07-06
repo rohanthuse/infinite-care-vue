@@ -26,6 +26,11 @@ export interface ClientMessage {
   isRead: boolean;
   hasAttachments: boolean;
   attachments?: any[];
+  messageType?: string;
+  priority?: string;
+  actionRequired?: boolean;
+  adminEyesOnly?: boolean;
+  notificationMethods?: string[];
 }
 
 export interface ClientMessageThread {
@@ -36,6 +41,9 @@ export interface ClientMessageThread {
   unreadCount: number;
   createdAt: string;
   updatedAt: string;
+  threadType?: string;
+  requiresAction?: boolean;
+  adminOnly?: boolean;
 }
 
 // Helper function to safely parse attachments
@@ -251,20 +259,25 @@ export const useClientThreadMessages = (threadId: string) => {
     queryFn: async (): Promise<ClientMessage[]> => {
       if (!currentUser || !threadId) return [];
 
-      const { data: messages, error } = await supabase
-        .from('messages')
-        .select(`
-          id,
-          thread_id,
-          sender_id,
-          sender_type,
-          content,
-          has_attachments,
-          attachments,
-          created_at
-        `)
-        .eq('thread_id', threadId)
-        .order('created_at', { ascending: true });
+        const { data: messages, error } = await supabase
+          .from('messages')
+          .select(`
+            id,
+            thread_id,
+            sender_id,
+            sender_type,
+            content,
+            has_attachments,
+            attachments,
+            message_type,
+            priority,
+            action_required,
+            admin_eyes_only,
+            notification_methods,
+            created_at
+          `)
+          .eq('thread_id', threadId)
+          .order('created_at', { ascending: true });
 
       if (error) {
         console.error('Error fetching thread messages:', error);
@@ -298,7 +311,12 @@ export const useClientThreadMessages = (threadId: string) => {
           timestamp: new Date(message.created_at),
           isRead,
           hasAttachments: message.has_attachments,
-          attachments: parseAttachments(message.attachments)
+          attachments: parseAttachments(message.attachments),
+          messageType: message.message_type,
+          priority: message.priority,
+          actionRequired: message.action_required,
+          adminEyesOnly: message.admin_eyes_only,
+          notificationMethods: message.notification_methods
         };
       }) || [];
     },

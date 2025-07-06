@@ -3093,33 +3093,42 @@ export type Database = {
       }
       message_threads: {
         Row: {
+          admin_only: boolean | null
           branch_id: string | null
           created_at: string
           created_by: string
           id: string
           is_archived: boolean | null
           last_message_at: string | null
+          requires_action: boolean | null
           subject: string
+          thread_type: string | null
           updated_at: string
         }
         Insert: {
+          admin_only?: boolean | null
           branch_id?: string | null
           created_at?: string
           created_by: string
           id?: string
           is_archived?: boolean | null
           last_message_at?: string | null
+          requires_action?: boolean | null
           subject: string
+          thread_type?: string | null
           updated_at?: string
         }
         Update: {
+          admin_only?: boolean | null
           branch_id?: string | null
           created_at?: string
           created_by?: string
           id?: string
           is_archived?: boolean | null
           last_message_at?: string | null
+          requires_action?: boolean | null
           subject?: string
+          thread_type?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3134,33 +3143,48 @@ export type Database = {
       }
       messages: {
         Row: {
+          action_required: boolean | null
+          admin_eyes_only: boolean | null
           attachments: Json | null
           content: string
           created_at: string
           has_attachments: boolean | null
           id: string
+          message_type: string | null
+          notification_methods: string[] | null
+          priority: string | null
           sender_id: string
           sender_type: string
           thread_id: string
           updated_at: string
         }
         Insert: {
+          action_required?: boolean | null
+          admin_eyes_only?: boolean | null
           attachments?: Json | null
           content: string
           created_at?: string
           has_attachments?: boolean | null
           id?: string
+          message_type?: string | null
+          notification_methods?: string[] | null
+          priority?: string | null
           sender_id: string
           sender_type: string
           thread_id: string
           updated_at?: string
         }
         Update: {
+          action_required?: boolean | null
+          admin_eyes_only?: boolean | null
           attachments?: Json | null
           content?: string
           created_at?: string
           has_attachments?: boolean | null
           id?: string
+          message_type?: string | null
+          notification_methods?: string[] | null
+          priority?: string | null
           sender_id?: string
           sender_type?: string
           thread_id?: string

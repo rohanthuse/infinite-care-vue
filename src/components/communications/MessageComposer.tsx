@@ -150,7 +150,14 @@ export const MessageComposer = ({
         // Send reply to existing thread
         await sendMessage.mutateAsync({
           threadId: selectedThreadId,
-          content: content.trim()
+          content: content.trim(),
+          messageType,
+          priority,
+          actionRequired,
+          adminEyesOnly,
+          notificationMethods: Object.entries(notificationMethods)
+            .filter(([_, enabled]) => enabled)
+            .map(([method, _]) => method)
         });
       } else {
         // Create new thread
@@ -168,7 +175,17 @@ export const MessageComposer = ({
           recipientNames: recipientData.map(r => r.name),
           recipientTypes: recipientData.map(r => r.type),
           subject: subject.trim(),
-          initialMessage: content.trim()
+          initialMessage: content.trim(),
+          threadType: messageType,
+          requiresAction: actionRequired,
+          adminOnly: adminEyesOnly,
+          messageType,
+          priority,
+          actionRequired,
+          adminEyesOnly,
+          notificationMethods: Object.entries(notificationMethods)
+            .filter(([_, enabled]) => enabled)
+            .map(([method, _]) => method)
         });
       }
       
@@ -178,6 +195,11 @@ export const MessageComposer = ({
         setSubject("");
         setRecipients([]);
         setSelectedContacts({ carers: [], clients: [], admins: [] });
+        setMessageType("");
+        setPriority("medium");
+        setActionRequired(false);
+        setAdminEyesOnly(false);
+        setNotificationMethods({ email: false, mobileApp: false, otherEmail: false });
       }
       
       onClose();

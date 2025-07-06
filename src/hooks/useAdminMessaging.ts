@@ -29,6 +29,11 @@ export interface AdminMessage {
   isRead: boolean;
   hasAttachments: boolean;
   attachments?: any[];
+  messageType?: string;
+  priority?: string;
+  actionRequired?: boolean;
+  adminEyesOnly?: boolean;
+  notificationMethods?: string[];
 }
 
 export interface AdminMessageThread {
@@ -40,6 +45,9 @@ export interface AdminMessageThread {
   createdAt: string;
   updatedAt: string;
   branchId?: string;
+  threadType?: string;
+  requiresAction?: boolean;
+  adminOnly?: boolean;
 }
 
 // Get contacts available for admin messaging (clients and carers in their branches)
@@ -354,7 +362,10 @@ export const useAdminMessageThreads = () => {
     } : undefined,
     unreadCount: thread.unreadCount,
     createdAt: thread.createdAt,
-    updatedAt: thread.updatedAt
+    updatedAt: thread.updatedAt,
+    threadType: thread.threadType,
+    requiresAction: thread.requiresAction,
+    adminOnly: thread.adminOnly
   }));
 
   return {
@@ -366,7 +377,19 @@ export const useAdminMessageThreads = () => {
 
 // Get messages for a specific thread (wrapper around unified system)
 export const useAdminThreadMessages = (threadId: string) => {
-  return useUnifiedThreadMessages(threadId);
+  const { data: messages = [], isLoading, error } = useUnifiedThreadMessages(threadId);
+  
+  // Transform to admin format with metadata
+  const adminMessages = messages.map(message => ({
+    ...message,
+    messageType: message.messageType,
+    priority: message.priority, 
+    actionRequired: message.actionRequired,
+    adminEyesOnly: message.adminEyesOnly,
+    notificationMethods: message.notificationMethods
+  }));
+  
+  return { data: adminMessages, isLoading, error };
 };
 
 // Send message (wrapper around unified system)
