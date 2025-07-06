@@ -129,18 +129,13 @@ export const MessageComposer = ({
       toast.error("Please select a message type");
       return;
     }
-
-    if (!subject.trim()) {
-      toast.error("Please enter a subject");
-      return;
-    }
     
     if (!content.trim()) {
       toast.error("Please enter message details");
       return;
     }
     
-    if (recipients.length === 0) {
+    if (!isReply && recipients.length === 0) {
       toast.error("Please select at least one recipient");
       return;
     }
@@ -160,7 +155,17 @@ export const MessageComposer = ({
             .map(([method, _]) => method)
         });
       } else {
-        // Create new thread
+        // Create new thread - validate subject and recipients for new messages only
+        if (!subject.trim()) {
+          toast.error("Please enter a subject");
+          return;
+        }
+        
+        if (recipients.length === 0) {
+          toast.error("Please select at least one recipient");
+          return;
+        }
+        
         const recipientData = recipients.map(recipientId => {
           const contact = availableContacts.find(c => c.id === recipientId);
           return {
