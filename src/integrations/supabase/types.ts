@@ -4993,6 +4993,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      fix_client_message_participants: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          fixed_count: number
+          error_count: number
+          details: Json
+        }[]
+      }
       fix_message_participants_user_ids: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -5164,6 +5172,14 @@ export type Database = {
       update_resource_stats: {
         Args: { resource_id: string; stat_type: string }
         Returns: undefined
+      }
+      user_can_access_thread: {
+        Args: { thread_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
+      user_is_admin: {
+        Args: { user_id_param: string }
+        Returns: boolean
       }
     }
     Enums: {

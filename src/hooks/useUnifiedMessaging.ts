@@ -133,12 +133,12 @@ export const useAvailableContacts = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user?.email) return [];
 
-        // Get client's branch
+        // Get client's branch with enhanced matching
         const { data: client } = await supabase
-          .from('clients')
+          .from('clients') 
           .select('id, branch_id, first_name, last_name, email')
           .eq('email', user.email)
-          .single();
+          .maybeSingle();
 
         if (client?.branch_id) {
           // Get admins for this branch
@@ -188,35 +188,70 @@ export const useUnifiedMessageThreads = () => {
   return useQuery({
     queryKey: ['unified-message-threads', currentUser?.id],
     queryFn: async (): Promise<UnifiedMessageThread[]> => {
-      if (!currentUser) return [];
-
-      const { data: threads, error } = await supabase
-        .from('message_threads')
-        .select(`
-          id,
-          subject,
-          created_at,
-          updated_at,
-          last_message_at,
-          message_participants (
-            user_id,
-            user_type,
-            user_name
-          )
-        `)
-        .order('last_message_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching message threads:', error);
+      console.log('[useUnifiedMessageThreads] Starting with user:', currentUser);
+      
+      if (!currentUser) {
+        console.log('[useUnifiedMessageThreads] No current user found');
         return [];
       }
 
-      if (!threads) return [];
+      try {
+        const { data: threads, error } = await supabase
+          .from('message_threads')
+          .select(`
+            id,
+            subject,
+            created_at,
+            updated_at,
+            last_message_at,
+            message_participants (
+              user_id,
+              user_type,
+              user_name
+            )
+          `)
+          .order('last_message_at', { ascending: false });
 
-      // Filter threads where current user is a participant
-      const userThreads = threads.filter(thread => 
-        thread.message_participants?.some(p => p.user_id === currentUser.id)
-      );
+        if (error) {
+          console.error('[useUnifiedMessageThreads] Error fetching threads:', error);
+          throw error;
+        }
+
+        if (!threads) {
+          console.log('[useUnifiedMessageThreads] No threads returned');
+          return [];
+        }
+
+        console.log('[useUnifiedMessageThreads] Raw threads:', threads.length);
+
+        // Enhanced filtering with fallback for client authentication
+        const userThreads = threads.filter(thread => {
+          if (!thread.message_participants) return false;
+          
+          // Check if current user is a participant (direct match)
+          const isDirectParticipant = thread.message_participants.some(p => p.user_id === currentUser.id);
+          
+          // For clients, also check by email if direct match fails
+          if (!isDirectParticipant && currentUser.role === 'client') {
+            // Try to match by user type and email-based logic
+            const hasClientParticipant = thread.message_participants.some(p => 
+              p.user_type === 'client' && 
+              p.user_name && 
+              currentUser.email &&
+              (p.user_name.toLowerCase().includes(currentUser.email.split('@')[0].toLowerCase()) ||
+               (currentUser.fullName && p.user_name.toLowerCase().includes(currentUser.fullName.toLowerCase())))
+            );
+            
+            if (hasClientParticipant) {
+              console.log('[useUnifiedMessageThreads] Found thread via email matching:', thread.id);
+              return true;
+            }
+          }
+          
+          return isDirectParticipant;
+        });
+
+        console.log('[useUnifiedMessageThreads] Filtered threads for user:', userThreads.length);
 
       const processedThreads = await Promise.all(
         userThreads.map(async (thread) => {
@@ -285,10 +320,17 @@ export const useUnifiedMessageThreads = () => {
         })
       );
 
-      return processedThreads;
+        console.log('[useUnifiedMessageThreads] Processed threads:', processedThreads.length);
+        return processedThreads;
+      } catch (error) {
+        console.error('[useUnifiedMessageThreads] Critical error:', error);
+        throw error;
+      }
     },
     enabled: !!currentUser,
     refetchInterval: 30000, // Refetch every 30 seconds for real-time feel
+    retry: 2,
+    retryDelay: 1000,
   });
 };
 
