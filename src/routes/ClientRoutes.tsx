@@ -12,27 +12,29 @@ import ClientReviews from "@/pages/client/ClientReviews";
 import ClientSupport from "@/pages/client/ClientSupport";
 import ClientServiceReports from "@/pages/client/ClientServiceReports";
 import { Suspense } from "react";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 
 // Higher-order component to check client authentication
 const RequireClientAuth = () => {
-  const { data: currentUser, isLoading } = useUserRole();
+  const { data: authData, isLoading, error } = useSimpleClientAuth();
   
   console.log('[RequireClientAuth] Auth state:', { 
     isLoading, 
-    currentUser: currentUser ? { 
-      id: currentUser.id, 
-      role: currentUser.role, 
-      email: currentUser.email 
-    } : null 
+    authData: authData ? { 
+      userId: authData.user.id, 
+      clientId: authData.client.id,
+      email: authData.user.email,
+      isClient: authData.isClient
+    } : null,
+    error: error?.message
   });
   
   if (isLoading) {
     return <div>Loading client authentication...</div>;
   }
   
-  if (!currentUser || currentUser.role !== 'client') {
-    console.log('[RequireClientAuth] Redirecting to login - invalid client');
+  if (error || !authData || !authData.isClient) {
+    console.log('[RequireClientAuth] Redirecting to login - invalid client:', error?.message);
     return <Navigate to="/client-login" replace />;
   }
   
@@ -47,9 +49,9 @@ const LoadingFallback = () => (
   </div>
 );
 
-// Client routes definition for use in App.tsx - returns JSX components
-const ClientRoutes = () => (
-  <Route element={<RequireClientAuth />}>
+// Client routes definition for use in App.tsx - returns array for consistency
+const ClientRoutes = () => [
+  <Route key="client-auth" element={<RequireClientAuth />}>
     <Route path="/client-dashboard" element={<ClientDashboard />}>
       <Route index element={<ClientOverview />} />
       <Route path="appointments" element={<ClientAppointments />} />
@@ -63,6 +65,6 @@ const ClientRoutes = () => (
       <Route path="support" element={<ClientSupport />} />
     </Route>
   </Route>
-);
+];
 
 export default ClientRoutes;

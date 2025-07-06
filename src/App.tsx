@@ -76,9 +76,9 @@ const AppContent = () => {
               <Route path="/client-login" element={<ClientLogin />} />
               
               {/* Protected Routes */}
-              <AdminRoutes />
-              <CarerRoutes />
-              <ClientRoutes />
+              {AdminRoutes()}
+              {CarerRoutes()}
+              {ClientRoutes()}
               
               {/* Fallback route for unmatched paths */}
               <Route path="*" element={<RoutingErrorFallback />} />
