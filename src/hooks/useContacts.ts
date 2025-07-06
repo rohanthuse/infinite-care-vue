@@ -25,7 +25,9 @@ export const useContacts = (branchId: string, contactType: string = 'all') => {
       }
 
       console.log('Fetching contacts for user:', currentUser.id, 'role:', currentUser.role, 'contactType:', contactType);
-      const contacts: Contact[] = [];
+      
+      // Use Map to deduplicate contacts by user ID
+      const contactsMap = new Map<string, Contact>();
 
       // Get staff (carers and admins)
       if (contactType === 'all' || contactType === 'carers' || contactType === 'admins') {
@@ -62,34 +64,41 @@ export const useContacts = (branchId: string, contactType: string = 'all') => {
           console.log('Found staff roles:', staffRoles?.length || 0);
 
           staff.forEach(member => {
-            const roleData = staffRoles?.find(r => r.user_id === member.id);
-            const memberRole = roleData?.role as UserRole;
+            // Get all roles for this staff member
+            const userRoles = staffRoles?.filter(r => r.user_id === member.id).map(r => r.role as UserRole) || [];
             
-            // If no role found, assume 'carer' for staff members (fallback)
-            const effectiveRole = memberRole || 'carer';
+            // If no roles found, assume 'carer' for staff members (fallback)
+            const allRoles = userRoles.length > 0 ? userRoles : ['carer' as UserRole];
             
-            console.log(`Staff member ${member.first_name} ${member.last_name} (${member.id}): role = ${effectiveRole}`);
+            // Determine the highest priority role to display (admin > carer)
+            const priorityOrder: UserRole[] = ['super_admin', 'branch_admin', 'carer'];
+            const displayRole = allRoles.find(role => priorityOrder.includes(role)) || 'carer';
+            
+            console.log(`Staff member ${member.first_name} ${member.last_name} (${member.id}): roles = [${allRoles.join(', ')}], display = ${displayRole}`);
             
             // Check if current user can communicate with this staff member
-            if (canCommunicateWith(currentUser.role, effectiveRole)) {
+            if (canCommunicateWith(currentUser.role, displayRole)) {
               const shouldInclude = 
                 contactType === 'all' ||
-                (contactType === 'carers' && effectiveRole === 'carer') ||
-                (contactType === 'admins' && (effectiveRole === 'super_admin' || effectiveRole === 'branch_admin'));
+                (contactType === 'carers' && allRoles.includes('carer')) ||
+                (contactType === 'admins' && allRoles.some(role => role === 'super_admin' || role === 'branch_admin'));
 
               if (shouldInclude) {
-                contacts.push({
-                  id: member.id,
-                  name: `${member.last_name}, ${member.first_name}`,
-                  avatar: `${member.first_name[0]}${member.last_name[0]}`,
-                  status: member.status === 'Active' ? 'online' : 'offline',
-                  unread: 0, // TODO: Calculate actual unread count
-                  type: effectiveRole,
-                  branchId: branchId
-                });
+                // Only add if not already in map (deduplicate by user ID)
+                if (!contactsMap.has(member.id)) {
+                  contactsMap.set(member.id, {
+                    id: member.id,
+                    name: `${member.last_name}, ${member.first_name}`,
+                    avatar: `${member.first_name[0]}${member.last_name[0]}`,
+                    status: member.status === 'Active' ? 'online' : 'offline',
+                    unread: 0, // TODO: Calculate actual unread count
+                    type: displayRole,
+                    branchId: branchId
+                  });
+                }
               }
             } else {
-              console.log(`User ${currentUser.role} cannot communicate with ${effectiveRole} ${member.first_name} ${member.last_name}`);
+              console.log(`User ${currentUser.role} cannot communicate with ${displayRole} ${member.first_name} ${member.last_name}`);
             }
           });
         }
@@ -116,19 +125,24 @@ export const useContacts = (branchId: string, contactType: string = 'all') => {
         console.log('Found clients:', clients?.length || 0);
 
         clients?.forEach(client => {
-          contacts.push({
-            id: client.id,
-            name: `${client.last_name}, ${client.first_name}`,
-            avatar: `${client.first_name[0]}${client.last_name[0]}`,
-            status: client.status === 'Active' ? 'online' : 'offline',
-            unread: 0, // TODO: Calculate actual unread count
-            type: 'client',
-            branchId: branchId
-          });
+          // Only add if not already in map (deduplicate by user ID)
+          if (!contactsMap.has(client.id)) {
+            contactsMap.set(client.id, {
+              id: client.id,
+              name: `${client.last_name}, ${client.first_name}`,
+              avatar: `${client.first_name[0]}${client.last_name[0]}`,
+              status: client.status === 'Active' ? 'online' : 'offline',
+              unread: 0, // TODO: Calculate actual unread count
+              type: 'client',
+              branchId: branchId
+            });
+          }
         });
       }
 
-      console.log('Final contacts list:', contacts.length, 'contacts');
+      // Convert Map to array
+      const contacts = Array.from(contactsMap.values());
+      console.log('Final contacts list:', contacts.length, 'contacts (deduplicated)');
       return contacts;
     },
     enabled: !!currentUser,

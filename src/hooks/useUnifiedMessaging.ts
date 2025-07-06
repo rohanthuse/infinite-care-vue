@@ -232,31 +232,75 @@ export const useUnifiedMessageThreads = () => {
 
         console.log('[useUnifiedMessageThreads] Raw threads:', threads.length);
 
-        // Enhanced filtering with fallback for client authentication
+        // Enhanced filtering with better participant resolution
         const userThreads = threads.filter(thread => {
-          if (!thread.message_participants) return false;
+          if (!thread.message_participants || thread.message_participants.length === 0) {
+            console.log(`[useUnifiedMessageThreads] Thread ${thread.id} has no participants, skipping`);
+            return false;
+          }
           
-          // Check if current user is a participant (direct match)
-          const isDirectParticipant = thread.message_participants.some(p => p.user_id === currentUser.id);
+          // Check if current user is a participant (direct match by user ID)
+          const isDirectParticipant = thread.message_participants.some(p => 
+            p.user_id === currentUser.id
+          );
           
-          // For clients, also check by email if direct match fails
-          if (!isDirectParticipant && currentUser.role === 'client') {
-            // Try to match by user type and email-based logic
-            const hasClientParticipant = thread.message_participants.some(p => 
-              p.user_type === 'client' && 
-              p.user_name && 
-              currentUser.email &&
-              (p.user_name.toLowerCase().includes(currentUser.email.split('@')[0].toLowerCase()) ||
-               (currentUser.fullName && p.user_name.toLowerCase().includes(currentUser.fullName.toLowerCase())))
-            );
+          if (isDirectParticipant) {
+            console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - direct participant match`);
+            return true;
+          }
+          
+          // For clients, check if there's a client participant that could be them
+          // This handles cases where the participant user_id might not match auth.uid()
+          if (currentUser.role === 'client' && currentUser.email) {
+            const hasMatchingClient = thread.message_participants.some(p => {
+              if (p.user_type !== 'client') return false;
+              
+              // Try name-based matching if available
+              if (p.user_name && currentUser.fullName) {
+                const nameParts = currentUser.fullName.toLowerCase().split(' ');
+                const participantName = p.user_name.toLowerCase();
+                const nameMatches = nameParts.some(part => 
+                  part.length > 2 && participantName.includes(part)
+                );
+                if (nameMatches) return true;
+              }
+              
+              // Try email-based matching
+              const emailPrefix = currentUser.email.split('@')[0].toLowerCase();
+              return p.user_name && p.user_name.toLowerCase().includes(emailPrefix);
+            });
             
-            if (hasClientParticipant) {
-              console.log('[useUnifiedMessageThreads] Found thread via email matching:', thread.id);
+            if (hasMatchingClient) {
+              console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - found matching client participant`);
               return true;
             }
           }
           
-          return isDirectParticipant;
+          // For admin/staff roles, be more inclusive - if there are messages in the thread
+          // and the user can theoretically access it, include it
+          if (currentUser.role === 'super_admin' || currentUser.role === 'branch_admin' || currentUser.role === 'carer') {
+            // If thread has participants and current user role can communicate with them, include it
+            const hasValidParticipants = thread.message_participants.some(p => 
+              p.user_type === 'client' || p.user_type === 'carer' || p.user_type === 'branch_admin'
+            );
+            
+            if (hasValidParticipants) {
+              console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - admin/staff access granted`);
+              return true;
+            }
+          }
+          
+          console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - no access granted`, {
+            currentUserId: currentUser.id,
+            currentUserRole: currentUser.role,
+            participants: thread.message_participants.map(p => ({ 
+              userId: p.user_id, 
+              userType: p.user_type, 
+              userName: p.user_name 
+            }))
+          });
+          
+          return false;
         });
 
         console.log('[useUnifiedMessageThreads] Filtered threads for user:', userThreads.length);
@@ -294,16 +338,39 @@ export const useUnifiedMessageThreads = () => {
 
           const unreadCount = (allMessages?.length || 0) - (readMessages?.length || 0);
 
-          // Process participants (exclude self)
-          const participants: UnifiedContact[] = thread.message_participants?.map(p => ({
-            id: p.user_id,
-            name: p.user_name,
-            avatar: p.user_name.split(' ').map(n => n.charAt(0)).join(''),
-            type: p.user_type === 'carer' ? 'carer' as const : 
-                  p.user_type === 'client' ? 'client' as const : 'branch_admin' as const,
-            status: 'online' as const,
-            unread: 0
-          })).filter(p => p.id !== currentUser.id) || [];
+          // Process participants with better name resolution
+          const participants: UnifiedContact[] = thread.message_participants?.map(p => {
+            // Provide better fallback names
+            let displayName = p.user_name || 'Unknown User';
+            
+            // If no name but we have user type, provide a role-based name
+            if (!p.user_name || p.user_name.trim() === '') {
+              switch (p.user_type) {
+                case 'client':
+                  displayName = 'Client';
+                  break;
+                case 'carer':
+                  displayName = 'Carer';
+                  break;
+                case 'branch_admin':
+                case 'super_admin':
+                  displayName = 'Administrator';
+                  break;
+                default:
+                  displayName = 'User';
+              }
+            }
+            
+            return {
+              id: p.user_id,
+              name: displayName,
+              avatar: displayName.split(' ').map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase(),
+              type: p.user_type === 'carer' ? 'carer' as const : 
+                    p.user_type === 'client' ? 'client' as const : 'branch_admin' as const,
+              status: 'online' as const,
+              unread: 0
+            };
+          }).filter(p => p.id !== currentUser.id) || [];
 
           return {
             id: thread.id,
