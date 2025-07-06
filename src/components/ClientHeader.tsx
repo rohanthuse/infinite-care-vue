@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CustomButton } from "@/components/ui/CustomButton";
+import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +14,6 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const clientName = localStorage.getItem("clientName") || "Client";
-  const notificationCount = 2; // For demonstration
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   
@@ -27,6 +27,11 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [mobileMenuOpen]);
+
+  const handleViewAllNotifications = () => {
+    // For clients, we'll navigate to their messages page which includes notifications
+    navigate("/client-dashboard/messages");
+  };
 
   const handleLogout = async () => {
     try {
@@ -94,14 +99,7 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
         
         {/* Bell notification on right for desktop view */}
         <div className="hidden md:flex items-center">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="h-9 w-9 rounded-full relative"
-          >
-            <Bell className="h-4 w-4" />
-            <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-          </Button>
+          <NotificationDropdown onViewAll={handleViewAllNotifications} />
         </div>
         
         {/* Mobile menu button */}
@@ -154,14 +152,7 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
         {/* Notifications for mobile */}
         <div className="w-full flex justify-between items-center py-2">
           <span className="text-sm font-medium text-gray-700">Notifications</span>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="h-8 w-8 rounded-full relative"
-          >
-            <Bell className="h-4 w-4" />
-            <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-          </Button>
+          <NotificationDropdown onViewAll={handleViewAllNotifications} />
         </div>
         
         {/* Mobile profile and logout */}
