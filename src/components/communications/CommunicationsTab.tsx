@@ -30,6 +30,16 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
   const [readFilter, setReadFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
 
+  // Check for thread to open from notification on component mount
+  React.useEffect(() => {
+    const threadIdToOpen = sessionStorage.getItem('openThreadId');
+    if (threadIdToOpen) {
+      setSelectedMessageId(threadIdToOpen);
+      setShowComposer(false);
+      sessionStorage.removeItem('openThreadId');
+    }
+  }, []);
+
   // Handler for filter changes
   const handleFilterOptionsChange = (priority?: string, readStatus?: string, date?: string) => {
     if (priority) setPriorityFilter(priority);

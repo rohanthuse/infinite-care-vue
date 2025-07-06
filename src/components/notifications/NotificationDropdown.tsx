@@ -10,11 +10,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Clock, AlertTriangle, CheckCircle, User, Calendar } from "lucide-react";
+import { Bell, Clock, AlertTriangle, CheckCircle, User, Calendar, MessageCircle } from "lucide-react";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { ErrorBoundary } from "@/components/care/ErrorBoundary";
+import { useNavigate } from "react-router-dom";
 
 interface NotificationDropdownProps {
   branchId?: string;
@@ -26,6 +27,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   onViewAll,
 }) => {
   const { notifications, stats, markAsRead, markAllAsRead, isMarkingAllAsRead, error } = useNotifications(branchId);
+  const navigate = useNavigate();
 
   const getIcon = (type: Notification['type'], category: Notification['category']) => {
     const iconClass = "h-4 w-4";
@@ -37,6 +39,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
           return <Calendar className={cn(iconClass, category === 'warning' ? 'text-amber-500' : 'text-blue-500')} />;
         case 'task':
           return <CheckCircle className={cn(iconClass, 'text-green-500')} />;
+        case 'message':
+          return <MessageCircle className={cn(iconClass, 'text-blue-500')} />;
         case 'system':
           return <AlertTriangle className={cn(iconClass, category === 'error' ? 'text-red-500' : 'text-gray-500')} />;
         default:
@@ -81,6 +85,29 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       markAllAsRead();
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
+    }
+  };
+
+  const handleNotificationClick = (notification: Notification) => {
+    try {
+      // Mark notification as read
+      markAsRead(notification.id);
+      
+      // Handle navigation for message notifications
+      if (notification.type === 'message' && notification.data?.thread_id) {
+        const currentPath = window.location.pathname;
+        const branchMatch = currentPath.match(/\/branch-dashboard\/([^/]+)\/([^/]+)/);
+        
+        if (branchMatch) {
+          const [, branchId, branchName] = branchMatch;
+          navigate(`/branch-dashboard/${branchId}/${branchName}/communication`);
+          
+          // Store thread_id in session storage so the communications page can open it
+          sessionStorage.setItem('openThreadId', notification.data.thread_id);
+        }
+      }
+    } catch (error) {
+      console.error('Error handling notification click:', error);
     }
   };
 
@@ -141,7 +168,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                     getPriorityColor(notification.priority),
                     !notification.read_at && "bg-opacity-75"
                   )}
-                  onClick={() => handleMarkAsRead(notification.id)}
+                  onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex-shrink-0 mt-0.5">
                     {getIcon(notification.type, notification.category)}
