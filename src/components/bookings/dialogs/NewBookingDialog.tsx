@@ -57,7 +57,7 @@ const scheduleSchema = z.object({
 
 const formSchema = z.object({
   clientId: z.string().min(1, { message: "Client ID required" }),
-  carerId: z.string().min(1, { message: "Carer ID required" }),
+  carerIds: z.array(z.string()).min(1, { message: "At least one carer required" }),
   fromDate: z.date({
     required_error: "A date is required.",
   }),
@@ -99,7 +99,7 @@ export function NewBookingDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       clientId: "",
-      carerId: "",
+      carerIds: prefilledData?.carerId ? [prefilledData.carerId] : [],
       fromDate: prefilledData?.date || new Date(),
       untilDate: prefilledData?.date || new Date(),
       schedules: [
@@ -126,11 +126,21 @@ export function NewBookingDialog({
   }, [open, preSelectedClientId, form]);
 
   function onSubmit(data: z.infer<typeof formSchema>) {
-    onCreateBooking(data, carers);
+    // Create bookings for each selected carer
+    const bookingsToCreate = data.carerIds.map(carerId => ({
+      ...data,
+      carerId, // Convert back to single carerId for each booking
+    }));
+    
+    // Create bookings sequentially for each carer
+    bookingsToCreate.forEach(bookingData => {
+      onCreateBooking(bookingData, carers);
+    });
+    
     form.reset();
     onOpenChange(false);
-    toast("Booking submitted", {
-      description: "The booking has been scheduled successfully",
+    toast("Bookings submitted", {
+      description: `Created bookings for ${data.carerIds.length} carer(s)`,
     });
   }
 
@@ -190,24 +200,46 @@ export function NewBookingDialog({
               />
               <FormField
                 control={form.control}
-                name="carerId"
+                name="carerIds"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Carer</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a carer" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {carers.map((carer) => (
-                          <SelectItem key={carer.id} value={carer.id}>
-                            {carer.name || carer.first_name + " " + carer.last_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Carers</FormLabel>
+                    <div className="space-y-2">
+                      {carers.map((carer) => (
+                        <div key={carer.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={carer.id}
+                            checked={field.value?.includes(carer.id)}
+                            onCheckedChange={(checked) => {
+                              const currentValue = field.value || [];
+                              if (checked) {
+                                field.onChange([...currentValue, carer.id]);
+                              } else {
+                                field.onChange(currentValue.filter((id: string) => id !== carer.id));
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor={carer.id}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            {carer.name || `${carer.first_name} ${carer.last_name}`}
+                          </label>
+                        </div>
+                      ))}
+                      {field.value && field.value.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {field.value.map((carerId: string) => {
+                            const carer = carers.find(c => c.id === carerId);
+                            return (
+                              <Badge key={carerId} variant="secondary" className="text-xs">
+                                {carer?.name || `${carer?.first_name} ${carer?.last_name}`}
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
