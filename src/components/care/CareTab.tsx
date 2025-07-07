@@ -189,29 +189,30 @@ const useCarePlans = (branchId: string | undefined) => {
       try {
         console.log('[useCarePlans] Fetching care plans for branch:', branchId);
         
-        // Updated query to include staff relationship
+        // Updated query to include staff relationship and filter by branch
         const { data: carePlans, error } = await supabase
           .from('client_care_plans')
           .select(`
             *,
-            client:clients(*),
+            client:clients!inner(*),
             staff!staff_id(
               id,
               first_name,
               last_name
             )
           `)
+          .eq('client.branch_id', branchId)
           .order('created_at', { ascending: false });
 
         if (error) {
           console.error('[useCarePlans] Database query error:', error);
-          // Fallback to mock data if database query fails
-          return mockCarePlans;
+          console.error('[useCarePlans] Error details:', error);
+          return [];
         }
 
         if (!carePlans || carePlans.length === 0) {
-          console.log('[useCarePlans] No care plans found in database, using mock data');
-          return mockCarePlans;
+          console.log('[useCarePlans] No care plans found for branch:', branchId);
+          return [];
         }
 
         // Transform database data to match expected format with proper assignedTo logic
@@ -228,7 +229,7 @@ const useCarePlans = (branchId: string | undefined) => {
           }
 
           return {
-            id: `CP-${String(index + 1).padStart(3, '0')}`,
+            id: plan.display_id || `CP-${String(index + 1).padStart(3, '0')}`,
             patientName: plan.client ? `${plan.client.first_name} ${plan.client.last_name}` : "Unknown Patient",
             patientId: plan.client?.other_identifier || `PT-${Math.floor(Math.random() * 9999)}`,
             dateCreated: new Date(plan.created_at),
@@ -236,7 +237,10 @@ const useCarePlans = (branchId: string | undefined) => {
             status: plan.status === 'active' ? 'Active' : 
                    plan.status === 'under_review' ? 'Under Review' : 
                    plan.status === 'archived' ? 'Archived' :
-                   plan.status === 'draft' ? 'Draft' : 'Active',
+                   plan.status === 'draft' ? 'Draft' : 
+                   plan.status === 'pending_client_approval' ? 'Pending Approval' :
+                   plan.status === 'client_approved' ? 'Client Approved' :
+                   plan.status === 'client_rejected' ? 'Changes Requested' : 'Active',
             assignedTo: assignedTo,
             avatar: plan.client?.avatar_initials || 
                    (plan.client ? `${plan.client.first_name?.[0] || ''}${plan.client.last_name?.[0] || ''}` : 'UK'),
