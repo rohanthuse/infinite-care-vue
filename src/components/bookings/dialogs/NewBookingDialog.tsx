@@ -183,8 +183,8 @@ export function NewBookingDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px]">
-        <DialogHeader>
+      <DialogContent className="max-w-[95vw] sm:max-w-[600px] lg:max-w-[700px] max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-blue-600">
             <Clock className="h-5 w-5" />
             Schedule Booking
@@ -193,425 +193,428 @@ export function NewBookingDialog({
             Schedule a new booking for a client with a carer.
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="clientId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Client ID</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Client ID" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+        <div className="flex-1 overflow-y-auto pr-2">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
-                control={form.control}
-                name="carerIds"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Carers</FormLabel>
-                    <div className="space-y-3">
-                      {/* Dropdown trigger */}
+                  control={form.control}
+                  name="clientId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Client ID</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Client ID" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="carerIds"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Carers</FormLabel>
+                      <div className="space-y-3">
+                        {/* Dropdown trigger */}
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className={cn(
+                                "w-full justify-between",
+                                !field.value?.length && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value?.length 
+                                ? `${field.value.length} carer${field.value.length !== 1 ? 's' : ''} selected`
+                                : "Select carers..."
+                              }
+                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[320px] p-0" align="start" sideOffset={4}>
+                            <div className="p-3 border-b">
+                              <Input
+                                placeholder="Search carers..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="h-8"
+                              />
+                            </div>
+                            <div className="p-2">
+                              <div className="flex items-center justify-between mb-2">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    const allCarerIds = filteredCarers.map(c => c.id);
+                                    field.onChange(allCarerIds);
+                                  }}
+                                  className="h-6 px-2 text-xs"
+                                >
+                                  Select All
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => field.onChange([])}
+                                  className="h-6 px-2 text-xs"
+                                >
+                                  Clear All
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="max-h-60 overflow-y-auto">
+                              {filteredCarers.length === 0 ? (
+                                <div className="p-4 text-center text-sm text-muted-foreground">
+                                  No carers found
+                                </div>
+                              ) : (
+                                <div className="p-1">
+                                  {filteredCarers.map((carer) => {
+                                    const isSelected = field.value?.includes(carer.id);
+                                    const carerName = carer.name || `${carer.first_name} ${carer.last_name}`;
+                                    
+                                    return (
+                                      <div
+                                        key={carer.id}
+                                        className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                                        onClick={() => {
+                                          const currentValue = field.value || [];
+                                          if (isSelected) {
+                                            field.onChange(currentValue.filter((id: string) => id !== carer.id));
+                                          } else {
+                                            field.onChange([...currentValue, carer.id]);
+                                          }
+                                        }}
+                                      >
+                                        <Checkbox
+                                          checked={isSelected}
+                                          className="pointer-events-none"
+                                        />
+                                        <span className="flex-1">{carerName}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        
+                        {/* Selected carers display */}
+                        {field.value && field.value.length > 0 && (
+                          <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                            {field.value.map((carerId) => {
+                              const carer = carers.find(c => c.id === carerId);
+                              const carerName = carer?.name || `${carer?.first_name} ${carer?.last_name}` || 'Unknown';
+                              
+                              return (
+                                <Badge
+                                  key={carerId}
+                                  variant="secondary"
+                                  className="text-xs px-2 py-1"
+                                >
+                                  {carerName}
+                                  <X 
+                                    className="h-3 w-3 ml-1 cursor-pointer hover:text-destructive"
+                                    onClick={() => {
+                                      const currentValue = field.value || [];
+                                      field.onChange(currentValue.filter((id: string) => id !== carerId));
+                                    }}
+                                  />
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="fromDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>From Date</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              "w-full justify-between",
-                              !field.value?.length && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value?.length 
-                              ? `${field.value.length} carer${field.value.length !== 1 ? 's' : ''} selected`
-                              : "Select carers..."
-                            }
-                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
                         </PopoverTrigger>
-                        <PopoverContent className="w-full p-0" align="start">
-                          <div className="p-3 border-b">
-                            <Input
-                              placeholder="Search carers..."
-                              value={searchQuery}
-                              onChange={(e) => setSearchQuery(e.target.value)}
-                              className="h-8"
-                            />
-                          </div>
-                          <div className="p-2">
-                            <div className="flex items-center justify-between mb-2">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  const allCarerIds = filteredCarers.map(c => c.id);
-                                  field.onChange(allCarerIds);
-                                }}
-                                className="h-6 px-2 text-xs"
-                              >
-                                Select All
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => field.onChange([])}
-                                className="h-6 px-2 text-xs"
-                              >
-                                Clear All
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="max-h-60 overflow-y-auto">
-                            {filteredCarers.length === 0 ? (
-                              <div className="p-4 text-center text-sm text-muted-foreground">
-                                No carers found
-                              </div>
-                            ) : (
-                              <div className="p-1">
-                                {filteredCarers.map((carer) => {
-                                  const isSelected = field.value?.includes(carer.id);
-                                  const carerName = carer.name || `${carer.first_name} ${carer.last_name}`;
-                                  
-                                  return (
-                                    <div
-                                      key={carer.id}
-                                      className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                                      onClick={() => {
-                                        const currentValue = field.value || [];
-                                        if (isSelected) {
-                                          field.onChange(currentValue.filter((id: string) => id !== carer.id));
-                                        } else {
-                                          field.onChange([...currentValue, carer.id]);
-                                        }
-                                      }}
-                                    >
-                                      <Checkbox
-                                        checked={isSelected}
-                                        className="pointer-events-none"
-                                      />
-                                      <span className="flex-1">{carerName}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) => date < new Date()}
+                            initialFocus
+                          />
                         </PopoverContent>
                       </Popover>
-                      
-                      {/* Selected carers display */}
-                      {field.value && field.value.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {field.value.map((carerId) => {
-                            const carer = carers.find(c => c.id === carerId);
-                            const carerName = carer?.name || `${carer?.first_name} ${carer?.last_name}` || 'Unknown';
-                            
-                            return (
-                              <Badge
-                                key={carerId}
-                                variant="secondary"
-                                className="text-xs px-2 py-1"
-                              >
-                                {carerName}
-                                <X 
-                                  className="h-3 w-3 ml-1 cursor-pointer hover:text-destructive"
-                                  onClick={() => {
-                                    const currentValue = field.value || [];
-                                    field.onChange(currentValue.filter((id: string) => id !== carerId));
-                                  }}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="untilDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Until Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) => date < new Date()}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div>
+                <FormLabel>Schedules</FormLabel>
+                {form.watch("schedules")?.map((schedule, index) => (
+                  <div key={index} className="border rounded-md p-4 mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="text-sm font-medium">Schedule {index + 1}</h4>
+                      {form.watch("schedules")?.length > 1 && (
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeSchedule(index)}>
+                          <X className="h-4 w-4" />
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name={`schedules.${index}.startTime` as const}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Start Time</FormLabel>
+                            <FormControl>
+                              <Input type="time" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`schedules.${index}.endTime` as const}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>End Time</FormLabel>
+                            <FormControl>
+                              <Input type="time" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name={`schedules.${index}.services` as const}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Services</FormLabel>
+                          <Select onValueChange={(value) => field.onChange([value])} defaultValue={field.value?.[0]}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a service" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {services.map((service) => (
+                                <SelectItem key={service.id} value={service.id}>
+                                  {service.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="mt-2">
+                      <FormLabel>Days</FormLabel>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+                        <FormField
+                          control={form.control}
+                          name={`schedules.${index}.mon` as const}
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-1 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
                                 />
-                              </Badge>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="fromDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>From Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
+                              </FormControl>
+                              <FormLabel className="font-normal">Mon</FormLabel>
+                            </FormItem>
+                          )}
                         />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="untilDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Until Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
+                        <FormField
+                          control={form.control}
+                          name={`schedules.${index}.tue` as const}
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-1 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">Tue</FormLabel>
+                            </FormItem>
+                          )}
                         />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div>
-              <FormLabel>Schedules</FormLabel>
-              {form.watch("schedules")?.map((schedule, index) => (
-                <div key={index} className="border rounded-md p-4 mb-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="text-sm font-medium">Schedule {index + 1}</h4>
-                    {form.watch("schedules")?.length > 1 && (
-                      <Button type="button" variant="ghost" size="sm" onClick={() => removeSchedule(index)}>
-                        <X className="h-4 w-4" />
-                        Remove
-                      </Button>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name={`schedules.${index}.startTime` as const}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Start Time</FormLabel>
-                          <FormControl>
-                            <Input type="time" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name={`schedules.${index}.endTime` as const}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>End Time</FormLabel>
-                          <FormControl>
-                            <Input type="time" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name={`schedules.${index}.services` as const}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Services</FormLabel>
-                        <Select onValueChange={(value) => field.onChange([value])} defaultValue={field.value[0]}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a service" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {services.map((service) => (
-                              <SelectItem key={service.id} value={service.id}>
-                                {service.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="mt-2">
-                    <FormLabel>Days</FormLabel>
-                    <div className="flex flex-wrap gap-2">
-                      <FormField
-                        control={form.control}
-                        name={`schedules.${index}.mon` as const}
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <FormLabel className="font-normal">Mon</FormLabel>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`schedules.${index}.tue` as const}
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <FormLabel className="font-normal">Tue</FormLabel>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`schedules.${index}.wed` as const}
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <FormLabel className="font-normal">Wed</FormLabel>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`schedules.${index}.thu` as const}
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <FormLabel className="font-normal">Thu</FormLabel>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`schedules.${index}.fri` as const}
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <FormLabel className="font-normal">Fri</FormLabel>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`schedules.${index}.sat` as const}
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <FormLabel className="font-normal">Sat</FormLabel>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`schedules.${index}.sun` as const}
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <FormLabel className="font-normal">Sun</FormLabel>
-                          </FormItem>
-                        )}
-                      />
+                        <FormField
+                          control={form.control}
+                          name={`schedules.${index}.wed` as const}
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-1 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">Wed</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`schedules.${index}.thu` as const}
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-1 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">Thu</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`schedules.${index}.fri` as const}
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-1 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">Fri</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`schedules.${index}.sat` as const}
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-1 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">Sat</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`schedules.${index}.sun` as const}
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-1 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">Sun</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              <Button type="button" variant="outline" size="sm" onClick={addSchedule} className="gap-1">
-                <Plus className="h-4 w-4" />
-                Add Schedule
-              </Button>
-            </div>
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">Schedule</Button>
-            </DialogFooter>
-          </form>
-        </Form>
+                ))}
+                <Button type="button" onClick={addSchedule} variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Schedule
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </div>
+        <DialogFooter className="flex-shrink-0 mt-4">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button type="submit" onClick={form.handleSubmit(onSubmit)}>
+            Create Booking
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
