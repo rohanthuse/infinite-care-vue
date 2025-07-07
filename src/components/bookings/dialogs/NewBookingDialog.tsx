@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Clock, Plus, X } from "lucide-react";
 
@@ -94,6 +94,17 @@ export function NewBookingDialog({
   preSelectedClientId,
 }: NewBookingDialogProps) {
   const [scheduleCount, setScheduleCount] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter carers based on search query
+  const filteredCarers = useMemo(() => {
+    if (!searchQuery.trim()) return carers;
+    const query = searchQuery.toLowerCase();
+    return carers.filter(carer => {
+      const carerName = (carer.name || `${carer.first_name} ${carer.last_name}`).toLowerCase();
+      return carerName.includes(query);
+    });
+  }, [carers, searchQuery]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -204,39 +215,67 @@ export function NewBookingDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Carers</FormLabel>
-                    <div className="space-y-2">
-                      {carers.map((carer) => (
-                        <div key={carer.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={carer.id}
-                            checked={field.value?.includes(carer.id)}
-                            onCheckedChange={(checked) => {
-                              const currentValue = field.value || [];
-                              if (checked) {
-                                field.onChange([...currentValue, carer.id]);
-                              } else {
-                                field.onChange(currentValue.filter((id: string) => id !== carer.id));
-                              }
-                            }}
-                          />
-                          <label
-                            htmlFor={carer.id}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                          >
-                            {carer.name || `${carer.first_name} ${carer.last_name}`}
-                          </label>
-                        </div>
-                      ))}
-                      {field.value && field.value.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {field.value.map((carerId: string) => {
-                            const carer = carers.find(c => c.id === carerId);
+                    <div className="space-y-3">
+                      {/* Search functionality */}
+                      <Input
+                        placeholder="Search carers..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="text-sm"
+                      />
+                      
+                      {/* Selection chips container */}
+                      <div className="border rounded-md p-3 bg-gray-50/50 max-h-48 overflow-y-auto">
+                        <div className="flex flex-wrap gap-2">
+                          {filteredCarers.map((carer) => {
+                            const isSelected = field.value?.includes(carer.id);
+                            const carerName = carer.name || `${carer.first_name} ${carer.last_name}`;
+                            
                             return (
-                              <Badge key={carerId} variant="secondary" className="text-xs">
-                                {carer?.name || `${carer?.first_name} ${carer?.last_name}`}
+                              <Badge
+                                key={carer.id}
+                                variant={isSelected ? "default" : "outline"}
+                                className={cn(
+                                  "cursor-pointer transition-all hover:scale-105 text-sm px-3 py-1",
+                                  isSelected 
+                                    ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90" 
+                                    : "hover:bg-secondary/50 border-border"
+                                )}
+                                onClick={() => {
+                                  const currentValue = field.value || [];
+                                  if (isSelected) {
+                                    field.onChange(currentValue.filter((id: string) => id !== carer.id));
+                                  } else {
+                                    field.onChange([...currentValue, carer.id]);
+                                  }
+                                }}
+                              >
+                                {carerName}
+                                {isSelected && (
+                                  <X className="h-3 w-3 ml-1" />
+                                )}
                               </Badge>
                             );
                           })}
+                          {filteredCarers.length === 0 && (
+                            <p className="text-sm text-muted-foreground px-2">No carers found</p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Selected carers summary */}
+                      {field.value && field.value.length > 0 && (
+                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                          <span>{field.value.length} carer{field.value.length !== 1 ? 's' : ''} selected</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => field.onChange([])}
+                            className="h-6 px-2 text-xs"
+                          >
+                            Clear all
+                          </Button>
                         </div>
                       )}
                     </div>
