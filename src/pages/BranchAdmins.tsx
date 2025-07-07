@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { AdminsTable } from "@/components/AdminsTable";
+import { AuthHealthDebugger } from "@/components/AuthHealthDebugger";
 import { Users } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -36,6 +37,9 @@ const BranchAdmins = () => {
           <AdminsTable />
         </div>
       </motion.main>
+      
+      {/* Authentication debugging tool for administrators */}
+      <AuthHealthDebugger />
     </div>
   );
 };

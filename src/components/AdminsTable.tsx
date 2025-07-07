@@ -48,8 +48,8 @@ export const AdminsTable = () => {
   const [selectedAdmin, setSelectedAdmin] = useState<AdminData | null>(null);
   const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
 
-  // Get current user authentication state
-  const { data: currentUser, isLoading: authLoading } = useUserRole();
+  // Get current user authentication state with enhanced error handling
+  const { data: currentUser, isLoading: authLoading, error: authError } = useUserRole();
 
   // Fetch all branch admins with proper authentication dependency
   const { data: admins = [], isLoading, error, refetch } = useQuery({
@@ -181,11 +181,50 @@ export const AdminsTable = () => {
   // Show loading while authenticating or fetching data
   const isLoadingData = authLoading || isLoading;
 
+  // Show authentication error with debugging info
+  if (authError && !authLoading) {
+    return (
+      <div className="p-4 text-center space-y-4">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h3 className="text-red-800 font-medium mb-2">Authentication Error</h3>
+          <p className="text-red-700 text-sm mb-3">{authError.message}</p>
+          <details className="text-left">
+            <summary className="text-red-600 cursor-pointer text-sm font-medium">Show Debug Info</summary>
+            <div className="mt-2 text-xs text-red-600 bg-red-100 p-2 rounded border font-mono">
+              Open browser console (F12) to see detailed debugging information.
+            </div>
+          </details>
+        </div>
+        <Button 
+          onClick={() => window.location.reload()} 
+          variant="outline"
+          className="border-red-300 text-red-700 hover:bg-red-50"
+        >
+          Refresh Page
+        </Button>
+      </div>
+    );
+  }
+
   // Show authentication message if not authenticated
   if (!authLoading && (!currentUser || (currentUser.role !== 'super_admin' && currentUser.role !== 'branch_admin'))) {
     return (
-      <div className="p-4 text-center">
-        <p className="text-gray-600">You need admin privileges to view this page.</p>
+      <div className="p-4 text-center space-y-4">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h3 className="text-yellow-800 font-medium mb-2">Access Denied</h3>
+          <p className="text-yellow-700">You need admin privileges to view this page.</p>
+          {currentUser && (
+            <div className="mt-2 text-sm text-yellow-600">
+              Current role: <code className="bg-yellow-100 px-1 rounded">{currentUser.role}</code>
+            </div>
+          )}
+        </div>
+        <Button 
+          onClick={() => window.location.href = '/'} 
+          variant="outline"
+        >
+          Return to Dashboard
+        </Button>
       </div>
     );
   }

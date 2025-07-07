@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { AdminsTable } from "@/components/AdminsTable";
+import { AuthHealthDebugger } from "@/components/AuthHealthDebugger";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,6 +37,9 @@ const Dashboard = () => {
         
         <AdminsTable />
       </motion.main>
+      
+      {/* Authentication debugging tool for administrators */}
+      <AuthHealthDebugger />
     </div>
   );
 };

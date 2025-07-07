@@ -21,7 +21,12 @@ export const useUserRole = () => {
     queryKey: ['userRole'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) {
+        console.error('[useUserRole] No authenticated user found');
+        throw new Error('Not authenticated');
+      }
+
+      console.log('[useUserRole] Checking role for user:', { id: user.id, email: user.email });
 
       const { data: roleData, error } = await supabase
         .from('user_roles')
@@ -30,20 +35,32 @@ export const useUserRole = () => {
         .single();
 
       if (error) {
-        console.error('Error fetching user role:', error);
-        // If no role found, check if user is a staff member and assign default role
-        const { data: staffData } = await supabase
-          .from('staff')
-          .select('id')
-          .eq('id', user.id)
-          .single();
+        console.error('[useUserRole] Error fetching user role:', {
+          error: error.message,
+          code: error.code,
+          details: error.details,
+          userId: user.id,
+          email: user.email
+        });
+
+        // Enhanced debugging - check what data exists for this user
+        const debugInfo = await Promise.allSettled([
+          supabase.from('staff').select('id, email, branch_id').eq('id', user.id).single(),
+          supabase.from('clients').select('id, email, branch_id').eq('email', user.email).single(),
+          supabase.from('admin_branches').select('admin_id, branch_id').eq('admin_id', user.id),
+          supabase.from('profiles').select('id, email, first_name, last_name').eq('id', user.id).single()
+        ]);
+
+        console.warn('[useUserRole] Debug info for user without role:', {
+          userId: user.id,
+          email: user.email,
+          staff: debugInfo[0].status === 'fulfilled' ? debugInfo[0].value.data : null,
+          client: debugInfo[1].status === 'fulfilled' ? debugInfo[1].value.data : null,
+          adminBranches: debugInfo[2].status === 'fulfilled' ? debugInfo[2].value.data : null,
+          profile: debugInfo[3].status === 'fulfilled' ? debugInfo[3].value.data : null,
+        });
         
-        if (staffData) {
-          // This staff member should have a role - log for debugging
-          console.warn('Staff member found without role assignment:', user.id);
-        }
-        
-        throw new Error('User role not found');
+        throw new Error(`User role not found for ${user.email} (${user.id}). Please contact administrator.`);
       }
 
       const role = roleData.role as UserRole;

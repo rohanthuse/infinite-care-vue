@@ -4992,6 +4992,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      check_user_role_health: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          user_id: string
+          email: string
+          has_auth: boolean
+          has_role: boolean
+          suggested_role: string
+          issue_type: string
+        }[]
+      }
       create_carer_with_invitation: {
         Args: { p_carer_data: Json; p_branch_id: string }
         Returns: string
