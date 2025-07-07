@@ -1,15 +1,28 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Clock, CheckCircle, AlertCircle, Printer, FileDown } from "lucide-react";
+import { FileText, Clock, CheckCircle, AlertCircle, Printer, FileDown, PenTool } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useClientCarePlansWithDetails } from "@/hooks/useCarePlanData";
 import { useToast } from "@/hooks/use-toast";
+import { ClientCarePlanApprovalDialog } from "@/components/client/ClientCarePlanApprovalDialog";
+import { 
+  useApproveCarePlan, 
+  useRejectCarePlan, 
+  useCarePlanRequiresApproval, 
+  useCarePlanStatus 
+} from "@/hooks/useCarePlanApproval";
 
 const ClientCarePlans = () => {
   const { toast } = useToast();
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [selectedCarePlan, setSelectedCarePlan] = useState<any>(null);
+
+  const approveCarePlanMutation = useApproveCarePlan();
+  const rejectCarePlanMutation = useRejectCarePlan();
   
   // Get authenticated client ID from localStorage
   const getClientId = () => {
@@ -81,6 +94,32 @@ const ClientCarePlans = () => {
   }
 
   const carePlan = carePlans[0]; // Get the most recent care plan
+  const requiresApproval = useCarePlanRequiresApproval(carePlan);
+  const statusInfo = useCarePlanStatus(carePlan);
+
+  const handleApproveCarePlan = async (signatureData: string, comments: string) => {
+    if (!carePlan) return;
+    
+    await approveCarePlanMutation.mutateAsync({
+      carePlanId: carePlan.id,
+      signatureData,
+      comments,
+    });
+  };
+
+  const handleRejectCarePlan = async (comments: string) => {
+    if (!carePlan) return;
+    
+    await rejectCarePlanMutation.mutateAsync({
+      carePlanId: carePlan.id,
+      comments,
+    });
+  };
+
+  const handleOpenApprovalDialog = () => {
+    setSelectedCarePlan(carePlan);
+    setApprovalDialogOpen(true);
+  };
 
   // Function to render goal status badge
   const renderGoalStatus = (status: string) => {
@@ -98,14 +137,45 @@ const ClientCarePlans = () => {
 
   return (
     <div className="space-y-6">
+      {/* Approval Alert */}
+      {requiresApproval && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-orange-100 rounded-full">
+                <AlertCircle className="h-5 w-5 text-orange-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-orange-800 mb-1">
+                  Care Plan Approval Required
+                </h3>
+                <p className="text-sm text-orange-700 mb-3">
+                  Your care team has created a new care plan that requires your review and approval. 
+                  Please take a moment to review the plan details and provide your digital signature.
+                </p>
+                <Button onClick={handleOpenApprovalDialog} className="bg-orange-600 hover:bg-orange-700">
+                  <PenTool className="h-4 w-4 mr-2" />
+                  Review & Sign Care Plan
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Care Plan Header */}
       <div className="bg-white p-6 rounded-xl border border-gray-200">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           <div>
-            <h2 className="text-xl font-bold flex items-center">
-              <FileText className="h-5 w-5 mr-2 text-blue-600" />
-              {carePlan.title}
-            </h2>
+            <div className="flex items-center gap-3 mb-2">
+              <h2 className="text-xl font-bold flex items-center">
+                <FileText className="h-5 w-5 mr-2 text-blue-600" />
+                {carePlan.title}
+              </h2>
+              <Badge variant={statusInfo.variant}>
+                {statusInfo.label}
+              </Badge>
+            </div>
             <div className="text-sm text-gray-500 mt-2">
               Last updated: {new Date(carePlan.updated_at).toLocaleDateString()} • Care Provider: {carePlan.provider_name}
             </div>
@@ -114,9 +184,21 @@ const ClientCarePlans = () => {
                 Plan ID: {carePlan.display_id}
               </div>
             )}
+            {carePlan.client_acknowledged_at && (
+              <div className="text-sm text-gray-500 mt-1">
+                Approved by you on: {new Date(carePlan.client_acknowledged_at).toLocaleDateString()}
+              </div>
+            )}
           </div>
           <div className="flex gap-2">
-            <Button onClick={handleRequestChanges}>Request Changes</Button>
+            {requiresApproval ? (
+              <Button onClick={handleOpenApprovalDialog} className="bg-orange-600 hover:bg-orange-700">
+                <PenTool className="h-4 w-4 mr-2" />
+                Sign Care Plan
+              </Button>
+            ) : (
+              <Button onClick={handleRequestChanges}>Request Changes</Button>
+            )}
             <Button variant="outline" onClick={handlePrintPlan} className="gap-2">
               <Printer className="h-4 w-4" />
               Print Plan
@@ -235,6 +317,18 @@ const ClientCarePlans = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Approval Dialog */}
+      {selectedCarePlan && (
+        <ClientCarePlanApprovalDialog
+          open={approvalDialogOpen}
+          onOpenChange={setApprovalDialogOpen}
+          carePlan={selectedCarePlan}
+          onApprove={handleApproveCarePlan}
+          onReject={handleRejectCarePlan}
+          isLoading={approveCarePlanMutation.isPending || rejectCarePlanMutation.isPending}
+        />
+      )}
     </div>
   );
 };

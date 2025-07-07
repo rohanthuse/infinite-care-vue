@@ -656,6 +656,50 @@ export type Database = {
         }
         Relationships: []
       }
+      care_plan_status_history: {
+        Row: {
+          care_plan_id: string
+          changed_by: string | null
+          changed_by_type: string
+          client_comments: string | null
+          created_at: string
+          id: string
+          new_status: string
+          previous_status: string | null
+          reason: string | null
+        }
+        Insert: {
+          care_plan_id: string
+          changed_by?: string | null
+          changed_by_type: string
+          client_comments?: string | null
+          created_at?: string
+          id?: string
+          new_status: string
+          previous_status?: string | null
+          reason?: string | null
+        }
+        Update: {
+          care_plan_id?: string
+          changed_by?: string | null
+          changed_by_type?: string
+          client_comments?: string | null
+          created_at?: string
+          id?: string
+          new_status?: string
+          previous_status?: string | null
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_plan_status_history_care_plan_id_fkey"
+            columns: ["care_plan_id"]
+            isOneToOne: false
+            referencedRelation: "client_care_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       care_plan_wizard_steps: {
         Row: {
           care_plan_id: string
@@ -1086,11 +1130,16 @@ export type Database = {
       }
       client_care_plans: {
         Row: {
+          acknowledgment_method: string | null
           approved_at: string | null
           approved_by: string | null
           auto_save_data: Json | null
           care_plan_type: string | null
+          client_acknowledged_at: string | null
+          client_acknowledgment_ip: unknown | null
+          client_comments: string | null
           client_id: string
+          client_signature_data: string | null
           completion_percentage: number | null
           created_at: string
           created_by_staff_id: string | null
@@ -1111,11 +1160,16 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          acknowledgment_method?: string | null
           approved_at?: string | null
           approved_by?: string | null
           auto_save_data?: Json | null
           care_plan_type?: string | null
+          client_acknowledged_at?: string | null
+          client_acknowledgment_ip?: unknown | null
+          client_comments?: string | null
           client_id: string
+          client_signature_data?: string | null
           completion_percentage?: number | null
           created_at?: string
           created_by_staff_id?: string | null
@@ -1136,11 +1190,16 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          acknowledgment_method?: string | null
           approved_at?: string | null
           approved_by?: string | null
           auto_save_data?: Json | null
           care_plan_type?: string | null
+          client_acknowledged_at?: string | null
+          client_acknowledgment_ip?: unknown | null
+          client_comments?: string | null
           client_id?: string
+          client_signature_data?: string | null
           completion_percentage?: number | null
           created_at?: string
           created_by_staff_id?: string | null

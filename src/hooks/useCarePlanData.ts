@@ -14,6 +14,12 @@ export interface CarePlanData {
   status: string;
   created_at: string;
   updated_at: string;
+  // Client acknowledgment fields
+  client_acknowledged_at?: string;
+  client_signature_data?: string;
+  client_acknowledgment_ip?: string | null;
+  acknowledgment_method?: string | null;
+  client_comments?: string | null;
   client?: {
     id: string;
     first_name: string;
@@ -88,10 +94,11 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {
     throw error;
   }
 
-  // Handle the case where staff might be null or undefined
+  // Transform the data to handle potential null staff relations and type casting
   const transformedData: CarePlanData = {
     ...data,
-    staff: data.staff || null
+    staff: data.staff || null,
+    client_acknowledgment_ip: data.client_acknowledgment_ip as string | null
   };
 
   return transformedData;
@@ -126,10 +133,11 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
     throw error;
   }
 
-  // Transform the data to handle potential null staff relations
+  // Transform the data to handle potential null staff relations and type casting
   const transformedData: CarePlanWithDetails[] = (data || []).map(item => ({
     ...item,
-    staff: item.staff || null
+    staff: item.staff || null,
+    client_acknowledgment_ip: item.client_acknowledgment_ip as string | null
   }));
 
   return transformedData;
@@ -165,10 +173,11 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
     throw error;
   }
 
-  // Transform the data to handle potential null staff relations
+  // Transform the data to handle potential null staff relations and type casting
   const transformedData: CarePlanWithDetails[] = (data || []).map(item => ({
     ...item,
-    staff: item.staff || null
+    staff: item.staff || null,
+    client_acknowledgment_ip: item.client_acknowledgment_ip as string | null
   }));
 
   return transformedData;
