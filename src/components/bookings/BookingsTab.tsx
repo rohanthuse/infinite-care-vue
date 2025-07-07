@@ -6,7 +6,7 @@ import { Booking } from "./BookingTimeGrid";
 import { BookingTimeGrid } from "./BookingTimeGrid";
 import { BookingsList } from "./BookingsList";
 import { BookingReport } from "./BookingReport";
-import { NewBookingDialog } from "./NewBookingDialog";
+import { NewBookingDialog } from "./dialogs/NewBookingDialog";
 import { EditBookingDialog } from "./EditBookingDialog";
 import { BookingOverlapAlert } from "./BookingOverlapAlert";
 import { DateNavigation } from "./DateNavigation";
@@ -221,12 +221,12 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       <NewBookingDialog
         open={newBookingDialogOpen}
         onOpenChange={setNewBookingDialogOpen}
-        clients={clients}
         carers={carers}
         services={services}
         onCreateBooking={handleCreateBooking}
-        isLoading={createMultipleBookingsMutation.isPending}
-        initialData={newBookingData}
+        branchId={branchId}
+        prefilledData={newBookingData}
+        preSelectedClientId={selectedClientId !== "all-clients" ? selectedClientId : undefined}
       />
 
       <EditBookingDialog

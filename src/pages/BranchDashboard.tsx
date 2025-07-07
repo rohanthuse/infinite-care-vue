@@ -4,7 +4,7 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { TabNavigation } from "@/components/TabNavigation";
 import { AddClientDialog } from "@/components/AddClientDialog";
-import { NewBookingDialog } from "@/components/bookings/NewBookingDialog";
+import { NewBookingDialog } from "@/components/bookings/dialogs/NewBookingDialog";
 import { ClientDetail } from "@/components/clients/ClientDetail";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServices } from "@/data/hooks/useServices";
@@ -157,12 +157,10 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
       <NewBookingDialog
         open={newBookingDialogOpen}
         onOpenChange={setNewBookingDialogOpen}
-        clients={bookingClients}
         carers={bookingCarers}
         services={services}
-        servicesLoading={isLoadingServices}
-        servicesError={servicesError}
         onCreateBooking={handleCreateBooking}
+        branchId={id}
       />
       
       {selectedClient && (
