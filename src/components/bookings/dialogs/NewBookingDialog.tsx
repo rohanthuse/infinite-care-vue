@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, Plus, X } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Plus, X, ChevronDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -209,73 +209,127 @@ export function NewBookingDialog({
                   </FormItem>
                 )}
               />
-              <FormField
+                <FormField
                 control={form.control}
                 name="carerIds"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Carers</FormLabel>
                     <div className="space-y-3">
-                      {/* Search functionality */}
-                      <Input
-                        placeholder="Search carers..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="text-sm"
-                      />
+                      {/* Dropdown trigger */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "w-full justify-between",
+                              !field.value?.length && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value?.length 
+                              ? `${field.value.length} carer${field.value.length !== 1 ? 's' : ''} selected`
+                              : "Select carers..."
+                            }
+                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0" align="start">
+                          <div className="p-3 border-b">
+                            <Input
+                              placeholder="Search carers..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="h-8"
+                            />
+                          </div>
+                          <div className="p-2">
+                            <div className="flex items-center justify-between mb-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const allCarerIds = filteredCarers.map(c => c.id);
+                                  field.onChange(allCarerIds);
+                                }}
+                                className="h-6 px-2 text-xs"
+                              >
+                                Select All
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => field.onChange([])}
+                                className="h-6 px-2 text-xs"
+                              >
+                                Clear All
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="max-h-60 overflow-y-auto">
+                            {filteredCarers.length === 0 ? (
+                              <div className="p-4 text-center text-sm text-muted-foreground">
+                                No carers found
+                              </div>
+                            ) : (
+                              <div className="p-1">
+                                {filteredCarers.map((carer) => {
+                                  const isSelected = field.value?.includes(carer.id);
+                                  const carerName = carer.name || `${carer.first_name} ${carer.last_name}`;
+                                  
+                                  return (
+                                    <div
+                                      key={carer.id}
+                                      className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                                      onClick={() => {
+                                        const currentValue = field.value || [];
+                                        if (isSelected) {
+                                          field.onChange(currentValue.filter((id: string) => id !== carer.id));
+                                        } else {
+                                          field.onChange([...currentValue, carer.id]);
+                                        }
+                                      }}
+                                    >
+                                      <Checkbox
+                                        checked={isSelected}
+                                        className="pointer-events-none"
+                                      />
+                                      <span className="flex-1">{carerName}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                       
-                      {/* Selection chips container */}
-                      <div className="border rounded-md p-3 bg-gray-50/50 max-h-48 overflow-y-auto">
-                        <div className="flex flex-wrap gap-2">
-                          {filteredCarers.map((carer) => {
-                            const isSelected = field.value?.includes(carer.id);
-                            const carerName = carer.name || `${carer.first_name} ${carer.last_name}`;
+                      {/* Selected carers display */}
+                      {field.value && field.value.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {field.value.map((carerId) => {
+                            const carer = carers.find(c => c.id === carerId);
+                            const carerName = carer?.name || `${carer?.first_name} ${carer?.last_name}` || 'Unknown';
                             
                             return (
                               <Badge
-                                key={carer.id}
-                                variant={isSelected ? "default" : "outline"}
-                                className={cn(
-                                  "cursor-pointer transition-all hover:scale-105 text-sm px-3 py-1",
-                                  isSelected 
-                                    ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90" 
-                                    : "hover:bg-secondary/50 border-border"
-                                )}
-                                onClick={() => {
-                                  const currentValue = field.value || [];
-                                  if (isSelected) {
-                                    field.onChange(currentValue.filter((id: string) => id !== carer.id));
-                                  } else {
-                                    field.onChange([...currentValue, carer.id]);
-                                  }
-                                }}
+                                key={carerId}
+                                variant="secondary"
+                                className="text-xs px-2 py-1"
                               >
                                 {carerName}
-                                {isSelected && (
-                                  <X className="h-3 w-3 ml-1" />
-                                )}
+                                <X 
+                                  className="h-3 w-3 ml-1 cursor-pointer hover:text-destructive"
+                                  onClick={() => {
+                                    const currentValue = field.value || [];
+                                    field.onChange(currentValue.filter((id: string) => id !== carerId));
+                                  }}
+                                />
                               </Badge>
                             );
                           })}
-                          {filteredCarers.length === 0 && (
-                            <p className="text-sm text-muted-foreground px-2">No carers found</p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Selected carers summary */}
-                      {field.value && field.value.length > 0 && (
-                        <div className="flex items-center justify-between text-sm text-muted-foreground">
-                          <span>{field.value.length} carer{field.value.length !== 1 ? 's' : ''} selected</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => field.onChange([])}
-                            className="h-6 px-2 text-xs"
-                          >
-                            Clear all
-                          </Button>
                         </div>
                       )}
                     </div>
