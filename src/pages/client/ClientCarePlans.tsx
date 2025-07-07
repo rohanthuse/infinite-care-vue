@@ -87,33 +87,32 @@ const ClientCarePlans = () => {
     );
   }
 
-  const carePlan = carePlans[0]; // Get the most recent care plan
-  const requiresApproval = useCarePlanRequiresApproval(carePlan);
-  const statusInfo = useCarePlanStatus(carePlan);
-
   const handleApproveCarePlan = async (signatureData: string, comments: string) => {
-    if (!carePlan) return;
+    if (!selectedCarePlan) return;
     
     await approveCarePlanMutation.mutateAsync({
-      carePlanId: carePlan.id,
+      carePlanId: selectedCarePlan.id,
       signatureData,
       comments,
     });
   };
 
   const handleRejectCarePlan = async (comments: string) => {
-    if (!carePlan) return;
+    if (!selectedCarePlan) return;
     
     await rejectCarePlanMutation.mutateAsync({
-      carePlanId: carePlan.id,
+      carePlanId: selectedCarePlan.id,
       comments,
     });
   };
 
-  const handleOpenApprovalDialog = () => {
+  const handleOpenApprovalDialog = (carePlan: any) => {
     setSelectedCarePlan(carePlan);
     setApprovalDialogOpen(true);
   };
+
+  // Count pending approvals for summary
+  const pendingApprovals = carePlans.filter(cp => useCarePlanRequiresApproval(cp)).length;
 
   // Function to render goal status badge
   const renderGoalStatus = (status: string) => {
@@ -131,8 +130,32 @@ const ClientCarePlans = () => {
 
   return (
     <div className="space-y-6">
-      {/* Approval Alert */}
-      {requiresApproval && (
+      {/* Summary Header */}
+      <div className="bg-white p-6 rounded-xl border border-gray-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center">
+              <FileText className="h-6 w-6 mr-3 text-blue-600" />
+              Your Care Plans
+            </h1>
+            <p className="text-gray-600 mt-1">
+              You have {carePlans.length} care plan{carePlans.length !== 1 ? 's' : ''}
+              {pendingApprovals > 0 && (
+                <span className="text-orange-600 font-medium">
+                  {' • '}{pendingApprovals} requiring your approval
+                </span>
+              )}
+            </p>
+          </div>
+          <Button variant="outline" onClick={handlePrintPlan} className="gap-2">
+            <Printer className="h-4 w-4" />
+            Print All Plans
+          </Button>
+        </div>
+      </div>
+
+      {/* Global Approval Alert */}
+      {pendingApprovals > 0 && (
         <Card className="border-orange-200 bg-orange-50">
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
@@ -141,175 +164,192 @@ const ClientCarePlans = () => {
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-orange-800 mb-1">
-                  Care Plan Approval Required
+                  Care Plan{pendingApprovals > 1 ? 's' : ''} Approval Required
                 </h3>
                 <p className="text-sm text-orange-700 mb-3">
-                  Your care team has created a new care plan that requires your review and approval. 
-                  Please take a moment to review the plan details and provide your digital signature.
+                  You have {pendingApprovals} care plan{pendingApprovals > 1 ? 's' : ''} that require{pendingApprovals === 1 ? 's' : ''} your review and approval. 
+                  Please review each plan below and provide your digital signature.
                 </p>
-                <Button onClick={handleOpenApprovalDialog} className="bg-orange-600 hover:bg-orange-700">
-                  <PenTool className="h-4 w-4 mr-2" />
-                  Review & Sign Care Plan
-                </Button>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Care Plan Header */}
-      <div className="bg-white p-6 rounded-xl border border-gray-200">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-xl font-bold flex items-center">
-                <FileText className="h-5 w-5 mr-2 text-blue-600" />
-                {carePlan.title}
-              </h2>
-              <Badge variant={statusInfo.variant}>
-                {statusInfo.label}
-              </Badge>
-            </div>
-            <div className="text-sm text-gray-500 mt-2">
-              Last updated: {new Date(carePlan.updated_at).toLocaleDateString()} • Care Provider: {carePlan.provider_name}
-            </div>
-            {carePlan.display_id && (
-              <div className="text-sm text-gray-500">
-                Plan ID: {carePlan.display_id}
-              </div>
-            )}
-            {carePlan.client_acknowledged_at && (
-              <div className="text-sm text-gray-500 mt-1">
-                Approved by you on: {new Date(carePlan.client_acknowledged_at).toLocaleDateString()}
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2">
-            {requiresApproval ? (
-              <Button onClick={handleOpenApprovalDialog} className="bg-orange-600 hover:bg-orange-700">
-                <PenTool className="h-4 w-4 mr-2" />
-                Sign Care Plan
-              </Button>
-            ) : (
-              <Button onClick={handleRequestChanges}>Request Changes</Button>
-            )}
-            <Button variant="outline" onClick={handlePrintPlan} className="gap-2">
-              <Printer className="h-4 w-4" />
-              Print Plan
-            </Button>
-          </div>
-        </div>
-        <div className="mt-6 flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-blue-600" />
-            <span className="text-sm">Next review: {carePlan.review_date ? new Date(carePlan.review_date).toLocaleDateString() : 'Not scheduled'}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium">Goals progress:</span>
-            <div className="flex-1 md:w-48">
-              <Progress value={carePlan.goals_progress || 0} className="h-2" />
-            </div>
-            <span className="text-sm font-medium">{carePlan.goals_progress || 0}%</span>
-          </div>
-        </div>
-      </div>
+      {/* Care Plans List */}
+      <div className="space-y-4">
+        {carePlans.map((carePlan) => {
+          const requiresApproval = useCarePlanRequiresApproval(carePlan);
+          const statusInfo = useCarePlanStatus(carePlan);
 
-      {/* Care Plan Content */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <Tabs defaultValue="goals">
-          <div className="border-b border-gray-200">
-            <div className="p-4">
-              <TabsList className="grid grid-cols-3 w-full lg:w-auto">
-                <TabsTrigger value="goals">Goals</TabsTrigger>
-                <TabsTrigger value="medications">Medications</TabsTrigger>
-                <TabsTrigger value="activities">Activities</TabsTrigger>
-              </TabsList>
-            </div>
-          </div>
-          
-          {/* Goals Tab */}
-          <TabsContent value="goals" className="p-6">
-            <div className="space-y-6">
-              {carePlan.goals && carePlan.goals.length > 0 ? (
-                carePlan.goals.map(goal => (
-                  <div key={goal.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h4 className="font-medium">{goal.description}</h4>
-                          {renderGoalStatus(goal.status)}
+          return (
+            <Card key={carePlan.id} className={`${requiresApproval ? 'border-orange-200 bg-orange-50/30' : 'border-gray-200'}`}>
+              <CardHeader className="pb-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <CardTitle className="text-lg">{carePlan.title}</CardTitle>
+                      <Badge variant={statusInfo.variant}>
+                        {statusInfo.label}
+                      </Badge>
+                    </div>
+                    <div className="space-y-1 text-sm text-gray-600">
+                      <div>Care Provider: {carePlan.provider_name}</div>
+                      <div>Plan ID: {carePlan.display_id}</div>
+                      <div>Last updated: {new Date(carePlan.updated_at).toLocaleDateString()}</div>
+                      {carePlan.client_acknowledged_at && (
+                        <div className="text-green-600">
+                          ✓ Approved by you on: {new Date(carePlan.client_acknowledged_at).toLocaleDateString()}
                         </div>
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="flex-1">
-                            <Progress value={goal.progress || 0} className="h-2" />
-                          </div>
-                          <span className="text-sm font-medium">{goal.progress || 0}%</span>
-                        </div>
-                        {goal.notes && (
-                          <p className="text-sm text-gray-600 mt-2">{goal.notes}</p>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </div>
-                ))
-              ) : (
-                <p className="text-gray-500 text-center py-8">No goals defined for this care plan.</p>
-              )}
-            </div>
-          </TabsContent>
-          
-          {/* Medications Tab */}
-          <TabsContent value="medications" className="p-6">
-            <div className="space-y-4">
-              {carePlan.medications && carePlan.medications.length > 0 ? (
-                carePlan.medications.map(med => (
-                  <div key={med.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                      <div>
-                        <h4 className="font-medium">{med.name}</h4>
-                        <p className="text-sm text-gray-600">{med.dosage}, {med.frequency}</p>
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        Started: {new Date(med.start_date).toLocaleDateString()} • Status: {med.status}
-                        {med.end_date && (
-                          <span> • Ends: {new Date(med.end_date).toLocaleDateString()}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500 text-center py-8">No medications defined for this care plan.</p>
-              )}
-            </div>
-          </TabsContent>
-          
-          {/* Activities Tab */}
-          <TabsContent value="activities" className="p-6">
-            <div className="space-y-4">
-              {carePlan.activities && carePlan.activities.length > 0 ? (
-                carePlan.activities.map(activity => (
-                  <div key={activity.id} className="border border-gray-200 rounded-lg p-4">
-                    <h4 className="font-medium">{activity.name}</h4>
-                    {activity.description && (
-                      <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    {requiresApproval ? (
+                      <Button 
+                        onClick={() => handleOpenApprovalDialog(carePlan)} 
+                        className="bg-orange-600 hover:bg-orange-700"
+                      >
+                        <PenTool className="h-4 w-4 mr-2" />
+                        Sign Plan
+                      </Button>
+                    ) : (
+                      <Button variant="outline" onClick={handleRequestChanges}>
+                        Request Changes
+                      </Button>
                     )}
-                    <div className="flex items-center mt-2 gap-2">
-                      <span className="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                        {activity.frequency}
-                      </span>
-                      <span className="text-xs font-medium bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                        {activity.status}
-                      </span>
-                    </div>
                   </div>
-                ))
-              ) : (
-                <p className="text-gray-500 text-center py-8">No activities defined for this care plan.</p>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
+                </div>
+              </CardHeader>
+
+              <CardContent className="pt-0">
+                {/* Care Plan Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm">
+                      Review: {carePlan.review_date ? new Date(carePlan.review_date).toLocaleDateString() : 'Not scheduled'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">Goals: {carePlan.goals?.length || 0}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">Medications: {carePlan.medications?.length || 0}</span>
+                  </div>
+                </div>
+
+                {/* Goals Progress */}
+                {carePlan.goals_progress !== undefined && (
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Goals Progress</span>
+                      <span className="text-sm font-medium">{carePlan.goals_progress}%</span>
+                    </div>
+                    <Progress value={carePlan.goals_progress} className="h-2" />
+                  </div>
+                )}
+
+                {/* Expandable Content */}
+                <Tabs defaultValue="summary" className="w-full">
+                  <TabsList className="grid grid-cols-4 w-full">
+                    <TabsTrigger value="summary">Summary</TabsTrigger>
+                    <TabsTrigger value="goals">Goals ({carePlan.goals?.length || 0})</TabsTrigger>
+                    <TabsTrigger value="medications">Meds ({carePlan.medications?.length || 0})</TabsTrigger>
+                    <TabsTrigger value="activities">Activities ({carePlan.activities?.length || 0})</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="summary" className="mt-4">
+                    <div className="text-sm text-gray-600 space-y-2">
+                      <p><strong>Care Plan Overview:</strong></p>
+                      <p>This care plan includes {carePlan.goals?.length || 0} goals, {carePlan.medications?.length || 0} medications, and {carePlan.activities?.length || 0} activities.</p>
+                      {carePlan.notes && <p><strong>Notes:</strong> {carePlan.notes}</p>}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="goals" className="mt-4">
+                    <div className="space-y-3">
+                      {carePlan.goals && carePlan.goals.length > 0 ? (
+                        carePlan.goals.slice(0, 3).map(goal => (
+                          <div key={goal.id} className="border border-gray-200 rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h5 className="font-medium text-sm">{goal.description}</h5>
+                              {renderGoalStatus(goal.status)}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1">
+                                <Progress value={goal.progress || 0} className="h-1" />
+                              </div>
+                              <span className="text-xs">{goal.progress || 0}%</span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 text-sm">No goals defined for this care plan.</p>
+                      )}
+                      {carePlan.goals && carePlan.goals.length > 3 && (
+                        <p className="text-xs text-gray-500">... and {carePlan.goals.length - 3} more goals</p>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="medications" className="mt-4">
+                    <div className="space-y-3">
+                      {carePlan.medications && carePlan.medications.length > 0 ? (
+                        carePlan.medications.slice(0, 3).map(med => (
+                          <div key={med.id} className="border border-gray-200 rounded-lg p-3">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h5 className="font-medium text-sm">{med.name}</h5>
+                                <p className="text-xs text-gray-600">{med.dosage}, {med.frequency}</p>
+                              </div>
+                              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                {med.status}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 text-sm">No medications defined for this care plan.</p>
+                      )}
+                      {carePlan.medications && carePlan.medications.length > 3 && (
+                        <p className="text-xs text-gray-500">... and {carePlan.medications.length - 3} more medications</p>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="activities" className="mt-4">
+                    <div className="space-y-3">
+                      {carePlan.activities && carePlan.activities.length > 0 ? (
+                        carePlan.activities.slice(0, 3).map(activity => (
+                          <div key={activity.id} className="border border-gray-200 rounded-lg p-3">
+                            <h5 className="font-medium text-sm">{activity.name}</h5>
+                            {activity.description && (
+                              <p className="text-xs text-gray-600 mt-1">{activity.description}</p>
+                            )}
+                            <div className="flex items-center mt-2 gap-2">
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                {activity.frequency}
+                              </span>
+                              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                {activity.status}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 text-sm">No activities defined for this care plan.</p>
+                      )}
+                      {carePlan.activities && carePlan.activities.length > 3 && (
+                        <p className="text-xs text-gray-500">... and {carePlan.activities.length - 3} more activities</p>
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Approval Dialog */}
