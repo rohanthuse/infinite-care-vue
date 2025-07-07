@@ -15,6 +15,7 @@ import {
   useCarePlanRequiresApproval, 
   useCarePlanStatus 
 } from "@/hooks/useCarePlanApproval";
+import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 
 const ClientCarePlans = () => {
   const { toast } = useToast();
@@ -24,17 +25,10 @@ const ClientCarePlans = () => {
   const approveCarePlanMutation = useApproveCarePlan();
   const rejectCarePlanMutation = useRejectCarePlan();
   
-  // Get authenticated client ID from localStorage
-  const getClientId = () => {
-    const clientId = localStorage.getItem("clientId");
-    if (!clientId) {
-      console.error("No authenticated client ID found");
-      return null;
-    }
-    return clientId;
-  };
-
-  const clientId = getClientId();
+  // Get authenticated client using proper Supabase auth
+  const { data: authData, isLoading: authLoading, error: authError } = useSimpleClientAuth();
+  const clientId = authData?.client?.id;
+  
   const { data: carePlans, isLoading, error } = useClientCarePlansWithDetails(clientId || '');
 
   const handleRequestChanges = () => {
@@ -52,23 +46,23 @@ const ClientCarePlans = () => {
     });
   };
 
-  if (!clientId) {
-    return (
-      <div className="text-center py-12">
-        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
-        <p className="text-gray-600">Please log in to view your care plans.</p>
-      </div>
-    );
-  }
-
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your care plans...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (authError || !clientId) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
+        <p className="text-gray-600">Please log in to view your care plans.</p>
       </div>
     );
   }

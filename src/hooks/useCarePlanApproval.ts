@@ -29,7 +29,7 @@ const approveCarePlan = async ({ carePlanId, signatureData, comments }: ApproveC
   const { error } = await supabase
     .from('client_care_plans')
     .update({
-      status: 'client_approved',
+      status: 'approved',
       client_acknowledged_at: new Date().toISOString(),
       client_signature_data: signatureData,
       client_acknowledgment_ip: clientIp,
@@ -58,7 +58,7 @@ const rejectCarePlan = async ({ carePlanId, comments }: RejectCarePlanData) => {
   const { error } = await supabase
     .from('client_care_plans')
     .update({
-      status: 'client_rejected',
+      status: 'rejected',
       client_comments: comments,
       updated_at: new Date().toISOString(),
     })
@@ -110,7 +110,7 @@ export const useRejectCarePlan = () => {
 export const useCarePlanRequiresApproval = (carePlan: any) => {
   if (!carePlan) return false;
   
-  return carePlan.status === 'pending_client_approval' && !carePlan.client_acknowledged_at;
+  return carePlan.status === 'pending_approval' && !carePlan.client_acknowledged_at;
 };
 
 // Hook to get care plan status info
@@ -118,21 +118,21 @@ export const useCarePlanStatus = (carePlan: any) => {
   if (!carePlan) return { status: 'unknown', label: 'Unknown', variant: 'secondary' as const };
 
   switch (carePlan.status) {
-    case 'pending_client_approval':
+    case 'pending_approval':
       return { 
-        status: 'pending_client_approval', 
+        status: 'pending_approval', 
         label: 'Awaiting Your Approval', 
         variant: 'destructive' as const 
       };
-    case 'client_approved':
+    case 'approved':
       return { 
-        status: 'client_approved', 
+        status: 'approved', 
         label: 'Approved by You', 
         variant: 'default' as const 
       };
-    case 'client_rejected':
+    case 'rejected':
       return { 
-        status: 'client_rejected', 
+        status: 'rejected', 
         label: 'Changes Requested', 
         variant: 'secondary' as const 
       };
