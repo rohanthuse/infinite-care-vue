@@ -9,8 +9,10 @@ import {
   Clock, 
   DollarSign, 
   Car, 
-  Percent 
+  Percent,
+  Receipt
 } from "lucide-react";
+import InvoicesPaymentsTab from "./InvoicesPaymentsTab";
 import ExtraTimeTab from "./ExtraTimeTab";
 import ExpensesTab from "./ExpensesTab";
 import TravelTab from "./TravelTab";
@@ -23,7 +25,7 @@ interface AccountingTabProps {
 }
 
 const AccountingTab: React.FC<AccountingTabProps> = ({ branchId, branchName }) => {
-  const [activeTab, setActiveTab] = useState("extra-time");
+  const [activeTab, setActiveTab] = useState("invoices-payments");
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -51,7 +53,14 @@ const AccountingTab: React.FC<AccountingTabProps> = ({ branchId, branchName }) =
           onValueChange={setActiveTab}
           className="w-full"
         >
-          <TabsList className="bg-gray-100 p-1 rounded-lg w-full md:w-auto grid grid-cols-2 md:grid-cols-5 mb-6">
+          <TabsList className="bg-gray-100 p-1 rounded-lg w-full md:w-auto grid grid-cols-3 md:grid-cols-6 mb-6">
+            <TabsTrigger 
+              value="invoices-payments" 
+              className="flex items-center gap-2 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm"
+            >
+              <Receipt className="h-4 w-4" />
+              <span>Invoices & Payments</span>
+            </TabsTrigger>
             <TabsTrigger 
               value="extra-time" 
               className="flex items-center gap-2 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm"
@@ -88,6 +97,10 @@ const AccountingTab: React.FC<AccountingTabProps> = ({ branchId, branchName }) =
               <span>Rate Management</span>
             </TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="invoices-payments" className="mt-0">
+            <InvoicesPaymentsTab branchId={branchId} branchName={branchName} />
+          </TabsContent>
           
           <TabsContent value="extra-time" className="mt-0">
             <ExtraTimeTab branchId={branchId} branchName={branchName} />
