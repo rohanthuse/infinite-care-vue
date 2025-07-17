@@ -97,6 +97,10 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({ client }) => {
             <p className="mt-1">{client.address || client.location || 'Not provided'}</p>
           </div>
           <div>
+            <h4 className="text-sm font-medium text-gray-500">Pin Code</h4>
+            <p className="mt-1">{client.pin_code || 'Not provided'}</p>
+          </div>
+          <div>
             <h4 className="text-sm font-medium text-gray-500">Region</h4>
             <p className="mt-1">{client.region || 'Not provided'}</p>
           </div>

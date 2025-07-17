@@ -2031,6 +2031,7 @@ export type Database = {
           other_identifier: string | null
           password_set_by: string | null
           phone: string | null
+          pin_code: string | null
           preferred_name: string | null
           pronouns: string | null
           referral_route: string | null
@@ -2066,6 +2067,7 @@ export type Database = {
           other_identifier?: string | null
           password_set_by?: string | null
           phone?: string | null
+          pin_code?: string | null
           preferred_name?: string | null
           pronouns?: string | null
           referral_route?: string | null
@@ -2101,6 +2103,7 @@ export type Database = {
           other_identifier?: string | null
           password_set_by?: string | null
           phone?: string | null
+          pin_code?: string | null
           preferred_name?: string | null
           pronouns?: string | null
           referral_route?: string | null

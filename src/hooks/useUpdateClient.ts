@@ -11,6 +11,7 @@ interface UpdateClientParams {
     phone?: string;
     date_of_birth?: string;
     address?: string;
+    pin_code?: string;
     gender?: string;
     preferred_name?: string;
     title?: string;

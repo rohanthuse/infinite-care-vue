@@ -30,6 +30,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
     email: "",
     phone: "",
     address: "",
+    pin_code: "",
     status: "New Enquiries",
     region: "North",
     date_of_birth: "",
@@ -128,6 +129,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         email: "",
         phone: "",
         address: "",
+        pin_code: "",
         status: "New Enquiries",
         region: "North",
         date_of_birth: "",
@@ -204,13 +206,24 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="address">Address</Label>
-            <Input
-              id="address"
-              value={formData.address}
-              onChange={(e) => handleInputChange("address", e.target.value)}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="address">Address</Label>
+              <Input
+                id="address"
+                value={formData.address}
+                onChange={(e) => handleInputChange("address", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="pin_code">Pin Code</Label>
+              <Input
+                id="pin_code"
+                value={formData.pin_code}
+                onChange={(e) => handleInputChange("pin_code", e.target.value)}
+                placeholder="e.g., MK9 1AA"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
