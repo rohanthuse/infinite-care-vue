@@ -5,13 +5,16 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { AdminsTable } from "@/components/AdminsTable";
 import { AuthHealthDebugger } from "@/components/AuthHealthDebugger";
+import { BranchQuickNavigation } from "@/components/dashboard/BranchQuickNavigation";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { data: currentUser } = useUserRole();
   
   // The old loading and auth check logic is now handled by the AuthProvider and protected route.
   
@@ -26,6 +29,9 @@ const Dashboard = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
+        {/* Super Admin Branch Navigation */}
+        {currentUser?.role === 'super_admin' && <BranchQuickNavigation />}
+        
         <div className="flex justify-between items-center mb-6 md:mb-8">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Branch Administrators</h1>
