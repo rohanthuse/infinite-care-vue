@@ -616,7 +616,7 @@ export function useClientsList(branchId?: string) {
 
       const { data, error } = await supabase
         .from('clients')
-        .select('id, first_name, last_name, email')
+        .select('id, first_name, last_name, email, pin_code')
         .eq('branch_id', branchId);
         // Note: Removed status filter as clients table may not have consistent status values
 

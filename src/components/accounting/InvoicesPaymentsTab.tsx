@@ -2,9 +2,15 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, FileText, DollarSign } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import FinancialSummaryCards from './FinancialSummaryCards';
 import InvoicesDataTable from './InvoicesDataTable';
 import PaymentsDataTable from './PaymentsDataTable';
+import { CreateEnhancedInvoiceDialog } from '@/components/clients/dialogs/CreateEnhancedInvoiceDialog';
+import { RecordPaymentDialog } from './RecordPaymentDialog';
+import { useClientsList } from '@/hooks/useAccountingData';
+import { useUninvoicedBookings } from '@/hooks/useEnhancedClientBilling';
+import { useBranchInvoices } from '@/hooks/useBranchInvoices';
 
 interface InvoicesPaymentsTabProps {
   branchId?: string;
@@ -13,6 +19,22 @@ interface InvoicesPaymentsTabProps {
 
 const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, branchName }) => {
   const [activeSubTab, setActiveSubTab] = useState('invoices');
+  const [isCreateInvoiceOpen, setIsCreateInvoiceOpen] = useState(false);
+  const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
+  
+  // Fetch clients for the dropdown
+  const { data: clients } = useClientsList(branchId);
+  const { data: uninvoicedBookings } = useUninvoicedBookings(branchId);
+  
+  // Fetch unpaid invoices for payment recording
+  const { data: allInvoices } = useBranchInvoices(branchId);
+  const unpaidInvoices = allInvoices?.filter(invoice => invoice.remaining_amount > 0).map(invoice => ({
+    id: invoice.id,
+    invoice_number: invoice.invoice_number,
+    client_name: invoice.client_name,
+    remaining_amount: invoice.remaining_amount
+  })) || [];
 
   if (!branchId) {
     return (
@@ -28,19 +50,56 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
       <FinancialSummaryCards branchId={branchId} />
 
       {/* Quick Actions */}
-      <div className="flex flex-wrap gap-3">
-        <Button className="flex items-center gap-2">
-          <PlusCircle className="h-4 w-4" />
-          Create Invoice
-        </Button>
-        <Button variant="outline" className="flex items-center gap-2">
-          <DollarSign className="h-4 w-4" />
-          Record Payment
-        </Button>
-        <Button variant="outline" className="flex items-center gap-2">
-          <FileText className="h-4 w-4" />
-          Generate Report
-        </Button>
+      <div className="bg-white rounded-lg border p-4">
+        <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-end">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Client for Invoice
+            </label>
+            <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+              <SelectTrigger className="w-full lg:w-64">
+                <SelectValue placeholder="Choose a client..." />
+              </SelectTrigger>
+              <SelectContent>
+                {clients?.map((client) => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.first_name} {client.last_name}
+                    {client.pin_code && ` (${client.pin_code})`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex flex-wrap gap-3">
+            <Button 
+              className="flex items-center gap-2"
+              onClick={() => {
+                if (selectedClientId) {
+                  setIsCreateInvoiceOpen(true);
+                }
+              }}
+              disabled={!selectedClientId}
+            >
+              <PlusCircle className="h-4 w-4" />
+              Create Invoice
+            </Button>
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => setIsRecordPaymentOpen(true)}
+              disabled={unpaidInvoices.length === 0}
+            >
+              <DollarSign className="h-4 w-4" />
+              Record Payment
+            </Button>
+            <Button variant="outline" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Generate Report
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Invoices and Payments Tabs */}
@@ -84,6 +143,21 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Invoice Creation Dialog */}
+      <CreateEnhancedInvoiceDialog
+        open={isCreateInvoiceOpen}
+        onOpenChange={setIsCreateInvoiceOpen}
+        clientId={selectedClientId}
+        uninvoicedBookings={uninvoicedBookings?.filter(booking => booking.client_id === selectedClientId) || []}
+      />
+
+      {/* Record Payment Dialog */}
+      <RecordPaymentDialog
+        open={isRecordPaymentOpen}
+        onOpenChange={setIsRecordPaymentOpen}
+        availableInvoices={unpaidInvoices}
+      />
     </div>
   );
 };
