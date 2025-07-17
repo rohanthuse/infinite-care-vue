@@ -4,7 +4,7 @@ import {
   User, Info, Calendar, FileText, FileCheck, 
   MessageCircle, AlertTriangle, Clock, Activity, 
   Wrench, Utensils, Bath, ShieldAlert, Clipboard, ClipboardCheck,
-  FileBarChart2
+  FileBarChart2, FormInput
 } from "lucide-react";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -63,6 +63,14 @@ export const CarePlanTabBar: React.FC<CarePlanTabBarProps> = ({ activeTab, onCha
       >
         <FileText className="h-4 w-4" />
         <span>Documents</span>
+      </TabsTrigger>
+      <TabsTrigger 
+        value="forms" 
+        onClick={() => onChange("forms")}
+        className={`flex items-center gap-1 ${activeTab === "forms" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
+      >
+        <FormInput className="h-4 w-4" />
+        <span>Forms</span>
       </TabsTrigger>
       <TabsTrigger 
         value="assessments" 

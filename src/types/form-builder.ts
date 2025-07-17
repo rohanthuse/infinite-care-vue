@@ -215,3 +215,18 @@ export interface Form {
   permissions?: FormPermissions;
   settings?: FormSettings;
 }
+
+// Care Plan Form Assignment Types
+export interface CarePlanFormAssignment {
+  id: string;
+  carePlanId: string;
+  formId: string;
+  assignedBy: string;
+  assignedAt: string;
+  dueDate?: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'overdue' | 'cancelled';
+  completionNotes?: string;
+  completedAt?: string;
+  completedBy?: string;
+  form?: Form;
+}

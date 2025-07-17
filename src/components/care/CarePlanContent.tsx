@@ -17,6 +17,7 @@ import { ServicePlanTab } from "./tabs/ServicePlanTab";
 import { AssessmentsTab } from "./tabs/AssessmentsTab";
 import { EquipmentTab } from "./tabs/EquipmentTab";
 import { RiskAssessmentsTab } from "./tabs/RiskAssessmentsTab";
+import { CarePlanFormsTab } from "./forms/CarePlanFormsTab";
 import {
   ClientProfile,
   ClientPersonalInfo,
@@ -51,6 +52,7 @@ interface CarePlanContentProps {
   equipment: ClientEquipment[];
   riskAssessments: ClientRiskAssessment[];
   serviceActions: ClientServiceAction[];
+  branchId?: string;
   onAddNote: () => void;
   onScheduleFollowUp: () => void;
   onRecordActivity: () => void;
@@ -82,6 +84,7 @@ export const CarePlanContent: React.FC<CarePlanContentProps> = ({
   equipment,
   riskAssessments,
   serviceActions,
+  branchId,
   onAddNote,
   onScheduleFollowUp,
   onRecordActivity,
@@ -210,6 +213,14 @@ export const CarePlanContent: React.FC<CarePlanContentProps> = ({
             
             <TabsContent value="documents">
               <DocumentsTab clientId={carePlan.patientId} />
+            </TabsContent>
+
+            <TabsContent value="forms">
+              <CarePlanFormsTab 
+                carePlanId={carePlan.id}
+                branchId={branchId || ""}
+                userRole="admin"
+              />
             </TabsContent>
             
             <TabsContent value="dietary">

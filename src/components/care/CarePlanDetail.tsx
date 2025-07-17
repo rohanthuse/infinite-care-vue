@@ -157,6 +157,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
           equipment={equipment}
           riskAssessments={riskAssessments}
           serviceActions={serviceActions}
+          branchId={branchId}
           onAddNote={() => dialogState.setAddNoteDialogOpen(true)}
           onScheduleFollowUp={handleScheduleFollowUp}
           onRecordActivity={() => dialogState.setAddActivityDialogOpen(true)}
