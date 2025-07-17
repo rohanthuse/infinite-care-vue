@@ -23,6 +23,7 @@ import { useTrainingCourses } from "@/hooks/useTrainingCourses";
 import { useStaffTrainingRecords } from "@/hooks/useStaffTrainingRecords";
 import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
 import { useTrainingManagement } from "@/hooks/useTrainingManagement";
+import { TrainingMetricsEmailButton } from "@/components/training/TrainingMetricsEmailButton";
 
 export interface TrainingMatrixProps {
   branchId?: string;
@@ -317,6 +318,13 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
             />
             
             <TrainingExport matrixData={{ staffMembers: filteredStaff, trainings: filteredTrainings, data: matrixData }} />
+            
+            <TrainingMetricsEmailButton 
+              branchId={branchId} 
+              branchName={branchName || 'Branch'}
+              variant="outline"
+              size="default"
+            />
             
             <Button 
               variant="default" 
