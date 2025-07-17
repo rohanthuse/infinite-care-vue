@@ -1494,9 +1494,12 @@ export type Database = {
           client_id: string
           created_at: string
           description: string | null
+          event_date: string | null
+          event_time: string | null
           event_type: string
           id: string
           location: string | null
+          recorded_by_staff_id: string | null
           reporter: string
           severity: string
           status: string
@@ -1512,9 +1515,12 @@ export type Database = {
           client_id: string
           created_at?: string
           description?: string | null
+          event_date?: string | null
+          event_time?: string | null
           event_type: string
           id?: string
           location?: string | null
+          recorded_by_staff_id?: string | null
           reporter: string
           severity?: string
           status?: string
@@ -1530,9 +1536,12 @@ export type Database = {
           client_id?: string
           created_at?: string
           description?: string | null
+          event_date?: string | null
+          event_time?: string | null
           event_type?: string
           id?: string
           location?: string | null
+          recorded_by_staff_id?: string | null
           reporter?: string
           severity?: string
           status?: string
@@ -1552,6 +1561,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_events_logs_recorded_by_staff_id_fkey"
+            columns: ["recorded_by_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
         ]

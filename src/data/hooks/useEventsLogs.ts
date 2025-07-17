@@ -15,6 +15,9 @@ export interface EventLog {
   reporter: string;
   location?: string;
   category: string;
+  event_date?: string;
+  event_time?: string;
+  recorded_by_staff_id?: string;
   body_map_points?: any;
   body_map_front_image_url?: string;
   body_map_back_image_url?: string;
@@ -25,6 +28,8 @@ export interface EventLog {
   client_name?: string;
   client_first_name?: string;
   client_last_name?: string;
+  // Staff information
+  recorded_by_staff_name?: string;
 }
 
 export interface CreateEventLogData {
@@ -37,6 +42,9 @@ export interface CreateEventLogData {
   reporter: string;
   location?: string;
   category: string;
+  event_date: string;
+  event_time: string;
+  recorded_by_staff_id: string;
   body_map_points?: any;
   branch_id?: string;
 }
@@ -59,6 +67,10 @@ export const useEventsLogs = (branchId?: string, filters?: {
         .select(`
           *,
           clients!inner(
+            first_name,
+            last_name
+          ),
+          staff:recorded_by_staff_id(
             first_name,
             last_name
           )
@@ -100,12 +112,13 @@ export const useEventsLogs = (branchId?: string, filters?: {
         throw error;
       }
       
-      // Transform the data to include client names
+      // Transform the data to include client and staff names
       const transformedData = data?.map(event => ({
         ...event,
         client_name: event.clients ? `${event.clients.first_name} ${event.clients.last_name}` : 'Unknown Client',
         client_first_name: event.clients?.first_name,
         client_last_name: event.clients?.last_name,
+        recorded_by_staff_name: event.staff ? `${event.staff.first_name} ${event.staff.last_name}` : 'Unknown Staff',
       })) || [];
       
       console.log('Fetched events logs:', transformedData.length, 'records');

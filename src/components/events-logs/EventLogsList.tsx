@@ -240,11 +240,22 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                     <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                       <div className="flex items-center gap-1">
                         <User className="h-4 w-4" />
-                        <span>{event.reporter}</span>
+                        <span>Reporter: {event.reporter}</span>
+                      </div>
+                      {event.recorded_by_staff_name && (
+                        <div className="flex items-center gap-1">
+                          <User className="h-4 w-4" />
+                          <span>Recorded by: {event.recorded_by_staff_name}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        <span>Event: {event.event_date ? format(new Date(event.event_date), 'MMM dd, yyyy') : format(new Date(event.created_at), 'MMM dd, yyyy')}</span>
+                        {event.event_time && <span>at {event.event_time}</span>}
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
-                        <span>{format(new Date(event.created_at), 'MMM dd, yyyy')}</span>
+                        <span>Recorded: {format(new Date(event.created_at), 'MMM dd, yyyy HH:mm')}</span>
                       </div>
                       {event.location && (
                         <div className="flex items-center gap-1">

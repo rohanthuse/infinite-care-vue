@@ -13,6 +13,7 @@ import { AlertTriangle, Save, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCreateEventLog, useEventClients } from '@/data/hooks/useEventsLogs';
 import { useReportTypeOptions } from '@/hooks/useParameterOptions';
+import { useStaff } from '@/data/hooks/agreements';
 import { BodyMapSelector } from './BodyMapSelector';
 
 const eventLogSchema = z.object({
@@ -25,6 +26,9 @@ const eventLogSchema = z.object({
   reporter: z.string().min(1, 'Reporter name is required'),
   location: z.string().optional(),
   description: z.string().optional(),
+  event_date: z.string().min(1, 'Event date is required'),
+  event_time: z.string().min(1, 'Event time is required'),
+  recorded_by_staff_id: z.string().min(1, 'Recording staff member is required'),
 });
 
 type EventLogFormData = z.infer<typeof eventLogSchema>;
@@ -38,6 +42,7 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
   const createEventLogMutation = useCreateEventLog();
   const { data: clients = [], isLoading: clientsLoading } = useEventClients(branchId);
   const { data: reportTypeOptions = [], isLoading: reportTypesLoading } = useReportTypeOptions();
+  const { data: staffList = [], isLoading: staffLoading } = useStaff(branchId);
 
   const form = useForm<EventLogFormData>({
     resolver: zodResolver(eventLogSchema),
@@ -51,6 +56,9 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
       reporter: '',
       location: '',
       description: '',
+      event_date: new Date().toISOString().split('T')[0],
+      event_time: new Date().toTimeString().slice(0, 5),
+      recorded_by_staff_id: '',
     },
   });
 
@@ -66,6 +74,9 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
         reporter: data.reporter,
         location: data.location || undefined,
         description: data.description || undefined,
+        event_date: data.event_date,
+        event_time: data.event_time,
+        recorded_by_staff_id: data.recorded_by_staff_id,
         body_map_points: bodyMapPoints.length > 0 ? bodyMapPoints : undefined,
         branch_id: branchId !== 'global' ? branchId : undefined,
       };
@@ -258,10 +269,44 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
                 </div>
               </div>
 
+              {/* Event Date and Time */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Event Timing</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="event_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Event Date *</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="event_time"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Event Time *</FormLabel>
+                        <FormControl>
+                          <Input type="time" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
               {/* Reporter and Location */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Event Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <FormField
                     control={form.control}
                     name="reporter"
@@ -271,6 +316,31 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
                         <FormControl>
                           <Input placeholder="Name of person reporting" {...field} />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="recorded_by_staff_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Recorded by Staff *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={staffLoading ? "Loading staff..." : "Select staff member"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {staffList.map((staff) => (
+                              <SelectItem key={staff.id} value={staff.id}>
+                                {staff.first_name} {staff.last_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}

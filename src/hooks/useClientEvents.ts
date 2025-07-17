@@ -13,6 +13,9 @@ export interface ClientEvent {
   description?: string;
   status: string;
   reporter: string;
+  event_date?: string;
+  event_time?: string;
+  recorded_by_staff_id?: string;
   body_map_points?: any;
   body_map_front_image_url?: string;
   body_map_back_image_url?: string;
@@ -22,6 +25,8 @@ export interface ClientEvent {
   client_name?: string;
   client_first_name?: string;
   client_last_name?: string;
+  // Staff information
+  recorded_by_staff_name?: string;
 }
 
 export const useClientEvents = (clientId: string) => {
