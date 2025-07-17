@@ -126,6 +126,7 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
       )
     `)
     .eq('client_id', clientId)
+    .in('status', ['pending_approval', 'approved', 'rejected', 'active']) // Only show staff-approved plans
     .order('created_at', { ascending: false });
 
   if (error) {

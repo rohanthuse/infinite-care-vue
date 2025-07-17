@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUserRole } from '@/hooks/useUserRole';
+import { StaffCarePlanApproval } from '@/components/admin/StaffCarePlanApproval';
 import { 
   Table, TableHeader, TableBody, TableHead, 
   TableRow, TableCell, TableFooter
@@ -216,7 +218,7 @@ const useCarePlans = (branchId: string | undefined) => {
         }
 
         // Transform database data to match expected format with proper assignedTo logic
-        const transformedPlans = carePlans.map((plan, index) => {
+        const transformedPlans = carePlans.map((plan, index): any => {
           // Determine the assigned provider name
           let assignedTo = "Unknown Provider";
           
@@ -238,14 +240,15 @@ const useCarePlans = (branchId: string | undefined) => {
                    plan.status === 'under_review' ? 'Under Review' : 
                    plan.status === 'archived' ? 'Archived' :
                    plan.status === 'draft' ? 'Draft' : 
-                   plan.status === 'pending_client_approval' ? 'Pending Approval' :
-                   plan.status === 'client_approved' ? 'Client Approved' :
-                   plan.status === 'client_rejected' ? 'Changes Requested' : 'Active',
+                   plan.status === 'pending_approval' ? 'Pending Client Approval' :
+                   plan.status === 'approved' ? 'Client Approved' :
+                   plan.status === 'rejected' ? 'Changes Requested' : 'Active',
             assignedTo: assignedTo,
             avatar: plan.client?.avatar_initials || 
                    (plan.client ? `${plan.client.first_name?.[0] || ''}${plan.client.last_name?.[0] || ''}` : 'UK'),
-            // Store the actual database ID for backend operations
+            // Store the actual database ID for backend operations and full plan data
             _databaseId: plan.id,
+            _fullPlanData: plan,
             completionPercentage: plan.completion_percentage || 0
           };
         });
@@ -270,6 +273,7 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const itemsPerPage = 5;
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { data: userRole } = useUserRole();
   
   // Use the hook to fetch care plans - MUST be at the top
   const { data: carePlans = [], isLoading, error } = useCarePlans(branchId);
@@ -548,6 +552,13 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+      {/* Staff Approval Section */}
+      {userRole?.role && ['super_admin', 'branch_admin', 'carer'].includes(userRole.role) && (
+        <div className="mb-6">
+          <StaffCarePlanApproval carePlans={carePlans?.map((p: any) => p._fullPlanData).filter(Boolean) || []} />
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-bold">Care Plans</h2>
