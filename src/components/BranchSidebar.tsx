@@ -7,7 +7,8 @@ import {
   Calendar, Star, MessageSquare, Pill, DollarSign, 
   FileText, ClipboardCheck, Bell, ClipboardList, 
   FileUp, Folder, UserPlus, BarChart4, Settings,
-  ChevronRight, ChevronDown, Menu, X, FileArchive
+  ChevronRight, ChevronDown, Menu, X, FileArchive,
+  CalendarDays
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -26,6 +27,7 @@ const menuItems: MenuItem[] = [
   { icon: Users, label: "Staff", path: "/branch-staff", expandable: true },
   { icon: Users, label: "Client", path: "/branch-client", expandable: true },
   { icon: Calendar, label: "Bookings", path: "/branch-bookings" },
+  { icon: CalendarDays, label: "Leave Management", path: "/branch-leave" },
   { icon: Star, label: "Reviews", path: "/branch-reviews" },
   { icon: MessageSquare, label: "Communication", path: "/branch-communication" },
   { icon: Pill, label: "Medication", path: "/branch-medication", expandable: true },

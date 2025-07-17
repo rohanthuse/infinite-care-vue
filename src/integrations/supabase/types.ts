@@ -418,6 +418,57 @@ export type Database = {
           },
         ]
       }
+      annual_leave_calendar: {
+        Row: {
+          branch_id: string | null
+          created_at: string
+          created_by: string
+          id: string
+          is_company_wide: boolean
+          is_recurring: boolean
+          leave_date: string
+          leave_name: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          is_company_wide?: boolean
+          is_recurring?: boolean
+          leave_date: string
+          leave_name: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_company_wide?: boolean
+          is_recurring?: boolean
+          leave_date?: string
+          leave_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annual_leave_calendar_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "annual_leave_calendar_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_records: {
         Row: {
           attendance_date: string
@@ -4399,6 +4450,82 @@ export type Database = {
           },
         ]
       }
+      staff_leave_requests: {
+        Row: {
+          branch_id: string
+          created_at: string
+          end_date: string
+          id: string
+          leave_type: string
+          reason: string | null
+          requested_at: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          staff_id: string
+          start_date: string
+          status: string
+          total_days: number
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          end_date: string
+          id?: string
+          leave_type?: string
+          reason?: string | null
+          requested_at?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          staff_id: string
+          start_date: string
+          status?: string
+          total_days: number
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          leave_type?: string
+          reason?: string | null
+          requested_at?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          staff_id?: string
+          start_date?: string
+          status?: string
+          total_days?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_leave_requests_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_leave_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_leave_requests_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_training_records: {
         Row: {
           assigned_by: string | null
@@ -5103,6 +5230,10 @@ export type Database = {
       }
       calculate_invoice_total: {
         Args: { invoice_id: string }
+        Returns: number
+      }
+      calculate_leave_days: {
+        Args: { p_start_date: string; p_end_date: string }
         Returns: number
       }
       calculate_news2_score: {

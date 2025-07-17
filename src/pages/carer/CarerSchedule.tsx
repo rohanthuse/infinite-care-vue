@@ -9,6 +9,7 @@ import { format, addDays, subDays, startOfWeek, endOfWeek, isToday, isTomorrow, 
 import { useCarerDashboard } from "@/hooks/useCarerDashboard";
 import { useCarerBookings } from "@/hooks/useCarerBookings";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useLeaveStatus } from "@/hooks/useLeaveManagement";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const CarerSchedule: React.FC = () => {
@@ -22,6 +23,16 @@ const CarerSchedule: React.FC = () => {
   // Filter bookings for current week
   const weekStart = startOfWeek(currentDate);
   const weekEnd = endOfWeek(currentDate);
+  
+  // Get staff branch ID from the bookings (assuming all bookings belong to same branch)
+  const staffBranchId = allBookings[0]?.branch_id;
+  
+  // Get leave status for the week
+  const { data: leaveStatus } = useLeaveStatus(
+    staffBranchId || '',
+    format(weekStart, 'yyyy-MM-dd'),
+    format(weekEnd, 'yyyy-MM-dd')
+  );
   
   const weekBookings = allBookings.filter(booking => {
     const bookingDate = new Date(booking.start_time);
@@ -57,14 +68,29 @@ const CarerSchedule: React.FC = () => {
     const days = [];
     for (let i = 0; i < 7; i++) {
       const day = addDays(weekStart, i);
+      const dayString = format(day, 'yyyy-MM-dd');
       const dayBookings = weekBookings.filter(booking => 
-        format(new Date(booking.start_time), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
+        format(new Date(booking.start_time), 'yyyy-MM-dd') === dayString
+      );
+      
+      // Check if user is on leave this day
+      const isOnLeave = leaveStatus?.staffLeave.some(leave => 
+        leave.staff_id === user?.id &&
+        dayString >= leave.start_date && 
+        dayString <= leave.end_date
+      );
+      
+      // Check if it's an annual leave day
+      const isAnnualLeave = leaveStatus?.annualLeave.some(leave => 
+        leave.leave_date === dayString
       );
       
       days.push({
         date: day,
         bookings: dayBookings,
-        isToday: isToday(day)
+        isToday: isToday(day),
+        isOnLeave,
+        isAnnualLeave
       });
     }
     return days;
@@ -138,10 +164,20 @@ const CarerSchedule: React.FC = () => {
       {viewMode === "week" && (
         <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
           {weekDays.map((day, index) => (
-            <Card key={index} className={`${day.isToday ? 'ring-2 ring-blue-500' : ''}`}>
+            <Card key={index} className={`
+              ${day.isToday ? 'ring-2 ring-blue-500' : ''}
+              ${day.isOnLeave ? 'bg-red-50 border-red-200' : ''}
+              ${day.isAnnualLeave ? 'bg-orange-50 border-orange-200' : ''}
+            `}>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {format(day.date, 'EEE')}
+                <CardTitle className="text-sm font-medium flex items-center justify-between">
+                  <span>{format(day.date, 'EEE')}</span>
+                  {day.isOnLeave && (
+                    <Badge className="bg-red-100 text-red-700 text-xs">Leave</Badge>
+                  )}
+                  {day.isAnnualLeave && (
+                    <Badge className="bg-orange-100 text-orange-700 text-xs">Holiday</Badge>
+                  )}
                 </CardTitle>
                 <CardDescription className={`text-xs ${day.isToday ? 'text-blue-600 font-medium' : ''}`}>
                   {format(day.date, 'MMM dd')}
