@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { TabNavigation } from "@/components/TabNavigation";
 import { AttendanceList } from "@/components/attendance/AttendanceList";
 import { AttendanceForm } from "@/components/attendance/AttendanceForm";
+import { AttendanceLeaveManagement } from "@/components/attendance/AttendanceLeaveManagement";
 
 const Attendance = () => {
   const { id, branchName } = useParams();
@@ -69,7 +70,7 @@ const Attendance = () => {
             className="w-full flex flex-col flex-1"
           >
             <div className="bg-gray-50 border-b border-gray-100 p-1.5 sm:p-2.5 sticky top-0 z-20">
-              <TabsList className="w-full grid grid-cols-2 rounded-md overflow-hidden bg-gray-100/80 p-0.5 sm:p-1">
+              <TabsList className="w-full grid grid-cols-3 rounded-md overflow-hidden bg-gray-100/80 p-0.5 sm:p-1">
                 <TabsTrigger 
                   value="new" 
                   className="text-base font-medium py-2.5 rounded-md transition-all duration-200 data-[state=active]:text-blue-700 data-[state=active]:shadow-sm data-[state=active]:bg-white"
@@ -81,6 +82,12 @@ const Attendance = () => {
                   className="text-base font-medium py-2.5 rounded-md transition-all duration-200 data-[state=active]:text-blue-700 data-[state=active]:shadow-sm data-[state=active]:bg-white"
                 >
                   View Attendance
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="leave" 
+                  className="text-base font-medium py-2.5 rounded-md transition-all duration-200 data-[state=active]:text-blue-700 data-[state=active]:shadow-sm data-[state=active]:bg-white"
+                >
+                  Leave Management
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -100,6 +107,14 @@ const Attendance = () => {
               >
                 <div className="p-4 md:p-6 max-w-full">
                   <AttendanceList branchId={id || ""} />
+                </div>
+              </TabsContent>
+              <TabsContent 
+                value="leave" 
+                className="p-0 focus:outline-none m-0 h-full overflow-y-auto"
+              >
+                <div className="p-4 md:p-6 max-w-full">
+                  <AttendanceLeaveManagement branchId={id || ""} />
                 </div>
               </TabsContent>
             </div>

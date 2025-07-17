@@ -1,0 +1,270 @@
+import React, { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { CalendarIcon, Plus, Trash2, CalendarDays, Building2, Globe } from "lucide-react";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import { useAnnualLeave, useCreateAnnualLeave, useDeleteAnnualLeave } from "@/hooks/useLeaveManagement";
+
+interface AnnualLeaveManagerProps {
+  branchId: string;
+}
+
+export function AnnualLeaveManager({ branchId }: AnnualLeaveManagerProps) {
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [leaveName, setLeaveName] = useState("");
+  const [isCompanyWide, setIsCompanyWide] = useState(false);
+  const [isRecurring, setIsRecurring] = useState(false);
+
+  const { data: annualLeave = [], isLoading } = useAnnualLeave(branchId);
+  const createAnnualLeave = useCreateAnnualLeave();
+  const deleteAnnualLeave = useDeleteAnnualLeave();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedDate) {
+      toast.error("Please select a date");
+      return;
+    }
+    
+    if (!leaveName.trim()) {
+      toast.error("Please enter a holiday name");
+      return;
+    }
+
+    const leaveData = {
+      branch_id: isCompanyWide ? undefined : branchId,
+      leave_date: format(selectedDate, 'yyyy-MM-dd'),
+      leave_name: leaveName.trim(),
+      is_company_wide: isCompanyWide,
+      is_recurring: isRecurring
+    };
+
+    createAnnualLeave.mutate(leaveData, {
+      onSuccess: () => {
+        setSelectedDate(undefined);
+        setLeaveName("");
+        setIsCompanyWide(false);
+        setIsRecurring(false);
+      }
+    });
+  };
+
+  const handleDelete = (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete "${name}"?`)) {
+      deleteAnnualLeave.mutate(id);
+    }
+  };
+
+  const renderScope = (isCompanyWide: boolean) => {
+    return isCompanyWide ? (
+      <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+        <Globe className="h-3 w-3 mr-1" />
+        Company Wide
+      </Badge>
+    ) : (
+      <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+        <Building2 className="h-3 w-3 mr-1" />
+        Branch Only
+      </Badge>
+    );
+  };
+
+  const sortedLeave = annualLeave.sort((a, b) => 
+    new Date(a.leave_date).getTime() - new Date(b.leave_date).getTime()
+  );
+
+  if (isLoading) {
+    return (
+      <Card className="border-gray-200 shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-gray-500">Loading annual leave calendar...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Add New Holiday */}
+      <Card className="border-gray-200 shadow-sm">
+        <CardContent className="p-6">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Plus className="h-5 w-5 text-green-600" />
+              Add Holiday / Annual Leave Date
+            </h3>
+            <p className="text-gray-500 mt-1">Add company-wide holidays or branch-specific leave dates</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="leaveName">Holiday Name *</Label>
+                <Input
+                  id="leaveName"
+                  placeholder="e.g., Christmas Day, Summer Holiday"
+                  value={leaveName}
+                  onChange={(e) => setLeaveName(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <Label>Date *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal mt-1",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="companyWide"
+                  checked={isCompanyWide}
+                  onCheckedChange={(checked) => setIsCompanyWide(checked === true)}
+                />
+                <Label htmlFor="companyWide" className="cursor-pointer">
+                  Company-wide holiday (applies to all branches)
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="recurring"
+                  checked={isRecurring}
+                  onCheckedChange={(checked) => setIsRecurring(checked === true)}
+                />
+                <Label htmlFor="recurring" className="cursor-pointer">
+                  Recurring annual holiday (repeats every year)
+                </Label>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setSelectedDate(undefined);
+                  setLeaveName("");
+                  setIsCompanyWide(false);
+                  setIsRecurring(false);
+                }}
+              >
+                Clear Form
+              </Button>
+              <Button
+                type="submit"
+                disabled={createAnnualLeave.isPending || !selectedDate || !leaveName.trim()}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                {createAnnualLeave.isPending ? 'Adding...' : 'Add Holiday'}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Annual Leave Calendar */}
+      <Card className="border-gray-200 shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <CalendarDays className="h-5 w-5 text-blue-600" />
+            <h3 className="text-lg font-semibold">Annual Leave Calendar ({sortedLeave.length})</h3>
+          </div>
+
+          {sortedLeave.length === 0 ? (
+            <div className="text-center py-8">
+              <CalendarDays className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">No holidays or annual leave dates scheduled</p>
+              <p className="text-gray-400 text-sm mt-1">Add your first holiday above to get started</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Holiday Name</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Scope</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedLeave.map((holiday) => (
+                    <TableRow key={holiday.id}>
+                      <TableCell className="font-medium">{holiday.leave_name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <CalendarIcon className="h-4 w-4 text-gray-400" />
+                          {format(new Date(holiday.leave_date), 'EEEE, MMM dd, yyyy')}
+                        </div>
+                      </TableCell>
+                      <TableCell>{renderScope(holiday.is_company_wide)}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="outline" 
+                          className={holiday.is_recurring ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200'}
+                        >
+                          {holiday.is_recurring ? 'Recurring' : 'One-time'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-500">
+                        {format(new Date(holiday.created_at), 'MMM dd, yyyy')}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(holiday.id, holiday.leave_name)}
+                          disabled={deleteAnnualLeave.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
