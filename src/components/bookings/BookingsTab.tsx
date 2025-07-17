@@ -6,6 +6,7 @@ import { Booking } from "./BookingTimeGrid";
 import { BookingTimeGrid } from "./BookingTimeGrid";
 import { BookingsList } from "./BookingsList";
 import { BookingReport } from "./BookingReport";
+import { StaffScheduleCalendar } from "./StaffScheduleCalendar";
 import { NewBookingDialog } from "./dialogs/NewBookingDialog";
 import { EditBookingDialog } from "./EditBookingDialog";
 import { BookingOverlapAlert } from "./BookingOverlapAlert";
@@ -166,10 +167,11 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       />
 
       <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="calendar">Calendar</TabsTrigger>
           <TabsTrigger value="list">List</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="staff-schedule">Staff Schedule</TabsTrigger>
         </TabsList>
         
         <TabsContent value="calendar" className="space-y-4">
@@ -215,6 +217,21 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         
         <TabsContent value="reports">
           <BookingReport bookings={filteredBookings} />
+        </TabsContent>
+
+        <TabsContent value="staff-schedule">
+          <StaffScheduleCalendar 
+            date={selectedDate}
+            bookings={filteredBookings}
+            branchId={branchId}
+            onCreateBooking={(staffId, timeSlot) => {
+              // Create new booking with pre-filled staff and time
+              const [hour] = timeSlot.split(':');
+              const startTime = `${hour}:00`;
+              
+              handleContextMenuBooking(selectedDate, startTime, undefined, staffId);
+            }}
+          />
         </TabsContent>
       </Tabs>
 
