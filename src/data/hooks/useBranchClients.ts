@@ -10,6 +10,8 @@ interface UseBranchClientsParams {
     searchTerm?: string;
     statusFilter?: string;
     regionFilter?: string;
+    sortBy?: 'name' | 'email' | 'pin_code' | 'region' | 'created_at';
+    sortOrder?: 'asc' | 'desc';
     page: number;
     itemsPerPage: number;
 }
@@ -19,6 +21,8 @@ const fetchBranchClients = async ({
     searchTerm,
     statusFilter,
     regionFilter,
+    sortBy = 'created_at',
+    sortOrder = 'desc',
     page,
     itemsPerPage,
 }: UseBranchClientsParams) => {
@@ -33,7 +37,7 @@ const fetchBranchClients = async ({
 
     if (searchTerm) {
         const searchIlke = `%${searchTerm}%`;
-        query = query.or(`first_name.ilike.${searchIlke},last_name.ilike.${searchIlke},email.ilike.${searchIlke}`);
+        query = query.or(`first_name.ilike.${searchIlke},last_name.ilike.${searchIlke},email.ilike.${searchIlke},pin_code.ilike.${searchIlke}`);
     }
 
     if (statusFilter && statusFilter !== 'all') {
@@ -47,7 +51,13 @@ const fetchBranchClients = async ({
     const from = (page - 1) * itemsPerPage;
     const to = from + itemsPerPage - 1;
 
-    query = query.range(from, to).order('created_at', { ascending: false });
+    // Apply sorting
+    let orderColumn: string = sortBy;
+    if (sortBy === 'name') {
+        orderColumn = 'first_name'; // Sort by first name when 'name' is selected
+    }
+    
+    query = query.range(from, to).order(orderColumn as any, { ascending: sortOrder === 'asc' });
 
     const { data, error, count } = await query;
 

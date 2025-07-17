@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Eye, Edit, MoreHorizontal, Key } from "lucide-react";
+import { Search, Plus, Eye, Edit, MoreHorizontal, Key, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useBranchClients } from "@/data/hooks/useBranchClients";
 import { SetClientPasswordDialog } from "@/components/clients/SetClientPasswordDialog";
@@ -26,6 +26,8 @@ export function ClientsManagementSection({
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [regionFilter, setRegionFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<'name' | 'email' | 'pin_code' | 'region' | 'created_at'>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
@@ -37,6 +39,8 @@ export function ClientsManagementSection({
     searchTerm,
     statusFilter,
     regionFilter,
+    sortBy,
+    sortOrder,
     page: currentPage,
     itemsPerPage,
   });
@@ -48,6 +52,23 @@ export function ClientsManagementSection({
   const handleSetPassword = (client: any) => {
     setSelectedClient(client);
     setPasswordDialogOpen(true);
+  };
+
+  const handleSort = (column: 'name' | 'email' | 'pin_code' | 'region' | 'created_at') => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+    setCurrentPage(1); // Reset to first page when sorting changes
+  };
+
+  const getSortIcon = (column: string) => {
+    if (sortBy !== column) return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+    return sortOrder === 'asc' 
+      ? <ArrowUp className="h-4 w-4 text-blue-600" />
+      : <ArrowDown className="h-4 w-4 text-blue-600" />;
   };
 
   if (!branchId) {
@@ -101,39 +122,65 @@ export function ClientsManagementSection({
           <CardTitle className="text-lg">Search & Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search clients by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search clients by name, email, or pin code..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={regionFilter} onValueChange={setRegionFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Region" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Regions</SelectItem>
+                  <SelectItem value="north">North</SelectItem>
+                  <SelectItem value="south">South</SelectItem>
+                  <SelectItem value="east">East</SelectItem>
+                  <SelectItem value="west">West</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={regionFilter} onValueChange={setRegionFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Region" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Regions</SelectItem>
-                <SelectItem value="north">North</SelectItem>
-                <SelectItem value="south">South</SelectItem>
-                <SelectItem value="east">East</SelectItem>
-                <SelectItem value="west">West</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col sm:flex-row gap-4 items-center">
+              <div className="text-sm text-gray-600">Sort by:</div>
+              <Select value={sortBy} onValueChange={(value: any) => { setSortBy(value); setCurrentPage(1); }}>
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name (A-Z)</SelectItem>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="pin_code">Pin Code (Area)</SelectItem>
+                  <SelectItem value="region">Region</SelectItem>
+                  <SelectItem value="created_at">Registration Date</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sortOrder} onValueChange={(value: any) => { setSortOrder(value); setCurrentPage(1); }}>
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="Order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="asc">Ascending</SelectItem>
+                  <SelectItem value="desc">Descending</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -161,12 +208,48 @@ export function ClientsManagementSection({
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-medium">Name</th>
-                      <th className="text-left py-3 px-4 font-medium">Email</th>
+                      <th className="text-left py-3 px-4 font-medium">
+                        <button 
+                          onClick={() => handleSort('name')}
+                          className="flex items-center gap-2 hover:text-blue-600 transition-colors"
+                        >
+                          Name {getSortIcon('name')}
+                        </button>
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium">
+                        <button 
+                          onClick={() => handleSort('email')}
+                          className="flex items-center gap-2 hover:text-blue-600 transition-colors"
+                        >
+                          Email {getSortIcon('email')}
+                        </button>
+                      </th>
                       <th className="text-left py-3 px-4 font-medium">Phone</th>
+                      <th className="text-left py-3 px-4 font-medium">
+                        <button 
+                          onClick={() => handleSort('pin_code')}
+                          className="flex items-center gap-2 hover:text-blue-600 transition-colors"
+                        >
+                          Pin Code {getSortIcon('pin_code')}
+                        </button>
+                      </th>
                       <th className="text-left py-3 px-4 font-medium">Status</th>
-                      <th className="text-left py-3 px-4 font-medium">Region</th>
-                      <th className="text-left py-3 px-4 font-medium">Registered</th>
+                      <th className="text-left py-3 px-4 font-medium">
+                        <button 
+                          onClick={() => handleSort('region')}
+                          className="flex items-center gap-2 hover:text-blue-600 transition-colors"
+                        >
+                          Region {getSortIcon('region')}
+                        </button>
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium">
+                        <button 
+                          onClick={() => handleSort('created_at')}
+                          className="flex items-center gap-2 hover:text-blue-600 transition-colors"
+                        >
+                          Registered {getSortIcon('created_at')}
+                        </button>
+                      </th>
                       <th className="text-right py-3 px-4 font-medium">Actions</th>
                     </tr>
                   </thead>
@@ -190,6 +273,11 @@ export function ClientsManagementSection({
                         </td>
                         <td className="py-3 px-4 text-sm">{client.email || 'N/A'}</td>
                         <td className="py-3 px-4 text-sm">{client.phone || client.mobile_number || 'N/A'}</td>
+                        <td className="py-3 px-4 text-sm">
+                          <span className="font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs">
+                            {client.pin_code || 'N/A'}
+                          </span>
+                        </td>
                         <td className="py-3 px-4">
                           <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
                             {client.status || 'pending'}
@@ -274,6 +362,12 @@ export function ClientsManagementSection({
                         </div>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2 text-sm text-gray-600">
+                        <span>Pin Code: 
+                          <span className="font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs ml-1">
+                            {client.pin_code || 'N/A'}
+                          </span>
+                        </span>
+                        <span>•</span>
                         <span>Region: {client.region || 'N/A'}</span>
                         <span>•</span>
                         <span>Registered: {client.registered_on ? new Date(client.registered_on).toLocaleDateString() : 'N/A'}</span>

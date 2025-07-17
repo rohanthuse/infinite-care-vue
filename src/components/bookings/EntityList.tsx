@@ -108,6 +108,11 @@ export const EntityList: React.FC<EntityListProps> = ({
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">{entity.name}</div>
+                    {type === "client" && 'pin_code' in entity && (entity as any).pin_code && (
+                      <div className="text-xs text-blue-600 font-mono bg-blue-50 px-1 py-0.5 rounded w-fit mt-0.5">
+                        {(entity as any).pin_code}
+                      </div>
+                    )}
                     <div className="flex flex-wrap gap-1.5 mt-1">
                       <Badge
                         className={`${
