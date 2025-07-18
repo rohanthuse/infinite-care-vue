@@ -1,6 +1,6 @@
 import React from "react";
 import { Booking } from "./BookingTimeGrid";
-import { Clock, Info } from "lucide-react";
+import { Clock, Info, MapPin, Phone, User, DollarSign, FileText, AlertCircle } from "lucide-react";
 import { 
   Tooltip, 
   TooltipContent, 
@@ -55,6 +55,99 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
     });
   };
   
+  // Calculate booking duration
+  const calculateDuration = () => {
+    const [startHour, startMin] = booking.startTime.split(':').map(Number);
+    const [endHour, endMin] = booking.endTime.split(':').map(Number);
+    const durationMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+    const hours = Math.floor(durationMinutes / 60);
+    const minutes = durationMinutes % 60;
+    return `${hours}h ${minutes > 0 ? `${minutes}m` : ''}`.trim();
+  };
+
+  // Enhanced tooltip content
+  const renderTooltipContent = () => {
+    const isClientView = type === "client";
+    const primaryPerson = isClientView ? booking.carerName : booking.clientName;
+    const primaryInitials = isClientView ? booking.carerInitials : booking.clientInitials;
+    const secondaryPerson = isClientView ? booking.clientName : booking.carerName;
+    const secondaryInitials = isClientView ? booking.clientInitials : booking.carerInitials;
+
+    return (
+      <div className="space-y-3 min-w-0">
+        {/* Header with primary person */}
+        <div className="border-b border-gray-100 pb-2">
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+              isClientView ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+            }`}>
+              {primaryInitials}
+            </div>
+            <div>
+              <div className="font-semibold text-sm text-gray-900">{primaryPerson}</div>
+              <div className="text-xs text-gray-500">{isClientView ? 'Assigned Carer' : 'Client'}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Appointment Details */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs">
+            <Clock className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+            <div className="font-medium text-gray-700">
+              {booking.startTime} - {booking.endTime}
+            </div>
+            <div className="text-gray-500">({calculateDuration()})</div>
+          </div>
+          
+          <div className="flex items-center gap-2 text-xs">
+            <User className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+            <div className="text-gray-600">
+              {isClientView ? 'Client' : 'Carer'}: <span className="font-medium">{secondaryPerson}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs">
+            <div className="w-3.5 h-3.5 flex items-center justify-center">
+              📅
+            </div>
+            <div className="text-gray-600">{formatDate(booking.date)}</div>
+          </div>
+        </div>
+
+        {/* Status */}
+        <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-1 text-xs py-1 px-2 rounded-full ${statusColors[booking.status]}`}>
+            {booking.status === 'in-progress' && <div className="w-2 h-2 bg-current rounded-full animate-pulse" />}
+            {booking.status === 'cancelled' && <AlertCircle className="h-3 w-3" />}
+            {booking.status === 'done' && <div className="w-2 h-2 bg-current rounded-full" />}
+            <span className="font-medium">
+              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1).replace('-', ' ')}
+            </span>
+          </div>
+        </div>
+
+        {/* Additional Information */}
+        {booking.notes && (
+          <div className="border-t border-gray-100 pt-2">
+            <div className="flex items-start gap-2 text-xs">
+              <FileText className="h-3.5 w-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
+              <div className="text-gray-600 leading-relaxed">{booking.notes}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Action Hint */}
+        <div className="border-t border-gray-100 pt-2">
+          <div className="text-xs text-gray-400 flex items-center gap-1">
+            <Info className="h-3 w-3" />
+            Click to edit booking details
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -95,22 +188,8 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
                 </div>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-xs bg-white p-3 shadow-lg rounded-md border">
-              <div className="space-y-1.5">
-                <div className="font-semibold text-sm">{type === "client" ? booking.carerName : booking.clientName}</div>
-                <div className="flex items-center text-xs text-gray-600">
-                  <Clock className="h-3.5 w-3.5 mr-1" />
-                  <span>{booking.startTime} - {booking.endTime}</span>
-                  <span className="mx-1.5">·</span>
-                  <span>{formatDate(booking.date)}</span>
-                </div>
-                <div className={`text-xs py-0.5 px-1.5 rounded-full inline-flex ${statusColors[booking.status]}`}>
-                  {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                </div>
-                {booking.notes && (
-                  <div className="text-xs mt-1 text-gray-600">{booking.notes}</div>
-                )}
-              </div>
+            <TooltipContent side="top" className="max-w-sm bg-popover text-popover-foreground border border-border shadow-lg rounded-md p-4">
+              {renderTooltipContent()}
             </TooltipContent>
           </Tooltip>
         )}
@@ -145,22 +224,8 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
             </div>
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs bg-white p-3 shadow-lg rounded-md border">
-          <div className="space-y-1.5">
-            <div className="font-semibold text-sm">{type === "client" ? booking.carerName : booking.clientName}</div>
-            <div className="flex items-center text-xs text-gray-600">
-              <Clock className="h-3.5 w-3.5 mr-1" />
-              <span>{booking.startTime} - {booking.endTime}</span>
-              <span className="mx-1.5">·</span>
-              <span>{formatDate(booking.date)}</span>
-            </div>
-            <div className={`text-xs py-0.5 px-1.5 rounded-full inline-flex ${statusColors[booking.status]}`}>
-              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-            </div>
-            {booking.notes && (
-              <div className="text-xs mt-1 text-gray-600">{booking.notes}</div>
-            )}
-          </div>
+        <TooltipContent side="top" className="max-w-sm bg-popover text-popover-foreground border border-border shadow-lg rounded-md p-4">
+          {renderTooltipContent()}
         </TooltipContent>
       </Tooltip>
     );
