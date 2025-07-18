@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, User, Mail, Phone, MapPin, Briefcase, Calendar, CheckCircle, Clock, Users, FileText, BarChart3, Award, Star } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, MapPin, Briefcase, Calendar, CheckCircle, Clock, Users, FileText, BarChart3, Award, Star, Share2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,10 +12,12 @@ import { useCarerDocuments } from "@/hooks/useCarerDocuments";
 import { useCarerPerformance } from "@/hooks/useCarerPerformance";
 import { CarerScheduleTab } from "@/components/carer-profile/CarerScheduleTab";
 import { CarerPerformanceTab } from "@/components/carer-profile/CarerPerformanceTab";
+import { CarerProfileSharingDialog } from "@/components/carers/CarerProfileSharingDialog";
 
 const CarerProfilePage: React.FC = () => {
   const { id: branchId, branchName, carerId } = useParams();
   const navigate = useNavigate();
+  const [showSharingDialog, setShowSharingDialog] = useState(false);
   
   const { data: carer, isLoading, error } = useCarerProfile(carerId);
   const { data: bookings = [], isLoading: bookingsLoading } = useCarerBookings(carerId || '');
@@ -119,14 +121,24 @@ const CarerProfilePage: React.FC = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" size="icon" onClick={handleGoBack}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Carer Profile</h1>
-            <p className="text-gray-600">View and manage carer information</p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" onClick={handleGoBack}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Carer Profile</h1>
+              <p className="text-gray-600">View and manage carer information</p>
+            </div>
           </div>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowSharingDialog(true)}
+            className="flex items-center gap-2"
+          >
+            <Share2 className="h-4 w-4" />
+            Share
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -468,6 +480,27 @@ const CarerProfilePage: React.FC = () => {
             </Tabs>
           </div>
         </div>
+
+        {/* Sharing Dialog */}
+        {carer && (
+          <CarerProfileSharingDialog
+            open={showSharingDialog}
+            onOpenChange={setShowSharingDialog}
+            carer={{
+              id: carer.id,
+              first_name: carer.first_name,
+              last_name: carer.last_name,
+              email: carer.email || '',
+              phone: carer.phone || '',
+              address: carer.address || '',
+              status: carer.status,
+              specialization: carer.specialization || '',
+              experience: carer.experience || '',
+              hire_date: carer.hire_date || '',
+            }}
+            branchId={branchId || ''}
+          />
+        )}
       </div>
     </div>
   );
