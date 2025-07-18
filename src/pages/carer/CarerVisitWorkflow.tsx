@@ -100,7 +100,7 @@ const CarerVisitWorkflow = () => {
   const appointment = location.state?.appointment;
   
   // Visit management hooks
-  const { visitRecord, isLoading: visitLoading, updateVisitRecord, completeVisit } = useVisitRecord(appointmentId);
+  const { visitRecord, isLoading: visitLoading, updateVisitRecord, completeVisit, autoCreateVisitRecord } = useVisitRecord(appointmentId);
   const { tasks, addTask, updateTask, addCommonTasks, isLoading: tasksLoading } = useVisitTasks(visitRecord?.id);
   const { medications, administerMedication, addCommonMedications, isLoading: medicationsLoading } = useVisitMedications(visitRecord?.id);
   const { events, recordIncident, recordAccident, recordObservation, isLoading: eventsLoading } = useVisitEvents(visitRecord?.id);
@@ -156,6 +156,19 @@ const CarerVisitWorkflow = () => {
   
   // Use appointmentData if available, otherwise fall back to location state
   const currentAppointment = appointmentData || appointment;
+
+  // Auto-create visit record for in-progress appointments without visit records
+  useEffect(() => {
+    if (currentAppointment?.status === 'in_progress' && !visitRecord && !visitLoading && user) {
+      console.log('Auto-creating visit record for in-progress appointment');
+      autoCreateVisitRecord.mutate({
+        id: currentAppointment.id,
+        client_id: currentAppointment.client_id,
+        staff_id: user.id,
+        branch_id: currentAppointment.clients?.branch_id || currentAppointment.branch_id,
+      });
+    }
+  }, [currentAppointment, visitRecord, visitLoading, user, autoCreateVisitRecord]);
 
   // Check if visit has been started and initialize data
   useEffect(() => {

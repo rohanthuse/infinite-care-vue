@@ -44,6 +44,37 @@ export const useVisitRecord = (bookingId?: string) => {
     enabled: !!bookingId,
   });
 
+  // Auto-create visit record for in-progress bookings
+  const autoCreateVisitRecord = useMutation({
+    mutationFn: async (bookingData: any) => {
+      const visitData = {
+        booking_id: bookingData.id,
+        client_id: bookingData.client_id,
+        staff_id: bookingData.staff_id,
+        branch_id: bookingData.branch_id,
+        visit_start_time: new Date().toISOString(),
+        status: 'in_progress' as const,
+        completion_percentage: 0,
+      };
+
+      const { data, error } = await supabase
+        .from('visit_records')
+        .insert(visitData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['visit-record', bookingId] });
+    },
+    onError: (error) => {
+      console.error('Error auto-creating visit record:', error);
+      toast.error('Failed to create visit record');
+    },
+  });
+
   // Create a new visit record
   const createVisitRecord = useMutation({
     mutationFn: async (visitData: Omit<VisitRecord, 'id' | 'created_at' | 'updated_at'>) => {
@@ -155,5 +186,6 @@ export const useVisitRecord = (bookingId?: string) => {
     createVisitRecord,
     updateVisitRecord,
     completeVisit,
+    autoCreateVisitRecord,
   };
 };
