@@ -84,16 +84,61 @@ const CarerAppointments: React.FC = () => {
     return format(date, "MMM dd, yyyy");
   };
 
-  // Check if appointment can be started (relaxed for testing - within 4 hours)
+  // Check if appointment can be started
   const canStartAppointment = (appointment: any) => {
     const now = new Date();
     const startTime = new Date(appointment.start_time);
+    const appointmentDate = format(startTime, 'yyyy-MM-dd');
+    const todayDate = format(now, 'yyyy-MM-dd');
+    
+    // Allow starting any appointment on the current day, or within 4 hours on other days
+    const isToday = appointmentDate === todayDate;
     const minutesDiff = differenceInMinutes(startTime, now);
     
     return (
-      (appointment.status === 'assigned' || appointment.status === 'scheduled') &&
-      minutesDiff <= 240 && minutesDiff >= -240 // Within 4 hours before or after (relaxed for testing)
+      (appointment.status === 'assigned' || appointment.status === 'scheduled' || appointment.status === 'confirmed') &&
+      appointment.status !== 'completed' &&
+      (isToday || (minutesDiff <= 240 && minutesDiff >= -240))
     );
+  };
+
+  // Categorize appointments
+  const categorizeAppointments = (appointments: any[]) => {
+    const now = new Date();
+    const todayDate = format(now, 'yyyy-MM-dd');
+    
+    const current: any[] = [];
+    const today: any[] = [];
+    const upcoming: any[] = [];
+    const past: any[] = [];
+
+    appointments.forEach(appointment => {
+      const appointmentDate = format(new Date(appointment.start_time), 'yyyy-MM-dd');
+      const startTime = new Date(appointment.start_time);
+      
+      if (appointmentDate === todayDate) {
+        if (canStartAppointment(appointment)) {
+          current.push(appointment);
+        } else {
+          today.push(appointment);
+        }
+      } else if (startTime > now) {
+        upcoming.push(appointment);
+      } else {
+        past.push(appointment);
+      }
+    });
+
+    // Sort each category
+    const sortByTime = (a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+    const sortByTimeDesc = (a: any, b: any) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime();
+
+    return {
+      current: current.sort(sortByTime),
+      today: today.sort(sortByTime),
+      upcoming: upcoming.sort(sortByTime),
+      past: past.sort(sortByTimeDesc)
+    };
   };
 
   const handleStartVisit = async (appointment: any) => {
@@ -234,83 +279,148 @@ const CarerAppointments: React.FC = () => {
       </div>
 
       {/* Appointments List */}
-      <div className="space-y-4">
-        {filteredAppointments.length > 0 ? (
-          filteredAppointments.map((appointment) => (
-            <Card key={appointment.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-gray-500" />
-                        <span className="font-medium">
-                          {formatAppointmentDate(appointment.start_time)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-gray-500" />
-                        <span>
-                          {format(new Date(appointment.start_time), 'HH:mm')} - {format(new Date(appointment.end_time), 'HH:mm')}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 mb-2">
-                      <User className="h-4 w-4 text-gray-500" />
-                      <span className="font-medium">
-                        {appointment.clients?.first_name} {appointment.clients?.last_name}
-                      </span>
-                    </div>
-                    
-                    <div className="text-sm text-gray-600 mb-2">
-                      <strong>Service:</strong> {appointment.services?.title || 'N/A'}
-                    </div>
-                    
-                    {appointment.clients?.address && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                        <MapPin className="h-4 w-4" />
-                        <span>{appointment.clients.address}</span>
-                      </div>
-                    )}
-                    
-                    {appointment.clients?.phone && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Phone className="h-4 w-4" />
-                        <span>{appointment.clients.phone}</span>
-                      </div>
-                    )}
-                    
-                    {getTimeInfo(appointment)}
-                  </div>
-                  
-                  <div className="flex flex-col items-end gap-2">
-                    <Badge className={getStatusColor(appointment.status)}>
-                      {appointment.status === 'assigned' ? 'Scheduled' : appointment.status}
-                    </Badge>
-                    {appointment.revenue && (
-                      <div className="text-sm text-gray-600">
-                        £{appointment.revenue}
-                      </div>
-                    )}
-                    {getActionButton(appointment)}
-                  </div>
-                </div>
+      {(() => {
+        const categorized = categorizeAppointments(filteredAppointments);
+        const hasAnyAppointments = categorized.current.length + categorized.today.length + categorized.upcoming.length + categorized.past.length > 0;
+
+        if (!hasAnyAppointments) {
+          return (
+            <Card>
+              <CardContent className="text-center py-12">
+                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No appointments found</h3>
+                <p className="text-gray-500 mb-4">
+                  {searchTerm ? "Try adjusting your search or filters" : "You don't have any appointments yet"}
+                </p>
               </CardContent>
             </Card>
-          ))
-        ) : (
-          <Card>
-            <CardContent className="text-center py-12">
-              <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No appointments found</h3>
-              <p className="text-gray-500 mb-4">
-                {searchTerm ? "Try adjusting your search or filters" : "You don't have any appointments yet"}
-              </p>
+          );
+        }
+
+        const renderAppointmentCard = (appointment: any) => (
+          <Card key={appointment.id} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-gray-500" />
+                      <span className="font-medium">
+                        {formatAppointmentDate(appointment.start_time)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-gray-500" />
+                      <span>
+                        {format(new Date(appointment.start_time), 'HH:mm')} - {format(new Date(appointment.end_time), 'HH:mm')}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-2">
+                    <User className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">
+                      {appointment.clients?.first_name} {appointment.clients?.last_name}
+                    </span>
+                  </div>
+                  
+                  <div className="text-sm text-gray-600 mb-2">
+                    <strong>Service:</strong> {appointment.services?.title || 'N/A'}
+                  </div>
+                  
+                  {appointment.clients?.address && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                      <MapPin className="h-4 w-4" />
+                      <span>{appointment.clients.address}</span>
+                    </div>
+                  )}
+                  
+                  {appointment.clients?.phone && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Phone className="h-4 w-4" />
+                      <span>{appointment.clients.phone}</span>
+                    </div>
+                  )}
+                  
+                  {getTimeInfo(appointment)}
+                </div>
+                
+                <div className="flex flex-col items-end gap-2">
+                  <Badge className={getStatusColor(appointment.status)}>
+                    {appointment.status === 'assigned' ? 'Scheduled' : appointment.status}
+                  </Badge>
+                  {appointment.revenue && (
+                    <div className="text-sm text-gray-600">
+                      £{appointment.revenue}
+                    </div>
+                  )}
+                  {getActionButton(appointment)}
+                </div>
+              </div>
             </CardContent>
           </Card>
-        )}
-      </div>
+        );
+
+        return (
+          <div className="space-y-8">
+            {/* Ready to Start */}
+            {categorized.current.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                  <h2 className="text-lg font-semibold text-green-700">Ready to Start</h2>
+                  <Badge className="bg-green-100 text-green-700">{categorized.current.length}</Badge>
+                </div>
+                <div className="space-y-4">
+                  {categorized.current.map(renderAppointmentCard)}
+                </div>
+              </div>
+            )}
+
+            {/* Today's Schedule */}
+            {categorized.today.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Calendar className="h-5 w-5 text-blue-600" />
+                  <h2 className="text-lg font-semibold text-blue-700">Today's Schedule</h2>
+                  <Badge className="bg-blue-100 text-blue-700">{categorized.today.length}</Badge>
+                </div>
+                <div className="space-y-4">
+                  {categorized.today.map(renderAppointmentCard)}
+                </div>
+              </div>
+            )}
+
+            {/* Upcoming */}
+            {categorized.upcoming.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Clock className="h-5 w-5 text-amber-600" />
+                  <h2 className="text-lg font-semibold text-amber-700">Upcoming Appointments</h2>
+                  <Badge className="bg-amber-100 text-amber-700">{categorized.upcoming.length}</Badge>
+                </div>
+                <div className="space-y-4">
+                  {categorized.upcoming.map(renderAppointmentCard)}
+                </div>
+              </div>
+            )}
+
+            {/* Past */}
+            {categorized.past.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="h-5 w-5 rounded-full bg-gray-400"></div>
+                  <h2 className="text-lg font-semibold text-gray-700">Past Appointments</h2>
+                  <Badge className="bg-gray-100 text-gray-700">{categorized.past.length}</Badge>
+                </div>
+                <div className="space-y-4">
+                  {categorized.past.map(renderAppointmentCard)}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 };
