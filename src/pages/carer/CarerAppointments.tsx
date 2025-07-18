@@ -84,7 +84,7 @@ const CarerAppointments: React.FC = () => {
     return format(date, "MMM dd, yyyy");
   };
 
-  // Check if appointment can be started (within 30 minutes of start time)
+  // Check if appointment can be started (relaxed for testing - within 4 hours)
   const canStartAppointment = (appointment: any) => {
     const now = new Date();
     const startTime = new Date(appointment.start_time);
@@ -92,13 +92,25 @@ const CarerAppointments: React.FC = () => {
     
     return (
       (appointment.status === 'assigned' || appointment.status === 'scheduled') &&
-      minutesDiff <= 30 && minutesDiff >= -30 // Within 30 minutes before or after
+      minutesDiff <= 240 && minutesDiff >= -240 // Within 4 hours before or after (relaxed for testing)
     );
   };
 
   const handleStartVisit = async (appointment: any) => {
     try {
-      // Navigate to visit workflow
+      // First update the booking status to in_progress
+      await bookingAttendance.mutateAsync({
+        bookingId: appointment.id,
+        staffId: user?.id || '',
+        branchId: appointment.branch_id || '',
+        action: 'start_visit',
+        location: {
+          latitude: 0, // TODO: Get real location
+          longitude: 0
+        }
+      });
+
+      // Then navigate to visit workflow
       navigate(`/carer-dashboard/visit/${appointment.id}`);
     } catch (error) {
       console.error('Error starting visit:', error);
@@ -152,7 +164,7 @@ const CarerAppointments: React.FC = () => {
     const startTime = new Date(appointment.start_time);
     const minutesDiff = differenceInMinutes(startTime, now);
     
-    if (Math.abs(minutesDiff) <= 30 && appointment.status !== 'completed') {
+    if (Math.abs(minutesDiff) <= 240 && appointment.status !== 'completed') {
       if (minutesDiff > 0) {
         return (
           <div className="text-xs text-amber-600 font-medium">
