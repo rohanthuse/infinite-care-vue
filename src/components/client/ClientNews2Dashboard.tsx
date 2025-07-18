@@ -1,0 +1,259 @@
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Activity, Calendar, Clock, Heart, Info, TrendingUp, Thermometer, Wind, Droplets } from "lucide-react";
+import { useClientNews2Data, useClientNews2History } from "@/hooks/useClientNews2Data";
+import { format } from "date-fns";
+import { ClientNews2History } from "./ClientNews2History";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+export const ClientNews2Dashboard = () => {
+  const { data: news2Data, isLoading, error } = useClientNews2Data();
+  const { data: observations } = useClientNews2History();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-20 bg-gray-200 rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !news2Data) {
+    return (
+      <div className="text-center py-12">
+        <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No Health Monitoring Data</h3>
+        <p className="text-gray-600 mb-4">
+          You don't currently have any NEWS2 health monitoring records.
+        </p>
+        <p className="text-sm text-gray-500">
+          Contact your care team if you believe this is an error.
+        </p>
+      </div>
+    );
+  }
+
+  const getRiskColor = (riskLevel: string) => {
+    switch (riskLevel?.toLowerCase()) {
+      case 'high': return 'text-red-600 bg-red-50 border-red-200';
+      case 'medium': return 'text-orange-600 bg-orange-50 border-orange-200';
+      case 'low': return 'text-green-600 bg-green-50 border-green-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
+  const getRiskBadge = (riskLevel: string) => {
+    switch (riskLevel?.toLowerCase()) {
+      case 'high': return <Badge variant="destructive">High Risk</Badge>;
+      case 'medium': return <Badge className="bg-orange-500 text-white">Medium Risk</Badge>;
+      case 'low': return <Badge className="bg-green-500 text-white">Low Risk</Badge>;
+      default: return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 7) return 'bg-red-500 text-white';
+    if (score >= 5) return 'bg-orange-500 text-white';
+    return 'bg-green-500 text-white';
+  };
+
+  const latestObservation = news2Data.latest_observation;
+  const currentScore = latestObservation?.total_score || 0;
+  const currentRisk = latestObservation?.risk_level || news2Data.risk_category;
+
+  return (
+    <div className="space-y-6">
+      {/* Welcome and Education */}
+      <Alert className="border-blue-200 bg-blue-50">
+        <Info className="h-4 w-4" />
+        <AlertTitle>About Your Health Monitoring</AlertTitle>
+        <AlertDescription>
+          NEWS2 (National Early Warning Score) helps monitor your health by tracking vital signs like heart rate, 
+          blood pressure, and temperature. Your care team uses this information to ensure you're receiving the best possible care.
+        </AlertDescription>
+      </Alert>
+
+      {/* Current Status Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className={`border-2 ${getRiskColor(currentRisk)}`}>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Current Status</p>
+                {getRiskBadge(currentRisk)}
+                <div className="mt-2">
+                  <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full ${getScoreColor(currentScore)} font-bold`}>
+                    {currentScore}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">NEWS2 Score</p>
+                </div>
+              </div>
+              <Activity className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Monitoring Frequency</p>
+                <p className="text-2xl font-bold capitalize">{news2Data.monitoring_frequency}</p>
+                <p className="text-xs text-gray-500 mt-1">Check intervals</p>
+              </div>
+              <Clock className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Last Checked</p>
+                <p className="text-lg font-semibold">
+                  {latestObservation ? format(new Date(latestObservation.recorded_at), 'MMM d, yyyy') : 'No data'}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {latestObservation ? format(new Date(latestObservation.recorded_at), 'HH:mm') : ''}
+                </p>
+              </div>
+              <Calendar className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Latest Vital Signs */}
+      {latestObservation && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Heart className="h-5 w-5 text-red-500" />
+              Latest Vital Signs
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                <Wind className="h-5 w-5 text-blue-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Breathing Rate</p>
+                  <p className="font-semibold">{latestObservation.respiratory_rate}/min</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                <Droplets className="h-5 w-5 text-blue-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Oxygen Level</p>
+                  <p className="font-semibold">{latestObservation.oxygen_saturation}%</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                <Heart className="h-5 w-5 text-red-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Heart Rate</p>
+                  <p className="font-semibold">{latestObservation.pulse_rate}/min</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                <Thermometer className="h-5 w-5 text-orange-500" />
+                <div>
+                  <p className="text-xs text-gray-500">Temperature</p>
+                  <p className="font-semibold">{latestObservation.temperature}°C</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Blood Pressure:</strong> {latestObservation.systolic_bp} mmHg (systolic)
+              </p>
+              <p className="text-sm text-blue-800 mt-1">
+                <strong>Alertness:</strong> {latestObservation.consciousness_level === 'A' ? 'Alert' : 
+                  latestObservation.consciousness_level === 'V' ? 'Responds to Voice' :
+                  latestObservation.consciousness_level === 'P' ? 'Responds to Pain' :
+                  latestObservation.consciousness_level === 'U' ? 'Unresponsive' : 'Unknown'}
+              </p>
+              {latestObservation.supplemental_oxygen && (
+                <p className="text-sm text-blue-800 mt-1">
+                  <strong>Oxygen Support:</strong> Yes
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* History Section */}
+      <ClientNews2History observations={observations || []} />
+
+      {/* Educational Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Info className="h-5 w-5 text-blue-500" />
+            Understanding Your NEWS2 Score
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                  0-4
+                </div>
+                <span className="font-medium text-green-800">Low Risk</span>
+              </div>
+              <p className="text-sm text-green-700">Normal monitoring. Your vital signs are within expected ranges.</p>
+            </div>
+            
+            <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                  5-6
+                </div>
+                <span className="font-medium text-orange-800">Medium Risk</span>
+              </div>
+              <p className="text-sm text-orange-700">Increased monitoring. Your care team will check on you more frequently.</p>
+            </div>
+            
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                  7+
+                </div>
+                <span className="font-medium text-red-800">High Risk</span>
+              </div>
+              <p className="text-sm text-red-700">Close monitoring. Your care team will respond promptly to any changes.</p>
+            </div>
+          </div>
+          
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h4 className="font-medium text-blue-800 mb-2">What do the measurements mean?</h4>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li><strong>Breathing Rate:</strong> How many breaths you take per minute (normal: 12-20)</li>
+              <li><strong>Oxygen Level:</strong> How well oxygen is carried in your blood (normal: 95%+)</li>
+              <li><strong>Heart Rate:</strong> How fast your heart beats per minute (normal: 60-100)</li>
+              <li><strong>Blood Pressure:</strong> The pressure in your blood vessels (normal: around 120)</li>
+              <li><strong>Temperature:</strong> Your body temperature (normal: 36-37.5°C)</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};

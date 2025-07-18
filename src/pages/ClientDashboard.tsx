@@ -5,7 +5,7 @@ import ClientHeader from "@/components/ClientHeader";
 import { 
   Home, Calendar, FileText, 
   CreditCard, User, File, MessageCircle, Star,
-  HelpCircle, BarChart
+  HelpCircle, BarChart, Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
@@ -28,6 +28,7 @@ const ClientDashboard = () => {
     { label: "Payments", icon: CreditCard, path: "/client-dashboard/payments" },
     { label: "Documents", icon: File, path: "/client-dashboard/documents" },
     { label: "Service Reports", icon: BarChart, path: "/client-dashboard/service-reports" },
+    { label: "Health Monitoring", icon: Activity, path: "/client-dashboard/health-monitoring" },
     { label: "Messages", icon: MessageCircle, path: "/client-dashboard/messages" },
     { label: "Profile", icon: User, path: "/client-dashboard/profile" },
     { label: "Support", icon: HelpCircle, path: "/client-dashboard/support" }
@@ -51,6 +52,8 @@ const ClientDashboard = () => {
       setPageTitle("Documents");
     } else if (path.includes("/service-reports")) {
       setPageTitle("Service Reports");
+    } else if (path.includes("/health-monitoring")) {
+      setPageTitle("Health Monitoring");
     } else if (path.includes("/messages")) {
       setPageTitle("Messages");
     } else if (path.includes("/profile")) {

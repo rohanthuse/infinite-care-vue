@@ -1,0 +1,152 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useClientAuth } from "./useClientAuth";
+
+export interface ClientNews2Data {
+  id: string;
+  client_id: string;
+  branch_id: string;
+  risk_category: string;
+  monitoring_frequency: string;
+  notes: string | null;
+  latest_observation?: {
+    id: string;
+    total_score: number;
+    risk_level: string;
+    recorded_at: string;
+    respiratory_rate: number;
+    oxygen_saturation: number;
+    supplemental_oxygen: boolean;
+    systolic_bp: number;
+    pulse_rate: number;
+    consciousness_level: string;
+    temperature: number;
+  };
+  observations_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientNews2Observation {
+  id: string;
+  news2_patient_id: string;
+  total_score: number;
+  risk_level: string;
+  recorded_at: string;
+  respiratory_rate: number;
+  respiratory_rate_score: number;
+  oxygen_saturation: number;
+  oxygen_saturation_score: number;
+  supplemental_oxygen: boolean;
+  supplemental_oxygen_score: number;
+  systolic_bp: number;
+  systolic_bp_score: number;
+  pulse_rate: number;
+  pulse_rate_score: number;
+  consciousness_level: string;
+  consciousness_level_score: number;
+  temperature: number;
+  temperature_score: number;
+  notes: string | null;
+  recorded_by?: {
+    first_name: string;
+    last_name: string;
+  };
+}
+
+export const useClientNews2Data = () => {
+  const { clientId, isAuthenticated } = useClientAuth();
+
+  return useQuery({
+    queryKey: ['client-news2-data', clientId],
+    queryFn: async () => {
+      if (!clientId) return null;
+
+      const { data, error } = await supabase
+        .from('news2_patients')
+        .select(`
+          *,
+          latest_observation:news2_observations(
+            id,
+            total_score,
+            risk_level,
+            recorded_at,
+            respiratory_rate,
+            oxygen_saturation,
+            supplemental_oxygen,
+            systolic_bp,
+            pulse_rate,
+            consciousness_level,
+            temperature
+          ),
+          observations_count:news2_observations(count)
+        `)
+        .eq('client_id', clientId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error) {
+        console.error('Error fetching client NEWS2 data:', error);
+        return null;
+      }
+
+      // Transform the data to match our interface
+      const transformedData = {
+        ...data,
+        latest_observation: data.latest_observation?.[0] || undefined,
+        observations_count: data.observations_count?.[0]?.count || 0
+      };
+
+      return transformedData as ClientNews2Data;
+    },
+    enabled: !!clientId && isAuthenticated,
+  });
+};
+
+export const useClientNews2History = () => {
+  const { clientId, isAuthenticated } = useClientAuth();
+
+  return useQuery({
+    queryKey: ['client-news2-history', clientId],
+    queryFn: async () => {
+      if (!clientId) return [];
+
+      // First get the NEWS2 patient record for this client
+      const { data: news2Patient } = await supabase
+        .from('news2_patients')
+        .select('id')
+        .eq('client_id', clientId)
+        .eq('is_active', true)
+        .single();
+
+      if (!news2Patient) return [];
+
+      // Then get all observations for this patient
+      const { data, error } = await supabase
+        .from('news2_observations')
+        .select(`
+          *,
+          recorded_by:staff(first_name, last_name)
+        `)
+        .eq('news2_patient_id', news2Patient.id)
+        .order('recorded_at', { ascending: false })
+        .limit(30); // Last 30 observations
+
+      if (error) {
+        console.error('Error fetching client NEWS2 history:', error);
+        return [];
+      }
+
+      // Transform the data to match our interface
+      const transformedData = data?.map(obs => ({
+        ...obs,
+        notes: obs.clinical_notes || null
+      })) || [];
+
+      return transformedData as ClientNews2Observation[];
+    },
+    enabled: !!clientId && isAuthenticated,
+  });
+};
