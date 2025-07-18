@@ -180,7 +180,7 @@ export const ClientNews2Dashboard = () => {
             
             <div className="mt-4 p-3 bg-blue-50 rounded-lg">
               <p className="text-sm text-blue-800">
-                <strong>Blood Pressure:</strong> {latestObservation.systolic_bp} mmHg (systolic)
+                <strong>Blood Pressure:</strong> {latestObservation.systolic_bp}{latestObservation.diastolic_bp ? `/${latestObservation.diastolic_bp}` : ''} mmHg
               </p>
               <p className="text-sm text-blue-800 mt-1">
                 <strong>Alertness:</strong> {latestObservation.consciousness_level === 'A' ? 'Alert' : 

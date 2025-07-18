@@ -24,6 +24,7 @@ export function ObservationChart({ observations }: ObservationChartProps) {
       respiratoryRate: obs.respiratory_rate || null,
       oxygenSaturation: obs.oxygen_saturation || null,
       systolicBP: obs.systolic_bp || null,
+      diastolicBP: obs.diastolic_bp || null,
       pulseRate: obs.pulse_rate || null,
       temperature: obs.temperature || null,
       riskLevel: obs.risk_level,
@@ -42,7 +43,7 @@ export function ObservationChart({ observations }: ObservationChartProps) {
               {entry.dataKey === 'temperature' && '°C'}
               {entry.dataKey === 'oxygenSaturation' && '%'}
               {(entry.dataKey === 'respiratoryRate' || entry.dataKey === 'pulseRate') && ' bpm'}
-              {entry.dataKey === 'systolicBP' && ' mmHg'}
+              {(entry.dataKey === 'systolicBP' || entry.dataKey === 'diastolicBP') && ' mmHg'}
             </p>
           ))}
           <p className="text-sm text-gray-600 mt-1">
@@ -190,6 +191,14 @@ export function ObservationChart({ observations }: ObservationChartProps) {
                     dataKey="systolicBP" 
                     stroke="#8b5cf6" 
                     name="Systolic BP"
+                    strokeWidth={2}
+                    connectNulls={false}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="diastolicBP" 
+                    stroke="#a855f7" 
+                    name="Diastolic BP"
                     strokeWidth={2}
                     connectNulls={false}
                   />

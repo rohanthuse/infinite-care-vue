@@ -3468,6 +3468,8 @@ export type Database = {
           consciousness_level: string
           consciousness_level_score: number
           created_at: string
+          diastolic_bp: number | null
+          diastolic_bp_score: number | null
           id: string
           news2_patient_id: string
           next_review_time: string | null
@@ -3495,6 +3497,8 @@ export type Database = {
           consciousness_level?: string
           consciousness_level_score?: number
           created_at?: string
+          diastolic_bp?: number | null
+          diastolic_bp_score?: number | null
           id?: string
           news2_patient_id: string
           next_review_time?: string | null
@@ -3522,6 +3526,8 @@ export type Database = {
           consciousness_level?: string
           consciousness_level_score?: number
           created_at?: string
+          diastolic_bp?: number | null
+          diastolic_bp_score?: number | null
           id?: string
           news2_patient_id?: string
           next_review_time?: string | null
@@ -5237,15 +5243,26 @@ export type Database = {
         Returns: number
       }
       calculate_news2_score: {
-        Args: {
-          resp_rate: number
-          o2_sat: number
-          supp_o2: boolean
-          sys_bp: number
-          pulse: number
-          consciousness: string
-          temp: number
-        }
+        Args:
+          | {
+              resp_rate: number
+              o2_sat: number
+              supp_o2: boolean
+              sys_bp: number
+              dias_bp: number
+              pulse: number
+              consciousness: string
+              temp: number
+            }
+          | {
+              resp_rate: number
+              o2_sat: number
+              supp_o2: boolean
+              sys_bp: number
+              pulse: number
+              consciousness: string
+              temp: number
+            }
         Returns: {
           resp_score: number
           o2_score: number

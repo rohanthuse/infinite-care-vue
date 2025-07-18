@@ -253,6 +253,19 @@ export function NewObservationDialog({
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="diastolic_bp">Diastolic Blood Pressure (mmHg)</Label>
+                  <Input
+                    id="diastolic_bp"
+                    type="number"
+                    min="0"
+                    max="200"
+                    value={formData.diastolic_bp || ""}
+                    onChange={(e) => handleInputChange('diastolic_bp', parseInt(e.target.value) || undefined)}
+                    placeholder="e.g., 80"
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="pulse_rate">Pulse Rate (per min)</Label>
                   <Input
                     id="pulse_rate"

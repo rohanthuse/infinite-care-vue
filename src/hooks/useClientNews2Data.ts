@@ -18,6 +18,7 @@ export interface ClientNews2Data {
     oxygen_saturation: number;
     supplemental_oxygen: boolean;
     systolic_bp: number;
+    diastolic_bp?: number;
     pulse_rate: number;
     consciousness_level: string;
     temperature: number;
@@ -41,6 +42,8 @@ export interface ClientNews2Observation {
   supplemental_oxygen_score: number;
   systolic_bp: number;
   systolic_bp_score: number;
+  diastolic_bp?: number;
+  diastolic_bp_score: number;
   pulse_rate: number;
   pulse_rate_score: number;
   consciousness_level: string;
@@ -93,6 +96,7 @@ export const useClientNews2Data = () => {
           oxygen_saturation,
           supplemental_oxygen,
           systolic_bp,
+          diastolic_bp,
           pulse_rate,
           consciousness_level,
           temperature

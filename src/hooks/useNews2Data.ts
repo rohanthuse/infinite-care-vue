@@ -40,6 +40,7 @@ export interface News2Observation {
   oxygen_saturation?: number;
   supplemental_oxygen: boolean;
   systolic_bp?: number;
+  diastolic_bp?: number;
   pulse_rate?: number;
   consciousness_level: 'A' | 'V' | 'P' | 'U';
   temperature?: number;
@@ -48,6 +49,7 @@ export interface News2Observation {
   oxygen_saturation_score: number;
   supplemental_oxygen_score: number;
   systolic_bp_score: number;
+  diastolic_bp_score: number;
   pulse_rate_score: number;
   consciousness_level_score: number;
   temperature_score: number;
@@ -88,6 +90,7 @@ export interface CreateObservationData {
   oxygen_saturation?: number;
   supplemental_oxygen: boolean;
   systolic_bp?: number;
+  diastolic_bp?: number;
   pulse_rate?: number;
   consciousness_level: 'A' | 'V' | 'P' | 'U';
   temperature?: number;
