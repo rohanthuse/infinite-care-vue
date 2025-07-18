@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { X, FileEdit, Download } from "lucide-react";
+import { X, FileEdit, Download, Share2 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -16,6 +16,7 @@ import { BillingTab } from "./tabs/BillingTab";
 import { CarePlansTab } from "./tabs/CarePlansTab";
 import { EventsLogsTab } from "./tabs/EventsLogsTab";
 import { useAdminClientDetail } from "@/hooks/useAdminClientData";
+import { ClientProfileSharingDialog } from "./ClientProfileSharingDialog";
 
 interface ClientDetailProps {
   client: {
@@ -40,6 +41,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
   onClose,
 }) => {
   const [activeTab, setActiveTab] = useState("personal");
+  const [sharingDialogOpen, setSharingDialogOpen] = useState(false);
   const navigate = useNavigate();
   const params = useParams();
   
@@ -101,6 +103,10 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
           </div>
           
           <div className="flex items-center space-x-2">
+            <Button variant="outline" onClick={() => setSharingDialogOpen(true)} className="flex items-center gap-2">
+              <Share2 className="h-4 w-4" />
+              <span>Share</span>
+            </Button>
             <Button variant="outline" onClick={handlePrintClientProfile} className="flex items-center gap-2">
               <Download className="h-4 w-4" />
               <span>Export</span>
@@ -180,9 +186,16 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 </TabsContent>
               </Tabs>
             </div>
+            </div>
           </div>
         </div>
+
+        <ClientProfileSharingDialog
+          open={sharingDialogOpen}
+          onOpenChange={setSharingDialogOpen}
+          client={client}
+          branchId={branchId}
+        />
       </div>
-    </div>
-  );
-};
+    );
+  };
