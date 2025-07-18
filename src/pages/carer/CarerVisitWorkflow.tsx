@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useBookingAttendance, BookingAttendanceData } from "@/hooks/useBookingAttendance";
+import { useCarerAuth } from "@/hooks/useCarerAuth";
 import {
   Clock,
   MapPin,
@@ -84,10 +88,10 @@ const CarerVisitWorkflow = () => {
   const { appointmentId } = useParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { user } = useCarerAuth();
+  const bookingAttendance = useBookingAttendance();
   const [activeTab, setActiveTab] = useState("check-in");
   const [currentStep, setCurrentStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [appointment, setAppointment] = useState<any>(null);
   const [visitStarted, setVisitStarted] = useState(false);
   const [visitTimer, setVisitTimer] = useState(0);
   const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
@@ -127,26 +131,35 @@ const CarerVisitWorkflow = () => {
     { id: "med2", name: "Metformin", dosage: "500mg", instructions: "Take with food", time: "12:30 PM", completed: false },
   ]);
   
-  // Mock appointment data - in a real app, this would be fetched from API
+  // Fetch real appointment data from database
+  const { data: appointment, isLoading } = useQuery({
+    queryKey: ['appointment', appointmentId],
+    queryFn: async () => {
+      if (!appointmentId) return null;
+      
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          clients(first_name, last_name, phone, address, branch_id),
+          services(title, description),
+          branches(name)
+        `)
+        .eq('id', appointmentId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!appointmentId,
+  });
+
+  // Check if visit has been started (booking status is 'in_progress')
   useEffect(() => {
-    const fetchAppointmentData = async () => {
-      // Simulating API call delay
-      setTimeout(() => {
-        setAppointment({
-          id: appointmentId || "1",
-          clientName: "Emma Thompson",
-          clientId: "CLT001",
-          address: "15 Oak Street, Milton Keynes",
-          time: "10:30 AM - 11:30 AM",
-          date: new Date(),
-          type: "Home Care Visit"
-        });
-        setIsLoading(false);
-      }, 1000);
-    };
-    
-    fetchAppointmentData();
-  }, [appointmentId]);
+    if (appointment?.status === 'in_progress') {
+      setVisitStarted(true);
+    }
+  }, [appointment]);
   
   // Timer functionality
   useEffect(() => {
@@ -209,9 +222,24 @@ const CarerVisitWorkflow = () => {
     return score;
   };
   
-  const handleStartVisit = () => {
-    setVisitStarted(true);
-    toast.success("Visit started");
+  const handleStartVisit = async () => {
+    if (!appointment || !user?.id) return;
+    
+    try {
+      const attendanceData: BookingAttendanceData = {
+        bookingId: appointment.id,
+        staffId: user.id,
+        branchId: appointment.clients?.branch_id || '',
+        action: 'start_visit',
+        location: undefined // Could get geolocation here if needed
+      };
+
+      await bookingAttendance.mutateAsync(attendanceData);
+      setVisitStarted(true);
+    } catch (error) {
+      console.error('Error starting visit:', error);
+      toast.error('Failed to start visit');
+    }
   };
   
   const handlePauseVisit = () => {
@@ -280,7 +308,7 @@ const CarerVisitWorkflow = () => {
       category: eventCategory,
       status: "Pending Review",
       details: eventDetails,
-      location: eventLocation || appointment?.address || "",
+      location: eventLocation || appointment?.clients?.address || "",
       date: format(new Date(), "yyyy-MM-dd"),
       time: format(new Date(), "HH:mm")
     };
@@ -394,34 +422,50 @@ const CarerVisitWorkflow = () => {
     handleStepChange(currentStep - 1);
   };
   
-  const handleCompleteVisit = () => {
-    setVisitStarted(false);
+  const handleCompleteVisit = async () => {
+    if (!appointment || !user?.id) return;
     
-    // Format the visit data
-    const visitData = {
-      appointmentId,
-      clientId: appointment?.clientId,
-      clientName: appointment?.clientName,
-      visitDate: format(new Date(), "yyyy-MM-dd"),
-      startTime: format(new Date(Date.now() - visitTimer * 1000), "HH:mm:ss"),
-      endTime: format(new Date(), "HH:mm:ss"),
-      duration: visitTimer,
-      tasks: tasks.filter(task => task.completed).map(task => task.name),
-      medications: medications.filter(med => med.completed).map(med => med.name),
-      news2Readings,
-      events,
-      notes,
-      clientSignature,
-      carerSignature,
-      hasPhoto: photoAdded,
-      status: "Completed"
-    };
-    
-    // Save visit data - in a real app this would be an API call
-    console.log("Visit completed:", visitData);
-    
-    toast.success("Visit completed successfully");
-    navigate("/carer-dashboard/appointments");
+    try {
+      const attendanceData: BookingAttendanceData = {
+        bookingId: appointment.id,
+        staffId: user.id,
+        branchId: appointment.clients?.branch_id || '',
+        action: 'end_visit',
+        location: undefined // Could get geolocation here if needed
+      };
+
+      await bookingAttendance.mutateAsync(attendanceData);
+      setVisitStarted(false);
+      
+      // Format the visit data for logging
+      const visitData = {
+        appointmentId,
+        clientId: appointment.client_id,
+        clientName: `${appointment.clients?.first_name} ${appointment.clients?.last_name}`,
+        visitDate: format(new Date(), "yyyy-MM-dd"),
+        startTime: format(new Date(Date.now() - visitTimer * 1000), "HH:mm:ss"),
+        endTime: format(new Date(), "HH:mm:ss"),
+        duration: visitTimer,
+        tasks: tasks.filter(task => task.completed).map(task => task.name),
+        medications: medications.filter(med => med.completed).map(med => med.name),
+        news2Readings,
+        events,
+        notes,
+        clientSignature,
+        carerSignature,
+        hasPhoto: photoAdded,
+        status: "Completed"
+      };
+      
+      // Log visit data for debugging
+      console.log("Visit completed:", visitData);
+      
+      toast.success("Visit completed successfully");
+      navigate("/carer-dashboard/appointments");
+    } catch (error) {
+      console.error('Error completing visit:', error);
+      toast.error('Failed to complete visit');
+    }
   };
   
   const getCategoryBadge = (category: string) => {
@@ -499,6 +543,20 @@ const CarerVisitWorkflow = () => {
       </div>
     );
   }
+
+  if (!appointment) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold text-red-600">Appointment not found</h2>
+          <p className="text-gray-600 mt-2">The requested appointment could not be found.</p>
+          <Button onClick={() => navigate("/carer-dashboard/appointments")} className="mt-4">
+            Back to Appointments
+          </Button>
+        </div>
+      </div>
+    );
+  }
   
   // Calculate step progress
   const totalSteps = 8;
@@ -521,7 +579,7 @@ const CarerVisitWorkflow = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-2">
         <div>
           <h1 className="text-2xl font-bold">Visit Workflow</h1>
-          <p className="text-gray-500">Client: {appointment?.clientName}</p>
+          <p className="text-gray-500">Client: {appointment?.clients?.first_name} {appointment?.clients?.last_name}</p>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-2 mt-2 sm:mt-0">
@@ -593,9 +651,9 @@ const CarerVisitWorkflow = () => {
                         <MapPin className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-medium">{appointment?.address}</h3>
-                        <p className="text-sm text-gray-500">{format(appointment?.date, "EEEE, MMMM d, yyyy")}</p>
-                        <p className="text-sm text-gray-500">{appointment?.time}</p>
+                        <h3 className="font-medium">{appointment?.clients?.address}</h3>
+                        <p className="text-sm text-gray-500">{format(new Date(appointment?.start_time), "EEEE, MMMM d, yyyy")}</p>
+                        <p className="text-sm text-gray-500">{format(new Date(appointment?.start_time), "h:mm a")} - {format(new Date(appointment?.end_time), "h:mm a")}</p>
                       </div>
                     </div>
                   </div>
@@ -959,7 +1017,7 @@ const CarerVisitWorkflow = () => {
                           id="eventLocation" 
                           value={eventLocation}
                           onChange={(e) => setEventLocation(e.target.value)}
-                          placeholder={appointment?.address}
+                          placeholder={appointment?.clients?.address}
                           className="mt-1"
                         />
                       </div>
@@ -1161,9 +1219,9 @@ const CarerVisitWorkflow = () => {
                       <div>
                         <h4 className="font-medium text-gray-700">Visit Summary</h4>
                         <ul className="mt-2 space-y-1 text-sm">
-                          <li><span className="text-gray-500">Client:</span> {appointment?.clientName}</li>
-                          <li><span className="text-gray-500">Address:</span> {appointment?.address}</li>
-                          <li><span className="text-gray-500">Date:</span> {format(appointment?.date, "EEEE, MMMM d, yyyy")}</li>
+                          <li><span className="text-gray-500">Client:</span> {appointment?.clients?.first_name} {appointment?.clients?.last_name}</li>
+                          <li><span className="text-gray-500">Address:</span> {appointment?.clients?.address}</li>
+                          <li><span className="text-gray-500">Date:</span> {format(new Date(appointment?.start_time), "EEEE, MMMM d, yyyy")}</li>
                           <li><span className="text-gray-500">Visit Duration:</span> {formatTime(visitTimer)}</li>
                         </ul>
                       </div>
