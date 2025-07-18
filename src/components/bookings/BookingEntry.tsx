@@ -188,7 +188,14 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
                 </div>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-sm bg-popover text-popover-foreground border border-border shadow-lg rounded-md p-4">
+            <TooltipContent 
+              side="top" 
+              sideOffset={20}
+              avoidCollisions={true}
+              sticky="always"
+              alignOffset={0}
+              className="max-w-sm bg-popover text-popover-foreground border border-border shadow-lg rounded-md p-4 z-[9999]"
+            >
               {renderTooltipContent()}
             </TooltipContent>
           </Tooltip>
@@ -224,7 +231,14 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
             </div>
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-sm bg-popover text-popover-foreground border border-border shadow-lg rounded-md p-4">
+        <TooltipContent 
+          side="top" 
+          sideOffset={20}
+          avoidCollisions={true}
+          sticky="always"
+          alignOffset={0}
+          className="max-w-sm bg-popover text-popover-foreground border border-border shadow-lg rounded-md p-4 z-[9999]"
+        >
           {renderTooltipContent()}
         </TooltipContent>
       </Tooltip>
