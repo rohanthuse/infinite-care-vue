@@ -5193,6 +5193,344 @@ export type Database = {
         }
         Relationships: []
       }
+      visit_events: {
+        Row: {
+          body_map_data: Json | null
+          created_at: string
+          event_category: string | null
+          event_description: string
+          event_time: string
+          event_title: string
+          event_type: string
+          follow_up_notes: string | null
+          follow_up_required: boolean | null
+          id: string
+          immediate_action_taken: string | null
+          location_in_home: string | null
+          photo_urls: string[] | null
+          photos_taken: boolean | null
+          reported_to: string[] | null
+          severity: string
+          updated_at: string
+          visit_record_id: string
+          witnesses: string[] | null
+        }
+        Insert: {
+          body_map_data?: Json | null
+          created_at?: string
+          event_category?: string | null
+          event_description: string
+          event_time?: string
+          event_title: string
+          event_type: string
+          follow_up_notes?: string | null
+          follow_up_required?: boolean | null
+          id?: string
+          immediate_action_taken?: string | null
+          location_in_home?: string | null
+          photo_urls?: string[] | null
+          photos_taken?: boolean | null
+          reported_to?: string[] | null
+          severity?: string
+          updated_at?: string
+          visit_record_id: string
+          witnesses?: string[] | null
+        }
+        Update: {
+          body_map_data?: Json | null
+          created_at?: string
+          event_category?: string | null
+          event_description?: string
+          event_time?: string
+          event_title?: string
+          event_type?: string
+          follow_up_notes?: string | null
+          follow_up_required?: boolean | null
+          id?: string
+          immediate_action_taken?: string | null
+          location_in_home?: string | null
+          photo_urls?: string[] | null
+          photos_taken?: boolean | null
+          reported_to?: string[] | null
+          severity?: string
+          updated_at?: string
+          visit_record_id?: string
+          witnesses?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_events_visit_record_id_fkey"
+            columns: ["visit_record_id"]
+            isOneToOne: false
+            referencedRelation: "visit_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visit_medications: {
+        Row: {
+          administered_by: string | null
+          administration_method: string | null
+          administration_notes: string | null
+          administration_time: string | null
+          created_at: string
+          dosage: string
+          id: string
+          is_administered: boolean
+          medication_id: string | null
+          medication_name: string
+          missed_reason: string | null
+          prescribed_time: string | null
+          side_effects_observed: string | null
+          updated_at: string
+          visit_record_id: string
+          witnessed_by: string | null
+        }
+        Insert: {
+          administered_by?: string | null
+          administration_method?: string | null
+          administration_notes?: string | null
+          administration_time?: string | null
+          created_at?: string
+          dosage: string
+          id?: string
+          is_administered?: boolean
+          medication_id?: string | null
+          medication_name: string
+          missed_reason?: string | null
+          prescribed_time?: string | null
+          side_effects_observed?: string | null
+          updated_at?: string
+          visit_record_id: string
+          witnessed_by?: string | null
+        }
+        Update: {
+          administered_by?: string | null
+          administration_method?: string | null
+          administration_notes?: string | null
+          administration_time?: string | null
+          created_at?: string
+          dosage?: string
+          id?: string
+          is_administered?: boolean
+          medication_id?: string | null
+          medication_name?: string
+          missed_reason?: string | null
+          prescribed_time?: string | null
+          side_effects_observed?: string | null
+          updated_at?: string
+          visit_record_id?: string
+          witnessed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_medications_visit_record_id_fkey"
+            columns: ["visit_record_id"]
+            isOneToOne: false
+            referencedRelation: "visit_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visit_records: {
+        Row: {
+          actual_duration_minutes: number | null
+          booking_id: string
+          branch_id: string
+          client_id: string
+          client_signature_data: string | null
+          completion_percentage: number | null
+          created_at: string
+          id: string
+          location_data: Json | null
+          staff_id: string
+          staff_signature_data: string | null
+          status: string
+          updated_at: string
+          visit_end_time: string | null
+          visit_notes: string | null
+          visit_start_time: string
+          visit_summary: string | null
+        }
+        Insert: {
+          actual_duration_minutes?: number | null
+          booking_id: string
+          branch_id: string
+          client_id: string
+          client_signature_data?: string | null
+          completion_percentage?: number | null
+          created_at?: string
+          id?: string
+          location_data?: Json | null
+          staff_id: string
+          staff_signature_data?: string | null
+          status?: string
+          updated_at?: string
+          visit_end_time?: string | null
+          visit_notes?: string | null
+          visit_start_time?: string
+          visit_summary?: string | null
+        }
+        Update: {
+          actual_duration_minutes?: number | null
+          booking_id?: string
+          branch_id?: string
+          client_id?: string
+          client_signature_data?: string | null
+          completion_percentage?: number | null
+          created_at?: string
+          id?: string
+          location_data?: Json | null
+          staff_id?: string
+          staff_signature_data?: string | null
+          status?: string
+          updated_at?: string
+          visit_end_time?: string | null
+          visit_notes?: string | null
+          visit_start_time?: string
+          visit_summary?: string | null
+        }
+        Relationships: []
+      }
+      visit_tasks: {
+        Row: {
+          assigned_by: string | null
+          completed_at: string | null
+          completion_notes: string | null
+          completion_time_minutes: number | null
+          created_at: string
+          id: string
+          is_completed: boolean
+          priority: string | null
+          task_category: string
+          task_description: string | null
+          task_name: string
+          updated_at: string
+          visit_record_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          completion_time_minutes?: number | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          priority?: string | null
+          task_category: string
+          task_description?: string | null
+          task_name: string
+          updated_at?: string
+          visit_record_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          completion_time_minutes?: number | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          priority?: string | null
+          task_category?: string
+          task_description?: string | null
+          task_name?: string
+          updated_at?: string
+          visit_record_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_tasks_visit_record_id_fkey"
+            columns: ["visit_record_id"]
+            isOneToOne: false
+            referencedRelation: "visit_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visit_vitals: {
+        Row: {
+          blood_sugar_mmol: number | null
+          client_id: string
+          consciousness_level: string | null
+          created_at: string
+          diastolic_bp: number | null
+          id: string
+          news2_risk_level: string | null
+          news2_total_score: number | null
+          notes: string | null
+          other_readings: Json | null
+          oxygen_saturation: number | null
+          pulse_rate: number | null
+          reading_time: string
+          respiratory_rate: number | null
+          supplemental_oxygen: boolean | null
+          systolic_bp: number | null
+          taken_by: string | null
+          temperature: number | null
+          verified_by: string | null
+          visit_record_id: string
+          vital_type: string
+          weight_kg: number | null
+        }
+        Insert: {
+          blood_sugar_mmol?: number | null
+          client_id: string
+          consciousness_level?: string | null
+          created_at?: string
+          diastolic_bp?: number | null
+          id?: string
+          news2_risk_level?: string | null
+          news2_total_score?: number | null
+          notes?: string | null
+          other_readings?: Json | null
+          oxygen_saturation?: number | null
+          pulse_rate?: number | null
+          reading_time?: string
+          respiratory_rate?: number | null
+          supplemental_oxygen?: boolean | null
+          systolic_bp?: number | null
+          taken_by?: string | null
+          temperature?: number | null
+          verified_by?: string | null
+          visit_record_id: string
+          vital_type?: string
+          weight_kg?: number | null
+        }
+        Update: {
+          blood_sugar_mmol?: number | null
+          client_id?: string
+          consciousness_level?: string | null
+          created_at?: string
+          diastolic_bp?: number | null
+          id?: string
+          news2_risk_level?: string | null
+          news2_total_score?: number | null
+          notes?: string | null
+          other_readings?: Json | null
+          oxygen_saturation?: number | null
+          pulse_rate?: number | null
+          reading_time?: string
+          respiratory_rate?: number | null
+          supplemental_oxygen?: boolean | null
+          systolic_bp?: number | null
+          taken_by?: string | null
+          temperature?: number | null
+          verified_by?: string | null
+          visit_record_id?: string
+          vital_type?: string
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_vitals_visit_record_id_fkey"
+            columns: ["visit_record_id"]
+            isOneToOne: false
+            referencedRelation: "visit_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_types: {
         Row: {
           created_at: string

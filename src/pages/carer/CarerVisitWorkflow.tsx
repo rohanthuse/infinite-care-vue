@@ -5,6 +5,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBookingAttendance, BookingAttendanceData } from "@/hooks/useBookingAttendance";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useVisitRecord } from "@/hooks/useVisitRecord";
+import { useVisitTasks } from "@/hooks/useVisitTasks";
+import { useVisitMedications } from "@/hooks/useVisitMedications";
+import { useVisitEvents } from "@/hooks/useVisitEvents";
+import { useVisitVitals } from "@/hooks/useVisitVitals";
 import {
   Clock,
   MapPin,
@@ -90,6 +95,14 @@ const CarerVisitWorkflow = () => {
   const isMobile = useIsMobile();
   const { user } = useCarerAuth();
   const bookingAttendance = useBookingAttendance();
+  
+  // Visit management hooks
+  const { visitRecord, isLoading: visitLoading, updateVisitRecord, completeVisit } = useVisitRecord(appointmentId);
+  const { tasks, addTask, updateTask, addCommonTasks, isLoading: tasksLoading } = useVisitTasks(visitRecord?.id);
+  const { medications, administerMedication, addCommonMedications, isLoading: medicationsLoading } = useVisitMedications(visitRecord?.id);
+  const { events, recordIncident, recordAccident, recordObservation, isLoading: eventsLoading } = useVisitEvents(visitRecord?.id);
+  const { vitals: news2Readings, recordNEWS2, calculateNEWS2Score, isLoading: vitalsLoading } = useVisitVitals(visitRecord?.id, appointment?.client_id);
+  
   const [activeTab, setActiveTab] = useState("check-in");
   const [currentStep, setCurrentStep] = useState(1);
   const [visitStarted, setVisitStarted] = useState(false);
@@ -99,37 +112,20 @@ const CarerVisitWorkflow = () => {
   const [carerSignature, setCarerSignature] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [photoAdded, setPhotoAdded] = useState(false);
-  const [eventCategory, setEventCategory] = useState("accident");
+  const [eventCategory, setEventCategory] = useState("incident");
   const [eventDetails, setEventDetails] = useState("");
   const [eventLocation, setEventLocation] = useState("");
   const [eventTitle, setEventTitle] = useState("");
   
   // NEWS2 state
-  const [news2Readings, setNews2Readings] = useState<News2Reading[]>([]);
   const [respRate, setRespRate] = useState(16);
   const [spo2, setSpo2] = useState(96);
   const [systolicBP, setSystolicBP] = useState(120);
+  const [diastolicBP, setDiastolicBP] = useState(80);
   const [pulse, setPulse] = useState(80);
-  const [consciousness, setConsciousness] = useState("Alert");
+  const [consciousness, setConsciousness] = useState("A");
   const [temperature, setTemperature] = useState(37.0);
   const [o2Therapy, setO2Therapy] = useState(false);
-  
-  // Events state
-  const [events, setEvents] = useState<Event[]>([]);
-  
-  // Mock client tasks from care plan
-  const [tasks, setTasks] = useState<Task[]>([
-    { id: "task1", name: "Personal hygiene assistance", description: "Help client with washing and dressing", completed: false, required: true },
-    { id: "task2", name: "Meal preparation", description: "Prepare lunch according to dietary requirements", completed: false, required: true },
-    { id: "task3", name: "Check blood pressure", description: "Record reading in notes", completed: false, required: true },
-    { id: "task4", name: "Mobility exercises", description: "Follow physiotherapist plan", completed: false, required: false },
-  ]);
-  
-  // Mock medications from care plan
-  const [medications, setMedications] = useState<MedicationTask[]>([
-    { id: "med1", name: "Amlodipine", dosage: "5mg", instructions: "Take with water", time: "12:00 PM", completed: false },
-    { id: "med2", name: "Metformin", dosage: "500mg", instructions: "Take with food", time: "12:30 PM", completed: false },
-  ]);
   
   // Fetch real appointment data from database
   const { data: appointment, isLoading } = useQuery({
@@ -154,12 +150,45 @@ const CarerVisitWorkflow = () => {
     enabled: !!appointmentId,
   });
 
-  // Check if visit has been started (booking status is 'in_progress')
+  // Check if visit has been started and initialize data
   useEffect(() => {
     if (appointment?.status === 'in_progress') {
       setVisitStarted(true);
     }
   }, [appointment]);
+
+  // Initialize tasks and medications when visit record is created
+  useEffect(() => {
+    if (visitRecord && tasks?.length === 0) {
+      addCommonTasks.mutate(visitRecord.id);
+    }
+  }, [visitRecord, tasks, addCommonTasks]);
+
+  useEffect(() => {
+    if (visitRecord && medications?.length === 0 && appointment?.client_id) {
+      addCommonMedications.mutate({ 
+        visitRecordId: visitRecord.id, 
+        clientId: appointment.client_id 
+      });
+    }
+  }, [visitRecord, medications, addCommonMedications, appointment?.client_id]);
+
+  // Load existing visit data
+  useEffect(() => {
+    if (visitRecord) {
+      setNotes(visitRecord.visit_notes || "");
+      setClientSignature(visitRecord.client_signature_data || null);
+      setCarerSignature(visitRecord.staff_signature_data || null);
+      
+      // Calculate visit timer from start time
+      if (visitRecord.visit_start_time) {
+        const startTime = new Date(visitRecord.visit_start_time);
+        const now = new Date();
+        const elapsedSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+        setVisitTimer(elapsedSeconds);
+      }
+    }
+  }, [visitRecord]);
   
   // Timer functionality
   useEffect(() => {
@@ -248,15 +277,27 @@ const CarerVisitWorkflow = () => {
   };
   
   const handleTaskToggle = (taskId: string) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId ? { ...task, completed: !task.completed } : task
-    ));
+    const task = tasks?.find(t => t.id === taskId);
+    if (task) {
+      updateTask.mutate({
+        taskId,
+        isCompleted: !task.is_completed,
+        notes: `Task ${task.is_completed ? 'unchecked' : 'completed'} at ${format(new Date(), 'HH:mm')}`,
+        completionTimeMinutes: task.is_completed ? undefined : 15, // Estimated time
+      });
+    }
   };
   
   const handleMedicationToggle = (medId: string) => {
-    setMedications(medications.map(med => 
-      med.id === medId ? { ...med, completed: !med.completed } : med
-    ));
+    const medication = medications?.find(m => m.id === medId);
+    if (medication) {
+      administerMedication.mutate({
+        medicationId: medId,
+        isAdministered: !medication.is_administered,
+        notes: `Medication ${medication.is_administered ? 'not administered' : 'administered'} at ${format(new Date(), 'HH:mm')}`,
+        administeredBy: user?.id,
+      });
+    }
   };
   
   const handleCapturePhoto = () => {
@@ -266,29 +307,23 @@ const CarerVisitWorkflow = () => {
   };
   
   const recordNews2Reading = () => {
-    const score = calculateNews2Score();
-    const newReading: News2Reading = {
-      id: `reading-${news2Readings.length + 1}`,
-      respRate,
-      spo2,
-      systolicBP,
-      pulse,
-      consciousness,
-      temperature,
-      o2Therapy,
-      dateTime: format(new Date(), "yyyy-MM-dd HH:mm"),
-      score
-    };
-    
-    setNews2Readings([...news2Readings, newReading]);
-    toast.success("Vital signs recorded successfully");
-    
-    // Show alert for high scores
-    if (score >= 7) {
-      toast.error("High NEWS2 score detected! Please notify clinical lead immediately.");
-    } else if (score >= 5) {
-      toast.warning("Medium risk NEWS2 score. Consider further assessment.");
+    if (!visitRecord || !appointment?.client_id) {
+      toast.error("Visit record not found");
+      return;
     }
+
+    recordNEWS2.mutate({
+      respiratory_rate: respRate,
+      oxygen_saturation: spo2,
+      supplemental_oxygen: o2Therapy,
+      systolic_bp: systolicBP,
+      diastolic_bp: diastolicBP,
+      pulse_rate: pulse,
+      consciousness_level: consciousness as 'A' | 'V' | 'P' | 'U',
+      temperature: temperature,
+      notes: `NEWS2 reading recorded during visit`,
+      taken_by: user?.id,
+    });
   };
   
   const handleAddEvent = () => {
@@ -301,23 +336,47 @@ const CarerVisitWorkflow = () => {
       toast.error("Please enter event details");
       return;
     }
+
+    if (!visitRecord) {
+      toast.error("Visit record not found");
+      return;
+    }
+
+    // Determine severity based on category
+    let severity: 'low' | 'medium' | 'high' | 'critical' = 'medium';
+    if (eventCategory === 'accident' || eventCategory === 'medication_error') {
+      severity = 'high';
+    } else if (eventCategory === 'near_miss' || eventCategory === 'compliment') {
+      severity = 'low';
+    }
+
+    // Record the appropriate event type
+    if (eventCategory === 'accident') {
+      recordAccident({
+        title: eventTitle,
+        description: eventDetails,
+        location: eventLocation || appointment?.clients?.address || "",
+        immediateAction: "Assessed and documented",
+      });
+    } else if (eventCategory === 'incident') {
+      recordIncident({
+        title: eventTitle,
+        description: eventDetails,
+        severity: severity,
+        location: eventLocation || appointment?.clients?.address || "",
+        immediateAction: "Documented and assessed",
+      });
+    } else {
+      recordObservation({
+        title: eventTitle,
+        description: eventDetails,
+        category: eventCategory,
+      });
+    }
     
-    const newEvent: Event = {
-      id: `event-${events.length + 1}`,
-      title: eventTitle,
-      category: eventCategory,
-      status: "Pending Review",
-      details: eventDetails,
-      location: eventLocation || appointment?.clients?.address || "",
-      date: format(new Date(), "yyyy-MM-dd"),
-      time: format(new Date(), "HH:mm")
-    };
-    
-    setEvents([...events, newEvent]);
     setEventTitle("");
     setEventDetails("");
     setEventLocation("");
-    toast.success("Event recorded successfully");
   };
   
   const handleStepChange = (stepNumber: number) => {
@@ -389,23 +448,34 @@ const CarerVisitWorkflow = () => {
   };
   
   const handleNextStep = () => {
+    // Auto-save visit progress
+    if (visitRecord) {
+      updateVisitRecord.mutate({
+        id: visitRecord.id,
+        updates: {
+          completion_percentage: Math.round((currentStep / 8) * 100),
+          visit_notes: notes,
+        }
+      });
+    }
+
     // Validate current step
     if (currentStep === 2) {
       const requiredTasksCompleted = tasks
-        .filter(task => task.required)
-        .every(task => task.completed);
+        ?.filter(task => task.priority === 'high' || task.priority === 'urgent')
+        .every(task => task.is_completed);
         
       if (!requiredTasksCompleted) {
-        toast.error("Please complete all required tasks");
+        toast.error("Please complete all high priority tasks");
         return;
       }
     }
     
-    if (currentStep === 3 && medications.length > 0) {
-      const allMedicationsCompleted = medications.every(med => med.completed);
+    if (currentStep === 3 && medications && medications.length > 0) {
+      const allMedicationsCompleted = medications.every(med => med.is_administered);
       
       if (!allMedicationsCompleted) {
-        toast.error("Please complete all medication tasks");
+        toast.error("Please complete all medication tasks or mark as not administered");
         return;
       }
     }
@@ -423,44 +493,31 @@ const CarerVisitWorkflow = () => {
   };
   
   const handleCompleteVisit = async () => {
-    if (!appointment || !user?.id) return;
+    if (!appointment || !user?.id || !visitRecord) return;
     
     try {
+      // Complete the visit record with all final data
+      await completeVisit.mutateAsync({
+        visitRecordId: visitRecord.id,
+        visitNotes: notes,
+        clientSignature: clientSignature || undefined,
+        staffSignature: carerSignature || undefined,
+        visitSummary: `Visit completed with ${tasks?.filter(t => t.is_completed).length || 0} tasks, ${medications?.filter(m => m.is_administered).length || 0} medications administered, ${news2Readings?.length || 0} vital readings, and ${events?.length || 0} events recorded.`,
+      });
+
+      // End the booking attendance
       const attendanceData: BookingAttendanceData = {
         bookingId: appointment.id,
         staffId: user.id,
         branchId: appointment.clients?.branch_id || '',
         action: 'end_visit',
-        location: undefined // Could get geolocation here if needed
+        location: undefined
       };
 
       await bookingAttendance.mutateAsync(attendanceData);
       setVisitStarted(false);
       
-      // Format the visit data for logging
-      const visitData = {
-        appointmentId,
-        clientId: appointment.client_id,
-        clientName: `${appointment.clients?.first_name} ${appointment.clients?.last_name}`,
-        visitDate: format(new Date(), "yyyy-MM-dd"),
-        startTime: format(new Date(Date.now() - visitTimer * 1000), "HH:mm:ss"),
-        endTime: format(new Date(), "HH:mm:ss"),
-        duration: visitTimer,
-        tasks: tasks.filter(task => task.completed).map(task => task.name),
-        medications: medications.filter(med => med.completed).map(med => med.name),
-        news2Readings,
-        events,
-        notes,
-        clientSignature,
-        carerSignature,
-        hasPhoto: photoAdded,
-        status: "Completed"
-      };
-      
-      // Log visit data for debugging
-      console.log("Visit completed:", visitData);
-      
-      toast.success("Visit completed successfully");
+      toast.success("Visit completed and saved successfully");
       navigate("/carer-dashboard/appointments");
     } catch (error) {
       console.error('Error completing visit:', error);
@@ -696,18 +753,18 @@ const CarerVisitWorkflow = () => {
                         <div key={task.id} className="p-4 flex items-start gap-3">
                           <Checkbox 
                             id={task.id} 
-                            checked={task.completed}
+                            checked={task.is_completed}
                             onCheckedChange={() => handleTaskToggle(task.id)}
                           />
                           <div className="flex-1">
                             <Label 
                               htmlFor={task.id} 
-                              className={`font-medium ${task.required ? 'after:content-["*"] after:ml-0.5 after:text-red-500' : ''}`}
+                              className={`font-medium ${task.priority === 'high' || task.priority === 'urgent' ? 'after:content-["*"] after:ml-0.5 after:text-red-500' : ''}`}
                             >
-                              {task.name}
+                              {task.task_name}
                             </Label>
-                            {task.description && (
-                              <p className="text-sm text-gray-500 mt-1">{task.description}</p>
+                            {task.task_description && (
+                              <p className="text-sm text-gray-500 mt-1">{task.task_description}</p>
                             )}
                           </div>
                         </div>
@@ -751,19 +808,19 @@ const CarerVisitWorkflow = () => {
                             <div className="flex items-start gap-3">
                               <Checkbox 
                                 id={med.id} 
-                                checked={med.completed}
+                                checked={med.is_administered}
                                 onCheckedChange={() => handleMedicationToggle(med.id)}
                               />
                               <div className="flex-1">
                                 <Label htmlFor={med.id} className="font-medium">
-                                  {med.name} - {med.dosage}
+                                  {med.medication_name} - {med.dosage}
                                 </Label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 text-sm">
                                   <div>
-                                    <span className="text-gray-500">Instructions:</span> {med.instructions}
+                                    <span className="text-gray-500">Method:</span> {med.administration_method || 'Oral'}
                                   </div>
                                   <div>
-                                    <span className="text-gray-500">Time:</span> {med.time}
+                                    <span className="text-gray-500">Time:</span> {med.prescribed_time || 'As needed'}
                                   </div>
                                 </div>
                               </div>
