@@ -376,9 +376,175 @@ export const generateNews2PDF = (
     );
   }
   
-  // Save the PDF with patient name and date
+// Save the PDF with patient name and date
   const formattedDate = format(new Date(), "yyyy-MM-dd");
   doc.save(`NEWS2_${patient.name.replace(/\s+/g, "_")}_${formattedDate}.pdf`);
+};
+
+// New function to generate Carer Profile PDF
+export const generateCarerProfilePDF = (
+  carer: any,
+  branchId: string
+) => {
+  const doc = new jsPDF();
+  
+  // Add logo or header
+  doc.setFontSize(20);
+  doc.setTextColor(0, 83, 156);
+  doc.text("Med-Infinite", 20, 20);
+  
+  // Add title
+  doc.setFontSize(16);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Carer Profile: ${carer.first_name} ${carer.last_name}`, 20, 40);
+  
+  // Add report generation date
+  doc.setFontSize(10);
+  doc.text(`Generated on: ${format(new Date(), "dd MMM yyyy, HH:mm")}`, 20, 50);
+  
+  // Personal Information Section
+  doc.setFontSize(14);
+  doc.setTextColor(0, 83, 156);
+  doc.text("Personal Information", 20, 70);
+  
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  let yPos = 80;
+  
+  const personalInfo = [
+    [`Full Name:`, `${carer.first_name} ${carer.last_name}`],
+    [`Email:`, carer.email || 'Not provided'],
+    [`Phone:`, carer.phone || 'Not provided'],
+    [`Address:`, carer.address || 'Not provided'],
+    [`Date of Birth:`, carer.date_of_birth ? format(new Date(carer.date_of_birth), "dd MMM yyyy") : 'Not provided'],
+  ];
+  
+  personalInfo.forEach(([label, value]) => {
+    doc.text(label, 20, yPos);
+    doc.text(value, 80, yPos);
+    yPos += 8;
+  });
+  
+  // Employment Details Section
+  yPos += 10;
+  doc.setFontSize(14);
+  doc.setTextColor(0, 83, 156);
+  doc.text("Employment Details", 20, yPos);
+  yPos += 10;
+  
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  
+  const employmentInfo = [
+    [`Hire Date:`, carer.hire_date ? format(new Date(carer.hire_date), "dd MMM yyyy") : 'Not provided'],
+    [`Status:`, carer.status || 'Not provided'],
+    [`Experience:`, carer.experience || 'Not provided'],
+    [`Specialization:`, carer.specialization || 'Not provided'],
+    [`Availability:`, carer.availability || 'Not provided'],
+  ];
+  
+  employmentInfo.forEach(([label, value]) => {
+    doc.text(label, 20, yPos);
+    doc.text(value, 80, yPos);
+    yPos += 8;
+  });
+  
+  // Professional Information Section
+  yPos += 10;
+  doc.setFontSize(14);
+  doc.setTextColor(0, 83, 156);
+  doc.text("Professional Information", 20, yPos);
+  yPos += 10;
+  
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  
+  if (carer.qualifications && carer.qualifications.length > 0) {
+    doc.text("Qualifications:", 20, yPos);
+    yPos += 8;
+    carer.qualifications.forEach((qual: string) => {
+      doc.text(`• ${qual}`, 25, yPos);
+      yPos += 6;
+    });
+  } else {
+    doc.text("Qualifications: Not provided", 20, yPos);
+    yPos += 8;
+  }
+  
+  // DBS Information Section
+  yPos += 10;
+  doc.setFontSize(14);
+  doc.setTextColor(0, 83, 156);
+  doc.text("DBS Information", 20, yPos);
+  yPos += 10;
+  
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  
+  const dbsInfo = [
+    [`DBS Status:`, carer.dbs_status || 'Not provided'],
+    [`DBS Issue Date:`, carer.dbs_issue_date ? format(new Date(carer.dbs_issue_date), "dd MMM yyyy") : 'Not provided'],
+    [`DBS Expiry Date:`, carer.dbs_expiry_date ? format(new Date(carer.dbs_expiry_date), "dd MMM yyyy") : 'Not provided'],
+    [`DBS Certificate Number:`, carer.dbs_certificate_number || 'Not provided'],
+  ];
+  
+  dbsInfo.forEach(([label, value]) => {
+    doc.text(label, 20, yPos);
+    doc.text(value, 80, yPos);
+    yPos += 8;
+  });
+  
+  // Bank Details Section (if available)
+  if (carer.bank_name || carer.account_number || carer.sort_code) {
+    yPos += 10;
+    doc.setFontSize(14);
+    doc.setTextColor(0, 83, 156);
+    doc.text("Bank Details", 20, yPos);
+    yPos += 10;
+    
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    
+    const bankInfo = [
+      [`Bank Name:`, carer.bank_name || 'Not provided'],
+      [`Account Number:`, carer.account_number ? `****${carer.account_number.slice(-4)}` : 'Not provided'],
+      [`Sort Code:`, carer.sort_code || 'Not provided'],
+    ];
+    
+    bankInfo.forEach(([label, value]) => {
+      doc.text(label, 20, yPos);
+      doc.text(value, 80, yPos);
+      yPos += 8;
+    });
+  }
+  
+  // Footer with confidentiality notice
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.text(
+    "CONFIDENTIAL - This document contains sensitive personal information",
+    doc.internal.pageSize.getWidth() / 2,
+    doc.internal.pageSize.getHeight() - 20,
+    { align: "center" }
+  );
+  
+  // Page numbers
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text(
+      `Page ${i} of ${pageCount} - Med-Infinite Confidential`,
+      doc.internal.pageSize.getWidth() / 2,
+      doc.internal.pageSize.getHeight() - 10,
+      { align: "center" }
+    );
+  }
+  
+  // Save the PDF
+  const fileName = `Carer_Profile_${carer.first_name}_${carer.last_name}_${format(new Date(), "yyyy-MM-dd")}.pdf`;
+  doc.save(fileName);
 };
 
 // Function to export multiple patients as a summary report
