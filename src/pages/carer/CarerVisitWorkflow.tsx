@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,7 +46,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { News2PatientTrend } from "@/components/reports/news2/news2Types";
 
 interface Task {
   id: string;
@@ -92,16 +91,44 @@ interface Event {
 const CarerVisitWorkflow = () => {
   const { appointmentId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const isMobile = useIsMobile();
   const { user } = useCarerAuth();
   const bookingAttendance = useBookingAttendance();
+  
+  // Get appointment data from location state or fetch from API
+  const appointment = location.state?.appointment;
   
   // Visit management hooks
   const { visitRecord, isLoading: visitLoading, updateVisitRecord, completeVisit } = useVisitRecord(appointmentId);
   const { tasks, addTask, updateTask, addCommonTasks, isLoading: tasksLoading } = useVisitTasks(visitRecord?.id);
   const { medications, administerMedication, addCommonMedications, isLoading: medicationsLoading } = useVisitMedications(visitRecord?.id);
   const { events, recordIncident, recordAccident, recordObservation, isLoading: eventsLoading } = useVisitEvents(visitRecord?.id);
-  const { vitals: news2Readings, recordNEWS2, calculateNEWS2Score, isLoading: vitalsLoading } = useVisitVitals(visitRecord?.id, appointment?.client_id);
+
+  // Fetch real appointment data from database
+  const { data: appointmentData, isLoading: appointmentLoading } = useQuery({
+    queryKey: ['appointment', appointmentId],
+    queryFn: async () => {
+      if (!appointmentId) return null;
+      
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          clients(first_name, last_name, phone, address, branch_id),
+          services(title, description),
+          branches(name)
+        `)
+        .eq('id', appointmentId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!appointmentId,
+  });
+
+  const { vitals: news2Readings, recordNEWS2, calculateNEWS2Score, isLoading: vitalsLoading } = useVisitVitals(visitRecord?.id, (appointment || appointmentData)?.client_id);
   
   const [activeTab, setActiveTab] = useState("check-in");
   const [currentStep, setCurrentStep] = useState(1);
@@ -127,35 +154,15 @@ const CarerVisitWorkflow = () => {
   const [temperature, setTemperature] = useState(37.0);
   const [o2Therapy, setO2Therapy] = useState(false);
   
-  // Fetch real appointment data from database
-  const { data: appointment, isLoading } = useQuery({
-    queryKey: ['appointment', appointmentId],
-    queryFn: async () => {
-      if (!appointmentId) return null;
-      
-      const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-          *,
-          clients(first_name, last_name, phone, address, branch_id),
-          services(title, description),
-          branches(name)
-        `)
-        .eq('id', appointmentId)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!appointmentId,
-  });
+  // Use appointmentData if available, otherwise fall back to location state
+  const currentAppointment = appointmentData || appointment;
 
   // Check if visit has been started and initialize data
   useEffect(() => {
-    if (appointment?.status === 'in_progress') {
+    if (currentAppointment?.status === 'in_progress') {
       setVisitStarted(true);
     }
-  }, [appointment]);
+  }, [currentAppointment]);
 
   // Initialize tasks and medications when visit record is created
   useEffect(() => {
@@ -165,13 +172,13 @@ const CarerVisitWorkflow = () => {
   }, [visitRecord, tasks, addCommonTasks]);
 
   useEffect(() => {
-    if (visitRecord && medications?.length === 0 && appointment?.client_id) {
+    if (visitRecord && medications?.length === 0 && currentAppointment?.client_id) {
       addCommonMedications.mutate({ 
         visitRecordId: visitRecord.id, 
-        clientId: appointment.client_id 
+        clientId: currentAppointment.client_id 
       });
     }
-  }, [visitRecord, medications, addCommonMedications, appointment?.client_id]);
+  }, [visitRecord, medications, addCommonMedications, currentAppointment?.client_id]);
 
   // Load existing visit data
   useEffect(() => {
@@ -252,13 +259,13 @@ const CarerVisitWorkflow = () => {
   };
   
   const handleStartVisit = async () => {
-    if (!appointment || !user?.id) return;
+    if (!currentAppointment || !user?.id) return;
     
     try {
       const attendanceData: BookingAttendanceData = {
-        bookingId: appointment.id,
+        bookingId: currentAppointment.id,
         staffId: user.id,
-        branchId: appointment.clients?.branch_id || '',
+        branchId: currentAppointment.clients?.branch_id || '',
         action: 'start_visit',
         location: undefined // Could get geolocation here if needed
       };
@@ -307,7 +314,7 @@ const CarerVisitWorkflow = () => {
   };
   
   const recordNews2Reading = () => {
-    if (!visitRecord || !appointment?.client_id) {
+    if (!visitRecord || !currentAppointment?.client_id) {
       toast.error("Visit record not found");
       return;
     }
@@ -355,7 +362,7 @@ const CarerVisitWorkflow = () => {
       recordAccident({
         title: eventTitle,
         description: eventDetails,
-        location: eventLocation || appointment?.clients?.address || "",
+        location: eventLocation || currentAppointment?.clients?.address || "",
         immediateAction: "Assessed and documented",
       });
     } else if (eventCategory === 'incident') {
@@ -363,7 +370,7 @@ const CarerVisitWorkflow = () => {
         title: eventTitle,
         description: eventDetails,
         severity: severity,
-        location: eventLocation || appointment?.clients?.address || "",
+        location: eventLocation || currentAppointment?.clients?.address || "",
         immediateAction: "Documented and assessed",
       });
     } else {
@@ -493,7 +500,7 @@ const CarerVisitWorkflow = () => {
   };
   
   const handleCompleteVisit = async () => {
-    if (!appointment || !user?.id || !visitRecord) return;
+    if (!currentAppointment || !user?.id || !visitRecord) return;
     
     try {
       // Complete the visit record with all final data
@@ -502,821 +509,894 @@ const CarerVisitWorkflow = () => {
         visitNotes: notes,
         clientSignature: clientSignature || undefined,
         staffSignature: carerSignature || undefined,
-        visitSummary: `Visit completed with ${tasks?.filter(t => t.is_completed).length || 0} tasks, ${medications?.filter(m => m.is_administered).length || 0} medications administered, ${news2Readings?.length || 0} vital readings, and ${events?.length || 0} events recorded.`,
+        visitSummary: `Visit completed with ${tasks?.filter(t => t.is_completed).length} tasks completed, ${medications?.filter(m => m.is_administered).length} medications administered, and ${events?.length} events recorded.`,
       });
 
-      // End the booking attendance
+      // Mark booking as completed
       const attendanceData: BookingAttendanceData = {
-        bookingId: appointment.id,
+        bookingId: currentAppointment.id,
         staffId: user.id,
-        branchId: appointment.clients?.branch_id || '',
-        action: 'end_visit',
+        branchId: currentAppointment.clients?.branch_id || '',
+        action: 'complete_visit',
         location: undefined
       };
 
       await bookingAttendance.mutateAsync(attendanceData);
-      setVisitStarted(false);
       
-      toast.success("Visit completed and saved successfully");
-      navigate("/carer-dashboard/appointments");
+      toast.success("Visit completed successfully!");
+      navigate("/carer-dashboard");
     } catch (error) {
       console.error('Error completing visit:', error);
       toast.error('Failed to complete visit');
     }
   };
-  
-  const getCategoryBadge = (category: string) => {
-    switch (category) {
-      case 'accident':
-        return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Accident</Badge>;
-      case 'incident':
-        return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">Incident</Badge>;
-      case 'near_miss':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Near Miss</Badge>;
-      case 'medication_error':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Medication Error</Badge>;
-      case 'safeguarding':
-        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Safeguarding</Badge>;
-      case 'complaint':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Complaint</Badge>;
-      case 'compliment':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Compliment</Badge>;
-      case 'review':
-        return <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200">Review</Badge>;
-      default:
-        return <Badge variant="outline">Other</Badge>;
-    }
-  };
-  
-  const getVitalStatus = (vital: number, type: string) => {
-    switch (type) {
-      case "resp":
-        if (vital <= 8 || vital >= 25) return "high";
-        if (vital >= 21 || vital <= 11) return "medium";
-        return "normal";
-      case "spo2":
-        if (vital <= 91) return "high";
-        if (vital <= 93) return "medium";
-        if (vital <= 95) return "medium";
-        return "normal";
-      case "bp":
-        if (vital <= 90 || vital >= 220) return "high";
-        if (vital <= 100) return "medium";
-        if (vital <= 110) return "medium";
-        return "normal";
-      case "pulse":
-        if (vital <= 40 || pulse >= 131) return "high";
-        if (vital >= 111) return "medium";
-        if (vital <= 50 || vital >= 91) return "medium";
-        return "normal";
-      case "temp":
-        if (vital <= 35.0 || vital >= 39.1) return "high";
-        if (vital >= 38.1) return "medium";
-        if (vital <= 36.0) return "medium";
-        return "normal";
-      default:
-        return "normal";
-    }
-  };
-  
-  const getVitalStatusColor = (status: string) => {
-    if (status === "high") return "text-red-500";
-    if (status === "medium") return "text-orange-500";
-    return "text-green-500";
-  };
-  
-  const getScoreColor = (score: number) => {
-    if (score >= 7) return "bg-red-500";
-    if (score >= 5) return "bg-orange-500";
-    if (score >= 3) return "bg-yellow-500";
-    return "bg-green-500";
-  };
-  
-  if (isLoading) {
+
+  // Show loading state
+  if (appointmentLoading || !currentAppointment) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
-        <span className="ml-2">Loading visit details...</span>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading visit details...</p>
+        </div>
       </div>
     );
   }
 
-  if (!appointment) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="text-center">
-          <h2 className="text-lg font-semibold text-red-600">Appointment not found</h2>
-          <p className="text-gray-600 mt-2">The requested appointment could not be found.</p>
-          <Button onClick={() => navigate("/carer-dashboard/appointments")} className="mt-4">
-            Back to Appointments
-          </Button>
-        </div>
-      </div>
-    );
-  }
-  
-  // Calculate step progress
-  const totalSteps = 8;
-  const progress = (currentStep / totalSteps) * 100;
-  
-  // Define tab items for better responsive display
-  const tabItems = [
-    { id: "check-in", label: "Check In", icon: <MapPin className="h-4 w-4" /> },
-    { id: "tasks", label: "Tasks", icon: <Clipboard className="h-4 w-4" /> },
-    { id: "medication", label: "Medication", icon: <Pill className="h-4 w-4" /> },
-    { id: "news2", label: "NEWS2", icon: <Activity className="h-4 w-4" /> },
-    { id: "events", label: "Events", icon: <FileBarChart2 className="h-4 w-4" /> },
-    { id: "notes", label: "Notes", icon: <MessageCircle className="h-4 w-4" /> },
-    { id: "sign-off", label: "Sign-off", icon: <Pencil className="h-4 w-4" /> },
-    { id: "complete", label: "Complete", icon: <CheckCircle2 className="h-4 w-4" /> },
-  ];
-  
+  // Helper functions for styling
+  const getScoreColor = (score: number) => {
+    if (score >= 7) return "bg-red-500";
+    if (score >= 5) return "bg-yellow-500";
+    return "bg-green-500";
+  };
+
+  const getPriorityBadge = (priority: string) => {
+    switch (priority) {
+      case "urgent":
+        return <Badge className="bg-red-100 text-red-800 border-red-200">Urgent</Badge>;
+      case "high":
+        return <Badge className="bg-orange-100 text-orange-800 border-orange-200">High</Badge>;
+      case "medium":
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Medium</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Low</Badge>;
+    }
+  };
+
+  const getCategoryBadge = (category: string) => {
+    switch (category) {
+      case "accident":
+        return <Badge className="bg-red-100 text-red-800 border-red-200">Accident</Badge>;
+      case "incident":
+        return <Badge className="bg-orange-100 text-orange-800 border-orange-200">Incident</Badge>;
+      case "near_miss":
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Near Miss</Badge>;
+      case "medication_error":
+        return <Badge className="bg-purple-100 text-purple-800 border-purple-200">Medication Error</Badge>;
+      case "compliment":
+        return <Badge className="bg-green-100 text-green-800 border-green-200">Compliment</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Other</Badge>;
+    }
+  };
+
   return (
-    <div>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-2">
-        <div>
-          <h1 className="text-2xl font-bold">Visit Workflow</h1>
-          <p className="text-gray-500">Client: {appointment?.clients?.first_name} {appointment?.clients?.last_name}</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-4 py-4">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 hover:bg-gray-100 rounded-lg"
+            >
+              <PanelLeftClose className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">
+                Visit with {currentAppointment.clients?.first_name} {currentAppointment.clients?.last_name}
+              </h1>
+              <p className="text-sm text-gray-500">
+                {format(new Date(currentAppointment.start_time), "EEEE, MMMM d, yyyy 'at' h:mm a")}
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <div className="text-sm font-medium text-gray-900">{formatTime(visitTimer)}</div>
+              <div className="text-xs text-gray-500">Visit Duration</div>
+            </div>
+            <Button
+              onClick={handlePauseVisit}
+              variant={visitStarted ? "destructive" : "default"}
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <PauseCircle className="w-4 h-4" />
+              {visitStarted ? "Pause" : "Resume"}
+            </Button>
+          </div>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-2 mt-2 sm:mt-0">
-          {visitStarted ? (
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-2"
-              onClick={handlePauseVisit}
-            >
-              {visitStarted ? <PauseCircle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
-              <span>{visitStarted ? "Pause" : "Resume"} Visit</span>
-            </Button>
-          ) : (
-            <Button 
-              className="flex items-center gap-2"
-              onClick={handleStartVisit}
-              disabled={visitTimer > 0}
-            >
-              <Clock className="h-4 w-4" />
-              <span>Start Visit</span>
-            </Button>
-          )}
-          
-          <Button 
-            variant="outline" 
-            className="bg-blue-50 border-blue-200 text-blue-700"
-          >
-            <Clock className="h-4 w-4 mr-2" />
-            {formatTime(visitTimer)}
-          </Button>
+        {/* Progress bar */}
+        <div className="max-w-4xl mx-auto mt-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">Progress</span>
+            <span className="text-sm text-gray-500">{Math.round((currentStep / 8) * 100)}% complete</span>
+          </div>
+          <Progress value={(currentStep / 8) * 100} className="h-2" />
         </div>
       </div>
-      
-      <Card className="mb-6">
-        <CardHeader className="pb-3">
-          <div className="flex justify-between items-center">
-            <CardTitle>Visit Progress</CardTitle>
-            <div className="text-sm font-medium">Step {currentStep} of {totalSteps}</div>
-          </div>
-          <Progress value={progress} className="h-2" />
-        </CardHeader>
-        <CardContent className="p-0 pb-1">
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <div className="px-4 pt-4 pb-1">
-              <ScrollArea className="pb-4 w-full">
-                <div className="inline-flex min-w-full">
-                  <TabsList className="inline-flex h-auto w-max p-1 items-center gap-1">
-                    {tabItems.map((tab) => (
-                      <TabsTrigger 
-                        key={tab.id} 
-                        value={tab.id} 
-                        className="flex items-center gap-1.5 h-10 px-3 md:px-4 py-2 whitespace-nowrap text-sm"
-                      >
-                        {tab.icon}
-                        <span>{tab.label}</span>
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </div>
-              </ScrollArea>
-            </div>
-            
-            <div className="px-4 py-6">
-              <TabsContent value="check-in">
-                <div className="space-y-6">
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-blue-100 rounded-full text-blue-700">
-                        <MapPin className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{appointment?.clients?.address}</h3>
-                        <p className="text-sm text-gray-500">{format(new Date(appointment?.start_time), "EEEE, MMMM d, yyyy")}</p>
-                        <p className="text-sm text-gray-500">{format(new Date(appointment?.start_time), "h:mm a")} - {format(new Date(appointment?.end_time), "h:mm a")}</p>
-                      </div>
+
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto p-4">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <TabsList className="grid w-full grid-cols-8">
+            <TabsTrigger value="check-in">
+              <div className="flex flex-col items-center gap-1">
+                <UserCheck className="w-4 h-4" />
+                <span className="text-xs">Check-in</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="tasks">
+              <div className="flex flex-col items-center gap-1">
+                <Clipboard className="w-4 h-4" />
+                <span className="text-xs">Tasks</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="medication">
+              <div className="flex flex-col items-center gap-1">
+                <Pill className="w-4 h-4" />
+                <span className="text-xs">Medication</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="news2">
+              <div className="flex flex-col items-center gap-1">
+                <Activity className="w-4 h-4" />
+                <span className="text-xs">NEWS2</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="events">
+              <div className="flex flex-col items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                <span className="text-xs">Events</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="notes">
+              <div className="flex flex-col items-center gap-1">
+                <FileText className="w-4 h-4" />
+                <span className="text-xs">Notes</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="sign-off">
+              <div className="flex flex-col items-center gap-1">
+                <Edit className="w-4 h-4" />
+                <span className="text-xs">Sign-off</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="complete">
+              <div className="flex flex-col items-center gap-1">
+                <CheckCircle className="w-4 h-4" />
+                <span className="text-xs">Complete</span>
+              </div>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Check-in Tab */}
+          <TabsContent value="check-in" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCheck className="w-5 h-5" />
+                  Check-in
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Client Information</Label>
+                    <div className="p-3 bg-gray-50 rounded-lg space-y-1">
+                      <p className="font-medium">{currentAppointment.clients?.first_name} {currentAppointment.clients?.last_name}</p>
+                      <p className="text-sm text-gray-600">{currentAppointment.clients?.phone}</p>
+                      <p className="text-sm text-gray-600">{currentAppointment.clients?.address}</p>
                     </div>
                   </div>
                   
-                  <div className="space-y-3">
-                    <h3 className="font-semibold">Initial Observations</h3>
-                    <div className="space-y-2">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Service Details</Label>
+                    <div className="p-3 bg-gray-50 rounded-lg space-y-1">
+                      <p className="font-medium">{currentAppointment.services?.title}</p>
+                      <p className="text-sm text-gray-600">{currentAppointment.services?.description}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {!visitStarted ? (
+                  <div className="text-center py-8">
+                    <div className="space-y-4">
+                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                        <Clock className="w-8 h-8 text-blue-600" />
+                      </div>
                       <div>
-                        <Label htmlFor="initialNotes">Record any initial observations</Label>
-                        <Textarea 
-                          id="initialNotes" 
-                          placeholder="Note any observations upon arrival..."
-                          className="h-24"
-                        />
+                        <h3 className="text-lg font-medium text-gray-900">Ready to start your visit?</h3>
+                        <p className="text-gray-600 mt-1">Click the button below to begin the visit timer and workflow.</p>
+                      </div>
+                      <Button onClick={handleStartVisit} size="lg" className="mt-4">
+                        <UserCheck className="w-5 h-5 mr-2" />
+                        Start Visit
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="space-y-4">
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                        <CheckCircle className="w-8 h-8 text-green-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900">Visit in progress</h3>
+                        <p className="text-gray-600 mt-1">Visit started at {format(new Date(), "h:mm a")}</p>
+                        <p className="text-lg font-mono text-blue-600 mt-2">{formatTime(visitTimer)}</p>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="border-t pt-4 flex justify-end">
-                    <Button 
-                      onClick={handleNextStep}
-                      disabled={!visitStarted}
-                      className="flex items-center gap-2"
-                    >
-                      Continue to Tasks
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
+                )}
+              </CardContent>
               
-              <TabsContent value="tasks">
-                <div className="space-y-6">
-                  <div className="space-y-3">
-                    <h3 className="font-semibold">Care Plan Tasks</h3>
-                    <p className="text-sm text-gray-500">Complete the following tasks according to client's care plan</p>
-                    
-                    <div className="divide-y border rounded-lg">
+              {visitStarted && (
+                <div className="border-t p-6 flex justify-end">
+                  <Button onClick={handleNextStep}>
+                    Next Step
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              )}
+            </Card>
+          </TabsContent>
+
+          {/* Tasks Tab */}
+          <TabsContent value="tasks" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clipboard className="w-5 h-5" />
+                  Care Tasks
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {tasksLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <p className="mt-2 text-gray-500">Loading tasks...</p>
+                    </div>
+                  ) : tasks && tasks.length > 0 ? (
+                    <div className="space-y-3">
                       {tasks.map((task) => (
-                        <div key={task.id} className="p-4 flex items-start gap-3">
-                          <Checkbox 
-                            id={task.id} 
+                        <div key={task.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                          <Checkbox
                             checked={task.is_completed}
                             onCheckedChange={() => handleTaskToggle(task.id)}
+                            className="flex-shrink-0"
                           />
-                          <div className="flex-1">
-                            <Label 
-                              htmlFor={task.id} 
-                              className={`font-medium ${task.priority === 'high' || task.priority === 'urgent' ? 'after:content-["*"] after:ml-0.5 after:text-red-500' : ''}`}
-                            >
-                              {task.task_name}
-                            </Label>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className={`font-medium ${task.is_completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                                {task.task_name}
+                              </p>
+                              {task.priority && getPriorityBadge(task.priority)}
+                            </div>
                             {task.task_description && (
-                              <p className="text-sm text-gray-500 mt-1">{task.task_description}</p>
+                              <p className="text-sm text-gray-600 mt-1">{task.task_description}</p>
+                            )}
+                            {task.completed_at && (
+                              <p className="text-xs text-green-600 mt-1">
+                                Completed at {format(new Date(task.completed_at), 'h:mm a')}
+                              </p>
                             )}
                           </div>
+                          {task.is_completed && (
+                            <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                          )}
                         </div>
                       ))}
                     </div>
-                  </div>
-                  
-                  <div className="border-t pt-4 flex justify-between">
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePreviousStep}
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={handleNextStep}
-                      disabled={!visitStarted}
-                      className="flex items-center gap-2"
-                    >
-                      Continue to Medication
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Clipboard className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">No tasks assigned for this visit</p>
+                    </div>
+                  )}
                 </div>
-              </TabsContent>
+              </CardContent>
               
-              <TabsContent value="medication">
-                <div className="space-y-6">
-                  <div className="space-y-3">
-                    <h3 className="font-semibold">Medication Administration</h3>
-                    
-                    {medications.length === 0 ? (
-                      <div className="text-center py-8 bg-gray-50 rounded-lg border">
-                        <Pill className="h-8 w-8 mx-auto text-gray-400" />
-                        <p className="mt-2 text-gray-500">No medications scheduled for this visit</p>
-                      </div>
-                    ) : (
-                      <div className="divide-y border rounded-lg">
-                        {medications.map((med) => (
-                          <div key={med.id} className="p-4">
-                            <div className="flex items-start gap-3">
-                              <Checkbox 
-                                id={med.id} 
-                                checked={med.is_administered}
-                                onCheckedChange={() => handleMedicationToggle(med.id)}
-                              />
-                              <div className="flex-1">
-                                <Label htmlFor={med.id} className="font-medium">
-                                  {med.medication_name} - {med.dosage}
-                                </Label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 text-sm">
-                                  <div>
-                                    <span className="text-gray-500">Method:</span> {med.administration_method || 'Oral'}
-                                  </div>
-                                  <div>
-                                    <span className="text-gray-500">Time:</span> {med.prescribed_time || 'As needed'}
-                                  </div>
-                                </div>
-                              </div>
+              <div className="border-t p-6 flex justify-between">
+                <Button variant="outline" onClick={handlePreviousStep}>
+                  Back
+                </Button>
+                <Button onClick={handleNextStep}>
+                  Next Step
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Medication Tab */}
+          <TabsContent value="medication" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Pill className="w-5 h-5" />
+                  Medication Administration
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {medicationsLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <p className="mt-2 text-gray-500">Loading medications...</p>
+                    </div>
+                  ) : medications && medications.length > 0 ? (
+                    <div className="space-y-3">
+                      {medications.map((med) => (
+                        <div key={med.id} className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50">
+                          <Checkbox
+                            checked={med.is_administered}
+                            onCheckedChange={() => handleMedicationToggle(med.id)}
+                            className="flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className={`font-medium ${med.is_administered ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                                {med.medication_name}
+                              </p>
+                              <Badge variant="outline">{med.dosage}</Badge>
                             </div>
+                            {med.prescribed_time && (
+                              <p className="text-sm text-gray-600 mt-1">
+                                Prescribed time: {format(new Date(`1970-01-01T${med.prescribed_time}`), 'h:mm a')}
+                              </p>
+                            )}
+                            {med.administration_time && (
+                              <p className="text-xs text-green-600 mt-1">
+                                Administered at {format(new Date(med.administration_time), 'h:mm a')}
+                              </p>
+                            )}
+                            {med.missed_reason && (
+                              <p className="text-xs text-orange-600 mt-1">
+                                Not administered: {med.missed_reason}
+                              </p>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="border-t pt-4 flex justify-between">
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePreviousStep}
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={handleNextStep}
-                      disabled={!visitStarted}
-                      className="flex items-center gap-2"
-                    >
-                      Continue to NEWS2
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="news2">
-                <div className="space-y-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">NEWS2 Vital Signs</h3>
-                      <Activity className="h-5 w-5 text-blue-600" />
+                          {med.is_administered && (
+                            <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                          )}
+                        </div>
+                      ))}
                     </div>
-                    <p className="text-sm text-gray-500">Record vital signs to calculate NEWS2 score</p>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="respRate">Respiration Rate (breaths/min)</Label>
-                        <div className="flex items-center gap-2">
-                          <Input 
-                            id="respRate" 
-                            type="number" 
-                            value={respRate} 
-                            onChange={(e) => setRespRate(Number(e.target.value))}
-                            className={`${getVitalStatusColor(getVitalStatus(respRate, "resp"))}`}
-                          />
-                          <span className="text-sm">/min</span>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="spo2">Oxygen Saturation (%)</Label>
-                        <div className="flex items-center gap-2">
-                          <Input 
-                            id="spo2" 
-                            type="number" 
-                            value={spo2} 
-                            onChange={(e) => setSpo2(Number(e.target.value))}
-                            className={`${getVitalStatusColor(getVitalStatus(spo2, "spo2"))}`}
-                          />
-                          <span className="text-sm">%</span>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="systolicBP">Systolic Blood Pressure (mmHg)</Label>
-                        <div className="flex items-center gap-2">
-                          <Input 
-                            id="systolicBP" 
-                            type="number" 
-                            value={systolicBP} 
-                            onChange={(e) => setSystolicBP(Number(e.target.value))}
-                            className={`${getVitalStatusColor(getVitalStatus(systolicBP, "bp"))}`}
-                          />
-                          <span className="text-sm">mmHg</span>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="pulse">Pulse Rate (beats/min)</Label>
-                        <div className="flex items-center gap-2">
-                          <Input 
-                            id="pulse" 
-                            type="number" 
-                            value={pulse} 
-                            onChange={(e) => setPulse(Number(e.target.value))}
-                            className={`${getVitalStatusColor(getVitalStatus(pulse, "pulse"))}`}
-                          />
-                          <span className="text-sm">bpm</span>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="consciousness">Consciousness</Label>
-                        <Select value={consciousness} onValueChange={setConsciousness}>
-                          <SelectTrigger id="consciousness">
-                            <SelectValue placeholder="Select level of consciousness" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Alert">Alert</SelectItem>
-                            <SelectItem value="New Confusion">New Confusion</SelectItem>
-                            <SelectItem value="Voice">Responds to Voice</SelectItem>
-                            <SelectItem value="Pain">Responds to Pain</SelectItem>
-                            <SelectItem value="Unresponsive">Unresponsive</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="temperature">Temperature (°C)</Label>
-                        <div className="flex items-center gap-2">
-                          <Input 
-                            id="temperature" 
-                            type="number" 
-                            step="0.1" 
-                            value={temperature} 
-                            onChange={(e) => setTemperature(Number(e.target.value))}
-                            className={`${getVitalStatusColor(getVitalStatus(temperature, "temp"))}`}
-                          />
-                          <span className="text-sm">°C</span>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <div className="flex items-center h-10 mt-6">
-                          <Checkbox 
-                            id="o2Therapy" 
-                            checked={o2Therapy}
-                            onCheckedChange={(value) => setO2Therapy(value === true)}
-                          />
-                          <Label htmlFor="o2Therapy" className="ml-2">
-                            On Supplemental Oxygen
-                          </Label>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-end">
-                        <Button 
-                          onClick={recordNews2Reading} 
-                          disabled={!visitStarted}
-                          className="mt-4"
-                        >
-                          Record Vital Signs
-                        </Button>
-                      </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Pill className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">No medications scheduled for this visit</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+              
+              <div className="border-t p-6 flex justify-between">
+                <Button variant="outline" onClick={handlePreviousStep}>
+                  Back
+                </Button>
+                <Button onClick={handleNextStep}>
+                  Next Step
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* NEWS2 Tab */}
+          <TabsContent value="news2" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="w-5 h-5" />
+                  NEWS2 Vital Signs
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Input form */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="respRate">Respiratory Rate (breaths/min)</Label>
+                      <Input
+                        id="respRate"
+                        type="number"
+                        value={respRate}
+                        onChange={(e) => setRespRate(Number(e.target.value))}
+                        min="0"
+                        max="50"
+                      />
                     </div>
                     
-                    {news2Readings.length > 0 && (
-                      <div className="mt-6">
-                        <h4 className="font-medium mb-3">Recorded Readings</h4>
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                              <tr>
-                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resp</th>
-                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SpO2</th>
-                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">BP</th>
-                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pulse</th>
-                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Consciousness</th>
-                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Temp</th>
-                                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-                              </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                              {news2Readings.map((reading) => (
-                                <tr key={reading.id}>
-                                  <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.dateTime}</td>
-                                  <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.respRate}/min</td>
-                                  <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.spo2}%</td>
-                                  <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.systolicBP} mmHg</td>
-                                  <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.pulse} bpm</td>
-                                  <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.consciousness}</td>
-                                  <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.temperature}°C</td>
-                                  <td className="px-3 py-4 whitespace-nowrap text-sm">
-                                    <span className={`${getScoreColor(reading.score)} text-white px-2 py-1 rounded-full`}>
-                                      {reading.score}
-                                    </span>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="border-t pt-4 flex justify-between">
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePreviousStep}
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={handleNextStep}
-                      disabled={!visitStarted}
-                      className="flex items-center gap-2"
-                    >
-                      Continue to Events
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="events">
-                <div className="space-y-6">
-                  <div className="space-y-3">
-                    <h3 className="font-semibold">Record Events</h3>
-                    <p className="text-sm text-gray-500">Record any incidents, accidents, or other events that occurred during the visit</p>
+                    <div className="space-y-2">
+                      <Label htmlFor="spo2">SpO2 (%)</Label>
+                      <Input
+                        id="spo2"
+                        type="number"
+                        value={spo2}
+                        onChange={(e) => setSpo2(Number(e.target.value))}
+                        min="70"
+                        max="100"
+                      />
+                    </div>
                     
-                    <div className="grid grid-cols-1 gap-4 border rounded-lg p-4">
-                      <div>
-                        <Label htmlFor="eventTitle">Event Title</Label>
-                        <Input 
-                          id="eventTitle" 
-                          value={eventTitle}
-                          onChange={(e) => setEventTitle(e.target.value)}
-                          placeholder="Enter event title"
-                          className="mt-1"
+                    <div className="space-y-2">
+                      <Label htmlFor="systolicBP">Systolic BP (mmHg)</Label>
+                      <Input
+                        id="systolicBP"
+                        type="number"
+                        value={systolicBP}
+                        onChange={(e) => setSystolicBP(Number(e.target.value))}
+                        min="60"
+                        max="250"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="diastolicBP">Diastolic BP (mmHg)</Label>
+                      <Input
+                        id="diastolicBP"
+                        type="number"
+                        value={diastolicBP}
+                        onChange={(e) => setDiastolicBP(Number(e.target.value))}
+                        min="30"
+                        max="150"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="pulse">Pulse (bpm)</Label>
+                      <Input
+                        id="pulse"
+                        type="number"
+                        value={pulse}
+                        onChange={(e) => setPulse(Number(e.target.value))}
+                        min="30"
+                        max="200"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="consciousness">Consciousness</Label>
+                      <Select value={consciousness} onValueChange={setConsciousness}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="A">Alert</SelectItem>
+                          <SelectItem value="V">Voice</SelectItem>
+                          <SelectItem value="P">Pain</SelectItem>
+                          <SelectItem value="U">Unresponsive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="temperature">Temperature (°C)</Label>
+                      <Input
+                        id="temperature"
+                        type="number"
+                        step="0.1"
+                        value={temperature}
+                        onChange={(e) => setTemperature(Number(e.target.value))}
+                        min="30"
+                        max="45"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <Checkbox
+                          checked={o2Therapy}
+                          onCheckedChange={setO2Therapy}
                         />
+                        Supplemental Oxygen
+                      </Label>
+                    </div>
+                  </div>
+                  
+                  {/* Current score */}
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">Current NEWS2 Score</h4>
+                        <p className="text-sm text-gray-600">Based on current readings</p>
+                      </div>
+                      <div className={`text-2xl font-bold px-4 py-2 rounded-full text-white ${getScoreColor(calculateNews2Score())}`}>
+                        {calculateNews2Score()}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-center">
+                    <Button onClick={recordNews2Reading}>
+                      <Activity className="w-4 h-4 mr-2" />
+                      Record Reading
+                    </Button>
+                  </div>
+                  
+                  {/* Previous readings */}
+                  {news2Readings && news2Readings.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-3">Previous Readings</h4>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resp</th>
+                              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SpO2</th>
+                              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">BP</th>
+                              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pulse</th>
+                              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Consciousness</th>
+                              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Temp</th>
+                              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {news2Readings.map((reading) => (
+                              <tr key={reading.id}>
+                                <td className="px-3 py-4 whitespace-nowrap text-sm">{format(new Date(reading.created_at), 'HH:mm')}</td>
+                                <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.respiratory_rate}/min</td>
+                                <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.oxygen_saturation}%</td>
+                                <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.systolic_bp} mmHg</td>
+                                <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.pulse_rate} bpm</td>
+                                <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.consciousness_level}</td>
+                                <td className="px-3 py-4 whitespace-nowrap text-sm">{reading.temperature}°C</td>
+                                <td className="px-3 py-4 whitespace-nowrap text-sm">
+                                  <span className={`${getScoreColor(reading.news2_total_score || 0)} text-white px-2 py-1 rounded-full`}>
+                                    {reading.news2_total_score || 0}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+              
+              <div className="border-t p-6 flex justify-between">
+                <Button variant="outline" onClick={handlePreviousStep}>
+                  Back
+                </Button>
+                <Button onClick={handleNextStep}>
+                  Next Step
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Events Tab */}
+          <TabsContent value="events" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5" />
+                  Events & Incidents
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Add new event form */}
+                  <div className="p-4 border rounded-lg bg-gray-50">
+                    <h4 className="font-medium mb-4">Record New Event</h4>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="eventTitle">Event Title</Label>
+                          <Input
+                            id="eventTitle"
+                            value={eventTitle}
+                            onChange={(e) => setEventTitle(e.target.value)}
+                            placeholder="Brief description of the event"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="eventCategory">Category</Label>
+                          <Select value={eventCategory} onValueChange={setEventCategory}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="incident">Incident</SelectItem>
+                              <SelectItem value="accident">Accident</SelectItem>
+                              <SelectItem value="near_miss">Near Miss</SelectItem>
+                              <SelectItem value="medication_error">Medication Error</SelectItem>
+                              <SelectItem value="compliment">Compliment</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                       
-                      <div>
-                        <Label htmlFor="eventCategory">Event Category</Label>
-                        <Select value={eventCategory} onValueChange={setEventCategory}>
-                          <SelectTrigger id="eventCategory" className="mt-1">
-                            <SelectValue placeholder="Select event category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="accident">Accident</SelectItem>
-                            <SelectItem value="incident">Incident</SelectItem>
-                            <SelectItem value="near_miss">Near Miss</SelectItem>
-                            <SelectItem value="medication_error">Medication Error</SelectItem>
-                            <SelectItem value="safeguarding">Safeguarding</SelectItem>
-                            <SelectItem value="complaint">Complaint</SelectItem>
-                            <SelectItem value="compliment">Compliment</SelectItem>
-                            <SelectItem value="review">Review</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="eventLocation">Location</Label>
-                        <Input 
-                          id="eventLocation" 
+                      <div className="space-y-2">
+                        <Label htmlFor="eventLocation">Location (optional)</Label>
+                        <Input
+                          id="eventLocation"
                           value={eventLocation}
                           onChange={(e) => setEventLocation(e.target.value)}
-                          placeholder={appointment?.clients?.address}
-                          className="mt-1"
+                          placeholder="Where did this occur?"
                         />
                       </div>
                       
-                      <div>
+                      <div className="space-y-2">
                         <Label htmlFor="eventDetails">Details</Label>
-                        <Textarea 
-                          id="eventDetails" 
+                        <Textarea
+                          id="eventDetails"
                           value={eventDetails}
                           onChange={(e) => setEventDetails(e.target.value)}
-                          placeholder="Describe what happened..."
-                          className="h-24 mt-1"
+                          placeholder="Provide detailed information about what happened..."
+                          rows={3}
                         />
                       </div>
                       
-                      <div className="flex justify-end">
-                        <Button 
-                          onClick={handleAddEvent}
-                          disabled={!visitStarted}
-                          className="flex items-center gap-2"
-                        >
-                          Record Event
-                          <PanelLeftClose className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Button onClick={handleAddEvent} className="w-full md:w-auto">
+                        <AlertCircle className="w-4 h-4 mr-2" />
+                        Record Event
+                      </Button>
                     </div>
-                    
-                    {events.length > 0 && (
-                      <div className="mt-6">
-                        <h4 className="font-medium mb-3">Recorded Events</h4>
-                        <div className="divide-y border rounded-lg">
-                          {events.map((event) => (
-                            <div key={event.id} className="p-4">
+                  </div>
+                  
+                  {/* Recorded events */}
+                  <div>
+                    <h4 className="font-medium mb-3">Recorded Events</h4>
+                    {eventsLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="mt-2 text-gray-500">Loading events...</p>
+                      </div>
+                    ) : events && events.length > 0 ? (
+                      <div className="space-y-3">
+                            {events.map((event) => (
+                              <div key={event.id} className="border rounded-lg divide-y">
+                                <div className="p-4">
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
-                                  <h5 className="font-medium">{event.title}</h5>
-                                  {getCategoryBadge(event.category)}
+                                  <h5 className="font-medium">{event.event_title}</h5>
+                                  {getCategoryBadge(event.event_category || 'other')}
                                 </div>
                                 <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">
-                                  {event.date} {event.time}
+                                  {format(new Date(event.event_time), 'MMM d, HH:mm')}
                                 </Badge>
                               </div>
-                              <p className="mt-2 text-sm text-gray-600">{event.details}</p>
-                              <div className="mt-2 text-xs text-gray-500">Location: {event.location}</div>
+                              <p className="mt-2 text-sm text-gray-600">{event.event_description}</p>
+                              <div className="mt-2 text-xs text-gray-500">Location: {event.location_in_home || 'Not specified'}</div>
                             </div>
                           ))}
                         </div>
                       </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-500">No events recorded for this visit</p>
+                      </div>
                     )}
                   </div>
-                  
-                  <div className="border-t pt-4 flex justify-between">
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePreviousStep}
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={handleNextStep}
-                      disabled={!visitStarted}
-                      className="flex items-center gap-2"
-                    >
-                      Continue to Notes
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
                 </div>
-              </TabsContent>
+              </CardContent>
               
-              <TabsContent value="notes">
+              <div className="border-t p-6 flex justify-between">
+                <Button variant="outline" onClick={handlePreviousStep}>
+                  Back
+                </Button>
+                <Button onClick={handleNextStep}>
+                  Next Step
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Notes Tab */}
+          <TabsContent value="notes" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Visit Notes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-6">
-                  <div className="space-y-3">
-                    <h3 className="font-semibold">Visit Notes</h3>
-                    <p className="text-sm text-gray-500">Enter any additional notes or observations about this visit</p>
-                    
-                    <div className="border rounded-lg p-4">
-                      <Textarea 
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Enter visit notes here..."
-                        className="h-36 mt-1"
-                      />
-                      
-                      <div className="mt-4 flex items-center">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleCapturePhoto}
-                          disabled={photoAdded || !visitStarted}
-                          className="flex items-center gap-2"
-                        >
-                          <Camera className="h-4 w-4" />
-                          <span>{photoAdded ? "Photo Added" : "Add Photo"}</span>
-                        </Button>
-                        
-                        {photoAdded && (
-                          <div className="ml-3 text-sm text-green-600 flex items-center">
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Photo attached
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="border-t pt-4 flex justify-between">
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePreviousStep}
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={handleNextStep}
-                      disabled={!visitStarted}
-                      className="flex items-center gap-2"
-                    >
-                      Continue to Sign-off
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="sign-off">
-                <div className="space-y-6">
-                  <div className="space-y-3">
-                    <h3 className="font-semibold">Sign-off</h3>
-                    <p className="text-sm text-gray-500">Please obtain signatures to confirm the visit</p>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                      <div className="space-y-3">
-                        <h4 className="font-medium">Client Signature</h4>
-                        <div className="border rounded-lg p-4">
-                          <SignatureCanvas 
-                            onSave={setClientSignature}
-                            height={150}
-                            initialSignature={clientSignature || undefined}
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <h4 className="font-medium">Carer Signature</h4>
-                        <div className="border rounded-lg p-4">
-                          <SignatureCanvas 
-                            onSave={setCarerSignature}
-                            height={150}
-                            initialSignature={carerSignature || undefined}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="my-6">
-                      <div className="flex items-center h-5">
-                        <Checkbox id="confirmVisit" />
-                        <Label htmlFor="confirmVisit" className="ml-2 text-sm">
-                          I confirm all information provided is accurate and all required tasks have been completed
-                        </Label>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="border-t pt-4 flex justify-between">
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePreviousStep}
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={handleNextStep}
-                      disabled={!visitStarted || !clientSignature}
-                      className="flex items-center gap-2"
-                    >
-                      Review and Complete
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="complete">
-                <div className="space-y-6">
-                  <div className="flex flex-col items-center justify-center py-6 text-center">
-                    <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-4">
-                      <CheckCircle2 className="h-8 w-8" />
-                    </div>
-                    <h3 className="text-xl font-bold">Visit Complete</h3>
-                    <p className="text-gray-500 max-w-md mt-2">
-                      You have completed all steps for this visit. Please review all information before finalizing.
+                  <div className="space-y-2">
+                    <Label htmlFor="visitNotes">Additional Notes</Label>
+                    <Textarea
+                      id="visitNotes"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Record any additional observations, concerns, or notes about the visit..."
+                      rows={8}
+                      className="min-h-[200px]"
+                    />
+                    <p className="text-sm text-gray-500">
+                      Use this space to document any observations, client feedback, or important information for the next visit.
                     </p>
                   </div>
                   
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="font-medium text-gray-700">Visit Summary</h4>
-                        <ul className="mt-2 space-y-1 text-sm">
-                          <li><span className="text-gray-500">Client:</span> {appointment?.clients?.first_name} {appointment?.clients?.last_name}</li>
-                          <li><span className="text-gray-500">Address:</span> {appointment?.clients?.address}</li>
-                          <li><span className="text-gray-500">Date:</span> {format(new Date(appointment?.start_time), "EEEE, MMMM d, yyyy")}</li>
-                          <li><span className="text-gray-500">Visit Duration:</span> {formatTime(visitTimer)}</li>
-                        </ul>
+                  <div className="flex items-center gap-4">
+                    <Button
+                      onClick={handleCapturePhoto}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <Camera className="w-4 h-4" />
+                      Add Photo
+                    </Button>
+                    
+                    {photoAdded && (
+                      <div className="flex items-center gap-2 text-green-600">
+                        <CheckCircle className="w-4 h-4" />
+                        <span className="text-sm">Photo added</span>
                       </div>
-                      
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+              
+              <div className="border-t p-6 flex justify-between">
+                <Button variant="outline" onClick={handlePreviousStep}>
+                  Back
+                </Button>
+                <Button onClick={handleNextStep}>
+                  Next Step
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Sign-off Tab */}
+          <TabsContent value="sign-off" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Edit className="w-5 h-5" />
+                  Sign-off
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
                       <div>
-                        <h4 className="font-medium text-gray-700">Tasks Summary</h4>
-                        <div className="mt-2 text-sm">
-                          <p><span className="text-gray-500">Completed Tasks:</span> {tasks.filter(t => t.completed).length} of {tasks.length}</p>
-                          <p><span className="text-gray-500">Medications Administered:</span> {medications.filter(m => m.completed).length} of {medications.length}</p>
-                          <p><span className="text-gray-500">NEWS2 Readings:</span> {news2Readings.length}</p>
-                          <p><span className="text-gray-500">Events Recorded:</span> {events.length}</p>
+                        <Label className="text-sm font-medium text-gray-700">Client Signature</Label>
+                        <p className="text-sm text-gray-500 mb-3">
+                          Please ask the client to sign below to confirm the visit
+                        </p>
+                        <div className="border rounded-lg p-2">
+                          <SignatureCanvas
+                            width={300}
+                            height={150}
+                            onSave={setClientSignature}
+                            placeholder="Client signature here"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-700">Carer Signature</Label>
+                        <p className="text-sm text-gray-500 mb-3">
+                          Sign below to confirm the completion of the visit
+                        </p>
+                        <div className="border rounded-lg p-2">
+                          <SignatureCanvas
+                            width={300}
+                            height={150}
+                            onSave={setCarerSignature}
+                            placeholder="Your signature here"
+                          />
                         </div>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="border-t pt-4 flex justify-between">
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePreviousStep}
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      onClick={handleCompleteVisit}
-                      disabled={!visitStarted}
-                      className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
-                    >
-                      <CheckCircle2 className="h-4 w-4" />
-                      Finalize Visit
-                    </Button>
+                  {clientSignature && carerSignature && (
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <p className="text-green-800 font-medium">Signatures collected</p>
+                      </div>
+                      <p className="text-green-700 text-sm mt-1">
+                        Both client and carer signatures have been captured successfully.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+              
+              <div className="border-t p-6 flex justify-between">
+                <Button variant="outline" onClick={handlePreviousStep}>
+                  Back
+                </Button>
+                <Button 
+                  onClick={handleNextStep}
+                  disabled={!clientSignature}
+                >
+                  Complete Visit
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Complete Tab */}
+          <TabsContent value="complete" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" />
+                  Visit Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="text-center py-6">
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle className="w-8 h-8 text-green-600" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900">Visit Ready for Completion</h3>
+                    <p className="text-gray-600 mt-1">Review the summary below and click Complete Visit to finish.</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-medium text-gray-700">Visit Details</h4>
+                      <ul className="mt-2 text-sm space-y-1">
+                        <li><span className="text-gray-500">Client:</span> {currentAppointment?.clients?.first_name} {currentAppointment?.clients?.last_name}</li>
+                        <li><span className="text-gray-500">Address:</span> {currentAppointment?.clients?.address}</li>
+                        <li><span className="text-gray-500">Date:</span> {format(new Date(currentAppointment?.start_time), "EEEE, MMMM d, yyyy")}</li>
+                        <li><span className="text-gray-500">Visit Duration:</span> {formatTime(visitTimer)}</li>
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-medium text-gray-700">Tasks Summary</h4>
+                      <div className="mt-2 text-sm">
+                        <p><span className="text-gray-500">Completed Tasks:</span> {tasks?.filter(t => t.is_completed).length || 0} of {tasks?.length || 0}</p>
+                        <p><span className="text-gray-500">Medications Administered:</span> {medications?.filter(m => m.is_administered).length || 0} of {medications?.length || 0}</p>
+                        <p><span className="text-gray-500">NEWS2 Readings:</span> {news2Readings?.length || 0}</p>
+                        <p><span className="text-gray-500">Events Recorded:</span> {events?.length || 0}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </TabsContent>
-            </div>
-          </Tabs>
-        </CardContent>
-      </Card>
+              </CardContent>
+              
+              <div className="border-t p-6 flex justify-between">
+                <Button variant="outline" onClick={handlePreviousStep}>
+                  Back
+                </Button>
+                <Button onClick={handleCompleteVisit} size="lg">
+                  <Send className="w-5 h-5 mr-2" />
+                  Complete Visit
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
