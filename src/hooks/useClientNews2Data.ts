@@ -62,41 +62,57 @@ export const useClientNews2Data = () => {
     queryFn: async () => {
       if (!clientId) return null;
 
-      const { data, error } = await supabase
+      // Get the NEWS2 patient record for this client
+      const { data: patientData, error: patientError } = await supabase
         .from('news2_patients')
-        .select(`
-          *,
-          latest_observation:news2_observations(
-            id,
-            total_score,
-            risk_level,
-            recorded_at,
-            respiratory_rate,
-            oxygen_saturation,
-            supplemental_oxygen,
-            systolic_bp,
-            pulse_rate,
-            consciousness_level,
-            temperature
-          ),
-          observations_count:news2_observations(count)
-        `)
+        .select('*')
         .eq('client_id', clientId)
         .eq('is_active', true)
         .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching client NEWS2 data:', error);
+      if (patientError) {
+        console.error('Error fetching NEWS2 patient:', patientError);
         return null;
       }
 
+      if (!patientData) {
+        console.log('No NEWS2 patient found for client:', clientId);
+        return null;
+      }
+
+      // Get the latest observation for this patient
+      const { data: latestObservation } = await supabase
+        .from('news2_observations')
+        .select(`
+          id,
+          total_score,
+          risk_level,
+          recorded_at,
+          respiratory_rate,
+          oxygen_saturation,
+          supplemental_oxygen,
+          systolic_bp,
+          pulse_rate,
+          consciousness_level,
+          temperature
+        `)
+        .eq('news2_patient_id', patientData.id)
+        .order('recorded_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      // Get the count of observations
+      const { count: observationsCount } = await supabase
+        .from('news2_observations')
+        .select('*', { count: 'exact', head: true })
+        .eq('news2_patient_id', patientData.id);
+
       // Transform the data to match our interface
       const transformedData = {
-        ...data,
-        latest_observation: data.latest_observation?.[0] || undefined,
-        observations_count: data.observations_count?.[0]?.count || 0
+        ...patientData,
+        latest_observation: latestObservation || undefined,
+        observations_count: observationsCount || 0
       };
 
       return transformedData as ClientNews2Data;
@@ -119,7 +135,7 @@ export const useClientNews2History = () => {
         .select('id')
         .eq('client_id', clientId)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
       if (!news2Patient) return [];
 
