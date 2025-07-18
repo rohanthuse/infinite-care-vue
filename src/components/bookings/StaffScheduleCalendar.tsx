@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useBranchStaff } from "@/hooks/useBranchStaff";
 import { useLeaveRequests } from "@/hooks/useLeaveManagement";
 import { Booking } from "./BookingTimeGrid";
@@ -257,8 +257,7 @@ export function StaffScheduleCalendar({
   };
 
   return (
-    <TooltipProvider>
-      <div className="space-y-4">
+    <div className="space-y-4">
       {/* Header with search and filters */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -370,7 +369,7 @@ export function StaffScheduleCalendar({
             {timeSlots.map(slot => {
               const status = staffMember.schedule[slot];
               return (
-                <Tooltip key={slot}>
+                <Tooltip key={`${staffMember.id}-${slot}-${status.type}`}>
                   <TooltipTrigger asChild>
                     <div
                       className={`p-1 border-r last:border-r-0 h-16 flex items-center justify-center text-xs font-medium cursor-pointer transition-colors ${getStatusColor(status)}`}
@@ -379,7 +378,7 @@ export function StaffScheduleCalendar({
                       {getStatusLabel(status)}
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs p-3">
+                  <TooltipContent side="top" className="max-w-sm p-4 bg-popover text-popover-foreground border border-border shadow-lg rounded-md">
                     {renderTooltipContent(status, staffMember.name)}
                   </TooltipContent>
                 </Tooltip>
@@ -414,7 +413,6 @@ export function StaffScheduleCalendar({
           </CardContent>
         </Card>
       )}
-      </div>
-    </TooltipProvider>
+    </div>
   );
 }
