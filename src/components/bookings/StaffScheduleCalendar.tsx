@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useBranchStaff } from "@/hooks/useBranchStaff";
 import { useLeaveRequests } from "@/hooks/useLeaveManagement";
 import { Booking } from "./BookingTimeGrid";
@@ -180,8 +181,84 @@ export function StaffScheduleCalendar({
     }
   };
 
+  const renderTooltipContent = (status: StaffStatus, staffName: string) => {
+    if (status.type === 'available') {
+      return (
+        <div className="space-y-1">
+          <p className="font-medium">{staffName}</p>
+          <p className="text-sm text-muted-foreground">Available - Click to create booking</p>
+        </div>
+      );
+    }
+
+    if (status.type === 'leave' && status.leaveType) {
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-red-500 rounded"></div>
+            <span className="font-medium">{staffName}</span>
+          </div>
+          <div className="space-y-1 text-sm">
+            <p><span className="font-medium">Leave Type:</span> {status.leaveType}</p>
+            <p><span className="font-medium">Status:</span> Approved</p>
+            <p className="text-muted-foreground">Staff member is on leave</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (status.booking) {
+      const booking = status.booking;
+      const duration = calculateDuration(booking.startTime, booking.endTime);
+      
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div className={`w-3 h-3 rounded ${
+              status.type === 'assigned' ? 'bg-blue-500' :
+              status.type === 'in-progress' ? 'bg-orange-500' :
+              'bg-green-500'
+            }`}></div>
+            <span className="font-medium capitalize">{status.type.replace('-', ' ')}</span>
+          </div>
+          
+          <div className="space-y-1 text-sm">
+            <p><span className="font-medium">Client:</span> {booking.clientName}</p>
+            <p><span className="font-medium">Carer:</span> {staffName}</p>
+            <p><span className="font-medium">Time:</span> {booking.startTime} - {booking.endTime} ({duration})</p>
+            <p><span className="font-medium">Date:</span> {format(date, 'MMM d, yyyy')}</p>
+            {booking.status && (
+              <p><span className="font-medium">Status:</span> <span className="capitalize">{booking.status}</span></p>
+            )}
+            {booking.notes && (
+              <p><span className="font-medium">Notes:</span> {booking.notes}</p>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  const calculateDuration = (startTime: string, endTime: string) => {
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const [endHour, endMin] = endTime.split(':').map(Number);
+    const startInMinutes = startHour * 60 + startMin;
+    const endInMinutes = endHour * 60 + endMin;
+    const durationInMinutes = endInMinutes - startInMinutes;
+    
+    if (durationInMinutes >= 60) {
+      const hours = Math.floor(durationInMinutes / 60);
+      const minutes = durationInMinutes % 60;
+      return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    }
+    return `${durationInMinutes}m`;
+  };
+
   return (
-    <div className="space-y-4">
+    <TooltipProvider>
+      <div className="space-y-4">
       {/* Header with search and filters */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -293,14 +370,19 @@ export function StaffScheduleCalendar({
             {timeSlots.map(slot => {
               const status = staffMember.schedule[slot];
               return (
-                <div
-                  key={slot}
-                  className={`p-1 border-r last:border-r-0 h-16 flex items-center justify-center text-xs font-medium cursor-pointer transition-colors ${getStatusColor(status)}`}
-                  onClick={() => handleCellClick(staffMember.id, slot)}
-                  title={status.booking ? `${status.booking.clientName} (${status.booking.startTime}-${status.booking.endTime})` : status.leaveType || ''}
-                >
-                  {getStatusLabel(status)}
-                </div>
+                <Tooltip key={slot}>
+                  <TooltipTrigger asChild>
+                    <div
+                      className={`p-1 border-r last:border-r-0 h-16 flex items-center justify-center text-xs font-medium cursor-pointer transition-colors ${getStatusColor(status)}`}
+                      onClick={() => handleCellClick(staffMember.id, slot)}
+                    >
+                      {getStatusLabel(status)}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    {renderTooltipContent(status, staffMember.name)}
+                  </TooltipContent>
+                </Tooltip>
               );
             })}
           </div>
@@ -332,6 +414,7 @@ export function StaffScheduleCalendar({
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
