@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Plus, Search, MoreHorizontal, Edit, Trash2, Shield, UserCheck, Eye, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,7 @@ interface TeamManagementSectionProps {
 const ITEMS_PER_PAGE = 10;
 
 export function TeamManagementSection({ branchId, branchName }: TeamManagementSectionProps) {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [specializationFilter, setSpecializationFilter] = useState("all");
@@ -70,6 +72,10 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
   const { data: carers = [], isLoading } = useBranchCarers(branchId);
   const deleteMutation = useDeleteCarer();
   const updateCarerMutation = useUpdateCarer();
+
+  const handleViewDetails = (carer: CarerDB) => {
+    navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName || '')}/carers/${carer.id}`);
+  };
 
   const filteredCarers = useMemo(() => {
     return carers.filter(carer => {
@@ -300,6 +306,10 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleViewDetails(carer)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Details
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setEditingCarer(carer)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Details
