@@ -31,8 +31,7 @@ export const useBookingAttendance = () => {
         const { error: bookingError } = await supabase
           .from('bookings')
           .update({ 
-            status: newStatus,
-            updated_at: new Date().toISOString()
+            status: newStatus
           })
           .eq('id', data.bookingId);
 
