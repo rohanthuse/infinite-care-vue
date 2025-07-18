@@ -379,7 +379,7 @@ export function StaffScheduleCalendar({
                       {getStatusLabel(status)}
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
+                  <TooltipContent side="top" className="max-w-xs p-3">
                     {renderTooltipContent(status, staffMember.name)}
                   </TooltipContent>
                 </Tooltip>
