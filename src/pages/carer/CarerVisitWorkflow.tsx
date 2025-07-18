@@ -517,7 +517,7 @@ const CarerVisitWorkflow = () => {
         bookingId: currentAppointment.id,
         staffId: user.id,
         branchId: currentAppointment.clients?.branch_id || '',
-        action: 'complete_visit',
+        action: 'end_visit',
         location: undefined
       };
 
@@ -1003,7 +1003,7 @@ const CarerVisitWorkflow = () => {
                       <Label className="flex items-center gap-2">
                         <Checkbox
                           checked={o2Therapy}
-                          onCheckedChange={setO2Therapy}
+                          onCheckedChange={(checked) => setO2Therapy(checked === true)}
                         />
                         Supplemental Oxygen
                       </Label>
@@ -1167,9 +1167,9 @@ const CarerVisitWorkflow = () => {
                       </div>
                     ) : events && events.length > 0 ? (
                       <div className="space-y-3">
-                            {events.map((event) => (
-                              <div key={event.id} className="border rounded-lg divide-y">
-                                <div className="p-4">
+                        {events.map((event) => (
+                          <div key={event.id} className="border rounded-lg divide-y">
+                            <div className="p-4">
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
                                   <h5 className="font-medium">{event.event_title}</h5>
@@ -1182,8 +1182,8 @@ const CarerVisitWorkflow = () => {
                               <p className="mt-2 text-sm text-gray-600">{event.event_description}</p>
                               <div className="mt-2 text-xs text-gray-500">Location: {event.location_in_home || 'Not specified'}</div>
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
                       </div>
                     ) : (
                       <div className="text-center py-8">
@@ -1288,7 +1288,6 @@ const CarerVisitWorkflow = () => {
                             width={300}
                             height={150}
                             onSave={setClientSignature}
-                            placeholder="Client signature here"
                           />
                         </div>
                       </div>
@@ -1305,7 +1304,6 @@ const CarerVisitWorkflow = () => {
                             width={300}
                             height={150}
                             onSave={setCarerSignature}
-                            placeholder="Your signature here"
                           />
                         </div>
                       </div>
