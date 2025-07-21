@@ -1,6 +1,8 @@
 
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useEffect } from "react";
 import Dashboard from "@/pages/Dashboard";
 import Services from "@/pages/Services";
 import Settings from "@/pages/Settings";
@@ -33,6 +35,46 @@ import Reports from "@/pages/Reports";
 import BookingApprovals from "@/pages/BookingApprovals";
 import ClientEdit from "@/pages/client/ClientEdit";
 
+const BranchAdminRedirector = () => {
+  const { data: userRole } = useUserRole();
+  
+  useEffect(() => {
+    // Only redirect branch admins, let super admins access the main dashboard
+    if (userRole?.role === 'branch_admin' && userRole?.branchId) {
+      const branchId = userRole.branchId;
+      const branchName = localStorage.getItem("currentBranchName") || "Branch";
+      const encodedBranchName = encodeURIComponent(branchName);
+      
+      // Redirect to their assigned branch dashboard
+      window.location.replace(`/branch-dashboard/${branchId}/${encodedBranchName}`);
+    }
+  }, [userRole]);
+
+  // Show loading while checking user role
+  if (!userRole) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // If it's a branch admin, show redirecting message
+  if (userRole.role === 'branch_admin') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to your branch dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // For super admins, render the normal dashboard
+  return <Dashboard />;
+};
+
 const RequireAdminAuth = () => {
   const { session, loading } = useAuth();
 
@@ -54,7 +96,8 @@ const RequireAdminAuth = () => {
 // Export as function that returns Route array for consistency
 const AdminRoutes = () => [
   <Route key="admin-auth" element={<RequireAdminAuth />}>
-    <Route path="/dashboard" element={<Dashboard />} />
+    <Route path="/admin" element={<BranchAdminRedirector />} />
+    <Route path="/dashboard" element={<BranchAdminRedirector />} />
     <Route path="/notifications" element={<Notifications />} />
     <Route path="/notifications/:categoryId" element={<Notifications />} />
     <Route path="/services" element={<Services />} />

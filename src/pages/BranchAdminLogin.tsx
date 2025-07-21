@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,8 +47,56 @@ const BranchAdminLogin = () => {
           .single();
 
         if (roleData) {
-          localStorage.setItem("userType", "branch_admin");
-          navigate("/admin");
+          // Fetch the branch admin's assigned branch
+          const { data: adminBranchData, error: branchError } = await supabase
+            .from("admin_branches")
+            .select(`
+              branch_id,
+              branches:branch_id (
+                id,
+                name,
+                status
+              )
+            `)
+            .eq("admin_id", data.user.id)
+            .eq("branches.status", "Active")
+            .single();
+
+          if (branchError) {
+            console.error("Error fetching branch assignment:", branchError);
+            toast({
+              variant: "destructive",
+              title: "Access Error",
+              description: "Unable to find your branch assignment. Please contact support.",
+            });
+            await supabase.auth.signOut();
+            return;
+          }
+
+          if (adminBranchData?.branches) {
+            const branch = adminBranchData.branches;
+            localStorage.setItem("userType", "branch_admin");
+            localStorage.setItem("currentBranchId", branch.id);
+            localStorage.setItem("currentBranchName", branch.name);
+            
+            // Encode branch name for URL
+            const encodedBranchName = encodeURIComponent(branch.name);
+            
+            toast({
+              title: "Login Successful",
+              description: `Welcome back! Redirecting to ${branch.name}...`,
+            });
+            
+            // Redirect to the specific branch dashboard
+            navigate(`/branch-dashboard/${branch.id}/${encodedBranchName}`);
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Access Denied",
+              description: "No active branch assignment found. Please contact your administrator.",
+            });
+            await supabase.auth.signOut();
+          }
         } else {
           toast({
             variant: "destructive",

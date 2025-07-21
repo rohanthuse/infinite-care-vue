@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
@@ -11,6 +12,8 @@ import { useServices } from "@/data/hooks/useServices";
 import { useBookingData } from "@/components/bookings/hooks/useBookingData";
 import { useBranchDashboardNavigation } from "@/hooks/useBranchDashboardNavigation";
 import { useNotificationGenerator } from "@/hooks/useNotificationGenerator";
+import { useCanAccessBranch } from "@/hooks/useBranchAdminAccess";
+import { useUserRole } from "@/hooks/useUserRole";
 
 // Import refactored sections
 import { DashboardStatsSection } from "@/components/branch-dashboard/DashboardStatsSection";
@@ -43,6 +46,7 @@ interface BranchDashboardProps {
 const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { data: userRole } = useUserRole();
   
   const {
     id,
@@ -51,6 +55,9 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     handleTabChange,
     handleWorkflowNavigation
   } = useBranchDashboardNavigation();
+
+  // Check branch access for branch admins
+  const { canAccess, isLoading: accessLoading, branchName: accessBranchName } = useCanAccessBranch(id || "");
 
   // Initialize notification generator for this branch
   useNotificationGenerator(id);
@@ -67,6 +74,43 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const [isUploadDocumentDialogOpen, setIsUploadDocumentDialogOpen] = useState(false);
 
   const displayBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
+
+  // Access control effect
+  useEffect(() => {
+    if (userRole?.role === 'branch_admin' && !accessLoading && !canAccess && id) {
+      console.warn('Branch admin trying to access unauthorized branch:', id);
+      navigate('/branch-admin-login');
+    }
+  }, [userRole, canAccess, accessLoading, id, navigate]);
+
+  // Show loading while checking access
+  if (accessLoading || !userRole) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Show access denied for branch admins without access
+  if (userRole.role === 'branch_admin' && !canAccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
+          <p className="text-gray-600 mb-4">
+            You don't have access to this branch dashboard.
+          </p>
+          <button
+            onClick={() => navigate('/branch-admin-login')}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Return to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   React.useEffect(() => {
     console.log("[BranchDashboard] services:", services, "isLoadingServices:", isLoadingServices, "servicesError:", servicesError);
