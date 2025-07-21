@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useInviteAdmin } from "@/data/hooks/useInviteAdmin";
+import { useCreateAdmin } from "@/data/hooks/useCreateAdmin";
 import { toast } from "sonner";
 
 interface CreateAdminDialogProps {
@@ -27,96 +27,73 @@ export const CreateAdminDialog: React.FC<CreateAdminDialogProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     email: "",
-    firstName: "",
-    lastName: "",
+    first_name: "",
+    last_name: "",
+    password: "",
   });
 
-  const inviteAdminMutation = useInviteAdmin();
+  const createAdminMutation = useCreateAdmin();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.email || !formData.firstName || !formData.lastName) {
+    if (!formData.email || !formData.first_name || !formData.last_name || !formData.password) {
       toast.error("Please fill in all fields");
       return;
     }
 
-    // Use default permissions for quick admin creation
-    const defaultPermissions = {
-      system: true,
-      finance: true,
-      under_review_care_plan: true,
-      confirmed_care_plan: true,
-      reviews: true,
-      third_party: true,
-      report_accounting: true,
-      report_total_working_hours: true,
-      report_staff: true,
-      report_client: true,
-      report_service: true,
-      accounting_extra_time: true,
-      accounting_expense: true,
-      accounting_travel: true,
-      accounting_invoices: true,
-      accounting_gross_payslip: true,
-      accounting_travel_management: true,
-      accounting_client_rate: true,
-      accounting_authority_rate: true,
-      accounting_staff_rate: true,
-      accounting_rate_management: true,
-      accounting_staff_bank_detail: true,
-    };
-
-    inviteAdminMutation.mutate({
-      email: formData.email,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      branchId: branchId,
-      permissions: defaultPermissions
-    }, {
-      onSuccess: () => {
-        setFormData({ email: "", firstName: "", lastName: "" });
-        onOpenChange(false);
+    createAdminMutation.mutate(
+      {
+        ...formData,
+        branch_id: branchId,
       },
-      onError: (error: any) => {
-        console.error("Create admin error:", error);
-      },
-    });
+      {
+        onSuccess: () => {
+          toast.success("Admin user created successfully!");
+          setFormData({ email: "", first_name: "", last_name: "", password: "" });
+          onOpenChange(false);
+        },
+        onError: (error: any) => {
+          console.error("Create admin error:", error);
+          toast.error(error.message || "Failed to create admin user");
+        },
+      }
+    );
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Invite Admin User</DialogTitle>
+          <DialogTitle>Create Admin User</DialogTitle>
           <DialogDescription>
-            Send an invitation to create a new admin user for this branch to enable booking creation.
+            Create a new admin user for this branch to enable booking creation.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="firstName" className="text-right">
+              <Label htmlFor="first_name" className="text-right">
                 First Name
               </Label>
               <Input
-                id="firstName"
-                value={formData.firstName}
+                id="first_name"
+                value={formData.first_name}
                 onChange={(e) =>
-                  setFormData({ ...formData, firstName: e.target.value })
+                  setFormData({ ...formData, first_name: e.target.value })
                 }
                 className="col-span-3"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="lastName" className="text-right">
+              <Label htmlFor="last_name" className="text-right">
                 Last Name
               </Label>
               <Input
-                id="lastName"
-                value={formData.lastName}
+                id="last_name"
+                value={formData.last_name}
                 onChange={(e) =>
-                  setFormData({ ...formData, lastName: e.target.value })
+                  setFormData({ ...formData, last_name: e.target.value })
                 }
                 className="col-span-3"
               />
@@ -135,13 +112,27 @@ export const CreateAdminDialog: React.FC<CreateAdminDialogProps> = ({
                 className="col-span-3"
               />
             </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="password" className="text-right">
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                className="col-span-3"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button
               type="submit"
-              disabled={inviteAdminMutation.isPending}
+              disabled={createAdminMutation.isPending}
             >
-              {inviteAdminMutation.isPending ? "Sending Invitation..." : "Send Invitation"}
+              {createAdminMutation.isPending ? "Creating..." : "Create Admin"}
             </Button>
           </DialogFooter>
         </form>

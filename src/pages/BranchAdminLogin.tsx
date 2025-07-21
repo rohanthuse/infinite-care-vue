@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,26 +29,10 @@ const BranchAdminLogin = () => {
       });
 
       if (error) {
-        console.error('Login error:', error);
-        
-        let errorMessage = "Login Failed";
-        let description = error.message;
-        
-        if (error.message.includes('Invalid login credentials')) {
-          errorMessage = "Invalid Credentials";
-          description = "Please check your email and password. If you were just invited as an admin, make sure you're using the credentials provided in the invitation.";
-        } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = "Email Not Confirmed";
-          description = "Please check your email for a confirmation link, or contact your administrator.";
-        } else if (error.message.includes('Too many requests')) {
-          errorMessage = "Too Many Attempts";
-          description = "Please wait a moment before trying again.";
-        }
-        
         toast({
           variant: "destructive",
-          title: errorMessage,
-          description: description,
+          title: "Login Failed",
+          description: error.message,
         });
         return;
       }
@@ -82,7 +67,7 @@ const BranchAdminLogin = () => {
             toast({
               variant: "destructive",
               title: "Access Error",
-              description: "Unable to find your branch assignment. Please contact your administrator for assistance.",
+              description: "Unable to find your branch assignment. Please contact support.",
             });
             await supabase.auth.signOut();
             return;
@@ -108,7 +93,7 @@ const BranchAdminLogin = () => {
             toast({
               variant: "destructive",
               title: "Access Denied",
-              description: "No active branch assignment found. Please contact your administrator to assign you to a branch.",
+              description: "No active branch assignment found. Please contact your administrator.",
             });
             await supabase.auth.signOut();
           }
@@ -116,7 +101,7 @@ const BranchAdminLogin = () => {
           toast({
             variant: "destructive",
             title: "Access Denied",
-            description: "You don't have branch admin privileges. Please contact your administrator or use the correct login page.",
+            description: "You don't have branch admin privileges.",
           });
           await supabase.auth.signOut();
         }
@@ -126,7 +111,7 @@ const BranchAdminLogin = () => {
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: "An unexpected error occurred. Please try again or contact support if the problem persists.",
+        description: "An unexpected error occurred. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -295,9 +280,6 @@ const BranchAdminLogin = () => {
                 >
                   Contact Support
                 </a>
-              </p>
-              <p className="text-xs text-gray-500 mt-2">
-                If you were just invited as an admin, use the credentials provided in your invitation email.
               </p>
             </div>
 

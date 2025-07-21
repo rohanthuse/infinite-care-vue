@@ -3,21 +3,12 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 
-// Generate a secure temporary password
-function generateTemporaryPassword(): string {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%^&*';
-  let result = '';
-  for (let i = 0; i < 12; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
-
-// Check if a user already exists and is linked to the branch
+// This function checks if a user already exists and is linked to the branch.
 async function isAlreadyAdminOfBranch(supabase: SupabaseClient, email: string, branchId: string): Promise<boolean> {
   const { data: user, error: userError } = await supabase.from('profiles').select('id').eq('email', email).single();
 
   if (userError || !user) {
+    // User does not exist, so not an admin of the branch
     return false;
   }
 
@@ -61,116 +52,99 @@ serve(async (req) => {
         })
     }
 
-    // Generate a temporary password
-    const tempPassword = generateTemporaryPassword();
-    console.log(`Generated temporary password for ${email}`);
-
-    // Try to create a new user with admin privileges (bypasses email confirmation)
-    console.log(`Attempting to create user ${email} via admin.createUser.`);
-    const { data: createUserData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password: tempPassword,
-      email_confirm: true, // Auto-confirm email
-      user_metadata: {
+    console.log(`Attempting to invite ${email} via auth.admin.inviteUserByEmail.`);
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+      data: {
         first_name: firstName,
         last_name: lastName,
         role: 'branch_admin',
       },
-    });
+    })
 
-    let userId: string;
-
-    if (createUserError) {
-      console.error('Error during supabaseAdmin.auth.admin.createUser:', createUserError);
-      
-      if (createUserError.message.includes('User already exists')) {
+    if (inviteError) {
+      console.error('Error during supabaseAdmin.auth.admin.inviteUserByEmail:', inviteError);
+      if (inviteError.message.includes('User already exists')) {
         console.log(`User ${email} already exists. Attempting to link to branch ${branchId}.`);
 
         const { data: { users }, error: getUserError } = await supabaseAdmin.auth.admin.listUsers({ email });
         if (getUserError || users.length === 0) {
           console.error('Error fetching existing user by email:', getUserError);
-          throw new Error("Failed to retrieve existing user after creation failed.");
+          throw new Error("Failed to retrieve existing user after invite failed.");
         }
         
         const user = users[0];
-        userId = user.id;
-        console.log(`Found existing user with ID: ${userId}. Proceeding to link.`);
+        console.log(`Found existing user with ID: ${user.id}. Proceeding to link.`);
         
-        // Update existing user's password and confirm email
-        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-          password: tempPassword,
-          email_confirm: true,
-          user_metadata: {
-            first_name: firstName,
-            last_name: lastName,
-            role: 'branch_admin',
-          }
+        const { error: branchLinkError } = await supabaseAdmin.from('admin_branches').insert({
+            admin_id: user.id,
+            branch_id: branchId
         });
-        
-        if (updateError) {
-          console.error('Error updating existing user:', updateError);
-          throw updateError;
+        if (branchLinkError) {
+          console.error('Error linking existing user to branch in admin_branches:', branchLinkError);
+          throw branchLinkError;
         }
-      } else {
-        throw createUserError;
+
+        const { error: permissionsError } = await supabaseAdmin.from('admin_permissions').upsert({
+            admin_id: user.id,
+            branch_id: branchId,
+            ...permissions
+        });
+        if (permissionsError) {
+            console.error('Error setting permissions for existing user:', permissionsError);
+            throw permissionsError;
+        }
+        
+        const { error: roleError } = await supabaseAdmin.from('user_roles').upsert({ user_id: user.id, role: 'branch_admin' });
+        if (roleError) {
+          console.error('Error upserting branch_admin role for existing user:', roleError);
+          throw roleError;
+        }
+        
+        console.log(`Successfully linked existing user ${email} to branch and set permissions.`);
+        return new Response(JSON.stringify({ message: 'Existing user assigned as admin to the branch.' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        });
       }
-    } else {
-      userId = createUserData.user.id;
-      console.log(`New user ${email} created with ID: ${userId}.`);
+      throw inviteError
+    }
+    
+    const newUser = inviteData.user
+    if (!newUser) {
+      console.error('Invite successful but newUser object is missing from response.');
+      throw new Error('Could not get user from invitation.')
     }
 
-    // Ensure user has branch_admin role
-    const { error: roleError } = await supabaseAdmin.from('user_roles').upsert({ 
-      user_id: userId, 
-      role: 'branch_admin' 
-    });
-    if (roleError) {
-      console.error('Error upserting branch_admin role:', roleError);
-      throw roleError;
-    }
-
-    // Link user to branch
-    const { error: branchLinkError } = await supabaseAdmin.from('admin_branches').upsert({
-      admin_id: userId,
-      branch_id: branchId
-    });
-    if (branchLinkError) {
-      console.error('Error linking user to branch:', branchLinkError);
-      throw branchLinkError;
-    }
-
-    // Set permissions
-    const { error: permissionsError } = await supabaseAdmin.from('admin_permissions').upsert({
-      admin_id: userId,
+    console.log(`New user ${email} invited with ID: ${newUser.id}. Linking to branch.`);
+    const { error: branchLinkError } = await supabaseAdmin.from('admin_branches').insert({
+      admin_id: newUser.id,
       branch_id: branchId,
-      ...permissions
+    })
+
+    if (branchLinkError) {
+      console.error('Failed to link newly invited user to branch:', branchLinkError)
+      throw new Error('User was invited, but could not be assigned to the branch.')
+    }
+
+    const { error: permissionsError } = await supabaseAdmin.from('admin_permissions').upsert({
+        admin_id: newUser.id,
+        branch_id: branchId,
+        ...permissions
     });
+
     if (permissionsError) {
-      console.error('Error setting permissions:', permissionsError);
-      throw permissionsError;
+        console.error('Failed to set permissions for newly invited user:', permissionsError)
+        // Ideally, here you might want to roll back the user creation or branch linking.
+        // For now, we'll throw an error which will be caught below.
+        throw new Error('User was invited and linked, but permissions could not be set.')
     }
 
-    // Ensure profile exists
-    const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
-      id: userId,
-      email: email,
-      first_name: firstName,
-      last_name: lastName
-    });
-    if (profileError) {
-      console.error('Error creating/updating profile:', profileError);
-      // Don't throw here as this is not critical for login functionality
-    }
 
-    console.log(`Successfully invited ${email} and set up admin access.`);
-    return new Response(JSON.stringify({ 
-      message: `Admin invited successfully! Login credentials: Email: ${email}, Password: ${tempPassword}`,
-      tempPassword: tempPassword 
-    }), {
+    console.log(`Successfully invited ${email} and linked to branch.`);
+    return new Response(JSON.stringify({ message: 'Admin invited successfully' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
-    });
-    
+    })
   } catch (error) {
     console.error('Unhandled exception in invite-admin function:', error);
     return new Response(JSON.stringify({ error: error.message }), {

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useInviteAdmin } from "@/data/hooks/useInviteAdmin";
+import { useCreateAdmin } from "@/data/hooks/useCreateAdmin";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -65,15 +66,16 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     email: "",
-    firstName: "",
-    lastName: "",
-    branchId: "",
+    first_name: "",
+    last_name: "",
+    password: "",
+    branch_id: "",
   });
 
   const [permissions, setPermissions] = useState<Permissions>(initialPermissions);
   const [activeTab, setActiveTab] = useState("basic");
 
-  const inviteAdminMutation = useInviteAdmin();
+  const createAdminMutation = useCreateAdmin();
 
   // Fetch branches for the dropdown
   const { data: branches = [], isLoading: branchesLoading } = useQuery({
@@ -107,26 +109,42 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.email || !formData.firstName || !formData.lastName || !formData.branchId) {
+    if (!formData.email || !formData.first_name || !formData.last_name || !formData.password || !formData.branch_id) {
       toast.error("Please fill in all fields");
       return;
     }
 
     try {
-      await inviteAdminMutation.mutateAsync({
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        branchId: formData.branchId,
-        permissions
-      });
+      // First create the admin
+      const adminResult = await createAdminMutation.mutateAsync(formData);
+      
+      if (adminResult?.user?.id) {
+        // Then create their permissions
+        const { error: permissionsError } = await supabase
+          .from('admin_permissions')
+          .insert({
+            admin_id: adminResult.user.id,
+            branch_id: formData.branch_id,
+            ...permissions
+          });
+
+        if (permissionsError) {
+          console.error("Error creating admin permissions:", permissionsError);
+          toast.error("Admin created but permissions setup failed");
+        } else {
+          toast.success("Admin user created successfully with permissions!");
+        }
+      } else {
+        toast.success("Admin user created successfully!");
+      }
 
       // Reset form
       setFormData({ 
         email: "", 
-        firstName: "", 
-        lastName: "", 
-        branchId: "" 
+        first_name: "", 
+        last_name: "", 
+        password: "",
+        branch_id: "" 
       });
       setPermissions(initialPermissions);
       setActiveTab("basic");
@@ -134,17 +152,18 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
       onClose();
 
     } catch (error: any) {
-      console.error("Invite admin error:", error);
-      // Error handling is done in the hook
+      console.error("Create admin error:", error);
+      toast.error(error.message || "Failed to create admin user");
     }
   };
 
   const handleClose = () => {
     setFormData({ 
       email: "", 
-      firstName: "", 
-      lastName: "", 
-      branchId: "" 
+      first_name: "", 
+      last_name: "", 
+      password: "",
+      branch_id: "" 
     });
     setPermissions(initialPermissions);
     setActiveTab("basic");
@@ -155,9 +174,9 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Invite New Branch Admin</DialogTitle>
+          <DialogTitle>Add New Branch Admin</DialogTitle>
           <DialogDescription>
-            Send an invitation to create a new administrator account for a branch location with specific permissions.
+            Create a new administrator account for a branch location with specific permissions.
           </DialogDescription>
         </DialogHeader>
         
@@ -177,26 +196,26 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
             <TabsContent value="basic" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name *</Label>
+                  <Label htmlFor="first_name">First Name *</Label>
                   <Input
-                    id="firstName"
+                    id="first_name"
                     type="text"
-                    value={formData.firstName}
+                    value={formData.first_name}
                     onChange={(e) =>
-                      setFormData({ ...formData, firstName: e.target.value })
+                      setFormData({ ...formData, first_name: e.target.value })
                     }
                     placeholder="Enter first name"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name *</Label>
+                  <Label htmlFor="last_name">Last Name *</Label>
                   <Input
-                    id="lastName"
+                    id="last_name"
                     type="text"
-                    value={formData.lastName}
+                    value={formData.last_name}
                     onChange={(e) =>
-                      setFormData({ ...formData, lastName: e.target.value })
+                      setFormData({ ...formData, last_name: e.target.value })
                     }
                     placeholder="Enter last name"
                     required
@@ -219,11 +238,26 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="password">Password *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  placeholder="Enter password"
+                  required
+                  minLength={6}
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="branch">Branch *</Label>
                 <Select
-                  value={formData.branchId}
+                  value={formData.branch_id}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, branchId: value })
+                    setFormData({ ...formData, branch_id: value })
                   }
                   required
                 >
@@ -328,22 +362,22 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={inviteAdminMutation.isPending}
+              disabled={createAdminMutation.isPending}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={inviteAdminMutation.isPending || branchesLoading}
+              disabled={createAdminMutation.isPending || branchesLoading}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {inviteAdminMutation.isPending ? (
+              {createAdminMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Sending Invitation...
+                  Creating...
                 </>
               ) : (
-                "Send Invitation"
+                "Create Admin"
               )}
             </Button>
           </DialogFooter>
