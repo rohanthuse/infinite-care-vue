@@ -40,6 +40,10 @@ const Navbar = () => {
   const handleClientLogin = () => {
     navigate("/client-login");
   };
+
+  const handleBranchAdminLogin = () => {
+    navigate("/branch-admin-login");
+  };
   
   const navItems = [
     { text: "Home", href: "#hero" },
@@ -92,6 +96,14 @@ const Navbar = () => {
             onClick={handleCarerLogin}
           >
             Carer Login
+          </CustomButton>
+          <CustomButton 
+            variant="outline" 
+            size="sm" 
+            className="border-blue-600 text-blue-600 hover:bg-blue-50"
+            onClick={handleBranchAdminLogin}
+          >
+            Branch Admin Login
           </CustomButton>
           <CustomButton 
             variant="pill" 
@@ -151,6 +163,16 @@ const Navbar = () => {
               }}
             >
               Carer Login
+            </CustomButton>
+            <CustomButton 
+              className="w-full"
+              variant="outline"
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                handleBranchAdminLogin();
+              }}
+            >
+              Branch Admin Login
             </CustomButton>
             <CustomButton 
               className="w-full bg-blue-600 hover:bg-blue-700"

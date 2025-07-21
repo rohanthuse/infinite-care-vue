@@ -14,6 +14,7 @@ import CarerLoginSafe from "./pages/CarerLoginSafe";
 import CarerInvitation from "./pages/CarerInvitation";
 import CarerOnboarding from "./pages/CarerOnboarding";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
+import BranchAdminLogin from "./pages/BranchAdminLogin";
 import ClientLogin from "./pages/ClientLogin";
 import AdminRoutes from "./routes/AdminRoutes";
 import CarerRoutes from "./routes/CarerRoutes";
@@ -51,6 +52,7 @@ const AppContent = () => {
   const isPublicRoute = [
     '/', 
     '/super-admin', 
+    '/branch-admin-login',
     '/carer-login', 
     '/client-login', 
     '/carer-invitation', 
@@ -70,6 +72,7 @@ const AppContent = () => {
               {/* Public Routes - Always accessible */}
               <Route path="/" element={<Index />} />
               <Route path="/super-admin" element={<SuperAdminLogin />} />
+              <Route path="/branch-admin-login" element={<BranchAdminLogin />} />
               <Route path="/carer-login" element={<CarerLoginSafe />} />
               <Route path="/carer-invitation" element={<CarerInvitation />} />
               <Route path="/carer-onboarding" element={<CarerOnboarding />} />
