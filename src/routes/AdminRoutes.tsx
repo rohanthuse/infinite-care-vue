@@ -45,7 +45,7 @@ const RequireAdminAuth = () => {
   }
 
   if (!session) {
-    return <Navigate to="/super-admin" replace />;
+    return <Navigate to="/admin-login" replace />;
   }
 
   return <Outlet />;

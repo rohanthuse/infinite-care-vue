@@ -13,7 +13,7 @@ import CarerLogin from "./pages/CarerLogin";
 import CarerLoginSafe from "./pages/CarerLoginSafe";
 import CarerInvitation from "./pages/CarerInvitation";
 import CarerOnboarding from "./pages/CarerOnboarding";
-import SuperAdminLogin from "./pages/SuperAdminLogin";
+import AdminLogin from "./pages/AdminLogin";
 import ClientLogin from "./pages/ClientLogin";
 import AdminRoutes from "./routes/AdminRoutes";
 import CarerRoutes from "./routes/CarerRoutes";
@@ -50,7 +50,8 @@ const AppContent = () => {
   // Show loading screen only for protected routes, not public routes
   const isPublicRoute = [
     '/', 
-    '/super-admin', 
+    '/admin-login',
+    '/super-admin', // Keep for backward compatibility
     '/carer-login', 
     '/client-login', 
     '/carer-invitation', 
@@ -69,7 +70,8 @@ const AppContent = () => {
             <Routes>
               {/* Public Routes - Always accessible */}
               <Route path="/" element={<Index />} />
-              <Route path="/super-admin" element={<SuperAdminLogin />} />
+              <Route path="/admin-login" element={<AdminLogin />} />
+              <Route path="/super-admin" element={<AdminLogin />} /> {/* Redirect for backward compatibility */}
               <Route path="/carer-login" element={<CarerLoginSafe />} />
               <Route path="/carer-invitation" element={<CarerInvitation />} />
               <Route path="/carer-onboarding" element={<CarerOnboarding />} />
