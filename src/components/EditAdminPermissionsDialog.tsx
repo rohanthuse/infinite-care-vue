@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
@@ -170,8 +169,8 @@ export function EditAdminPermissionsDialog({ isOpen, onClose, adminId, branchId,
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-[650px] p-0 overflow-hidden rounded-xl">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b">
+        <DialogContent className="sm:max-w-[650px] max-h-[90vh] p-0 overflow-hidden rounded-xl flex flex-col">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
             <DialogTitle className="text-xl flex items-center font-semibold text-gray-800">
               <ShieldCheck className="h-5 w-5 mr-2 text-blue-600" />
               Edit Permissions
@@ -187,10 +186,10 @@ export function EditAdminPermissionsDialog({ isOpen, onClose, adminId, branchId,
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit}>
-            <div className="px-6 pt-6 pb-24 max-h-[70vh] overflow-y-auto space-y-6">
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+            <div className="px-6 py-4 overflow-y-auto flex-1 space-y-6">
               {isLoadingPermissions ? (
-                <div className="flex justify-center items-center h-96">
+                <div className="flex justify-center items-center h-64">
                   <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
                   <span className="ml-2 text-gray-600">Loading Permissions...</span>
                 </div>
@@ -263,7 +262,7 @@ export function EditAdminPermissionsDialog({ isOpen, onClose, adminId, branchId,
               )}
             </div>
 
-            <DialogFooter className="px-6 py-4 border-t bg-gray-50/80">
+            <DialogFooter className="px-6 py-4 border-t bg-gray-50/80 flex-shrink-0">
               <div className="flex justify-end gap-2 w-full">
                 <Button 
                   type="button" 
