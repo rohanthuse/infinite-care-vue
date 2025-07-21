@@ -22,15 +22,51 @@ export const useBranchAdminAccess = (targetBranchId?: string) => {
         throw new Error('Not authenticated');
       }
 
-      // First check if user is a branch admin
+      // Get user roles first
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', session.user.id)
-        .eq('role', 'branch_admin')
-        .single();
+        .eq('user_id', session.user.id);
 
-      if (!roleData) {
+      const userRoles = roleData?.map(r => r.role) || [];
+      
+      // Super admins can access any branch
+      if (userRoles.includes('super_admin')) {
+        if (targetBranchId) {
+          // Get the specific branch details
+          const { data: branchData, error } = await supabase
+            .from('branches')
+            .select('id, name, status')
+            .eq('id', targetBranchId)
+            .single();
+
+          if (error || !branchData) {
+            throw new Error('Branch not found');
+          }
+
+          return {
+            branchId: branchData.id,
+            branchName: branchData.name,
+            branchStatus: branchData.status,
+            canAccess: true,
+            isLoading: false,
+            error: null
+          };
+        } else {
+          // No specific branch requested, super admin has general access
+          return {
+            branchId: '',
+            branchName: 'Super Admin',
+            branchStatus: 'Active',
+            canAccess: true,
+            isLoading: false,
+            error: null
+          };
+        }
+      }
+
+      // Check if user is a branch admin
+      if (!userRoles.includes('branch_admin')) {
         throw new Error('Not a branch admin');
       }
 

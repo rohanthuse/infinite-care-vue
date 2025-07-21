@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -56,7 +55,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     handleWorkflowNavigation
   } = useBranchDashboardNavigation();
 
-  // Check branch access for branch admins
+  // Check branch access - but allow super admins to bypass
   const { canAccess, isLoading: accessLoading, branchName: accessBranchName } = useCanAccessBranch(id || "");
 
   // Initialize notification generator for this branch
@@ -75,7 +74,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
 
   const displayBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
 
-  // Access control effect
+  // Enhanced access control - super admins can access any branch
   useEffect(() => {
     if (userRole?.role === 'branch_admin' && !accessLoading && !canAccess && id) {
       console.warn('Branch admin trying to access unauthorized branch:', id);
@@ -83,8 +82,8 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     }
   }, [userRole, canAccess, accessLoading, id, navigate]);
 
-  // Show loading while checking access
-  if (accessLoading || !userRole) {
+  // Show loading while checking access (but skip for super admins)
+  if (accessLoading && userRole?.role !== 'super_admin') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -92,7 +91,16 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     );
   }
 
-  // Show access denied for branch admins without access
+  // Show loading while user role is being determined
+  if (!userRole) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Show access denied for branch admins without access (but allow super admins)
   if (userRole.role === 'branch_admin' && !canAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -106,6 +114,26 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
             Return to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if branch ID is missing
+  if (!id) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Branch Not Found</h1>
+          <p className="text-gray-600 mb-4">
+            The branch you're looking for could not be found.
+          </p>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Return to Dashboard
           </button>
         </div>
       </div>

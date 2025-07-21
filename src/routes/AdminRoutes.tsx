@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -39,7 +38,8 @@ const BranchAdminRedirector = () => {
   const { data: userRole } = useUserRole();
   
   useEffect(() => {
-    // Only redirect branch admins, let super admins access the main dashboard
+    // Only redirect branch admins to their specific branch
+    // Super admins should stay on the main dashboard
     if (userRole?.role === 'branch_admin' && userRole?.branchId) {
       const branchId = userRole.branchId;
       const branchName = localStorage.getItem("currentBranchName") || "Branch";
@@ -93,7 +93,6 @@ const RequireAdminAuth = () => {
   return <Outlet />;
 };
 
-// Export as function that returns Route array for consistency
 const AdminRoutes = () => [
   <Route key="admin-auth" element={<RequireAdminAuth />}>
     <Route path="/admin" element={<BranchAdminRedirector />} />
@@ -117,7 +116,7 @@ const AdminRoutes = () => [
     <Route path="/key-parameters" element={<KeyParameters />} />
     <Route path="/booking-approvals" element={<BookingApprovals />} />
     
-    {/* Branch Dashboard Routes - Simplified and URL-based */}
+    {/* Branch Dashboard Routes - Enhanced error handling */}
     <Route path="/branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
     <Route path="/branch-dashboard/:id/:branchName/dashboard" element={<BranchDashboard />} />
     <Route path="/branch-dashboard/:id/:branchName/key-parameters" element={<BranchDashboard />} />

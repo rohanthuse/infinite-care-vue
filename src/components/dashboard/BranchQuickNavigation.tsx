@@ -15,7 +15,10 @@ export const BranchQuickNavigation = () => {
   const { data: branches, isLoading, error } = useBranchNavigation();
 
   const handleEnterBranch = (branch: Branch) => {
-    navigate(`/branch-dashboard/${branch.id}/${encodeURIComponent(branch.name)}`);
+    // Ensure proper URL encoding for branch names
+    const encodedBranchName = encodeURIComponent(branch.name);
+    console.log('Navigating to branch:', branch.id, branch.name, encodedBranchName);
+    navigate(`/branch-dashboard/${branch.id}/${encodedBranchName}`);
   };
 
   const filteredBranches = branches?.filter(branch =>
