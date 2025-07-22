@@ -25,11 +25,11 @@ const carePlanSchema = z.object({
   activities: z.array(z.any()).optional(),
   personal_care: z.any().optional(),
   dietary: z.any().optional(),
-  risk_assessments: z.any().optional(),
-  equipment: z.any().optional(),
-  service_plans: z.any().optional(),
-  service_actions: z.any().optional(),
-  documents: z.any().optional(),
+  risk_assessments: z.array(z.any()).optional(),
+  equipment: z.array(z.any()).optional(),
+  service_plans: z.array(z.any()).optional(),
+  service_actions: z.array(z.any()).optional(),
+  documents: z.array(z.any()).optional(),
   additional_notes: z.string().optional(),
 });
 
@@ -83,11 +83,11 @@ export function CarePlanCreationWizard({
       activities: [],
       personal_care: {},
       dietary: {},
-      risk_assessments: [], // Changed from {} to []
-      equipment: [], // Changed from {} to []
-      service_plans: [], // Changed from {} to []
-      service_actions: [], // Changed from {} to []
-      documents: [], // Changed from {} to []
+      risk_assessments: [],
+      equipment: [],
+      service_plans: [],
+      service_actions: [],
+      documents: [],
       additional_notes: "",
     },
   });
@@ -194,11 +194,11 @@ export function CarePlanCreationWizard({
     if (formData.activities && formData.activities.length > 0) completedSteps.push(6);
     if (formData.personal_care && Object.keys(formData.personal_care).length > 0) completedSteps.push(7);
     if (formData.dietary && Object.keys(formData.dietary).length > 0) completedSteps.push(8);
-    if (formData.risk_assessments && formData.risk_assessments.length > 0) completedSteps.push(9); // Fixed to check array length
-    if (formData.equipment && formData.equipment.length > 0) completedSteps.push(10); // Fixed to check array length
-    if (formData.service_plans && formData.service_plans.length > 0) completedSteps.push(11); // Fixed to check array length
-    if (formData.service_actions && formData.service_actions.length > 0) completedSteps.push(12); // Fixed to check array length
-    if (formData.documents && formData.documents.length > 0) completedSteps.push(13); // Fixed to check array length
+    if (formData.risk_assessments && formData.risk_assessments.length > 0) completedSteps.push(9);
+    if (formData.equipment && formData.equipment.length > 0) completedSteps.push(10);
+    if (formData.service_plans && formData.service_plans.length > 0) completedSteps.push(11);
+    if (formData.service_actions && formData.service_actions.length > 0) completedSteps.push(12);
+    if (formData.documents && formData.documents.length > 0) completedSteps.push(13);
     
     // Step 14 (Review) is considered completed when ready to finalize
     if (completedSteps.length >= 3) completedSteps.push(14);
