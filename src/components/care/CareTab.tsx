@@ -291,6 +291,7 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
 
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedClientName, setSelectedClientName] = useState<string>("");
+  const [selectedClientData, setSelectedClientData] = useState<any>(undefined);
   const [isCreateCarePlanWizardOpen, setIsCreateCarePlanWizardOpen] = useState(false);
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
 
@@ -413,9 +414,10 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
     }
   };
 
-  const handleClientSelect = (clientId: string, clientName: string) => {
+  const handleClientSelect = (clientId: string, clientName: string, clientData?: any) => {
     setSelectedClientId(clientId);
     setSelectedClientName(clientName);
+    setSelectedClientData(clientData);
   };
 
   const handleCarePlanCreated = () => {
@@ -1037,13 +1039,13 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
       </Dialog>
 
       {/* Create Care Plan Wizard */}
-      {selectedClientId && (
+      {selectedClientId && selectedClientName && (
         <CarePlanCreationWizard
           open={isCreateCarePlanWizardOpen}
           onOpenChange={setIsCreateCarePlanWizardOpen}
           clientId={selectedClientId}
-          onComplete={handleCarePlanCreated}
-          draftCarePlanId={editingDraftId || undefined}
+          clientName={selectedClientName}
+          clientData={selectedClientData}
         />
       )}
 
