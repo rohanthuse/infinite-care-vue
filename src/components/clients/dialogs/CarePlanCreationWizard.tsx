@@ -115,32 +115,23 @@ export function CarePlanCreationWizard({
       // Only set values if they don't already exist (don't overwrite draft data)
       const currentPersonalInfo = form.getValues('personal_info') || {};
       
-      const updatedPersonalInfo = {
+      const updatedPersonalInfo: any = {
         ...currentPersonalInfo,
-        // Only set if not already present
-        ...((!currentPersonalInfo.emergency_contact_name && clientProfile.emergency_contact) && {
-          emergency_contact_name: clientProfile.emergency_contact
-        }),
-        ...((!currentPersonalInfo.emergency_contact_phone && clientProfile.emergency_phone) && {
-          emergency_contact_phone: clientProfile.emergency_phone
-        }),
-        // Extract GP name from gp_details if it's a string or object
-        ...((!currentPersonalInfo.gp_name && clientProfile.gp_details) && {
-          gp_name: typeof clientProfile.gp_details === 'string' 
-            ? clientProfile.gp_details 
-            : clientProfile.gp_details?.name || ''
-        }),
-        ...((!currentPersonalInfo.gp_practice && clientProfile.gp_details) && {
-          gp_practice: typeof clientProfile.gp_details === 'object' 
-            ? clientProfile.gp_details?.practice || ''
-            : ''
-        }),
-        ...((!currentPersonalInfo.gp_phone && clientProfile.gp_details) && {
-          gp_phone: typeof clientProfile.gp_details === 'object' 
-            ? clientProfile.gp_details?.phone || ''
-            : ''
-        }),
       };
+
+      // Add basic client information if not already present
+      if (clientProfile.first_name && clientProfile.last_name && !updatedPersonalInfo.client_name) {
+        updatedPersonalInfo.client_name = `${clientProfile.first_name} ${clientProfile.last_name}`;
+      }
+      if (clientProfile.email && !updatedPersonalInfo.client_email) {
+        updatedPersonalInfo.client_email = clientProfile.email;
+      }
+      if (clientProfile.phone && !updatedPersonalInfo.client_phone) {
+        updatedPersonalInfo.client_phone = clientProfile.phone;
+      }
+      if (clientProfile.address && !updatedPersonalInfo.client_address) {
+        updatedPersonalInfo.client_address = clientProfile.address;
+      }
 
       // Set the updated personal info
       form.setValue('personal_info', updatedPersonalInfo);
