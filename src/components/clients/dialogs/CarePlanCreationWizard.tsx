@@ -84,7 +84,7 @@ export function CarePlanCreationWizard({
       activities: [],
       personal_care: {},
       dietary: {},
-      risk_assessments: {},
+      risk_assessments: [], // Changed from {} to []
       equipment: {},
       service_plans: {},
       service_actions: {},
@@ -195,7 +195,7 @@ export function CarePlanCreationWizard({
     if (formData.activities && formData.activities.length > 0) completedSteps.push(6);
     if (formData.personal_care && Object.keys(formData.personal_care).length > 0) completedSteps.push(7);
     if (formData.dietary && Object.keys(formData.dietary).length > 0) completedSteps.push(8);
-    if (formData.risk_assessments && Object.keys(formData.risk_assessments).length > 0) completedSteps.push(9);
+    if (formData.risk_assessments && formData.risk_assessments.length > 0) completedSteps.push(9); // Fixed to check array length
     if (formData.equipment && Object.keys(formData.equipment).length > 0) completedSteps.push(10);
     if (formData.service_plans && Object.keys(formData.service_plans).length > 0) completedSteps.push(11);
     if (formData.service_actions && Object.keys(formData.service_actions).length > 0) completedSteps.push(12);
