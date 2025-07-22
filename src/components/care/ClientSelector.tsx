@@ -5,10 +5,25 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "lucide-react";
 
+interface Client {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  date_of_birth?: string;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  gp_details?: any;
+  mobility_status?: string;
+  communication_preferences?: any;
+}
+
 interface ClientSelectorProps {
   branchId: string;
   selectedClientId: string | null;
-  onClientSelect: (clientId: string, clientName: string) => void;
+  onClientSelect: (clientId: string, clientName: string, clientData: Client) => void;
 }
 
 export const ClientSelector: React.FC<ClientSelectorProps> = ({
@@ -21,12 +36,12 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
-        .select('id, first_name, last_name')
+        .select('id, first_name, last_name, email, phone, address, date_of_birth, emergency_contact, emergency_phone, gp_details, mobility_status, communication_preferences')
         .eq('branch_id', branchId)
         .order('last_name');
       
       if (error) throw error;
-      return data;
+      return data as Client[];
     },
     enabled: !!branchId
   });
@@ -48,7 +63,7 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({
         onValueChange={(value) => {
           const client = clients.find(c => c.id === value);
           if (client) {
-            onClientSelect(value, `${client.first_name} ${client.last_name}`);
+            onClientSelect(value, `${client.first_name} ${client.last_name}`, client);
           }
         }}
       >

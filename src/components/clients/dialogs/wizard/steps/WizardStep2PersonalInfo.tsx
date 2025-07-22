@@ -28,7 +28,7 @@ export function WizardStep2PersonalInfo({ form }: WizardStep2PersonalInfoProps) 
       <div>
         <h2 className="text-2xl font-semibold text-gray-900 mb-2">Personal Information</h2>
         <p className="text-gray-600">
-          Contact details and emergency information for the client.
+          Contact details and emergency information for the client. Information has been pre-populated from the client's profile where available.
         </p>
       </div>
 
@@ -41,7 +41,11 @@ export function WizardStep2PersonalInfo({ form }: WizardStep2PersonalInfoProps) 
               <FormItem>
                 <FormLabel>Emergency Contact Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter emergency contact name" {...field} />
+                  <Input 
+                    placeholder="Enter emergency contact name" 
+                    {...field} 
+                    className={field.value ? "bg-blue-50 border-blue-200" : ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -55,7 +59,11 @@ export function WizardStep2PersonalInfo({ form }: WizardStep2PersonalInfoProps) 
               <FormItem>
                 <FormLabel>Emergency Contact Phone</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter phone number" {...field} />
+                  <Input 
+                    placeholder="Enter phone number" 
+                    {...field} 
+                    className={field.value ? "bg-blue-50 border-blue-200" : ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -95,7 +103,11 @@ export function WizardStep2PersonalInfo({ form }: WizardStep2PersonalInfoProps) 
               <FormItem>
                 <FormLabel>GP Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter GP name" {...field} />
+                  <Input 
+                    placeholder="Enter GP name" 
+                    {...field} 
+                    className={field.value ? "bg-green-50 border-green-200" : ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -109,7 +121,11 @@ export function WizardStep2PersonalInfo({ form }: WizardStep2PersonalInfoProps) 
               <FormItem>
                 <FormLabel>GP Practice</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter GP practice name" {...field} />
+                  <Input 
+                    placeholder="Enter GP practice name" 
+                    {...field} 
+                    className={field.value ? "bg-green-50 border-green-200" : ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -123,7 +139,11 @@ export function WizardStep2PersonalInfo({ form }: WizardStep2PersonalInfoProps) 
               <FormItem>
                 <FormLabel>GP Phone</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter GP phone number" {...field} />
+                  <Input 
+                    placeholder="Enter GP phone number" 
+                    {...field} 
+                    className={field.value ? "bg-green-50 border-green-200" : ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
