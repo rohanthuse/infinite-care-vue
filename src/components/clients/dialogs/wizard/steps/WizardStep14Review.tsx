@@ -1,7 +1,7 @@
 
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
-import { CheckCircle, AlertCircle, FileText, User, Activity, Target, Utensils, Shield, Wrench, Calendar, ClipboardList, Upload } from "lucide-react";
+import { CheckCircle, AlertCircle, FileText, User, Activity, Target, Utensils, Shield, Wrench, Calendar, ClipboardList, Upload, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import {
   Form,
@@ -118,6 +118,9 @@ export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
 
   const completedSections = sections.filter(section => getSectionStatus(section.data) === "completed");
   const emptySections = sections.filter(section => getSectionStatus(section.data) === "empty");
+
+  // Check if care plan has enough content to be finalized
+  const hasMinimumContent = completedSections.length >= 3; // Require at least 3 sections to be complete
 
   return (
     <div className="space-y-6">
@@ -294,6 +297,26 @@ export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
         </Card>
       )}
 
+      {/* Insufficient Content Warning */}
+      {!hasMinimumContent && (
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-800">
+              <XCircle className="h-5 w-5" />
+              Insufficient Content
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-700 mb-3">
+              This care plan needs more content before it can be finalized. Please complete at least 3 sections with meaningful information.
+            </p>
+            <p className="text-sm text-red-600">
+              Currently completed: {completedSections.length} of {sections.length} sections (minimum required: 3)
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Additional Notes */}
       <Form {...form}>
         <FormField
@@ -316,21 +339,36 @@ export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
       </Form>
 
       {/* Finalization Notice */}
-      <Card className="border-green-200 bg-green-50">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
-            <div>
-              <h4 className="font-medium text-green-800 mb-1">Ready to Finalize</h4>
-              <p className="text-sm text-green-700">
-                Once you click "Finalize Care Plan", this plan will be activated and can be used 
-                for care delivery. You can still make changes later, but the plan will be marked 
-                as active and ready for implementation.
-              </p>
+      {hasMinimumContent ? (
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-green-800 mb-1">Ready to Finalize</h4>
+                <p className="text-sm text-green-700">
+                  This care plan will be sent for staff approval before becoming active. 
+                  You can still make changes during the approval process if needed.
+                </p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-gray-200 bg-gray-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-gray-600 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-gray-800 mb-1">Not Ready for Finalization</h4>
+                <p className="text-sm text-gray-700">
+                  Please add more content to at least 3 sections before finalizing this care plan.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

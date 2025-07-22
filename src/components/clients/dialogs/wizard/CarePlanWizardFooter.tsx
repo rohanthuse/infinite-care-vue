@@ -12,6 +12,7 @@ interface CarePlanWizardFooterProps {
   onFinalize: () => void;
   isLoading: boolean;
   isDraft: boolean;
+  formData?: any;
 }
 
 export function CarePlanWizardFooter({
@@ -22,10 +23,38 @@ export function CarePlanWizardFooter({
   onSaveDraft,
   onFinalize,
   isLoading,
-  isDraft
+  isDraft,
+  formData
 }: CarePlanWizardFooterProps) {
   const isFirstStep = currentStep === 1;
   const isLastStep = currentStep === totalSteps;
+
+  // Check if care plan has minimum content for finalization
+  const getSectionStatus = (sectionData: any) => {
+    if (!sectionData) return "empty";
+    if (typeof sectionData === "object" && Object.keys(sectionData).length === 0) return "empty";
+    if (Array.isArray(sectionData) && sectionData.length === 0) return "empty";
+    return "completed";
+  };
+
+  const sections = [
+    { data: { title: formData?.title, provider_type: formData?.provider_type, start_date: formData?.start_date, priority: formData?.priority } },
+    { data: formData?.personal_info },
+    { data: formData?.about_me },
+    { data: formData?.medical_info },
+    { data: formData?.goals },
+    { data: formData?.activities },
+    { data: formData?.personal_care },
+    { data: formData?.dietary },
+    { data: formData?.risk_assessments },
+    { data: formData?.equipment },
+    { data: formData?.service_plans },
+    { data: formData?.service_actions },
+    { data: formData?.documents }
+  ];
+
+  const completedSections = sections.filter(section => getSectionStatus(section.data) === "completed");
+  const hasMinimumContent = completedSections.length >= 3;
 
   const handleNext = async () => {
     try {
@@ -46,6 +75,14 @@ export function CarePlanWizardFooter({
       console.error('Failed to save draft:', error);
       // Error toast is handled by the hook
     }
+  };
+
+  const handleFinalize = () => {
+    if (!hasMinimumContent && isLastStep) {
+      // Don't allow finalization if insufficient content
+      return;
+    }
+    onFinalize();
   };
 
   return (
@@ -79,12 +116,17 @@ export function CarePlanWizardFooter({
           {isLastStep ? (
             <Button
               type="button"
-              onClick={onFinalize}
-              disabled={isLoading}
-              className="flex items-center space-x-2 bg-green-600 hover:bg-green-700"
+              onClick={handleFinalize}
+              disabled={isLoading || !hasMinimumContent}
+              className={`flex items-center space-x-2 ${
+                hasMinimumContent 
+                  ? "bg-green-600 hover:bg-green-700" 
+                  : "bg-gray-400 hover:bg-gray-400 cursor-not-allowed"
+              }`}
+              title={!hasMinimumContent ? "Complete at least 3 sections to finalize" : "Send for staff approval"}
             >
               <CheckCircle className="h-4 w-4" />
-              <span>{isLoading ? "Finalizing..." : "Finalize Care Plan"}</span>
+              <span>{isLoading ? "Finalizing..." : "Send for Approval"}</span>
             </Button>
           ) : (
             <Button
@@ -104,7 +146,11 @@ export function CarePlanWizardFooter({
         <p className="text-sm text-gray-500">
           Step {currentStep} of {totalSteps}
           {isDraft && <span className="text-amber-600 ml-2">(Draft Mode - All changes are automatically saved)</span>}
-          {isLastStep && !isDraft && <span className="text-green-600 ml-2">Ready to finalize</span>}
+          {isLastStep && !isDraft && (
+            <span className={`ml-2 ${hasMinimumContent ? "text-green-600" : "text-red-600"}`}>
+              {hasMinimumContent ? "Ready for approval" : "Need more content to finalize"}
+            </span>
+          )}
         </p>
       </div>
     </div>
