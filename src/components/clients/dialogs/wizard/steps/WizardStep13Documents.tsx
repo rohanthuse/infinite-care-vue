@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { Plus, X, Upload, File, Calendar } from "lucide-react";
+import { Plus, X, Upload, File, Calendar, CheckCircle, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import {
   Form,
@@ -27,6 +27,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useUnifiedDocuments } from "@/hooks/useUnifiedDocuments";
+import { useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 interface WizardStep13DocumentsProps {
   form: UseFormReturn<any>;
@@ -34,7 +37,10 @@ interface WizardStep13DocumentsProps {
 }
 
 export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsProps) {
+  const { id: branchId } = useParams();
+  const { uploadDocument, isUploading } = useUnifiedDocuments(branchId || '');
   const [uploadingFiles, setUploadingFiles] = useState<{ [key: number]: boolean }>({});
+  const [uploadErrors, setUploadErrors] = useState<{ [key: number]: string }>({});
 
   const addDocument = () => {
     const current = form.getValues("documents") || [];
@@ -44,43 +50,92 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
       upload_date: new Date(),
       uploaded_by: "",
       file_path: "",
-      file_size: ""
+      file_size: "",
+      uploaded_document_id: null // Track the uploaded document ID
     }]);
   };
 
   const removeDocument = (index: number) => {
     const current = form.getValues("documents") || [];
     form.setValue("documents", current.filter((_, i) => i !== index));
+    
+    // Clear any upload state for this index
+    setUploadingFiles(prev => {
+      const newState = { ...prev };
+      delete newState[index];
+      return newState;
+    });
+    
+    setUploadErrors(prev => {
+      const newState = { ...prev };
+      delete newState[index];
+      return newState;
+    });
   };
 
   const handleFileUpload = async (index: number, file: File) => {
+    if (!branchId) {
+      setUploadErrors(prev => ({ ...prev, [index]: "Branch ID not found" }));
+      return;
+    }
+
     setUploadingFiles(prev => ({ ...prev, [index]: true }));
+    setUploadErrors(prev => {
+      const newState = { ...prev };
+      delete newState[index];
+      return newState;
+    });
     
     try {
-      // Simulate file upload - in real implementation, this would upload to storage
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Prepare upload data
+      const uploadData = {
+        name: file.name,
+        type: getDocumentTypeFromFile(file),
+        category: "Care Plan",
+        description: `Care plan document for client`,
+        file: file,
+        tags: ["care-plan", "client-document"],
+        access_level: "branch" as const,
+        client_id: clientId
+      };
+
+      // Upload the file using the unified documents hook
+      const uploadedDocument = await uploadDocument(uploadData);
       
-      const formattedSize = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
-      
-      form.setValue(`documents.${index}.name`, file.name);
-      form.setValue(`documents.${index}.file_size`, formattedSize);
-      form.setValue(`documents.${index}.file_path`, `/uploads/${clientId}/${file.name}`);
-      form.setValue(`documents.${index}.upload_date`, new Date());
-      
-      // Auto-detect document type based on file extension
-      const extension = file.name.split('.').pop()?.toLowerCase();
-      let docType = "other";
-      if (["pdf"].includes(extension || "")) docType = "care_plan";
-      else if (["jpg", "jpeg", "png"].includes(extension || "")) docType = "photo";
-      else if (["doc", "docx"].includes(extension || "")) docType = "assessment";
-      
-      form.setValue(`documents.${index}.type`, docType);
+      if (uploadedDocument) {
+        const formattedSize = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+        
+        // Update form with the uploaded document information
+        form.setValue(`documents.${index}.name`, file.name);
+        form.setValue(`documents.${index}.file_size`, formattedSize);
+        form.setValue(`documents.${index}.file_path`, uploadedDocument.file_path || '');
+        form.setValue(`documents.${index}.upload_date`, new Date());
+        form.setValue(`documents.${index}.uploaded_by`, uploadedDocument.uploaded_by_name || 'Current User');
+        form.setValue(`documents.${index}.type`, getDocumentTypeFromFile(file));
+        form.setValue(`documents.${index}.uploaded_document_id`, uploadedDocument.id);
+        
+        toast.success(`Document "${file.name}" uploaded successfully`);
+      }
       
     } catch (error) {
       console.error("File upload failed:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+      setUploadErrors(prev => ({ ...prev, [index]: errorMessage }));
+      toast.error(`Failed to upload "${file.name}": ${errorMessage}`);
     } finally {
       setUploadingFiles(prev => ({ ...prev, [index]: false }));
     }
+  };
+
+  const getDocumentTypeFromFile = (file: File): string => {
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    
+    if (["pdf"].includes(extension || "")) return "care_plan";
+    if (["jpg", "jpeg", "png", "gif", "webp"].includes(extension || "")) return "photo";
+    if (["doc", "docx"].includes(extension || "")) return "assessment";
+    if (["txt"].includes(extension || "")) return "other";
+    
+    return "other";
   };
 
   const documents = form.watch("documents") || [];
@@ -117,6 +172,12 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
                 <h4 className="text-md font-medium flex items-center">
                   <File className="h-4 w-4 mr-2" />
                   Document {index + 1}
+                  {form.watch(`documents.${index}.file_path`) && (
+                    <CheckCircle className="h-4 w-4 ml-2 text-green-600" />
+                  )}
+                  {uploadErrors[index] && (
+                    <AlertCircle className="h-4 w-4 ml-2 text-red-600" />
+                  )}
                 </h4>
                 <Button
                   type="button"
@@ -127,6 +188,12 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
                   <X className="h-4 w-4" />
                 </Button>
               </div>
+
+              {uploadErrors[index] && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                  Error: {uploadErrors[index]}
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -149,7 +216,7 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Document Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select document type" />
@@ -239,7 +306,7 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
                       type="button" 
                       variant="outline" 
                       size="sm"
-                      disabled={uploadingFiles[index]}
+                      disabled={uploadingFiles[index] || isUploading}
                     >
                       {uploadingFiles[index] ? "Uploading..." : "Browse Files"}
                     </Button>
@@ -252,7 +319,7 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
                           handleFileUpload(index, file);
                         }
                       }}
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.gif,.webp"
                     />
                   </label>
                 </div>
@@ -265,11 +332,11 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
                           {form.watch(`documents.${index}.name`)}
                         </p>
                         <p className="text-xs text-green-600">
-                          {form.watch(`documents.${index}.file_size`)}
+                          {form.watch(`documents.${index}.file_size`)} • Uploaded successfully
                         </p>
                       </div>
                       <div className="text-green-600">
-                        <File className="h-4 w-4" />
+                        <CheckCircle className="h-4 w-4" />
                       </div>
                     </div>
                   </div>
