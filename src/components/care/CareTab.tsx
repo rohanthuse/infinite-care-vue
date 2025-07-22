@@ -1045,7 +1045,6 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
           onOpenChange={setIsCreateCarePlanWizardOpen}
           clientId={selectedClientId}
           clientName={selectedClientName}
-          clientData={selectedClientData}
         />
       )}
 

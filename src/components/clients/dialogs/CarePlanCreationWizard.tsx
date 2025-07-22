@@ -153,6 +153,7 @@ interface CarePlanCreationWizardProps {
   clientName: string;
   carePlanId?: string;
   onSuccess?: () => void;
+  clientData?: any; // Optional for backward compatibility
 }
 
 const steps = [
@@ -179,6 +180,7 @@ export function CarePlanCreationWizard({
   clientName,
   carePlanId,
   onSuccess,
+  clientData,
 }: CarePlanCreationWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
@@ -214,14 +216,12 @@ export function CarePlanCreationWizard({
 
   const {
     saveDraft,
-    loadDraft,
-    deleteDraft,
-    activateDraft,
+    autoSave,
     draftData,
-    isDraft,
+    isDraftLoading,
     isSaving,
-    lastSaved,
-  } = useCarePlanDraft();
+    savedCarePlanId,
+  } = useCarePlanDraft(clientId, carePlanId);
 
   const { data: staffMembers } = useQuery({
     queryKey: ['staff-members'],
@@ -238,10 +238,10 @@ export function CarePlanCreationWizard({
 
   // Load existing care plan data if editing
   useEffect(() => {
-    if (carePlanId && open) {
-      loadDraft(clientId, carePlanId);
+    if (carePlanId && open && draftData?.auto_save_data) {
+      form.reset(draftData.auto_save_data as any);
     }
-  }, [carePlanId, open, clientId, loadDraft]);
+  }, [carePlanId, open, draftData, form]);
 
   // Load draft data into form when available
   useEffect(() => {
@@ -268,29 +268,20 @@ export function CarePlanCreationWizard({
     if (!open || !clientId) return;
 
     const subscription = form.watch((data) => {
-      if (Object.keys(form.formState.dirtyFields).length > 0) {
-        const timeoutId = setTimeout(() => {
-          handleSaveDraft();
-        }, 30000); // Auto-save after 30 seconds of inactivity
-
-        return () => clearTimeout(timeoutId);
+      if (currentStep > 1) {
+        autoSave(data, currentStep);
       }
     });
 
-    return subscription;
-  }, [form, open, clientId]);
+    return () => subscription.unsubscribe();
+  }, [form, open, clientId, autoSave, currentStep]);
 
   const handleSaveDraft = async () => {
     const data = form.getValues();
-    const draftId = draftData?.id || carePlanId;
     
     try {
-      await saveDraft({
-        clientId,
-        formData: data,
-        currentStep,
-        carePlanId: draftId,
-      });
+      await saveDraft(data, currentStep);
+      toast.success("Draft saved successfully!");
     } catch (error) {
       console.error('Error saving draft:', error);
       toast.error("Failed to save draft");
@@ -323,12 +314,10 @@ export function CarePlanCreationWizard({
     setIsLoading(true);
     
     try {
-      const draftId = draftData?.id;
-      const savedCarePlanId = carePlanId;
+      const currentCarePlanId = savedCarePlanId || carePlanId;
       
-      if (draftId || savedCarePlanId) {
-        const carePlanId = draftId || savedCarePlanId;
-        
+      if (currentCarePlanId) {
+        // Update existing draft/care plan
         const finalData: any = {
           title: data.title,
           start_date: data.start_date.toISOString().split('T')[0],
@@ -337,7 +326,28 @@ export function CarePlanCreationWizard({
           priority: data.priority,
           care_plan_type: data.care_plan_type,
           status: 'active',
-          auto_save_data: data,
+          auto_save_data: JSON.parse(JSON.stringify({
+            ...data,
+            start_date: data.start_date.toISOString(),
+            end_date: data.end_date?.toISOString(),
+            review_date: data.review_date?.toISOString(),
+            goals: data.goals?.map(goal => ({
+              ...goal,
+              targetDate: goal.targetDate?.toISOString()
+            })),
+            risk_assessments: data.risk_assessments?.map(assessment => ({
+              ...assessment,
+              review_date: assessment.review_date?.toISOString()
+            })),
+            service_actions: data.service_actions?.map(action => ({
+              ...action,
+              due_date: action.due_date?.toISOString()
+            })),
+            documents: data.documents?.map(doc => ({
+              ...doc,
+              uploaded_at: doc.uploaded_at?.toISOString()
+            }))
+          })),
           last_step_completed: 14,
           completion_percentage: 100,
         };
@@ -354,13 +364,9 @@ export function CarePlanCreationWizard({
         const { error } = await supabase
           .from('client_care_plans')
           .update(finalData)
-          .eq('id', carePlanId);
+          .eq('id', currentCarePlanId);
 
         if (error) throw error;
-
-        if (draftId) {
-          await activateDraft(draftId);
-        }
       } else {
         // Create new care plan
         const newCarePlan = {
@@ -372,21 +378,39 @@ export function CarePlanCreationWizard({
           priority: data.priority,
           care_plan_type: data.care_plan_type,
           status: 'active',
-          auto_save_data: data,
+          auto_save_data: JSON.parse(JSON.stringify({
+            ...data,
+            start_date: data.start_date.toISOString(),
+            end_date: data.end_date?.toISOString(),
+            review_date: data.review_date?.toISOString(),
+            goals: data.goals?.map(goal => ({
+              ...goal,
+              targetDate: goal.targetDate?.toISOString()
+            })),
+            risk_assessments: data.risk_assessments?.map(assessment => ({
+              ...assessment,
+              review_date: assessment.review_date?.toISOString()
+            })),
+            service_actions: data.service_actions?.map(action => ({
+              ...action,
+              due_date: action.due_date?.toISOString()
+            })),
+            documents: data.documents?.map(doc => ({
+              ...doc,
+              uploaded_at: doc.uploaded_at?.toISOString()
+            }))
+          })),
           completion_percentage: 100,
+          display_id: '', // This will be auto-generated by the database
+          provider_name: data.provider_type === 'staff' && data.staff_id 
+            ? staffMembers?.find(s => s.id === data.staff_id)?.first_name + ' ' + staffMembers?.find(s => s.id === data.staff_id)?.last_name || 'Unknown Staff'
+            : data.provider_name || 'Not Assigned',
+          staff_id: data.provider_type === 'staff' ? data.staff_id : undefined,
         };
-
-        if (data.provider_type === 'staff' && data.staff_id) {
-          const staffMember = staffMembers?.find(s => s.id === data.staff_id);
-          (newCarePlan as any).staff_id = data.staff_id;
-          (newCarePlan as any).provider_name = staffMember ? `${staffMember.first_name} ${staffMember.last_name}` : 'Unknown Staff';
-        } else {
-          (newCarePlan as any).provider_name = data.provider_name || 'Not Assigned';
-        }
 
         const { error } = await supabase
           .from('client_care_plans')
-          .insert([newCarePlan]);
+          .insert(newCarePlan);
 
         if (error) throw error;
       }
@@ -425,12 +449,11 @@ export function CarePlanCreationWizard({
       >
         <DialogHeader className="px-6 py-4 border-b bg-white flex-shrink-0">
           <DialogTitle className="text-xl font-semibold">
-            {isDraft ? "Edit Care Plan Draft" : "Create Care Plan"} - {clientName}
+            {draftData ? "Edit Care Plan Draft" : "Create Care Plan"} - {clientName}
           </DialogTitle>
-          {lastSaved && (
+          {isSaving && (
             <p className="text-sm text-gray-500 mt-1">
-              Last saved: {lastSaved.toLocaleTimeString()}
-              {isSaving && <span className="text-blue-600 ml-2">Saving...</span>}
+              <span className="text-blue-600">Saving...</span>
             </p>
           )}
         </DialogHeader>
@@ -467,7 +490,7 @@ export function CarePlanCreationWizard({
               onSaveDraft={handleSaveDraft}
               onFinalize={form.handleSubmit(onSubmit)}
               isLoading={isLoading || isSaving}
-              isDraft={isDraft}
+              isDraft={!!draftData}
             />
           </div>
         </div>

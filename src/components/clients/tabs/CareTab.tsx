@@ -126,7 +126,6 @@ export const CareTab: React.FC = () => {
           onOpenChange={setIsWizardOpen}
           clientId={selectedClientId}
           clientName={selectedClientName}
-          clientData={selectedClientData}
         />
       )}
     </div>
