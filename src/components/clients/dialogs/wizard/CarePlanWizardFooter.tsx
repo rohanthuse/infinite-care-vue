@@ -28,10 +28,11 @@ export function CarePlanWizardFooter({
   const isLastStep = currentStep === totalSteps;
 
   return (
-    <div className="border-t bg-white px-6 py-4 mt-auto">
+    <div className="absolute bottom-0 left-0 right-0 border-t bg-white/95 backdrop-blur-sm px-6 py-4 z-10">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Button
+            type="button"
             variant="outline"
             onClick={onPrevious}
             disabled={isFirstStep || isLoading}
@@ -44,6 +45,7 @@ export function CarePlanWizardFooter({
 
         <div className="flex items-center space-x-2">
           <Button
+            type="button"
             variant="outline"
             onClick={onSaveDraft}
             disabled={isLoading}
@@ -55,6 +57,7 @@ export function CarePlanWizardFooter({
 
           {isLastStep ? (
             <Button
+              type="button"
               onClick={onFinalize}
               disabled={isLoading}
               className="flex items-center space-x-2 bg-green-600 hover:bg-green-700"
@@ -64,6 +67,7 @@ export function CarePlanWizardFooter({
             </Button>
           ) : (
             <Button
+              type="button"
               onClick={onNext}
               disabled={isLoading}
               className="flex items-center space-x-2"
