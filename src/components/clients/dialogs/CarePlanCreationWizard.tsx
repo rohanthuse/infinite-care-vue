@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -8,11 +7,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useParams } from "react-router-dom";
 
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { CarePlanWizardSteps } from "./wizard/CarePlanWizardSteps";
+import { CarePlanWizardFooter } from "./wizard/CarePlanWizardFooter";
 import { useBranchStaff } from "@/hooks/useBranchStaff";
+import { useCarePlanDraft } from "@/hooks/useCarePlanDraft";
 import { parseGpDetails, parseCommunicationPreferences } from "@/utils/safeJsonParse";
 
 const formSchema = z.object({
@@ -173,6 +173,7 @@ interface CarePlanCreationWizardProps {
   clientId: string;
   clientName: string;
   clientData?: Client;
+  draftId?: string;
 }
 
 export function CarePlanCreationWizard({ 
@@ -180,13 +181,23 @@ export function CarePlanCreationWizard({
   onOpenChange, 
   clientId, 
   clientName,
-  clientData 
+  clientData,
+  draftId
 }: CarePlanCreationWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const { toast } = useToast();
   const { id: branchId } = useParams();
   const queryClient = useQueryClient();
   const { data: branchStaff = [] } = useBranchStaff(branchId || '');
+  
+  const { 
+    draftData, 
+    isDraftLoading, 
+    saveDraft, 
+    autoSave, 
+    isSaving,
+    savedCarePlanId 
+  } = useCarePlanDraft(clientId, draftId);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -264,16 +275,48 @@ export function CarePlanCreationWizard({
     },
   });
 
-  // Pre-populate form with client data when available
+  const watchedValues = form.watch();
+  const isDraft = !!draftId || !!savedCarePlanId;
+
   useEffect(() => {
-    if (clientData && open) {
-      console.log('Pre-populating form with client data:', clientData);
+    if (open && (draftId || savedCarePlanId)) {
+      autoSave(watchedValues, currentStep);
+    }
+  }, [watchedValues, currentStep, autoSave, open, draftId, savedCarePlanId]);
+
+  useEffect(() => {
+    if (draftData && draftData.auto_save_data && open) {
+      console.log('Loading draft data:', draftData);
       
       try {
-        // Pre-populate basic info
+        const savedData = draftData.auto_save_data;
+        
+        form.reset(savedData);
+        
+        if (draftData.last_step_completed) {
+          setCurrentStep(draftData.last_step_completed);
+        }
+        
+        toast({
+          title: "Draft loaded",
+          description: `Resumed from step ${draftData.last_step_completed || 1} (${draftData.completion_percentage || 0}% complete)`,
+        });
+      } catch (error) {
+        console.error('Error loading draft data:', error);
+        toast({
+          title: "Warning",
+          description: "Some draft data could not be loaded properly. You can still continue creating the care plan.",
+          variant: "default",
+        });
+      }
+    }
+  }, [draftData, open, form, toast]);
+
+  useEffect(() => {
+    if (clientData && open && !draftData) {
+      try {
         form.setValue("title", `Comprehensive Care Plan for ${clientData.first_name} ${clientData.last_name}`);
         
-        // Pre-populate personal info
         if (clientData.emergency_contact) {
           form.setValue("personal_info.emergency_contact_name", clientData.emergency_contact);
         }
@@ -281,7 +324,6 @@ export function CarePlanCreationWizard({
           form.setValue("personal_info.emergency_contact_phone", clientData.emergency_phone);
         }
         
-        // Pre-populate GP details using safe parsing
         if (clientData.gp_details) {
           const gpDetails = parseGpDetails(clientData.gp_details);
           
@@ -298,7 +340,6 @@ export function CarePlanCreationWizard({
           }
         }
 
-        // Pre-populate communication preferences using safe parsing
         if (clientData.communication_preferences) {
           const commPrefs = parseCommunicationPreferences(clientData.communication_preferences);
           
@@ -307,7 +348,6 @@ export function CarePlanCreationWizard({
           }
         }
 
-        // Pre-populate medical info
         if (clientData.mobility_status) {
           form.setValue("medical_info.mobility_status", clientData.mobility_status);
         }
@@ -320,7 +360,7 @@ export function CarePlanCreationWizard({
         });
       }
     }
-  }, [clientData, open, form, toast]);
+  }, [clientData, open, form, toast, draftData]);
 
   const createCarePlanMutation = useMutation({
     mutationFn: async (data: FormValues) => {
@@ -397,24 +437,116 @@ export function CarePlanCreationWizard({
     }
   };
 
-  const handleSubmit = async (data: FormValues) => {
-    console.log('Submitting care plan data:', data);
+  const handleSaveDraft = () => {
+    const currentData = form.getValues();
+    saveDraft(currentData, currentStep);
+  };
+
+  const handleFinalize = async () => {
+    const data = form.getValues();
+    console.log('Finalizing care plan data:', data);
+    
     try {
-      await createCarePlanMutation.mutateAsync(data);
+      if (draftId || savedCarePlanId) {
+        const carePlanId = draftId || savedCarePlanId;
+        
+        const finalData = {
+          title: data.title,
+          start_date: data.start_date.toISOString().split('T')[0],
+          end_date: data.end_date ? data.end_date.toISOString().split('T')[0] : null,
+          review_date: data.review_date ? data.review_date.toISOString().split('T')[0] : null,
+          priority: data.priority,
+          care_plan_type: data.care_plan_type,
+          personal_info: data.personal_info,
+          about_me: data.about_me,
+          medical_info: data.medical_info,
+          goals: data.goals,
+          activities: data.activities,
+          personal_care: data.personal_care,
+          dietary: data.dietary,
+          risk_assessments: data.risk_assessments,
+          equipment: data.equipment,
+          service_plans: data.service_plans,
+          service_actions: data.service_actions,
+          documents: data.documents,
+          status: 'active',
+          completion_percentage: 100,
+        };
+
+        if (data.provider_type === 'staff' && data.staff_id) {
+          const staffMember = branchStaff.find(staff => staff.id === data.staff_id);
+          finalData.staff_id = data.staff_id;
+          finalData.provider_name = staffMember ? `${staffMember.first_name} ${staffMember.last_name}` : 'Unknown Staff';
+        } else {
+          finalData.provider_name = data.provider_name;
+        }
+
+        const { error } = await supabase
+          .from('client_care_plans')
+          .update(finalData)
+          .eq('id', carePlanId);
+
+        if (error) throw error;
+      } else {
+        await createCarePlanMutation.mutateAsync(data);
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['care-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['client-care-plans', clientId] });
+      
+      toast({
+        title: "Care plan finalized",
+        description: "The care plan has been created and activated successfully",
+      });
+      
       onOpenChange(false);
       setCurrentStep(1);
       form.reset();
     } catch (error) {
-      console.error('Error creating care plan:', error);
+      console.error('Error finalizing care plan:', error);
+      toast({
+        title: "Error",
+        description: "Failed to finalize care plan. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
+  const handleSubmit = async (data: FormValues) => {
+    await handleFinalize();
+  };
+
+  if (isDraftLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-center p-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p>Loading draft...</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-blue-600">
             Care Plan Creation Wizard - {clientName}
+            {isDraft && (
+              <span className="px-2 py-1 text-xs bg-amber-100 text-amber-800 rounded-full">
+                Draft Mode
+              </span>
+            )}
+            {isSaving && (
+              <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full animate-pulse">
+                Saving...
+              </span>
+            )}
           </DialogTitle>
           <div className="space-y-2">
             <div className="flex justify-between text-sm text-gray-600">
@@ -425,45 +557,24 @@ export function CarePlanCreationWizard({
           </div>
         </DialogHeader>
 
-        <CarePlanWizardSteps 
-          currentStep={currentStep} 
-          form={form} 
-          clientId={clientId}
-        />
-
-        <div className="flex justify-between pt-6 border-t">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={prevStep}
-            disabled={currentStep === 1}
-          >
-            Previous
-          </Button>
-          
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            
-            {currentStep === totalSteps ? (
-              <Button
-                onClick={form.handleSubmit(handleSubmit)}
-                disabled={createCarePlanMutation.isPending}
-              >
-                {createCarePlanMutation.isPending ? "Creating..." : "Create Care Plan"}
-              </Button>
-            ) : (
-              <Button type="button" onClick={nextStep}>
-                Next
-              </Button>
-            )}
-          </div>
+        <div className="flex-1 overflow-y-auto">
+          <CarePlanWizardSteps 
+            currentStep={currentStep} 
+            form={form} 
+            clientId={clientId}
+          />
         </div>
+
+        <CarePlanWizardFooter
+          currentStep={currentStep}
+          totalSteps={totalSteps}
+          onPrevious={prevStep}
+          onNext={nextStep}
+          onSaveDraft={handleSaveDraft}
+          onFinalize={handleFinalize}
+          isLoading={createCarePlanMutation.isPending || isSaving}
+          isDraft={isDraft}
+        />
       </DialogContent>
     </Dialog>
   );
