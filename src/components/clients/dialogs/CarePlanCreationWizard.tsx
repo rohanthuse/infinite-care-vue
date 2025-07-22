@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CarePlanWizardSidebar } from "./wizard/CarePlanWizardSidebar";
 import { CarePlanWizardSteps } from "./wizard/CarePlanWizardSteps";
 import { CarePlanWizardFooter } from "./wizard/CarePlanWizardFooter";
 import { useCarePlanDraft } from "@/hooks/useCarePlanDraft";
@@ -38,6 +39,23 @@ interface CarePlanCreationWizardProps {
   clientId: string;
   carePlanId?: string;
 }
+
+const wizardSteps = [
+  { id: 1, name: "Basic Information", description: "Care plan title and basic details" },
+  { id: 2, name: "Personal Information", description: "Client personal details" },
+  { id: 3, name: "About Me", description: "Client preferences and background" },
+  { id: 4, name: "Medical Information", description: "Health conditions and medications" },
+  { id: 5, name: "Goals", description: "Care goals and objectives" },
+  { id: 6, name: "Activities", description: "Daily activities and routines" },
+  { id: 7, name: "Personal Care", description: "Personal care requirements" },
+  { id: 8, name: "Dietary", description: "Dietary needs and restrictions" },
+  { id: 9, name: "Risk Assessments", description: "Safety and risk evaluations" },
+  { id: 10, name: "Equipment", description: "Required equipment and aids" },
+  { id: 11, name: "Service Plans", description: "Service delivery plans" },
+  { id: 12, name: "Service Actions", description: "Specific service actions" },
+  { id: 13, name: "Documents", description: "Supporting documents" },
+  { id: 14, name: "Review", description: "Review and finalize care plan" },
+];
 
 export function CarePlanCreationWizard({
   isOpen,
@@ -79,7 +97,8 @@ export function CarePlanCreationWizard({
     saveDraft, 
     autoSave, 
     isSaving,
-    savedCarePlanId 
+    savedCarePlanId,
+    completionPercentage 
   } = useCarePlanDraft(clientId, carePlanId);
 
   const { createCarePlan, isCreating } = useCarePlanCreation();
@@ -114,6 +133,36 @@ export function CarePlanCreationWizard({
     return () => subscription.unsubscribe();
   }, [form, autoSave, currentStep, isOpen, savedCarePlanId]);
 
+  // Calculate completed steps based on form data
+  const getCompletedSteps = () => {
+    const formData = form.getValues();
+    const completedSteps: number[] = [];
+
+    // Check each step for completion
+    if (formData.title?.trim()) completedSteps.push(1);
+    if (formData.personal_info && Object.keys(formData.personal_info).length > 0) completedSteps.push(2);
+    if (formData.about_me && Object.keys(formData.about_me).length > 0) completedSteps.push(3);
+    if (formData.medical_info && Object.keys(formData.medical_info).length > 0) completedSteps.push(4);
+    if (formData.goals && formData.goals.length > 0) completedSteps.push(5);
+    if (formData.activities && formData.activities.length > 0) completedSteps.push(6);
+    if (formData.personal_care && Object.keys(formData.personal_care).length > 0) completedSteps.push(7);
+    if (formData.dietary && Object.keys(formData.dietary).length > 0) completedSteps.push(8);
+    if (formData.risk_assessments && Object.keys(formData.risk_assessments).length > 0) completedSteps.push(9);
+    if (formData.equipment && Object.keys(formData.equipment).length > 0) completedSteps.push(10);
+    if (formData.service_plans && Object.keys(formData.service_plans).length > 0) completedSteps.push(11);
+    if (formData.service_actions && Object.keys(formData.service_actions).length > 0) completedSteps.push(12);
+    if (formData.documents && Object.keys(formData.documents).length > 0) completedSteps.push(13);
+    
+    // Step 14 (Review) is considered completed when ready to finalize
+    if (completedSteps.length >= 3) completedSteps.push(14);
+
+    return completedSteps;
+  };
+
+  const handleStepClick = (stepNumber: number) => {
+    setCurrentStep(stepNumber);
+  };
+
   const handleNext = () => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
@@ -142,7 +191,7 @@ export function CarePlanCreationWizard({
       await createCarePlan({
         ...formData,
         client_id: clientId,
-        status: 'pending_approval', // Changed from 'active' to follow staff approval workflow
+        status: 'pending_approval',
         care_plan_id: savedCarePlanId,
       });
 
@@ -155,35 +204,50 @@ export function CarePlanCreationWizard({
   };
 
   const formData = form.watch();
+  const completedSteps = getCompletedSteps();
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>
             {carePlanId ? "Edit Care Plan Draft" : "Create Care Plan"}
           </DialogTitle>
         </DialogHeader>
         
-        <div className="flex-1 overflow-y-auto pb-24 px-1">
-          <CarePlanWizardSteps 
-            currentStep={currentStep} 
-            form={form} 
-            clientId={clientId}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Sidebar */}
+          <CarePlanWizardSidebar
+            steps={wizardSteps}
+            currentStep={currentStep}
+            completedSteps={completedSteps}
+            onStepClick={handleStepClick}
+            completionPercentage={completionPercentage}
           />
-        </div>
+          
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-6 pb-24">
+              <CarePlanWizardSteps 
+                currentStep={currentStep} 
+                form={form} 
+                clientId={clientId}
+              />
+            </div>
 
-        <CarePlanWizardFooter
-          currentStep={currentStep}
-          totalSteps={totalSteps}
-          onPrevious={handlePrevious}
-          onNext={handleNext}
-          onSaveDraft={handleSaveDraft}
-          onFinalize={handleFinalize}
-          isLoading={isSaving || isCreating}
-          isDraft={!!draftData}
-          formData={formData}
-        />
+            <CarePlanWizardFooter
+              currentStep={currentStep}
+              totalSteps={totalSteps}
+              onPrevious={handlePrevious}
+              onNext={handleNext}
+              onSaveDraft={handleSaveDraft}
+              onFinalize={handleFinalize}
+              isLoading={isSaving || isCreating}
+              isDraft={!!draftData}
+              formData={formData}
+            />
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
