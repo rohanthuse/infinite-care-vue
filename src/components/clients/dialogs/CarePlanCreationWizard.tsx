@@ -98,7 +98,6 @@ export function CarePlanCreationWizard({
     autoSave, 
     isSaving,
     savedCarePlanId,
-    completionPercentage 
   } = useCarePlanDraft(clientId, carePlanId);
 
   const { createCarePlan, isCreating } = useCarePlanCreation();
@@ -222,7 +221,7 @@ export function CarePlanCreationWizard({
             currentStep={currentStep}
             completedSteps={completedSteps}
             onStepClick={handleStepClick}
-            completionPercentage={completionPercentage}
+            completionPercentage={draftData?.completion_percentage || 0}
           />
           
           {/* Main Content */}
