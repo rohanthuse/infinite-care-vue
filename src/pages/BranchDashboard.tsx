@@ -11,7 +11,7 @@ import { useServices } from "@/data/hooks/useServices";
 import { useBookingData } from "@/components/bookings/hooks/useBookingData";
 import { useBranchDashboardNavigation } from "@/hooks/useBranchDashboardNavigation";
 import { useNotificationGenerator } from "@/hooks/useNotificationGenerator";
-import { useCanAccessBranch } from "@/hooks/useBranchAdminAccess";
+import { useBranchAdminAccess } from "@/hooks/useBranchAdminAccess";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -46,9 +46,9 @@ interface BranchDashboardProps {
 const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { session, loading: authLoading } = useAuth();
   
-  // Always call all hooks unconditionally
+  // Always call all hooks unconditionally at the top level
+  const { session, loading: authLoading } = useAuth();
   const { data: userRole, isLoading: roleLoading } = useUserRole();
   const {
     id,
@@ -58,12 +58,13 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     handleWorkflowNavigation
   } = useBranchDashboardNavigation();
 
-  // Always call branch access hook but handle the logic properly
-  const { canAccess, isLoading: accessLoading, branchName: accessBranchName } = useCanAccessBranch(id || "");
+  // Always call branch access hook - we'll handle the logic inside
+  const { data: branchAccess, isLoading: accessLoading, error: accessError } = useBranchAdminAccess(id || "");
 
-  // Initialize notification generator for this branch
+  // Always initialize notification generator
   useNotificationGenerator(id);
 
+  // Always call booking data hooks
   const { clients: bookingClients, carers: bookingCarers } = useBookingData(id);
   const { data: services = [], isLoading: isLoadingServices, error: servicesError } = useServices();
 
@@ -75,93 +76,111 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const [isAddNoteDialogOpen, setIsAddNoteDialogOpen] = useState(false);
   const [isUploadDocumentDialogOpen, setIsUploadDocumentDialogOpen] = useState(false);
 
-  // Handle branch access control after authentication and role are determined
+  // State for access control
+  const [accessDenied, setAccessDenied] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  // Handle access control logic
   useEffect(() => {
-    console.log('[BranchDashboard] Auth and Access State:', {
+    console.log('[BranchDashboard] Access Control Check:', {
       authLoading,
       roleLoading,
       accessLoading,
       userRole: userRole?.role,
-      canAccess,
+      branchAccess: branchAccess?.canAccess,
       branchId: id,
-      session: !!session
+      session: !!session,
+      accessError: accessError?.message
     });
 
-    // Only apply access control after we have all the necessary data
-    if (!authLoading && !roleLoading && userRole && id) {
-      // Super admins can access any branch
-      if (userRole.role === 'super_admin') {
-        console.log('[BranchDashboard] Super admin detected, allowing access');
+    // Wait for all authentication data to be loaded
+    if (authLoading || roleLoading) {
+      return;
+    }
+
+    // If no session, redirect to login
+    if (!session) {
+      console.log('[BranchDashboard] No session, redirecting to login');
+      navigate('/branch-admin-login', { replace: true });
+      return;
+    }
+
+    // If no branch ID, show error
+    if (!id) {
+      console.log('[BranchDashboard] No branch ID found');
+      setAccessDenied(true);
+      setIsInitializing(false);
+      return;
+    }
+
+    // If no user role yet, keep loading
+    if (!userRole) {
+      console.log('[BranchDashboard] No user role yet, continuing to load');
+      return;
+    }
+
+    // Super admins have immediate access
+    if (userRole.role === 'super_admin') {
+      console.log('[BranchDashboard] Super admin access granted');
+      setAccessDenied(false);
+      setIsInitializing(false);
+      return;
+    }
+
+    // Branch admins need access verification
+    if (userRole.role === 'branch_admin') {
+      // Still loading access check
+      if (accessLoading) {
+        console.log('[BranchDashboard] Branch admin access check in progress');
         return;
       }
 
-      // Branch admins need to have proper access to their branch
-      if (userRole.role === 'branch_admin') {
-        // Wait for access check to complete
-        if (!accessLoading) {
-          if (!canAccess) {
-            console.warn('[BranchDashboard] Branch admin access denied for branch:', id);
-            navigate('/branch-admin-login', { replace: true });
-          }
-        }
+      // Access check completed
+      if (branchAccess?.canAccess) {
+        console.log('[BranchDashboard] Branch admin access granted');
+        setAccessDenied(false);
+        setIsInitializing(false);
+      } else {
+        console.log('[BranchDashboard] Branch admin access denied');
+        setAccessDenied(true);
+        setIsInitializing(false);
       }
+      return;
     }
-  }, [authLoading, roleLoading, accessLoading, userRole, canAccess, id, navigate, session]);
+
+    // Other roles don't have access
+    console.log('[BranchDashboard] User role does not have access:', userRole.role);
+    setAccessDenied(true);
+    setIsInitializing(false);
+  }, [authLoading, roleLoading, accessLoading, session, userRole, branchAccess, id, navigate, accessError]);
 
   const displayBranchName = branchName ? decodeURIComponent(branchName) : "Med-Infinite Branch";
 
-  // Show loading while checking authentication and roles
-  if (authLoading || roleLoading) {
+  // Show loading while initializing
+  if (isInitializing || authLoading || roleLoading || (userRole?.role === 'branch_admin' && accessLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading authentication...</p>
+          <p className="text-gray-600">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
-  // Show loading while checking branch access for branch admins only
-  if (userRole?.role === 'branch_admin' && accessLoading) {
+  // Show access denied if necessary
+  if (accessDenied || !id) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking branch access...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error if branch ID is missing
-  if (!id) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Branch Not Found</h1>
+          <h1 className="text-2xl font-bold text-red-600 mb-4">
+            {!id ? "Branch Not Found" : "Access Denied"}
+          </h1>
           <p className="text-gray-600 mb-4">
-            The branch you're looking for could not be found.
-          </p>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Return to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Only show access denied for branch admins who don't have access
-  if (userRole?.role === 'branch_admin' && !accessLoading && !canAccess) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
-          <p className="text-gray-600 mb-4">
-            You don't have access to this branch dashboard.
+            {!id 
+              ? "The branch you're looking for could not be found."
+              : "You don't have access to this branch dashboard."
+            }
           </p>
           <button
             onClick={() => navigate('/branch-admin-login')}
@@ -174,10 +193,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     );
   }
 
-  React.useEffect(() => {
-    console.log("[BranchDashboard] services:", services, "isLoadingServices:", isLoadingServices, "servicesError:", servicesError);
-  }, [services, isLoadingServices, servicesError]);
-
+  // Event handlers
   const handleNewBooking = () => {
     setNewBookingDialogOpen(true);
   };
@@ -217,7 +233,6 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
 
   const handleAddNote = () => {
     console.log("Add note for client:", selectedClient?.id);
-    // Implement note adding functionality
   };
 
   const handleScheduleAppointment = () => {
@@ -227,7 +242,6 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
 
   const handleUploadDocument = () => {
     console.log("Upload document for client:", selectedClient?.id);
-    // Implement document upload functionality
   };
 
   const handleEditClient = (client: any) => {
@@ -236,10 +250,8 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     }
   };
 
-  // Enhanced tab change handler with events-logs navigation
   const enhancedHandleTabChange = (value: string) => {
     if (value === "events-logs" && id && branchName) {
-      // Navigate to dedicated Events & Logs page
       navigate(`/branch-dashboard/${id}/${branchName}/events-logs`);
     } else {
       handleTabChange(value);

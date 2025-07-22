@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,12 +52,35 @@ const BranchAdminLogin = () => {
 
         if (roleError || !roleData) {
           console.error('[BranchAdminLogin] Role check error:', roleError);
+          
+          // Check if user is super admin instead
+          const { data: superAdminRole, error: superAdminError } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", data.user.id)
+            .eq("role", "super_admin")
+            .single();
+
+          if (superAdminError || !superAdminRole) {
+            toast({
+              variant: "destructive",
+              title: "Access Denied",
+              description: "You don't have admin privileges.",
+            });
+            await supabase.auth.signOut();
+            return;
+          }
+          
+          // Super admin can access main dashboard
+          console.log('[BranchAdminLogin] Super admin role confirmed');
+          localStorage.setItem("userType", "super_admin");
+          
           toast({
-            variant: "destructive",
-            title: "Access Denied",
-            description: "You don't have branch admin privileges.",
+            title: "Login Successful",
+            description: "Welcome back, Super Admin!",
           });
-          await supabase.auth.signOut();
+          
+          navigate('/dashboard', { replace: true });
           return;
         }
 
@@ -97,7 +119,7 @@ const BranchAdminLogin = () => {
         localStorage.setItem("currentBranchId", branch.id);
         localStorage.setItem("currentBranchName", branch.name);
         
-        // Properly encode branch name for URL - handle special characters
+        // Properly encode branch name for URL - handle special characters and spaces
         const encodedBranchName = encodeURIComponent(branch.name);
         
         console.log('[BranchAdminLogin] Navigating to branch dashboard:', {
@@ -111,12 +133,12 @@ const BranchAdminLogin = () => {
           description: `Welcome back! Redirecting to ${branch.name}...`,
         });
         
-        // Redirect to the specific branch dashboard
-        const targetPath = `/branch-dashboard/${branch.id}/${encodedBranchName}`;
-        console.log('[BranchAdminLogin] Target path:', targetPath);
-        
-        // Use replace to prevent back button issues
-        navigate(targetPath, { replace: true });
+        // Small delay to ensure toast shows before navigation
+        setTimeout(() => {
+          const targetPath = `/branch-dashboard/${branch.id}/${encodedBranchName}`;
+          console.log('[BranchAdminLogin] Target path:', targetPath);
+          navigate(targetPath, { replace: true });
+        }, 1000);
       }
     } catch (error) {
       console.error("Login error:", error);

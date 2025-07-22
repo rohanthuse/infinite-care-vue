@@ -98,6 +98,12 @@ export const useBranchAdminAccess = (targetBranchId?: string) => {
 
       if (error) {
         console.error('[useBranchAdminAccess] Error fetching branch access:', error);
+        
+        // If no branch assignment found, return specific error
+        if (error.code === 'PGRST116') {
+          throw new Error('No branch assignment found for this admin');
+        }
+        
         throw new Error('Unable to fetch branch access');
       }
 
@@ -125,7 +131,15 @@ export const useBranchAdminAccess = (targetBranchId?: string) => {
       };
     },
     enabled: !!session?.user?.id,
-    retry: 1,
+    retry: (failureCount, error) => {
+      // Don't retry authentication errors
+      if (error.message.includes('Not authenticated') || 
+          error.message.includes('Not a branch admin') ||
+          error.message.includes('No branch assignment found')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
   });
