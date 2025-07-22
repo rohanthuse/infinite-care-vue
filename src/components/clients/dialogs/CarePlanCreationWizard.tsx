@@ -221,7 +221,11 @@ export function CarePlanCreationWizard({
     isDraftLoading,
     isSaving,
     savedCarePlanId,
+    existingDraftId,
   } = useCarePlanDraft(clientId, carePlanId);
+
+  // Use the effective care plan ID (provided carePlanId or found existing draft)
+  const effectiveCarePlanId = carePlanId || existingDraftId;
 
   const { data: staffMembers } = useQuery({
     queryKey: ['staff-members'],
@@ -236,12 +240,12 @@ export function CarePlanCreationWizard({
     },
   });
 
-  // Load existing care plan data if editing
+  // Load existing care plan data if editing or existing draft found
   useEffect(() => {
-    if (carePlanId && open && draftData?.auto_save_data) {
+    if (effectiveCarePlanId && open && draftData?.auto_save_data) {
       form.reset(draftData.auto_save_data as any);
     }
-  }, [carePlanId, open, draftData, form]);
+  }, [effectiveCarePlanId, open, draftData, form]);
 
   // Load draft data into form when available
   useEffect(() => {
@@ -255,13 +259,16 @@ export function CarePlanCreationWizard({
           setCurrentStep(draftData.last_step_completed);
         }
         
-        toast.success("Draft loaded successfully");
+        // Only show success toast if we found an existing draft (not for provided carePlanId)
+        if (existingDraftId && !carePlanId) {
+          toast.success("Existing draft loaded successfully");
+        }
       } catch (error) {
         console.error('Error loading draft data:', error);
         toast.error("Failed to load draft data");
       }
     }
-  }, [draftData, form, open]);
+  }, [draftData, form, open, existingDraftId, carePlanId]);
 
   // Auto-save functionality with debounce
   useEffect(() => {
@@ -314,7 +321,7 @@ export function CarePlanCreationWizard({
     setIsLoading(true);
     
     try {
-      const currentCarePlanId = savedCarePlanId || carePlanId;
+      const currentCarePlanId = savedCarePlanId || effectiveCarePlanId;
       
       if (currentCarePlanId) {
         // Update existing draft/care plan
@@ -368,7 +375,7 @@ export function CarePlanCreationWizard({
 
         if (error) throw error;
       } else {
-        // Create new care plan
+        // Create new care plan only if no existing draft was found
         const newCarePlan = {
           client_id: clientId,
           title: data.title,
@@ -450,6 +457,11 @@ export function CarePlanCreationWizard({
         <DialogHeader className="px-6 py-4 border-b bg-white flex-shrink-0">
           <DialogTitle className="text-xl font-semibold">
             {draftData ? "Edit Care Plan Draft" : "Create Care Plan"} - {clientName}
+            {existingDraftId && !carePlanId && (
+              <span className="text-sm font-normal text-green-600 ml-2">
+                (Existing draft loaded)
+              </span>
+            )}
           </DialogTitle>
           {isSaving && (
             <p className="text-sm text-gray-500 mt-1">

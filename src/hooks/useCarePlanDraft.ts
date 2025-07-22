@@ -15,23 +15,51 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
   const queryClient = useQueryClient();
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Query to load existing draft
-  const { data: draftData, isLoading: isDraftLoading } = useQuery({
-    queryKey: ['care-plan-draft', carePlanId],
+  // Query to find existing draft for client when no carePlanId is provided
+  const { data: existingDraft, isLoading: isCheckingExistingDraft } = useQuery({
+    queryKey: ['existing-care-plan-draft', clientId],
     queryFn: async () => {
-      if (!carePlanId) return null;
+      if (carePlanId) return null; // Skip if we already have a carePlanId
+      
+      const { data, error } = await supabase
+        .from('client_care_plans')
+        .select('id, auto_save_data, last_step_completed, completion_percentage, status')
+        .eq('client_id', clientId)
+        .eq('status', 'draft')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error checking for existing draft:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!clientId && !carePlanId,
+  });
+
+  // Determine the effective care plan ID (provided or from existing draft)
+  const effectiveCarePlanId = carePlanId || existingDraft?.id;
+
+  // Query to load existing draft data
+  const { data: draftData, isLoading: isDraftLoading } = useQuery({
+    queryKey: ['care-plan-draft', effectiveCarePlanId],
+    queryFn: async () => {
+      if (!effectiveCarePlanId) return null;
       
       const { data, error } = await supabase
         .from('client_care_plans')
         .select('auto_save_data, last_step_completed, completion_percentage, status')
-        .eq('id', carePlanId)
+        .eq('id', effectiveCarePlanId)
         .eq('status', 'draft')
         .single();
 
       if (error || !data) return null;
       return data;
     },
-    enabled: !!carePlanId,
+    enabled: !!effectiveCarePlanId,
   });
 
   // Mutation to save draft
@@ -56,19 +84,22 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
         provider_name: formData.provider_name || 'Not Assigned',
       };
 
-      if (carePlanId) {
+      // Use existing draft ID if available, otherwise create new
+      const targetCarePlanId = effectiveCarePlanId;
+
+      if (targetCarePlanId) {
         // Update existing draft
         const { data, error } = await supabase
           .from('client_care_plans')
           .update(draftPayload)
-          .eq('id', carePlanId)
+          .eq('id', targetCarePlanId)
           .select()
           .single();
 
         if (error) throw error;
         return data;
       } else {
-        // Create new draft
+        // Create new draft only if no existing draft found
         const { data, error } = await supabase
           .from('client_care_plans')
           .insert(draftPayload)
@@ -83,6 +114,7 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
       queryClient.invalidateQueries({ queryKey: ['care-plans'] });
       queryClient.invalidateQueries({ queryKey: ['client-care-plans', clientId] });
       queryClient.invalidateQueries({ queryKey: ['care-plan-draft', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['existing-care-plan-draft', clientId] });
       
       if (!variables.isAutoSave) {
         toast({
@@ -129,10 +161,11 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
 
   return {
     draftData,
-    isDraftLoading,
+    isDraftLoading: isDraftLoading || isCheckingExistingDraft,
     saveDraft,
     autoSave,
     isSaving: saveDraftMutation.isPending,
-    savedCarePlanId: saveDraftMutation.data?.id,
+    savedCarePlanId: saveDraftMutation.data?.id || effectiveCarePlanId,
+    existingDraftId: existingDraft?.id,
   };
 }
