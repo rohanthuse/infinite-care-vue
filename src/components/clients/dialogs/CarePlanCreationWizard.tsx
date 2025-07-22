@@ -273,31 +273,45 @@ export function CarePlanCreationWizard({
       try {
         const savedData = draftData.auto_save_data;
         
-        // Process the saved data to handle date fields properly
-        const processedData = {
-          ...savedData,
-          start_date: parseDateSafely(savedData.start_date) || new Date(),
-          end_date: parseDateSafely(savedData.end_date),
-          review_date: parseDateSafely(savedData.review_date),
-          goals: savedData.goals?.map((goal: any) => ({
-            ...goal,
-            targetDate: parseDateSafely(goal.targetDate)
-          })) || [],
-          risk_assessments: savedData.risk_assessments?.map((assessment: any) => ({
-            ...assessment,
-            review_date: parseDateSafely(assessment.review_date)
-          })) || [],
-          service_actions: savedData.service_actions?.map((action: any) => ({
-            ...action,
-            due_date: parseDateSafely(action.due_date)
-          })) || [],
-          documents: savedData.documents?.map((doc: any) => ({
-            ...doc,
-            uploaded_at: parseDateSafely(doc.uploaded_at)
-          })) || [],
-        };
-        
-        form.reset(processedData as any);
+        // Ensure savedData is an object before processing
+        if (savedData && typeof savedData === 'object' && !Array.isArray(savedData)) {
+          const dataObj = savedData as Record<string, any>;
+          
+          // Process the saved data to handle date fields properly
+          const processedData = {
+            ...dataObj,
+            start_date: parseDateSafely(dataObj.start_date) || new Date(),
+            end_date: parseDateSafely(dataObj.end_date),
+            review_date: parseDateSafely(dataObj.review_date),
+            goals: dataObj.goals?.map((goal: any) => ({
+              ...goal,
+              targetDate: parseDateSafely(goal.targetDate)
+            })) || [],
+            risk_assessments: dataObj.risk_assessments?.map((assessment: any) => ({
+              ...assessment,
+              review_date: parseDateSafely(assessment.review_date)
+            })) || [],
+            service_actions: dataObj.service_actions?.map((action: any) => ({
+              ...action,
+              due_date: parseDateSafely(action.due_date)
+            })) || [],
+            documents: dataObj.documents?.map((doc: any) => ({
+              ...doc,
+              uploaded_at: parseDateSafely(doc.uploaded_at)
+            })) || [],
+          };
+          
+          form.reset(processedData as any);
+        } else {
+          // If savedData is not a valid object, start fresh
+          form.reset({
+            start_date: new Date(),
+            goals: [],
+            risk_assessments: [],
+            service_actions: [],
+            documents: []
+          });
+        }
         
         if (draftData.last_step_completed) {
           setCurrentStep(draftData.last_step_completed);
