@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
 
 export function DashboardHeader() {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut } = useAuth();
+  const { data: userRole, isLoading: userRoleLoading } = useUserRole();
   const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -57,6 +59,37 @@ export function DashboardHeader() {
       navigate(`/branch-dashboard/${branchId}/${branchName}/notifications`);
     } else {
       navigate('/notifications');
+    }
+  };
+
+  // Display user information
+  const getUserDisplayName = () => {
+    if (!userRole) return "Loading...";
+    
+    // Priority: fullName > first/last name > email
+    if (userRole.fullName && userRole.fullName.trim()) {
+      return userRole.fullName;
+    }
+    if (userRole.firstName || userRole.lastName) {
+      return `${userRole.firstName || ''} ${userRole.lastName || ''}`.trim();
+    }
+    return userRole.email || "User";
+  };
+
+  const getUserRole = () => {
+    if (!userRole) return "Loading...";
+    
+    switch (userRole.role) {
+      case 'super_admin':
+        return "Super Admin";
+      case 'branch_admin':
+        return "Branch Admin";
+      case 'carer':
+        return "Carer";
+      case 'client':
+        return "Client";
+      default:
+        return "User";
     }
   };
   
@@ -144,8 +177,12 @@ export function DashboardHeader() {
           
           <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm py-2 px-4 rounded-full border border-gray-100/60 shadow-sm w-full md:w-auto justify-between md:justify-start ml-0 md:ml-2">
             <div>
-              <div className="text-gray-800 font-semibold">Administrator</div>
-              <div className="text-gray-500 text-xs font-medium">Super Admin</div>
+              <div className="text-gray-800 font-semibold">
+                {userRoleLoading ? "Loading..." : getUserDisplayName()}
+              </div>
+              <div className="text-gray-500 text-xs font-medium">
+                {userRoleLoading ? "Loading..." : getUserRole()}
+              </div>
             </div>
             <div className="h-8 border-r border-gray-200/80 mx-1 hidden md:block"></div>
             <CustomButton variant="ghost" size="icon" className="flex items-center p-1.5 hover:bg-gray-100/80 text-gray-700 rounded-full transition-all" onClick={handleLogout}>
