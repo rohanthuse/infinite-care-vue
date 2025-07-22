@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Progress } from "@/components/ui/progress";
 import { CarePlanWizardSteps } from "./wizard/CarePlanWizardSteps";
 import { useBranchStaff } from "@/hooks/useBranchStaff";
+import { parseGpDetails, parseCommunicationPreferences } from "@/utils/safeJsonParse";
 
 const formSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -258,52 +259,58 @@ export function CarePlanCreationWizard({
     if (clientData && open) {
       console.log('Pre-populating form with client data:', clientData);
       
-      // Pre-populate basic info
-      form.setValue("title", `Comprehensive Care Plan for ${clientData.first_name} ${clientData.last_name}`);
-      
-      // Pre-populate personal info
-      if (clientData.emergency_contact) {
-        form.setValue("personal_info.emergency_contact_name", clientData.emergency_contact);
-      }
-      if (clientData.emergency_phone) {
-        form.setValue("personal_info.emergency_contact_phone", clientData.emergency_phone);
-      }
-      
-      // Pre-populate GP details if available
-      if (clientData.gp_details) {
-        const gpDetails = typeof clientData.gp_details === 'string' 
-          ? JSON.parse(clientData.gp_details) 
-          : clientData.gp_details;
+      try {
+        // Pre-populate basic info
+        form.setValue("title", `Comprehensive Care Plan for ${clientData.first_name} ${clientData.last_name}`);
         
-        if (gpDetails.name) {
-          form.setValue("personal_info.gp_name", gpDetails.name);
+        // Pre-populate personal info
+        if (clientData.emergency_contact) {
+          form.setValue("personal_info.emergency_contact_name", clientData.emergency_contact);
         }
-        if (gpDetails.practice) {
-          form.setValue("personal_info.gp_practice", gpDetails.practice);
+        if (clientData.emergency_phone) {
+          form.setValue("personal_info.emergency_contact_phone", clientData.emergency_phone);
         }
-        if (gpDetails.phone) {
-          form.setValue("personal_info.gp_phone", gpDetails.phone);
-        }
-      }
-
-      // Pre-populate communication preferences
-      if (clientData.communication_preferences) {
-        const commPrefs = typeof clientData.communication_preferences === 'string'
-          ? JSON.parse(clientData.communication_preferences)
-          : clientData.communication_preferences;
         
-        // Add communication preferences to about_me section if it exists
-        if (commPrefs.preferred_method) {
-          form.setValue("about_me.communication_method", commPrefs.preferred_method);
+        // Pre-populate GP details using safe parsing
+        if (clientData.gp_details) {
+          const gpDetails = parseGpDetails(clientData.gp_details);
+          
+          if (gpDetails) {
+            if (gpDetails.name) {
+              form.setValue("personal_info.gp_name", gpDetails.name);
+            }
+            if (gpDetails.practice) {
+              form.setValue("personal_info.gp_practice", gpDetails.practice);
+            }
+            if (gpDetails.phone) {
+              form.setValue("personal_info.gp_phone", gpDetails.phone);
+            }
+          }
         }
-      }
 
-      // Pre-populate medical info
-      if (clientData.mobility_status) {
-        form.setValue("medical_info.mobility_status", clientData.mobility_status);
+        // Pre-populate communication preferences using safe parsing
+        if (clientData.communication_preferences) {
+          const commPrefs = parseCommunicationPreferences(clientData.communication_preferences);
+          
+          if (commPrefs && commPrefs.preferred_method) {
+            form.setValue("about_me.communication_method", commPrefs.preferred_method);
+          }
+        }
+
+        // Pre-populate medical info
+        if (clientData.mobility_status) {
+          form.setValue("medical_info.mobility_status", clientData.mobility_status);
+        }
+      } catch (error) {
+        console.error('Error pre-populating form with client data:', error);
+        toast({
+          title: "Warning",
+          description: "Some client data could not be loaded properly. You can still create the care plan.",
+          variant: "default",
+        });
       }
     }
-  }, [clientData, open, form]);
+  }, [clientData, open, form, toast]);
 
   const createCarePlanMutation = useMutation({
     mutationFn: async (data: FormValues) => {
