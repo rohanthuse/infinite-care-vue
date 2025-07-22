@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { 
   Dialog, 
   DialogContent, 
@@ -195,42 +197,51 @@ export const StaffCarePlanApproval: React.FC<StaffCarePlanApprovalProps> = ({ ca
         </CardContent>
       </Card>
 
-      {/* Approval/Rejection Dialog */}
+      {/* Enhanced Approval/Rejection Dialog */}
       <Dialog open={!!selectedPlan && !!actionType} onOpenChange={cancelAction}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
+        <DialogContent className="max-w-lg">
+          <DialogHeader className="space-y-3 pb-4">
+            <DialogTitle className="text-xl font-semibold">
               {actionType === 'approve' ? 'Approve Care Plan' : 'Request Changes'}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4">
-            <div>
-              <p className="font-medium">{selectedPlan?.title}</p>
-              <p className="text-sm text-muted-foreground">
-                Client: {selectedPlan?.client.first_name} {selectedPlan?.client.last_name}
-              </p>
+          <div className="space-y-6">
+            {/* Care Plan Information Section */}
+            <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+              <h4 className="font-medium text-base">{selectedPlan?.title}</h4>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <User className="h-4 w-4" />
+                <span>Client: {selectedPlan?.client.first_name} {selectedPlan?.client.last_name}</span>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Plan ID: {selectedPlan?.display_id}
+              </div>
             </div>
 
+            {/* Rejection Reason Section (only for reject action) */}
             {actionType === 'reject' && (
-              <div>
-                <label className="text-sm font-medium mb-2 block">
+              <div className="space-y-3">
+                <Label htmlFor="rejection-reason" className="text-sm font-medium text-foreground">
                   Reason for Changes *
-                </label>
+                </Label>
                 <Textarea
+                  id="rejection-reason"
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   placeholder="Please specify what changes are needed..."
-                  className="min-h-[80px]"
+                  className="min-h-[100px] resize-none border-input focus:border-ring focus:ring-1 focus:ring-ring"
                 />
               </div>
             )}
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">
+            {/* Comments Section */}
+            <div className="space-y-3">
+              <Label htmlFor="comments" className="text-sm font-medium text-foreground">
                 {actionType === 'approve' ? 'Comments (Optional)' : 'Additional Comments'}
-              </label>
+              </Label>
               <Textarea
+                id="comments"
                 value={comments}
                 onChange={(e) => setComments(e.target.value)}
                 placeholder={
@@ -238,13 +249,17 @@ export const StaffCarePlanApproval: React.FC<StaffCarePlanApprovalProps> = ({ ca
                     ? "Add any comments for the care team..."
                     : "Additional feedback or instructions..."
                 }
-                className="min-h-[80px]"
+                className="min-h-[80px] resize-none border-input focus:border-ring focus:ring-1 focus:ring-ring"
               />
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={cancelAction}>
+          <DialogFooter className="pt-6 gap-3">
+            <Button 
+              variant="outline" 
+              onClick={cancelAction}
+              className="min-w-[100px]"
+            >
               Cancel
             </Button>
             <Button
@@ -255,6 +270,7 @@ export const StaffCarePlanApproval: React.FC<StaffCarePlanApprovalProps> = ({ ca
                 staffReject.isPending
               }
               variant={actionType === 'approve' ? 'default' : 'destructive'}
+              className="min-w-[140px]"
             >
               {staffApprove.isPending || staffReject.isPending ? 'Processing...' : 
                actionType === 'approve' ? 'Approve & Send to Client' : 'Request Changes'}
