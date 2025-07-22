@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,18 +40,20 @@ export const useUnifiedDocuments = (branchId: string) => {
   const queryClient = useQueryClient();
   const [isUploading, setIsUploading] = useState(false);
 
+  console.log('[useUnifiedDocuments] Hook initialized with branchId:', branchId);
+
   // Fetch unified documents
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['unified-documents', branchId],
     queryFn: async () => {
-      console.log('Fetching documents for branch:', branchId);
+      console.log('[useUnifiedDocuments] Fetching documents for branch:', branchId);
       
       const { data, error } = await supabase.rpc('get_branch_documents', {
         p_branch_id: branchId
       });
 
       if (error) {
-        console.error('Error fetching documents:', error);
+        console.error('[useUnifiedDocuments] Error fetching documents:', error);
         throw error;
       }
 
@@ -75,7 +76,7 @@ export const useUnifiedDocuments = (branchId: string) => {
                 has_file: !fileError && fileData && fileData.length > 0
               };
             } catch (err) {
-              console.error('Error checking file existence:', err);
+              console.error('[useUnifiedDocuments] Error checking file existence:', err);
               return { ...doc, has_file: false };
             }
           }
@@ -83,6 +84,7 @@ export const useUnifiedDocuments = (branchId: string) => {
         }) || []
       );
 
+      console.log('[useUnifiedDocuments] Successfully fetched documents count:', documentsWithFileStatus.length);
       return documentsWithFileStatus as UnifiedDocument[];
     },
     enabled: !!branchId,
@@ -90,86 +92,122 @@ export const useUnifiedDocuments = (branchId: string) => {
 
   // Upload document mutation
   const uploadDocument = async (uploadData: UploadDocumentData) => {
-    console.log('Starting document upload for branch:', branchId);
+    console.log('[useUnifiedDocuments] Starting document upload:', {
+      branchId,
+      fileName: uploadData.file.name,
+      fileSize: uploadData.file.size,
+      category: uploadData.category,
+      clientId: uploadData.client_id
+    });
+    
     setIsUploading(true);
 
     try {
       // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
-        console.error('User authentication error:', userError);
+        console.error('[useUnifiedDocuments] User authentication error:', userError);
         throw new Error('You must be logged in to upload documents');
       }
 
-      console.log('Current user:', user.id);
+      console.log('[useUnifiedDocuments] Current user verified:', {
+        userId: user.id,
+        email: user.email
+      });
 
       // Check user permissions for this branch
-      const { data: userRoleData } = await supabase
+      const { data: userRoleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
         .single();
 
-      console.log('User role:', userRoleData?.role);
+      if (roleError) {
+        console.error('[useUnifiedDocuments] Error fetching user role:', roleError);
+        throw new Error('Could not verify user permissions');
+      }
+
+      console.log('[useUnifiedDocuments] User role verified:', userRoleData?.role);
 
       // Verify user can access this branch
       let hasAccess = false;
       
       if (userRoleData?.role === 'super_admin') {
         hasAccess = true;
+        console.log('[useUnifiedDocuments] Super admin access granted');
       } else if (userRoleData?.role === 'branch_admin') {
-        const { data: adminBranch } = await supabase
+        const { data: adminBranch, error: adminError } = await supabase
           .from('admin_branches')
           .select('branch_id')
           .eq('admin_id', user.id)
           .eq('branch_id', branchId)
           .single();
+        
+        if (adminError) {
+          console.error('[useUnifiedDocuments] Error checking admin branch access:', adminError);
+        }
+        
         hasAccess = !!adminBranch;
+        console.log('[useUnifiedDocuments] Branch admin access check:', { hasAccess, adminBranch });
       } else if (userRoleData?.role === 'carer') {
-        const { data: staffData } = await supabase
+        const { data: staffData, error: staffError } = await supabase
           .from('staff')
           .select('branch_id')
           .eq('id', user.id)
           .eq('branch_id', branchId)
           .single();
+        
+        if (staffError) {
+          console.error('[useUnifiedDocuments] Error checking staff branch access:', staffError);
+        }
+        
         hasAccess = !!staffData;
+        console.log('[useUnifiedDocuments] Staff access check:', { hasAccess, staffData });
       }
 
       if (!hasAccess) {
+        console.error('[useUnifiedDocuments] Access denied for branch:', branchId);
         throw new Error('You do not have permission to upload documents to this branch');
       }
 
-      console.log('User has access to branch');
+      console.log('[useUnifiedDocuments] User has access to branch, proceeding with upload');
 
       // Generate unique file path
       const fileExt = uploadData.file.name.split('.').pop();
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `${branchId}/${fileName}`;
 
-      console.log('Uploading file to path:', filePath);
+      console.log('[useUnifiedDocuments] Generated file path:', filePath);
 
       // Upload file to storage
+      console.log('[useUnifiedDocuments] Uploading to storage bucket: documents');
       const { data: uploadResult, error: uploadError } = await supabase.storage
         .from('documents')
         .upload(filePath, uploadData.file);
 
       if (uploadError) {
-        console.error('File upload error:', uploadError);
+        console.error('[useUnifiedDocuments] File upload error:', uploadError);
         throw new Error(`Failed to upload file: ${uploadError.message}`);
       }
 
-      console.log('File uploaded successfully:', uploadResult);
+      console.log('[useUnifiedDocuments] File uploaded successfully to storage:', uploadResult);
 
       // Get user name for display
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('first_name, last_name')
         .eq('id', user.id)
         .single();
 
+      if (profileError) {
+        console.log('[useUnifiedDocuments] Could not fetch profile data, using email:', profileError);
+      }
+
       const uploaderName = profileData 
         ? `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim()
         : user.email || 'Unknown User';
+
+      console.log('[useUnifiedDocuments] Uploader name determined:', uploaderName);
 
       // Save document metadata to database
       const documentData = {
@@ -190,7 +228,10 @@ export const useUnifiedDocuments = (branchId: string) => {
         status: 'active'
       };
 
-      console.log('Saving document metadata:', documentData);
+      console.log('[useUnifiedDocuments] Saving document metadata:', {
+        ...documentData,
+        file_size: `${documentData.file_size} bytes`
+      });
 
       const { data: documentRecord, error: dbError } = await supabase
         .from('documents')
@@ -199,13 +240,14 @@ export const useUnifiedDocuments = (branchId: string) => {
         .single();
 
       if (dbError) {
-        console.error('Database insert error:', dbError);
+        console.error('[useUnifiedDocuments] Database insert error:', dbError);
         // Clean up uploaded file if database insert fails
+        console.log('[useUnifiedDocuments] Cleaning up uploaded file due to database error');
         await supabase.storage.from('documents').remove([filePath]);
         throw new Error(`Failed to save document: ${dbError.message}`);
       }
 
-      console.log('Document saved successfully:', documentRecord);
+      console.log('[useUnifiedDocuments] Document metadata saved successfully:', documentRecord);
       toast.success('Document uploaded successfully');
       
       // Invalidate and refetch documents
@@ -213,11 +255,16 @@ export const useUnifiedDocuments = (branchId: string) => {
       
       return documentRecord;
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('[useUnifiedDocuments] Upload error:', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       toast.error(error instanceof Error ? error.message : 'Failed to upload document');
       throw error;
     } finally {
       setIsUploading(false);
+      console.log('[useUnifiedDocuments] Upload process completed');
     }
   };
 

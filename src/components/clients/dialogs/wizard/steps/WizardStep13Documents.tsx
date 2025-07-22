@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Plus, X, Upload, File, Calendar, CheckCircle, AlertCircle } from "lucide-react";
@@ -30,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { useUnifiedDocuments } from "@/hooks/useUnifiedDocuments";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 interface WizardStep13DocumentsProps {
   form: UseFormReturn<any>;
@@ -38,12 +38,25 @@ interface WizardStep13DocumentsProps {
 
 export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsProps) {
   const { id: branchId } = useParams();
+  const { user } = useAuth();
   const { uploadDocument, isUploading } = useUnifiedDocuments(branchId || '');
   const [uploadingFiles, setUploadingFiles] = useState<{ [key: number]: boolean }>({});
   const [uploadErrors, setUploadErrors] = useState<{ [key: number]: string }>({});
 
+  // Debug logging for initialization
+  console.log('[WizardStep13Documents] Component initialized:', {
+    branchId,
+    clientId,
+    userId: user?.id,
+    userEmail: user?.email,
+    isUploading,
+    formDocuments: form.getValues("documents")
+  });
+
   const addDocument = () => {
     const current = form.getValues("documents") || [];
+    console.log('[WizardStep13Documents] Adding new document, current count:', current.length);
+    
     form.setValue("documents", [...current, {
       name: "",
       type: "",
@@ -51,12 +64,14 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
       uploaded_by: "",
       file_path: "",
       file_size: "",
-      uploaded_document_id: null // Track the uploaded document ID
+      uploaded_document_id: null
     }]);
   };
 
   const removeDocument = (index: number) => {
     const current = form.getValues("documents") || [];
+    console.log('[WizardStep13Documents] Removing document at index:', index);
+    
     form.setValue("documents", current.filter((_, i) => i !== index));
     
     // Clear any upload state for this index
@@ -74,8 +89,68 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
   };
 
   const handleFileUpload = async (index: number, file: File) => {
+    console.log('[WizardStep13Documents] Starting file upload:', {
+      index,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      branchId,
+      clientId,
+      userId: user?.id
+    });
+
+    // Pre-upload validation
     if (!branchId) {
-      setUploadErrors(prev => ({ ...prev, [index]: "Branch ID not found" }));
+      const error = "Branch ID not found - cannot upload file";
+      console.error('[WizardStep13Documents] Upload failed:', error);
+      setUploadErrors(prev => ({ ...prev, [index]: error }));
+      toast.error(error);
+      return;
+    }
+
+    if (!user) {
+      const error = "User not authenticated - please log in";
+      console.error('[WizardStep13Documents] Upload failed:', error);
+      setUploadErrors(prev => ({ ...prev, [index]: error }));
+      toast.error(error);
+      return;
+    }
+
+    if (!clientId) {
+      const error = "Client ID not provided - cannot associate document";
+      console.error('[WizardStep13Documents] Upload failed:', error);
+      setUploadErrors(prev => ({ ...prev, [index]: error }));
+      toast.error(error);
+      return;
+    }
+
+    // File validation
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (file.size > maxSize) {
+      const error = "File too large - maximum size is 50MB";
+      console.error('[WizardStep13Documents] Upload failed:', error);
+      setUploadErrors(prev => ({ ...prev, [index]: error }));
+      toast.error(error);
+      return;
+    }
+
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'text/plain'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      const error = `File type not supported: ${file.type}`;
+      console.error('[WizardStep13Documents] Upload failed:', error);
+      setUploadErrors(prev => ({ ...prev, [index]: error }));
+      toast.error(error);
       return;
     }
 
@@ -87,6 +162,8 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
     });
     
     try {
+      console.log('[WizardStep13Documents] Preparing upload data...');
+      
       // Prepare upload data
       const uploadData = {
         name: file.name,
@@ -99,11 +176,21 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
         client_id: clientId
       };
 
+      console.log('[WizardStep13Documents] Upload data prepared:', {
+        ...uploadData,
+        file: `File object: ${file.name} (${file.size} bytes)`
+      });
+
       // Upload the file using the unified documents hook
+      console.log('[WizardStep13Documents] Calling uploadDocument...');
       const uploadedDocument = await uploadDocument(uploadData);
+      
+      console.log('[WizardStep13Documents] Upload response:', uploadedDocument);
       
       if (uploadedDocument) {
         const formattedSize = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+        
+        console.log('[WizardStep13Documents] Updating form with uploaded document data...');
         
         // Update form with the uploaded document information
         form.setValue(`documents.${index}.name`, file.name);
@@ -114,16 +201,29 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
         form.setValue(`documents.${index}.type`, getDocumentTypeFromFile(file));
         form.setValue(`documents.${index}.uploaded_document_id`, uploadedDocument.id);
         
+        console.log('[WizardStep13Documents] Form updated successfully');
         toast.success(`Document "${file.name}" uploaded successfully`);
+      } else {
+        throw new Error('Upload returned no document data');
       }
       
     } catch (error) {
-      console.error("File upload failed:", error);
-      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+      console.error("[WizardStep13Documents] File upload failed:", {
+        error,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorStack: error instanceof Error ? error.stack : undefined,
+        fileName: file.name,
+        fileSize: file.size,
+        branchId,
+        clientId
+      });
+      
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed - please try again';
       setUploadErrors(prev => ({ ...prev, [index]: errorMessage }));
       toast.error(`Failed to upload "${file.name}": ${errorMessage}`);
     } finally {
       setUploadingFiles(prev => ({ ...prev, [index]: false }));
+      console.log('[WizardStep13Documents] Upload process completed for index:', index);
     }
   };
 
@@ -140,6 +240,8 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
 
   const documents = form.watch("documents") || [];
 
+  console.log('[WizardStep13Documents] Current documents in form:', documents);
+
   return (
     <div className="space-y-6">
       <div>
@@ -147,6 +249,10 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
         <p className="text-gray-600">
           Upload and organize important care plan documentation and files.
         </p>
+        {/* Debug info - remove in production */}
+        <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+          Debug: Branch ID: {branchId || 'Missing'} | Client ID: {clientId || 'Missing'} | User: {user?.email || 'Not logged in'}
+        </div>
       </div>
 
       <Form {...form}>
@@ -178,12 +284,16 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
                   {uploadErrors[index] && (
                     <AlertCircle className="h-4 w-4 ml-2 text-red-600" />
                   )}
+                  {uploadingFiles[index] && (
+                    <div className="ml-2 animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                  )}
                 </h4>
                 <Button
                   type="button"
                   onClick={() => removeDocument(index)}
                   size="sm"
                   variant="outline"
+                  disabled={uploadingFiles[index]}
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -191,7 +301,21 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
 
               {uploadErrors[index] && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-                  Error: {uploadErrors[index]}
+                  <div className="flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    <strong>Upload Error:</strong>
+                  </div>
+                  <p className="mt-1">{uploadErrors[index]}</p>
+                </div>
+              )}
+
+              {uploadingFiles[index] && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded text-blue-700 text-sm">
+                  <div className="flex items-center">
+                    <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></div>
+                    <strong>Uploading...</strong>
+                  </div>
+                  <p className="mt-1">Please wait while your file is being uploaded to the server.</p>
                 </div>
               )}
 
@@ -294,12 +418,12 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
                 />
               </div>
 
-              {/* File Upload Area */}
+              {/* Enhanced File Upload Area */}
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
                 <div className="text-center">
                   <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                   <p className="text-sm text-gray-600 mb-2">
-                    {uploadingFiles[index] ? "Uploading..." : "Drag and drop your file here, or"}
+                    {uploadingFiles[index] ? "Uploading file..." : "Drag and drop your file here, or"}
                   </p>
                   <label className="cursor-pointer">
                     <Button 
@@ -315,6 +439,12 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
                       className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
+                        console.log('[WizardStep13Documents] File selected:', {
+                          fileName: file?.name,
+                          fileSize: file?.size,
+                          fileType: file?.type,
+                          index
+                        });
                         if (file) {
                           handleFileUpload(index, file);
                         }
@@ -322,6 +452,9 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.gif,.webp"
                     />
                   </label>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Supported formats: PDF, DOC, DOCX, JPG, PNG, GIF, WEBP, TXT (Max 50MB)
+                  </p>
                 </div>
                 
                 {form.watch(`documents.${index}.file_path`) && (
@@ -333,6 +466,9 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
                         </p>
                         <p className="text-xs text-green-600">
                           {form.watch(`documents.${index}.file_size`)} • Uploaded successfully
+                        </p>
+                        <p className="text-xs text-green-600">
+                          ID: {form.watch(`documents.${index}.uploaded_document_id`)}
                         </p>
                       </div>
                       <div className="text-green-600">
