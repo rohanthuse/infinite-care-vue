@@ -1,6 +1,7 @@
 
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
+import { WizardErrorBoundary } from "./WizardErrorBoundary";
 import { WizardStep1BasicInfo } from "./steps/WizardStep1BasicInfo";
 import { WizardStep2PersonalInfo } from "./steps/WizardStep2PersonalInfo";
 import { WizardStep3AboutMe } from "./steps/WizardStep3AboutMe";
@@ -24,6 +25,12 @@ interface CarePlanWizardStepsProps {
 
 export function CarePlanWizardSteps({ currentStep, form, clientId }: CarePlanWizardStepsProps) {
   const renderStep = () => {
+    // Log current step for debugging
+    console.log(`Rendering step ${currentStep}`, {
+      formValues: form.getValues(),
+      currentStep
+    });
+
     switch (currentStep) {
       case 1:
         return <WizardStep1BasicInfo form={form} />;
@@ -54,13 +61,23 @@ export function CarePlanWizardSteps({ currentStep, form, clientId }: CarePlanWiz
       case 14:
         return <WizardStep14Review form={form} />;
       default:
+        console.warn(`Unknown step: ${currentStep}, defaulting to step 1`);
         return <WizardStep1BasicInfo form={form} />;
     }
   };
 
   return (
     <div className="space-y-6">
-      {renderStep()}
+      <WizardErrorBoundary 
+        stepNumber={currentStep}
+        onRetry={() => {
+          // Force re-render by updating form state
+          const currentValues = form.getValues();
+          form.reset(currentValues);
+        }}
+      >
+        {renderStep()}
+      </WizardErrorBoundary>
     </div>
   );
 }

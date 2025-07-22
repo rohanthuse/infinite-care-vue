@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -57,6 +58,20 @@ const wizardSteps = [
   { id: 14, name: "Review", description: "Review and finalize care plan" },
 ];
 
+// Safe array initialization helper
+const initializeArrayField = (value: any): any[] => {
+  if (Array.isArray(value)) return value;
+  if (value === null || value === undefined) return [];
+  // If it's an object, convert to empty array to prevent errors
+  return [];
+};
+
+// Safe object initialization helper
+const initializeObjectField = (value: any): any => {
+  if (value && typeof value === 'object' && !Array.isArray(value)) return value;
+  return {};
+};
+
 export function CarePlanCreationWizard({
   isOpen,
   onClose,
@@ -65,6 +80,7 @@ export function CarePlanCreationWizard({
 }: CarePlanCreationWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [clientDataLoaded, setClientDataLoaded] = useState(false);
+  const [stepError, setStepError] = useState<string | null>(null);
   const totalSteps = 14;
   
   const form = useForm({
@@ -106,43 +122,60 @@ export function CarePlanCreationWizard({
   // Fetch client profile data
   const { data: clientProfile, isLoading: isClientLoading } = useClientProfile(clientId);
 
+  // Debug logging for form state
+  useEffect(() => {
+    if (isOpen) {
+      console.log('CarePlanCreationWizard opened:', {
+        currentStep,
+        clientId,
+        carePlanId,
+        formValues: form.getValues()
+      });
+    }
+  }, [isOpen, currentStep, clientId, carePlanId, form]);
+
   // Pre-populate form with client data when client profile is loaded
   useEffect(() => {
     if (clientProfile && !isDraftLoading && !clientDataLoaded) {
       console.log('Pre-populating form with client data:', clientProfile);
       
-      // Only set values if they don't already exist (don't overwrite draft data)
-      const currentPersonalInfo = form.getValues('personal_info') || {};
-      
-      const updatedPersonalInfo: any = {
-        ...currentPersonalInfo,
-      };
+      try {
+        // Only set values if they don't already exist (don't overwrite draft data)
+        const currentPersonalInfo = form.getValues('personal_info') || {};
+        
+        const updatedPersonalInfo: any = {
+          ...currentPersonalInfo,
+        };
 
-      // Add basic client information if not already present
-      if (clientProfile.first_name && clientProfile.last_name && !updatedPersonalInfo.client_name) {
-        updatedPersonalInfo.client_name = `${clientProfile.first_name} ${clientProfile.last_name}`;
-      }
-      if (clientProfile.email && !updatedPersonalInfo.client_email) {
-        updatedPersonalInfo.client_email = clientProfile.email;
-      }
-      if (clientProfile.phone && !updatedPersonalInfo.client_phone) {
-        updatedPersonalInfo.client_phone = clientProfile.phone;
-      }
-      if (clientProfile.address && !updatedPersonalInfo.client_address) {
-        updatedPersonalInfo.client_address = clientProfile.address;
-      }
+        // Add basic client information if not already present
+        if (clientProfile.first_name && clientProfile.last_name && !updatedPersonalInfo.client_name) {
+          updatedPersonalInfo.client_name = `${clientProfile.first_name} ${clientProfile.last_name}`;
+        }
+        if (clientProfile.email && !updatedPersonalInfo.client_email) {
+          updatedPersonalInfo.client_email = clientProfile.email;
+        }
+        if (clientProfile.phone && !updatedPersonalInfo.client_phone) {
+          updatedPersonalInfo.client_phone = clientProfile.phone;
+        }
+        if (clientProfile.address && !updatedPersonalInfo.client_address) {
+          updatedPersonalInfo.client_address = clientProfile.address;
+        }
 
-      // Set the updated personal info
-      form.setValue('personal_info', updatedPersonalInfo);
-      
-      // Pre-populate other basic info if available
-      const currentTitle = form.getValues('title');
-      if (!currentTitle && clientProfile.first_name && clientProfile.last_name) {
-        form.setValue('title', `Care Plan for ${clientProfile.first_name} ${clientProfile.last_name}`);
-      }
+        // Set the updated personal info
+        form.setValue('personal_info', updatedPersonalInfo);
+        
+        // Pre-populate other basic info if available
+        const currentTitle = form.getValues('title');
+        if (!currentTitle && clientProfile.first_name && clientProfile.last_name) {
+          form.setValue('title', `Care Plan for ${clientProfile.first_name} ${clientProfile.last_name}`);
+        }
 
-      setClientDataLoaded(true);
-      console.log('Client data pre-populated successfully');
+        setClientDataLoaded(true);
+        console.log('Client data pre-populated successfully');
+      } catch (error) {
+        console.error('Error pre-populating client data:', error);
+        setStepError('Failed to load client data');
+      }
     }
   }, [clientProfile, isDraftLoading, clientDataLoaded, form]);
 
@@ -153,19 +186,36 @@ export function CarePlanCreationWizard({
       
       console.log('Loading draft data:', savedData);
       
-      // Set form values from saved data (this will override client data where draft exists)
-      Object.keys(savedData).forEach((key) => {
-        if (savedData[key] !== undefined) {
-          form.setValue(key as any, savedData[key]);
-        }
-      });
+      try {
+        // Safely set form values from saved data with proper type handling
+        Object.keys(savedData).forEach((key) => {
+          if (savedData[key] !== undefined) {
+            let value = savedData[key];
+            
+            // Handle array fields with safety checks
+            if (['risk_assessments', 'equipment', 'service_plans', 'service_actions', 'documents', 'goals', 'activities'].includes(key)) {
+              value = initializeArrayField(value);
+            }
+            // Handle object fields with safety checks
+            else if (['personal_info', 'about_me', 'medical_info', 'personal_care', 'dietary'].includes(key)) {
+              value = initializeObjectField(value);
+            }
+            
+            form.setValue(key as any, value);
+          }
+        });
 
-      // Set current step from saved data
-      if (draftData.last_step_completed) {
-        setCurrentStep(draftData.last_step_completed);
+        // Set current step from saved data
+        if (draftData.last_step_completed) {
+          setCurrentStep(draftData.last_step_completed);
+        }
+        
+        console.log('Draft data loaded successfully');
+        setStepError(null);
+      } catch (error) {
+        console.error('Error loading draft data:', error);
+        setStepError('Failed to load saved data');
       }
-      
-      console.log('Draft data loaded successfully');
     }
   }, [draftData, isDraftLoading, clientDataLoaded, form]);
 
@@ -173,7 +223,11 @@ export function CarePlanCreationWizard({
   useEffect(() => {
     const subscription = form.watch((data) => {
       if (isOpen && savedCarePlanId && clientDataLoaded) {
-        autoSave(data, currentStep);
+        try {
+          autoSave(data, currentStep);
+        } catch (error) {
+          console.error('Auto-save error:', error);
+        }
       }
     });
     
@@ -182,49 +236,81 @@ export function CarePlanCreationWizard({
 
   // Calculate completed steps based on form data
   const getCompletedSteps = () => {
-    const formData = form.getValues();
-    const completedSteps: number[] = [];
+    try {
+      const formData = form.getValues();
+      const completedSteps: number[] = [];
 
-    // Check each step for completion
-    if (formData.title?.trim()) completedSteps.push(1);
-    if (formData.personal_info && Object.keys(formData.personal_info).length > 0) completedSteps.push(2);
-    if (formData.about_me && Object.keys(formData.about_me).length > 0) completedSteps.push(3);
-    if (formData.medical_info && Object.keys(formData.medical_info).length > 0) completedSteps.push(4);
-    if (formData.goals && formData.goals.length > 0) completedSteps.push(5);
-    if (formData.activities && formData.activities.length > 0) completedSteps.push(6);
-    if (formData.personal_care && Object.keys(formData.personal_care).length > 0) completedSteps.push(7);
-    if (formData.dietary && Object.keys(formData.dietary).length > 0) completedSteps.push(8);
-    if (formData.risk_assessments && formData.risk_assessments.length > 0) completedSteps.push(9);
-    if (formData.equipment && formData.equipment.length > 0) completedSteps.push(10);
-    if (formData.service_plans && formData.service_plans.length > 0) completedSteps.push(11);
-    if (formData.service_actions && formData.service_actions.length > 0) completedSteps.push(12);
-    if (formData.documents && formData.documents.length > 0) completedSteps.push(13);
-    
-    // Step 14 (Review) is considered completed when ready to finalize
-    if (completedSteps.length >= 3) completedSteps.push(14);
+      // Check each step for completion with safety checks
+      if (formData.title?.trim()) completedSteps.push(1);
+      if (formData.personal_info && Object.keys(formData.personal_info).length > 0) completedSteps.push(2);
+      if (formData.about_me && Object.keys(formData.about_me).length > 0) completedSteps.push(3);
+      if (formData.medical_info && Object.keys(formData.medical_info).length > 0) completedSteps.push(4);
+      if (Array.isArray(formData.goals) && formData.goals.length > 0) completedSteps.push(5);
+      if (Array.isArray(formData.activities) && formData.activities.length > 0) completedSteps.push(6);
+      if (formData.personal_care && Object.keys(formData.personal_care).length > 0) completedSteps.push(7);
+      if (formData.dietary && Object.keys(formData.dietary).length > 0) completedSteps.push(8);
+      if (Array.isArray(formData.risk_assessments) && formData.risk_assessments.length > 0) completedSteps.push(9);
+      if (Array.isArray(formData.equipment) && formData.equipment.length > 0) completedSteps.push(10);
+      if (Array.isArray(formData.service_plans) && formData.service_plans.length > 0) completedSteps.push(11);
+      if (Array.isArray(formData.service_actions) && formData.service_actions.length > 0) completedSteps.push(12);
+      if (Array.isArray(formData.documents) && formData.documents.length > 0) completedSteps.push(13);
+      
+      // Step 14 (Review) is considered completed when ready to finalize
+      if (completedSteps.length >= 3) completedSteps.push(14);
 
-    return completedSteps;
+      return completedSteps;
+    } catch (error) {
+      console.error('Error calculating completed steps:', error);
+      return [];
+    }
   };
 
   const handleStepClick = (stepNumber: number) => {
-    setCurrentStep(stepNumber);
+    try {
+      console.log(`Navigating to step ${stepNumber}`);
+      setCurrentStep(stepNumber);
+      setStepError(null);
+    } catch (error) {
+      console.error('Error navigating to step:', error);
+      setStepError(`Failed to navigate to step ${stepNumber}`);
+    }
   };
 
   const handleNext = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+    try {
+      if (currentStep < totalSteps) {
+        console.log(`Moving from step ${currentStep} to ${currentStep + 1}`);
+        setCurrentStep(currentStep + 1);
+        setStepError(null);
+      }
+    } catch (error) {
+      console.error('Error navigating to next step:', error);
+      setStepError('Failed to proceed to next step');
     }
   };
 
   const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+    try {
+      if (currentStep > 1) {
+        console.log(`Moving from step ${currentStep} to ${currentStep - 1}`);
+        setCurrentStep(currentStep - 1);
+        setStepError(null);
+      }
+    } catch (error) {
+      console.error('Error navigating to previous step:', error);
+      setStepError('Failed to go to previous step');
     }
   };
 
   const handleSaveDraft = async () => {
-    const formData = form.getValues();
-    await saveDraft(formData, currentStep);
+    try {
+      const formData = form.getValues();
+      await saveDraft(formData, currentStep);
+      setStepError(null);
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      setStepError('Failed to save draft');
+    }
   };
 
   const handleFinalize = async () => {
@@ -244,10 +330,19 @@ export function CarePlanCreationWizard({
 
       toast.success("Care plan sent for staff approval successfully!");
       onClose();
+      setStepError(null);
     } catch (error) {
       console.error('Error finalizing care plan:', error);
+      setStepError('Failed to finalize care plan');
       toast.error("Failed to finalize care plan. Please try again.");
     }
+  };
+
+  // Reset form state when dialog closes
+  const handleClose = () => {
+    setStepError(null);
+    setCurrentStep(1);
+    onClose();
   };
 
   const formData = form.watch();
@@ -257,7 +352,7 @@ export function CarePlanCreationWizard({
   const isLoading = isClientLoading || isDraftLoading || !clientDataLoaded;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>
@@ -269,6 +364,18 @@ export function CarePlanCreationWizard({
             )}
           </DialogTitle>
         </DialogHeader>
+        
+        {stepError && (
+          <div className="px-6 py-2 bg-red-50 border-b border-red-200">
+            <p className="text-red-700 text-sm">{stepError}</p>
+            <button 
+              onClick={() => setStepError(null)}
+              className="text-red-600 hover:text-red-800 text-xs underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
         
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center p-6">
