@@ -291,7 +291,7 @@ export function CarePlanCreationWizard({
       try {
         const savedData = draftData.auto_save_data;
         
-        form.reset(savedData);
+        form.reset(savedData as any);
         
         if (draftData.last_step_completed) {
           setCurrentStep(draftData.last_step_completed);
@@ -450,7 +450,7 @@ export function CarePlanCreationWizard({
       if (draftId || savedCarePlanId) {
         const carePlanId = draftId || savedCarePlanId;
         
-        const finalData = {
+        const finalData: any = {
           title: data.title,
           start_date: data.start_date.toISOString().split('T')[0],
           end_date: data.end_date ? data.end_date.toISOString().split('T')[0] : null,
@@ -478,7 +478,7 @@ export function CarePlanCreationWizard({
           finalData.staff_id = data.staff_id;
           finalData.provider_name = staffMember ? `${staffMember.first_name} ${staffMember.last_name}` : 'Unknown Staff';
         } else {
-          finalData.provider_name = data.provider_name;
+          finalData.provider_name = data.provider_name || 'Not Assigned';
         }
 
         const { error } = await supabase

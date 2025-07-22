@@ -43,7 +43,7 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
     }) => {
       const completionPercentage = Math.round((currentStep / 14) * 100);
       
-      const draftPayload = {
+      const draftPayload: any = {
         client_id: clientId,
         title: formData.title || `Draft Care Plan for Client`,
         status: 'draft',
@@ -53,6 +53,7 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
         start_date: formData.start_date ? formData.start_date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         priority: formData.priority || 'medium',
         care_plan_type: formData.care_plan_type || 'standard',
+        provider_name: formData.provider_name || 'Not Assigned',
       };
 
       if (carePlanId) {
@@ -70,7 +71,7 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
         // Create new draft
         const { data, error } = await supabase
           .from('client_care_plans')
-          .insert([draftPayload])
+          .insert(draftPayload)
           .select()
           .single();
 
