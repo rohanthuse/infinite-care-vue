@@ -122,10 +122,9 @@ export const CareTab: React.FC = () => {
       {/* Care Plan Creation Wizard */}
       {selectedClientId && selectedClientName && (
         <CarePlanCreationWizard
-          open={isWizardOpen}
-          onOpenChange={setIsWizardOpen}
+          isOpen={isWizardOpen}
+          onClose={() => setIsWizardOpen(false)}
           clientId={selectedClientId}
-          clientName={selectedClientName}
         />
       )}
     </div>
