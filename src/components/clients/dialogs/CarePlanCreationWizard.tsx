@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -105,25 +106,27 @@ const formSchema = z.object({
     weightMonitoring: z.boolean().optional(),
     specialEquipment: z.string().optional(),
   }).optional(),
-  riskAssessments: z.array(z.object({
-    riskType: z.string().optional(),
-    riskLevel: z.string().optional(),
-    assessedBy: z.string().optional(),
-    reviewDate: z.date().optional(),
-    riskFactors: z.array(z.object({
-      factor: z.string().optional(),
-    })).optional(),
-    mitigationStrategies: z.array(z.object({
-      strategy: z.string().optional(),
-    })).optional(),
+  risk_assessments: z.array(z.object({
+    risk_type: z.string().optional(),
+    risk_level: z.string().optional(),
+    assessed_by: z.string().optional(),
+    review_date: z.date().optional(),
+    risk_factors: z.array(z.string()).optional(),
+    mitigation_strategies: z.array(z.string()).optional(),
   })).optional(),
-  equipment: z.object({
-    assistive_devices: z.string().optional(),
-    mobility_aids: z.string().optional(),
-    sensory_aids: z.string().optional(),
-    communication_aids: z.string().optional(),
-    medical_equipment: z.string().optional(),
-  }).optional(),
+  equipment: z.array(z.object({
+    equipment_name: z.string().optional(),
+    equipment_type: z.string().optional(),
+    manufacturer: z.string().optional(),
+    model_number: z.string().optional(),
+    serial_number: z.string().optional(),
+    installation_date: z.date().optional(),
+    last_maintenance_date: z.date().optional(),
+    next_maintenance_date: z.date().optional(),
+    maintenance_schedule: z.string().optional(),
+    location: z.string().optional(),
+    notes: z.string().optional(),
+  })).optional(),
   service_plans: z.array(z.object({
     service_type: z.string().optional(),
     frequency: z.string().optional(),
@@ -253,14 +256,8 @@ export function CarePlanCreationWizard({
         weightMonitoring: false,
         specialEquipment: "",
       },
-      riskAssessments: [],
-      equipment: {
-        assistive_devices: "",
-        mobility_aids: "",
-        sensory_aids: "",
-        communication_aids: "",
-        medical_equipment: "",
-      },
+      risk_assessments: [],
+      equipment: [],
       service_plans: [],
       service_actions: [],
       documents: [],
@@ -342,7 +339,7 @@ export function CarePlanCreationWizard({
         activities: data.activities,
         personal_care: data.personal_care,
         dietary: data.dietary,
-        risk_assessments: data.riskAssessments,
+        risk_assessments: data.risk_assessments,
         equipment: data.equipment,
         service_plans: data.service_plans,
         service_actions: data.service_actions,
