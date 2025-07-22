@@ -8,7 +8,7 @@ interface CarePlanWizardFooterProps {
   totalSteps: number;
   onPrevious: () => void;
   onNext: () => void;
-  onSaveDraft: () => void;
+  onSaveDraft: () => Promise<void>;
   onFinalize: () => void;
   isLoading: boolean;
   isDraft: boolean;
@@ -26,6 +26,27 @@ export function CarePlanWizardFooter({
 }: CarePlanWizardFooterProps) {
   const isFirstStep = currentStep === 1;
   const isLastStep = currentStep === totalSteps;
+
+  const handleNext = async () => {
+    try {
+      // Save draft before proceeding to next step
+      await onSaveDraft();
+      // Only proceed to next step after save completes successfully
+      onNext();
+    } catch (error) {
+      console.error('Failed to save before proceeding to next step:', error);
+      // Don't proceed if save fails - user will see error toast from the hook
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    try {
+      await onSaveDraft();
+    } catch (error) {
+      console.error('Failed to save draft:', error);
+      // Error toast is handled by the hook
+    }
+  };
 
   return (
     <div className="absolute bottom-0 left-0 right-0 border-t bg-white/95 backdrop-blur-sm px-6 py-4 z-10">
@@ -47,12 +68,12 @@ export function CarePlanWizardFooter({
           <Button
             type="button"
             variant="outline"
-            onClick={onSaveDraft}
+            onClick={handleSaveDraft}
             disabled={isLoading}
             className="flex items-center space-x-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
           >
             <Save className="h-4 w-4" />
-            <span>{isDraft ? "Update Draft" : "Save as Draft"}</span>
+            <span>{isLoading ? "Saving..." : isDraft ? "Update Draft" : "Save as Draft"}</span>
           </Button>
 
           {isLastStep ? (
@@ -68,11 +89,11 @@ export function CarePlanWizardFooter({
           ) : (
             <Button
               type="button"
-              onClick={onNext}
+              onClick={handleNext}
               disabled={isLoading}
               className="flex items-center space-x-2"
             >
-              <span>Next</span>
+              <span>{isLoading ? "Saving..." : "Next"}</span>
               <ArrowRight className="h-4 w-4" />
             </Button>
           )}

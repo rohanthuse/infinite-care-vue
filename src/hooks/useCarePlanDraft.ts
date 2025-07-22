@@ -1,4 +1,3 @@
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +39,7 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
+  const isManualSavingRef = useRef(false);
 
   // Query to find existing draft for client when no carePlanId is provided
   const { data: existingDraft, isLoading: isCheckingExistingDraft } = useQuery({
@@ -95,6 +95,11 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
       currentStep: number;
       isAutoSave?: boolean;
     }) => {
+      // Prevent auto-save if manual save is in progress
+      if (isAutoSave && isManualSavingRef.current) {
+        throw new Error('Manual save in progress, skipping auto-save');
+      }
+
       const completionPercentage = Math.round((currentStep / 14) * 100);
       
       const draftPayload: any = {
@@ -142,6 +147,7 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
       queryClient.invalidateQueries({ queryKey: ['care-plan-draft', data.id] });
       queryClient.invalidateQueries({ queryKey: ['existing-care-plan-draft', clientId] });
       
+      // Only show toast for manual saves, not auto-saves
       if (!variables.isAutoSave) {
         toast({
           title: "Draft saved",
@@ -151,6 +157,12 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
     },
     onError: (error, variables) => {
       console.error('Error saving draft:', error);
+      
+      // Skip error toast for cancelled auto-saves during manual save
+      if (variables.isAutoSave && error.message?.includes('Manual save in progress')) {
+        return;
+      }
+      
       if (!variables.isAutoSave) {
         toast({
           title: "Error",
@@ -158,30 +170,60 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
           variant: "destructive",
         });
       }
+    },
+    onSettled: (data, error, variables) => {
+      // Clear manual save flag when manual save completes
+      if (!variables.isAutoSave) {
+        isManualSavingRef.current = false;
+      }
     }
   });
 
   // Auto-save function with debouncing
   const autoSave = useCallback((formData: any, currentStep: number) => {
+    // Clear existing timeout
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current);
     }
 
+    // Don't set new auto-save if manual save is in progress
+    if (isManualSavingRef.current) {
+      return;
+    }
+
     autoSaveTimeoutRef.current = setTimeout(() => {
-      saveDraftMutation.mutate({
-        formData,
-        currentStep,
-        isAutoSave: true,
-      });
+      // Double-check manual save isn't in progress before executing
+      if (!isManualSavingRef.current) {
+        saveDraftMutation.mutate({
+          formData,
+          currentStep,
+          isAutoSave: true,
+        });
+      }
     }, 30000); // Auto-save after 30 seconds of inactivity
   }, [saveDraftMutation]);
 
-  // Manual save function
-  const saveDraft = useCallback((formData: any, currentStep: number) => {
-    saveDraftMutation.mutate({
-      formData,
-      currentStep,
-      isAutoSave: false,
+  // Manual save function with coordination
+  const saveDraft = useCallback(async (formData: any, currentStep: number): Promise<void> => {
+    // Set manual save flag and clear auto-save
+    isManualSavingRef.current = true;
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    // Return a promise that resolves when save completes
+    return new Promise((resolve, reject) => {
+      saveDraftMutation.mutate(
+        {
+          formData,
+          currentStep,
+          isAutoSave: false,
+        },
+        {
+          onSuccess: () => resolve(),
+          onError: (error) => reject(error),
+        }
+      );
     });
   }, [saveDraftMutation]);
 
