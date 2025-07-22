@@ -10,6 +10,32 @@ interface DraftData {
   completion_percentage: number;
 }
 
+// Helper function to safely format dates
+const formatDateSafely = (date: any): string => {
+  if (!date) return new Date().toISOString().split('T')[0];
+  
+  if (typeof date === 'string') {
+    // If it's already a string, check if it's a valid date format
+    if (date.includes('T')) {
+      // If it's an ISO string, extract just the date part
+      return date.split('T')[0];
+    }
+    // If it's already in YYYY-MM-DD format, return as is
+    return date;
+  }
+  
+  if (date instanceof Date) {
+    return date.toISOString().split('T')[0];
+  }
+  
+  // Try to parse as date if it's something else
+  try {
+    return new Date(date).toISOString().split('T')[0];
+  } catch {
+    return new Date().toISOString().split('T')[0];
+  }
+};
+
 export function useCarePlanDraft(clientId: string, carePlanId?: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -54,7 +80,7 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
         .select('auto_save_data, last_step_completed, completion_percentage, status')
         .eq('id', effectiveCarePlanId)
         .eq('status', 'draft')
-        .single();
+        .maybeSingle();
 
       if (error || !data) return null;
       return data;
@@ -78,7 +104,7 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
         auto_save_data: formData,
         last_step_completed: currentStep,
         completion_percentage: completionPercentage,
-        start_date: formData.start_date ? formData.start_date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        start_date: formatDateSafely(formData.start_date),
         priority: formData.priority || 'medium',
         care_plan_type: formData.care_plan_type || 'standard',
         provider_name: formData.provider_name || 'Not Assigned',

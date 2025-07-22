@@ -173,6 +173,26 @@ const steps = [
   { id: 14, name: "Review", description: "Final review" },
 ];
 
+// Helper function to safely parse dates from saved data
+const parseDateSafely = (dateValue: any): Date | undefined => {
+  if (!dateValue) return undefined;
+  
+  if (dateValue instanceof Date) return dateValue;
+  
+  if (typeof dateValue === 'string') {
+    try {
+      const parsed = new Date(dateValue);
+      if (!isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    } catch (error) {
+      console.warn('Failed to parse date:', dateValue);
+    }
+  }
+  
+  return undefined;
+};
+
 export function CarePlanCreationWizard({
   open,
   onOpenChange,
@@ -253,7 +273,31 @@ export function CarePlanCreationWizard({
       try {
         const savedData = draftData.auto_save_data;
         
-        form.reset(savedData as any);
+        // Process the saved data to handle date fields properly
+        const processedData = {
+          ...savedData,
+          start_date: parseDateSafely(savedData.start_date) || new Date(),
+          end_date: parseDateSafely(savedData.end_date),
+          review_date: parseDateSafely(savedData.review_date),
+          goals: savedData.goals?.map((goal: any) => ({
+            ...goal,
+            targetDate: parseDateSafely(goal.targetDate)
+          })) || [],
+          risk_assessments: savedData.risk_assessments?.map((assessment: any) => ({
+            ...assessment,
+            review_date: parseDateSafely(assessment.review_date)
+          })) || [],
+          service_actions: savedData.service_actions?.map((action: any) => ({
+            ...action,
+            due_date: parseDateSafely(action.due_date)
+          })) || [],
+          documents: savedData.documents?.map((doc: any) => ({
+            ...doc,
+            uploaded_at: parseDateSafely(doc.uploaded_at)
+          })) || [],
+        };
+        
+        form.reset(processedData as any);
         
         if (draftData.last_step_completed) {
           setCurrentStep(draftData.last_step_completed);
@@ -288,10 +332,9 @@ export function CarePlanCreationWizard({
     
     try {
       await saveDraft(data, currentStep);
-      toast.success("Draft saved successfully!");
     } catch (error) {
       console.error('Error saving draft:', error);
-      toast.error("Failed to save draft");
+      // Error handling is already done in the hook
     }
   };
 
