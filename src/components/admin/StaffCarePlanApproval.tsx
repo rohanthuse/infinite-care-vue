@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -197,10 +196,10 @@ export const StaffCarePlanApproval: React.FC<StaffCarePlanApprovalProps> = ({ ca
         </CardContent>
       </Card>
 
-      {/* Enhanced Approval/Rejection Dialog */}
+      {/* Enhanced Approval/Rejection Dialog with Better Padding */}
       <Dialog open={!!selectedPlan && !!actionType} onOpenChange={cancelAction}>
         <DialogContent className="max-w-lg">
-          <DialogHeader className="space-y-3 pb-4">
+          <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
               {actionType === 'approve' ? 'Approve Care Plan' : 'Request Changes'}
             </DialogTitle>
@@ -230,7 +229,7 @@ export const StaffCarePlanApproval: React.FC<StaffCarePlanApprovalProps> = ({ ca
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   placeholder="Please specify what changes are needed..."
-                  className="min-h-[100px] resize-none border-input focus:border-ring focus:ring-1 focus:ring-ring"
+                  className="min-h-[100px] resize-none"
                 />
               </div>
             )}
@@ -249,12 +248,12 @@ export const StaffCarePlanApproval: React.FC<StaffCarePlanApprovalProps> = ({ ca
                     ? "Add any comments for the care team..."
                     : "Additional feedback or instructions..."
                 }
-                className="min-h-[80px] resize-none border-input focus:border-ring focus:ring-1 focus:ring-ring"
+                className="min-h-[80px] resize-none"
               />
             </div>
           </div>
 
-          <DialogFooter className="pt-6 gap-3">
+          <DialogFooter className="gap-3">
             <Button 
               variant="outline" 
               onClick={cancelAction}
