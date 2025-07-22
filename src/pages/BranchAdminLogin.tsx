@@ -23,12 +23,15 @@ const BranchAdminLogin = () => {
     setIsLoading(true);
 
     try {
+      console.log('[BranchAdminLogin] Attempting login for:', email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error('[BranchAdminLogin] Login error:', error);
         toast({
           variant: "destructive",
           title: "Login Failed",
@@ -38,73 +41,82 @@ const BranchAdminLogin = () => {
       }
 
       if (data.user) {
+        console.log('[BranchAdminLogin] User authenticated:', data.user.id);
+        
         // Check if user has branch admin role
-        const { data: roleData } = await supabase
+        const { data: roleData, error: roleError } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", data.user.id)
           .eq("role", "branch_admin")
           .single();
 
-        if (roleData) {
-          // Fetch the branch admin's assigned branch
-          const { data: adminBranchData, error: branchError } = await supabase
-            .from("admin_branches")
-            .select(`
-              branch_id,
-              branches:branch_id (
-                id,
-                name,
-                status
-              )
-            `)
-            .eq("admin_id", data.user.id)
-            .eq("branches.status", "Active")
-            .single();
-
-          if (branchError) {
-            console.error("Error fetching branch assignment:", branchError);
-            toast({
-              variant: "destructive",
-              title: "Access Error",
-              description: "Unable to find your branch assignment. Please contact support.",
-            });
-            await supabase.auth.signOut();
-            return;
-          }
-
-          if (adminBranchData?.branches) {
-            const branch = adminBranchData.branches;
-            localStorage.setItem("userType", "branch_admin");
-            localStorage.setItem("currentBranchId", branch.id);
-            localStorage.setItem("currentBranchName", branch.name);
-            
-            // Encode branch name for URL
-            const encodedBranchName = encodeURIComponent(branch.name);
-            
-            toast({
-              title: "Login Successful",
-              description: `Welcome back! Redirecting to ${branch.name}...`,
-            });
-            
-            // Redirect to the specific branch dashboard
-            navigate(`/branch-dashboard/${branch.id}/${encodedBranchName}`);
-          } else {
-            toast({
-              variant: "destructive",
-              title: "Access Denied",
-              description: "No active branch assignment found. Please contact your administrator.",
-            });
-            await supabase.auth.signOut();
-          }
-        } else {
+        if (roleError || !roleData) {
+          console.error('[BranchAdminLogin] Role check error:', roleError);
           toast({
             variant: "destructive",
             title: "Access Denied",
             description: "You don't have branch admin privileges.",
           });
           await supabase.auth.signOut();
+          return;
         }
+
+        console.log('[BranchAdminLogin] Branch admin role confirmed');
+
+        // Fetch the branch admin's assigned branch
+        const { data: adminBranchData, error: branchError } = await supabase
+          .from("admin_branches")
+          .select(`
+            branch_id,
+            branches:branch_id (
+              id,
+              name,
+              status
+            )
+          `)
+          .eq("admin_id", data.user.id)
+          .single();
+
+        if (branchError || !adminBranchData?.branches) {
+          console.error('[BranchAdminLogin] Branch assignment error:', branchError);
+          toast({
+            variant: "destructive",
+            title: "Access Error",
+            description: "Unable to find your branch assignment. Please contact support.",
+          });
+          await supabase.auth.signOut();
+          return;
+        }
+
+        const branch = adminBranchData.branches;
+        console.log('[BranchAdminLogin] Branch assignment found:', branch);
+        
+        // Store branch information
+        localStorage.setItem("userType", "branch_admin");
+        localStorage.setItem("currentBranchId", branch.id);
+        localStorage.setItem("currentBranchName", branch.name);
+        
+        // Properly encode branch name for URL - handle special characters
+        const encodedBranchName = encodeURIComponent(branch.name);
+        
+        console.log('[BranchAdminLogin] Navigating to branch dashboard:', {
+          branchId: branch.id,
+          branchName: branch.name,
+          encodedBranchName
+        });
+        
+        toast({
+          title: "Login Successful",
+          description: `Welcome back! Redirecting to ${branch.name}...`,
+        });
+        
+        // Redirect to the specific branch dashboard
+        const targetPath = `/branch-dashboard/${branch.id}/${encodedBranchName}`;
+        console.log('[BranchAdminLogin] Target path:', targetPath);
+        
+        // Use replace to prevent back button issues
+        navigate(targetPath, { replace: true });
       }
     } catch (error) {
       console.error("Login error:", error);

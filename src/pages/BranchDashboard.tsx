@@ -13,6 +13,7 @@ import { useBranchDashboardNavigation } from "@/hooks/useBranchDashboardNavigati
 import { useNotificationGenerator } from "@/hooks/useNotificationGenerator";
 import { useCanAccessBranch } from "@/hooks/useBranchAdminAccess";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/hooks/useAuth";
 
 // Import refactored sections
 import { DashboardStatsSection } from "@/components/branch-dashboard/DashboardStatsSection";
@@ -45,8 +46,10 @@ interface BranchDashboardProps {
 const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: userRole } = useUserRole();
+  const { session, loading: authLoading } = useAuth();
   
+  // Always call all hooks unconditionally
+  const { data: userRole, isLoading: roleLoading } = useUserRole();
   const {
     id,
     branchName,
@@ -55,7 +58,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     handleWorkflowNavigation
   } = useBranchDashboardNavigation();
 
-  // Check branch access - but allow super admins to bypass
+  // Always call branch access hook but handle the logic properly
   const { canAccess, isLoading: accessLoading, branchName: accessBranchName } = useCanAccessBranch(id || "");
 
   // Initialize notification generator for this branch
@@ -72,49 +75,60 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const [isAddNoteDialogOpen, setIsAddNoteDialogOpen] = useState(false);
   const [isUploadDocumentDialogOpen, setIsUploadDocumentDialogOpen] = useState(false);
 
-  const displayBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
-
-  // Enhanced access control - super admins can access any branch
+  // Handle branch access control after authentication and role are determined
   useEffect(() => {
-    if (userRole?.role === 'branch_admin' && !accessLoading && !canAccess && id) {
-      console.warn('Branch admin trying to access unauthorized branch:', id);
-      navigate('/branch-admin-login');
+    console.log('[BranchDashboard] Auth and Access State:', {
+      authLoading,
+      roleLoading,
+      accessLoading,
+      userRole: userRole?.role,
+      canAccess,
+      branchId: id,
+      session: !!session
+    });
+
+    // Only apply access control after we have all the necessary data
+    if (!authLoading && !roleLoading && userRole && id) {
+      // Super admins can access any branch
+      if (userRole.role === 'super_admin') {
+        console.log('[BranchDashboard] Super admin detected, allowing access');
+        return;
+      }
+
+      // Branch admins need to have proper access to their branch
+      if (userRole.role === 'branch_admin') {
+        // Wait for access check to complete
+        if (!accessLoading) {
+          if (!canAccess) {
+            console.warn('[BranchDashboard] Branch admin access denied for branch:', id);
+            navigate('/branch-admin-login', { replace: true });
+          }
+        }
+      }
     }
-  }, [userRole, canAccess, accessLoading, id, navigate]);
+  }, [authLoading, roleLoading, accessLoading, userRole, canAccess, id, navigate, session]);
 
-  // Show loading while checking access (but skip for super admins)
-  if (accessLoading && userRole?.role !== 'super_admin') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  const displayBranchName = branchName ? decodeURIComponent(branchName) : "Med-Infinite Branch";
 
-  // Show loading while user role is being determined
-  if (!userRole) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  // Show access denied for branch admins without access (but allow super admins)
-  if (userRole.role === 'branch_admin' && !canAccess) {
+  // Show loading while checking authentication and roles
+  if (authLoading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
-          <p className="text-gray-600 mb-4">
-            You don't have access to this branch dashboard.
-          </p>
-          <button
-            onClick={() => navigate('/branch-admin-login')}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Return to Login
-          </button>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading while checking branch access for branch admins only
+  if (userRole?.role === 'branch_admin' && accessLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking branch access...</p>
         </div>
       </div>
     );
@@ -134,6 +148,26 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
             Return to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Only show access denied for branch admins who don't have access
+  if (userRole?.role === 'branch_admin' && !accessLoading && !canAccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
+          <p className="text-gray-600 mb-4">
+            You don't have access to this branch dashboard.
+          </p>
+          <button
+            onClick={() => navigate('/branch-admin-login')}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Return to Login
           </button>
         </div>
       </div>
