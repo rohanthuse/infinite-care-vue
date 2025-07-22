@@ -9,6 +9,7 @@ import { CarePlanWizardSteps } from "./wizard/CarePlanWizardSteps";
 import { CarePlanWizardFooter } from "./wizard/CarePlanWizardFooter";
 import { useCarePlanDraft } from "@/hooks/useCarePlanDraft";
 import { useCarePlanCreation } from "@/hooks/useCarePlanCreation";
+import { useClientProfile } from "@/hooks/useClientData";
 import { toast } from "sonner";
 
 const carePlanSchema = z.object({
@@ -64,6 +65,7 @@ export function CarePlanCreationWizard({
   carePlanId
 }: CarePlanCreationWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
+  const [clientDataLoaded, setClientDataLoaded] = useState(false);
   const totalSteps = 14;
   
   const form = useForm({
@@ -102,12 +104,66 @@ export function CarePlanCreationWizard({
 
   const { createCarePlan, isCreating } = useCarePlanCreation();
 
-  // Load draft data when available
+  // Fetch client profile data
+  const { data: clientProfile, isLoading: isClientLoading } = useClientProfile(clientId);
+
+  // Pre-populate form with client data when client profile is loaded
   useEffect(() => {
-    if (draftData?.auto_save_data && !isDraftLoading) {
+    if (clientProfile && !isDraftLoading && !clientDataLoaded) {
+      console.log('Pre-populating form with client data:', clientProfile);
+      
+      // Only set values if they don't already exist (don't overwrite draft data)
+      const currentPersonalInfo = form.getValues('personal_info') || {};
+      
+      const updatedPersonalInfo = {
+        ...currentPersonalInfo,
+        // Only set if not already present
+        ...((!currentPersonalInfo.emergency_contact_name && clientProfile.emergency_contact) && {
+          emergency_contact_name: clientProfile.emergency_contact
+        }),
+        ...((!currentPersonalInfo.emergency_contact_phone && clientProfile.emergency_phone) && {
+          emergency_contact_phone: clientProfile.emergency_phone
+        }),
+        // Extract GP name from gp_details if it's a string or object
+        ...((!currentPersonalInfo.gp_name && clientProfile.gp_details) && {
+          gp_name: typeof clientProfile.gp_details === 'string' 
+            ? clientProfile.gp_details 
+            : clientProfile.gp_details?.name || ''
+        }),
+        ...((!currentPersonalInfo.gp_practice && clientProfile.gp_details) && {
+          gp_practice: typeof clientProfile.gp_details === 'object' 
+            ? clientProfile.gp_details?.practice || ''
+            : ''
+        }),
+        ...((!currentPersonalInfo.gp_phone && clientProfile.gp_details) && {
+          gp_phone: typeof clientProfile.gp_details === 'object' 
+            ? clientProfile.gp_details?.phone || ''
+            : ''
+        }),
+      };
+
+      // Set the updated personal info
+      form.setValue('personal_info', updatedPersonalInfo);
+      
+      // Pre-populate other basic info if available
+      const currentTitle = form.getValues('title');
+      if (!currentTitle && clientProfile.first_name && clientProfile.last_name) {
+        form.setValue('title', `Care Plan for ${clientProfile.first_name} ${clientProfile.last_name}`);
+      }
+
+      setClientDataLoaded(true);
+      console.log('Client data pre-populated successfully');
+    }
+  }, [clientProfile, isDraftLoading, clientDataLoaded, form]);
+
+  // Load draft data when available (this should run after client data is loaded)
+  useEffect(() => {
+    if (draftData?.auto_save_data && !isDraftLoading && clientDataLoaded) {
       const savedData = draftData.auto_save_data;
       
-      // Set form values from saved data
+      console.log('Loading draft data:', savedData);
+      
+      // Set form values from saved data (this will override client data where draft exists)
       Object.keys(savedData).forEach((key) => {
         if (savedData[key] !== undefined) {
           form.setValue(key as any, savedData[key]);
@@ -118,19 +174,21 @@ export function CarePlanCreationWizard({
       if (draftData.last_step_completed) {
         setCurrentStep(draftData.last_step_completed);
       }
+      
+      console.log('Draft data loaded successfully');
     }
-  }, [draftData, isDraftLoading, form]);
+  }, [draftData, isDraftLoading, clientDataLoaded, form]);
 
   // Auto-save on form changes
   useEffect(() => {
     const subscription = form.watch((data) => {
-      if (isOpen && savedCarePlanId) {
+      if (isOpen && savedCarePlanId && clientDataLoaded) {
         autoSave(data, currentStep);
       }
     });
     
     return () => subscription.unsubscribe();
-  }, [form, autoSave, currentStep, isOpen, savedCarePlanId]);
+  }, [form, autoSave, currentStep, isOpen, savedCarePlanId, clientDataLoaded]);
 
   // Calculate completed steps based on form data
   const getCompletedSteps = () => {
@@ -205,48 +263,65 @@ export function CarePlanCreationWizard({
   const formData = form.watch();
   const completedSteps = getCompletedSteps();
 
+  // Show loading state while client data is being fetched
+  const isLoading = isClientLoading || isDraftLoading || !clientDataLoaded;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>
             {carePlanId ? "Edit Care Plan Draft" : "Create Care Plan"}
+            {clientProfile && (
+              <span className="text-sm font-normal text-gray-600 ml-2">
+                for {clientProfile.first_name} {clientProfile.last_name}
+              </span>
+            )}
           </DialogTitle>
         </DialogHeader>
         
-        <div className="flex flex-1 overflow-hidden">
-          {/* Sidebar */}
-          <CarePlanWizardSidebar
-            steps={wizardSteps}
-            currentStep={currentStep}
-            completedSteps={completedSteps}
-            onStepClick={handleStepClick}
-            completionPercentage={draftData?.completion_percentage || 0}
-          />
-          
-          {/* Main Content */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-6 pb-24">
-              <CarePlanWizardSteps 
-                currentStep={currentStep} 
-                form={form} 
-                clientId={clientId}
+        {isLoading ? (
+          <div className="flex-1 flex items-center justify-center p-6">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+              <p className="text-gray-600">Loading client information...</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-1 overflow-hidden">
+            {/* Sidebar */}
+            <CarePlanWizardSidebar
+              steps={wizardSteps}
+              currentStep={currentStep}
+              completedSteps={completedSteps}
+              onStepClick={handleStepClick}
+              completionPercentage={draftData?.completion_percentage || 0}
+            />
+            
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6 pb-24">
+                <CarePlanWizardSteps 
+                  currentStep={currentStep} 
+                  form={form} 
+                  clientId={clientId}
+                />
+              </div>
+
+              <CarePlanWizardFooter
+                currentStep={currentStep}
+                totalSteps={totalSteps}
+                onPrevious={handlePrevious}
+                onNext={handleNext}
+                onSaveDraft={handleSaveDraft}
+                onFinalize={handleFinalize}
+                isLoading={isSaving || isCreating}
+                isDraft={!!draftData}
+                formData={formData}
               />
             </div>
-
-            <CarePlanWizardFooter
-              currentStep={currentStep}
-              totalSteps={totalSteps}
-              onPrevious={handlePrevious}
-              onNext={handleNext}
-              onSaveDraft={handleSaveDraft}
-              onFinalize={handleFinalize}
-              isLoading={isSaving || isCreating}
-              isDraft={!!draftData}
-              formData={formData}
-            />
           </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
