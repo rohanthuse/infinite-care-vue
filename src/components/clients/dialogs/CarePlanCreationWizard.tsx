@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -85,10 +84,10 @@ export function CarePlanCreationWizard({
       personal_care: {},
       dietary: {},
       risk_assessments: [], // Changed from {} to []
-      equipment: {},
-      service_plans: {},
-      service_actions: {},
-      documents: {},
+      equipment: [], // Changed from {} to []
+      service_plans: [], // Changed from {} to []
+      service_actions: [], // Changed from {} to []
+      documents: [], // Changed from {} to []
       additional_notes: "",
     },
   });
@@ -196,10 +195,10 @@ export function CarePlanCreationWizard({
     if (formData.personal_care && Object.keys(formData.personal_care).length > 0) completedSteps.push(7);
     if (formData.dietary && Object.keys(formData.dietary).length > 0) completedSteps.push(8);
     if (formData.risk_assessments && formData.risk_assessments.length > 0) completedSteps.push(9); // Fixed to check array length
-    if (formData.equipment && Object.keys(formData.equipment).length > 0) completedSteps.push(10);
-    if (formData.service_plans && Object.keys(formData.service_plans).length > 0) completedSteps.push(11);
-    if (formData.service_actions && Object.keys(formData.service_actions).length > 0) completedSteps.push(12);
-    if (formData.documents && Object.keys(formData.documents).length > 0) completedSteps.push(13);
+    if (formData.equipment && formData.equipment.length > 0) completedSteps.push(10); // Fixed to check array length
+    if (formData.service_plans && formData.service_plans.length > 0) completedSteps.push(11); // Fixed to check array length
+    if (formData.service_actions && formData.service_actions.length > 0) completedSteps.push(12); // Fixed to check array length
+    if (formData.documents && formData.documents.length > 0) completedSteps.push(13); // Fixed to check array length
     
     // Step 14 (Review) is considered completed when ready to finalize
     if (completedSteps.length >= 3) completedSteps.push(14);
