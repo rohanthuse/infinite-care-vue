@@ -131,16 +131,16 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
         throw new Error('Client not found');
       }
 
-      const { data, error } = await supabase
-        .from('client_care_plans')
-        .insert({
-          client_id: clientId,
-          title: `General Care Plan for ${client.first_name} ${client.last_name}`,
-          provider_name: 'System Generated',
-          start_date: new Date().toISOString().split('T')[0],
-          status: 'active',
-          display_id: 'TEMP' // This will be overwritten by the database trigger
-        })
+       const { data, error } = await supabase
+         .from('client_care_plans')
+         .insert({
+           client_id: clientId,
+           title: `General Care Plan for ${client.first_name} ${client.last_name}`,
+           provider_name: 'System Generated',
+           start_date: new Date().toISOString().split('T')[0],
+           status: 'active',
+           display_id: `TEMP-${Date.now()}` // Temporary unique value, will be replaced by trigger
+         })
         .select()
         .single();
 
