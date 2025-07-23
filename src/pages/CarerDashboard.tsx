@@ -20,12 +20,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerProfile } from "@/hooks/useCarerProfile";
 
 const CarerDashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated, loading, carerProfile, signOut } = useCarerAuth();
+  const { user, isAuthenticated, loading, signOut } = useCarerAuth();
+  const { data: carerProfile } = useCarerProfile();
 
   // Menu items for mobile view
   const menuItems = [

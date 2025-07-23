@@ -10,13 +10,15 @@ import { format } from "date-fns";
 import { CarerCarePlanDetail } from "@/components/carer/CarerCarePlanDetail";
 import { useCarerAssignedCarePlans } from "@/hooks/useCarePlanData";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerProfile } from "@/hooks/useCarerProfile";
 
 const CarerCarePlans: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCarePlan, setSelectedCarePlan] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("all");
   
-  const { user, carerProfile, isAuthenticated, loading } = useCarerAuth();
+  const { user, isAuthenticated, loading } = useCarerAuth();
+  const { data: carerProfile } = useCarerProfile();
   const { data: carePlans, isLoading, error } = useCarerAssignedCarePlans(user?.id || '');
 
   // Show loading state while checking authentication or loading care plans

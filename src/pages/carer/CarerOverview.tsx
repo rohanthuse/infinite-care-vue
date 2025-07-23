@@ -10,10 +10,12 @@ import { useCarerDashboard } from "@/hooks/useCarerDashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerProfile } from "@/hooks/useCarerProfile";
 
 const CarerOverview: React.FC = () => {
   const navigate = useNavigate();
-  const { user, carerProfile, isAuthenticated } = useCarerAuth();
+  const { user, isAuthenticated } = useCarerAuth();
+  const { data: carerProfile } = useCarerProfile();
   const {
     todayAppointments,
     upcomingAppointments,

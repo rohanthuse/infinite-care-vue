@@ -16,6 +16,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { addDays, format, isWithinInterval, parseISO } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { useNews2Patients, useNews2Alerts, News2Patient } from "@/hooks/useNews2Data";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -35,7 +36,8 @@ const CarerNews2: React.FC = () => {
     to: new Date(),
   });
   
-  const { user, carerProfile, isAuthenticated, loading } = useCarerAuth();
+  const { user, isAuthenticated, loading } = useCarerAuth();
+  const { data: carerProfile } = useCarerProfile();
   const { data: news2Patients, isLoading: patientsLoading, refetch } = useNews2Patients(carerProfile?.branch_id);
   const { data: alerts } = useNews2Alerts(carerProfile?.branch_id);
 
