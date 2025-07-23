@@ -5784,6 +5784,27 @@ export type Database = {
           branch_id: string
         }[]
       }
+      get_staff_profile_by_auth_user_id: {
+        Args: { auth_user_id_param: string }
+        Returns: {
+          id: string
+          auth_user_id: string
+          first_name: string
+          last_name: string
+          email: string
+          phone: string
+          address: string
+          status: string
+          experience: string
+          specialization: string
+          availability: string
+          date_of_birth: string
+          hire_date: string
+          branch_id: string
+          first_login_completed: boolean
+          profile_completed: boolean
+        }[]
+      }
       get_staff_reports_data: {
         Args: {
           p_branch_id: string

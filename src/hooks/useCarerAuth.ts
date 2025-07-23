@@ -27,7 +27,7 @@ export function useCarerAuth() {
       const { data: staffRecord, error } = await supabase
         .from('staff')
         .select('*')
-        .eq('id', userId)
+        .eq('auth_user_id', userId)
         .single();
       
       if (error) {
@@ -151,7 +151,7 @@ export function useCarerAuth() {
         const { data: staffRecord, error: staffError } = await supabase
           .from('staff')
           .select('*')
-          .eq('id', data.user.id)
+          .eq('auth_user_id', data.user.id)
           .single();
 
         if (staffError || !staffRecord) {
@@ -224,7 +224,7 @@ export function useCarerAuth() {
       const { error: updateError } = await supabase
         .from('staff')
         .update({
-          id: authData.user!.id,
+          auth_user_id: authData.user!.id,
           invitation_accepted_at: new Date().toISOString(),
           first_login_completed: false
         })
@@ -256,7 +256,7 @@ export function useCarerAuth() {
           first_login_completed: true,
           profile_completed: true
         })
-        .eq('id', user.id);
+        .eq('auth_user_id', user.id);
 
       if (error) throw error;
 
