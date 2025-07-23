@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
 import { CarerAuthDebugPanel } from "@/components/carers/CarerAuthDebugPanel";
+import { diagnoseAuthIssue } from "@/utils/authFixHelper";
 
 export default function CarerLoginSafe() {
   const [email, setEmail] = useState("");
@@ -36,7 +37,16 @@ export default function CarerLoginSafe() {
       return;
     }
 
-    await signIn(email, password);
+    // Diagnose auth issues before attempting login
+    console.log('[CarerLoginSafe] Running pre-login diagnostics...');
+    const diagnosis = await diagnoseAuthIssue(email);
+    console.log('[CarerLoginSafe] Diagnosis result:', diagnosis);
+
+    const result = await signIn(email, password);
+    
+    if (!result.success) {
+      console.error('[CarerLoginSafe] Login failed:', result.error);
+    }
   };
 
   const togglePasswordVisibility = () => {

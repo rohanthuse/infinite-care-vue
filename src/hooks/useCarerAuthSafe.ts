@@ -36,12 +36,11 @@ export function useCarerAuthSafe() {
 
       if (event === 'SIGNED_IN' && session?.user) {
         try {
-          // Check if user is a carer by looking at staff table
-          const { data: staffRecord, error: staffError } = await supabase
-            .from('staff')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
+          // Use the enhanced database function that handles auth_user_id properly
+          const { data, error: staffError } = await supabase.rpc(
+            'get_staff_profile_by_auth_user_id',
+            { auth_user_id_param: session.user.id }
+          );
 
           if (staffError) {
             console.error('[useCarerAuthSafe] Staff lookup error:', staffError);
@@ -55,6 +54,9 @@ export function useCarerAuthSafe() {
             await supabase.auth.signOut();
             return;
           }
+
+          // The function returns an array, get the first record
+          const staffRecord = data && data.length > 0 ? data[0] : null;
 
           if (staffRecord) {
             console.log('[useCarerAuthSafe] Carer authenticated:', staffRecord);
@@ -119,6 +121,9 @@ export function useCarerAuthSafe() {
     setError(null);
     
     try {
+      // First, let's try to fix any remaining NULL values for this specific user
+      console.log('[useCarerAuthSafe] Checking auth health before sign in...');
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -127,7 +132,7 @@ export function useCarerAuthSafe() {
       if (error) {
         console.error('[useCarerAuthSafe] Sign in error:', error);
         
-        // Provide user-friendly error messages
+        // Handle specific auth errors more gracefully
         let userMessage = 'Sign in failed. Please try again.';
         
         if (error.message.includes('Invalid login credentials')) {
@@ -136,6 +141,8 @@ export function useCarerAuthSafe() {
           userMessage = 'Please check your email and confirm your account before signing in.';
         } else if (error.message.includes('Too many requests')) {
           userMessage = 'Too many login attempts. Please wait a moment before trying again.';
+        } else if (error.message.includes('converting NULL to string')) {
+          userMessage = 'Authentication system issue. Please contact support for assistance.';
         }
         
         setError(userMessage);
@@ -144,12 +151,13 @@ export function useCarerAuthSafe() {
       }
 
       if (data.user) {
-        // Verify this user is a carer (additional check)
-        const { data: staffRecord, error: staffError } = await supabase
-          .from('staff')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
+        // Verify this user is a carer using the enhanced function
+        const { data: staffData, error: staffError } = await supabase.rpc(
+          'get_staff_profile_by_auth_user_id',
+          { auth_user_id_param: data.user.id }
+        );
+
+        const staffRecord = staffData && staffData.length > 0 ? staffData[0] : null;
 
         if (staffError || !staffRecord) {
           await supabase.auth.signOut();
