@@ -20,6 +20,7 @@ import {
   useUpdateClientMedicalInfo,
   useChangeClientPassword
 } from "@/hooks/useClientProfile";
+import { usePhotoUpload } from "@/hooks/usePhotoUpload";
 
 const ClientProfile = () => {
   const { clientProfile: authProfile, isAuthenticated, loading: authLoading } = useClientAuth();
@@ -31,6 +32,7 @@ const ClientProfile = () => {
   const updatePersonalInfo = useUpdateClientPersonalInfo();
   const updateMedicalInfo = useUpdateClientMedicalInfo();
   const changePassword = useChangeClientPassword();
+  const { uploadPhoto, uploading } = usePhotoUpload();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -92,6 +94,7 @@ const ClientProfile = () => {
   });
 
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Update form data when profile data loads
   React.useEffect(() => {
@@ -113,6 +116,11 @@ const ClientProfile = () => {
         communication_preferences: profile.communication_preferences || "",
         additional_information: profile.additional_information || ""
       });
+      
+      // Set the photo from the database if it exists
+      if (profile.profile_photo_url && !photoPreview) {
+        setPhotoPreview(profile.profile_photo_url);
+      }
     }
   }, [profile]);
 
@@ -157,6 +165,20 @@ const ClientProfile = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     
+    // Validate file size (limit to 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Photo size must be less than 5MB");
+      return;
+    }
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please select a valid image file");
+      return;
+    }
+    
+    setSelectedFile(file);
+    
     const reader = new FileReader();
     reader.onloadend = () => {
       const result = reader.result as string;
@@ -168,7 +190,26 @@ const ClientProfile = () => {
 
   const handleSaveProfile = async () => {
     try {
-      await updateProfile.mutateAsync(profileData);
+      let photoUrl = profile?.profile_photo_url || null;
+      
+      // Upload photo if a new one was selected
+      if (selectedFile && authProfile?.id) {
+        const uploadedUrl = await uploadPhoto(selectedFile, authProfile.id);
+        if (uploadedUrl) {
+          photoUrl = uploadedUrl;
+        }
+      }
+      
+      // Include photo URL in the profile update
+      const updateData = {
+        ...profileData,
+        ...(photoUrl && { profile_photo_url: photoUrl })
+      };
+      
+      await updateProfile.mutateAsync(updateData);
+      
+      // Clear the selected file after successful save
+      setSelectedFile(null);
     } catch (error) {
       console.error('Failed to save profile:', error);
     }
@@ -260,8 +301,8 @@ const ClientProfile = () => {
         <div className="flex flex-col md:flex-row gap-6 items-start">
           <div className="w-full md:w-64 flex flex-col items-center text-center">
             <Avatar className="h-24 w-24">
-              {photoPreview ? (
-                <AvatarImage src={photoPreview} alt={displayName} />
+              {photoPreview || profile?.profile_photo_url ? (
+                <AvatarImage src={photoPreview || profile?.profile_photo_url} alt={displayName} />
               ) : (
                 <AvatarFallback className="bg-blue-100 text-blue-800 text-3xl">
                   {avatarInitials}
@@ -282,8 +323,10 @@ const ClientProfile = () => {
                 variant="outline" 
                 className="w-full flex items-center justify-center gap-2"
                 onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
               >
-                <Upload className="w-4 h-4" /> Change Photo
+                <Upload className="w-4 h-4" /> 
+                {uploading ? 'Uploading...' : 'Change Photo'}
               </Button>
             </div>
           </div>
@@ -454,11 +497,11 @@ const ClientProfile = () => {
                     <div className="flex justify-end">
                       <Button 
                         onClick={handleSaveProfile}
-                        disabled={updateProfile.isPending}
+                        disabled={updateProfile.isPending || uploading}
                         className="flex items-center gap-2"
                       >
                         <Save className="w-4 h-4" />
-                        {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
+                        {updateProfile.isPending || uploading ? 'Saving...' : 'Save Changes'}
                       </Button>
                     </div>
                   </CardContent>

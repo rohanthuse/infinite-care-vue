@@ -26,6 +26,7 @@ export interface ClientProfileData {
   emergency_phone?: string;
   communication_preferences?: string;
   additional_information?: string;
+  profile_photo_url?: string;
 }
 
 export interface ClientPersonalInfo {

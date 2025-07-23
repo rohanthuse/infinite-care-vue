@@ -2100,6 +2100,7 @@ export type Database = {
           phone: string | null
           pin_code: string | null
           preferred_name: string | null
+          profile_photo_url: string | null
           pronouns: string | null
           referral_route: string | null
           region: string | null
@@ -2136,6 +2137,7 @@ export type Database = {
           phone?: string | null
           pin_code?: string | null
           preferred_name?: string | null
+          profile_photo_url?: string | null
           pronouns?: string | null
           referral_route?: string | null
           region?: string | null
@@ -2172,6 +2174,7 @@ export type Database = {
           phone?: string | null
           pin_code?: string | null
           preferred_name?: string | null
+          profile_photo_url?: string | null
           pronouns?: string | null
           referral_route?: string | null
           region?: string | null
