@@ -68,28 +68,87 @@ export function useMedicationsByClient(clientId: string) {
   });
 }
 
-// Hook to create a new medication
+// Enhanced hook to create a new medication with better error handling
 export function useCreateMedication() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (medicationData: MedicationFormData) => {
+      console.log('[useCreateMedication] Attempting to create medication:', medicationData);
+
+      // Validate required fields
+      if (!medicationData.care_plan_id) {
+        throw new Error('Care plan ID is required');
+      }
+      if (!medicationData.name?.trim()) {
+        throw new Error('Medication name is required');
+      }
+      if (!medicationData.dosage?.trim()) {
+        throw new Error('Dosage is required');
+      }
+      if (!medicationData.frequency?.trim()) {
+        throw new Error('Frequency is required');
+      }
+
+      // Verify that the care plan exists before creating medication
+      console.log('[useCreateMedication] Verifying care plan exists:', medicationData.care_plan_id);
+      
+      const { data: carePlan, error: carePlanError } = await supabase
+        .from('client_care_plans')
+        .select('id, status')
+        .eq('id', medicationData.care_plan_id)
+        .single();
+
+      if (carePlanError) {
+        console.error('[useCreateMedication] Care plan verification failed:', carePlanError);
+        throw new Error(`Care plan not found: ${carePlanError.message}`);
+      }
+
+      if (!carePlan) {
+        throw new Error('Care plan does not exist');
+      }
+
+      console.log('[useCreateMedication] Care plan verified, creating medication');
+
+      // Create the medication
       const { data, error } = await supabase
         .from('client_medications')
         .insert(medicationData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useCreateMedication] Medication creation failed:', error);
+        
+        // Provide more specific error messages based on the error
+        if (error.code === '23503') {
+          throw new Error('Care plan not found or invalid');
+        } else if (error.code === '42501') {
+          throw new Error('Permission denied - please check your access rights');
+        } else if (error.message.includes('RLS')) {
+          throw new Error('Access denied - medication could not be created for this care plan');
+        } else {
+          throw new Error(`Database error: ${error.message}`);
+        }
+      }
+
+      console.log('[useCreateMedication] Medication created successfully:', data.id);
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
+      console.log('[useCreateMedication] Success callback - invalidating queries');
+      
+      // Invalidate all medication-related queries
       queryClient.invalidateQueries({ queryKey: ['medications'] });
-      toast.success('Medication added successfully');
+      queryClient.invalidateQueries({ queryKey: ['branch-clients-for-medication'] });
+      queryClient.invalidateQueries({ queryKey: ['care-plans'] });
+      
+      // Note: We don't show a success toast here as it's handled in the component
+      console.log('[useCreateMedication] Medication created successfully');
     },
     onError: (error) => {
-      console.error('Error creating medication:', error);
-      toast.error('Failed to add medication');
+      console.error('[useCreateMedication] Error in mutation:', error);
+      // Note: Error toast is handled in the component for better control
     },
   });
 }
@@ -100,6 +159,8 @@ export function useUpdateMedication() {
 
   return useMutation({
     mutationFn: async ({ id, ...updateData }: Partial<MedicationFormData> & { id: string }) => {
+      console.log('[useUpdateMedication] Updating medication:', id, updateData);
+      
       const { data, error } = await supabase
         .from('client_medications')
         .update(updateData)
@@ -107,7 +168,11 @@ export function useUpdateMedication() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useUpdateMedication] Update failed:', error);
+        throw error;
+      }
+      
       return data;
     },
     onSuccess: () => {
@@ -127,12 +192,17 @@ export function useDeleteMedication() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      console.log('[useDeleteMedication] Deleting medication:', id);
+      
       const { error } = await supabase
         .from('client_medications')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useDeleteMedication] Delete failed:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['medications'] });

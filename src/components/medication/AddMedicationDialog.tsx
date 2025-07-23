@@ -1,8 +1,9 @@
+
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarIcon, Clock, Plus, X } from "lucide-react";
+import { CalendarIcon, Clock, Plus, X, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
@@ -70,6 +71,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogProps) => {
+  const [isCreatingCarePlan, setIsCreatingCarePlan] = useState(false);
   const createMedication = useCreateMedication();
   const queryClient = useQueryClient();
   const { id: branchId } = useBranchDashboardNavigation();
@@ -79,6 +81,8 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
     queryKey: ['branch-clients-for-medication', branchId],
     queryFn: async () => {
       if (!branchId) return [];
+      
+      console.log('[AddMedicationDialog] Fetching clients for branch:', branchId);
       
       const { data, error } = await supabase
         .from('clients')
@@ -96,10 +100,13 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
         .eq('branch_id', branchId)
         .order('last_name', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[AddMedicationDialog] Error fetching clients:', error);
+        throw error;
+      }
       
       // Filter out only clearly inactive clients
-      return data.filter(client => {
+      const activeClients = data.filter(client => {
         const status = client.status?.toLowerCase();
         // Exclude only clearly inactive statuses
         return status !== 'former' && 
@@ -107,15 +114,22 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                status !== 'closed_enquiries' &&
                status !== 'inactive';
       });
+
+      console.log(`[AddMedicationDialog] Found ${activeClients.length} active clients`);
+      return activeClients;
     },
     enabled: !!branchId,
   });
 
-  // Mutation to create a care plan if needed
+  // Enhanced mutation to create a care plan with better error handling
   const createCarePlan = useMutation({
     mutationFn: async (clientId: string) => {
+      console.log('[AddMedicationDialog] Creating care plan for client:', clientId);
+      
       const client = clients.find(c => c.id === clientId);
-      if (!client) throw new Error('Client not found');
+      if (!client) {
+        throw new Error('Client not found');
+      }
 
       const { data, error } = await supabase
         .from('client_care_plans')
@@ -130,9 +144,17 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[AddMedicationDialog] Error creating care plan:', error);
+        throw new Error(`Failed to create care plan: ${error.message}`);
+      }
+
+      console.log('[AddMedicationDialog] Care plan created successfully:', data.id);
       return data;
     },
+    onError: (error) => {
+      console.error('[AddMedicationDialog] Care plan creation failed:', error);
+    }
   });
 
   const form = useForm<FormData>({
@@ -147,6 +169,8 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
 
   const onSubmit = async (values: FormData) => {
     try {
+      console.log('[AddMedicationDialog] Starting medication creation process');
+      
       const selectedClient = clients.find(c => c.id === values.client_id);
       if (!selectedClient) {
         toast.error('Selected client not found');
@@ -158,15 +182,31 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
       
       // If no active care plan exists, create one
       if (!carePlan) {
-        toast.info('Creating care plan for client...');
-        carePlan = await createCarePlan.mutateAsync(values.client_id);
+        console.log('[AddMedicationDialog] No active care plan found, creating one');
+        setIsCreatingCarePlan(true);
         
-        // Invalidate queries to refresh the data
-        queryClient.invalidateQueries({ queryKey: ['branch-clients-for-medication'] });
-        queryClient.invalidateQueries({ queryKey: ['care-plans'] });
+        try {
+          carePlan = await createCarePlan.mutateAsync(values.client_id);
+          
+          // Wait a moment for the care plan to be fully committed
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Invalidate and refetch client data to ensure we have the latest care plan
+          await queryClient.invalidateQueries({ queryKey: ['branch-clients-for-medication'] });
+          
+          console.log('[AddMedicationDialog] Care plan created, proceeding with medication');
+        } catch (carePlanError) {
+          console.error('[AddMedicationDialog] Failed to create care plan:', carePlanError);
+          toast.error(`Failed to create care plan: ${carePlanError instanceof Error ? carePlanError.message : 'Unknown error'}`);
+          return;
+        } finally {
+          setIsCreatingCarePlan(false);
+        }
       }
 
-      // Create the medication
+      // Create the medication with retry logic
+      console.log('[AddMedicationDialog] Creating medication for care plan:', carePlan.id);
+      
       const medicationData = {
         care_plan_id: carePlan.id,
         name: values.name,
@@ -176,14 +216,20 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
         end_date: values.end_date?.toISOString().split('T')[0],
         status: values.status || "active",
       };
+
+      console.log('[AddMedicationDialog] Medication data:', medicationData);
       
       await createMedication.mutateAsync(medicationData);
       
+      console.log('[AddMedicationDialog] Medication created successfully');
       form.reset();
       onOpenChange(false);
+      toast.success('Medication added successfully');
+      
     } catch (error) {
-      console.error('Error creating medication:', error);
-      toast.error('Failed to create medication');
+      console.error('[AddMedicationDialog] Error in medication creation process:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to add medication: ${errorMessage}`);
     }
   };
 
@@ -199,6 +245,8 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
     { value: "After meals", label: "After meals" },
     { value: "At bedtime", label: "At bedtime" },
   ];
+
+  const isSubmitting = createMedication.isPending || createCarePlan.isPending || isCreatingCarePlan;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -216,7 +264,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Patient*</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a patient" />
@@ -235,7 +283,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                                 </div>
                                 {!hasActivePlan && (
                                   <span className="ml-2 text-xs text-orange-600 bg-orange-100 px-2 py-0.5 rounded">
-                                    Auto-create plan
+                                    Will create plan
                                   </span>
                                 )}
                               </div>
@@ -247,7 +295,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                     <FormDescription>
                       {clients.length === 0 
                         ? "No active clients found in this branch"
-                        : `${clients.length} clients available (excluding former/closed clients). Care plans will be created automatically if needed.`
+                        : `${clients.length} clients available. Care plans will be created automatically if needed.`
                       }
                     </FormDescription>
                     <FormMessage />
@@ -267,7 +315,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                     <FormItem>
                       <FormLabel>Medication Name*</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter medication name" {...field} />
+                        <Input placeholder="Enter medication name" {...field} disabled={isSubmitting} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -281,7 +329,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                     <FormItem>
                       <FormLabel>Dosage*</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. 10mg, 1 tablet, 5ml" {...field} />
+                        <Input placeholder="e.g. 10mg, 1 tablet, 5ml" {...field} disabled={isSubmitting} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -295,7 +343,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Frequency*</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select frequency" />
@@ -333,6 +381,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                               className={`w-full pl-3 text-left font-normal ${
                                 !field.value ? "text-muted-foreground" : ""
                               }`}
+                              disabled={isSubmitting}
                             >
                               {field.value ? (
                                 format(field.value, "PPP")
@@ -371,6 +420,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
                               className={`w-full pl-3 text-left font-normal ${
                                 !field.value ? "text-muted-foreground" : ""
                               }`}
+                              disabled={isSubmitting}
                             >
                               {field.value ? (
                                 format(field.value, "PPP")
@@ -400,15 +450,28 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
               </div>
             </div>
 
+            {isCreatingCarePlan && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                  <span className="text-sm text-blue-800">Creating care plan for patient...</span>
+                </div>
+              </div>
+            )}
+
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                disabled={createMedication.isPending || createCarePlan.isPending}
-              >
-                {createMedication.isPending || createCarePlan.isPending ? "Adding..." : "Add Medication"}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isCreatingCarePlan ? "Creating Care Plan..." : "Adding Medication..."}
+                  </>
+                ) : (
+                  "Add Medication"
+                )}
               </Button>
             </DialogFooter>
           </form>
