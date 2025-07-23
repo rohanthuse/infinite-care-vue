@@ -4246,6 +4246,7 @@ export type Database = {
       staff: {
         Row: {
           address: string | null
+          auth_user_id: string | null
           availability: string | null
           bank_account_name: string | null
           bank_account_number: string | null
@@ -4286,6 +4287,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          auth_user_id?: string | null
           availability?: string | null
           bank_account_name?: string | null
           bank_account_number?: string | null
@@ -4326,6 +4328,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          auth_user_id?: string | null
           availability?: string | null
           bank_account_name?: string | null
           bank_account_number?: string | null
