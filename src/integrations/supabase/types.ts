@@ -4432,25 +4432,37 @@ export type Database = {
           created_at: string | null
           document_type: string
           expiry_date: string | null
+          file_path: string | null
+          file_size: string | null
+          file_type: string | null
           id: string
           staff_id: string | null
           status: string
+          updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           document_type: string
           expiry_date?: string | null
+          file_path?: string | null
+          file_size?: string | null
+          file_type?: string | null
           id?: string
           staff_id?: string | null
           status: string
+          updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           document_type?: string
           expiry_date?: string | null
+          file_path?: string | null
+          file_size?: string | null
+          file_type?: string | null
           id?: string
           staff_id?: string | null
           status?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
