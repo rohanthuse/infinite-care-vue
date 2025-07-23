@@ -11,7 +11,7 @@ import { format, addDays, subMonths } from "date-fns";
 import { useCarerPayments } from "@/hooks/useCarerPayments";
 import { useCarerExpenseManagement } from "@/hooks/useCarerExpenseManagement";
 import { useCarerExpenseEdit } from "@/hooks/useCarerExpenseEdit";
-import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { formatCurrency } from "@/utils/currencyFormatter";
 import { toast } from "sonner";
 import ViewExpenseDialog from "@/components/accounting/ViewExpenseDialog";
@@ -33,7 +33,7 @@ const CarerPayments: React.FC = () => {
     receipt: null as File | null,
   });
 
-  const { carerProfile } = useCarerAuth();
+  const { data: carerProfile } = useCarerProfile();
   const { data: paymentData, isLoading, error } = useCarerPayments();
   const { submitExpense, isSubmitting } = useCarerExpenseManagement();
   const { updateExpense, isUpdating } = useCarerExpenseEdit();

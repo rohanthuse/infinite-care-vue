@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateNews2Patient } from "@/hooks/useNews2Data";
 import { useBranchClients } from "@/data/hooks/useBranchClients";
-import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { UserPlus } from "lucide-react";
 
 interface AddPatientToNews2DialogProps {
@@ -31,7 +31,7 @@ export function AddPatientToNews2Dialog({
   const [assignedCarerId, setAssignedCarerId] = useState("");
   const [notes, setNotes] = useState("");
 
-  const { carerProfile } = useCarerAuth();
+  const { data: carerProfile } = useCarerProfile();
   const createNews2Patient = useCreateNews2Patient();
 
   // Fetch clients from the current branch

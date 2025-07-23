@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCarerAuth } from "./useCarerAuth";
+import { useAuthSafe } from "./useAuthSafe";
 
 export interface CarerProfile {
   id: string;
@@ -36,7 +36,7 @@ export interface CarerProfile {
  * This replaces the profile management in useCarerAuth
  */
 export const useCarerProfile = () => {
-  const { user } = useCarerAuth();
+  const { user } = useAuthSafe();
 
   return useQuery({
     queryKey: ['carer-profile', user?.id],

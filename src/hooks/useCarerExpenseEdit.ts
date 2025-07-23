@@ -1,6 +1,6 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCarerAuth } from '@/hooks/useCarerAuth';
+import { useCarerProfile } from '@/hooks/useCarerProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -15,7 +15,7 @@ export interface UpdateExpenseData {
 }
 
 export function useCarerExpenseEdit() {
-  const { carerProfile } = useCarerAuth();
+  const { data: carerProfile } = useCarerProfile();
   const queryClient = useQueryClient();
 
   const updateExpense = useMutation({

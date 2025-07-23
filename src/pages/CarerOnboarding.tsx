@@ -6,7 +6,7 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { useUpdateCarer } from "@/data/hooks/useBranchCarers";
 import { toast } from "sonner";
 
@@ -20,7 +20,7 @@ export default function CarerOnboarding() {
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { carerProfile } = useCarerAuth();
+  const { data: carerProfile } = useCarerProfile();
   const updateCarerMutation = useUpdateCarer();
 
   const handleSubmit = async (e: React.FormEvent) => {

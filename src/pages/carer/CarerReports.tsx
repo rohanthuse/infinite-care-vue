@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ReportExporter } from "@/utils/reportExporter";
-import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { CarerAttendanceReports } from "@/components/reports/attendance/CarerAttendanceReports";
 import { CarerActivityReports } from "@/components/reports/activity/CarerActivityReports";
 
@@ -37,7 +37,7 @@ const CarerReports: React.FC = () => {
     to: new Date(),
   });
   
-  const { carerProfile, loading: authLoading } = useCarerAuth();
+  const { data: carerProfile, isLoading: authLoading } = useCarerProfile();
 
   // Debug logging
   console.log('[CarerReports] Auth loading:', authLoading);

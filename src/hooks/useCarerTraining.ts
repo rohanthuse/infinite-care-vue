@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerProfile } from "@/hooks/useCarerProfile";
 
 export interface CarerTrainingRecord {
   id: string;
@@ -35,7 +35,7 @@ export interface CarerTrainingStats {
 }
 
 export const useCarerTraining = () => {
-  const { carerProfile } = useCarerAuth();
+  const { data: carerProfile } = useCarerProfile();
 
   const { data: trainingRecords = [], isLoading, error } = useQuery({
     queryKey: ['carer-training', carerProfile?.id],

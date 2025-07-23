@@ -10,10 +10,7 @@ export interface CarerAuthState {
   loading: boolean;
   isAuthenticated: boolean;
   isCarerRole: boolean;
-  carerProfile: any | null; // backward compatibility
 }
-
-import { useCarerProfile } from './useCarerProfile';
 
 export function useCarerAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -21,9 +18,6 @@ export function useCarerAuth() {
   const [loading, setLoading] = useState(true);
   const [isCarerRole, setIsCarerRole] = useState(false);
   const navigate = useNavigate();
-  
-  // Use the new unified profile hook for backward compatibility
-  const { data: carerProfile } = useCarerProfile();
 
   const checkCarerRole = async (userId: string) => {
     try {
@@ -307,7 +301,6 @@ export function useCarerAuth() {
     loading,
     isAuthenticated: !!user,
     isCarerRole,
-    carerProfile, // backward compatibility
     signIn,
     signOut,
     acceptInvitation,

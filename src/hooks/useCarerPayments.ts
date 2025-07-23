@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { usePayrollRecords, useExpenses, useExtraTimeRecords } from '@/hooks/useAccountingData';
-import { useCarerAuth } from '@/hooks/useCarerAuth';
+import { useCarerProfile } from '@/hooks/useCarerProfile';
 import { format, startOfYear, endOfYear } from 'date-fns';
 
 export interface CarerPaymentSummary {
@@ -26,7 +26,7 @@ export interface PaymentHistoryItem {
 }
 
 export function useCarerPayments() {
-  const { carerProfile } = useCarerAuth();
+  const { data: carerProfile } = useCarerProfile();
   const branchId = carerProfile?.branch_id;
   const staffId = carerProfile?.id;
 

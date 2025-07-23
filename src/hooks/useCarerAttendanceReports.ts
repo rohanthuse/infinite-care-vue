@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCarerAuth } from "./useCarerAuth";
+import { useCarerProfile } from "./useCarerProfile";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, parseISO } from "date-fns";
 
 export interface AttendanceMetrics {
@@ -38,7 +38,7 @@ export interface AttendanceReportsData {
 }
 
 export const useCarerAttendanceReports = (dateRange?: { from: Date; to: Date }) => {
-  const { carerProfile } = useCarerAuth();
+  const { data: carerProfile } = useCarerProfile();
   
   return useQuery({
     queryKey: ['carer-attendance-reports', carerProfile?.id, dateRange],

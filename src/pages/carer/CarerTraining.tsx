@@ -13,7 +13,7 @@ import { format, addDays, isAfter, isBefore, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { useCarerTraining } from "@/hooks/useCarerTraining";
 import { useCarerTrainingActions } from "@/hooks/useCarerTrainingActions";
-import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerProfile } from "@/hooks/useCarerProfile";
 
 type TrainingStatus = 'completed' | 'in-progress' | 'expired' | 'not-started';
 type TrainingCategory = 'core' | 'mandatory' | 'specialized' | 'optional';
@@ -27,7 +27,7 @@ const CarerTraining: React.FC = () => {
   const [actionType, setActionType] = useState<'start' | 'complete' | null>(null);
   const [completionScore, setCompletionScore] = useState("");
 
-  const { carerProfile } = useCarerAuth();
+  const { data: carerProfile } = useCarerProfile();
   const { trainingRecords, stats, isLoading, error } = useCarerTraining();
   const { updateTrainingStatus, enrollInTraining, isUpdating, isEnrolling } = useCarerTrainingActions();
 

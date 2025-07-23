@@ -1,7 +1,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCreateExpense } from '@/hooks/useAccountingData';
-import { useCarerAuth } from '@/hooks/useCarerAuth';
+import { useCarerProfile } from '@/hooks/useCarerProfile';
 import { toast } from 'sonner';
 
 export interface CreateExpenseData {
@@ -14,7 +14,7 @@ export interface CreateExpenseData {
 }
 
 export function useCarerExpenseManagement() {
-  const { carerProfile } = useCarerAuth();
+  const { data: carerProfile } = useCarerProfile();
   const queryClient = useQueryClient();
   const createExpenseMutation = useCreateExpense();
 

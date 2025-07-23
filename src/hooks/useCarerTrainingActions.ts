@@ -1,11 +1,11 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { toast } from "sonner";
 
 export const useCarerTrainingActions = () => {
-  const { carerProfile } = useCarerAuth();
+  const { data: carerProfile } = useCarerProfile();
   const queryClient = useQueryClient();
 
   const updateTrainingStatus = useMutation({
