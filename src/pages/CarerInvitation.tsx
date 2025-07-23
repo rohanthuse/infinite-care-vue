@@ -114,7 +114,7 @@ export default function CarerInvitation() {
     try {
       console.log('[CarerInvitation] Accepting invitation with token:', token);
 
-      const { data, error } = await supabase.rpc('accept_carer_invitation', {
+      const { data, error } = await supabase.rpc('accept_carer_invitation' as any, {
         p_invitation_token: token,
         p_password: password
       });
@@ -129,7 +129,7 @@ export default function CarerInvitation() {
           toast.success('Account created successfully! Please sign in with your credentials.');
           navigate('/carer-login');
         } else {
-          toast.error(data.error || 'Failed to accept invitation');
+          toast.error((data as any).error || 'Failed to accept invitation');
         }
       } else {
         toast.success('Account created successfully! Please sign in with your credentials.');

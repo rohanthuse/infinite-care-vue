@@ -165,10 +165,11 @@ export async function createCarerWithInvitation(carerData: CreateCarerData) {
   }
   
   // Check if the operation was successful
-  if (data && typeof data === 'object' && 'success' in data) {
-    if (!data.success) {
-      console.error('[createCarerWithInvitation] Operation failed:', data.error);
-      throw new Error(data.error || 'Failed to create carer or send invitation');
+  if (data !== null && data !== undefined && typeof data === 'object' && data && 'success' in data) {
+    const result = data as any;
+    if (!result.success) {
+      console.error('[createCarerWithInvitation] Operation failed:', result.error);
+      throw new Error(result.error || 'Failed to create carer or send invitation');
     }
   }
   
@@ -262,14 +263,17 @@ export function useCreateCarerWithInvitation() {
       queryClient.invalidateQueries({ queryKey: ["branch-carers", variables.branch_id] });
       
       // Show appropriate success message based on email status
-      if (data && typeof data === 'object' && 'success' in data && data.success) {
-        toast.success("Carer created and invitation sent!", {
-          description: `${variables.first_name} ${variables.last_name} has been added and will receive an invitation email.`
-        });
-      } else {
-        toast.warning("Carer created but email failed", {
-          description: `${variables.first_name} ${variables.last_name} has been added but the invitation email could not be sent. Please contact them manually.`
-        });
+      if (data !== null && data !== undefined && typeof data === 'object' && data && 'success' in data) {
+        const result = data as any;
+        if (result.success) {
+          toast.success("Carer created and invitation sent!", {
+            description: `${variables.first_name} ${variables.last_name} has been added and will receive an invitation email.`
+          });
+        } else {
+          toast.warning("Carer created but email failed", {
+            description: `${variables.first_name} ${variables.last_name} has been added but the invitation email could not be sent. Please contact them manually.`
+          });
+        }
       }
     },
     onError: (error) => {
