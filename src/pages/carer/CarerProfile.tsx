@@ -14,12 +14,14 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { CarerDocuments } from "@/components/carer/CarerDocuments";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { useUpdateCarer } from "@/data/hooks/useBranchCarers";
 import { supabase } from "@/integrations/supabase/client";
 
 const CarerProfile: React.FC = () => {
   const { toast } = useToast();
-  const { carerProfile, loading } = useCarerAuth();
+  const { isAuthenticated } = useCarerAuth();
+  const { data: carerProfile, isLoading: loading, error } = useCarerProfile();
   const updateCarerMutation = useUpdateCarer();
   
   // State for edit mode
@@ -198,6 +200,17 @@ const CarerProfile: React.FC = () => {
     }
   };
 
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Please sign in to access your profile</p>
+          <Button onClick={() => window.location.href = '/carer-login'}>Sign In</Button>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -209,11 +222,13 @@ const CarerProfile: React.FC = () => {
     );
   }
 
-  if (!carerProfile) {
+  if (error || !carerProfile) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <p className="text-red-600 mb-4">Unable to load profile</p>
+          <p className="text-red-600 mb-4">
+            {error?.message || "Unable to load profile"}
+          </p>
           <Button onClick={() => window.location.reload()}>Refresh</Button>
         </div>
       </div>

@@ -290,14 +290,30 @@ export function useUpdateCarer() {
   
   return useMutation({
     mutationFn: updateCarer,
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["branch-carers", data.branch_id] });
-      queryClient.invalidateQueries({ queryKey: ["staff-profile", data.id] });
-      queryClient.invalidateQueries({ queryKey: ["carer-profile", data.id] });
+    onSuccess: (data, variables) => {
+      console.log("[useUpdateCarer] Success:", data);
+      
+      // Invalidate all related queries to ensure UI updates
+      queryClient.invalidateQueries({ queryKey: ["branch-carers"] });
+      queryClient.invalidateQueries({ queryKey: ["carer-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["carer-profile", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["carer-profile-by-id"] });
+      queryClient.invalidateQueries({ queryKey: ["carer-profile-by-id", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["staff-profile", variables.id] });
+      
+      // Update the carer in the cache if available
+      const branchId = data?.branch_id;
+      if (branchId) {
+        queryClient.invalidateQueries({ queryKey: ["branch-carers", branchId] });
+      }
+
+      // Also invalidate any auth-related queries that might cache profile data
+      queryClient.invalidateQueries({ queryKey: ["carer-branch"] });
+      
       toast.success("Carer updated successfully");
     },
-    onError: (error) => {
-      console.error('[useUpdateCarer] Error:', error);
+    onError: (error: any) => {
+      console.error("[useUpdateCarer] Error:", error);
       toast.error("Failed to update carer", {
         description: error.message || "An error occurred while updating the carer."
       });

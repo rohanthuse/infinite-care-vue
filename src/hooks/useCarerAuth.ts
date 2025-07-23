@@ -10,46 +10,39 @@ export interface CarerAuthState {
   loading: boolean;
   isAuthenticated: boolean;
   isCarerRole: boolean;
-  carerProfile: any | null;
 }
 
 export function useCarerAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [carerProfile, setCarerProfile] = useState<any | null>(null);
+  const [isCarerRole, setIsCarerRole] = useState(false);
   const navigate = useNavigate();
 
-  const fetchCarerProfile = async (userId: string) => {
+  const checkCarerRole = async (userId: string) => {
     try {
-      console.log('[useCarerAuth] Fetching carer profile for user:', userId);
+      console.log('[useCarerAuth] Checking carer role for user:', userId);
       
-      // Use the new database function for better performance and consistency
+      // Check if user has carer role and staff record exists
       const { data, error } = await supabase.rpc(
         'get_staff_profile_by_auth_user_id',
         { auth_user_id_param: userId }
       );
       
       if (error) {
-        console.error('[useCarerAuth] Error fetching staff record:', error);
-        throw error;
+        console.error('[useCarerAuth] Error checking carer role:', error);
+        setIsCarerRole(false);
+        return false;
       }
 
-      // Return the first record since the function returns an array
-      const staffRecord = data && data.length > 0 ? data[0] : null;
-
-      if (staffRecord) {
-        console.log('[useCarerAuth] Carer profile loaded:', staffRecord);
-        setCarerProfile(staffRecord);
-        return staffRecord;
-      } else {
-        console.warn('[useCarerAuth] No staff record found for user:', userId);
-        return null;
-      }
+      const hasCarerRole = data && data.length > 0;
+      setIsCarerRole(hasCarerRole);
+      console.log('[useCarerAuth] Carer role check result:', hasCarerRole);
+      return hasCarerRole;
     } catch (error) {
-      console.error('[useCarerAuth] Error fetching carer profile:', error);
-      setCarerProfile(null);
-      return null;
+      console.error('[useCarerAuth] Error checking carer role:', error);
+      setIsCarerRole(false);
+      return false;
     }
   };
 
@@ -65,31 +58,26 @@ export function useCarerAuth() {
       setUser(session?.user ?? null);
 
       if (event === 'SIGNED_IN' && session?.user) {
-        // Fetch carer profile for signed in user
-        const profile = await fetchCarerProfile(session.user.id);
+        // Check carer role for signed in user
+        const hasRole = await checkCarerRole(session.user.id);
         
-        if (profile) {
-          toast.success(`Welcome back, ${profile.first_name}!`);
-          
+        if (hasRole) {
           // Only navigate on actual sign in, not during normal app usage
           // Check if this is a fresh sign in (not just a page refresh/navigation)
           const currentPath = window.location.pathname;
           if (currentPath === '/carer-login' || currentPath === '/carer-invitation') {
-            if (!profile.first_login_completed) {
-              navigate('/carer-onboarding');
-            } else {
-              navigate('/carer-dashboard');
-            }
+            navigate('/carer-dashboard');
           }
         } else {
-          console.error('[useCarerAuth] Could not load carer profile');
-          toast.error('Unable to load your profile. Please contact support.');
+          console.error('[useCarerAuth] User does not have carer role');
+          toast.error('Access denied. This account is not registered as a carer.');
+          await supabase.auth.signOut();
         }
       }
 
       if (event === 'SIGNED_OUT') {
         console.log('[useCarerAuth] User signed out');
-        setCarerProfile(null);
+        setIsCarerRole(false);
         navigate('/carer-login');
       }
 
@@ -117,8 +105,8 @@ export function useCarerAuth() {
           setSession(session);
           setUser(session.user);
           
-          // Fetch carer profile for existing session
-          await fetchCarerProfile(session.user.id);
+          // Check carer role for existing session
+          await checkCarerRole(session.user.id);
         }
       } catch (error) {
         console.error('[useCarerAuth] Error during auth initialization:', error);
@@ -221,7 +209,7 @@ export function useCarerAuth() {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      setCarerProfile(null);
+      setIsCarerRole(false);
       toast.success('Signed out successfully');
       navigate('/carer-login');
     } catch (error: any) {
@@ -286,7 +274,7 @@ export function useCarerAuth() {
   };
 
   const completeProfile = async (profileData: any) => {
-    if (!user || !carerProfile) return { success: false, error: 'No authenticated user' };
+    if (!user) return { success: false, error: 'No authenticated user' };
 
     try {
       const { error } = await supabase
@@ -300,7 +288,6 @@ export function useCarerAuth() {
 
       if (error) throw error;
 
-      setCarerProfile(prev => ({ ...prev, ...profileData, first_login_completed: true }));
       return { success: true };
     } catch (error: any) {
       console.error('[useCarerAuth] Complete profile error:', error);
@@ -313,8 +300,7 @@ export function useCarerAuth() {
     session,
     loading,
     isAuthenticated: !!user,
-    isCarerRole: !!carerProfile,
-    carerProfile,
+    isCarerRole,
     signIn,
     signOut,
     acceptInvitation,
