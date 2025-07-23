@@ -148,8 +148,34 @@ export const useUpdateClientProfile = () => {
       console.log('[useUpdateClientProfile] Updating with:', updates);
       console.log('[useUpdateClientProfile] Client ID:', clientProfile.id);
       
-      const { data: user } = await supabase.auth.getUser();
-      console.log('[useUpdateClientProfile] Auth user ID:', user.user?.id);
+      // Verify authentication first
+      const { data: user, error: authError } = await supabase.auth.getUser();
+      if (authError || !user.user) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+      
+      console.log('[useUpdateClientProfile] Auth user ID:', user.user.id);
+      
+      // Check if client is linked to auth user
+      const { data: clientCheck } = await supabase
+        .from('clients')
+        .select('id, auth_user_id, email')
+        .eq('id', clientProfile.id)
+        .maybeSingle();
+        
+      if (!clientCheck) {
+        throw new Error('Client record not found.');
+      }
+      
+      if (!clientCheck.auth_user_id) {
+        throw new Error('Your account needs to be properly linked. Please contact support.');
+      }
+      
+      if (clientCheck.auth_user_id !== user.user.id) {
+        throw new Error('Access denied. You can only update your own profile.');
+      }
+      
+      console.log('[useUpdateClientProfile] Client verification passed');
 
       const { data, error } = await supabase
         .from('clients')
@@ -174,7 +200,7 @@ export const useUpdateClientProfile = () => {
       }
 
       if (!data) {
-        throw new Error('Profile update failed - no data returned. Please check your permissions.');
+        throw new Error('Profile update failed - no data returned. This may be a permissions issue.');
       }
 
       console.log('[useUpdateClientProfile] Success:', data);
