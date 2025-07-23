@@ -43,6 +43,9 @@ const fetchClientPersonalInfo = async (clientId: string): Promise<ClientPersonal
 const upsertClientPersonalInfo = async (personalInfo: Partial<ClientPersonalInfo> & { client_id: string }) => {
   console.log('[upsertClientPersonalInfo] Upserting:', personalInfo);
   
+  const { data: user } = await supabase.auth.getUser();
+  console.log('[upsertClientPersonalInfo] Auth user ID:', user.user?.id);
+  
   const { data, error } = await supabase
     .from('client_personal_info')
     .upsert(personalInfo, { onConflict: 'client_id' })
@@ -50,10 +53,16 @@ const upsertClientPersonalInfo = async (personalInfo: Partial<ClientPersonalInfo
     .single();
 
   if (error) {
-    console.error('[upsertClientPersonalInfo] Error:', error);
-    throw error;
+    console.error('[upsertClientPersonalInfo] Error details:', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code
+    });
+    throw new Error(`Failed to update personal information: ${error.message}`);
   }
 
+  console.log('[upsertClientPersonalInfo] Success:', data);
   return data;
 };
 

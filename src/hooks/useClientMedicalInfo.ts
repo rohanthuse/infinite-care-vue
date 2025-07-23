@@ -39,6 +39,9 @@ const fetchClientMedicalInfo = async (clientId: string): Promise<ClientMedicalIn
 const upsertClientMedicalInfo = async (medicalInfo: Partial<ClientMedicalInfo> & { client_id: string }) => {
   console.log('[upsertClientMedicalInfo] Upserting:', medicalInfo);
   
+  const { data: user } = await supabase.auth.getUser();
+  console.log('[upsertClientMedicalInfo] Auth user ID:', user.user?.id);
+  
   const { data, error } = await supabase
     .from('client_medical_info')
     .upsert(medicalInfo, { onConflict: 'client_id' })
@@ -46,8 +49,13 @@ const upsertClientMedicalInfo = async (medicalInfo: Partial<ClientMedicalInfo> &
     .single();
 
   if (error) {
-    console.error('[upsertClientMedicalInfo] Error:', error);
-    throw error;
+    console.error('[upsertClientMedicalInfo] Error details:', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code
+    });
+    throw new Error(`Failed to update medical information: ${error.message}`);
   }
 
   console.log('[upsertClientMedicalInfo] Result:', data);

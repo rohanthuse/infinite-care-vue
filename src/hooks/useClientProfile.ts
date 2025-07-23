@@ -145,6 +145,12 @@ export const useUpdateClientProfile = () => {
     mutationFn: async (updates: Partial<ClientProfileData>) => {
       if (!clientProfile?.id) throw new Error('Client not authenticated');
 
+      console.log('[useUpdateClientProfile] Updating with:', updates);
+      console.log('[useUpdateClientProfile] Client ID:', clientProfile.id);
+      
+      const { data: user } = await supabase.auth.getUser();
+      console.log('[useUpdateClientProfile] Auth user ID:', user.user?.id);
+
       const { data, error } = await supabase
         .from('clients')
         .update(updates)
@@ -152,7 +158,17 @@ export const useUpdateClientProfile = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useUpdateClientProfile] Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw new Error(`Failed to update profile: ${error.message}`);
+      }
+
+      console.log('[useUpdateClientProfile] Success:', data);
       return data;
     },
     onSuccess: () => {
@@ -161,7 +177,7 @@ export const useUpdateClientProfile = () => {
     },
     onError: (error) => {
       console.error('Profile update error:', error);
-      toast.error('Failed to update profile');
+      toast.error(`Failed to update profile: ${error.message}`);
     }
   });
 };
@@ -211,7 +227,7 @@ export const useUpdateClientPersonalInfo = () => {
     },
     onError: (error) => {
       console.error('Personal info update error:', error);
-      toast.error('Failed to update personal information');
+      toast.error(`Failed to update personal information: ${error.message}`);
     }
   });
 };
@@ -261,7 +277,7 @@ export const useUpdateClientMedicalInfo = () => {
     },
     onError: (error) => {
       console.error('Medical info update error:', error);
-      toast.error('Failed to update medical information');
+      toast.error(`Failed to update medical information: ${error.message}`);
     }
   });
 };
