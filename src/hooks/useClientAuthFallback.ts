@@ -53,7 +53,64 @@ export const useClientAuthFallback = () => {
 
       console.log('[ClientAuth] Sign in successful for user:', data.user.id);
 
-      // Verify the user has a client role
+      // First, try to find client by email and check auth_user_id link
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
+        .select('id, first_name, last_name, branch_id, status, auth_user_id')
+        .eq('email', data.user.email)
+        .single();
+
+      if (clientError || !clientData) {
+        await supabase.auth.signOut();
+        const errorMsg = 'Access denied: No client account found for this email.';
+        setError(errorMsg);
+        return { success: false, error: errorMsg };
+      }
+
+      // Check if client is active
+      if (clientData.status?.toLowerCase() !== 'active') {
+        await supabase.auth.signOut();
+        const errorMsg = 'Your account is not active. Please contact support.';
+        setError(errorMsg);
+        return { success: false, error: errorMsg };
+      }
+
+      // Check if auth_user_id is properly linked
+      if (!clientData.auth_user_id || clientData.auth_user_id !== data.user.id) {
+        console.log('[ClientAuth] Fixing missing auth_user_id link for client:', clientData.id);
+        
+        // Try to fix the link automatically
+        const { error: updateError } = await supabase
+          .from('clients')
+          .update({ auth_user_id: data.user.id })
+          .eq('id', clientData.id);
+
+        if (updateError) {
+          console.error('[ClientAuth] Failed to update auth_user_id link:', updateError);
+        } else {
+          console.log('[ClientAuth] Successfully linked client to auth user');
+        }
+
+        // Ensure client role exists - check first to avoid conflicts
+        const { data: existingRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.user.id)
+          .eq('role', 'client')
+          .single();
+
+        if (!existingRole) {
+          const { error: roleInsertError } = await supabase
+            .from('user_roles')
+            .insert({ user_id: data.user.id, role: 'client' });
+
+          if (roleInsertError) {
+            console.error('[ClientAuth] Failed to insert client role:', roleInsertError);
+          }
+        }
+      }
+
+      // Verify the user has a client role (after potential fix)
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
@@ -62,35 +119,17 @@ export const useClientAuthFallback = () => {
         .single();
 
       if (roleError || !roleData) {
-        console.error('[ClientAuth] Role verification failed:', roleError);
-        
-        // Try to find client by email for backward compatibility
-        const { data: clientData, error: clientError } = await supabase
-          .from('clients')
-          .select('id, first_name, last_name, branch_id, status')
-          .eq('email', data.user.email)
-          .single();
-
-        if (clientError || !clientData) {
-          await supabase.auth.signOut();
-          const errorMsg = 'Access denied: No client account found for this email.';
-          setError(errorMsg);
-          return { success: false, error: errorMsg };
-        }
-
-        // Check if client is active
-        if (clientData.status?.toLowerCase() !== 'active') {
-          await supabase.auth.signOut();
-          const errorMsg = 'Your account is not active. Please contact support.';
-          setError(errorMsg);
-          return { success: false, error: errorMsg };
-        }
-
-        // Store client info for compatibility
-        localStorage.setItem("clientId", clientData.id);
-        localStorage.setItem("clientName", clientData.first_name || 'Client');
-        localStorage.setItem("clientEmail", data.user.email || '');
+        console.error('[ClientAuth] Role verification still failed after fix attempt:', roleError);
+        await supabase.auth.signOut();
+        const errorMsg = 'Access denied: Client role verification failed. Please contact support.';
+        setError(errorMsg);
+        return { success: false, error: errorMsg };
       }
+
+      // Store client info for compatibility
+      localStorage.setItem("clientId", clientData.id);
+      localStorage.setItem("clientName", clientData.first_name || 'Client');
+      localStorage.setItem("clientEmail", data.user.email || '');
 
       // Set user type for compatibility
       localStorage.setItem("userType", "client");

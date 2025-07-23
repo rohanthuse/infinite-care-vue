@@ -14,6 +14,8 @@ interface AdminSetupClientAuthResponse {
   error?: string;
   message?: string;
   auth_user_id?: string;
+  user_created?: boolean;
+  client_linked?: boolean;
 }
 
 const setupClientAuth = async ({ clientId, password, adminId }: SetupClientAuthParams): Promise<AdminSetupClientAuthResponse> => {
@@ -57,20 +59,40 @@ export const useAdminSetClientAuth = () => {
     onSuccess: (data) => {
       console.log('[useAdminSetClientAuth] Auth setup successful:', data);
       
+      // Provide detailed success feedback
+      const message = data.user_created 
+        ? "New authentication account created and linked successfully"
+        : "Existing authentication account updated and linked successfully";
+      
       toast({
         title: "Success",
-        description: "Client authentication has been set up successfully",
+        description: `${message}. The client can now log in using their email and password.`,
       });
       
-      // Invalidate relevant queries
+      // Invalidate relevant queries to refresh client data
       queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
       queryClient.invalidateQueries({ queryKey: ['admin-clients'] });
+      queryClient.invalidateQueries({ queryKey: ['client-details'] });
     },
     onError: (error: any) => {
       console.error('[useAdminSetClientAuth] Error:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = "Failed to set up client authentication. Please try again.";
+      
+      if (error.message?.includes('Insufficient permissions')) {
+        errorMessage = "You don't have permission to set up client authentication.";
+      } else if (error.message?.includes('Client not found')) {
+        errorMessage = "Client not found. Please refresh the page and try again.";
+      } else if (error.message?.includes('already exists')) {
+        errorMessage = "Authentication account already exists. Trying to update existing account.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to set up client authentication. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
