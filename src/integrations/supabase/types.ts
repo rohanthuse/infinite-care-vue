@@ -5829,6 +5829,14 @@ export type Database = {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: boolean
       }
+      link_client_to_auth_user: {
+        Args: {
+          p_client_id: string
+          p_auth_user_id: string
+          p_admin_id: string
+        }
+        Returns: Json
+      }
       safe_setup_client_auth: {
         Args: { p_client_id: string; p_password: string; p_admin_id: string }
         Returns: Json

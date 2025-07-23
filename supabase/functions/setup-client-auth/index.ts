@@ -91,58 +91,96 @@ serve(async (req) => {
     let userCreated = false;
 
     try {
-      // Check if user already exists
-      const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+      console.log('[setup-client-auth] Attempting to create new user');
       
-      if (listError) {
-        console.error('[setup-client-auth] Error listing users:', listError);
-        throw new Error('Failed to check existing users');
-      }
-
-      const existingUser = existingUsers.users.find(user => user.email === clientData.email);
-
-      if (existingUser) {
-        // Update existing user
-        console.log('[setup-client-auth] Updating existing user:', existingUser.id);
-        authUserId = existingUser.id;
-        
-        const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-          existingUser.id,
-          {
-            password: password,
-            email_confirm: true
-          }
-        );
-
-        if (updateError) {
-          console.error('[setup-client-auth] Error updating user:', updateError);
-          throw new Error(`Failed to update user: ${updateError.message}`);
+      // Try to create new user first - this avoids the listUsers() issue
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: clientData.email,
+        password: password,
+        email_confirm: true,
+        user_metadata: {
+          first_name: clientData.first_name,
+          last_name: clientData.last_name
         }
-
-        console.log('[setup-client-auth] User updated successfully');
-        userCreated = false;
-      } else {
-        // Create new user
-        console.log('[setup-client-auth] Creating new user for:', clientData.email);
+      });
+      
+      if (createError) {
+        console.log('[setup-client-auth] Create failed, checking if user exists:', createError.message);
         
-        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-          email: clientData.email,
-          password: password,
-          email_confirm: true,
-          user_metadata: {
-            first_name: clientData.first_name,
-            last_name: clientData.last_name
-          }
-        });
+        // If user already exists, try to find and update them
+        if (createError.message.includes('already registered') || createError.message.includes('User already registered')) {
+          console.log('[setup-client-auth] User already exists, attempting to find and update');
+          
+          // Use the database function to link the client, which will handle finding the auth user
+          const { data: linkResult, error: linkError } = await supabaseAdmin.rpc('link_client_to_auth_user', {
+            p_client_id: clientId,
+            p_auth_user_id: null, // Will be found by the function
+            p_admin_id: adminId
+          });
 
-        if (createError) {
-          console.error('[setup-client-auth] Error creating user:', createError);
+          if (linkError) {
+            console.error('[setup-client-auth] Error with initial link attempt:', linkError);
+          }
+
+          // Try to get the auth user by email to update password
+          const { data: authUsers, error: getUserError } = await supabaseAdmin
+            .rpc('get_user_by_email', { user_email: clientData.email });
+          
+          // If that doesn't work, try a simpler approach by checking clients table
+          if (getUserError || !authUsers) {
+            console.log('[setup-client-auth] Could not find auth user, checking client record');
+            
+            // Check if client already has auth_user_id set
+            const { data: clientCheck, error: clientCheckError } = await supabaseAdmin
+              .from('clients')
+              .select('auth_user_id')
+              .eq('id', clientId)
+              .single();
+              
+            if (clientCheck?.auth_user_id) {
+              authUserId = clientCheck.auth_user_id;
+              console.log('[setup-client-auth] Found auth_user_id in client record:', authUserId);
+              
+              // Update the password for existing user
+              const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+                authUserId,
+                { password: password }
+              );
+              
+              if (updateError) {
+                console.error('[setup-client-auth] Error updating password:', updateError);
+                throw new Error('Failed to update existing user password');
+              }
+              
+              userCreated = false;
+            } else {
+              throw new Error('User exists but could not be found for update');
+            }
+          } else {
+            authUserId = authUsers.id;
+            console.log('[setup-client-auth] Found existing user:', authUserId);
+            
+            // Update existing user's password
+            const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+              authUserId,
+              { password: password }
+            );
+            
+            if (updateError) {
+              console.error('[setup-client-auth] Error updating user password:', updateError);
+              throw new Error('Failed to update existing user password');
+            }
+            
+            userCreated = false;
+          }
+        } else {
+          console.error('[setup-client-auth] Unexpected error creating user:', createError);
           throw new Error(`Failed to create user: ${createError.message}`);
         }
-
+      } else {
         authUserId = newUser.user.id;
-        console.log('[setup-client-auth] User created successfully:', authUserId);
         userCreated = true;
+        console.log('[setup-client-auth] Successfully created new user:', authUserId);
       }
 
       // Ensure client role exists
