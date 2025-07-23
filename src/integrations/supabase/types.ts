@@ -5627,6 +5627,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      check_carer_auth_health: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       check_user_role_health: {
         Args: Record<PropertyKey, never>
         Returns: {
