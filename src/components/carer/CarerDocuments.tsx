@@ -27,58 +27,84 @@ import {
 
 interface CarerDocument {
   id: string;
-  name: string;
-  type: string;
-  category: string;
-  file_path: string;
-  file_size: string;
+  staff_id: string;
+  document_type: string;
+  file_path?: string;
+  file_size?: string;
   status: string;
   created_at: string;
   expiry_date?: string;
 }
 
-// Fetch carer documents
+// Fetch carer documents from staff_documents table
 const fetchCarerDocuments = async (carerId: string): Promise<CarerDocument[]> => {
+  console.log('[CarerDocuments] Fetching documents for carer:', carerId);
+  
+  // Get current user to check auth
+  const { data: { user } } = await supabase.auth.getUser();
+  console.log('[CarerDocuments] Current user:', user?.id);
+  
   const { data, error } = await supabase
-    .from('documents')
+    .from('staff_documents')
     .select('*')
     .eq('staff_id', carerId)
-    .eq('status', 'active')
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error('[CarerDocuments] Error fetching documents:', error);
+    throw error;
+  }
+  
+  console.log('[CarerDocuments] Retrieved documents:', data?.length);
   return data || [];
 };
 
-// Upload document
+// Upload document to staff-documents bucket
 const uploadDocument = async (file: File, carerId: string, category: string, type: string) => {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${carerId}/${Date.now()}.${fileExt}`;
+  console.log('[CarerDocuments] Starting upload for:', file.name, 'Category:', category, 'Type:', type);
   
-  // Upload to storage (assuming storage bucket exists)
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+  const filePath = `${carerId}/${fileName}`;
+  
+  console.log('[CarerDocuments] Uploading to path:', filePath);
+  
+  // Upload to staff-documents storage bucket
   const { error: uploadError } = await supabase.storage
-    .from('documents')
-    .upload(fileName, file);
+    .from('staff-documents')
+    .upload(filePath, file);
 
-  if (uploadError) throw uploadError;
+  if (uploadError) {
+    console.error('[CarerDocuments] Upload error:', uploadError);
+    throw new Error(`Failed to upload file: ${uploadError.message}`);
+  }
 
-  // Save document record
+  console.log('[CarerDocuments] File uploaded successfully to storage');
+
+  const formattedSize = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+
+  // Save document record to staff_documents table
   const { data, error } = await supabase
-    .from('documents')
+    .from('staff_documents')
     .insert({
-      name: file.name,
-      type: type,
-      category: category,
-      file_path: fileName,
-      file_size: (file.size / 1024).toFixed(2) + ' KB',
       staff_id: carerId,
-      uploaded_by_name: 'Self-uploaded',
-      status: 'active'
+      document_type: category,
+      file_path: filePath,
+      file_size: formattedSize,
+      status: 'active',
+      expiry_date: null
     })
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('[CarerDocuments] Database insert error:', error);
+    // Clean up uploaded file if database insert fails
+    await supabase.storage.from('staff-documents').remove([filePath]);
+    throw new Error(`Failed to save document: ${error.message}`);
+  }
+
+  console.log('[CarerDocuments] Document saved successfully:', data);
   return data;
 };
 
@@ -123,6 +149,76 @@ export const CarerDocuments: React.FC = () => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
+    }
+  };
+
+  // Handle view document
+  const handleViewDocument = async (document: CarerDocument) => {
+    try {
+      if (!document.file_path) {
+        throw new Error('File path not available');
+      }
+
+      console.log('[CarerDocuments] Viewing document:', document.file_path);
+
+      const { data } = supabase.storage
+        .from('staff-documents')
+        .getPublicUrl(document.file_path);
+
+      if (data?.publicUrl) {
+        window.open(data.publicUrl, '_blank');
+      } else {
+        throw new Error('Could not generate file URL');
+      }
+    } catch (error: any) {
+      console.error('[CarerDocuments] View error:', error);
+      toast({
+        title: "View failed",
+        description: error.message || "Failed to view document",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle download document
+  const handleDownloadDocument = async (document: CarerDocument) => {
+    try {
+      if (!document.file_path) {
+        throw new Error('File path not available');
+      }
+
+      console.log('[CarerDocuments] Downloading document:', document.file_path);
+
+      const { data, error } = await supabase.storage
+        .from('staff-documents')
+        .download(document.file_path);
+
+      if (error) {
+        console.error('[CarerDocuments] Download error:', error);
+        throw new Error(`Failed to download file: ${error.message}`);
+      }
+
+      // Create download link
+      const url = URL.createObjectURL(data);
+      const a = window.document.createElement('a');
+      a.href = url;
+      a.download = document.file_path.split('/').pop() || 'document';
+      window.document.body.appendChild(a);
+      a.click();
+      window.document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Download started",
+        description: "Document download has started.",
+      });
+    } catch (error: any) {
+      console.error('[CarerDocuments] Download error:', error);
+      toast({
+        title: "Download failed",
+        description: error.message || "Failed to download document",
+        variant: "destructive"
+      });
     }
   };
 
@@ -226,13 +322,17 @@ export const CarerDocuments: React.FC = () => {
                   <div className="flex items-center space-x-4">
                     <FileText className="h-8 w-8 text-blue-500" />
                     <div>
-                      <h3 className="font-medium">{doc.name}</h3>
+                      <h3 className="font-medium">{doc.document_type || 'Document'}</h3>
                       <div className="flex items-center space-x-2 text-sm text-gray-500">
-                        <span>{doc.category}</span>
-                        <span>•</span>
-                        <span>{doc.file_size}</span>
+                        <span>{doc.file_size || 'Unknown size'}</span>
                         <span>•</span>
                         <span>{new Date(doc.created_at).toLocaleDateString()}</span>
+                        {doc.expiry_date && (
+                          <>
+                            <span>•</span>
+                            <span>Expires: {new Date(doc.expiry_date).toLocaleDateString()}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -240,10 +340,20 @@ export const CarerDocuments: React.FC = () => {
                     <Badge className={getStatusColor(doc.status)}>
                       {doc.status}
                     </Badge>
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleViewDocument(doc)}
+                      disabled={!doc.file_path}
+                    >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleDownloadDocument(doc)}
+                      disabled={!doc.file_path}
+                    >
                       <Download className="h-4 w-4" />
                     </Button>
                   </div>

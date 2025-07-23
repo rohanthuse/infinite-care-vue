@@ -185,6 +185,25 @@ export async function updateCarer(carerData: UpdateCarerData) {
   // Get current user info for better error reporting
   const { data: { user } } = await supabase.auth.getUser();
   console.log('[updateCarer] Current user:', user?.id);
+  console.log('[updateCarer] Update data:', updateData);
+  
+  // First, let's check if we can find the staff member by auth_user_id
+  const { data: staffCheck } = await supabase
+    .from("staff")
+    .select("id, auth_user_id, email")
+    .eq("id", id)
+    .single();
+    
+  console.log('[updateCarer] Staff check result:', staffCheck);
+  
+  if (!staffCheck) {
+    throw new Error('Staff member not found.');
+  }
+  
+  // Check if the current user is updating their own profile
+  if (staffCheck.auth_user_id !== user?.id) {
+    console.log('[updateCarer] User mismatch - staffCheck.auth_user_id:', staffCheck.auth_user_id, 'vs user.id:', user?.id);
+  }
   
   const { data, error } = await supabase
     .from("staff")
@@ -195,6 +214,10 @@ export async function updateCarer(carerData: UpdateCarerData) {
 
   if (error) {
     console.error('[updateCarer] Error details:', error);
+    console.error('[updateCarer] Error code:', error.code);
+    console.error('[updateCarer] Error message:', error.message);
+    console.error('[updateCarer] Error hint:', error.hint);
+    console.error('[updateCarer] Error details:', error.details);
     
     // Provide more specific error messages based on error code
     if (error.code === 'PGRST116') {
@@ -212,7 +235,7 @@ export async function updateCarer(carerData: UpdateCarerData) {
     throw new Error('No carer was updated. The carer may not exist or you may not have permission to update it.');
   }
   
-  console.log('[updateCarer] Updated carer:', data);
+  console.log('[updateCarer] Updated carer successfully:', data);
   return data;
 }
 

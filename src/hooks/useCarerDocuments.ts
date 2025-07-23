@@ -14,6 +14,10 @@ export interface CarerDocument {
 const fetchCarerDocuments = async (carerId: string): Promise<CarerDocument[]> => {
   console.log('[fetchCarerDocuments] Fetching documents for carer:', carerId);
   
+  // Get current user to check auth
+  const { data: { user } } = await supabase.auth.getUser();
+  console.log('[fetchCarerDocuments] Current user:', user?.id);
+  
   const { data, error } = await supabase
     .from('staff_documents')
     .select('*')
@@ -25,6 +29,7 @@ const fetchCarerDocuments = async (carerId: string): Promise<CarerDocument[]> =>
     throw error;
   }
 
+  console.log('[fetchCarerDocuments] Retrieved documents:', data?.length);
   return data || [];
 };
 

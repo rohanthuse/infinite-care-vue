@@ -5807,6 +5807,16 @@ export type Database = {
           branch_id: string
           first_login_completed: boolean
           profile_completed: boolean
+          national_insurance_number: string
+          emergency_contact_name: string
+          emergency_contact_phone: string
+          qualifications: string[]
+          certifications: string[]
+          bank_name: string
+          bank_account_name: string
+          bank_account_number: string
+          bank_sort_code: string
+          invitation_accepted_at: string
         }[]
       }
       get_staff_reports_data: {
