@@ -26,7 +26,7 @@ export function useCarerAuthSafe() {
   useEffect(() => {
     let mounted = true;
 
-    const handleAuthStateChange = async (event: string, session: Session | null) => {
+  const handleAuthStateChange = async (event: string, session: Session | null) => {
       if (!mounted) return;
 
       console.log('[useCarerAuthSafe] Auth state changed:', event, session?.user?.id);
@@ -61,11 +61,31 @@ export function useCarerAuthSafe() {
           if (staffRecord) {
             console.log('[useCarerAuthSafe] Carer authenticated:', staffRecord);
             setCarerProfile(staffRecord);
-            toast.success(`Welcome back, ${staffRecord.first_name}!`);
             
-            // Only navigate on actual sign in, not during normal app usage
+            // Only show welcome message and navigate on actual login from login pages
             const currentPath = window.location.pathname;
-            if (currentPath === '/carer-login' || currentPath === '/carer-invitation') {
+            const isFromLoginPage = currentPath === '/carer-login' || currentPath === '/carer-invitation';
+            
+            // Check if we should show welcome message (only once per session)
+            const lastWelcomeTime = localStorage.getItem('carerLastWelcome');
+            const sessionStart = session.access_token; // Use token as session identifier
+            const currentSessionWelcome = localStorage.getItem('carerCurrentSessionWelcome');
+            
+            // Show welcome message only if:
+            // 1. Coming from login page, OR
+            // 2. Haven't shown welcome for this session yet AND it's been more than 30 minutes since last welcome
+            const shouldShowWelcome = isFromLoginPage || 
+              (currentSessionWelcome !== sessionStart && 
+               (!lastWelcomeTime || Date.now() - parseInt(lastWelcomeTime) > 30 * 60 * 1000));
+            
+            if (shouldShowWelcome) {
+              toast.success(`Welcome back, ${staffRecord.first_name}!`);
+              localStorage.setItem('carerLastWelcome', Date.now().toString());
+              localStorage.setItem('carerCurrentSessionWelcome', sessionStart);
+            }
+            
+            // Only navigate if coming from login pages
+            if (isFromLoginPage) {
               if (!staffRecord.first_login_completed) {
                 navigate('/carer-onboarding');
               } else {
