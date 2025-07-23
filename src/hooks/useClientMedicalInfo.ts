@@ -46,7 +46,7 @@ const upsertClientMedicalInfo = async (medicalInfo: Partial<ClientMedicalInfo> &
     .from('client_medical_info')
     .upsert(medicalInfo, { onConflict: 'client_id' })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('[upsertClientMedicalInfo] Error details:', {

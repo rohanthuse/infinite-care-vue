@@ -70,7 +70,7 @@ export const useClientProfile = () => {
         .from('clients')
         .select('*')
         .eq('id', clientProfile.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching client profile:', error);
@@ -97,7 +97,7 @@ export const useClientPersonalInfo = () => {
         .from('client_personal_info')
         .select('*')
         .eq('client_id', clientProfile.id)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching client personal info:', error);
@@ -123,7 +123,7 @@ export const useClientMedicalInfo = () => {
         .from('client_medical_info')
         .select('*')
         .eq('client_id', clientProfile.id)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching client medical info:', error);
@@ -156,7 +156,7 @@ export const useUpdateClientProfile = () => {
         .update(updates)
         .eq('id', clientProfile.id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('[useUpdateClientProfile] Error details:', {
@@ -165,7 +165,16 @@ export const useUpdateClientProfile = () => {
           hint: error.hint,
           code: error.code
         });
+        
+        if (error.code === 'PGRST116') {
+          throw new Error('Profile not found or access denied. Please ensure you are logged in and have permission to update this profile.');
+        }
+        
         throw new Error(`Failed to update profile: ${error.message}`);
+      }
+
+      if (!data) {
+        throw new Error('Profile update failed - no data returned. Please check your permissions.');
       }
 
       console.log('[useUpdateClientProfile] Success:', data);

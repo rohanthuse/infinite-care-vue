@@ -50,7 +50,7 @@ const upsertClientPersonalInfo = async (personalInfo: Partial<ClientPersonalInfo
     .from('client_personal_info')
     .upsert(personalInfo, { onConflict: 'client_id' })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('[upsertClientPersonalInfo] Error details:', {
