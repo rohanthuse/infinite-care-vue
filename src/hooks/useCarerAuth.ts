@@ -24,16 +24,19 @@ export function useCarerAuth() {
     try {
       console.log('[useCarerAuth] Fetching carer profile for user:', userId);
       
-      const { data: staffRecord, error } = await supabase
-        .from('staff')
-        .select('*')
-        .eq('auth_user_id', userId)
-        .single();
+      // Use the new database function for better performance and consistency
+      const { data, error } = await supabase.rpc(
+        'get_staff_profile_by_auth_user_id',
+        { auth_user_id_param: userId }
+      );
       
       if (error) {
         console.error('[useCarerAuth] Error fetching staff record:', error);
         throw error;
       }
+
+      // Return the first record since the function returns an array
+      const staffRecord = data && data.length > 0 ? data[0] : null;
 
       if (staffRecord) {
         console.log('[useCarerAuth] Carer profile loaded:', staffRecord);
