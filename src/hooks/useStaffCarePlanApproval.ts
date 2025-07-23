@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -10,7 +11,7 @@ interface StaffApproveCarePlanData {
 interface StaffRejectCarePlanData {
   carePlanId: string;
   comments: string;
-  reason?: string;
+  reason: string;
 }
 
 // Staff approve care plan
@@ -20,47 +21,85 @@ const staffApproveCarePlan = async ({ carePlanId, comments }: StaffApproveCarePl
     throw new Error('User not authenticated');
   }
 
-  // Update care plan with staff approval
-  const { error } = await supabase
+  console.log(`[staffApproveCarePlan] Approving care plan ${carePlanId}`);
+
+  // Update care plan status to approved
+  const { error: updateError } = await supabase
     .from('client_care_plans')
     .update({
-      status: 'pending_approval',
+      status: 'approved',
       approved_by: user.id,
       approved_at: new Date().toISOString(),
-      notes: comments || null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', carePlanId);
 
-  if (error) {
-    console.error('Error approving care plan:', error);
-    throw error;
+  if (updateError) {
+    console.error('Error approving care plan:', updateError);
+    throw updateError;
+  }
+
+  // Create approval record
+  const { error: approvalError } = await supabase
+    .from('client_care_plan_approvals')
+    .insert({
+      care_plan_id: carePlanId,
+      action: 'approved',
+      performed_by: user.id,
+      performed_at: new Date().toISOString(),
+      comments: comments || 'Care plan approved by staff',
+      previous_status: 'pending_approval',
+      new_status: 'approved'
+    });
+
+  if (approvalError) {
+    console.error('Error creating approval record:', approvalError);
+    // Don't fail the operation for this
   }
 
   return { success: true };
 };
 
-// Staff reject care plan (send back to draft)
+// Staff reject care plan
 const staffRejectCarePlan = async ({ carePlanId, comments, reason }: StaffRejectCarePlanData) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     throw new Error('User not authenticated');
   }
 
-  // Update care plan status back to draft with rejection reason
-  const { error } = await supabase
+  console.log(`[staffRejectCarePlan] Rejecting care plan ${carePlanId}`);
+
+  // Update care plan status to rejected
+  const { error: updateError } = await supabase
     .from('client_care_plans')
     .update({
-      status: 'draft',
-      rejection_reason: reason || comments,
-      notes: comments,
+      status: 'rejected',
+      rejection_reason: reason,
       updated_at: new Date().toISOString(),
     })
     .eq('id', carePlanId);
 
-  if (error) {
-    console.error('Error rejecting care plan:', error);
-    throw error;
+  if (updateError) {
+    console.error('Error rejecting care plan:', updateError);
+    throw updateError;
+  }
+
+  // Create approval record
+  const { error: approvalError } = await supabase
+    .from('client_care_plan_approvals')
+    .insert({
+      care_plan_id: carePlanId,
+      action: 'rejected',
+      performed_by: user.id,
+      performed_at: new Date().toISOString(),
+      comments: comments,
+      previous_status: 'pending_approval',
+      new_status: 'rejected'
+    });
+
+  if (approvalError) {
+    console.error('Error creating approval record:', approvalError);
+    // Don't fail the operation for this
   }
 
   return { success: true };
@@ -72,10 +111,9 @@ export const useStaffApproveCarePlan = () => {
   return useMutation({
     mutationFn: staffApproveCarePlan,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['care-plans'] });
-      queryClient.invalidateQueries({ queryKey: ['care-plan'] });
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
-      toast.success('Care plan approved and sent to client for signature.');
+      queryClient.invalidateQueries({ queryKey: ['care-plan'] });
+      toast.success('Care plan approved successfully! The client will be notified.');
     },
     onError: (error) => {
       console.error('Failed to approve care plan:', error);
@@ -90,10 +128,9 @@ export const useStaffRejectCarePlan = () => {
   return useMutation({
     mutationFn: staffRejectCarePlan,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['care-plans'] });
-      queryClient.invalidateQueries({ queryKey: ['care-plan'] });
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
-      toast.success('Care plan returned to draft status with feedback.');
+      queryClient.invalidateQueries({ queryKey: ['care-plan'] });
+      toast.success('Care plan rejected. The client will be notified of the requested changes.');
     },
     onError: (error) => {
       console.error('Failed to reject care plan:', error);
@@ -102,14 +139,7 @@ export const useStaffRejectCarePlan = () => {
   });
 };
 
-// Hook to check if care plan needs staff approval
-export const useCarePlanRequiresStaffApproval = (carePlan: any) => {
-  if (!carePlan) return false;
-  
-  return carePlan.status === 'draft' && !carePlan.approved_by;
-};
-
-// Hook to get staff care plan status info
+// Hook to get care plan status info for staff
 export const useStaffCarePlanStatus = (carePlan: any) => {
   if (!carePlan) return { status: 'unknown', label: 'Unknown', variant: 'secondary' as const };
 
@@ -123,20 +153,20 @@ export const useStaffCarePlanStatus = (carePlan: any) => {
     case 'pending_approval':
       return { 
         status: 'pending_approval', 
-        label: 'Pending Client Signature', 
-        variant: 'secondary' as const 
+        label: 'Pending Staff Review', 
+        variant: 'destructive' as const 
       };
     case 'approved':
       return { 
         status: 'approved', 
-        label: 'Client Approved', 
+        label: 'Approved by Staff', 
         variant: 'default' as const 
       };
     case 'rejected':
       return { 
         status: 'rejected', 
-        label: 'Client Requested Changes', 
-        variant: 'destructive' as const 
+        label: 'Changes Requested', 
+        variant: 'secondary' as const 
       };
     case 'active':
       return { 

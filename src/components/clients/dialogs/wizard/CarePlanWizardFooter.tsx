@@ -56,6 +56,14 @@ export function CarePlanWizardFooter({
   const completedSections = sections.filter(section => getSectionStatus(section.data) === "completed");
   const hasMinimumContent = completedSections.length >= 3;
 
+  // Check if provider information is complete
+  const hasProviderInfo = formData?.provider_type && (
+    (formData.provider_type === 'staff' && formData.staff_id) ||
+    (formData.provider_type === 'external' && formData.provider_name)
+  );
+
+  const canFinalize = hasMinimumContent && hasProviderInfo;
+
   const handleNext = async () => {
     try {
       // Save draft before proceeding to next step
@@ -78,11 +86,21 @@ export function CarePlanWizardFooter({
   };
 
   const handleFinalize = () => {
-    if (!hasMinimumContent && isLastStep) {
-      // Don't allow finalization if insufficient content
+    if (!canFinalize && isLastStep) {
+      // Don't allow finalization if insufficient content or missing provider
       return;
     }
     onFinalize();
+  };
+
+  const getFinalizationMessage = () => {
+    if (!hasMinimumContent) {
+      return "Complete at least 3 sections to finalize";
+    }
+    if (!hasProviderInfo) {
+      return "Provider information is required to finalize";
+    }
+    return "Send for staff approval";
   };
 
   return (
@@ -117,13 +135,13 @@ export function CarePlanWizardFooter({
             <Button
               type="button"
               onClick={handleFinalize}
-              disabled={isLoading || !hasMinimumContent}
+              disabled={isLoading || !canFinalize}
               className={`flex items-center space-x-2 ${
-                hasMinimumContent 
+                canFinalize 
                   ? "bg-green-600 hover:bg-green-700" 
                   : "bg-gray-400 hover:bg-gray-400 cursor-not-allowed"
               }`}
-              title={!hasMinimumContent ? "Complete at least 3 sections to finalize" : "Send for staff approval"}
+              title={!canFinalize ? getFinalizationMessage() : "Send for staff approval"}
             >
               <CheckCircle className="h-4 w-4" />
               <span>{isLoading ? "Finalizing..." : "Send for Approval"}</span>
@@ -147,8 +165,8 @@ export function CarePlanWizardFooter({
           Step {currentStep} of {totalSteps}
           {isDraft && <span className="text-amber-600 ml-2">(Draft Mode - All changes are automatically saved)</span>}
           {isLastStep && !isDraft && (
-            <span className={`ml-2 ${hasMinimumContent ? "text-green-600" : "text-red-600"}`}>
-              {hasMinimumContent ? "Ready for approval" : "Need more content to finalize"}
+            <span className={`ml-2 ${canFinalize ? "text-green-600" : "text-red-600"}`}>
+              {canFinalize ? "Ready for approval" : getFinalizationMessage()}
             </span>
           )}
         </p>
