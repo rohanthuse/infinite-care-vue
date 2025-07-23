@@ -153,19 +153,27 @@ export async function createCarerWithInvitation(carerData: CreateCarerData) {
     bank_name: carerData.bank_name,
   };
   
-  // Use the new database function to create carer with invitation
+  // Use the enhanced database function
   const { data, error } = await supabase.rpc('create_carer_with_invitation', {
     p_carer_data: carerDataForRPC,
     p_branch_id: carerData.branch_id
   });
 
   if (error) {
-    console.error('[createCarerWithInvitation] Error:', error);
+    console.error('[createCarerWithInvitation] Database error:', error);
     throw error;
   }
   
-  console.log('[createCarerWithInvitation] Created carer with ID:', data);
-  return { id: data };
+  // Check if the operation was successful
+  if (data && typeof data === 'object' && 'success' in data) {
+    if (!data.success) {
+      console.error('[createCarerWithInvitation] Operation failed:', data.error);
+      throw new Error(data.error || 'Failed to create carer or send invitation');
+    }
+  }
+  
+  console.log('[createCarerWithInvitation] Operation completed:', data);
+  return data;
 }
 
 export async function updateCarer(carerData: UpdateCarerData) {
@@ -252,9 +260,17 @@ export function useCreateCarerWithInvitation() {
     mutationFn: createCarerWithInvitation,
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["branch-carers", variables.branch_id] });
-      toast.success("Carer created and invitation sent!", {
-        description: `${variables.first_name} ${variables.last_name} has been added and will receive an invitation email.`
-      });
+      
+      // Show appropriate success message based on email status
+      if (data && typeof data === 'object' && 'success' in data && data.success) {
+        toast.success("Carer created and invitation sent!", {
+          description: `${variables.first_name} ${variables.last_name} has been added and will receive an invitation email.`
+        });
+      } else {
+        toast.warning("Carer created but email failed", {
+          description: `${variables.first_name} ${variables.last_name} has been added but the invitation email could not be sent. Please contact them manually.`
+        });
+      }
     },
     onError: (error) => {
       console.error('[useCreateCarerWithInvitation] Error:', error);

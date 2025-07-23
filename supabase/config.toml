@@ -1,3 +1,4 @@
+
 project_id = "vcrjntfjsmpoupgairep"
 
 [api]
@@ -8,121 +9,49 @@ extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [db]
-enabled = true
 port = 54322
-major_version = 15
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[realtime]
+enabled = true
+port = 54323
+ip_version = "ipv6"
 
 [studio]
 enabled = true
 port = 54323
+api_url = "http://127.0.0.1"
+openai_api_key = "env(OPENAI_API_KEY)"
 
-[ingest]
+[inbucket]
 enabled = true
 port = 54324
+port_web = 54325
 
 [storage]
 enabled = true
-port = 54325
-image_transformation = {enabled = true}
+port = 54326
+file_size_limit = "50MiB"
 
 [auth]
 enabled = true
-port = 54326
+port = 54327
 site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["http://localhost:3000"]
+additional_redirect_urls = ["https://127.0.0.1:3000"]
 jwt_expiry = 3600
 refresh_token_rotation_enabled = true
-secure_nonce = true
+security_update_password_require_reauthentication = true
+
+[auth.email]
 enable_signup = true
+double_confirm_changes = true
 enable_confirmations = false
 
-[auth.external.azure]
-enabled = false
-client_id = ""
-secret = ""
-url = ""
-
-[auth.external.bitbucket]
-enabled = false
-client_id = ""
-secret = ""
-
-[auth.external.discord]
-enabled = false
-client_id = ""
-secret = ""
-
-[auth.external.facebook]
-enabled = false
-client_id = ""
-secret = ""
-
-[auth.external.github]
-enabled = false
-client_id = ""
-secret = ""
-
-[auth.external.gitlab]
-enabled = false
-client_id = ""
-secret = ""
-
-[auth.external.google]
-enabled = false
-client_id = ""
-secret = ""
-
-[auth.external.keycloak]
-enabled = false
-client_id = ""
-secret = ""
-url = ""
-
-[auth.external.linkedin]
-enabled = false
-client_id = ""
-secret = ""
-
-[auth.external.notion]
-enabled = false
-client_id = ""
-secret = ""
-
-[auth.external.twitch]
-enabled = false
-client_id = ""
-secret = ""
-
-[auth.external.twitter]
-enabled = false
-client_id = ""
-secret = ""
-
-[auth.external.slack]
-enabled = false
-client_id = ""
-secret = ""
-
-[auth.external.spotify]
-enabled = false
-client_id = ""
-secret = ""
-
-[auth.external.workos]
-enabled = false
-client_id = ""
-secret = ""
-
-[auth.external.zoom]
-enabled = false
-client_id = ""
-secret = ""
-
-[functions.invite-admin]
+[functions.send-carer-invitation]
 verify_jwt = false
-
-[functions.send-third-party-invitation]
-verify_jwt = false
-
-[functions.send-training-metrics]
-verify_jwt = true

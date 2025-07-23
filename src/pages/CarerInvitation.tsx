@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCarerAuth } from '@/hooks/useCarerAuth';
-import { Loader2, Heart, CheckCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2, Heart, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function CarerInvitation() {
@@ -15,7 +15,9 @@ export default function CarerInvitation() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { acceptInvitation } = useCarerAuth();
+  const [validating, setValidating] = useState(true);
+  const [invitationValid, setInvitationValid] = useState(false);
+  const [invitationData, setInvitationData] = useState<any>(null);
   
   const token = searchParams.get('token');
 
@@ -23,8 +25,75 @@ export default function CarerInvitation() {
     if (!token) {
       toast.error('Invalid invitation link');
       navigate('/carer-login');
+      return;
     }
+
+    validateInvitation();
   }, [token, navigate]);
+
+  const validateInvitation = async () => {
+    if (!token) return;
+
+    try {
+      setValidating(true);
+      console.log('[CarerInvitation] Validating token:', token);
+
+      // Check if invitation exists and is valid
+      const { data, error } = await supabase
+        .from('carer_invitations')
+        .select(`
+          id,
+          expires_at,
+          used_at,
+          staff:staff_id (
+            id,
+            first_name,
+            last_name,
+            email,
+            branches:branch_id (
+              name
+            )
+          )
+        `)
+        .eq('invitation_token', token)
+        .single();
+
+      if (error) {
+        console.error('[CarerInvitation] Validation error:', error);
+        toast.error('Invalid invitation link');
+        navigate('/carer-login');
+        return;
+      }
+
+      if (!data) {
+        toast.error('Invitation not found');
+        navigate('/carer-login');
+        return;
+      }
+
+      if (data.used_at) {
+        toast.error('This invitation has already been used');
+        navigate('/carer-login');
+        return;
+      }
+
+      if (new Date(data.expires_at) < new Date()) {
+        toast.error('This invitation has expired');
+        navigate('/carer-login');
+        return;
+      }
+
+      console.log('[CarerInvitation] Invitation is valid:', data);
+      setInvitationData(data);
+      setInvitationValid(true);
+    } catch (error) {
+      console.error('[CarerInvitation] Validation failed:', error);
+      toast.error('Failed to validate invitation');
+      navigate('/carer-login');
+    } finally {
+      setValidating(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,23 +112,61 @@ export default function CarerInvitation() {
 
     setLoading(true);
     try {
-      const result = await acceptInvitation(token, password);
-      
-      if (result.success) {
-        toast.success('Account created successfully! Please check your email to verify your account.');
-        navigate('/carer-login');
-      } else {
-        toast.error(result.error || 'Failed to accept invitation');
+      console.log('[CarerInvitation] Accepting invitation with token:', token);
+
+      const { data, error } = await supabase.rpc('accept_carer_invitation', {
+        p_invitation_token: token,
+        p_password: password
+      });
+
+      if (error) {
+        console.error('[CarerInvitation] Accept invitation error:', error);
+        throw error;
       }
-    } catch (error) {
-      toast.error('An unexpected error occurred');
+
+      if (data && typeof data === 'object' && 'success' in data) {
+        if (data.success) {
+          toast.success('Account created successfully! Please sign in with your credentials.');
+          navigate('/carer-login');
+        } else {
+          toast.error(data.error || 'Failed to accept invitation');
+        }
+      } else {
+        toast.success('Account created successfully! Please sign in with your credentials.');
+        navigate('/carer-login');
+      }
+    } catch (error: any) {
+      console.error('[CarerInvitation] Error accepting invitation:', error);
+      toast.error(error.message || 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }
   };
 
-  if (!token) {
-    return null;
+  if (validating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
+            <p className="text-gray-600">Validating invitation...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!invitationValid) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+            <p className="text-gray-600 text-center">Invalid or expired invitation</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -72,20 +179,20 @@ export default function CarerInvitation() {
           </div>
           <div className="flex items-center justify-center gap-2 mb-2">
             <CheckCircle className="h-6 w-6 text-green-600" />
-            <CardTitle className="text-2xl">Accept Invitation</CardTitle>
+            <CardTitle className="text-2xl">Welcome to Your Team!</CardTitle>
           </div>
           <CardDescription>
-            Create your password to complete your carer account setup
+            Hi {invitationData?.staff?.first_name}! Complete your account setup for {invitationData?.staff?.branches?.name}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Create Password</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Create a secure password"
+                placeholder="Enter a secure password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -112,10 +219,10 @@ export default function CarerInvitation() {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Account...
+                  Setting up account...
                 </>
               ) : (
-                'Create Account'
+                'Complete Account Setup'
               )}
             </Button>
           </form>
