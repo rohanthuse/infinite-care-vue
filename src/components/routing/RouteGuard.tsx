@@ -1,4 +1,3 @@
-
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,12 +19,14 @@ export const RouteGuard = ({
   userType = 'admin'
 }: RouteGuardProps) => {
   const { session: adminSession, loading: adminLoading } = useAuth();
-  const { isAuthenticated: carerAuth, loading: carerLoading } = useCarerAuthSafe();
   const { data: currentUser, isLoading: userRoleLoading } = useUserRole();
+  
+  // Only call carer auth if we actually need it for carer routes
+  const carerAuth = userType === 'carer' ? useCarerAuthSafe() : { isAuthenticated: false, loading: false };
 
   // Determine loading state based on user type
   const isLoading = userType === 'admin' ? adminLoading : 
-                   userType === 'carer' ? carerLoading : 
+                   userType === 'carer' ? carerAuth.loading : 
                    userType === 'client' ? userRoleLoading : false;
 
   // Show loading screen while checking authentication
@@ -37,9 +38,9 @@ export const RouteGuard = ({
   let isAuthenticated = false;
   
   if (userType === 'admin') {
-    isAuthenticated = !!adminSession && currentUser?.role === 'super_admin' || currentUser?.role === 'branch_admin';
+    isAuthenticated = !!adminSession && (currentUser?.role === 'super_admin' || currentUser?.role === 'branch_admin');
   } else if (userType === 'carer') {
-    isAuthenticated = carerAuth && currentUser?.role === 'carer';
+    isAuthenticated = carerAuth.isAuthenticated && currentUser?.role === 'carer';
   } else if (userType === 'client') {
     isAuthenticated = !!currentUser && currentUser.role === 'client';
   }

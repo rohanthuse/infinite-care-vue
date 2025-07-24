@@ -55,9 +55,9 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
   // Use branchId from props (carer context) or URL params (admin context)
   const branchId = propBranchId || urlBranchId;
   
-  // Get carer context
-  const { carerProfile } = useCarerAuthSafe();
-  const { addTask: addCarerTask } = useCarerTasks();
+  // Get carer context only if needed
+  const carerAuth = isCarerContext ? useCarerAuthSafe() : { carerProfile: null };
+  const carerTasks = isCarerContext ? useCarerTasks() : { addTask: null };
   
   // Get admin context
   const { createTask } = useTasks(branchId!);
@@ -93,9 +93,9 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
       completed: status === 'done',
     };
     
-    if (isCarerContext && addCarerTask) {
+    if (isCarerContext && carerTasks.addTask) {
       // Use carer-specific task creation (auto-assigns to current carer)
-      addCarerTask(taskData);
+      carerTasks.addTask(taskData);
     } else {
       // Use admin task creation flow
       createTask({
