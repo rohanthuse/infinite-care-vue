@@ -113,7 +113,7 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Reschedule Appointment</DialogTitle>
           <DialogDescription>
@@ -121,7 +121,7 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-4 py-4 flex-1 overflow-y-auto pr-2">
           <div className="grid gap-2">
             <label htmlFor="date" className="text-sm font-medium">
               Select a New Date
@@ -163,7 +163,7 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
                   key={slot}
                   type="button"
                   variant={timeSlot === slot ? "default" : "outline"}
-                  className={cn("text-sm", timeSlot === slot && "bg-blue-600")}
+                  className={cn("text-sm", timeSlot === slot && "bg-primary text-primary-foreground")}
                   onClick={() => setTimeSlot(slot)}
                 >
                   <Clock className="mr-1 h-3 w-3" />
@@ -188,7 +188,7 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
           </div>
         </div>
         
-        <DialogFooter>
+        <DialogFooter className="pb-6">
           <Button 
             variant="outline" 
             onClick={handleClose}
@@ -200,6 +200,7 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
             type="button" 
             onClick={handleSubmit} 
             disabled={rescheduleAppointmentMutation.isPending || !date || !timeSlot}
+            className="bg-primary hover:bg-primary/90"
           >
             {rescheduleAppointmentMutation.isPending ? "Rescheduling..." : "Confirm Reschedule"}
           </Button>
