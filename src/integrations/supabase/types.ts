@@ -4009,6 +4009,7 @@ export type Database = {
           attachment_file_id: string | null
           branch_id: string | null
           created_at: string
+          created_by: string | null
           id: string
           notes: string | null
           scheduled_for: string | null
@@ -4025,6 +4026,7 @@ export type Database = {
           attachment_file_id?: string | null
           branch_id?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           notes?: string | null
           scheduled_for?: string | null
@@ -4041,6 +4043,7 @@ export type Database = {
           attachment_file_id?: string | null
           branch_id?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           notes?: string | null
           scheduled_for?: string | null

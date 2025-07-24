@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAgreementTypes, useAgreementTemplates, useClients, useStaff, useCreateScheduledAgreement } from "@/data/hooks/agreements";
+import { supabase } from "@/integrations/supabase/client";
 
 // Time slots
 const timeSlots = [
@@ -88,6 +89,9 @@ export function ScheduleAgreementDialog({
     }
     
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
       await createScheduledAgreementMutation.mutateAsync({
         title,
         scheduled_for: scheduledDateTime.toISOString(),
@@ -100,7 +104,7 @@ export function ScheduleAgreementDialog({
         notes: notes || null,
         attachment_file_id: null,
         branch_id: branchId !== "global" ? branchId : null,
-        created_by: null, // Will be set by auth context when available
+        created_by: user?.id || null,
       });
       
       resetForm();
