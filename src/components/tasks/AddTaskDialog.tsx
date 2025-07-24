@@ -90,7 +90,6 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
       due_date: dueDate ? dueDate.toISOString() : null,
       client_id: clientId === "no-client" ? null : clientId,
       category,
-      completed: status === 'done',
     };
     
     if (isCarerContext && carerTasks.addTask) {
