@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Heart, Lock, AlertCircle, Eye, EyeOff, Mail, X, LogOut, ArrowRight, UserX } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Heart, Lock, AlertCircle, Eye, EyeOff, Mail, X, LogOut, ArrowRight } from "lucide-react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,14 +15,9 @@ export default function CarerLoginSafe() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [forceLogin, setForceLogin] = useState(false);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   
   const { signIn, signOut, loading, isAuthenticated, error, clearError, carerProfile } = useCarerAuthSafe();
-
-  // Check if user wants to force login (from URL param or state)
-  const shouldForceLogin = forceLogin || searchParams.get('force') === 'true';
 
   // Clear any previous errors when component mounts or when user starts typing
   useEffect(() => {
@@ -68,19 +63,10 @@ export default function CarerLoginSafe() {
     clearError();
     setEmail("");
     setPassword("");
-    setForceLogin(false);
   };
 
-  const handleLoginWithDifferentAccount = async () => {
-    await signOut();
-    setForceLogin(true);
-    clearError();
-    setEmail("");
-    setPassword("");
-  };
-
-  // If user is already authenticated and not forcing login, show different options
-  if (isAuthenticated && carerProfile && !shouldForceLogin) {
+  // If user is already authenticated, show different options
+  if (isAuthenticated && carerProfile) {
     return (
       <div className="min-h-screen flex">
         {/* Left section with gradient background */}
@@ -133,21 +119,12 @@ export default function CarerLoginSafe() {
               </CustomButton>
 
               <CustomButton
-                onClick={handleLoginWithDifferentAccount}
-                variant="outline"
-                className="w-full flex items-center justify-center gap-2 border-amber-300 text-amber-700 hover:bg-amber-50"
-              >
-                <UserX className="h-5 w-5" />
-                Login with Different Account
-              </CustomButton>
-
-              <CustomButton
                 onClick={handleSignOut}
                 variant="outline"
                 className="w-full flex items-center justify-center gap-2"
               >
                 <LogOut className="h-5 w-5" />
-                Sign Out & Return Home
+                Sign Out
               </CustomButton>
             </div>
             
