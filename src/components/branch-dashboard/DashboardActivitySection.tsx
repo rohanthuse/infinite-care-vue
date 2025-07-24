@@ -8,6 +8,7 @@ import { ActionItem } from "@/components/dashboard/ActionItem";
 import { useBranchStatistics } from "@/data/hooks/useBranchStatistics";
 import { useBookingNavigation } from "@/hooks/useBookingNavigation";
 import { useBranchDashboardNavigation } from "@/hooks/useBranchDashboardNavigation";
+import { useTasks } from "@/hooks/useTasks";
 import { format, formatDistanceToNow } from "date-fns";
 
 interface DashboardActivitySectionProps {
@@ -17,7 +18,8 @@ interface DashboardActivitySectionProps {
 export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> = ({ branchId }) => {
   const { data: branchStats, isLoading: isLoadingBranchStats, error: branchStatsError } = useBranchStatistics(branchId);
   const { navigateToBookings } = useBookingNavigation();
-  const { branchName } = useBranchDashboardNavigation();
+  const { branchName, handleTabChange } = useBranchDashboardNavigation();
+  const { tasks, isLoading: isLoadingTasks, error: tasksError } = useTasks(branchId || "");
 
   const handleBookingClick = (clientName?: string) => {
     if (branchId && branchName && clientName) {
@@ -40,6 +42,15 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
       });
     }
   };
+
+  const handleViewAllTasks = () => {
+    handleTabChange('task-matrix');
+  };
+
+  // Filter and prepare urgent tasks for display
+  const urgentTasks = tasks
+    .filter(task => task.status !== 'done' && (task.priority === 'high' || task.priority === 'urgent'))
+    .slice(0, 4);  // Show maximum 4 tasks
 
   return (
     <>
@@ -159,7 +170,12 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
                 <CardTitle className="text-base md:text-lg font-semibold">Action Items</CardTitle>
                 <CardDescription>Tasks requiring attention</CardDescription>
               </div>
-              <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                onClick={handleViewAllTasks}
+              >
                 View All Tasks
                 <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
               </Button>
@@ -167,30 +183,40 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              <ActionItem
-                title="Follow up with client"
-                name="Wendy Smith"
-                date="Today"
-                priority="High"
-              />
-              <ActionItem
-                title="Review care plan"
-                name="John Michael"
-                date="Tomorrow"
-                priority="Medium"
-              />
-              <ActionItem
-                title="Schedule assessment"
-                name="Lisa Rodrigues"
-                date="May 15"
-                priority="Low"
-              />
-              <ActionItem
-                title="Update medical records"
-                name="Kate Williams"
-                date="May 16"
-                priority="Medium"
-              />
+              {isLoadingTasks ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm">
+                    <div className="space-y-2">
+                      <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse" />
+                      <div className="h-3 w-1/2 bg-gray-200 rounded animate-pulse" />
+                      <div className="h-3 w-1/4 bg-gray-200 rounded animate-pulse" />
+                    </div>
+                  </div>
+                ))
+              ) : tasksError ? (
+                <p className="text-red-500 text-center py-4 col-span-full">Error loading tasks.</p>
+              ) : urgentTasks.length > 0 ? (
+                urgentTasks.map((task) => {
+                  const assigneeName = task.assignee ? `${task.assignee.first_name} ${task.assignee.last_name}` : 'Unassigned';
+                  const clientName = task.client ? `${task.client.first_name} ${task.client.last_name}` : assigneeName;
+                  const dueDate = task.due_date ? format(new Date(task.due_date), 'MMM dd') : 'No due date';
+                  
+                  return (
+                    <ActionItem
+                      key={task.id}
+                      title={task.title}
+                      name={clientName}
+                      date={dueDate}
+                      priority={task.priority === 'urgent' ? 'High' : task.priority === 'high' ? 'High' : 'Medium'}
+                    />
+                  );
+                })
+              ) : (
+                <div className="col-span-full text-center py-8 text-gray-500">
+                  <ClipboardCheck className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                  <p>No urgent tasks found.</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
