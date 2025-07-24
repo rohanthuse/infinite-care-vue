@@ -4075,14 +4075,14 @@ export type Database = {
             foreignKeyName: "scheduled_agreements_scheduled_with_client_id_fkey"
             columns: ["scheduled_with_client_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "scheduled_agreements_scheduled_with_staff_id_fkey"
             columns: ["scheduled_with_staff_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
           {
