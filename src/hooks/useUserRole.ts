@@ -28,10 +28,9 @@ export const useUserRole = () => {
 
       console.log('[useUserRole] Checking role for user:', { id: user.id, email: user.email });
 
+      // Use the new function to get highest priority role
       const { data: roleData, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
+        .rpc('get_user_highest_role', { p_user_id: user.id })
         .single();
 
       if (error) {

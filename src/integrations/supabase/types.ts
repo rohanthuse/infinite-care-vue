@@ -5870,6 +5870,12 @@ export type Database = {
           days_since_service: number
         }[]
       }
+      get_user_highest_role: {
+        Args: { p_user_id: string }
+        Returns: {
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       has_role: {
         Args: {
           _user_id: string

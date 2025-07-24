@@ -19,7 +19,7 @@ export const RouteGuard = ({
   userType = 'admin'
 }: RouteGuardProps) => {
   const { session: adminSession, loading: adminLoading } = useAuth();
-  const { data: currentUser, isLoading: userRoleLoading } = useUserRole();
+  const { data: currentUser, isLoading: userRoleLoading, error: userRoleError } = useUserRole();
   
   // Only call carer auth if we actually need it for carer routes
   const carerAuth = userType === 'carer' ? useCarerAuthSafe() : { isAuthenticated: false, loading: false };
@@ -32,6 +32,12 @@ export const RouteGuard = ({
   // Show loading screen while checking authentication
   if (isLoading) {
     return <LoadingScreen />;
+  }
+
+  // If there's an error with user role and user type requires admin access, redirect
+  if (userRoleError && (userType === 'admin' || userType === 'carer')) {
+    console.error('[RouteGuard] User role error:', userRoleError);
+    return <Navigate to={redirectTo} replace />;
   }
 
   // Check authentication based on user type using unified auth state
