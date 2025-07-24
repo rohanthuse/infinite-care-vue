@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Heart, Lock, AlertCircle, Eye, EyeOff, Mail, X } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Heart, Lock, AlertCircle, Eye, EyeOff, Mail, X, LogOut, ArrowRight } from "lucide-react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,8 +15,9 @@ export default function CarerLoginSafe() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const navigate = useNavigate();
   
-  const { signIn, loading, isAuthenticated, error, clearError } = useCarerAuthSafe();
+  const { signIn, signOut, loading, isAuthenticated, error, clearError, carerProfile } = useCarerAuthSafe();
 
   // Clear any previous errors when component mounts or when user starts typing
   useEffect(() => {
@@ -52,6 +53,91 @@ export default function CarerLoginSafe() {
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
+  const handleContinueToDashboard = () => {
+    navigate('/carer-dashboard');
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    clearError();
+    setEmail("");
+    setPassword("");
+  };
+
+  // If user is already authenticated, show different options
+  if (isAuthenticated && carerProfile) {
+    return (
+      <div className="min-h-screen flex">
+        {/* Left section with gradient background */}
+        <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-500 text-white p-8 flex-col justify-center relative overflow-hidden">
+          <div className="z-10 max-w-lg">
+            <div className="flex items-center space-x-2 text-2xl font-semibold mb-6">
+              <Heart className="h-7 w-7" />
+              <span>CarePortal</span>
+            </div>
+            
+            <h1 className="text-4xl lg:text-5xl font-bold mb-6">
+              Welcome Back!
+            </h1>
+            
+            <p className="text-xl font-light mb-4">
+              You're already signed in
+            </p>
+            
+            <p className="text-blue-100 mb-8 max-w-md">
+              Choose to continue to your dashboard or sign out to use different credentials.
+            </p>
+          </div>
+
+          {/* Wave pattern background */}
+          <div className="absolute inset-0 opacity-20">
+            <svg className="w-full h-full" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0,800 C200,783.33 400,766.67 600,750 C800,733.33 1000,716.67 1200,700 L1200,1200 L0,1200 Z" fill="white" />
+              <path d="M0,400 C200,383.33 400,366.67 600,350 C800,333.33 1000,316.67 1200,300 L1200,1200 L0,1200 Z" fill="white" opacity="0.5" />
+              <path d="M0,600 C200,583.33 400,566.67 600,550 C800,533.33 1000,516.67 1200,500 L1200,1200 L0,1200 Z" fill="white" opacity="0.3" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Right section with authenticated user options */}
+        <div className="w-full md:w-1/2 bg-white flex items-center justify-center p-6">
+          <div className="max-w-md w-full">
+            <div className="text-center md:text-left mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">CarePortal</h2>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">Already Signed In</h3>
+              <p className="text-gray-600">Hello, {carerProfile.first_name}!</p>
+            </div>
+
+            <div className="space-y-4">
+              <CustomButton
+                onClick={handleContinueToDashboard}
+                className="w-full bg-blue-600 hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+              >
+                <ArrowRight className="h-5 w-5" />
+                Continue to Dashboard
+              </CustomButton>
+
+              <CustomButton
+                onClick={handleSignOut}
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2"
+              >
+                <LogOut className="h-5 w-5" />
+                Sign Out
+              </CustomButton>
+            </div>
+            
+            <div className="mt-8 text-center">
+              <Link to="/" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+                Return to homepage
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">
