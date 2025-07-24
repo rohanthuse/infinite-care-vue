@@ -26,6 +26,8 @@ import { cn } from "@/lib/utils";
 import { TaskPriority, TaskStatus } from "@/types/task";
 import { useTasks } from "@/hooks/useTasks";
 import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
+import { useCarerTasks } from "@/hooks/useCarerTasks";
+import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
 import { useParams } from "react-router-dom";
 
 interface AddTaskDialogProps {
@@ -36,13 +38,16 @@ interface AddTaskDialogProps {
   clients?: string[]; // Keep for backward compatibility
   categories?: string[]; // Keep for backward compatibility
   branchId?: string; // New prop for carer context
+  isCarerContext?: boolean; // Flag to indicate if this is being used in carer context
 }
 
 const AddTaskDialog: React.FC<AddTaskDialogProps> = ({ 
   isOpen, 
   onClose, 
+  onAddTask,
   initialStatus = 'todo',
   branchId: propBranchId,
+  isCarerContext = false,
 }) => {
   const params = useParams<{id: string}>();
   const urlBranchId = params.id;
@@ -50,6 +55,11 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
   // Use branchId from props (carer context) or URL params (admin context)
   const branchId = propBranchId || urlBranchId;
   
+  // Get carer context
+  const { carerProfile } = useCarerAuthSafe();
+  const { addTask: addCarerTask } = useCarerTasks();
+  
+  // Get admin context
   const { createTask } = useTasks(branchId!);
   const { staff, clients } = useBranchStaffAndClients(branchId!);
   
@@ -72,21 +82,33 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
       return;
     }
     
-    createTask({
+    const taskData = {
       title,
       description,
       status,
       priority,
-      branch_id: branchId,
-      assignee_id: assigneeId === "no-assignee" ? null : assigneeId,
-      client_id: clientId === "no-client" ? null : clientId,
       due_date: dueDate ? dueDate.toISOString() : null,
-      created_by: null,
-      tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+      client_id: clientId === "no-client" ? null : clientId,
       category,
-      notes: notes || null,
-      completion_percentage: 0,
-    });
+      completed: status === 'done',
+    };
+    
+    if (isCarerContext && addCarerTask) {
+      // Use carer-specific task creation (auto-assigns to current carer)
+      addCarerTask(taskData);
+      if (onAddTask) onAddTask(taskData);
+    } else {
+      // Use admin task creation flow
+      createTask({
+        ...taskData,
+        branch_id: branchId,
+        assignee_id: assigneeId === "no-assignee" ? null : assigneeId,
+        created_by: null,
+        tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+        notes: notes || null,
+        completion_percentage: 0,
+      });
+    }
     
     resetForm();
     onClose();
@@ -205,24 +227,26 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
             </Popover>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="assignee">Assignee</Label>
-              <Select value={assigneeId} onValueChange={setAssigneeId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select assignee" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="no-assignee">No assignee</SelectItem>
-                  {staff.map((member) => (
-                    <SelectItem key={member.id} value={member.id}>
-                      {member.first_name} {member.last_name}
-                      {member.specialization && ` (${member.specialization})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className={`grid grid-cols-1 ${isCarerContext ? '' : 'sm:grid-cols-2'} gap-4`}>
+            {!isCarerContext && (
+              <div className="space-y-2">
+                <Label htmlFor="assignee">Assignee</Label>
+                <Select value={assigneeId} onValueChange={setAssigneeId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select assignee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="no-assignee">No assignee</SelectItem>
+                    {staff.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.first_name} {member.last_name}
+                        {member.specialization && ` (${member.specialization})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             
             <div className="space-y-2">
               <Label htmlFor="client">Client</Label>

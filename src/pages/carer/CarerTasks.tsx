@@ -465,6 +465,7 @@ const CarerTasks: React.FC = () => {
         clients={clients as string[]}
         categories={categories as string[]}
         branchId={carerBranch?.branch_id}
+        isCarerContext={true}
       />
       
       {/* Filter Tasks Dialog */}

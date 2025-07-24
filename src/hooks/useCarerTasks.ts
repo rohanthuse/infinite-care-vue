@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useCarerAuth } from "./useCarerAuth";
+import { useCarerAuthSafe } from "./useCarerAuthSafe";
 import { useCarerBranch } from "./useCarerBranch";
 
 export interface CarerTask {
@@ -24,15 +24,15 @@ export interface CarerTask {
 }
 
 export const useCarerTasks = () => {
-  const { user } = useCarerAuth();
+  const { user, carerProfile } = useCarerAuthSafe();
   const { data: carerBranch } = useCarerBranch();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: tasks = [], isLoading, error } = useQuery({
-    queryKey: ['carer-tasks', user?.id],
+    queryKey: ['carer-tasks', carerProfile?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!carerProfile?.id) return [];
       
       const { data, error } = await supabase
         .from('tasks')
@@ -40,10 +40,13 @@ export const useCarerTasks = () => {
           *,
           client:clients(first_name, last_name)
         `)
-        .eq('assignee_id', user.id)
+        .eq('assignee_id', carerProfile.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching carer tasks:', error);
+        throw error;
+      }
       
       return (data || []).map(task => ({
         ...task,
@@ -53,7 +56,7 @@ export const useCarerTasks = () => {
         createdAt: task.created_at
       }));
     },
-    enabled: !!user?.id,
+    enabled: !!carerProfile?.id,
   });
 
   const updateTaskMutation = useMutation({
@@ -73,7 +76,7 @@ export const useCarerTasks = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['carer-tasks', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['carer-tasks', carerProfile?.id] });
       toast({
         title: "Task updated",
         description: "Task has been updated successfully.",
@@ -94,30 +97,55 @@ export const useCarerTasks = () => {
         throw new Error('Branch information not available');
       }
 
+      if (!carerProfile?.id) {
+        throw new Error('Carer profile not available');
+      }
+
+      console.log('[useCarerTasks] Creating task:', {
+        carerProfileId: carerProfile.id,
+        branchId: carerBranch.branch_id,
+        taskData: newTask
+      });
+
+      const taskData = {
+        title: newTask.title,
+        description: newTask.description,
+        status: newTask.completed ? 'done' : 'pending',
+        priority: newTask.priority,
+        due_date: newTask.due_date,
+        assignee_id: carerProfile.id,
+        client_id: newTask.client_id,
+        category: newTask.category || 'General',
+        branch_id: carerBranch.branch_id,
+      };
+
       const { data, error } = await supabase
         .from('tasks')
-        .insert({
-          title: newTask.title,
-          description: newTask.description,
-          status: newTask.completed ? 'done' : 'pending',
-          priority: newTask.priority,
-          due_date: newTask.due_date,
-          assignee_id: user?.id,
-          client_id: newTask.client_id,
-          category: newTask.category || 'General',
-          branch_id: carerBranch.branch_id,
-        })
+        .insert(taskData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useCarerTasks] Error creating task:', error);
+        throw error;
+      }
+      
+      console.log('[useCarerTasks] Task created successfully:', data);
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['carer-tasks', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['carer-tasks', carerProfile?.id] });
       toast({
         title: "Task created",
         description: "New task has been created successfully.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating task:', error);
+      toast({
+        title: "Error",
+        description: `Failed to create task: ${error.message}`,
+        variant: "destructive",
       });
     },
   });
