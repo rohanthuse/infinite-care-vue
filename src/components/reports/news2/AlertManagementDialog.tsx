@@ -108,7 +108,7 @@ export const AlertManagementDialog = ({ alert, patient, onClose }: AlertManageme
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className={`h-5 w-5 ${
@@ -119,7 +119,7 @@ export const AlertManagementDialog = ({ alert, patient, onClose }: AlertManageme
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 flex-1 overflow-y-auto pr-2">
           {/* Alert Overview */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
