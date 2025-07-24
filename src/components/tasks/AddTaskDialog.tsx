@@ -96,7 +96,6 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
     if (isCarerContext && addCarerTask) {
       // Use carer-specific task creation (auto-assigns to current carer)
       addCarerTask(taskData);
-      if (onAddTask) onAddTask(taskData);
     } else {
       // Use admin task creation flow
       createTask({
