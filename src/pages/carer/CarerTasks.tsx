@@ -65,16 +65,29 @@ const CarerTasks: React.FC = () => {
     new Set(tasks.map(task => task.category).filter(Boolean))
   );
   const clients = Array.from(
-    new Set(tasks.map(task => task.client).filter(Boolean))
+    new Set(tasks.map(task => {
+      if (typeof task.client === 'string') {
+        return task.client;
+      } else if (task.client && typeof task.client === 'object') {
+        return `${(task.client as any).first_name} ${(task.client as any).last_name}`;
+      }
+      return null;
+    }).filter(Boolean))
   ) as string[];
 
   // Apply filters and search to tasks
   const filteredTasks = tasks.filter(task => {
     // Text search
+    const clientName = typeof task.client === 'string' 
+      ? task.client 
+      : task.client && typeof task.client === 'object'
+      ? `${(task.client as any).first_name} ${(task.client as any).last_name}`
+      : '';
+      
     const searchMatch = 
       searchQuery === "" || 
       task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (task.client && task.client.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (clientName && clientName.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (task.category && task.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
       task.description.toLowerCase().includes(searchQuery.toLowerCase());
     
@@ -95,9 +108,14 @@ const CarerTasks: React.FC = () => {
       (task.category && filters.category.includes(task.category));
     
     // Client filter
+    const taskClientName = typeof task.client === 'string' 
+      ? task.client 
+      : task.client && typeof task.client === 'object'
+      ? `${(task.client as any).first_name} ${(task.client as any).last_name}`
+      : '';
     const clientMatch = 
       filters.client.length === 0 || 
-      (task.client && filters.client.includes(task.client));
+      (taskClientName && filters.client.includes(taskClientName));
     
     // Date range filter
     let dateMatch = true;
@@ -353,7 +371,9 @@ const CarerTasks: React.FC = () => {
                         {task.client && (
                           <div className="flex items-center text-xs text-gray-500">
                             <User className="h-3.5 w-3.5 mr-1" />
-                            {task.client}
+                            {typeof task.client === 'string' 
+                              ? task.client 
+                              : `${(task.client as any).first_name} ${(task.client as any).last_name}`}
                           </div>
                         )}
                         
@@ -428,7 +448,9 @@ const CarerTasks: React.FC = () => {
                         {task.client && (
                           <div className="flex items-center text-xs text-gray-500">
                             <User className="h-3.5 w-3.5 mr-1" />
-                            {task.client}
+                            {typeof task.client === 'string' 
+                              ? task.client 
+                              : `${(task.client as any).first_name} ${(task.client as any).last_name}`}
                           </div>
                         )}
                         

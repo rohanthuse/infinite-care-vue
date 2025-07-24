@@ -165,7 +165,7 @@ const FilterTasksDialog: React.FC<FilterTasksDialogProps> = ({
                         checked={selectedClients.includes(client)}
                         onCheckedChange={() => toggleClient(client)}
                       />
-                      <Label htmlFor={`client-${client}`}>{client}</Label>
+                      <Label htmlFor={`client-${client}`}>{typeof client === 'string' ? client.trim() : String(client)}</Label>
                     </div>
                   ))}
                 </div>
