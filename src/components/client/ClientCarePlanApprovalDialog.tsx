@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -49,7 +49,7 @@ export function ClientCarePlanApprovalDialog({
   const [comments, setComments] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
   const [hasReadPlan, setHasReadPlan] = useState(false);
-  const signatureRef = useRef<any>(null);
+  const [signatureData, setSignatureData] = useState<string>('');
 
   const steps = [
     { id: 'review', title: 'Review Care Plan', icon: FileText },
@@ -57,12 +57,10 @@ export function ClientCarePlanApprovalDialog({
   ];
 
   const handleApprove = async () => {
-    if (!signatureRef.current?.signatureData) {
+    if (!signatureData || signatureData.trim() === '') {
       toast.error('Please provide your digital signature');
       return;
     }
-
-    const signatureData = signatureRef.current.signatureData;
 
     try {
       await onApprove(signatureData, comments);
@@ -70,6 +68,7 @@ export function ClientCarePlanApprovalDialog({
       setCurrentStep(0);
       setComments('');
       setHasReadPlan(false);
+      setSignatureData('');
     } catch (error) {
       console.error('Error approving care plan:', error);
       toast.error('Failed to approve care plan. Please try again.');
@@ -95,7 +94,7 @@ export function ClientCarePlanApprovalDialog({
   };
 
   const canProceedToSignature = hasReadPlan;
-  const canApprove = canProceedToSignature && signatureRef.current?.signatureData;
+  const canApprove = canProceedToSignature && signatureData && signatureData.trim() !== '';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -349,14 +348,17 @@ export function ClientCarePlanApprovalDialog({
                 <CardContent>
                   <SignatureCanvas
                     onSave={(signature) => {
-                      // Store signature data for later use
-                      if (signatureRef.current) {
-                        signatureRef.current.signatureData = signature;
-                      }
+                      setSignatureData(signature);
                     }}
                     height={150}
                     disabled={isLoading}
                   />
+                  {signatureData && (
+                    <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-sm text-green-800">Signature captured successfully</span>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
