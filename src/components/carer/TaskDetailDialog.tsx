@@ -42,6 +42,7 @@ interface TaskDetailDialogProps {
   task: any;
   onComplete: (taskId: string) => void;
   onSave: (task: any) => void;
+  onDelete?: (taskId: string) => void;
 }
 
 const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({ 
@@ -49,7 +50,8 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   onOpenChange, 
   task, 
   onComplete,
-  onSave
+  onSave,
+  onDelete
 }) => {
   const [editMode, setEditMode] = useState(false);
   const [title, setTitle] = useState(task?.title || "");
@@ -138,7 +140,9 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   };
   
   const handleDelete = () => {
-    // Note: This would need to be implemented with proper task deletion logic
+    if (onDelete) {
+      onDelete(task.id);
+    }
     onOpenChange(false);
   };
   

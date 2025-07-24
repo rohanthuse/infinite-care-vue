@@ -43,7 +43,7 @@ const CarerTasks: React.FC = () => {
   const { data: carerBranch, isLoading: branchLoading } = useCarerBranch();
   
   // Get tasks from the new database hook
-  const { tasks, completeTask, updateTask, addTask, isLoading } = useCarerTasks();
+  const { tasks, completeTask, updateTask, addTask, deleteTask, isLoading } = useCarerTasks();
   
   // Filter and sort states
   const [filters, setFilters] = useState({
@@ -200,6 +200,11 @@ const CarerTasks: React.FC = () => {
   const handleAddTask = (taskData: any) => {
     addTask(taskData);
     setAddTaskDialogOpen(false);
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    deleteTask(taskId);
+    setDetailDialogOpen(false);
   };
 
   const handleApplyFilters = (newFilters: any) => {
@@ -454,6 +459,7 @@ const CarerTasks: React.FC = () => {
           task={selectedTask}
           onComplete={handleCompleteTask}
           onSave={handleSaveTask}
+          onDelete={handleDeleteTask}
         />
       )}
       

@@ -164,8 +164,38 @@ export const useCarerTasks = () => {
     });
   };
 
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (error) throw error;
+      return taskId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['carer-tasks', carerProfile?.id] });
+      toast({
+        title: "Task deleted",
+        description: "Task has been deleted successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete task: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
   const addTask = (taskData: any) => {
     addTaskMutation.mutate(taskData);
+  };
+
+  const deleteTask = (taskId: string) => {
+    deleteTaskMutation.mutate(taskId);
   };
 
   return {
@@ -175,7 +205,9 @@ export const useCarerTasks = () => {
     completeTask,
     updateTask,
     addTask,
+    deleteTask,
     isUpdating: updateTaskMutation.isPending,
     isAdding: addTaskMutation.isPending,
+    isDeleting: deleteTaskMutation.isPending,
   };
 };
