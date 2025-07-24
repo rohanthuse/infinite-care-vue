@@ -233,7 +233,7 @@ export const AlertManagementDialog = ({ alert, patient, onClose }: AlertManageme
           )}
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 pb-6">
           <Button variant="outline" onClick={onClose}>
             <X className="h-4 w-4 mr-2" />
             Close
