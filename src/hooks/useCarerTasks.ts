@@ -9,7 +9,7 @@ export interface CarerTask {
   id: string;
   title: string;
   description: string;
-  status: 'pending' | 'in-progress' | 'done';
+  status: 'todo' | 'in-progress' | 'done';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   due_date: string | null;
   client_id: string | null;
@@ -110,7 +110,7 @@ export const useCarerTasks = () => {
       const taskData = {
         title: newTask.title,
         description: newTask.description,
-        status: newTask.completed ? 'done' : 'pending',
+        status: newTask.completed ? 'done' : 'todo',
         priority: newTask.priority,
         due_date: newTask.due_date,
         assignee_id: carerProfile.id,
@@ -153,7 +153,7 @@ export const useCarerTasks = () => {
   const completeTask = (taskId: string) => {
     updateTaskMutation.mutate({
       id: taskId,
-      updates: { completed: true, status: 'done' }
+        updates: { completed: true, status: 'done' }
     });
   };
 
