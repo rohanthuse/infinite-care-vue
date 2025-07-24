@@ -98,7 +98,7 @@ export function ClientCarePlanApprovalDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[95vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
@@ -337,26 +337,40 @@ export function ClientCarePlanApprovalDialog({
           )}
 
           {currentStep === 1 && (
-            <div className="h-full flex flex-col space-y-4">
+            <div className="h-full flex flex-col space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Digital Signature Required</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <User className="h-5 w-5 text-primary" />
+                    Digital Signature Required
+                  </CardTitle>
                   <CardDescription>
                     By signing below, you acknowledge that you have read, understood, and agree to this care plan.
+                    <br />
+                    <strong>Instructions:</strong> Draw your signature in the box below using your mouse or finger, then click "Save" to confirm.
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <SignatureCanvas
-                    onSave={(signature) => {
-                      setSignatureData(signature);
-                    }}
-                    height={150}
-                    disabled={isLoading}
-                  />
+                <CardContent className="space-y-4">
+                  <div className="bg-muted/30 p-4 rounded-lg">
+                    <SignatureCanvas
+                      onSave={(signature) => {
+                        setSignatureData(signature);
+                      }}
+                      width={500}
+                      height={200}
+                      disabled={isLoading}
+                    />
+                  </div>
                   {signatureData && (
-                    <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span className="text-sm text-green-800">Signature captured successfully</span>
+                      <span className="text-sm text-green-800 font-medium">Signature captured successfully</span>
+                    </div>
+                  )}
+                  {!signatureData && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-md flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm text-blue-800">Please draw your signature above and click "Save" to continue</span>
                     </div>
                   )}
                 </CardContent>
@@ -375,7 +389,8 @@ export function ClientCarePlanApprovalDialog({
                     value={comments}
                     onChange={(e) => setComments(e.target.value)}
                     disabled={isLoading}
-                    rows={3}
+                    rows={4}
+                    className="min-h-[100px]"
                   />
                 </CardContent>
               </Card>
