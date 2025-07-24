@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
+import { EditBranchDialog } from "@/components/EditBranchDialog";
 import { motion } from "framer-motion";
 import { 
   Building2, Calendar, Users, FileText, Clock, 
@@ -22,6 +23,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 const BranchDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   const { data: branchData, isLoading, error } = useBranch(id);
   const { data: stats, isLoading: isLoadingStats, error: errorStats } = useBranchStatistics(id);
@@ -36,6 +38,17 @@ const BranchDetails = () => {
     toast.success("Navigating to Branch Dashboard");
     if (branchData) {
       navigate(`/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.name)}`);
+    }
+  };
+
+  const handleEditBranch = () => {
+    setIsEditDialogOpen(true);
+  };
+
+  const handleManageCarers = () => {
+    toast.success("Navigating to Carers Management");
+    if (branchData) {
+      navigate(`/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.name)}/carers`);
     }
   };
 
@@ -136,10 +149,17 @@ const BranchDetails = () => {
                   <UserCog className="h-4 w-4" />
                   Branch Admins
                 </Button>
-                <Button variant="outline" className="rounded-md border-gray-200">
+                <Button 
+                  variant="outline" 
+                  className="rounded-md border-gray-200"
+                  onClick={handleEditBranch}
+                >
                   Edit Branch
                 </Button>
-                <CustomButton className="bg-blue-600 hover:bg-blue-700">
+                <CustomButton 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={handleManageCarers}
+                >
                   Manage Carers
                 </CustomButton>
               </div>
@@ -365,6 +385,12 @@ const BranchDetails = () => {
                 </Button>
             </div>
         )}
+        
+        <EditBranchDialog
+          isOpen={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
+          branch={branchData}
+        />
       </motion.main>
     </div>
   );
