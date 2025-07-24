@@ -182,7 +182,7 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
               {isLoadingTasks ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm">
