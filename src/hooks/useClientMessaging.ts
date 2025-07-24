@@ -448,6 +448,26 @@ export const useClientCreateThread = () => {
 
       console.log('[useClientCreateThread] Thread created:', thread);
 
+      // Get the actual role for the recipient from the database
+      let actualRecipientType: 'client' | 'carer' | 'branch_admin' | 'super_admin' = recipientType === 'carer' ? 'carer' : 'branch_admin';
+      if (recipientType === 'admin') {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', recipientId)
+          .in('role', ['super_admin', 'branch_admin'])
+          .single();
+        
+        if (roleData && (roleData.role === 'super_admin' || roleData.role === 'branch_admin')) {
+          actualRecipientType = roleData.role;
+        } else {
+          // Fallback to branch_admin if no specific role found
+          actualRecipientType = 'branch_admin';
+        }
+      }
+
+      console.log('[useClientCreateThread] Using recipient type:', actualRecipientType);
+
       // Add participants - use the authenticated user's ID for the client
       const participants = [
         {
@@ -459,7 +479,7 @@ export const useClientCreateThread = () => {
         {
           thread_id: thread.id,
           user_id: recipientId,
-          user_type: recipientType,
+          user_type: actualRecipientType,
           user_name: recipientName
         }
       ];
