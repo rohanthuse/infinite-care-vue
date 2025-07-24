@@ -97,7 +97,7 @@ export const EditTemplateDialog: React.FC<EditTemplateDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 pb-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
             <FormField
               control={form.control}
               name="title"
@@ -152,7 +152,7 @@ export const EditTemplateDialog: React.FC<EditTemplateDialogProps> = ({
                 </FormItem>
               )}
             />
-            <DialogFooter>
+            <DialogFooter className="py-4 border-t mt-4 bg-muted/30 -mx-6 px-6">
               <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
