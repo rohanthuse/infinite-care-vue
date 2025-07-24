@@ -215,8 +215,13 @@ export const useAgreementTemplates = ({ searchQuery, typeFilter, branchId }: { s
 };
 
 const createTemplate = async (templateData: Omit<AgreementTemplate, 'id' | 'created_at' | 'updated_at' | 'usage_count' | 'agreement_types'>) => {
-    const { error } = await supabase.from('agreement_templates').insert({ ...templateData, usage_count: 0 });
+    const { data, error } = await supabase
+        .from('agreement_templates')
+        .insert({ ...templateData, usage_count: 0 })
+        .select()
+        .single();
     if (error) throw new Error(error.message);
+    return data;
 };
 
 export const useCreateTemplate = () => {

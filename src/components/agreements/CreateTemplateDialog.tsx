@@ -38,6 +38,8 @@ export function CreateTemplateDialog({
   const [selectedType, setSelectedType] = useState("");
   const [content, setContent] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
+  const [createdTemplateId, setCreatedTemplateId] = useState<string | null>(null);
+  const [isTemplateCreated, setIsTemplateCreated] = useState(false);
   
   // Fetch data
   const { data: agreementTypes, isLoading: typesLoading } = useAgreementTypes();
@@ -49,7 +51,7 @@ export function CreateTemplateDialog({
     }
     
     try {
-      await createTemplateMutation.mutateAsync({
+      const result = await createTemplateMutation.mutateAsync({
         title,
         content: content || null,
         type_id: selectedType,
@@ -58,11 +60,20 @@ export function CreateTemplateDialog({
         created_by: null, // Will be set by auth context when available
       });
       
-      resetForm();
-      onOpenChange(false);
+      // Store the created template ID and mark as created
+      setCreatedTemplateId(result.id);
+      setIsTemplateCreated(true);
+      
+      // Move to step 2 for file uploads
+      setCurrentStep(2);
     } catch (error) {
       console.error('Error creating template:', error);
     }
+  };
+
+  const handleCompleteTemplate = () => {
+    resetForm();
+    onOpenChange(false);
   };
   
   const resetForm = () => {
@@ -70,6 +81,8 @@ export function CreateTemplateDialog({
     setSelectedType("");
     setContent("");
     setCurrentStep(1);
+    setCreatedTemplateId(null);
+    setIsTemplateCreated(false);
   };
 
   const canProceedToStep2 = title && selectedType;
@@ -146,17 +159,33 @@ export function CreateTemplateDialog({
 
             <TabsContent value="step2" className="space-y-4 py-4">
               <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Template Files</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Upload template documents that can be reused for multiple agreements
-                  </p>
-                  <FileUploadDropzone
-                    templateId="temp" // Will be replaced after template creation
-                    category="template"
-                    maxFiles={3}
-                  />
-                </div>
+                {isTemplateCreated && createdTemplateId ? (
+                  <div>
+                    <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <h3 className="text-lg font-medium text-green-800 mb-2">✓ Template Created Successfully!</h3>
+                      <p className="text-sm text-green-700">
+                        Your template has been created. You can now upload template files (optional).
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">Template Files</h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Upload template documents that can be reused for multiple agreements
+                      </p>
+                      <FileUploadDropzone
+                        templateId={createdTemplateId}
+                        category="template"
+                        maxFiles={3}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center p-8">
+                    <p className="text-gray-500">
+                      Create the template first to upload files
+                    </p>
+                  </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>
@@ -179,17 +208,16 @@ export function CreateTemplateDialog({
           )}
           {currentStep < 2 ? (
             <Button 
-              onClick={() => setCurrentStep(currentStep + 1)}
-              disabled={!canProceedToStep2}
-            >
-              Next
-            </Button>
-          ) : (
-            <Button 
-              onClick={handleCreateTemplate} 
+              onClick={handleCreateTemplate}
               disabled={createTemplateMutation.isPending || !canComplete}
             >
               {createTemplateMutation.isPending ? "Creating..." : "Create Template"}
+            </Button>
+          ) : (
+            <Button 
+              onClick={handleCompleteTemplate}
+            >
+              Complete
             </Button>
           )}
         </DialogFooter>
