@@ -61,13 +61,19 @@ export const useCarerTasks = () => {
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<CarerTask> }) => {
+      // Filter out frontend-only fields before sending to database
+      const { completed, client, ...dbUpdates } = updates;
+      
+      // Convert completed status to database status
+      const finalUpdates = {
+        ...dbUpdates,
+        status: completed !== undefined ? (completed ? 'done' : dbUpdates.status || 'todo') : dbUpdates.status,
+        due_date: updates.due_date,
+      };
+
       const { data, error } = await supabase
         .from('tasks')
-        .update({
-          ...updates,
-          status: updates.completed ? 'done' : updates.status,
-          due_date: updates.due_date,
-        })
+        .update(finalUpdates)
         .eq('id', id)
         .select()
         .single();
@@ -153,7 +159,7 @@ export const useCarerTasks = () => {
   const completeTask = (taskId: string) => {
     updateTaskMutation.mutate({
       id: taskId,
-        updates: { completed: true, status: 'done' }
+      updates: { status: 'done' }
     });
   };
 
