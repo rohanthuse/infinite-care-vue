@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Clock, Plus, X, ChevronDown } from "lucide-react";
 
+import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -95,6 +97,10 @@ export function NewBookingDialog({
 }: NewBookingDialogProps) {
   const [scheduleCount, setScheduleCount] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [clientSearchQuery, setClientSearchQuery] = useState("");
+
+  // Fetch clients and staff data
+  const { clients, isLoading: isLoadingClients } = useBranchStaffAndClients(branchId || "");
 
   // Filter carers based on search query
   const filteredCarers = useMemo(() => {
@@ -105,6 +111,17 @@ export function NewBookingDialog({
       return carerName.includes(query);
     });
   }, [carers, searchQuery]);
+
+  // Filter clients based on search query
+  const filteredClients = useMemo(() => {
+    if (!clientSearchQuery.trim()) return clients;
+    const query = clientSearchQuery.toLowerCase();
+    return clients.filter(client => {
+      const clientName = `${client.first_name} ${client.last_name}`.toLowerCase();
+      const clientEmail = (client.email || "").toLowerCase();
+      return clientName.includes(query) || clientEmail.includes(query);
+    });
+  }, [clients, clientSearchQuery]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -202,10 +219,73 @@ export function NewBookingDialog({
                   name="clientId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Client ID</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Client ID" {...field} />
-                      </FormControl>
+                      <FormLabel>Client</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "w-full justify-between",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value 
+                              ? (() => {
+                                  const selectedClient = clients.find(c => c.id === field.value);
+                                  return selectedClient 
+                                    ? `${selectedClient.first_name} ${selectedClient.last_name}`
+                                    : "Unknown Client";
+                                })()
+                              : "Select client..."
+                            }
+                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[320px] p-0" align="start" sideOffset={4}>
+                          <div className="p-3 border-b">
+                            <Input
+                              placeholder="Search clients..."
+                              value={clientSearchQuery}
+                              onChange={(e) => setClientSearchQuery(e.target.value)}
+                              className="h-8"
+                            />
+                          </div>
+                          <div className="max-h-60 overflow-y-auto">
+                            {isLoadingClients ? (
+                              <div className="p-4 text-center text-sm text-muted-foreground">
+                                Loading clients...
+                              </div>
+                            ) : filteredClients.length === 0 ? (
+                              <div className="p-4 text-center text-sm text-muted-foreground">
+                                No clients found
+                              </div>
+                            ) : (
+                              <div className="p-1">
+                                {filteredClients.map((client) => (
+                                  <div
+                                    key={client.id}
+                                    className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                                    onClick={() => {
+                                      field.onChange(client.id);
+                                      setClientSearchQuery("");
+                                    }}
+                                  >
+                                    <div className="flex-1">
+                                      <div className="font-medium">
+                                        {client.first_name} {client.last_name}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">
+                                        ID: {client.id.slice(0, 8)}... • {client.email}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                       <FormMessage />
                     </FormItem>
                   )}
