@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { TaskStatus, TaskView } from "@/types/task";
+import { TaskStatus, TaskView, Task } from "@/types/task";
 import TaskColumn from "@/components/tasks/TaskColumn";
 import AddTaskDialog from "@/components/tasks/AddTaskDialog";
+import FilterTasksDialog from "@/components/carer/FilterTasksDialog";
+import SortTasksDialog, { SortOption } from "@/components/carer/SortTasksDialog";
 import { Button } from "@/components/ui/button";
 import { 
   Search, Filter, Plus, Users, UserRound, 
@@ -42,6 +44,22 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
   const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
   const [addToColumn, setAddToColumn] = useState<TaskStatus>("todo");
   
+  // Filter and Sort state
+  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+  const [isSortDialogOpen, setIsSortDialogOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({
+    priority: [] as string[],
+    category: [] as string[],
+    client: [] as string[],
+    dateRange: { from: undefined as Date | undefined, to: undefined as Date | undefined },
+    showCompleted: true
+  });
+  const [sortOption, setSortOption] = useState<SortOption>({
+    field: "dueDate",
+    direction: "asc",
+    label: "Due Date (Earliest First)"
+  });
+  
   const { tasks, isLoading, updateTask } = useTasks(branchId);
   const { staff, clients } = useBranchStaffAndClients(branchId);
   
@@ -61,54 +79,142 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
     clientName: task.client ? `${task.client.first_name} ${task.client.last_name}` : undefined,
     staffId: task.assignee?.id,
     staffName: task.assignee ? `${task.assignee.first_name} ${task.assignee.last_name}` : undefined,
+    category: task.category || 'General',
   }));
   
-  // Filter tasks based on search and view
-  const filteredTasks = transformedTasks.filter(task => {
-    const matchesSearch = searchTerm.trim() === "" || 
-      task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.assignee?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+  // Extract unique categories and clients for filter options
+  const uniqueCategories = Array.from(new Set(transformedTasks.map(task => task.category).filter(Boolean)));
+  const uniqueClients = Array.from(new Set(transformedTasks.map(task => task.clientName).filter(Boolean)));
+  
+  // Apply filters to tasks
+  const applyFilters = (tasks: any[]) => {
+    return tasks.filter(task => {
+      // Priority filter
+      if (activeFilters.priority.length > 0) {
+        // Map UI priority labels to database values
+        const priorityMap: Record<string, string> = {
+          'High Priority': 'high',
+          'Medium Priority': 'medium', 
+          'Low Priority': 'low',
+          'Urgent': 'urgent'
+        };
+        const mappedPriorities = activeFilters.priority.map(p => priorityMap[p] || p.toLowerCase());
+        if (!mappedPriorities.includes(task.priority)) return false;
+      }
+      
+      // Category filter
+      if (activeFilters.category.length > 0) {
+        if (!activeFilters.category.includes(task.category || 'General')) return false;
+      }
+      
+      // Client filter
+      if (activeFilters.client.length > 0) {
+        if (!task.clientName || !activeFilters.client.includes(task.clientName)) return false;
+      }
+      
+      // Date range filter
+      if (activeFilters.dateRange.from || activeFilters.dateRange.to) {
+        if (!task.dueDate) return false;
+        const taskDate = new Date(task.dueDate);
+        if (activeFilters.dateRange.from && taskDate < activeFilters.dateRange.from) return false;
+        if (activeFilters.dateRange.to && taskDate > activeFilters.dateRange.to) return false;
+      }
+      
+      // Show completed filter
+      if (!activeFilters.showCompleted && task.status === 'done') return false;
+      
+      return true;
+    });
+  };
+  
+  // Apply sorting to tasks
+  const applySorting = (tasks: any[]) => {
+    return [...tasks].sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (sortOption.field) {
+        case 'dueDate':
+          aValue = a.dueDate ? new Date(a.dueDate) : new Date('9999-12-31');
+          bValue = b.dueDate ? new Date(b.dueDate) : new Date('9999-12-31');
+          break;
+        case 'priority':
+          const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
+          aValue = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+          bValue = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
+          break;
+        case 'title':
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        case 'category':
+          aValue = (a.category || 'General').toLowerCase();
+          bValue = (b.category || 'General').toLowerCase();
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) return sortOption.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortOption.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+  
+  // Filter tasks based on search, view, filters, and sorting
+  const processedTasks = (() => {
+    // First apply search and view filters
+    let filtered = transformedTasks.filter(task => {
+      const matchesSearch = searchTerm.trim() === "" || 
+        task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.assignee?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchesView = taskView === "staff" ? 
+        (task.staffId || !task.clientId) : 
+        !!task.clientId;
+      
+      return matchesSearch && matchesView;
+    });
     
-    const matchesView = taskView === "staff" ? 
-      (task.staffId || !task.clientId) : 
-      !!task.clientId;
+    // Apply additional filters
+    filtered = applyFilters(filtered);
     
-    return matchesSearch && matchesView;
-  });
+    // Apply sorting
+    return applySorting(filtered);
+  })();
   
   // Group tasks by status
   const columns = [
     {
       id: "backlog" as TaskStatus,
       title: "Backlog",
-      tasks: filteredTasks.filter(task => task.status === "backlog"),
+      tasks: processedTasks.filter(task => task.status === "backlog"),
       color: "bg-gray-100"
     },
     {
       id: "todo" as TaskStatus,
       title: "To Do",
-      tasks: filteredTasks.filter(task => task.status === "todo"),
+      tasks: processedTasks.filter(task => task.status === "todo"),
       color: "bg-blue-100"
     },
     {
       id: "in-progress" as TaskStatus,
       title: "In Progress",
-      tasks: filteredTasks.filter(task => task.status === "in-progress"),
+      tasks: processedTasks.filter(task => task.status === "in-progress"),
       color: "bg-amber-100"
     },
     {
       id: "review" as TaskStatus,
       title: "Review",
-      tasks: filteredTasks.filter(task => task.status === "review"),
+      tasks: processedTasks.filter(task => task.status === "review"),
       color: "bg-purple-100"
     },
     {
       id: "done" as TaskStatus,
       title: "Done",
-      tasks: filteredTasks.filter(task => task.status === "done"),
+      tasks: processedTasks.filter(task => task.status === "done"),
       color: "bg-green-100"
     }
   ];
@@ -149,6 +255,16 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
   const handleAddTask = (columnId: TaskStatus) => {
     setAddToColumn(columnId);
     setIsAddTaskDialogOpen(true);
+  };
+  
+  const handleApplyFilters = (filters: typeof activeFilters) => {
+    setActiveFilters(filters);
+    setIsFilterDialogOpen(false);
+  };
+  
+  const handleApplySort = (sort: SortOption) => {
+    setSortOption(sort);
+    setIsSortDialogOpen(false);
   };
   
   if (isLoading) {
@@ -194,12 +310,20 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
               </TabsList>
             </Tabs>
             
-            <Button variant="outline" className="gap-2 whitespace-nowrap">
+            <Button 
+              variant="outline" 
+              className="gap-2 whitespace-nowrap"
+              onClick={() => setIsFilterDialogOpen(true)}
+            >
               <Filter className="h-4 w-4" />
               <span className="hidden sm:inline">Filter</span>
             </Button>
             
-            <Button variant="outline" className="gap-2 whitespace-nowrap">
+            <Button 
+              variant="outline" 
+              className="gap-2 whitespace-nowrap"
+              onClick={() => setIsSortDialogOpen(true)}
+            >
               <SlidersHorizontal className="h-4 w-4" />
               <span className="hidden sm:inline">Sort</span>
             </Button>
@@ -244,6 +368,21 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
         initialStatus={addToColumn}
         clients={clients?.map(c => `${c.first_name} ${c.last_name}`) || []}
         categories={['Medical', 'Administrative', 'Training', 'Maintenance', 'Social', 'Safety', 'Nutrition', 'Therapy']}
+      />
+      
+      <FilterTasksDialog
+        open={isFilterDialogOpen}
+        onOpenChange={setIsFilterDialogOpen}
+        onApplyFilters={handleApplyFilters}
+        categories={uniqueCategories}
+        clients={uniqueClients}
+      />
+      
+      <SortTasksDialog
+        open={isSortDialogOpen}
+        onOpenChange={setIsSortDialogOpen}
+        selectedSort={sortOption}
+        onSelectSort={handleApplySort}
       />
     </div>
   );
