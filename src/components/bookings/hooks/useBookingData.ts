@@ -77,6 +77,22 @@ export function useBookingData(branchId?: string) {
           client = getOrCreatePlaceholderClient(bk.client_id);
         if (!carer && bk.staff_id)
           carer = getOrCreatePlaceholderCarer(bk.staff_id);
+        // Parse datetime properly - handle both space and T-separated formats
+        const parseDateTime = (dateTimeStr: string) => {
+          if (!dateTimeStr) return null;
+          try {
+            // Convert space-separated format to ISO format if needed
+            const isoString = dateTimeStr.includes('T') ? dateTimeStr : dateTimeStr.replace(' ', 'T');
+            return new Date(isoString);
+          } catch (error) {
+            console.warn('[useBookingData] Failed to parse datetime:', dateTimeStr, error);
+            return null;
+          }
+        };
+
+        const startDate = parseDateTime(bk.start_time);
+        const endDate = parseDateTime(bk.end_time);
+
         return {
           id: bk.id,
           clientId: bk.client_id,
@@ -85,9 +101,9 @@ export function useBookingData(branchId?: string) {
           carerId: bk.staff_id,
           carerName: carer?.name || "(Unknown Carer)",
           carerInitials: carer?.initials || "??",
-          startTime: bk.start_time ? bk.start_time.slice(11, 16) : "07:00",
-          endTime: bk.end_time ? bk.end_time.slice(11, 16) : "07:30",
-          date: bk.start_time ? bk.start_time.slice(0, 10) : "",
+          startTime: startDate ? startDate.toTimeString().slice(0, 5) : "07:00",
+          endTime: endDate ? endDate.toTimeString().slice(0, 5) : "07:30",
+          date: startDate ? startDate.toISOString().slice(0, 10) : "",
           status: bk.status || "assigned",
           notes: "",
         };
