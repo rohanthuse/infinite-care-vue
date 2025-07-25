@@ -6,7 +6,6 @@ import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { AdminsTable } from "@/components/AdminsTable";
 import { AuthHealthDebugger } from "@/components/AuthHealthDebugger";
 import { BranchQuickNavigation } from "@/components/dashboard/BranchQuickNavigation";
-import { SuperAdminStatsSection } from "@/components/dashboard/SuperAdminStatsSection";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,9 +29,6 @@ const Dashboard = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        {/* Super Admin Stats Overview */}
-        {currentUser?.role === 'super_admin' && <SuperAdminStatsSection />}
-        
         {/* Super Admin Branch Navigation */}
         {currentUser?.role === 'super_admin' && <BranchQuickNavigation />}
         
