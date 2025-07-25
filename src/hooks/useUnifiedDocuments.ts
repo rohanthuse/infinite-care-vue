@@ -115,27 +115,29 @@ export const useUnifiedDocuments = (branchId: string) => {
         email: user.email
       });
 
-      // Check user permissions for this branch
-      const { data: userRoleData, error: roleError } = await supabase
+      // Check user permissions for this branch - handle multiple roles
+      console.log('[useUnifiedDocuments] Checking user roles for user:', user.id);
+      const { data: userRolesData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
-        .single();
+        .eq('user_id', user.id);
 
       if (roleError) {
-        console.error('[useUnifiedDocuments] Error fetching user role:', roleError);
-        throw new Error('Could not verify user permissions');
+        console.error('[useUnifiedDocuments] Error fetching user roles:', roleError);
+        // Don't throw error immediately - check if user has branch access anyway
+        console.log('[useUnifiedDocuments] Continuing with branch access check despite role query error');
       }
 
-      console.log('[useUnifiedDocuments] User role verified:', userRoleData?.role);
+      const userRoles = userRolesData?.map(r => r.role) || [];
+      console.log('[useUnifiedDocuments] User roles found:', userRoles);
 
       // Verify user can access this branch
       let hasAccess = false;
       
-      if (userRoleData?.role === 'super_admin') {
+      if (userRoles.includes('super_admin')) {
         hasAccess = true;
         console.log('[useUnifiedDocuments] Super admin access granted');
-      } else if (userRoleData?.role === 'branch_admin') {
+      } else if (userRoles.includes('branch_admin')) {
         const { data: adminBranch, error: adminError } = await supabase
           .from('admin_branches')
           .select('branch_id')
@@ -149,7 +151,7 @@ export const useUnifiedDocuments = (branchId: string) => {
         
         hasAccess = !!adminBranch;
         console.log('[useUnifiedDocuments] Branch admin access check:', { hasAccess, adminBranch });
-      } else if (userRoleData?.role === 'carer') {
+      } else if (userRoles.includes('carer')) {
         const { data: staffData, error: staffError } = await supabase
           .from('staff')
           .select('branch_id')
