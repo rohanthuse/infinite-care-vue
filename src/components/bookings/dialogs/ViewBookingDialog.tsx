@@ -31,8 +31,10 @@ export function ViewBookingDialog({
   if (!booking) return null;
 
   const service = services.find((s) => s.id === booking.service_id);
-  const startTime = parseISO(booking.start_time);
-  const endTime = parseISO(booking.end_time);
+  
+  // Construct proper Date objects from booking date and time strings
+  const startTime = new Date(`${booking.date}T${booking.startTime}:00`);
+  const endTime = new Date(`${booking.date}T${booking.endTime}:00`);
   
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -81,15 +83,13 @@ export function ViewBookingDialog({
             </div>
             <div className="pl-6 space-y-1">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Client ID:</span>
-                <span className="text-sm font-medium">{booking.client_id}</span>
+                <span className="text-sm text-gray-600">Client:</span>
+                <span className="text-sm font-medium">{booking.clientName}</span>
               </div>
-              {booking.staff_name && (
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Assigned Carer:</span>
-                  <span className="text-sm font-medium">{booking.staff_name}</span>
-                </div>
-              )}
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Assigned Carer:</span>
+                <span className="text-sm font-medium">{booking.carerName}</span>
+              </div>
             </div>
           </div>
 
@@ -144,10 +144,10 @@ export function ViewBookingDialog({
                   {service?.title || "No service selected"}
                 </span>
               </div>
-              {booking.revenue && (
+              {booking.notes && (
                 <div className="flex justify-between mt-1">
-                  <span className="text-sm text-gray-600">Revenue:</span>
-                  <span className="text-sm font-medium">£{booking.revenue}</span>
+                  <span className="text-sm text-gray-600">Notes:</span>
+                  <span className="text-sm font-medium">{booking.notes}</span>
                 </div>
               )}
             </div>
@@ -167,10 +167,8 @@ export function ViewBookingDialog({
                 <span className="text-sm font-medium font-mono">{booking.id}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Created:</span>
-                <span className="text-sm font-medium">
-                  {format(parseISO(booking.created_at), "MMM d, yyyy 'at' h:mm a")}
-                </span>
+                <span className="text-sm text-gray-600">Date:</span>
+                <span className="text-sm font-medium">{booking.date}</span>
               </div>
             </div>
           </div>
