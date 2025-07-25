@@ -9,6 +9,7 @@ import { BookingReport } from "./BookingReport";
 import { StaffScheduleCalendar } from "./StaffScheduleCalendar";
 import { NewBookingDialog } from "./dialogs/NewBookingDialog";
 import { EditBookingDialog } from "./EditBookingDialog";
+import { ViewBookingDialog } from "./dialogs/ViewBookingDialog";
 import { BookingOverlapAlert } from "./BookingOverlapAlert";
 import { DateNavigation } from "./DateNavigation";
 import { BookingFilters } from "./BookingFilters";
@@ -51,6 +52,8 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const [selectedClientId, setSelectedClientId] = useState<string>(clientParam || "all-clients");
   const [selectedCarerId, setSelectedCarerId] = useState<string>("all-carers");
   const [activeView, setActiveView] = useState<string>("calendar");
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [viewingBooking, setViewingBooking] = useState<Booking | null>(null);
 
   // Update URL parameters when filters change
   useEffect(() => {
@@ -117,7 +120,16 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   // Handle booking view from list
   const handleViewBooking = (booking: Booking) => {
     console.log("[BookingsTab] View booking from list:", booking.id);
-    handleEditBooking(booking); // Use same edit dialog for viewing
+    setViewingBooking(booking);
+    setShowViewDialog(true);
+  };
+
+  // Handle edit from view dialog
+  const handleEditFromView = () => {
+    if (viewingBooking) {
+      setShowViewDialog(false);
+      handleEditBooking(viewingBooking);
+    }
   };
 
   if (isLoading) {
@@ -280,6 +292,14 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         onChooseDifferentCarer={handleUpdateOverlapChooseDifferentCarer}
         onModifyTime={handleUpdateOverlapModifyTime}
         onForceCreate={handleUpdateOverlapForceUpdate}
+      />
+
+      <ViewBookingDialog
+        open={showViewDialog}
+        onOpenChange={setShowViewDialog}
+        booking={viewingBooking}
+        services={services}
+        onEdit={handleEditFromView}
       />
     </div>
   );
