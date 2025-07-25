@@ -4,7 +4,7 @@ export const useSuperAdminNavigation = () => {
   const navigate = useNavigate();
 
   const navigateToClients = () => {
-    navigate('/branch'); // Navigate to branch management where you can see all clients across branches
+    navigate('/clients'); // Navigate to comprehensive clients view across all branches
   };
 
   const navigateToBookings = () => {
@@ -12,11 +12,11 @@ export const useSuperAdminNavigation = () => {
   };
 
   const navigateToReviews = () => {
-    navigate('/branch'); // Navigate to branch management where you can access reviews
+    navigate('/reviews'); // Navigate to reviews management across all branches
   };
 
   const navigateToAccounting = () => {
-    navigate('/branch'); // Navigate to branch management where you can access accounting
+    navigate('/accounting'); // Navigate to accounting/revenue overview across all branches
   };
 
   return {
