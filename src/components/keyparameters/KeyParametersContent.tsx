@@ -448,35 +448,39 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
 
       {/* Create Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Add New {getParameterTypeTitle(activeSectionTab)}</DialogTitle>
           </DialogHeader>
-          <ParameterForm
-            parameterType={activeSectionTab}
-            onSubmit={handleFormSubmit}
-            onCancel={() => setIsDialogOpen(false)}
-            isLoading={getParameterHook(activeSectionTab)?.isCreating}
-          />
+          <div className="flex-1 overflow-y-auto px-1">
+            <ParameterForm
+              parameterType={activeSectionTab}
+              onSubmit={handleFormSubmit}
+              onCancel={() => setIsDialogOpen(false)}
+              isLoading={getParameterHook(activeSectionTab)?.isCreating}
+            />
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Edit {getParameterTypeTitle(activeSectionTab)}</DialogTitle>
           </DialogHeader>
-          <ParameterForm
-            parameterType={activeSectionTab}
-            initialData={editingItem}
-            onSubmit={handleFormSubmit}
-            onCancel={() => {
-              setIsEditDialogOpen(false);
-              setEditingItem(null);
-            }}
-            isLoading={getParameterHook(activeSectionTab)?.isUpdating}
-          />
+          <div className="flex-1 overflow-y-auto px-1">
+            <ParameterForm
+              parameterType={activeSectionTab}
+              initialData={editingItem}
+              onSubmit={handleFormSubmit}
+              onCancel={() => {
+                setIsEditDialogOpen(false);
+                setEditingItem(null);
+              }}
+              isLoading={getParameterHook(activeSectionTab)?.isUpdating}
+            />
+          </div>
         </DialogContent>
       </Dialog>
 
