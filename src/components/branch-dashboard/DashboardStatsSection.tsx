@@ -32,6 +32,18 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
     }
   };
 
+  const handleTotalClientsClick = () => {
+    onTabChange("clients");
+  };
+
+  const handlePendingReviewsClick = () => {
+    onTabChange("reviews");
+  };
+
+  const handleMonthlyRevenueClick = () => {
+    onTabChange("accounting");
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -105,17 +117,17 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
           icon={<Users className="h-5 w-5 text-blue-600" />} 
           positive={dashboardStats?.clientsChangePositive ?? true} 
           isLoading={isLoadingDashboardStats}
+          onClick={handleTotalClientsClick}
         />
-        <div onClick={handleTodaysBookingsClick} className="cursor-pointer">
-          <DashboardStat 
-            title="Today's Bookings" 
-            value={dashboardStats?.todaysBookingsCount?.toString() ?? "0"} 
-            change={dashboardStats?.todaysBookingsChange ?? "0%"} 
-            icon={<Calendar className="h-5 w-5 text-green-600" />} 
-            positive={dashboardStats?.todaysBookingsChangePositive ?? true} 
-            isLoading={isLoadingDashboardStats}
-          />
-        </div>
+        <DashboardStat 
+          title="Today's Bookings" 
+          value={dashboardStats?.todaysBookingsCount?.toString() ?? "0"} 
+          change={dashboardStats?.todaysBookingsChange ?? "0%"} 
+          icon={<Calendar className="h-5 w-5 text-green-600" />} 
+          positive={dashboardStats?.todaysBookingsChangePositive ?? true} 
+          isLoading={isLoadingDashboardStats}
+          onClick={handleTodaysBookingsClick}
+        />
         <DashboardStat 
           title="Pending Reviews" 
           value={dashboardStats?.pendingReviewsCount?.toString() ?? "0"} 
@@ -123,6 +135,7 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
           icon={<FileText className="h-5 w-5 text-amber-600" />} 
           positive={dashboardStats?.pendingReviewsChangePositive ?? true} 
           isLoading={isLoadingDashboardStats}
+          onClick={handlePendingReviewsClick}
         />
         <DashboardStat 
           title="Monthly Revenue" 
@@ -131,6 +144,7 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
           icon={<BarChart4 className="h-5 w-5 text-purple-600" />} 
           positive={dashboardStats?.monthlyRevenueChangePositive ?? true} 
           isLoading={isLoadingDashboardStats}
+          onClick={handleMonthlyRevenueClick}
         />
       </div>
     </motion.div>

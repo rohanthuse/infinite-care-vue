@@ -11,6 +11,7 @@ export const DashboardStat = ({
   icon,
   positive,
   isLoading,
+  onClick,
 }: {
   title: string;
   value: string;
@@ -18,9 +19,10 @@ export const DashboardStat = ({
   icon: React.ReactNode;
   positive: boolean;
   isLoading?: boolean;
+  onClick?: () => void;
 }) => {
   return (
-    <Card>
+    <Card className={onClick ? "cursor-pointer hover:shadow-md transition-shadow" : ""} onClick={onClick}>
       <CardContent className="p-4 md:p-6">
         <div className="flex justify-between items-start">
           <div>
