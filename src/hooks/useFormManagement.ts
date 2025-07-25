@@ -151,7 +151,9 @@ export const useFormManagement = (branchId: string) => {
       
       // Navigate to the newly created form
       const encodedBranchName = encodeURIComponent(window.location.pathname.split('/')[3] || 'branch');
-      window.location.href = `/branch-dashboard/${branchId}/${encodedBranchName}/form-builder/${data.id}`;
+      const currentUrl = new URL(window.location.href);
+      const sourceParam = currentUrl.pathname.includes('/forms') ? '?source=forms' : '';
+      window.location.href = `/branch-dashboard/${branchId}/${encodedBranchName}/form-builder/${data.id}${sourceParam}`;
     },
     onError: (error) => {
       toast({

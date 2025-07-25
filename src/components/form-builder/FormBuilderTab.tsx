@@ -109,11 +109,11 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
   };
 
   const handleEditForm = (formId: string) => {
-    navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-builder/${formId}`);
+    navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-builder/${formId}?source=forms`);
   };
 
   const handleViewForm = (formId: string) => {
-    navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-builder/${formId}`);
+    navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-builder/${formId}?source=forms`);
   };
 
   const handleDuplicateForm = (formId: string) => {

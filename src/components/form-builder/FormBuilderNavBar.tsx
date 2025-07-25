@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,13 +24,22 @@ export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
 }) => {
   const navigate = useNavigate();
   const { id: branchId, branchName } = useParams<{ id: string; branchName: string }>();
+  const [searchParams] = useSearchParams();
   const [title, setTitle] = useState<string>(form.title);
   const [description, setDescription] = useState<string>(form.description || '');
   const [isTitleEditing, setIsTitleEditing] = useState<boolean>(false);
   const [isDescriptionEditing, setIsDescriptionEditing] = useState<boolean>(false);
 
   const handleBack = () => {
-    navigate(`/branch-dashboard/${branchId}/${branchName}`);
+    const source = searchParams.get('source');
+    
+    if (source === 'forms') {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/forms`);
+    } else if (source === 'workflow') {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/workflow`);
+    } else {
+      navigate(`/branch-dashboard/${branchId}/${branchName}`);
+    }
   };
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
