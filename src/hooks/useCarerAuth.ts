@@ -48,30 +48,50 @@ export function useCarerAuth() {
 
   useEffect(() => {
     let mounted = true;
+    let loadingTimeout: NodeJS.Timeout;
+
+    // Set up loading timeout to prevent stuck loading state
+    const setLoadingTimeout = () => {
+      clearTimeout(loadingTimeout);
+      loadingTimeout = setTimeout(() => {
+        if (mounted) {
+          console.log('[useCarerAuth] Loading timeout reached, resetting loading state');
+          setLoading(false);
+        }
+      }, 10000); // 10 second timeout
+    };
 
     const handleAuthStateChange = async (event: string, session: Session | null) => {
       if (!mounted) return;
 
       console.log('[useCarerAuth] Auth state changed:', event, session?.user?.id);
       
+      // Clear any existing timeout
+      clearTimeout(loadingTimeout);
+      
       setSession(session);
       setUser(session?.user ?? null);
 
       if (event === 'SIGNED_IN' && session?.user) {
-        // Check carer role for signed in user
-        const hasRole = await checkCarerRole(session.user.id);
-        
-        if (hasRole) {
-          // Only navigate on actual sign in, not during normal app usage
-          // Check if this is a fresh sign in (not just a page refresh/navigation)
-          const currentPath = window.location.pathname;
-          if (currentPath === '/carer-login' || currentPath === '/carer-invitation') {
-            navigate('/carer-dashboard');
+        try {
+          // Check carer role for signed in user
+          const hasRole = await checkCarerRole(session.user.id);
+          
+          if (hasRole) {
+            // Only navigate on actual sign in, not during normal app usage
+            // Check if this is a fresh sign in (not just a page refresh/navigation)
+            const currentPath = window.location.pathname;
+            if (currentPath === '/carer-login' || currentPath === '/carer-invitation') {
+              navigate('/carer-dashboard');
+            }
+          } else {
+            console.error('[useCarerAuth] User does not have carer role');
+            toast.error('Access denied. This account is not registered as a carer.');
+            await supabase.auth.signOut();
           }
-        } else {
-          console.error('[useCarerAuth] User does not have carer role');
-          toast.error('Access denied. This account is not registered as a carer.');
-          await supabase.auth.signOut();
+        } catch (error) {
+          console.error('[useCarerAuth] Error during sign in process:', error);
+          toast.error('Authentication error occurred');
         }
       }
 
@@ -82,7 +102,9 @@ export function useCarerAuth() {
       }
 
       // Always set loading to false after handling auth state change
-      setLoading(false);
+      if (mounted) {
+        setLoading(false);
+      }
     };
 
     // Set up auth state listener
@@ -91,11 +113,13 @@ export function useCarerAuth() {
     // Check for existing session
     const initializeAuth = async () => {
       try {
+        setLoadingTimeout(); // Start timeout
+        
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('[useCarerAuth] Error getting session:', error);
-          setLoading(false);
+          if (mounted) setLoading(false);
           return;
         }
 
@@ -106,11 +130,16 @@ export function useCarerAuth() {
           setUser(session.user);
           
           // Check carer role for existing session
-          await checkCarerRole(session.user.id);
+          try {
+            await checkCarerRole(session.user.id);
+          } catch (error) {
+            console.error('[useCarerAuth] Error checking carer role during init:', error);
+          }
         }
       } catch (error) {
         console.error('[useCarerAuth] Error during auth initialization:', error);
       } finally {
+        clearTimeout(loadingTimeout);
         if (mounted) {
           setLoading(false);
         }
@@ -121,6 +150,7 @@ export function useCarerAuth() {
 
     return () => {
       mounted = false;
+      clearTimeout(loadingTimeout);
       subscription.unsubscribe();
     };
   }, [navigate]);
