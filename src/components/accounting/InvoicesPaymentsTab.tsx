@@ -7,10 +7,12 @@ import FinancialSummaryCards from './FinancialSummaryCards';
 import InvoicesDataTable from './InvoicesDataTable';
 import PaymentsDataTable from './PaymentsDataTable';
 import { CreateEnhancedInvoiceDialog } from '@/components/clients/dialogs/CreateEnhancedInvoiceDialog';
+import { ViewInvoiceDialog } from '@/components/clients/dialogs/ViewInvoiceDialog';
 import { RecordPaymentDialog } from './RecordPaymentDialog';
 import { useClientsList } from '@/hooks/useAccountingData';
-import { useUninvoicedBookings } from '@/hooks/useEnhancedClientBilling';
+import { useUninvoicedBookings, EnhancedClientBilling } from '@/hooks/useEnhancedClientBilling';
 import { useBranchInvoices } from '@/hooks/useBranchInvoices';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InvoicesPaymentsTabProps {
   branchId?: string;
@@ -21,7 +23,10 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
   const [activeSubTab, setActiveSubTab] = useState('invoices');
   const [isCreateInvoiceOpen, setIsCreateInvoiceOpen] = useState(false);
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
+  const [isViewInvoiceOpen, setIsViewInvoiceOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [selectedInvoiceForView, setSelectedInvoiceForView] = useState<EnhancedClientBilling | null>(null);
+  const [selectedInvoiceIdForPayment, setSelectedInvoiceIdForPayment] = useState<string>('');
   
   // Fetch clients for the dropdown
   const { data: clients } = useClientsList(branchId);
@@ -35,6 +40,52 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
     client_name: invoice.client_name,
     remaining_amount: invoice.remaining_amount
   })) || [];
+
+  // Handler for viewing invoice - find invoice from existing data
+  const handleViewInvoice = async (invoiceId: string) => {
+    try {
+      // First try to find in existing data
+      const existingInvoice = allInvoices?.find(invoice => invoice.id === invoiceId);
+      if (existingInvoice) {
+        // Fetch full invoice details with line items
+        const { data, error } = await supabase
+          .from('client_billing')
+          .select(`
+            *,
+            invoice_line_items(*),
+            payment_records(*)
+          `)
+          .eq('id', invoiceId)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          const enhancedInvoice: EnhancedClientBilling = {
+            ...data,
+            status: data.status as 'draft' | 'sent' | 'pending' | 'paid' | 'overdue' | 'cancelled' | 'refunded',
+            invoice_type: data.invoice_type as 'manual' | 'automatic',
+            line_items: data.invoice_line_items || [],
+            payment_records: (data.payment_records || []).map(record => ({
+              ...record,
+              payment_method: record.payment_method as 'cash' | 'card' | 'bank_transfer' | 'online' | 'check'
+            }))
+          };
+
+          setSelectedInvoiceForView(enhancedInvoice);
+          setIsViewInvoiceOpen(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching invoice details:', error);
+    }
+  };
+
+  // Handler for recording payment
+  const handleRecordPayment = (invoiceId: string) => {
+    setSelectedInvoiceIdForPayment(invoiceId);
+    setIsRecordPaymentOpen(true);
+  };
 
   if (!branchId) {
     return (
@@ -125,8 +176,8 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
             </div>
             <InvoicesDataTable 
               branchId={branchId}
-              onViewInvoice={(id) => console.log('View invoice:', id)}
-              onRecordPayment={(id) => console.log('Record payment for:', id)}
+              onViewInvoice={handleViewInvoice}
+              onRecordPayment={handleRecordPayment}
             />
           </div>
         </TabsContent>
@@ -157,6 +208,13 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
         open={isRecordPaymentOpen}
         onOpenChange={setIsRecordPaymentOpen}
         availableInvoices={unpaidInvoices}
+      />
+
+      {/* View Invoice Dialog */}
+      <ViewInvoiceDialog
+        open={isViewInvoiceOpen}
+        onOpenChange={setIsViewInvoiceOpen}
+        invoice={selectedInvoiceForView}
       />
     </div>
   );
