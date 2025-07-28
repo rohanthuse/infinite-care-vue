@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Filter, Plus, FileText, Download } from "lucide-react";
 import { useExpenses, useCreateExpense, ExpenseRecord } from "@/hooks/useAccountingData";
+import { useUserRole } from "@/hooks/useUserRole";
 import ExpensesTable from "./ExpensesTable";
 import AddExpenseDialog from "./AddExpenseDialog";
 import FilterExpensesDialog from "./FilterExpensesDialog";
@@ -41,6 +42,7 @@ interface ExpenseFilter {
 const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
   const { data: expenses = [], isLoading, error } = useExpenses(branchId);
   const createExpenseMutation = useCreateExpense();
+  const { data: userRole } = useUserRole();
 
   const [filteredExpenses, setFilteredExpenses] = useState<ExpenseRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -179,13 +181,13 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
 
   // Handler functions
   const handleAddExpense = async (expenseData: Partial<ExpenseRecord>) => {
-    if (!branchId) return;
+    if (!branchId || !userRole?.id) return;
     
     try {
       await createExpenseMutation.mutateAsync({
         ...expenseData,
         branch_id: branchId,
-        created_by: 'current-user', // Replace with actual user ID from auth
+        created_by: userRole.id,
       } as Omit<ExpenseRecord, 'id' | 'created_at' | 'updated_at'>);
       
       setAddDialogOpen(false);
