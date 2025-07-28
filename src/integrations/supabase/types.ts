@@ -2530,6 +2530,7 @@ export type Database = {
           branch_id: string
           client_id: string | null
           created_at: string
+          created_by: string | null
           extra_time_minutes: number
           extra_time_rate: number | null
           hourly_rate: number
@@ -2557,6 +2558,7 @@ export type Database = {
           branch_id: string
           client_id?: string | null
           created_at?: string
+          created_by?: string | null
           extra_time_minutes?: number
           extra_time_rate?: number | null
           hourly_rate: number
@@ -2584,6 +2586,7 @@ export type Database = {
           branch_id?: string
           client_id?: string | null
           created_at?: string
+          created_by?: string | null
           extra_time_minutes?: number
           extra_time_rate?: number | null
           hourly_rate?: number
