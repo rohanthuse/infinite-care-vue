@@ -190,6 +190,10 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
       console.log("Creating expense with user role:", userRole);
       console.log("Expense data received:", expenseData);
 
+      // For super admins, use a system approach to handle foreign key constraints
+      const isStaffMember = userRole.role === 'carer';
+      const systemStaffId = 'f47cc12e-01df-4f28-b5a5-ec0cf540fd78'; // System admin staff ID for this branch
+      
       const expenseToCreate = {
         branch_id: branchId,
         staff_id: null,
@@ -202,7 +206,7 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
         receipt_url: expenseData.receipt_url || null,
         notes: expenseData.notes || null,
         status: 'approved', // Auto-approve for super admin
-        created_by: userRole.id,
+        created_by: isStaffMember ? userRole.id : systemStaffId, // Use system staff ID for super admins
         approved_by: null, // Set to null to avoid foreign key constraint
         approved_at: new Date().toISOString(),
       };
