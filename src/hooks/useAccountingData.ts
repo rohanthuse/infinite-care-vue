@@ -578,6 +578,68 @@ export function useCreateExtraTimeRecord() {
   });
 }
 
+export const useUpdateTravelRecord = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...record }: { id: string } & Partial<TravelRecord>) => {
+      const { data, error } = await supabase
+        .from('travel_records')
+        .update(record)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating travel record:', error);
+        throw error;
+      }
+      
+      return data;
+    },
+    onSuccess: (data) => {
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['travel-records', data.branch_id] });
+      
+      toast.success('Travel record updated successfully');
+    },
+    onError: (error: any) => {
+      console.error('Failed to update travel record:', error);
+      toast.error('Failed to update travel record. Please try again.');
+    },
+  });
+};
+
+export const useDeleteTravelRecord = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, branchId }: { id: string; branchId: string }) => {
+      const { error } = await supabase
+        .from('travel_records')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error deleting travel record:', error);
+        throw error;
+      }
+      
+      return { id, branchId };
+    },
+    onSuccess: (data) => {
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['travel-records', data.branchId] });
+      
+      toast.success('Travel record deleted successfully');
+    },
+    onError: (error: any) => {
+      console.error('Failed to delete travel record:', error);
+      toast.error('Failed to delete travel record. Please try again.');
+    },
+  });
+};
+
 // Hook to get staff list for dropdowns - FIXED STATUS FILTER
 export function useStaffList(branchId?: string) {
   return useQuery({

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Filter, Plus, FileText, Download, Car, Route } from "lucide-react";
-import { TravelRecord, useCreateTravelRecord, useTravelRecords } from "@/hooks/useAccountingData";
+import { TravelRecord, useCreateTravelRecord, useTravelRecords, useUpdateTravelRecord, useDeleteTravelRecord } from "@/hooks/useAccountingData";
 import TravelRecordsTable from "./TravelRecordsTable";
 import AddTravelRecordDialog from "./AddTravelRecordDialog";
 import FilterTravelDialog from "./FilterTravelDialog";
@@ -43,6 +43,8 @@ interface TravelTabProps {
 const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
   const { data: travelRecords = [], isLoading } = useTravelRecords(branchId);
   const createTravelRecord = useCreateTravelRecord();
+  const updateTravelRecord = useUpdateTravelRecord();
+  const deleteTravelRecord = useDeleteTravelRecord();
   
   const [filteredRecords, setFilteredRecords] = useState<TravelRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -149,10 +151,19 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
     setAddDialogOpen(true);
   };
 
-  const handleUpdateRecord = (updatedData: Omit<TravelRecord, "id" | "created_at" | "updated_at" | "staff" | "client">) => {
-    // For now, we'll just close the dialog - actual update mutation would be implemented here
-    setAddDialogOpen(false);
-    setCurrentRecord(undefined);
+  const handleUpdateRecord = async (updatedData: Omit<TravelRecord, "id" | "created_at" | "updated_at" | "staff" | "client">) => {
+    if (!currentRecord) return;
+    
+    try {
+      await updateTravelRecord.mutateAsync({
+        id: currentRecord.id,
+        ...updatedData
+      });
+      setAddDialogOpen(false);
+      setCurrentRecord(undefined);
+    } catch (error) {
+      console.error('Failed to update travel record:', error);
+    }
   };
 
   const handleViewRecord = (record: TravelRecord) => {
@@ -165,11 +176,18 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDeleteRecord = () => {
-    if (recordToDelete) {
-      // Delete mutation would be implemented here
+  const confirmDeleteRecord = async () => {
+    if (!recordToDelete || !branchId) return;
+    
+    try {
+      await deleteTravelRecord.mutateAsync({
+        id: recordToDelete,
+        branchId
+      });
       setDeleteDialogOpen(false);
       setRecordToDelete(undefined);
+    } catch (error) {
+      console.error('Failed to delete travel record:', error);
     }
   };
 
