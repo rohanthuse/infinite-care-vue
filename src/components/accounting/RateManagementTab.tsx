@@ -108,7 +108,7 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       await createServiceRate.mutateAsync({
         ...rateData,
         branch_id: branchId,
-        created_by: currentUser.id,
+        created_by: currentUser.staffId || currentUser.id,
       } as Omit<ServiceRate, 'id' | 'created_at' | 'updated_at'>);
       
       setIsAddRateDialogOpen(false);
