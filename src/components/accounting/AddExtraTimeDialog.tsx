@@ -257,9 +257,8 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
         
       };
 
-      // Add auto-approval for super admin
+      // Add auto-approval for super admin (leave approved_by as null to avoid FK constraint)
       if (!isEditing && userRole?.role === 'super_admin') {
-        extraTimeData.approved_by = userRole.id;
         extraTimeData.approved_at = new Date().toISOString();
       }
 
