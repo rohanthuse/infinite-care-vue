@@ -16,6 +16,7 @@ import FilterRateDialog from "./FilterRateDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { ServiceRate as UIServiceRate, RateFilter as UIRateFilter } from "@/types/rate";
+import { useUserRole } from "@/hooks/useUserRole";
 
 // Define filter interface compatible with database types
 interface RateFilter {
@@ -42,6 +43,7 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
   // Use real database data instead of mock data
   const { data: rates = [], isLoading, error, refetch } = useServiceRates(branchId);
   const createServiceRate = useCreateServiceRate();
+  const { data: currentUser } = useUserRole();
   
   const [filteredRates, setFilteredRates] = useState<ServiceRate[]>([]);
   const [activeFilter, setActiveFilter] = useState<RateFilter | undefined>(undefined);
@@ -97,11 +99,16 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
       return;
     }
 
+    if (!currentUser?.id) {
+      toast.error('User authentication required');
+      return;
+    }
+
     try {
       await createServiceRate.mutateAsync({
         ...rateData,
         branch_id: branchId,
-        created_by: 'current-user', // This should come from auth context
+        created_by: currentUser.id,
       } as Omit<ServiceRate, 'id' | 'created_at' | 'updated_at'>);
       
       setIsAddRateDialogOpen(false);
