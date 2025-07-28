@@ -461,6 +461,7 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
         open={isAddRateDialogOpen}
         onClose={() => setIsAddRateDialogOpen(false)}
         onAddRate={handleAddRate}
+        branchId={branchId}
       />
       
       <EditRateDialog
