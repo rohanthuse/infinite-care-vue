@@ -583,8 +583,18 @@ export const useUpdateTravelRecord = () => {
   
   return useMutation({
     mutationFn: async ({ id, ...record }: { id: string } & Partial<TravelRecord>) => {
-      // Remove fields that shouldn't be updated
+      // Remove fields that shouldn't be updated and add status preservation
       const { staff, client, ...updateData } = record as any;
+      
+      // Add status field back for updates (preserve existing status)
+      if (!updateData.status) {
+        const { data: existingRecord } = await supabase
+          .from('travel_records')
+          .select('status')
+          .eq('id', id)
+          .single();
+        updateData.status = existingRecord?.status || 'pending';
+      }
       
       const { data, error } = await supabase
         .from('travel_records')

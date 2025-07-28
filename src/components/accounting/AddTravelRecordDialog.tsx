@@ -60,7 +60,7 @@ type TravelFormData = z.infer<typeof travelSchema>;
 interface AddTravelRecordDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (travelData: Omit<TravelRecord, "id" | "created_at" | "updated_at" | "staff" | "client">) => void;
+  onSave: (travelData: Omit<TravelRecord, "id" | "status" | "created_at" | "updated_at" | "staff" | "client">) => void;
   initialData?: TravelRecord;
   isEditing?: boolean;
   branchId?: string;
@@ -180,8 +180,6 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
         approved_by: initialData?.approved_by || null,
         approved_at: initialData?.approved_at || null,
         reimbursed_at: initialData?.reimbursed_at || null,
-        // Preserve status when editing, default to 'pending' for new records
-        status: initialData?.status || 'pending',
       };
 
       await onSave(travelData);
