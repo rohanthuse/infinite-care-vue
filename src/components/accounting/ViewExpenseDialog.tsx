@@ -16,7 +16,6 @@ import { Edit, FileText } from "lucide-react";
 interface ViewExpenseDialogProps {
   open: boolean;
   onClose: () => void;
-  onEdit: () => void;
   expense: ExpenseRecord;
 }
 
@@ -51,7 +50,6 @@ const statusLabels = {
 const ViewExpenseDialog: React.FC<ViewExpenseDialogProps> = ({
   open,
   onClose,
-  onEdit,
   expense,
 }) => {
   const renderStatusBadge = (status: string) => {
@@ -143,10 +141,6 @@ const ViewExpenseDialog: React.FC<ViewExpenseDialogProps> = ({
         <DialogFooter className="pt-4">
           <Button type="button" variant="outline" onClick={onClose}>
             Close
-          </Button>
-          <Button onClick={onEdit}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Expense
           </Button>
         </DialogFooter>
       </DialogContent>

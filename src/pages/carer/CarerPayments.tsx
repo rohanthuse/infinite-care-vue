@@ -567,7 +567,6 @@ const CarerPayments: React.FC = () => {
         <ViewExpenseDialog
           open={showViewExpense}
           onClose={() => setShowViewExpense(false)}
-          onEdit={handleViewExpenseEdit}
           expense={selectedExpense}
         />
       )}

@@ -385,10 +385,6 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
             setViewDialogOpen(false);
             setCurrentExpense(undefined);
           }}
-          onEdit={() => {
-            setViewDialogOpen(false);
-            setAddDialogOpen(true);
-          }}
           expense={currentExpense}
         />
       )}
