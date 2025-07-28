@@ -207,6 +207,7 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
       <RecordPaymentDialog
         open={isRecordPaymentOpen}
         onOpenChange={setIsRecordPaymentOpen}
+        preselectedInvoiceId={selectedInvoiceIdForPayment}
         availableInvoices={unpaidInvoices}
       />
 
