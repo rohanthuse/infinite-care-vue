@@ -191,7 +191,7 @@ const fetchTemplates = async ({ searchQuery = "", typeFilter = "all", branchId }
     let query = supabase.from('agreement_templates').select(`*, agreement_types ( name )`);
     
     if (branchId && branchId !== "global") {
-        query = query.eq('branch_id', branchId);
+        query = query.or(`branch_id.eq.${branchId},branch_id.is.null`);
     }
     
     if (searchQuery) {
