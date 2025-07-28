@@ -293,7 +293,7 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
               )}
             />
 
-            <DialogFooter className="pt-4">
+            <DialogFooter className="pt-6">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>

@@ -203,7 +203,7 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
         notes: expenseData.notes || null,
         status: 'approved', // Auto-approve for super admin
         created_by: userRole.id,
-        approved_by: userRole.id,
+        approved_by: null, // Set to null to avoid foreign key constraint
         approved_at: new Date().toISOString(),
       };
 
