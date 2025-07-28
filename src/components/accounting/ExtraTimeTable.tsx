@@ -32,7 +32,7 @@ const ExtraTimeTable: React.FC<ExtraTimeTableProps> = ({
   onEditRecord,
   onDeleteRecord,
 }) => {
-  const getStatusBadge = (status: string, creatorRole?: string) => {
+  const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { variant: "secondary" | "default" | "destructive"; label: string; className?: string }> = {
       pending: { variant: "secondary" as const, label: "Pending" },
       approved: { variant: "default" as const, label: "Approved", className: "bg-green-100 text-green-800 hover:bg-green-200" },
@@ -42,17 +42,9 @@ const ExtraTimeTable: React.FC<ExtraTimeTableProps> = ({
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
     
     return (
-      <div className="flex items-center gap-2">
-        <Badge variant={config.variant} className={config.className || ""}>
-          {config.label}
-        </Badge>
-        {status === 'approved' && creatorRole === 'super_admin' && (
-          <div className="flex items-center text-xs text-green-600">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Auto-approved
-          </div>
-        )}
-      </div>
+      <Badge variant={config.variant} className={config.className || ""}>
+        {config.label}
+      </Badge>
     );
   };
 
@@ -65,18 +57,6 @@ const ExtraTimeTable: React.FC<ExtraTimeTableProps> = ({
     return `${mins}m`;
   };
 
-  const getCreatorRoleDisplay = (role?: string) => {
-    switch (role) {
-      case 'super_admin':
-        return 'Super Admin';
-      case 'branch_admin':
-        return 'Branch Admin';
-      case 'carer':
-        return 'Carer';
-      default:
-        return 'Unknown';
-    }
-  };
 
   return (
     <div className="rounded-md border overflow-hidden">
@@ -155,14 +135,15 @@ const ExtraTimeTable: React.FC<ExtraTimeTableProps> = ({
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">
-                    <div className="font-medium">{getCreatorRoleDisplay(record.creator_role)}</div>
-                    {record.created_by && (
+                    {record.created_by ? (
                       <div className="text-gray-500">{record.created_by}</div>
+                    ) : (
+                      <div className="text-gray-400">System</div>
                     )}
                   </div>
                 </TableCell>
                 <TableCell>
-                  {getStatusBadge(record.status, record.creator_role)}
+                  {getStatusBadge(record.status)}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>

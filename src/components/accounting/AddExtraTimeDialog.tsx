@@ -254,7 +254,7 @@ const AddExtraTimeDialog: React.FC<AddExtraTimeDialogProps> = ({
         invoiced: false,
         invoice_id: null,
         created_by: userRole?.id || null,
-        creator_role: userRole?.role || null,
+        
       };
 
       // Add auto-approval for super admin

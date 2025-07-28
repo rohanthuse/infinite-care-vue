@@ -147,7 +147,7 @@ export interface ExtraTimeRecord {
   created_at: string;
   updated_at: string;
   created_by?: string;
-  creator_role?: string;
+  
   staff?: {
     first_name: string;
     last_name: string;
@@ -428,7 +428,7 @@ export type CreateExtraTimeRecord = {
   invoiced: boolean;
   invoice_id?: string | null;
   created_by?: string | null;
-  creator_role?: string | null;
+  
 };
 
 // Mutation hooks for creating records
