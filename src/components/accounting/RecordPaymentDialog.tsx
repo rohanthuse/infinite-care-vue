@@ -131,8 +131,8 @@ export function RecordPaymentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Record Payment</DialogTitle>
           <DialogDescription>
             Record a payment against an outstanding invoice
@@ -140,65 +140,136 @@ export function RecordPaymentDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="invoice_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Invoice</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an invoice" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {availableInvoices.map((invoice) => (
-                        <SelectItem key={invoice.id} value={invoice.id}>
-                          {invoice.invoice_number} - {invoice.client_name} (£{invoice.remaining_amount.toFixed(2)} remaining)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
               <FormField
                 control={form.control}
-                name="payment_amount"
+                name="invoice_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Payment Amount</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    {selectedInvoice && (
-                      <p className="text-xs text-gray-500">
-                        Remaining: £{selectedInvoice.remaining_amount.toFixed(2)}
-                      </p>
-                    )}
+                    <FormLabel>Invoice</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an invoice" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {availableInvoices.map((invoice) => (
+                          <SelectItem key={invoice.id} value={invoice.id}>
+                            {invoice.invoice_number} - {invoice.client_name} (£{invoice.remaining_amount.toFixed(2)} remaining)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="payment_amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Payment Amount</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      {selectedInvoice && (
+                        <p className="text-xs text-gray-500">
+                          Remaining: £{selectedInvoice.remaining_amount.toFixed(2)}
+                        </p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="payment_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Payment Date</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
-                name="payment_date"
+                name="payment_method"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Payment Date</FormLabel>
+                    <FormLabel>Payment Method</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="cash">Cash</SelectItem>
+                        <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                        <SelectItem value="credit_card">Credit Card</SelectItem>
+                        <SelectItem value="debit_card">Debit Card</SelectItem>
+                        <SelectItem value="cheque">Cheque</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="payment_reference"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Payment Reference</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Optional" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="transaction_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Transaction ID</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Optional" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Textarea {...field} placeholder="Optional notes..." rows={3} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -206,76 +277,7 @@ export function RecordPaymentDialog({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="payment_method"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Payment Method</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                      <SelectItem value="credit_card">Credit Card</SelectItem>
-                      <SelectItem value="debit_card">Debit Card</SelectItem>
-                      <SelectItem value="cheque">Cheque</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="payment_reference"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Payment Reference</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Optional" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="transaction_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Transaction ID</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Optional" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} placeholder="Optional notes..." rows={3} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
+            <DialogFooter className="flex-shrink-0 mt-4 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
