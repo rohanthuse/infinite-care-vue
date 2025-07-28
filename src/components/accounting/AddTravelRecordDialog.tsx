@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TravelRecord } from "@/hooks/useAccountingData";
 import { toast } from "sonner";
 import { createFutureDateValidation, createPositiveNumberValidation } from "@/utils/validationUtils";
+import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
 
 const travelSchema = z.object({
   travel_date: createFutureDateValidation("Travel date"),
@@ -25,8 +26,8 @@ const travelSchema = z.object({
   purpose: z.string().min(5, "Purpose must be at least 5 characters"),
   receipt_url: z.string().optional(),
   notes: z.string().optional(),
-  client_name: z.string().optional(),
-  carer_name: z.string().min(1, "Carer name is required"),
+  client_id: z.string().optional(),
+  staff_id: z.string().min(1, "Staff member selection is required"),
 }).refine((data) => {
   // Validate reasonable distance limits
   return data.distance_miles <= 500;
@@ -81,6 +82,9 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
   isEditing = false,
   branchId,
 }) => {
+  // Fetch staff and clients for the branch
+  const { staff, clients, isLoading } = useBranchStaffAndClients(branchId || "");
+
   const {
     register,
     handleSubmit,
@@ -102,8 +106,8 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
       purpose: initialData.purpose,
       receipt_url: initialData.receipt_url || "",
       notes: initialData.notes || "",
-      client_name: "",
-      carer_name: "",
+      client_id: initialData.client_id || "",
+      staff_id: initialData.staff_id || "",
     } : {
       travel_date: new Date().toISOString().split('T')[0],
       start_location: "",
@@ -116,8 +120,8 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
       purpose: "",
       receipt_url: "",
       notes: "",
-      client_name: "",
-      carer_name: "",
+      client_id: "",
+      staff_id: "",
     },
   });
 
@@ -140,9 +144,9 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
 
       const travelData: Omit<TravelRecord, "id" | "status" | "created_at" | "updated_at" | "staff" | "client"> = {
         branch_id: branchId,
-        staff_id: "", // This should be populated based on the current user or selection
-        client_id: undefined,
-        booking_id: undefined,
+        staff_id: data.staff_id,
+        client_id: data.client_id || null,
+        booking_id: null,
         travel_date: data.travel_date,
         start_location: data.start_location,
         end_location: data.end_location,
@@ -334,24 +338,53 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
           {/* Client and Carer */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="client_name">Client Name (if applicable)</Label>
-              <Input
-                id="client_name"
-                {...register("client_name")}
-                placeholder="Optional"
-              />
+              <Label htmlFor="client_id">Client Name (if applicable)</Label>
+              {isLoading ? (
+                <div className="h-10 bg-gray-100 rounded animate-pulse" />
+              ) : (
+                <Select
+                  value={watchedValues.client_id || ""}
+                  onValueChange={(value) => setValue("client_id", value === "none" ? "" : value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select client (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.last_name}, {client.first_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="carer_name">Carer Name *</Label>
-              <Input
-                id="carer_name"
-                {...register("carer_name")}
-                placeholder="Who made this journey"
-                className={errors.carer_name ? "border-red-500" : ""}
-              />
-              {errors.carer_name && (
-                <p className="text-sm text-red-600">{errors.carer_name.message}</p>
+              <Label htmlFor="staff_id">Staff Member *</Label>
+              {isLoading ? (
+                <div className="h-10 bg-gray-100 rounded animate-pulse" />
+              ) : (
+                <Select
+                  value={watchedValues.staff_id || ""}
+                  onValueChange={(value) => setValue("staff_id", value)}
+                >
+                  <SelectTrigger className={errors.staff_id ? "border-red-500" : ""}>
+                    <SelectValue placeholder="Select staff member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staff.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.last_name}, {member.first_name}
+                        {member.specialization && ` (${member.specialization})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {errors.staff_id && (
+                <p className="text-sm text-red-600">{errors.staff_id.message}</p>
               )}
             </div>
           </div>
