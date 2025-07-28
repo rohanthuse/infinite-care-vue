@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ServiceRate } from "@/hooks/useAccountingData";
 import { toast } from "sonner";
 import { createDateValidation, createPositiveNumberValidation } from "@/utils/validationUtils";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const rateSchema = z.object({
   service_name: z.string().min(1, "Service name is required"),
@@ -92,6 +93,7 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
 }) => {
   console.log('[AddRateDialog] Received props:', { branchId, open, initialRate });
   const isEditing = Boolean(initialRate);
+  const { data: currentUser } = useUserRole();
   
   const {
     register,
@@ -167,6 +169,11 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
         return;
       }
 
+      if (!currentUser?.id) {
+        toast.error('User authentication required');
+        return;
+      }
+
       const newRate: ServiceRate = {
         id: initialRate?.id || crypto.randomUUID(),
         branch_id: branchId,
@@ -184,7 +191,7 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
         is_default: data.is_default,
         status: data.status,
         description: data.description || undefined,
-        created_by: "current-user", // This should be populated from user context
+        created_by: currentUser.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
