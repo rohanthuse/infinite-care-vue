@@ -25,6 +25,7 @@ interface AccountingTabProps {
 }
 
 const AccountingTab: React.FC<AccountingTabProps> = ({ branchId, branchName }) => {
+  console.log('[AccountingTab] Received props:', { branchId, branchName });
   const [activeTab, setActiveTab] = useState("invoices-payments");
 
   return (

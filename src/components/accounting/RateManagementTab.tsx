@@ -38,6 +38,7 @@ interface RateManagementTabProps {
 }
 
 const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchName }) => {
+  console.log('[RateManagementTab] Received props:', { branchId, branchName });
   // Use real database data instead of mock data
   const { data: rates = [], isLoading, error, refetch } = useServiceRates(branchId);
   const createServiceRate = useCreateServiceRate();

@@ -90,6 +90,7 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
   initialRate,
   branchId,
 }) => {
+  console.log('[AddRateDialog] Received props:', { branchId, open, initialRate });
   const isEditing = Boolean(initialRate);
   
   const {
