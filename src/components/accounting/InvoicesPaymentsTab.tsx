@@ -9,6 +9,7 @@ import PaymentsDataTable from './PaymentsDataTable';
 import { CreateEnhancedInvoiceDialog } from '@/components/clients/dialogs/CreateEnhancedInvoiceDialog';
 import { ViewInvoiceDialog } from '@/components/clients/dialogs/ViewInvoiceDialog';
 import { RecordPaymentDialog } from './RecordPaymentDialog';
+import { ViewPaymentDialog } from './ViewPaymentDialog';
 import { useClientsList } from '@/hooks/useAccountingData';
 import { useUninvoicedBookings, EnhancedClientBilling } from '@/hooks/useEnhancedClientBilling';
 import { useBranchInvoices } from '@/hooks/useBranchInvoices';
@@ -27,6 +28,8 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedInvoiceForView, setSelectedInvoiceForView] = useState<EnhancedClientBilling | null>(null);
   const [selectedInvoiceIdForPayment, setSelectedInvoiceIdForPayment] = useState<string>('');
+  const [selectedPaymentForView, setSelectedPaymentForView] = useState<string | null>(null);
+  const [isViewPaymentOpen, setIsViewPaymentOpen] = useState(false);
   
   // Fetch clients for the dropdown
   const { data: clients } = useClientsList(branchId);
@@ -85,6 +88,12 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
   const handleRecordPayment = (invoiceId: string) => {
     setSelectedInvoiceIdForPayment(invoiceId);
     setIsRecordPaymentOpen(true);
+  };
+
+  // Handler for viewing payment
+  const handleViewPayment = (paymentId: string) => {
+    setSelectedPaymentForView(paymentId);
+    setIsViewPaymentOpen(true);
   };
 
   if (!branchId) {
@@ -190,7 +199,10 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
                 <p className="text-sm text-gray-500">Track all payment transactions</p>
               </div>
             </div>
-            <PaymentsDataTable branchId={branchId} />
+            <PaymentsDataTable 
+              branchId={branchId} 
+              onViewPayment={handleViewPayment}
+            />
           </div>
         </TabsContent>
       </Tabs>
@@ -216,6 +228,16 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
         open={isViewInvoiceOpen}
         onOpenChange={setIsViewInvoiceOpen}
         invoice={selectedInvoiceForView}
+      />
+
+      {/* View Payment Dialog */}
+      <ViewPaymentDialog
+        open={isViewPaymentOpen}
+        onOpenChange={(open) => {
+          setIsViewPaymentOpen(open);
+          if (!open) setSelectedPaymentForView(null);
+        }}
+        paymentId={selectedPaymentForView}
       />
     </div>
   );

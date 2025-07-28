@@ -101,6 +101,49 @@ export const useBranchPayments = (
   });
 };
 
+export const usePaymentRecord = (paymentId: string) => {
+  return useQuery({
+    queryKey: ['payment-record', paymentId],
+    queryFn: async () => {
+      if (!paymentId) return null;
+      
+      const { data, error } = await supabase
+        .from('payment_records')
+        .select(`
+          *,
+          client_billing!inner(
+            id,
+            invoice_number,
+            description,
+            client_id,
+            clients!inner(
+              id,
+              first_name,
+              last_name,
+              email,
+              pin_code,
+              branch_id
+            )
+          )
+        `)
+        .eq('id', paymentId)
+        .single();
+
+      if (error) throw error;
+      if (!data) return null;
+
+      return {
+        ...data,
+        client_name: `${data.client_billing.clients.first_name} ${data.client_billing.clients.last_name}`,
+        client_pin_code: data.client_billing.clients.pin_code,
+        invoice_number: data.client_billing.invoice_number,
+        invoice_description: data.client_billing.description
+      };
+    },
+    enabled: Boolean(paymentId),
+  });
+};
+
 export const useBranchPaymentStats = (branchId: string) => {
   return useQuery({
     queryKey: ['branch-payment-stats', branchId],
