@@ -14,6 +14,7 @@ import {
   SlidersHorizontal
 } from "lucide-react";
 import { usePayrollRecords, useCreatePayrollRecord, PayrollRecord } from "@/hooks/useAccountingData";
+import { useAuthSafe } from "@/hooks/useAuthSafe";
 import PayrollTable from "./PayrollTable";
 import AddPayrollDialog from "./AddPayrollDialog";
 import ViewPayrollDialog from "./ViewPayrollDialog";
@@ -38,6 +39,7 @@ interface PayrollFilter {
 }
 
 const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
+  const { user } = useAuthSafe();
   const { data: payrollRecords = [], isLoading, error } = usePayrollRecords(branchId);
   const createPayrollMutation = useCreatePayrollRecord();
 
@@ -189,17 +191,32 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
 
   // Handle adding new payroll record
   const handleAddPayroll = async (record: Partial<PayrollRecord>) => {
-    if (!branchId) return;
+    if (!branchId) {
+      toast.error('No branch selected');
+      return;
+    }
+    
+    if (!user?.id) {
+      toast.error('User not authenticated');
+      return;
+    }
     
     try {
+      console.log('Submitting payroll data:', {
+        ...record,
+        branch_id: branchId,
+        created_by: user.id,
+      });
+      
       if (isEditing && selectedRecord) {
         // TODO: Implement update mutation
         console.log('Update record:', record);
+        toast.success('Payroll record updated successfully');
       } else {
         await createPayrollMutation.mutateAsync({
           ...record,
           branch_id: branchId,
-          created_by: 'current-user', // Replace with actual user ID
+          created_by: user.id,
         } as Omit<PayrollRecord, 'id' | 'created_at' | 'updated_at'>);
       }
       
@@ -208,6 +225,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
       setSelectedRecord(null);
     } catch (error) {
       console.error('Failed to save payroll record:', error);
+      toast.error(`Failed to save payroll record: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
