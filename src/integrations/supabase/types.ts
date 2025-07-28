@@ -3857,13 +3857,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "payroll_records_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "staff"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "payroll_records_staff_id_fkey"
             columns: ["staff_id"]
             isOneToOne: false
