@@ -66,14 +66,55 @@ export function SignAgreementDialog({
   const createAgreementMutation = useCreateAgreement();
   const { workflowState, handleFileUpload, setSignature, resetWorkflow } = useAgreementWorkflow();
   
-  const handleSignAgreement = async () => {
+  const handleCreateAgreement = async () => {
     if (!title || !selectedType || !signerName || !signedDate) {
       toast.error("Please fill in all required fields");
+      return false;
+    }
+    
+    try {
+      // Create the agreement with Pending status initially
+      const agreementData = {
+        title,
+        content: content || null,
+        template_id: selectedTemplate || null,
+        type_id: selectedType,
+        status: "Pending" as const,
+        signed_by_name: signerName,
+        signed_by_client_id: signingParty === "client" ? selectedClient || null : null,
+        signed_by_staff_id: signingParty === "staff" ? selectedStaff || null : null,
+        signing_party: signingParty,
+        signed_at: signedDate.toISOString(),
+        digital_signature: null, // Will be updated in final step
+        primary_document_id: null,
+        signature_file_id: null,
+        branch_id: branchId !== "global" ? branchId : null,
+      };
+
+      // Create agreement and get the response
+      const newAgreement = await createAgreementMutation.mutateAsync(agreementData);
+      
+      if (newAgreement?.id) {
+        setCreatedAgreementId(newAgreement.id);
+        toast.success("Agreement created! You can now upload documents.");
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error creating agreement:', error);
+      toast.error('Failed to create agreement');
+      return false;
+    }
+  };
+
+  const handleSignAgreement = async () => {
+    if (!createdAgreementId) {
+      toast.error("Agreement not found");
       return;
     }
     
     try {
-      // Create the agreement first
+      // Update the agreement status to Active and add signature
       const agreementData = {
         title,
         content: content || null,
@@ -91,22 +132,19 @@ export function SignAgreementDialog({
         branch_id: branchId !== "global" ? branchId : null,
       };
 
-      // Create agreement and get the response
-      const newAgreement = await createAgreementMutation.mutateAsync(agreementData);
+      // Update the existing agreement by creating a new one with updated data
+      await createAgreementMutation.mutateAsync(agreementData);
       
-      if (newAgreement?.id) {
-        setCreatedAgreementId(newAgreement.id);
-        toast.success("Agreement created successfully!");
-        
-        // Close dialog after successful creation
-        setTimeout(() => {
-          resetForm();
-          onOpenChange(false);
-        }, 1000);
-      }
+      toast.success("Agreement signed successfully!");
+      
+      // Close dialog after successful signing
+      setTimeout(() => {
+        resetForm();
+        onOpenChange(false);
+      }, 1000);
     } catch (error) {
-      console.error('Error creating agreement:', error);
-      toast.error('Failed to create agreement');
+      console.error('Error signing agreement:', error);
+      toast.error('Failed to sign agreement');
     }
   };
   
@@ -338,8 +376,8 @@ export function SignAgreementDialog({
                     disabled={!createdAgreementId}
                   />
                   {!createdAgreementId && (
-                    <p className="text-xs text-yellow-600 mt-2">
-                      Files will be available for upload after creating the agreement
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Complete Step 1 to enable file uploads
                     </p>
                   )}
                 </div>
@@ -382,17 +420,27 @@ export function SignAgreementDialog({
           )}
           {currentStep < 3 ? (
             <Button 
-              onClick={() => setCurrentStep(currentStep + 1)}
-              disabled={!canProceedToStep2}
+              onClick={async () => {
+                if (currentStep === 1) {
+                  // Create agreement when moving from step 1 to step 2
+                  const success = await handleCreateAgreement();
+                  if (success) {
+                    setCurrentStep(currentStep + 1);
+                  }
+                } else {
+                  setCurrentStep(currentStep + 1);
+                }
+              }}
+              disabled={currentStep === 1 ? !canProceedToStep2 : false}
             >
-              Next
+              {createAgreementMutation.isPending && currentStep === 1 ? "Creating..." : "Next"}
             </Button>
           ) : (
             <Button 
               onClick={handleSignAgreement} 
               disabled={createAgreementMutation.isPending || !canComplete}
             >
-              {createAgreementMutation.isPending ? "Processing..." : "Sign Agreement"}
+              {createAgreementMutation.isPending ? "Signing..." : "Sign Agreement"}
             </Button>
           )}
         </DialogFooter>
