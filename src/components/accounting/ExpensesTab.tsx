@@ -181,18 +181,41 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
 
   // Handler functions
   const handleAddExpense = async (expenseData: Partial<ExpenseRecord>) => {
-    if (!branchId || !userRole?.id) return;
+    if (!branchId || !userRole?.id) {
+      toast.error("Missing required information. Please try again.");
+      return;
+    }
     
     try {
-      await createExpenseMutation.mutateAsync({
-        ...expenseData,
+      console.log("Creating expense with user role:", userRole);
+      console.log("Expense data received:", expenseData);
+
+      const expenseToCreate = {
         branch_id: branchId,
+        staff_id: null,
+        client_id: null,
+        description: expenseData.description || '',
+        amount: Number(expenseData.amount || 0),
+        category: expenseData.category || '',
+        expense_date: expenseData.expense_date || new Date().toISOString().split('T')[0],
+        payment_method: expenseData.payment_method || 'cash',
+        receipt_url: expenseData.receipt_url || null,
+        notes: expenseData.notes || null,
+        status: 'approved', // Auto-approve for super admin
         created_by: userRole.id,
-      } as Omit<ExpenseRecord, 'id' | 'created_at' | 'updated_at'>);
+        approved_by: userRole.id,
+        approved_at: new Date().toISOString(),
+      };
+
+      console.log("Final expense to create:", expenseToCreate);
+
+      await createExpenseMutation.mutateAsync(expenseToCreate);
       
       setAddDialogOpen(false);
+      toast.success("Expense added successfully");
     } catch (error) {
-      console.error('Failed to create expense:', error);
+      console.error("Error adding expense:", error);
+      toast.error(`Failed to add expense: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
