@@ -583,16 +583,19 @@ export const useUpdateTravelRecord = () => {
   
   return useMutation({
     mutationFn: async ({ id, ...record }: { id: string } & Partial<TravelRecord>) => {
+      // Remove fields that shouldn't be updated
+      const { staff, client, ...updateData } = record as any;
+      
       const { data, error } = await supabase
         .from('travel_records')
-        .update(record)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
       
       if (error) {
         console.error('Error updating travel record:', error);
-        throw error;
+        throw new Error(`Failed to update travel record: ${error.message}`);
       }
       
       return data;
@@ -605,7 +608,8 @@ export const useUpdateTravelRecord = () => {
     },
     onError: (error: any) => {
       console.error('Failed to update travel record:', error);
-      toast.error('Failed to update travel record. Please try again.');
+      const errorMessage = error.message || 'Failed to update travel record. Please try again.';
+      toast.error(errorMessage);
     },
   });
 };

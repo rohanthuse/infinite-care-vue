@@ -163,6 +163,7 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
       setCurrentRecord(undefined);
     } catch (error) {
       console.error('Failed to update travel record:', error);
+      // Error is already handled by the mutation's onError
     }
   };
 

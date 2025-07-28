@@ -60,7 +60,7 @@ type TravelFormData = z.infer<typeof travelSchema>;
 interface AddTravelRecordDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (travelData: Omit<TravelRecord, "id" | "status" | "created_at" | "updated_at" | "staff" | "client">) => void;
+  onSave: (travelData: Omit<TravelRecord, "id" | "created_at" | "updated_at" | "staff" | "client">) => void;
   initialData?: TravelRecord;
   isEditing?: boolean;
   branchId?: string;
@@ -94,36 +94,54 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
     formState: { errors, isSubmitting },
   } = useForm<TravelFormData>({
     resolver: zodResolver(travelSchema),
-    defaultValues: initialData ? {
-      travel_date: initialData.travel_date,
-      start_location: initialData.start_location,
-      end_location: initialData.end_location,
-      distance_miles: initialData.distance_miles,
-      travel_time_minutes: initialData.travel_time_minutes || undefined,
-      vehicle_type: initialData.vehicle_type as any,
-      mileage_rate: initialData.mileage_rate,
-      total_cost: initialData.total_cost,
-      purpose: initialData.purpose,
-      receipt_url: initialData.receipt_url || "",
-      notes: initialData.notes || "",
-      client_id: initialData.client_id || "",
-      staff_id: initialData.staff_id || "",
-    } : {
-      travel_date: new Date().toISOString().split('T')[0],
-      start_location: "",
-      end_location: "",
-      distance_miles: 0,
-      travel_time_minutes: undefined,
-      vehicle_type: "car_personal",
-      mileage_rate: 0.45,
-      total_cost: 0,
-      purpose: "",
-      receipt_url: "",
-      notes: "",
-      client_id: "",
-      staff_id: "",
-    },
   });
+
+  // Reset form when dialog opens/closes or when initialData changes
+  React.useEffect(() => {
+    if (open) {
+      if (initialData && isEditing) {
+        // Convert string numbers to actual numbers for editing
+        reset({
+          travel_date: initialData.travel_date,
+          start_location: initialData.start_location,
+          end_location: initialData.end_location,
+          distance_miles: typeof initialData.distance_miles === 'string' 
+            ? parseFloat(initialData.distance_miles) 
+            : initialData.distance_miles,
+          travel_time_minutes: initialData.travel_time_minutes || undefined,
+          vehicle_type: initialData.vehicle_type as any,
+          mileage_rate: typeof initialData.mileage_rate === 'string' 
+            ? parseFloat(initialData.mileage_rate) 
+            : initialData.mileage_rate,
+          total_cost: typeof initialData.total_cost === 'string' 
+            ? parseFloat(initialData.total_cost) 
+            : initialData.total_cost,
+          purpose: initialData.purpose,
+          receipt_url: initialData.receipt_url || "",
+          notes: initialData.notes || "",
+          client_id: initialData.client_id || "",
+          staff_id: initialData.staff_id || "",
+        });
+      } else {
+        // Reset to default values for new record
+        reset({
+          travel_date: new Date().toISOString().split('T')[0],
+          start_location: "",
+          end_location: "",
+          distance_miles: 0,
+          travel_time_minutes: undefined,
+          vehicle_type: "car_personal",
+          mileage_rate: 0.45,
+          total_cost: 0,
+          purpose: "",
+          receipt_url: "",
+          notes: "",
+          client_id: "",
+          staff_id: "",
+        });
+      }
+    }
+  }, [open, initialData, isEditing, reset]);
 
   const watchedValues = watch();
 
@@ -146,7 +164,7 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
         branch_id: branchId,
         staff_id: data.staff_id,
         client_id: data.client_id || null,
-        booking_id: null,
+        booking_id: initialData?.booking_id || null,
         travel_date: data.travel_date,
         start_location: data.start_location,
         end_location: data.end_location,
@@ -158,13 +176,18 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
         purpose: data.purpose,
         receipt_url: data.receipt_url || null,
         notes: data.notes || null,
-        approved_by: null,
-        approved_at: null,
-        reimbursed_at: null,
+        // Preserve existing approval status when editing
+        approved_by: initialData?.approved_by || null,
+        approved_at: initialData?.approved_at || null,
+        reimbursed_at: initialData?.reimbursed_at || null,
+        // Preserve status when editing, default to 'pending' for new records
+        status: initialData?.status || 'pending',
       };
 
-      onSave(travelData);
-      reset();
+      await onSave(travelData);
+      if (!isEditing) {
+        reset();
+      }
       onClose();
     } catch (error) {
       console.error('Error saving travel record:', error);
