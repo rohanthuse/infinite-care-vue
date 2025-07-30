@@ -7,6 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarIcon, Plus, Trash2, Building, Globe } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -21,7 +22,7 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
   branchId,
   isCompanyWide = false
 }) => {
-  const { data: annualLeave, isLoading } = useAnnualLeave(branchId);
+  const { data: allAnnualLeave, isLoading } = useAnnualLeave(branchId);
   const createAnnualLeave = useCreateAnnualLeave();
   const deleteAnnualLeave = useDeleteAnnualLeave();
 
@@ -30,6 +31,27 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
   const [leaveName, setLeaveName] = useState('');
   const [isCompanyWideLeave, setIsCompanyWideLeave] = useState(isCompanyWide);
   const [isRecurring, setIsRecurring] = useState(false);
+  
+  // Filter states
+  const [scopeFilter, setScopeFilter] = useState<"all" | "branch" | "company">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "one-time" | "recurring">("all");
+  const [searchFilter, setSearchFilter] = useState("");
+
+  // Filter holidays based on current filter settings
+  const annualLeave = allAnnualLeave?.filter(holiday => {
+    // Scope filter
+    if (scopeFilter === "branch" && holiday.is_company_wide) return false;
+    if (scopeFilter === "company" && !holiday.is_company_wide) return false;
+    
+    // Type filter
+    if (typeFilter === "one-time" && holiday.is_recurring) return false;
+    if (typeFilter === "recurring" && !holiday.is_recurring) return false;
+    
+    // Search filter
+    if (searchFilter && !holiday.leave_name.toLowerCase().includes(searchFilter.toLowerCase())) return false;
+    
+    return true;
+  }) || [];
 
   const handleCreateLeave = async () => {
     if (!selectedDate || !leaveName.trim()) return;
@@ -59,6 +81,15 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
   const sortedLeave = annualLeave?.sort((a, b) => 
     new Date(a.leave_date).getTime() - new Date(b.leave_date).getTime()
   );
+
+  const totalHolidays = allAnnualLeave?.length || 0;
+  const filteredCount = annualLeave.length;
+
+  const resetFilters = () => {
+    setScopeFilter("all");
+    setTypeFilter("all");
+    setSearchFilter("");
+  };
 
   if (isLoading) {
     return (
@@ -172,6 +203,60 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
             </DialogContent>
           </Dialog>
         </div>
+        
+        {/* Filter Controls */}
+        <div className="flex flex-col gap-4 mt-4">
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium">Scope:</label>
+              <Select value={scopeFilter} onValueChange={(value: "all" | "branch" | "company") => setScopeFilter(value)}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Holidays</SelectItem>
+                  <SelectItem value="branch">Branch Only</SelectItem>
+                  <SelectItem value="company">Company-wide</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium">Type:</label>
+              <Select value={typeFilter} onValueChange={(value: "all" | "one-time" | "recurring") => setTypeFilter(value)}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="one-time">One-time</SelectItem>
+                  <SelectItem value="recurring">Recurring</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <label className="text-sm font-medium">Search:</label>
+              <Input
+                placeholder="Search holidays..."
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+                className="max-w-60"
+              />
+            </div>
+            
+            {(scopeFilter !== "all" || typeFilter !== "all" || searchFilter) && (
+              <Button variant="outline" size="sm" onClick={resetFilters}>
+                Clear Filters
+              </Button>
+            )}
+          </div>
+          
+          <div className="text-sm text-muted-foreground">
+            Showing {filteredCount} of {totalHolidays} holidays
+            {(scopeFilter !== "all" || typeFilter !== "all" || searchFilter) && " (filtered)"}
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         {!sortedLeave || sortedLeave.length === 0 ? (
@@ -187,28 +272,31 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
                 className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-gray-50"
               >
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h4 className="font-medium">{leave.leave_name}</h4>
-                    <div className="flex gap-2">
-                      {leave.is_company_wide && (
-                        <Badge variant="secondary" className="text-xs">
-                          <Globe className="h-3 w-3 mr-1" />
-                          Company-wide
-                        </Badge>
-                      )}
-                      {!leave.is_company_wide && (
-                        <Badge variant="outline" className="text-xs">
-                          <Building className="h-3 w-3 mr-1" />
-                          Branch
-                        </Badge>
-                      )}
-                      {leave.is_recurring && (
-                        <Badge variant="outline" className="text-xs">
-                          Recurring
-                        </Badge>
-                      )}
+                    <div className="flex items-center gap-3 mb-1">
+                      <h4 className="font-medium">{leave.leave_name}</h4>
+                      <div className="flex gap-2">
+                        {leave.is_company_wide ? (
+                          <Badge variant="default" className="text-xs bg-primary/10 text-primary border-primary/20">
+                            <Globe className="h-3 w-3 mr-1" />
+                            Company-wide
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs">
+                            <Building className="h-3 w-3 mr-1" />
+                            Branch Only
+                          </Badge>
+                        )}
+                        {leave.is_recurring ? (
+                          <Badge variant="outline" className="text-xs border-blue-200 text-blue-700 bg-blue-50">
+                            Recurring
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs border-gray-200 text-gray-700">
+                            One-time
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                  </div>
                   <p className="text-sm text-gray-600">
                     {format(new Date(leave.leave_date), 'EEEE, MMMM dd, yyyy')}
                   </p>
@@ -219,7 +307,7 @@ const AnnualLeaveManager: React.FC<AnnualLeaveManagerProps> = ({
                   size="sm"
                   onClick={() => handleDeleteLeave(leave.id)}
                   disabled={deleteAnnualLeave.isPending}
-                  className="text-red-600 hover:text-red-700"
+                  className="text-destructive hover:text-destructive/80"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

@@ -97,7 +97,8 @@ export const useAnnualLeave = (branchId?: string) => {
         .order('leave_date', { ascending: true });
 
       if (branchId) {
-        query = query.eq('branch_id', branchId);
+        // Show both branch-specific holidays AND company-wide holidays
+        query = query.or(`branch_id.eq.${branchId},is_company_wide.eq.true`);
       }
 
       const { data, error } = await query;
