@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Clock, FileText, Upload, Target } from "lucide-react";
 import { CarerTrainingRecord } from "@/hooks/useCarerTraining";
+import { TrainingFileUpload } from "./TrainingFileUpload";
+import { useCarerProfile } from "@/hooks/useCarerProfile";
 
 interface TrainingStatusUpdateDialogProps {
   isOpen: boolean;
@@ -26,6 +28,7 @@ export function TrainingStatusUpdateDialog({
   onUpdate, 
   isUpdating 
 }: TrainingStatusUpdateDialogProps) {
+  const { data: carerProfile } = useCarerProfile();
   const [activeTab, setActiveTab] = useState("status");
   const [progressPercentage, setProgressPercentage] = useState(training.progress_percentage || 0);
   const [timeSpent, setTimeSpent] = useState(training.time_spent_minutes || 0);
@@ -33,6 +36,7 @@ export function TrainingStatusUpdateDialog({
   const [trainingNotes, setTrainingNotes] = useState(training.training_notes || "");
   const [reflectionNotes, setReflectionNotes] = useState(training.reflection_notes || "");
   const [sessionTime, setSessionTime] = useState(0);
+  const [evidenceFiles, setEvidenceFiles] = useState(training.evidence_files || []);
 
   const statusOptions = [
     { value: 'not-started', label: 'Not Started', color: 'secondary' },
@@ -54,6 +58,7 @@ export function TrainingStatusUpdateDialog({
       time_spent_minutes: timeSpent + sessionTime,
       training_notes: trainingNotes,
       reflection_notes: reflectionNotes,
+      evidence_files: evidenceFiles,
     };
 
     onUpdate(updates);
@@ -250,29 +255,20 @@ export function TrainingStatusUpdateDialog({
 
             <TabsContent value="evidence" className="space-y-4">
               <div className="space-y-4">
-                <div className="text-center p-8 border-2 border-dashed rounded-lg">
-                  <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-2">Upload Certification</p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Upload certificates, screenshots, or other certification documents of your training completion
+                <div className="space-y-2">
+                  <Label>Training Certification</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Upload certificates, completion documents, or other evidence of training completion
                   </p>
-                  <Button type="button" variant="outline">
-                    Choose Files
-                  </Button>
                 </div>
 
-                {training.evidence_files && training.evidence_files.length > 0 && (
-                  <div className="space-y-2">
-                    <Label>Uploaded Certifications</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {training.evidence_files.map((file: any, index: number) => (
-                        <div key={index} className="p-3 border rounded-lg flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          <span className="text-sm">{file.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                {carerProfile?.id && (
+                  <TrainingFileUpload
+                    trainingRecordId={training.id}
+                    staffId={carerProfile.id}
+                    evidenceFiles={evidenceFiles}
+                    onFilesUpdate={setEvidenceFiles}
+                  />
                 )}
               </div>
             </TabsContent>

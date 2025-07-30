@@ -16,7 +16,8 @@ export const useCarerTrainingActions = () => {
       progress_percentage,
       time_spent_minutes,
       training_notes,
-      reflection_notes
+      reflection_notes,
+      evidence_files
     }: { 
       recordId: string; 
       status: 'in-progress' | 'completed' | 'paused' | 'under-review' | 'failed' | 'renewal-required'; 
@@ -25,6 +26,7 @@ export const useCarerTrainingActions = () => {
       time_spent_minutes?: number;
       training_notes?: string;
       reflection_notes?: string;
+      evidence_files?: any[];
     }) => {
       if (!carerProfile?.id) {
         throw new Error('Carer profile not found');
@@ -49,6 +51,10 @@ export const useCarerTrainingActions = () => {
       
       if (reflection_notes !== undefined) {
         updateData.reflection_notes = reflection_notes;
+      }
+
+      if (evidence_files !== undefined) {
+        updateData.evidence_files = evidence_files;
       }
 
       if (status === 'completed') {
