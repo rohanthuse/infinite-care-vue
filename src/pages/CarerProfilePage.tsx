@@ -379,18 +379,47 @@ const CarerProfilePage: React.FC = () => {
                       <div className="space-y-4">
                         {documents.map((doc) => (
                           <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                            <div>
-                              <p className="font-semibold text-gray-900">{doc.document_type}</p>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-semibold text-gray-900">
+                                  {doc.source_type === 'training_certification' ? doc.file_name : doc.document_type}
+                                </p>
+                                <Badge 
+                                  variant="outline" 
+                                  className={
+                                    doc.source_type === 'training_certification' 
+                                      ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                                      : 'bg-gray-50 text-gray-700 border-gray-200'
+                                  }
+                                >
+                                  {doc.source_type === 'training_certification' ? 'Training Certification' : 'Document'}
+                                </Badge>
+                              </div>
+                              {doc.source_type === 'training_certification' && doc.training_course_name && (
+                                <p className="text-sm text-blue-600 font-medium">
+                                  Course: {doc.training_course_name}
+                                </p>
+                              )}
                               <p className="text-sm text-gray-600">
-                                {doc.expiry_date ? `Expires: ${formatDate(doc.expiry_date)}` : 'No expiry date'}
+                                {doc.source_type === 'training_certification' && doc.completion_date
+                                  ? `Completed: ${formatDate(doc.completion_date)}`
+                                  : doc.expiry_date 
+                                    ? `Expires: ${formatDate(doc.expiry_date)}` 
+                                    : `Created: ${formatDate(doc.created_at)}`
+                                }
                               </p>
+                              {doc.file_size && (
+                                <p className="text-xs text-gray-500">Size: {doc.file_size}</p>
+                              )}
                             </div>
-                            <Badge 
-                              variant="outline" 
-                              className={doc.status === 'valid' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}
-                            >
-                              {doc.status}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <Badge 
+                                variant="outline" 
+                                className={doc.status === 'valid' || doc.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}
+                              >
+                                {doc.status}
+                              </Badge>
+                            </div>
                           </div>
                         ))}
                       </div>
