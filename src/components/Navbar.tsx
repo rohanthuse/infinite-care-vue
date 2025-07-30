@@ -95,7 +95,7 @@ const Navbar = () => {
             className="border-blue-600 text-blue-600 hover:bg-blue-50"
             onClick={handleCarerLogin}
           >
-            Carer Login
+            Staff Login
           </CustomButton>
           <CustomButton 
             variant="outline" 
@@ -162,7 +162,7 @@ const Navbar = () => {
                 handleCarerLogin();
               }}
             >
-              Carer Login
+              Staff Login
             </CustomButton>
             <CustomButton 
               className="w-full"
