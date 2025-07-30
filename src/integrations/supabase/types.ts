@@ -5977,6 +5977,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_current_staff_member: {
+        Args: { staff_id_param: string }
+        Returns: boolean
+      }
       is_thread_participant: {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: boolean
