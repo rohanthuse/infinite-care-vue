@@ -15,6 +15,10 @@ import { useCreateEventLog, useEventClients } from '@/data/hooks/useEventsLogs';
 import { useReportTypeOptions } from '@/hooks/useParameterOptions';
 import { useStaff } from '@/data/hooks/agreements';
 import { BodyMapSelector } from './BodyMapSelector';
+import { EnhancedStaffDetailsSection } from './EnhancedStaffDetailsSection';
+import { FollowUpSection } from './FollowUpSection';
+import { ImmediateActionsSection } from './ImmediateActionsSection';
+import { FileAttachmentsSection } from './FileAttachmentsSection';
 
 const eventLogSchema = z.object({
   client_id: z.string().min(1, 'Client is required'),
@@ -29,6 +33,22 @@ const eventLogSchema = z.object({
   event_date: z.string().min(1, 'Event date is required'),
   event_time: z.string().min(1, 'Event time is required'),
   recorded_by_staff_id: z.string().min(1, 'Recording staff member is required'),
+  // Staff involvement
+  staff_present: z.array(z.string()).optional(),
+  staff_aware: z.array(z.string()).optional(),
+  other_people_present: z.array(z.any()).optional(),
+  // Follow-up tracking
+  action_required: z.boolean().optional(),
+  follow_up_date: z.string().optional(),
+  follow_up_assigned_to: z.string().optional(),
+  follow_up_notes: z.string().optional(),
+  // Immediate actions
+  immediate_actions_taken: z.string().optional(),
+  investigation_required: z.boolean().optional(),
+  investigation_assigned_to: z.string().optional(),
+  expected_resolution_date: z.string().optional(),
+  // File attachments
+  attachments: z.array(z.any()).optional(),
 });
 
 type EventLogFormData = z.infer<typeof eventLogSchema>;
@@ -59,6 +79,22 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
       event_date: new Date().toISOString().split('T')[0],
       event_time: new Date().toTimeString().slice(0, 5),
       recorded_by_staff_id: '',
+      // Staff involvement
+      staff_present: [],
+      staff_aware: [],
+      other_people_present: [],
+      // Follow-up tracking
+      action_required: false,
+      follow_up_date: '',
+      follow_up_assigned_to: '',
+      follow_up_notes: '',
+      // Immediate actions
+      immediate_actions_taken: '',
+      investigation_required: false,
+      investigation_assigned_to: '',
+      expected_resolution_date: '',
+      // File attachments
+      attachments: [],
     },
   });
 
@@ -79,6 +115,19 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
         recorded_by_staff_id: data.recorded_by_staff_id,
         body_map_points: bodyMapPoints.length > 0 ? bodyMapPoints : undefined,
         branch_id: branchId !== 'global' ? branchId : undefined,
+        // Enhanced fields
+        staff_present: data.staff_present || [],
+        staff_aware: data.staff_aware || [],
+        other_people_present: data.other_people_present || [],
+        action_required: data.action_required || false,
+        follow_up_date: data.follow_up_date || undefined,
+        follow_up_assigned_to: data.follow_up_assigned_to || undefined,
+        follow_up_notes: data.follow_up_notes || undefined,
+        immediate_actions_taken: data.immediate_actions_taken || undefined,
+        investigation_required: data.investigation_required || false,
+        investigation_assigned_to: data.investigation_assigned_to || undefined,
+        expected_resolution_date: data.expected_resolution_date || undefined,
+        attachments: data.attachments || [],
       };
 
       await createEventLogMutation.mutateAsync(eventData);
@@ -411,6 +460,17 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
                   )}
                 />
               </div>
+
+              <Separator />
+
+              {/* Enhanced Sections */}
+              <EnhancedStaffDetailsSection form={form} staffList={staffList} />
+              
+              <FollowUpSection form={form} staffList={staffList} />
+              
+              <ImmediateActionsSection form={form} staffList={staffList} />
+              
+              <FileAttachmentsSection form={form} />
 
               <Separator />
 

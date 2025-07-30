@@ -47,6 +47,19 @@ export interface CreateEventLogData {
   recorded_by_staff_id: string;
   body_map_points?: any;
   branch_id?: string;
+  // Enhanced fields
+  staff_present?: string[];
+  staff_aware?: string[];
+  other_people_present?: any[];
+  action_required?: boolean;
+  follow_up_date?: string;
+  follow_up_assigned_to?: string;
+  follow_up_notes?: string;
+  immediate_actions_taken?: string;
+  investigation_required?: boolean;
+  investigation_assigned_to?: string;
+  expected_resolution_date?: string;
+  attachments?: any[];
 }
 
 // Fetch events logs for a specific branch

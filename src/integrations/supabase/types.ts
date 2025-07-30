@@ -1530,64 +1530,130 @@ export type Database = {
       }
       client_events_logs: {
         Row: {
+          action_required: boolean | null
+          attachments: Json | null
           body_map_back_image_url: string | null
           body_map_front_image_url: string | null
           body_map_points: Json | null
           branch_id: string | null
           category: string | null
           client_id: string
+          contributing_factors: string[] | null
           created_at: string
           description: string | null
+          environmental_factors: string | null
           event_date: string | null
           event_time: string | null
           event_type: string
+          expected_resolution_date: string | null
+          external_reporting_required: boolean | null
+          family_notified: boolean | null
+          follow_up_assigned_to: string | null
+          follow_up_date: string | null
+          follow_up_notes: string | null
+          gp_notified: boolean | null
           id: string
+          immediate_actions_taken: string | null
+          insurance_notified: boolean | null
+          investigation_assigned_to: string | null
+          investigation_required: boolean | null
+          lessons_learned: string | null
           location: string | null
+          notification_notes: string | null
+          other_people_present: Json | null
+          preventable: boolean | null
           recorded_by_staff_id: string | null
           reporter: string
+          risk_level: string | null
           severity: string
+          staff_aware: string[] | null
+          staff_present: string[] | null
           status: string
           title: string
           updated_at: string
         }
         Insert: {
+          action_required?: boolean | null
+          attachments?: Json | null
           body_map_back_image_url?: string | null
           body_map_front_image_url?: string | null
           body_map_points?: Json | null
           branch_id?: string | null
           category?: string | null
           client_id: string
+          contributing_factors?: string[] | null
           created_at?: string
           description?: string | null
+          environmental_factors?: string | null
           event_date?: string | null
           event_time?: string | null
           event_type: string
+          expected_resolution_date?: string | null
+          external_reporting_required?: boolean | null
+          family_notified?: boolean | null
+          follow_up_assigned_to?: string | null
+          follow_up_date?: string | null
+          follow_up_notes?: string | null
+          gp_notified?: boolean | null
           id?: string
+          immediate_actions_taken?: string | null
+          insurance_notified?: boolean | null
+          investigation_assigned_to?: string | null
+          investigation_required?: boolean | null
+          lessons_learned?: string | null
           location?: string | null
+          notification_notes?: string | null
+          other_people_present?: Json | null
+          preventable?: boolean | null
           recorded_by_staff_id?: string | null
           reporter: string
+          risk_level?: string | null
           severity?: string
+          staff_aware?: string[] | null
+          staff_present?: string[] | null
           status?: string
           title: string
           updated_at?: string
         }
         Update: {
+          action_required?: boolean | null
+          attachments?: Json | null
           body_map_back_image_url?: string | null
           body_map_front_image_url?: string | null
           body_map_points?: Json | null
           branch_id?: string | null
           category?: string | null
           client_id?: string
+          contributing_factors?: string[] | null
           created_at?: string
           description?: string | null
+          environmental_factors?: string | null
           event_date?: string | null
           event_time?: string | null
           event_type?: string
+          expected_resolution_date?: string | null
+          external_reporting_required?: boolean | null
+          family_notified?: boolean | null
+          follow_up_assigned_to?: string | null
+          follow_up_date?: string | null
+          follow_up_notes?: string | null
+          gp_notified?: boolean | null
           id?: string
+          immediate_actions_taken?: string | null
+          insurance_notified?: boolean | null
+          investigation_assigned_to?: string | null
+          investigation_required?: boolean | null
+          lessons_learned?: string | null
           location?: string | null
+          notification_notes?: string | null
+          other_people_present?: Json | null
+          preventable?: boolean | null
           recorded_by_staff_id?: string | null
           reporter?: string
+          risk_level?: string | null
           severity?: string
+          staff_aware?: string[] | null
+          staff_present?: string[] | null
           status?: string
           title?: string
           updated_at?: string
