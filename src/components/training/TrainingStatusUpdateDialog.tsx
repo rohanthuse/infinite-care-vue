@@ -81,7 +81,7 @@ export function TrainingStatusUpdateDialog({
               <TabsTrigger value="status">Status</TabsTrigger>
               <TabsTrigger value="progress">Progress</TabsTrigger>
               <TabsTrigger value="notes">Notes</TabsTrigger>
-              <TabsTrigger value="evidence">Evidence</TabsTrigger>
+              <TabsTrigger value="evidence">Certification</TabsTrigger>
             </TabsList>
 
             <TabsContent value="status" className="space-y-4">
@@ -252,9 +252,9 @@ export function TrainingStatusUpdateDialog({
               <div className="space-y-4">
                 <div className="text-center p-8 border-2 border-dashed rounded-lg">
                   <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-2">Upload Evidence</p>
+                  <p className="text-muted-foreground mb-2">Upload Certification</p>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Upload certificates, screenshots, or other evidence of your training completion
+                    Upload certificates, screenshots, or other certification documents of your training completion
                   </p>
                   <Button type="button" variant="outline">
                     Choose Files
@@ -263,7 +263,7 @@ export function TrainingStatusUpdateDialog({
 
                 {training.evidence_files && training.evidence_files.length > 0 && (
                   <div className="space-y-2">
-                    <Label>Uploaded Evidence</Label>
+                    <Label>Uploaded Certifications</Label>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {training.evidence_files.map((file: any, index: number) => (
                         <div key={index} className="p-3 border rounded-lg flex items-center gap-2">
