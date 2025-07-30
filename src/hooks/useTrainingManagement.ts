@@ -3,14 +3,17 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { TrainingCourse } from "./useTrainingCourses";
+import { useBranchStaff } from "./useBranchStaff";
 
 export const useTrainingManagement = (branchId: string) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: branchStaff } = useBranchStaff(branchId);
 
   const createCourseMutation = useMutation({
     mutationFn: async (courseData: Omit<TrainingCourse, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
+      // First, create the training course
+      const { data: newCourse, error: courseError } = await supabase
         .from('training_courses')
         .insert({
           ...courseData,
@@ -19,14 +22,39 @@ export const useTrainingManagement = (branchId: string) => {
         .select()
         .single();
 
-      if (error) throw error;
-      return data;
+      if (courseError) throw courseError;
+
+      // Then, automatically assign it to all active staff in the branch
+      if (branchStaff && branchStaff.length > 0) {
+        const trainingRecords = branchStaff.map(staff => ({
+          staff_id: staff.id,
+          training_course_id: newCourse.id,
+          branch_id: branchId,
+          status: 'not-started' as const,
+          assigned_date: new Date().toISOString().split('T')[0]
+        }));
+
+        const { error: assignmentError } = await supabase
+          .from('staff_training_records')
+          .insert(trainingRecords);
+
+        if (assignmentError) {
+          console.warn('Failed to auto-assign training to staff:', assignmentError);
+          // Don't throw here - course was created successfully
+        }
+      }
+
+      return newCourse;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['training-courses', branchId] });
+      queryClient.invalidateQueries({ queryKey: ['staff-training-records', branchId] });
+      queryClient.invalidateQueries({ queryKey: ['carer-training'] });
+      
+      const staffCount = branchStaff?.length || 0;
       toast({
         title: "Training course created",
-        description: "New training course has been created successfully.",
+        description: `New training course has been created and assigned to ${staffCount} staff members.`,
       });
     },
     onError: (error) => {
