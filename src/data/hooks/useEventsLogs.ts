@@ -30,6 +30,34 @@ export interface EventLog {
   client_last_name?: string;
   // Staff information
   recorded_by_staff_name?: string;
+  // Enhanced fields
+  staff_present?: string[];
+  staff_aware?: string[];
+  other_people_present?: any[];
+  action_required?: boolean;
+  follow_up_date?: string;
+  follow_up_assigned_to?: string;
+  follow_up_notes?: string;
+  immediate_actions_taken?: string;
+  investigation_required?: boolean;
+  investigation_assigned_to?: string;
+  expected_resolution_date?: string;
+  lessons_learned?: string;
+  risk_level?: string;
+  contributing_factors?: string[];
+  environmental_factors?: string;
+  preventable?: boolean;
+  similar_incidents?: string;
+  family_notified?: boolean;
+  family_notification_date?: string;
+  family_notification_method?: string;
+  gp_notified?: boolean;
+  gp_notification_date?: string;
+  insurance_notified?: boolean;
+  insurance_notification_date?: string;
+  external_reporting_required?: boolean;
+  external_reporting_details?: string;
+  attachments?: any[];
 }
 
 export interface CreateEventLogData {

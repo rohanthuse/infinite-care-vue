@@ -5,9 +5,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertTriangle, Calendar, Clock, MapPin, User } from 'lucide-react';
 import { EventLog } from '@/data/hooks/useEventsLogs';
 import { BodyMapViewer } from './BodyMapViewer';
+import { EventStaffDetailsView } from './EventStaffDetailsView';
+import { EventFollowUpView } from './EventFollowUpView';
+import { EventActionsView } from './EventActionsView';
+import { EventRiskAssessmentView } from './EventRiskAssessmentView';
+import { EventComplianceView } from './EventComplianceView';
+import { EventAttachmentsView } from './EventAttachmentsView';
 
 interface EventDetailsDialogProps {
   event: EventLog | null;
@@ -41,7 +48,7 @@ export function EventDetailsDialog({ event, open, onOpenChange, onEdit }: EventD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-orange-500" />
@@ -140,20 +147,87 @@ export function EventDetailsDialog({ event, open, onOpenChange, onEdit }: EventD
             </>
           )}
 
-          {/* Body Map Points */}
-          {event.body_map_points && Array.isArray(event.body_map_points) && event.body_map_points.length > 0 && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <h4 className="font-medium text-sm">Body Map</h4>
-                <BodyMapViewer 
-                  bodyMapPoints={event.body_map_points}
-                  frontImageUrl={event.body_map_front_image_url}
-                  backImageUrl={event.body_map_back_image_url}
-                />
-              </div>
-            </>
-          )}
+          {/* Enhanced Details in Tabs */}
+          <Separator />
+          
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="staff">Staff</TabsTrigger>
+              <TabsTrigger value="actions">Actions</TabsTrigger>
+              <TabsTrigger value="risk">Risk</TabsTrigger>
+              <TabsTrigger value="compliance">Compliance</TabsTrigger>
+              <TabsTrigger value="attachments">Files</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="overview" className="space-y-4 mt-4">
+              {/* Body Map Points */}
+              {event.body_map_points && Array.isArray(event.body_map_points) && event.body_map_points.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-medium text-sm">Body Map</h4>
+                  <BodyMapViewer 
+                    bodyMapPoints={event.body_map_points}
+                    frontImageUrl={event.body_map_front_image_url}
+                    backImageUrl={event.body_map_back_image_url}
+                  />
+                </div>
+              )}
+
+              {/* Follow-up Requirements */}
+              <EventFollowUpView
+                actionRequired={event.action_required}
+                followUpDate={event.follow_up_date}
+                followUpAssignedTo={event.follow_up_assigned_to}
+                followUpNotes={event.follow_up_notes}
+              />
+            </TabsContent>
+            
+            <TabsContent value="staff" className="mt-4">
+              <EventStaffDetailsView
+                staffPresent={event.staff_present}
+                staffAware={event.staff_aware}
+                otherPeoplePresent={event.other_people_present}
+              />
+            </TabsContent>
+            
+            <TabsContent value="actions" className="mt-4">
+              <EventActionsView
+                immediateActionsTaken={event.immediate_actions_taken}
+                investigationRequired={event.investigation_required}
+                investigationAssignedTo={event.investigation_assigned_to}
+                expectedResolutionDate={event.expected_resolution_date}
+                lessonsLearned={event.lessons_learned}
+              />
+            </TabsContent>
+            
+            <TabsContent value="risk" className="mt-4">
+              <EventRiskAssessmentView
+                riskLevel={event.risk_level}
+                contributingFactors={event.contributing_factors}
+                environmentalFactors={event.environmental_factors}
+                preventable={event.preventable}
+                similarIncidents={event.similar_incidents}
+              />
+            </TabsContent>
+            
+            <TabsContent value="compliance" className="mt-4">
+              <EventComplianceView
+                familyNotified={event.family_notified}
+                familyNotificationDate={event.family_notification_date}
+                familyNotificationMethod={event.family_notification_method}
+                gpNotified={event.gp_notified}
+                gpNotificationDate={event.gp_notification_date}
+                insuranceNotified={event.insurance_notified}
+                insuranceNotificationDate={event.insurance_notification_date}
+                externalReportingRequired={event.external_reporting_required}
+                externalReportingDetails={event.external_reporting_details}
+              />
+            </TabsContent>
+            
+            <TabsContent value="attachments" className="mt-4">
+              <EventAttachmentsView attachments={event.attachments} />
+            </TabsContent>
+          </Tabs>
         </div>
 
         <DialogFooter className="flex justify-between">
