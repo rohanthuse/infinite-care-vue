@@ -460,13 +460,6 @@ export type Database = {
             referencedRelation: "branches"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "annual_leave_calendar_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "staff"
-            referencedColumns: ["id"]
-          },
         ]
       }
       attendance_records: {
