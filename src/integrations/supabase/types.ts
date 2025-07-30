@@ -4614,15 +4614,28 @@ export type Database = {
           assigned_date: string | null
           branch_id: string
           certificate_url: string | null
+          competency_assessment: Json | null
           completion_date: string | null
           created_at: string
+          evidence_files: Json | null
           expiry_date: string | null
           id: string
+          last_accessed: string | null
           notes: string | null
+          progress_percentage: number | null
+          reflection_notes: string | null
+          renewal_requested_at: string | null
+          retake_count: number | null
           score: number | null
           staff_id: string
           status: string
+          status_extended:
+            | Database["public"]["Enums"]["training_status_extended"]
+            | null
+          supervisor_comments: string | null
+          time_spent_minutes: number | null
           training_course_id: string
+          training_notes: string | null
           updated_at: string
         }
         Insert: {
@@ -4630,15 +4643,28 @@ export type Database = {
           assigned_date?: string | null
           branch_id: string
           certificate_url?: string | null
+          competency_assessment?: Json | null
           completion_date?: string | null
           created_at?: string
+          evidence_files?: Json | null
           expiry_date?: string | null
           id?: string
+          last_accessed?: string | null
           notes?: string | null
+          progress_percentage?: number | null
+          reflection_notes?: string | null
+          renewal_requested_at?: string | null
+          retake_count?: number | null
           score?: number | null
           staff_id: string
           status?: string
+          status_extended?:
+            | Database["public"]["Enums"]["training_status_extended"]
+            | null
+          supervisor_comments?: string | null
+          time_spent_minutes?: number | null
           training_course_id: string
+          training_notes?: string | null
           updated_at?: string
         }
         Update: {
@@ -4646,15 +4672,28 @@ export type Database = {
           assigned_date?: string | null
           branch_id?: string
           certificate_url?: string | null
+          competency_assessment?: Json | null
           completion_date?: string | null
           created_at?: string
+          evidence_files?: Json | null
           expiry_date?: string | null
           id?: string
+          last_accessed?: string | null
           notes?: string | null
+          progress_percentage?: number | null
+          reflection_notes?: string | null
+          renewal_requested_at?: string | null
+          retake_count?: number | null
           score?: number | null
           staff_id?: string
           status?: string
+          status_extended?:
+            | Database["public"]["Enums"]["training_status_extended"]
+            | null
+          supervisor_comments?: string | null
+          time_spent_minutes?: number | null
           training_course_id?: string
+          training_notes?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -5996,6 +6035,15 @@ export type Database = {
         | "rejected"
         | "expired"
         | "revoked"
+      training_status_extended:
+        | "not-started"
+        | "in-progress"
+        | "completed"
+        | "expired"
+        | "paused"
+        | "under-review"
+        | "failed"
+        | "renewal-required"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -6140,6 +6188,16 @@ export const Constants = {
         "rejected",
         "expired",
         "revoked",
+      ],
+      training_status_extended: [
+        "not-started",
+        "in-progress",
+        "completed",
+        "expired",
+        "paused",
+        "under-review",
+        "failed",
+        "renewal-required",
       ],
     },
   },

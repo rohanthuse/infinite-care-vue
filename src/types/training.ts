@@ -1,5 +1,5 @@
 
-export type TrainingStatus = 'completed' | 'in-progress' | 'expired' | 'not-started';
+export type TrainingStatus = 'completed' | 'in-progress' | 'expired' | 'not-started' | 'paused' | 'under-review' | 'failed' | 'renewal-required';
 export type TrainingCategory = 'core' | 'mandatory' | 'specialized' | 'optional';
 
 export interface Training {

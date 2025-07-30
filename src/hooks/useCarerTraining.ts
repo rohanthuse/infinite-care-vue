@@ -6,11 +6,21 @@ import { useCarerProfile } from "@/hooks/useCarerProfile";
 export interface CarerTrainingRecord {
   id: string;
   training_course_id: string;
-  status: 'not-started' | 'in-progress' | 'completed' | 'expired';
+  status: 'not-started' | 'in-progress' | 'completed' | 'expired' | 'paused' | 'under-review' | 'failed' | 'renewal-required';
   completion_date: string | null;
   expiry_date: string | null;
   score: number | null;
   assigned_date: string;
+  progress_percentage?: number | null;
+  time_spent_minutes?: number | null;
+  last_accessed?: string | null;
+  training_notes?: string | null;
+  reflection_notes?: string | null;
+  evidence_files?: any[] | null;
+  retake_count?: number | null;
+  renewal_requested_at?: string | null;
+  supervisor_comments?: string | null;
+  competency_assessment?: any | null;
   training_course: {
     id: string;
     title: string;

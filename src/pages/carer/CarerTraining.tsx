@@ -1,6 +1,5 @@
-
 import React, { useState } from "react";
-import { Search, Filter, GraduationCap, CheckCircle, Clock, Calendar, ChevronRight, Download, Award, Loader2, PlayCircle, BookOpen } from "lucide-react";
+import { Search, Filter, GraduationCap, CheckCircle, Clock, Calendar, ChevronRight, Download, Award, Loader2, PlayCircle, BookOpen, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -14,9 +13,8 @@ import { toast } from "sonner";
 import { useCarerTraining } from "@/hooks/useCarerTraining";
 import { useCarerTrainingActions } from "@/hooks/useCarerTrainingActions";
 import { useCarerProfile } from "@/hooks/useCarerProfile";
-
-type TrainingStatus = 'completed' | 'in-progress' | 'expired' | 'not-started';
-type TrainingCategory = 'core' | 'mandatory' | 'specialized' | 'optional';
+import { TrainingStatusUpdateDialog } from "@/components/training/TrainingStatusUpdateDialog";
+import { TrainingStatus, TrainingCategory } from "@/types/training";
 
 const CarerTraining: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,6 +22,7 @@ const CarerTraining: React.FC = () => {
   const [selectedTraining, setSelectedTraining] = useState<any>(null);
   const [selectedStatus, setSelectedStatus] = useState<TrainingStatus | 'all'>('all');
   const [showActionDialog, setShowActionDialog] = useState(false);
+  const [statusUpdateDialogOpen, setStatusUpdateDialogOpen] = useState(false);
   const [actionType, setActionType] = useState<'start' | 'complete' | null>(null);
   const [completionScore, setCompletionScore] = useState("");
 
@@ -106,6 +105,17 @@ const CarerTraining: React.FC = () => {
     }
   };
 
+  // Handle enhanced training status update
+  const handleEnhancedTrainingUpdate = async (updates: any) => {
+    try {
+      await updateTrainingStatus.mutateAsync(updates);
+      setStatusUpdateDialogOpen(false);
+      setSelectedTraining(null);
+    } catch (error) {
+      // Error handling is done in the hook
+    }
+  };
+
   // Get the appropriate status badge class
   const getStatusColor = (status: TrainingStatus): string => {
     switch (status) {
@@ -113,6 +123,10 @@ const CarerTraining: React.FC = () => {
       case "in-progress": return "bg-blue-100 text-blue-700";
       case "expired": return "bg-red-100 text-red-700";
       case "not-started": return "bg-gray-100 text-gray-700";
+      case "paused": return "bg-yellow-100 text-yellow-700";
+      case "under-review": return "bg-purple-100 text-purple-700";
+      case "failed": return "bg-red-100 text-red-700";
+      case "renewal-required": return "bg-orange-100 text-orange-700";
       default: return "bg-gray-100 text-gray-700";
     }
   };
@@ -129,12 +143,17 @@ const CarerTraining: React.FC = () => {
   
   // Calculate training progress percentage
   const calculateTrainingProgress = (record: any): number => {
+    if (record.progress_percentage !== null && record.progress_percentage !== undefined) {
+      return record.progress_percentage;
+    }
+    
     switch (record.status) {
       case "completed": return 100;
       case "in-progress": 
         return record.score ? (record.score / record.training_course.max_score) * 100 : 60;
       case "expired": return 100; // It was completed but expired
       case "not-started": return 0;
+      case "paused": return record.score ? (record.score / record.training_course.max_score) * 100 : 30;
       default: return 0;
     }
   };
@@ -276,6 +295,10 @@ const CarerTraining: React.FC = () => {
               <SelectItem value="in-progress">In Progress</SelectItem>
               <SelectItem value="expired">Expired</SelectItem>
               <SelectItem value="not-started">Not Started</SelectItem>
+              <SelectItem value="paused">Paused</SelectItem>
+              <SelectItem value="under-review">Under Review</SelectItem>
+              <SelectItem value="failed">Failed</SelectItem>
+              <SelectItem value="renewal-required">Renewal Required</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -365,6 +388,19 @@ const CarerTraining: React.FC = () => {
                       <span>Assigned {formatDate(record.assigned_date)}</span>
                     </div>
                     <div className="flex gap-2">
+                      <Button 
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedTraining(record);
+                          setStatusUpdateDialogOpen(true);
+                        }}
+                        disabled={isUpdating}
+                      >
+                        <Settings className="h-4 w-4 mr-1" />
+                        Update
+                      </Button>
                       {record.status === 'not-started' && (
                         <Button 
                           size="sm" 
@@ -411,7 +447,7 @@ const CarerTraining: React.FC = () => {
         )}
       </div>
       
-      {/* Action Dialog */}
+      {/* Basic Action Dialog */}
       <Dialog open={showActionDialog} onOpenChange={setShowActionDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -464,6 +500,20 @@ const CarerTraining: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Enhanced Training Status Update Dialog */}
+      {selectedTraining && (
+        <TrainingStatusUpdateDialog
+          isOpen={statusUpdateDialogOpen}
+          onClose={() => {
+            setStatusUpdateDialogOpen(false);
+            setSelectedTraining(null);
+          }}
+          training={selectedTraining}
+          onUpdate={handleEnhancedTrainingUpdate}
+          isUpdating={isUpdating}
+        />
+      )}
     </div>
   );
 };

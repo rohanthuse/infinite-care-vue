@@ -12,11 +12,19 @@ export const useCarerTrainingActions = () => {
     mutationFn: async ({ 
       recordId, 
       status, 
-      score 
+      score,
+      progress_percentage,
+      time_spent_minutes,
+      training_notes,
+      reflection_notes
     }: { 
       recordId: string; 
-      status: 'in-progress' | 'completed'; 
+      status: 'in-progress' | 'completed' | 'paused' | 'under-review' | 'failed' | 'renewal-required'; 
       score?: number;
+      progress_percentage?: number;
+      time_spent_minutes?: number;
+      training_notes?: string;
+      reflection_notes?: string;
     }) => {
       if (!carerProfile?.id) {
         throw new Error('Carer profile not found');
@@ -26,6 +34,22 @@ export const useCarerTrainingActions = () => {
         status,
         updated_at: new Date().toISOString(),
       };
+
+      if (progress_percentage !== undefined) {
+        updateData.progress_percentage = progress_percentage;
+      }
+      
+      if (time_spent_minutes !== undefined) {
+        updateData.time_spent_minutes = time_spent_minutes;
+      }
+      
+      if (training_notes !== undefined) {
+        updateData.training_notes = training_notes;
+      }
+      
+      if (reflection_notes !== undefined) {
+        updateData.reflection_notes = reflection_notes;
+      }
 
       if (status === 'completed') {
         updateData.completion_date = new Date().toISOString().split('T')[0];
