@@ -5796,6 +5796,10 @@ export type Database = {
           details: Json
         }[]
       }
+      fix_staff_auth_links: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       generate_invite_token: {
         Args: Record<PropertyKey, never>
         Returns: string

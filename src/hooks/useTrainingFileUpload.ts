@@ -18,6 +18,12 @@ export const useTrainingFileUpload = () => {
     setProgress(0);
 
     try {
+      // Check authentication first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('You must be logged in to upload training certificates');
+      }
+
       // Validate file size (default 10MB for training files)
       const maxSize = (options.maxSizeInMB || 10) * 1024 * 1024;
       if (file.size > maxSize) {
@@ -38,10 +44,22 @@ export const useTrainingFileUpload = () => {
         throw new Error('File type not allowed. Please upload PDF, image, or document files.');
       }
 
+      // Verify staff access permissions
+      const { data: staffData, error: staffError } = await supabase
+        .from('staff')
+        .select('id, auth_user_id')
+        .eq('id', options.staffId)
+        .eq('auth_user_id', user.id)
+        .single();
+
+      if (staffError || !staffData) {
+        throw new Error('You can only upload certificates for your own training records');
+      }
+
       // Generate unique file path for training evidence
       const fileExt = file.name.split('.').pop();
       const fileName = `training_${options.trainingRecordId}_${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `staff-documents/training-evidence/${options.staffId}/${fileName}`;
+      const filePath = `training-evidence/${options.staffId}/${fileName}`;
 
       setProgress(25);
 
@@ -50,7 +68,10 @@ export const useTrainingFileUpload = () => {
         .from('staff-documents')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
 
       setProgress(75);
 
