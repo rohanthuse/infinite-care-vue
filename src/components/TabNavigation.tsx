@@ -41,7 +41,7 @@ const primaryTabs: TabItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", value: "dashboard", description: "Branch overview" },
   { icon: Calendar, label: "Bookings", value: "bookings", description: "Manage appointments" },
   { icon: Users, label: "Clients", value: "clients", description: "Client information" },
-  { icon: Users, label: "Carers", value: "carers", description: "Carer management" },
+  { icon: Users, label: "Staff", value: "carers", description: "Staff management" },
   { icon: ClipboardList, label: "Care Plan", value: "care-plan", description: "Patient care plans" },
   { icon: Star, label: "Reviews", value: "reviews", description: "Client feedback" },
   { icon: MessageSquare, label: "Communication", value: "communication", description: "Messages & emails" },
@@ -167,9 +167,9 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                       <FileSignature className="mr-2 h-4 w-4" />
                       <span>New Agreement</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleQuickAddAction("New Carer")} className="cursor-pointer">
+                    <DropdownMenuItem onClick={() => handleQuickAddAction("New Staff")} className="cursor-pointer">
                       <UserRoundPlus className="mr-2 h-4 w-4" />
-                      <span>New Carer</span>
+                      <span>New Staff</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -452,9 +452,9 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                       <FileSignature className="mr-2 h-4 w-4" />
                       <span>New Agreement</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleQuickAddAction("New Carer")} className="cursor-pointer">
+                    <DropdownMenuItem onClick={() => handleQuickAddAction("New Staff")} className="cursor-pointer">
                       <UserRoundPlus className="mr-2 h-4 w-4" />
-                      <span>New Carer</span>
+                      <span>New Staff</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => handleQuickAddAction("Upload Document")} className="cursor-pointer">

@@ -28,7 +28,7 @@ export function CarersTab({ branchId, branchName }: CarersTabProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Carers Management</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Staff Management</h2>
           <p className="text-gray-600">Manage your care team and recruitment</p>
         </div>
       </div>

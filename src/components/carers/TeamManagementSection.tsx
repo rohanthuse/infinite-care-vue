@@ -119,7 +119,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         });
       }
       
-      toast.success(`Status updated for ${carerIds.length} carer${carerIds.length > 1 ? 's' : ''}`, {
+      toast.success(`Status updated for ${carerIds.length} staff member${carerIds.length > 1 ? 's' : ''}`, {
         description: reason ? `Reason: ${reason}` : undefined
       });
       
@@ -127,7 +127,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
       setSelectedCarers([]);
     } catch (error) {
       toast.error("Failed to update status", {
-        description: "Some carers may not have been updated successfully."
+        description: "Some staff members may not have been updated successfully."
       });
     }
   };
@@ -197,7 +197,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
           </div>
           <Button disabled className="bg-blue-600 hover:bg-blue-700">
             <Plus className="h-4 w-4 mr-2" />
-            Add Carer
+            Add Staff
           </Button>
         </div>
         <LoadingSkeleton />
@@ -215,7 +215,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         </div>
         <Button onClick={() => setShowAddDialog(true)} className="bg-blue-600 hover:bg-blue-700">
           <Plus className="h-4 w-4 mr-2" />
-          Add Carer
+          Add Staff
         </Button>
       </div>
 
@@ -227,7 +227,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Search carers by name, email, or specialization..."
+            placeholder="Search staff by name, email, or specialization..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -345,11 +345,11 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         {/* Empty State */}
         {filteredCarers.length === 0 && (
           <div className="text-center py-12">
-            <div className="text-gray-400 text-lg mb-2">No carers found</div>
+            <div className="text-gray-400 text-lg mb-2">No staff found</div>
             <p className="text-gray-600">
               {searchTerm || statusFilter !== "all" || specializationFilter !== "all"
                 ? "Try adjusting your search criteria"
-                : "Get started by adding your first carer"}
+                : "Get started by adding your first staff member"}
             </p>
           </div>
         )}
@@ -358,7 +358,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         {filteredCarers.length > 0 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
             <div className="text-sm text-gray-700">
-              Showing {startIndex + 1} to {Math.min(endIndex, filteredCarers.length)} of {filteredCarers.length} carers
+              Showing {startIndex + 1} to {Math.min(endIndex, filteredCarers.length)} of {filteredCarers.length} staff
             </div>
             <Pagination>
               <PaginationContent>
@@ -427,7 +427,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
       <AlertDialog open={!!deletingCarer} onOpenChange={(open) => !open && setDeletingCarer(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Carer</AlertDialogTitle>
+            <AlertDialogTitle>Delete Staff Member</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete {deletingCarer?.first_name} {deletingCarer?.last_name}? 
               This action cannot be undone.
