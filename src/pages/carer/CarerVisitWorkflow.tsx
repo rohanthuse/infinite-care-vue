@@ -43,6 +43,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { SignatureCanvas } from "@/components/ui/signature-canvas";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import VisitCarePlanUpdate from "@/components/carer/VisitCarePlanUpdate";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -420,12 +421,15 @@ const CarerVisitWorkflow = () => {
         setActiveTab("events");
         break;
       case 6:
-        setActiveTab("notes");
+        setActiveTab("care-plan");
         break;
       case 7:
-        setActiveTab("sign-off");
+        setActiveTab("notes");
         break;
       case 8:
+        setActiveTab("sign-off");
+        break;
+      case 9:
         setActiveTab("complete");
         break;
       default:
@@ -453,14 +457,17 @@ const CarerVisitWorkflow = () => {
       case "events":
         setCurrentStep(5);
         break;
-      case "notes":
+      case "care-plan":
         setCurrentStep(6);
         break;
-      case "sign-off":
+      case "notes":
         setCurrentStep(7);
         break;
-      case "complete":
+      case "sign-off":
         setCurrentStep(8);
+        break;
+      case "complete":
+        setCurrentStep(9);
         break;
       default:
         break;
@@ -470,13 +477,13 @@ const CarerVisitWorkflow = () => {
   const handleNextStep = () => {
     // Auto-save visit progress
     if (visitRecord) {
-      updateVisitRecord.mutate({
-        id: visitRecord.id,
-        updates: {
-          completion_percentage: Math.round((currentStep / 8) * 100),
-          visit_notes: notes,
-        }
-      });
+        updateVisitRecord.mutate({
+          id: visitRecord.id,
+          updates: {
+            completion_percentage: Math.round((currentStep / 9) * 100),
+            visit_notes: notes,
+          }
+        });
     }
 
     // Validate current step
@@ -500,7 +507,7 @@ const CarerVisitWorkflow = () => {
       }
     }
     
-    if (currentStep === 7 && !clientSignature) {
+    if (currentStep === 8 && !clientSignature) {
       toast.error("Client signature is required");
       return;
     }
@@ -674,6 +681,12 @@ const CarerVisitWorkflow = () => {
               <div className="flex flex-col items-center gap-1">
                 <AlertCircle className="w-4 h-4" />
                 <span className="text-xs">Events</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="care-plan">
+              <div className="flex flex-col items-center gap-1">
+                <FileBarChart2 className="w-4 h-4" />
+                <span className="text-xs">Care Plan</span>
               </div>
             </TabsTrigger>
             <TabsTrigger value="notes">
@@ -1206,6 +1219,34 @@ const CarerVisitWorkflow = () => {
                     )}
                   </div>
                 </div>
+              </CardContent>
+              
+              <div className="border-t p-6 flex justify-between">
+                <Button variant="outline" onClick={handlePreviousStep}>
+                  Back
+                </Button>
+                <Button onClick={handleNextStep}>
+                  Next Step
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Care Plan Tab */}
+          <TabsContent value="care-plan" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileBarChart2 className="w-5 h-5" />
+                  Care Plan Updates
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <VisitCarePlanUpdate 
+                  clientId={currentAppointment.client_id}
+                  visitRecordId={visitRecord?.id}
+                />
               </CardContent>
               
               <div className="border-t p-6 flex justify-between">
