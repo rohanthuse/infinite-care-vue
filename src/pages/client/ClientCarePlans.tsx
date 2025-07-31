@@ -223,6 +223,22 @@ const ClientCarePlans = () => {
               </CardHeader>
 
               <CardContent className="pt-0">
+                {/* Action Required Notice for Approval */}
+                {requiresApproval && (
+                  <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg mb-4">
+                    <div className="flex items-center gap-2 text-orange-800 mb-2">
+                      <AlertCircle className="h-5 w-5" />
+                      <span className="font-semibold">Your Approval Required</span>
+                    </div>
+                    <p className="text-sm text-orange-700 mb-3">
+                      Your care team has prepared and approved this comprehensive care plan for you. Please review all sections below including goals, medications, and activities, then click "Sign Care Plan" to provide your digital signature and approval.
+                    </p>
+                    <div className="text-xs text-orange-600 font-medium">
+                      ✓ Plan reviewed by healthcare team  •  ⏳ Awaiting your signature
+                    </div>
+                  </div>
+                )}
+
                 {/* Care Plan Summary */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div className="flex items-center gap-2">
