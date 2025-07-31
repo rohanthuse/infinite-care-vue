@@ -30,14 +30,18 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+interface AdminBranch {
+  branch_id: string;
+  branch_name: string;
+}
+
 interface AdminData {
   id: string;
   email: string;
   first_name?: string;
   last_name?: string;
   role: string;
-  branch_name?: string;
-  branch_id?: string;
+  branches: AdminBranch[];
   created_at: string;
   has_permissions: boolean;
 }
@@ -106,23 +110,40 @@ export const AdminsTable = () => {
 
       console.log('Admin permissions data:', permissions);
 
-      // Transform and combine data
-      const transformedData: AdminData[] = adminBranches.map((item: any) => {
+      // Group admins by their ID to avoid duplicates
+      const adminMap = new Map<string, AdminData>();
+
+      adminBranches.forEach((item: any) => {
         const profile = profiles?.find(p => p.id === item.admin_id);
-        return {
-          id: item.admin_id,
-          email: profile?.email || 'Unknown',
-          first_name: profile?.first_name,
-          last_name: profile?.last_name,
-          role: 'branch_admin',
-          branch_name: item.branches?.name || 'No Branch',
-          branch_id: item.branch_id,
-          created_at: new Date().toISOString(),
-          has_permissions: permissions?.some(p => p.admin_id === item.admin_id) || false,
-        };
+        const adminId = item.admin_id;
+        
+        if (adminMap.has(adminId)) {
+          // Add branch to existing admin
+          const existingAdmin = adminMap.get(adminId)!;
+          existingAdmin.branches.push({
+            branch_id: item.branch_id,
+            branch_name: item.branches?.name || 'No Branch'
+          });
+        } else {
+          // Create new admin entry
+          adminMap.set(adminId, {
+            id: adminId,
+            email: profile?.email || 'Unknown',
+            first_name: profile?.first_name,
+            last_name: profile?.last_name,
+            role: 'branch_admin',
+            branches: [{
+              branch_id: item.branch_id,
+              branch_name: item.branches?.name || 'No Branch'
+            }],
+            created_at: new Date().toISOString(),
+            has_permissions: permissions?.some(p => p.admin_id === adminId) || false,
+          });
+        }
       });
 
-      console.log('Transformed admin data:', transformedData);
+      const transformedData = Array.from(adminMap.values());
+      console.log('Grouped admin data:', transformedData);
       return transformedData;
     },
     enabled: !!currentUser && (currentUser.role === 'super_admin' || currentUser.role === 'branch_admin'),
@@ -175,7 +196,7 @@ export const AdminsTable = () => {
   const filteredAdmins = admins.filter((admin) =>
     admin.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     `${admin.first_name} ${admin.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    admin.branch_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    admin.branches.some(branch => branch.branch_name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Show loading while authenticating or fetching data
@@ -301,9 +322,18 @@ export const AdminsTable = () => {
                   </TableCell>
                   <TableCell>{admin.email}</TableCell>
                   <TableCell>
-                    <span className="text-sm font-medium">
-                      {admin.branch_name}
-                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {admin.branches.map((branch, index) => (
+                        <Badge key={branch.branch_id} variant="outline" className="text-xs">
+                          {branch.branch_name}
+                        </Badge>
+                      ))}
+                      {admin.branches.length > 1 && (
+                        <Badge variant="info" className="text-xs ml-1">
+                          {admin.branches.length} branches
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary" className="capitalize">
@@ -383,7 +413,7 @@ export const AdminsTable = () => {
             refetch(); // Refetch data when dialog closes
           }}
           adminId={selectedAdmin.id}
-          branchId={selectedAdmin.branch_id || ''}
+          branchId={selectedAdmin.branches[0]?.branch_id || ''}
           adminName={selectedAdmin.first_name && selectedAdmin.last_name 
             ? `${selectedAdmin.first_name} ${selectedAdmin.last_name}` 
             : selectedAdmin.email}
