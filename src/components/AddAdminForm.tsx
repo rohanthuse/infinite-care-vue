@@ -77,7 +77,7 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('branches')
-        .select('id, name')
+        .select('id, name, address')
         .order('name');
       
       if (error) throw error;
@@ -191,8 +191,8 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="max-w-[800px] max-h-[85vh] flex flex-col">
+        <DialogHeader>
           <DialogTitle>Add New Branch Admin</DialogTitle>
           <DialogDescription>
             Create a new administrator account for a branch location with specific permissions.
@@ -201,7 +201,7 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
         
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
-            <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="basic" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 Basic Info
@@ -212,8 +212,8 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
               </TabsTrigger>
             </TabsList>
 
-            <div className="flex-1 min-h-0 overflow-hidden">
-              <TabsContent value="basic" className="space-y-4 mt-4 h-full overflow-y-auto">
+            <div className="flex-1 overflow-auto mt-4">
+              <TabsContent value="basic" className="space-y-4 m-0 pr-2">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="first_name">First Name *</Label>
@@ -312,24 +312,34 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
                       No branches available
                     </div>
                   ) : (
-                    <div className="border rounded-lg p-3 bg-gray-50/50 max-h-48 overflow-y-auto">
-                      <div className="space-y-3">
+                    <div className="border rounded-lg p-4 bg-muted/20 max-h-72 overflow-y-auto">
+                      <div className="space-y-4">
                         {branches.map((branch) => (
-                          <div key={branch.id} className="flex items-center space-x-3">
+                          <div key={branch.id} className="flex items-start space-x-3 p-2 rounded hover:bg-muted/30">
                             <Checkbox
                               id={branch.id}
                               checked={formData.branch_ids.includes(branch.id)}
                               onCheckedChange={(checked) => 
                                 handleBranchToggle(branch.id, checked as boolean)
                               }
+                              className="mt-1"
                             />
-                            <Label 
-                              htmlFor={branch.id}
-                              className="flex items-center gap-2 cursor-pointer flex-1 text-sm"
-                            >
-                              <Building2 className="h-4 w-4 text-gray-500" />
-                              {branch.name}
-                            </Label>
+                            <div className="flex-1 min-w-0">
+                              <Label 
+                                htmlFor={branch.id}
+                                className="text-sm font-medium cursor-pointer block"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                                  {branch.name}
+                                </div>
+                              </Label>
+                              {branch.address && (
+                                <p className="text-xs text-muted-foreground mt-1 ml-6">
+                                  {branch.address}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -344,77 +354,159 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
                 </div>
               </TabsContent>
 
-              <TabsContent value="permissions" className="mt-4 h-full overflow-y-auto">
-                <div className="space-y-6 pr-2 pb-4">
-                  {/* Branch Settings Section */}
-                  <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
-                    <h3 className="font-semibold text-gray-800 border-b pb-2">Branch Settings</h3>
-                    <div className="space-y-4">
-                      {renderPermissionSwitch('system', 'System')}
-                      {renderPermissionSwitch('finance', 'Finance')}
-                    </div>
-                  </div>
-
-                  {/* Care Plan Section */}
-                  <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
-                    <h3 className="font-semibold text-gray-800 border-b pb-2">Care Plan</h3>
-                    <div className="space-y-4">
-                      {renderPermissionSwitch('under_review_care_plan', 'Under Review Care Plan')}
-                      {renderPermissionSwitch('confirmed_care_plan', 'Confirmed Care Plan')}
-                    </div>
-                  </div>
-
-                  {/* Reviews & Third Party Section */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
-                      <h3 className="font-semibold text-gray-800 border-b pb-2">Reviews</h3>
-                      <div className="space-y-4">
-                        {renderPermissionSwitch('reviews', 'Reviews')}
+              <TabsContent value="permissions" className="space-y-6 m-0 pr-2">
+                {/* Branch Settings Section */}
+                <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
+                  <h3 className="font-semibold border-b pb-2">Branch Settings</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 rounded-lg border">
+                      <div>
+                        <Label htmlFor="system" className="font-medium">System</Label>
+                        <p className="text-sm text-muted-foreground">System administration access</p>
                       </div>
+                      <Switch
+                        id="system"
+                        checked={permissions.system}
+                        onCheckedChange={(checked) => handlePermissionChange('system', checked)}
+                      />
                     </div>
-                    <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
-                      <h3 className="font-semibold text-gray-800 border-b pb-2">Third Party</h3>
-                      <div className="space-y-4">
-                        {renderPermissionSwitch('third_party', 'Third Party')}
+                    <div className="flex items-center justify-between p-3 rounded-lg border">
+                      <div>
+                        <Label htmlFor="finance" className="font-medium">Finance</Label>
+                        <p className="text-sm text-muted-foreground">Financial data and operations</p>
                       </div>
+                      <Switch
+                        id="finance"
+                        checked={permissions.finance}
+                        onCheckedChange={(checked) => handlePermissionChange('finance', checked)}
+                      />
                     </div>
                   </div>
+                </div>
 
-                  {/* Branch Report Section */}
-                  <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
-                    <h3 className="font-semibold text-gray-800 border-b pb-2">Branch Report</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                      {renderPermissionSwitch('report_accounting', 'Accounting')}
-                      {renderPermissionSwitch('report_total_working_hours', 'Total Working Hours')}
-                      {renderPermissionSwitch('report_staff', 'Staff')}
-                      {renderPermissionSwitch('report_client', 'Client')}
-                      {renderPermissionSwitch('report_service', 'Service')}
+                {/* Care Plan Section */}
+                <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
+                  <h3 className="font-semibold border-b pb-2">Care Plan</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 rounded-lg border">
+                      <div>
+                        <Label htmlFor="under_review_care_plan" className="font-medium">Under Review Care Plan</Label>
+                        <p className="text-sm text-muted-foreground">Access to review pending care plans</p>
+                      </div>
+                      <Switch
+                        id="under_review_care_plan"
+                        checked={permissions.under_review_care_plan}
+                        onCheckedChange={(checked) => handlePermissionChange('under_review_care_plan', checked)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg border">
+                      <div>
+                        <Label htmlFor="confirmed_care_plan" className="font-medium">Confirmed Care Plan</Label>
+                        <p className="text-sm text-muted-foreground">Access to confirmed care plans</p>
+                      </div>
+                      <Switch
+                        id="confirmed_care_plan"
+                        checked={permissions.confirmed_care_plan}
+                        onCheckedChange={(checked) => handlePermissionChange('confirmed_care_plan', checked)}
+                      />
                     </div>
                   </div>
+                </div>
 
-                  {/* Accounting Section */}
-                  <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
-                    <h3 className="font-semibold text-gray-800 border-b pb-2">Accounting</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                      {renderPermissionSwitch('accounting_extra_time', 'Extra Time')}
-                      {renderPermissionSwitch('accounting_expense', 'Expense')}
-                      {renderPermissionSwitch('accounting_travel', 'Travel')}
-                      {renderPermissionSwitch('accounting_invoices', 'Invoices')}
-                      {renderPermissionSwitch('accounting_gross_payslip', 'Gross Payslip')}
-                      {renderPermissionSwitch('accounting_travel_management', 'Travel Management')}
-                      {renderPermissionSwitch('accounting_client_rate', 'Client Rate')}
-                      {renderPermissionSwitch('accounting_authority_rate', 'Authority Rate')}
-                      {renderPermissionSwitch('accounting_staff_rate', 'Staff Rate')}
-                      {renderPermissionSwitch('accounting_rate_management', 'Rate Management')}
-                      {renderPermissionSwitch('accounting_staff_bank_detail', "Staff's Bank Detail")}
+                {/* Reviews & Third Party Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
+                    <h3 className="font-semibold border-b pb-2">Reviews</h3>
+                    <div className="flex items-center justify-between p-3 rounded-lg border">
+                      <div>
+                        <Label htmlFor="reviews" className="font-medium">Reviews</Label>
+                        <p className="text-sm text-muted-foreground">Manage client reviews</p>
+                      </div>
+                      <Switch
+                        id="reviews"
+                        checked={permissions.reviews}
+                        onCheckedChange={(checked) => handlePermissionChange('reviews', checked)}
+                      />
                     </div>
+                  </div>
+                  <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
+                    <h3 className="font-semibold border-b pb-2">Third Party</h3>
+                    <div className="flex items-center justify-between p-3 rounded-lg border">
+                      <div>
+                        <Label htmlFor="third_party" className="font-medium">Third Party</Label>
+                        <p className="text-sm text-muted-foreground">Third party integrations</p>
+                      </div>
+                      <Switch
+                        id="third_party"
+                        checked={permissions.third_party}
+                        onCheckedChange={(checked) => handlePermissionChange('third_party', checked)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Branch Report Section */}
+                <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
+                  <h3 className="font-semibold border-b pb-2">Branch Reports</h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    {[
+                      { key: 'report_accounting', label: 'Accounting Reports', desc: 'Financial reporting access' },
+                      { key: 'report_total_working_hours', label: 'Working Hours Reports', desc: 'Staff time tracking reports' },
+                      { key: 'report_staff', label: 'Staff Reports', desc: 'Staff performance and data' },
+                      { key: 'report_client', label: 'Client Reports', desc: 'Client data and analytics' },
+                      { key: 'report_service', label: 'Service Reports', desc: 'Service delivery metrics' }
+                    ].map(({ key, label, desc }) => (
+                      <div key={key} className="flex items-center justify-between p-3 rounded-lg border">
+                        <div>
+                          <Label htmlFor={key} className="font-medium">{label}</Label>
+                          <p className="text-sm text-muted-foreground">{desc}</p>
+                        </div>
+                        <Switch
+                          id={key}
+                          checked={permissions[key as keyof Permissions]}
+                          onCheckedChange={(checked) => handlePermissionChange(key as keyof Permissions, checked)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Accounting Section */}
+                <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
+                  <h3 className="font-semibold border-b pb-2">Accounting</h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    {[
+                      { key: 'accounting_extra_time', label: 'Extra Time', desc: 'Overtime and additional hours' },
+                      { key: 'accounting_expense', label: 'Expenses', desc: 'Expense management and tracking' },
+                      { key: 'accounting_travel', label: 'Travel', desc: 'Travel expense tracking' },
+                      { key: 'accounting_invoices', label: 'Invoices', desc: 'Invoice generation and management' },
+                      { key: 'accounting_gross_payslip', label: 'Gross Payslip', desc: 'Payroll and salary information' },
+                      { key: 'accounting_travel_management', label: 'Travel Management', desc: 'Travel planning and approval' },
+                      { key: 'accounting_client_rate', label: 'Client Rates', desc: 'Client billing rates' },
+                      { key: 'accounting_authority_rate', label: 'Authority Rates', desc: 'Government/authority billing rates' },
+                      { key: 'accounting_staff_rate', label: 'Staff Rates', desc: 'Staff payment rates' },
+                      { key: 'accounting_rate_management', label: 'Rate Management', desc: 'Overall rate management system' },
+                      { key: 'accounting_staff_bank_detail', label: 'Staff Bank Details', desc: 'Employee banking information' }
+                    ].map(({ key, label, desc }) => (
+                      <div key={key} className="flex items-center justify-between p-3 rounded-lg border">
+                        <div>
+                          <Label htmlFor={key} className="font-medium">{label}</Label>
+                          <p className="text-sm text-muted-foreground">{desc}</p>
+                        </div>
+                        <Switch
+                          id={key}
+                          checked={permissions[key as keyof Permissions]}
+                          onCheckedChange={(checked) => handlePermissionChange(key as keyof Permissions, checked)}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
               </TabsContent>
             </div>
           </Tabs>
 
-          <DialogFooter className="flex gap-2 pt-4 mt-4 border-t flex-shrink-0 sticky bottom-0 bg-background">
+          <DialogFooter className="flex gap-2 pt-4 mt-4 border-t">
             <Button
               type="button"
               variant="outline"
@@ -426,7 +518,6 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
             <Button
               type="submit"
               disabled={createAdminMutation.isPending || branchesLoading}
-              className="bg-blue-600 hover:bg-blue-700"
             >
               {createAdminMutation.isPending ? (
                 <>
