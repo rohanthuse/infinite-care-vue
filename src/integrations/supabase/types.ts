@@ -5782,6 +5782,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      fix_all_client_auth_issues: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       fix_client_auth_links: {
         Args: Record<PropertyKey, never>
         Returns: Json
