@@ -213,10 +213,26 @@ const CarerAppointments: React.FC = () => {
 
   const getActionButton = (appointment: any) => {
     const status = appointment.status?.toLowerCase();
+    const isLoading = bookingAttendance.isPending;
+    
+    console.log('[getActionButton] Rendering button for appointment:', {
+      id: appointment.id,
+      status: status,
+      isLoading: isLoading
+    });
     
     if (status === 'completed') {
       return (
-        <Button variant="outline" size="sm" className="flex items-center gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex items-center gap-2"
+          onClick={() => {
+            console.log('[getActionButton] Navigating to completed visit:', appointment.id);
+            navigate(`/carer/visit/${appointment.id}`);
+          }}
+          disabled={isLoading}
+        >
           <Eye className="h-4 w-4" />
           View Details
         </Button>
@@ -227,8 +243,12 @@ const CarerAppointments: React.FC = () => {
       return (
         <Button 
           size="sm" 
-          className="flex items-center gap-2"
-          onClick={() => navigate(`/carer-dashboard/visit/${appointment.id}`)}
+          className="flex items-center gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/80"
+          onClick={() => {
+            console.log('[getActionButton] Navigating to in-progress visit:', appointment.id);
+            navigate(`/carer/visit/${appointment.id}`);
+          }}
+          disabled={isLoading}
         >
           <ArrowRight className="h-4 w-4" />
           Continue Visit
@@ -240,11 +260,12 @@ const CarerAppointments: React.FC = () => {
       return (
         <Button 
           size="sm" 
-          className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+          className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
           onClick={() => handleStartVisit(appointment)}
+          disabled={isLoading}
         >
           <Play className="h-4 w-4" />
-          Start Visit
+          {isLoading ? 'Starting...' : 'Start Visit'}
         </Button>
       );
     }

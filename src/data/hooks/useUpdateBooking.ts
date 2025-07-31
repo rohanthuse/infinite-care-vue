@@ -36,12 +36,18 @@ export function useUpdateBooking(branchId?: string) {
   return useMutation({
     mutationFn: updateBooking,
     onSuccess: (data) => {
-      // Invalidate both branch bookings and client-specific bookings
+      console.log('[useUpdateBooking] Successfully updated booking:', data.id);
+      
+      // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
       queryClient.invalidateQueries({ queryKey: ["client-bookings", data.client_id] });
+      queryClient.invalidateQueries({ queryKey: ["carer-bookings", data.staff_id] });
+      queryClient.invalidateQueries({ queryKey: ["carer-appointments-full", data.staff_id] });
+      
       toast.success("Booking updated successfully!");
     },
     onError: (error: any) => {
+      console.error('[useUpdateBooking] Failed to update booking:', error);
       toast.error("Failed to update booking", {
         description: error.message || "An unknown error occurred.",
       });
