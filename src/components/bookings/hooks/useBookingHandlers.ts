@@ -343,9 +343,17 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       return;
     }
 
+    console.log("[useBookingHandlers] Creating", bookingsToCreate.length, "bookings for branch:", branchId);
+    console.log("[useBookingHandlers] Bookings to create:", bookingsToCreate.map(b => ({
+      client_id: b.client_id,
+      staff_id: b.staff_id,
+      start_time: b.start_time,
+      end_time: b.end_time
+    })));
+
     createMultipleBookingsMutation.mutate(bookingsToCreate, {
       onError: (error: any) => {
-        console.error("[BookingsTab] Booking creation error:", error);
+        console.error("[useBookingHandlers] Booking creation error:", error);
         if (error.message?.includes("row-level security")) {
           toast.error("Access denied. You may not be authorized for this branch.", {
             description: "Contact your administrator or create an admin user for this branch.",
@@ -357,8 +365,9 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         }
       },
       onSuccess: (data: any) => {
+        console.log("[useBookingHandlers] ✅ Bookings created successfully:", data);
         toast.success("Bookings created!", {
-          description: `Created ${data.length || bookingsToCreate.length} bookings for selected range.`,
+          description: `Created ${data?.length || bookingsToCreate.length} bookings. Refreshing calendar...`,
         });
         setNewBookingDialogOpen(false);
         createMultipleBookingsMutation.reset();

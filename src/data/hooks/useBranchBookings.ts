@@ -41,9 +41,21 @@ export async function fetchBranchBookings(branchId?: string) {
 }
 
 export function useBranchBookings(branchId?: string) {
-  return useQuery({
+  const result = useQuery({
     queryKey: ["branch-bookings", branchId],
     queryFn: () => fetchBranchBookings(branchId),
     enabled: !!branchId,
+    refetchOnWindowFocus: true,
+    staleTime: 1000 * 30, // 30 seconds - keeps data fresh
   });
+
+  // Log query results
+  if (result.data) {
+    console.log("[useBranchBookings] Query success - fetched", result.data?.length || 0, "bookings for branch:", branchId);
+  }
+  if (result.error) {
+    console.error("[useBranchBookings] Query error for branch", branchId, ":", result.error);
+  }
+
+  return result;
 }

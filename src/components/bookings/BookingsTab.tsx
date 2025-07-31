@@ -22,6 +22,7 @@ import { useRealTimeBookingSync } from "./hooks/useRealTimeBookingSync";
 import { BookingValidationAlert } from "./BookingValidationAlert";
 import { useSearchParams } from "react-router-dom";
 import { parseISO, isValid } from "date-fns";
+import { useBookingDebug } from "./hooks/useBookingDebug";
 
 interface BookingsTabProps {
   branchId?: string;
@@ -77,6 +78,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const { clients, carers, bookings, isLoading } = useBookingData(branchId);
   
   const { isConnected: isRealTimeConnected } = useRealTimeBookingSync(branchId);
+  const { inspectCache } = useBookingDebug(branchId, bookings);
   
   const {
     newBookingDialogOpen,
@@ -164,6 +166,13 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={inspectCache}
+          >
+            Debug Cache
           </Button>
           <Button onClick={handleNewBooking}>
             <Plus className="h-4 w-4 mr-2" />
