@@ -22,12 +22,22 @@ export const useBookingAttendance = () => {
 
   return useMutation({
     mutationFn: async (data: BookingAttendanceData) => {
-      console.log('Processing booking attendance:', data);
+      console.log('[useBookingAttendance] Processing booking attendance:', data);
+      
+      // Validate required fields
+      if (!data.bookingId || !data.staffId || !data.branchId) {
+        const missingFields = [];
+        if (!data.bookingId) missingFields.push('bookingId');
+        if (!data.staffId) missingFields.push('staffId');
+        if (!data.branchId) missingFields.push('branchId');
+        throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+      }
       
       try {
         // Update booking status
         const newStatus = data.action === 'start_visit' ? 'in_progress' : 'completed';
         
+        console.log('[useBookingAttendance] Updating booking status to:', newStatus);
         const { error: bookingError } = await supabase
           .from('bookings')
           .update({ 
@@ -35,39 +45,49 @@ export const useBookingAttendance = () => {
           })
           .eq('id', data.bookingId);
 
-        if (bookingError) throw bookingError;
+        if (bookingError) {
+          console.error('[useBookingAttendance] Booking update error:', bookingError);
+          throw new Error(`Failed to update booking: ${bookingError.message}`);
+        }
 
-        // Process attendance automatically
+        console.log('[useBookingAttendance] Booking updated successfully');
+
+        // Process attendance automatically with retry logic
         const attendanceData: AutoAttendanceData = {
           personId: data.staffId,
           personType: 'staff',
           branchId: data.branchId,
           bookingId: data.bookingId,
           action: data.action === 'start_visit' ? 'check_in' : 'check_out',
-          location: data.location
+          location: data.location || { latitude: 0, longitude: 0 }
         };
 
-        await automaticAttendance.mutateAsync(attendanceData);
+        console.log('[useBookingAttendance] Processing attendance:', attendanceData);
+        try {
+          await automaticAttendance.mutateAsync(attendanceData);
+          console.log('[useBookingAttendance] Attendance processed successfully');
+        } catch (attendanceError) {
+          console.error('[useBookingAttendance] Attendance error:', attendanceError);
+          // Don't throw here - allow the booking update to succeed even if attendance fails
+          console.warn('[useBookingAttendance] Continuing despite attendance error');
+        }
 
         return { success: true, bookingStatus: newStatus };
       } catch (error) {
-        console.error('Error processing booking attendance:', error);
+        console.error('[useBookingAttendance] Error processing booking attendance:', error);
         throw error;
       }
     },
     onSuccess: (result, variables) => {
+      console.log('[useBookingAttendance] Success, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['branch-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-records'] });
-      
-      if (variables.action === 'start_visit') {
-        toast.success("Visit started and attendance marked");
-      } else {
-        toast.success("Visit completed and attendance updated");
-      }
+      queryClient.invalidateQueries({ queryKey: ['today-attendance'] });
     },
     onError: (error: any) => {
-      console.error('Error processing booking attendance:', error);
-      toast.error('Failed to process visit: ' + (error.message || 'Unknown error'));
+      console.error('[useBookingAttendance] Mutation error:', error);
+      // Don't show toast here - let the calling component handle it
     },
   });
 };

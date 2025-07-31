@@ -47,31 +47,72 @@ export const useVisitRecord = (bookingId?: string) => {
   // Auto-create visit record for in-progress bookings
   const autoCreateVisitRecord = useMutation({
     mutationFn: async (bookingData: any) => {
+      console.log('[autoCreateVisitRecord] Creating visit record for booking:', bookingData);
+      
+      // Validate required fields
+      if (!bookingData.id || !bookingData.client_id || !bookingData.staff_id) {
+        const missingFields = [];
+        if (!bookingData.id) missingFields.push('booking_id');
+        if (!bookingData.client_id) missingFields.push('client_id');
+        if (!bookingData.staff_id) missingFields.push('staff_id');
+        throw new Error(`Missing required fields for visit record: ${missingFields.join(', ')}`);
+      }
+
+      // Get branch_id if not provided
+      let branchId = bookingData.branch_id;
+      if (!branchId) {
+        console.log('[autoCreateVisitRecord] Branch ID missing, fetching from booking');
+        const { data: booking, error: bookingError } = await supabase
+          .from('bookings')
+          .select('branch_id')
+          .eq('id', bookingData.id)
+          .single();
+        
+        if (bookingError) {
+          console.error('[autoCreateVisitRecord] Error fetching booking branch:', bookingError);
+          throw new Error(`Failed to get branch information: ${bookingError.message}`);
+        }
+        
+        branchId = booking?.branch_id;
+      }
+
+      if (!branchId) {
+        throw new Error('Branch ID is required but not found');
+      }
+
       const visitData = {
         booking_id: bookingData.id,
         client_id: bookingData.client_id,
         staff_id: bookingData.staff_id,
-        branch_id: bookingData.branch_id,
+        branch_id: branchId,
         visit_start_time: new Date().toISOString(),
         status: 'in_progress' as const,
         completion_percentage: 0,
       };
 
+      console.log('[autoCreateVisitRecord] Inserting visit data:', visitData);
       const { data, error } = await supabase
         .from('visit_records')
         .insert(visitData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[autoCreateVisitRecord] Insert error:', error);
+        throw new Error(`Failed to create visit record: ${error.message}`);
+      }
+      
+      console.log('[autoCreateVisitRecord] Visit record created successfully:', data);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('[autoCreateVisitRecord] Success, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['visit-record', bookingId] });
+      queryClient.invalidateQueries({ queryKey: ['visit-record'] });
     },
     onError: (error) => {
-      console.error('Error auto-creating visit record:', error);
-      toast.error('Failed to create visit record');
+      console.error('[autoCreateVisitRecord] Error:', error);
+      toast.error(`Failed to create visit record: ${error.message}`);
     },
   });
 

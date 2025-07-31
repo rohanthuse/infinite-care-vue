@@ -143,11 +143,57 @@ const CarerAppointments: React.FC = () => {
 
   const handleStartVisit = async (appointment: any) => {
     try {
-      // First update the booking status to in_progress
+      console.log('[handleStartVisit] Starting visit for appointment:', appointment);
+      console.log('[handleStartVisit] User context:', user);
+      
+      // Validate required data first
+      if (!appointment.id) {
+        console.error('[handleStartVisit] Missing appointment ID');
+        toast.error('Invalid appointment data');
+        return;
+      }
+
+      if (!user?.id) {
+        console.error('[handleStartVisit] Missing user ID');
+        toast.error('User not authenticated');
+        return;
+      }
+
+      // Get branch ID - first try from appointment, then from user context
+      let branchId = appointment.branch_id;
+      if (!branchId) {
+        console.log('[handleStartVisit] Getting branch ID from user context');
+        const { data: staffData, error: staffError } = await supabase
+          .from('staff')
+          .select('branch_id')
+          .eq('id', user.id)
+          .single();
+        
+        if (staffError) {
+          console.error('[handleStartVisit] Error fetching staff branch:', staffError);
+          toast.error('Unable to determine branch information');
+          return;
+        }
+        
+        branchId = staffData?.branch_id;
+      }
+
+      if (!branchId) {
+        console.error('[handleStartVisit] Missing branch ID');
+        toast.error('Branch information not found');
+        return;
+      }
+
+      console.log('[handleStartVisit] Using branch ID:', branchId);
+
+      // Show loading state
+      toast.loading('Starting visit...', { id: 'start-visit' });
+
+      // Process booking attendance
       await bookingAttendance.mutateAsync({
         bookingId: appointment.id,
-        staffId: user?.id || '',
-        branchId: appointment.branch_id || '',
+        staffId: user.id,
+        branchId: branchId,
         action: 'start_visit',
         location: {
           latitude: 0, // TODO: Get real location
@@ -155,11 +201,13 @@ const CarerAppointments: React.FC = () => {
         }
       });
 
-      // Then navigate to visit workflow
+      toast.success('Visit started successfully', { id: 'start-visit' });
+
+      // Navigate to visit workflow
       navigate(`/carer-dashboard/visit/${appointment.id}`);
     } catch (error) {
-      console.error('Error starting visit:', error);
-      toast.error('Failed to start visit');
+      console.error('[handleStartVisit] Error starting visit:', error);
+      toast.error(`Failed to start visit: ${error instanceof Error ? error.message : 'Unknown error'}`, { id: 'start-visit' });
     }
   };
 
