@@ -37,7 +37,8 @@ const approveCarePlan = async ({ carePlanId, signatureData, comments }: ApproveC
       client_comments: comments,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', carePlanId);
+    .eq('id', carePlanId)
+    .eq('status', 'pending_client_approval'); // Only allow approval from pending_client_approval status
 
   if (error) {
     console.error('Error approving care plan:', error);
@@ -110,7 +111,7 @@ export const useRejectCarePlan = () => {
 export const useCarePlanRequiresApproval = (carePlan: any) => {
   if (!carePlan) return false;
   
-  return carePlan.status === 'pending_approval' && !carePlan.client_acknowledged_at;
+  return carePlan.status === 'pending_client_approval' && !carePlan.client_acknowledged_at;
 };
 
 // Hook to get care plan status info
@@ -121,6 +122,12 @@ export const useCarePlanStatus = (carePlan: any) => {
     case 'pending_approval':
       return { 
         status: 'pending_approval', 
+        label: 'Pending Staff Approval', 
+        variant: 'secondary' as const 
+      };
+    case 'pending_client_approval':
+      return { 
+        status: 'pending_client_approval', 
         label: 'Awaiting Your Approval', 
         variant: 'destructive' as const 
       };

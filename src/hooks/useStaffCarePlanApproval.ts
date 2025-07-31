@@ -30,9 +30,9 @@ const staffApproveCarePlan = async ({ carePlanId, comments }: StaffApproveCarePl
     .eq('id', user.id)
     .single();
 
-  // Update care plan status to approved
+  // Update care plan status to pending_client_approval (two-stage approval process)
   const updateData: any = {
-    status: 'approved',
+    status: 'pending_client_approval',
     approved_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };

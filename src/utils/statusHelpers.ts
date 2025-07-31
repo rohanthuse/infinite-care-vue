@@ -51,6 +51,16 @@ export const getStatusBadgeClass = (status: string) => {
     case CARE_PLAN_STATUSES.ARCHIVED:
       return "text-gray-600 bg-gray-50 border-gray-200";
     
+    // Care plan approval statuses
+    case "pending_approval":
+      return "text-amber-600 bg-amber-50 border-amber-200";
+    case "pending_client_approval":
+      return "text-orange-600 bg-orange-50 border-orange-200";
+    case "approved":
+      return "text-green-600 bg-green-50 border-green-200";
+    case "rejected":
+      return "text-red-600 bg-red-50 border-red-200";
+    
     // Legacy/fallback statuses (case insensitive)
     case "active":
       return "text-green-600 bg-green-50 border-green-200";

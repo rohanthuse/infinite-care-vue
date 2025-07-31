@@ -213,11 +213,11 @@ const ClientCarePlans = () => {
                         <PenTool className="h-4 w-4 mr-2" />
                         Sign Plan
                       </Button>
-                    ) : (
+                    ) : carePlan.status === 'approved' || carePlan.status === 'active' ? (
                       <Button variant="outline" onClick={handleRequestChanges}>
                         Request Changes
                       </Button>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               </CardHeader>
