@@ -11,20 +11,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCreateAdmin } from "@/data/hooks/useCreateAdmin";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, User, Shield } from "lucide-react";
+import { Loader2, User, Shield, Building2 } from "lucide-react";
 
 const initialPermissions = {
   system: true,
@@ -69,7 +63,7 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
     first_name: "",
     last_name: "",
     password: "",
-    branch_id: "",
+    branch_ids: [] as string[],
   });
 
   const [permissions, setPermissions] = useState<Permissions>(initialPermissions);
@@ -106,11 +100,34 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
     </div>
   );
 
+  const handleBranchToggle = (branchId: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      branch_ids: checked 
+        ? [...prev.branch_ids, branchId]
+        : prev.branch_ids.filter(id => id !== branchId)
+    }));
+  };
+
+  const handleSelectAllBranches = () => {
+    setFormData(prev => ({
+      ...prev,
+      branch_ids: branches.map(branch => branch.id)
+    }));
+  };
+
+  const handleClearAllBranches = () => {
+    setFormData(prev => ({
+      ...prev,
+      branch_ids: []
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.email || !formData.first_name || !formData.last_name || !formData.password || !formData.branch_id) {
-      toast.error("Please fill in all fields");
+    if (!formData.email || !formData.first_name || !formData.last_name || !formData.password || formData.branch_ids.length === 0) {
+      toast.error("Please fill in all fields and select at least one branch");
       return;
     }
 
@@ -119,20 +136,22 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
       const adminResult = await createAdminMutation.mutateAsync(formData);
       
       if (adminResult?.user?.id) {
-        // Then create their permissions
+        // Create permissions for each selected branch
+        const permissionEntries = formData.branch_ids.map(branchId => ({
+          admin_id: adminResult.user.id,
+          branch_id: branchId,
+          ...permissions
+        }));
+
         const { error: permissionsError } = await supabase
           .from('admin_permissions')
-          .insert({
-            admin_id: adminResult.user.id,
-            branch_id: formData.branch_id,
-            ...permissions
-          });
+          .insert(permissionEntries);
 
         if (permissionsError) {
           console.error("Error creating admin permissions:", permissionsError);
           toast.error("Admin created but permissions setup failed");
         } else {
-          toast.success("Admin user created successfully with permissions!");
+          toast.success(`Admin user created successfully with access to ${formData.branch_ids.length} branch${formData.branch_ids.length > 1 ? 'es' : ''}!`);
         }
       } else {
         toast.success("Admin user created successfully!");
@@ -144,7 +163,7 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
         first_name: "", 
         last_name: "", 
         password: "",
-        branch_id: "" 
+        branch_ids: [] 
       });
       setPermissions(initialPermissions);
       setActiveTab("basic");
@@ -163,7 +182,7 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
       first_name: "", 
       last_name: "", 
       password: "",
-      branch_id: "" 
+      branch_ids: [] 
     });
     setPermissions(initialPermissions);
     setActiveTab("basic");
@@ -252,39 +271,75 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="branch">Branch *</Label>
-                <Select
-                  value={formData.branch_id}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, branch_id: value })
-                  }
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a branch" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
-                    {branchesLoading ? (
-                      <SelectItem value="" disabled>
-                        <div className="flex items-center">
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          Loading branches...
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-medium">Branches Access *</Label>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">
+                      {formData.branch_ids.length} selected
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSelectAllBranches}
+                      disabled={branchesLoading}
+                      className="h-6 px-2 text-xs"
+                    >
+                      All
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearAllBranches}
+                      disabled={branchesLoading}
+                      className="h-6 px-2 text-xs"
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+                
+                {branchesLoading ? (
+                  <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Loading branches...
+                  </div>
+                ) : branches.length === 0 ? (
+                  <div className="text-center py-4 text-sm text-muted-foreground">
+                    No branches available
+                  </div>
+                ) : (
+                  <div className="border rounded-lg p-3 bg-gray-50/50 max-h-48 overflow-y-auto">
+                    <div className="space-y-3">
+                      {branches.map((branch) => (
+                        <div key={branch.id} className="flex items-center space-x-3">
+                          <Checkbox
+                            id={branch.id}
+                            checked={formData.branch_ids.includes(branch.id)}
+                            onCheckedChange={(checked) => 
+                              handleBranchToggle(branch.id, checked as boolean)
+                            }
+                          />
+                          <Label 
+                            htmlFor={branch.id}
+                            className="flex items-center gap-2 cursor-pointer flex-1 text-sm"
+                          >
+                            <Building2 className="h-4 w-4 text-gray-500" />
+                            {branch.name}
+                          </Label>
                         </div>
-                      </SelectItem>
-                    ) : branches.length === 0 ? (
-                      <SelectItem value="" disabled>
-                        No branches available
-                      </SelectItem>
-                    ) : (
-                      branches.map((branch) => (
-                        <SelectItem key={branch.id} value={branch.id}>
-                          {branch.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {formData.branch_ids.length === 0 && (
+                  <p className="text-sm text-destructive">
+                    Please select at least one branch
+                  </p>
+                )}
               </div>
             </TabsContent>
 

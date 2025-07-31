@@ -45,7 +45,7 @@ export const CreateAdminDialog: React.FC<CreateAdminDialogProps> = ({
     createAdminMutation.mutate(
       {
         ...formData,
-        branch_id: branchId,
+        branch_ids: [branchId],
       },
       {
         onSuccess: () => {

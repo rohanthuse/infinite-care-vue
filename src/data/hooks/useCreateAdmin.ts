@@ -7,7 +7,7 @@ export interface CreateAdminInput {
   first_name: string;
   last_name: string;
   password: string;
-  branch_id: string;
+  branch_ids: string[];
 }
 
 export async function createAdmin(input: CreateAdminInput) {
@@ -55,22 +55,22 @@ export async function createAdmin(input: CreateAdminInput) {
 
     console.log('Admin role assigned successfully');
 
-    // Create the admin-branch association
+    // Create multiple admin-branch associations
+    const branchAssociations = input.branch_ids.map(branchId => ({
+      admin_id: authData.user.id,
+      branch_id: branchId,
+    }));
+
     const { error: branchError } = await supabase
       .from("admin_branches")
-      .insert([
-        {
-          admin_id: authData.user.id,
-          branch_id: input.branch_id,
-        },
-      ]);
+      .insert(branchAssociations);
 
     if (branchError) {
       console.error('Branch association error:', branchError);
-      throw new Error(`Failed to create branch association: ${branchError.message}`);
+      throw new Error(`Failed to create branch associations: ${branchError.message}`);
     }
 
-    console.log('Branch association created successfully');
+    console.log(`Branch associations created successfully for ${input.branch_ids.length} branches`);
 
     // Ensure profile exists (should be created by trigger, but verify)
     const { data: existingProfile } = await supabase
