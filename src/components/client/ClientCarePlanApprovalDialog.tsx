@@ -423,13 +423,13 @@ export function ClientCarePlanApprovalDialog({
                 onClick={handleReject}
                 disabled={isLoading}
               >
-                Request Changes
+                Need to Add Some Changes
               </Button>
               <Button
                 onClick={handleApprove}
                 disabled={!canApprove || isLoading}
               >
-                {isLoading ? 'Processing...' : 'Approve Care Plan'}
+                {isLoading ? 'Processing...' : 'Care Plan is Approved'}
               </Button>
             </>
           )}

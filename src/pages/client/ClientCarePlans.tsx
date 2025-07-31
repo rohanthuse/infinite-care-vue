@@ -208,14 +208,14 @@ const ClientCarePlans = () => {
                     {requiresApproval ? (
                       <Button 
                         onClick={() => handleOpenApprovalDialog(carePlan)} 
-                        className="bg-orange-600 hover:bg-orange-700"
+                        className="bg-green-600 hover:bg-green-700"
                       >
                         <PenTool className="h-4 w-4 mr-2" />
-                        Sign Plan
+                        Care Plan is Approved
                       </Button>
                     ) : carePlan.status === 'approved' || carePlan.status === 'active' ? (
                       <Button variant="outline" onClick={handleRequestChanges}>
-                        Request Changes
+                        Need to Add Some Changes
                       </Button>
                     ) : null}
                   </div>
@@ -286,25 +286,25 @@ const ClientCarePlans = () => {
                   <TabsContent value="goals" className="mt-4">
                     <div className="space-y-3">
                       {carePlan.goals && carePlan.goals.length > 0 ? (
-                        carePlan.goals.slice(0, 3).map(goal => (
-                          <div key={goal.id} className="border border-gray-200 rounded-lg p-3">
-                            <div className="flex items-center gap-2 mb-2">
+                        carePlan.goals.map(goal => (
+                          <div key={goal.id} className="border border-gray-200 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-3">
                               <h5 className="font-medium text-sm">{goal.description}</h5>
                               {renderGoalStatus(goal.status)}
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 mb-2">
                               <div className="flex-1">
-                                <Progress value={goal.progress || 0} className="h-1" />
+                                <Progress value={goal.progress || 0} className="h-2" />
                               </div>
-                              <span className="text-xs">{goal.progress || 0}%</span>
+                              <span className="text-xs font-medium">{goal.progress || 0}%</span>
                             </div>
+                            {goal.notes && (
+                              <p className="text-xs text-gray-600 mt-1">{goal.notes}</p>
+                            )}
                           </div>
                         ))
                       ) : (
                         <p className="text-gray-500 text-sm">No goals defined for this care plan.</p>
-                      )}
-                      {carePlan.goals && carePlan.goals.length > 3 && (
-                        <p className="text-xs text-gray-500">... and {carePlan.goals.length - 3} more goals</p>
                       )}
                     </div>
                   </TabsContent>
@@ -312,24 +312,27 @@ const ClientCarePlans = () => {
                   <TabsContent value="medications" className="mt-4">
                     <div className="space-y-3">
                       {carePlan.medications && carePlan.medications.length > 0 ? (
-                        carePlan.medications.slice(0, 3).map(med => (
-                          <div key={med.id} className="border border-gray-200 rounded-lg p-3">
-                            <div className="flex justify-between items-start">
-                              <div>
+                        carePlan.medications.map(med => (
+                          <div key={med.id} className="border border-gray-200 rounded-lg p-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex-1">
                                 <h5 className="font-medium text-sm">{med.name}</h5>
-                                <p className="text-xs text-gray-600">{med.dosage}, {med.frequency}</p>
+                                <p className="text-xs text-gray-600 mt-1">{med.dosage} • {med.frequency}</p>
                               </div>
                               <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
                                 {med.status}
                               </span>
                             </div>
+                            <div className="text-xs text-gray-500 mt-2">
+                              Start: {new Date(med.start_date).toLocaleDateString()}
+                              {med.end_date && (
+                                <span> • End: {new Date(med.end_date).toLocaleDateString()}</span>
+                              )}
+                            </div>
                           </div>
                         ))
                       ) : (
                         <p className="text-gray-500 text-sm">No medications defined for this care plan.</p>
-                      )}
-                      {carePlan.medications && carePlan.medications.length > 3 && (
-                        <p className="text-xs text-gray-500">... and {carePlan.medications.length - 3} more medications</p>
                       )}
                     </div>
                   </TabsContent>
@@ -337,27 +340,26 @@ const ClientCarePlans = () => {
                   <TabsContent value="activities" className="mt-4">
                     <div className="space-y-3">
                       {carePlan.activities && carePlan.activities.length > 0 ? (
-                        carePlan.activities.slice(0, 3).map(activity => (
-                          <div key={activity.id} className="border border-gray-200 rounded-lg p-3">
-                            <h5 className="font-medium text-sm">{activity.name}</h5>
-                            {activity.description && (
-                              <p className="text-xs text-gray-600 mt-1">{activity.description}</p>
-                            )}
-                            <div className="flex items-center mt-2 gap-2">
-                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                                {activity.frequency}
-                              </span>
+                        carePlan.activities.map(activity => (
+                          <div key={activity.id} className="border border-gray-200 rounded-lg p-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <h5 className="font-medium text-sm">{activity.name}</h5>
                               <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
                                 {activity.status}
+                              </span>
+                            </div>
+                            {activity.description && (
+                              <p className="text-xs text-gray-600 mb-2">{activity.description}</p>
+                            )}
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                {activity.frequency}
                               </span>
                             </div>
                           </div>
                         ))
                       ) : (
                         <p className="text-gray-500 text-sm">No activities defined for this care plan.</p>
-                      )}
-                      {carePlan.activities && carePlan.activities.length > 3 && (
-                        <p className="text-xs text-gray-500">... and {carePlan.activities.length - 3} more activities</p>
                       )}
                     </div>
                   </TabsContent>
