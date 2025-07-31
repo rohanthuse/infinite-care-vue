@@ -190,6 +190,12 @@ export const useStaffCarePlanStatus = (carePlan: any) => {
         label: 'Pending Staff Review', 
         variant: 'destructive' as const 
       };
+    case 'pending_client_approval':
+      return { 
+        status: 'pending_client_approval', 
+        label: 'Pending Client Review', 
+        variant: 'outline' as const 
+      };
     case 'approved':
       return { 
         status: 'approved', 

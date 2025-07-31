@@ -51,8 +51,9 @@ export const StaffCarePlanApproval: React.FC<StaffCarePlanApprovalProps> = ({ ca
   const staffApprove = useStaffApproveCarePlan();
   const staffReject = useStaffRejectCarePlan();
 
-  // Filter care plans that need staff approval
+  // Filter care plans by status
   const pendingApprovalPlans = carePlans.filter(plan => plan.status === 'pending_approval');
+  const pendingClientReviewPlans = carePlans.filter(plan => plan.status === 'pending_client_approval');
 
   const handleApprove = (plan: CarePlan) => {
     setSelectedPlan(plan);
@@ -100,7 +101,7 @@ export const StaffCarePlanApproval: React.FC<StaffCarePlanApprovalProps> = ({ ca
     return useStaffCarePlanStatus(plan);
   };
 
-  if (pendingApprovalPlans.length === 0) {
+  if (pendingApprovalPlans.length === 0 && pendingClientReviewPlans.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -111,7 +112,7 @@ export const StaffCarePlanApproval: React.FC<StaffCarePlanApprovalProps> = ({ ca
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            No care plans are currently awaiting staff approval.
+            No care plans are currently awaiting approval or client review.
           </p>
         </CardContent>
       </Card>
@@ -120,81 +121,144 @@ export const StaffCarePlanApproval: React.FC<StaffCarePlanApprovalProps> = ({ ca
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-amber-600" />
-            Care Plans Awaiting Staff Approval ({pendingApprovalPlans.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {pendingApprovalPlans.map((plan) => {
-            const statusInfo = getStatusInfo(plan);
-            return (
-              <div key={plan.id} className="border rounded-lg p-4 space-y-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <h3 className="font-semibold">{plan.title}</h3>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <User className="h-4 w-4" />
-                      <span>{plan.client.first_name} {plan.client.last_name}</span>
+      <div className="space-y-8">
+        {/* Care Plans Awaiting Staff Approval */}
+        {pendingApprovalPlans.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-amber-600" />
+                Care Plans Awaiting Staff Approval ({pendingApprovalPlans.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {pendingApprovalPlans.map((plan) => {
+                const statusInfo = getStatusInfo(plan);
+                return (
+                  <div key={plan.id} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <h3 className="font-semibold">{plan.title}</h3>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <User className="h-4 w-4" />
+                          <span>{plan.client.first_name} {plan.client.last_name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          <span>Created: {format(new Date(plan.created_at), 'MMM dd, yyyy')}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Plan ID: {plan.display_id}
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge variant={statusInfo.variant}>
+                          {statusInfo.label}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span>Created: {format(new Date(plan.created_at), 'MMM dd, yyyy')}</span>
+
+                    {plan.notes && (
+                      <div className="bg-muted p-3 rounded">
+                        <p className="text-sm">
+                          <strong>Notes:</strong> {plan.notes}
+                        </p>
+                      </div>
+                    )}
+
+                    {plan.rejection_reason && (
+                      <div className="bg-destructive/10 p-3 rounded border border-destructive/20">
+                        <p className="text-sm text-destructive">
+                          <strong>Previous Rejection:</strong> {plan.rejection_reason}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleApprove(plan)}
+                        className="flex items-center gap-2"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleReject(plan)}
+                        className="flex items-center gap-2"
+                      >
+                        <XCircle className="h-4 w-4" />
+                        Request Changes
+                      </Button>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      Plan ID: {plan.display_id}
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Care Plans Pending Client Review */}
+        {pendingClientReviewPlans.length > 0 && (
+          <Card className="border-orange-200 bg-orange-50/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-orange-600" />
+                Pending Client Review ({pendingClientReviewPlans.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {pendingClientReviewPlans.map((plan) => {
+                const statusInfo = getStatusInfo(plan);
+                return (
+                  <div key={plan.id} className="border border-orange-200 bg-white rounded-lg p-4 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <h3 className="font-semibold">{plan.title}</h3>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <User className="h-4 w-4" />
+                          <span>{plan.client.first_name} {plan.client.last_name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          <span>Approved by Staff: {format(new Date(plan.created_at), 'MMM dd, yyyy')}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Plan ID: {plan.display_id}
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">
+                          {statusInfo.label}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {plan.notes && (
+                      <div className="bg-muted p-3 rounded">
+                        <p className="text-sm">
+                          <strong>Notes:</strong> {plan.notes}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-blue-800">
+                        <CheckCircle className="h-4 w-4" />
+                        <span className="text-sm font-medium">Approved by care team - Awaiting client signature</span>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="flex flex-col items-end gap-2">
-                    <Badge variant={statusInfo.variant}>
-                      {statusInfo.label}
-                    </Badge>
-                  </div>
-                </div>
-
-                {plan.notes && (
-                  <div className="bg-muted p-3 rounded">
-                    <p className="text-sm">
-                      <strong>Notes:</strong> {plan.notes}
-                    </p>
-                  </div>
-                )}
-
-                {plan.rejection_reason && (
-                  <div className="bg-destructive/10 p-3 rounded border border-destructive/20">
-                    <p className="text-sm text-destructive">
-                      <strong>Previous Rejection:</strong> {plan.rejection_reason}
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    size="sm"
-                    onClick={() => handleApprove(plan)}
-                    className="flex items-center gap-2"
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                    Approve
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleReject(plan)}
-                    className="flex items-center gap-2"
-                  >
-                    <XCircle className="h-4 w-4" />
-                    Request Changes
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-        </CardContent>
-      </Card>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* Enhanced Approval/Rejection Dialog with Better Padding */}
       <Dialog open={!!selectedPlan && !!actionType} onOpenChange={cancelAction}>
