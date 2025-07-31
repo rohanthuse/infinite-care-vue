@@ -246,12 +246,12 @@ export const StaffCarePlanApproval: React.FC<StaffCarePlanApprovalProps> = ({ ca
                       </div>
                     )}
 
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-blue-800">
-                        <CheckCircle className="h-4 w-4" />
-                        <span className="text-sm font-medium">Approved by care team - Awaiting client signature</span>
-                      </div>
-                    </div>
+                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                       <div className="flex items-center gap-2 text-blue-800">
+                         <Clock className="h-4 w-4" />
+                         <span className="text-sm font-medium">Wait for Client Approval</span>
+                       </div>
+                     </div>
                   </div>
                 );
               })}
