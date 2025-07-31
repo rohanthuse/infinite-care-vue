@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Save, CheckCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface CarePlanWizardFooterProps {
   currentStep: number;
@@ -86,10 +87,27 @@ export function CarePlanWizardFooter({
   };
 
   const handleFinalize = () => {
-    if (!canFinalize && isLastStep) {
-      // Don't allow finalization if insufficient content or missing provider
+    if (!hasMinimumContent) {
+      toast.error("Please complete at least 3 sections before finalizing", {
+        description: "Fill in more details about the client's care requirements"
+      });
       return;
     }
+
+    if (!hasProviderInfo) {
+      toast.error("Please assign a provider before finalizing", {
+        description: "Select a staff member or specify a provider name"
+      });
+      return;
+    }
+
+    if (!canFinalize) {
+      toast.error("Cannot finalize care plan", {
+        description: "Please ensure all required information is completed"
+      });
+      return;
+    }
+
     onFinalize();
   };
 

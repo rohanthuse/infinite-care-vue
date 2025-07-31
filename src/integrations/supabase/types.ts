@@ -1249,6 +1249,8 @@ export type Database = {
           created_by_staff_id: string | null
           display_id: string
           end_date: string | null
+          finalized_at: string | null
+          finalized_by: string | null
           goals_progress: number | null
           id: string
           last_step_completed: number | null
@@ -1279,6 +1281,8 @@ export type Database = {
           created_by_staff_id?: string | null
           display_id: string
           end_date?: string | null
+          finalized_at?: string | null
+          finalized_by?: string | null
           goals_progress?: number | null
           id?: string
           last_step_completed?: number | null
@@ -1309,6 +1313,8 @@ export type Database = {
           created_by_staff_id?: string | null
           display_id?: string
           end_date?: string | null
+          finalized_at?: string | null
+          finalized_by?: string | null
           goals_progress?: number | null
           id?: string
           last_step_completed?: number | null

@@ -20,10 +20,18 @@ export const useCarePlanCreation = () => {
     try {
       console.log('[useCarePlanCreation] Starting care plan finalization:', data);
 
+      // Validate required data
+      if (!data.care_plan_id) {
+        throw new Error('Care plan ID is required');
+      }
+      if (!data.status) {
+        throw new Error('Care plan status is required');
+      }
+
       // Get current user info
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        throw new Error('User not authenticated');
+        throw new Error('User not authenticated. Please log in and try again.');
       }
 
       // Get the care plan to check current data
@@ -35,10 +43,23 @@ export const useCarePlanCreation = () => {
 
       if (fetchError) {
         console.error('[useCarePlanCreation] Error fetching care plan:', fetchError);
-        throw new Error('Failed to fetch care plan details');
+        throw new Error('Failed to fetch care plan details. Please refresh and try again.');
+      }
+
+      if (!carePlan) {
+        throw new Error('Care plan not found. Please refresh the page and try again.');
       }
 
       console.log('[useCarePlanCreation] Current care plan data:', carePlan);
+
+      // Validate provider assignment data before proceeding
+      const hasStaffId = data.staff_id && data.staff_id.trim() !== '';
+      const hasProviderName = (data.provider_name && data.provider_name.trim() !== '') || 
+                             (carePlan.provider_name && carePlan.provider_name.trim() !== '');
+
+      if (!hasStaffId && !hasProviderName) {
+        throw new Error('Provider assignment is required. Please select a staff member or specify a provider name.');
+      }
 
       // Prepare update data with proper provider assignment
       const updateData: any = {
@@ -51,17 +72,32 @@ export const useCarePlanCreation = () => {
       // Handle provider assignment to satisfy check_provider_assignment constraint
       // The constraint requires: (staff_id IS NOT NULL AND provider_name IS NOT NULL) OR 
       // (staff_id IS NULL AND provider_name IS NOT NULL)
-      if (data.staff_id) {
-        // Internal staff provider
+      if (hasStaffId) {
+        // Internal staff provider - both staff_id and provider_name must be set
         updateData.staff_id = data.staff_id;
         updateData.provider_name = data.provider_name || carePlan.provider_name || 'Internal Staff';
+        
+        // Validate that we have both required fields
+        if (!updateData.provider_name || updateData.provider_name.trim() === '') {
+          throw new Error('Provider name is required when assigning to staff member.');
+        }
       } else {
-        // External provider or use existing data
+        // External provider - staff_id must be NULL and provider_name must be set
         updateData.staff_id = null;
-        updateData.provider_name = data.provider_name || carePlan.provider_name || 'External Provider';
+        updateData.provider_name = data.provider_name || carePlan.provider_name;
+        
+        // Validate that we have provider name
+        if (!updateData.provider_name || updateData.provider_name.trim() === '') {
+          throw new Error('Provider name is required for external providers.');
+        }
       }
 
       console.log('[useCarePlanCreation] Update data prepared:', updateData);
+      
+      // Final validation before database update
+      if (!updateData.provider_name || updateData.provider_name.trim() === '') {
+        throw new Error('Provider assignment validation failed. Please ensure all required fields are filled.');
+      }
 
       // Update the care plan
       const { data: updatedCarePlan, error } = await supabase
