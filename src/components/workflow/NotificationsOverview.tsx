@@ -102,7 +102,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
       bgColor: "bg-indigo-50",
       borderColor: "border-indigo-200",
       description: "Recently modified documents",
-      path: "documents",
+      path: "document",
       icon: FileWarning
     },
   ];

@@ -135,6 +135,7 @@ const AdminRoutes = () => [
     <Route path="/branch-dashboard/:id/:branchName/agreements" element={<BranchDashboard />} />
     <Route path="/branch-dashboard/:id/:branchName/forms" element={<BranchDashboard />} />
     <Route path="/branch-dashboard/:id/:branchName/notifications" element={<BranchDashboard />} />
+    <Route path="/branch-dashboard/:id/:branchName/notifications/:categoryId" element={<BranchDashboard />} />
     
     {/* Specific Branch Dashboard Sub-pages */}
     <Route path="/branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
