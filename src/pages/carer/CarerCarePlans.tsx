@@ -63,6 +63,8 @@ const CarerCarePlans: React.FC = () => {
     status: plan.status === 'approved' ? 'Active' : plan.status,
     type: plan.care_plan_type || 'Standard Care',
     alerts: plan.status === 'rejected' ? 1 : 0, // Show alert if rejected
+    isDirectlyAssigned: plan.isDirectlyAssigned || false,
+    assignmentType: plan.isDirectlyAssigned ? 'Direct' : 'Branch',
     tasks: plan.activities?.map(activity => ({
       id: activity.id,
       name: activity.name,
@@ -77,6 +79,8 @@ const CarerCarePlans: React.FC = () => {
     
     const tabMatches = 
       activeTab === "all" || 
+      (activeTab === "direct" && carePlan.isDirectlyAssigned) ||
+      (activeTab === "branch" && !carePlan.isDirectlyAssigned) ||
       (activeTab === "alerts" && carePlan.alerts > 0);
     
     return searchMatches && tabMatches;
@@ -105,7 +109,9 @@ const CarerCarePlans: React.FC = () => {
         
         <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
-            <TabsTrigger value="all">All Care Plans</TabsTrigger>
+            <TabsTrigger value="all">All Care Plans ({transformedCarePlans.length})</TabsTrigger>
+            <TabsTrigger value="direct">My Assigned ({transformedCarePlans.filter(plan => plan.isDirectlyAssigned).length})</TabsTrigger>
+            <TabsTrigger value="branch">Branch Plans ({transformedCarePlans.filter(plan => !plan.isDirectlyAssigned).length})</TabsTrigger>
             <TabsTrigger value="alerts" className="relative">
               Requires Attention
               {transformedCarePlans.filter(plan => plan.alerts > 0).length > 0 && (
@@ -139,7 +145,12 @@ const CarerCarePlans: React.FC = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-sm text-gray-500 mb-3">{carePlan.type}</div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-sm text-gray-500">{carePlan.type}</div>
+                  <Badge variant={carePlan.isDirectlyAssigned ? "default" : "secondary"} className="text-xs">
+                    {carePlan.assignmentType}
+                  </Badge>
+                </div>
                 
                 <div className="grid grid-cols-2 gap-2 text-sm mb-4">
                   <div>

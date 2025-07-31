@@ -61,6 +61,7 @@ export interface CarePlanWithDetails extends CarePlanData {
   review_date?: string;
   goals_progress?: number;
   notes?: string;
+  isDirectlyAssigned?: boolean; // Flag to indicate if directly assigned to carer
 }
 
 const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {
@@ -147,6 +148,21 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
 const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWithDetails[]> => {
   console.log(`[fetchCarerAssignedCarePlans] Input carer ID: ${carerId}`);
 
+  // First get the carer's branch_id
+  const { data: carerData, error: carerError } = await supabase
+    .from('staff')
+    .select('branch_id')
+    .eq('id', carerId)
+    .single();
+
+  if (carerError) {
+    console.error('Error fetching carer branch:', carerError);
+    throw carerError;
+  }
+
+  const branchId = carerData?.branch_id;
+
+  // Fetch care plans assigned directly to the carer OR in their branch (fallback)
   const { data, error } = await supabase
     .from('client_care_plans')
     .select(`
@@ -155,7 +171,8 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
         id,
         first_name,
         last_name,
-        avatar_initials
+        avatar_initials,
+        branch_id
       ),
       goals:client_care_plan_goals(*),
       activities:client_activities(*),
@@ -166,7 +183,8 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
         last_name
       )
     `)
-    .eq('staff_id', carerId)
+    .or(`staff_id.eq.${carerId},and(client.branch_id.eq.${branchId},staff_id.is.null)`)
+    .in('status', ['active', 'pending_approval', 'approved'])
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -178,7 +196,9 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
   const transformedData: CarePlanWithDetails[] = (data || []).map(item => ({
     ...item,
     staff: item.staff || null,
-    client_acknowledgment_ip: item.client_acknowledgment_ip as string | null
+    client_acknowledgment_ip: item.client_acknowledgment_ip as string | null,
+    // Add a flag to indicate if this is directly assigned or branch-level
+    isDirectlyAssigned: item.staff_id === carerId
   }));
 
   return transformedData;
