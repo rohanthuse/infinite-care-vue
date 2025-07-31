@@ -52,7 +52,7 @@ export const StaffCarePlanApproval: React.FC<StaffCarePlanApprovalProps> = ({ ca
   const staffReject = useStaffRejectCarePlan();
 
   // Filter care plans that need staff approval
-  const pendingApprovalPlans = carePlans.filter(plan => plan.status === 'draft');
+  const pendingApprovalPlans = carePlans.filter(plan => plan.status === 'pending_approval');
 
   const handleApprove = (plan: CarePlan) => {
     setSelectedPlan(plan);
