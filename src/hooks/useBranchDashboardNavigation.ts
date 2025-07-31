@@ -13,7 +13,7 @@ export const useBranchDashboardNavigation = () => {
   const validTabs = [
     'dashboard', 'key-parameters', 'workflow', 'task-matrix', 'training-matrix',
     'bookings', 'carers', 'clients', 'reviews', 'communication', 'medication',
-    'accounting', 'care-plan', 'agreements', 'forms', 'notifications'
+    'accounting', 'finance', 'care-plan', 'agreements', 'forms', 'notifications'
   ];
 
   // Extract the active tab from the current path - simplified logic

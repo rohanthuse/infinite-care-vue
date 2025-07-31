@@ -43,6 +43,7 @@ const primaryTabs: TabItem[] = [
   { icon: Users, label: "Clients", value: "clients", description: "Client information" },
   { icon: Users, label: "Staff", value: "carers", description: "Staff management" },
   { icon: ClipboardList, label: "Care Plan", value: "care-plan", description: "Patient care plans" },
+  { icon: DollarSign, label: "Finance", value: "finance", description: "Financial management" },
   { icon: Star, label: "Reviews", value: "reviews", description: "Client feedback" },
   { icon: MessageSquare, label: "Communication", value: "communication", description: "Messages & emails" },
 ];
@@ -59,7 +60,6 @@ const secondaryTabGroups = [
   {
     label: "Administration",
     items: [
-      { icon: DollarSign, label: "Accounting", value: "accounting", description: "Financial management" },
       { icon: FileText, label: "Agreements", value: "agreements", description: "Legal documents" },
       { icon: Bell, label: "Events & Logs", value: "events-logs", description: "Activity tracking" },
       { icon: ClipboardCheck, label: "Attendance", value: "attendance", description: "Staff attendance" },
