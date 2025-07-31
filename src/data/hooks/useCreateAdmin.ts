@@ -10,6 +10,53 @@ export interface CreateAdminInput {
   branch_ids: string[];
 }
 
+// Helper function to verify user exists in auth.users with retry mechanism
+async function verifyUserExists(userId: string, maxRetries = 5): Promise<boolean> {
+  console.log(`Verifying user existence for ID: ${userId}`);
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      // Check if user exists by trying to fetch user roles (this will fail if user doesn't exist)
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("user_id", userId)
+        .limit(1);
+      
+      if (!error) {
+        console.log(`User verification successful on attempt ${attempt}`);
+        return true;
+      }
+      
+      // If it's a foreign key constraint error, user doesn't exist yet
+      if (error.code === '23503' || error.message.includes('foreign key')) {
+        console.log(`User not yet committed to auth.users, attempt ${attempt}/${maxRetries}`);
+        
+        if (attempt < maxRetries) {
+          // Exponential backoff: wait 200ms, 400ms, 800ms, 1600ms
+          const delay = 200 * Math.pow(2, attempt - 1);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+      }
+      
+      throw error;
+    } catch (error) {
+      console.error(`User verification attempt ${attempt} failed:`, error);
+      
+      if (attempt === maxRetries) {
+        return false;
+      }
+      
+      // Wait before next attempt
+      const delay = 200 * Math.pow(2, attempt - 1);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  return false;
+}
+
 export async function createAdmin(input: CreateAdminInput) {
   try {
     console.log('Starting admin creation process for:', input.email);
@@ -37,6 +84,14 @@ export async function createAdmin(input: CreateAdminInput) {
     }
 
     console.log('User created successfully:', authData.user.id);
+
+    // Wait for user to be fully committed to auth.users with retry mechanism
+    const userExists = await verifyUserExists(authData.user.id);
+    if (!userExists) {
+      throw new Error("User creation verification failed - user not found in database");
+    }
+
+    console.log('User existence verified, proceeding with role assignment');
 
     // Assign branch_admin role
     const { error: roleError } = await supabase
