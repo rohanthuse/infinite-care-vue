@@ -194,7 +194,7 @@ export function ClientCarePlanApprovalDialog({
 
           {currentStep === 1 && (
             <div className="h-full flex flex-col space-y-4 min-h-0">
-              <Card className="flex-shrink-0">
+              <Card className="min-h-[400px]">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <User className="h-5 w-5 text-primary" />
@@ -206,17 +206,15 @@ export function ClientCarePlanApprovalDialog({
                     <strong>Instructions:</strong> Draw your signature in the box below using your mouse or finger, then click "Save" to confirm.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4 pb-6">
-                  <div className="bg-muted/30 p-4 rounded-lg">
-                    <SignatureCanvas
-                      onSave={(signature) => {
-                        setSignatureData(signature);
-                      }}
-                      width={Math.min(500, window.innerWidth - 100)}
-                      height={200}
-                      disabled={isLoading}
-                    />
-                  </div>
+                <CardContent className="space-y-4 pb-2">
+                  <SignatureCanvas
+                    onSave={(signature) => {
+                      setSignatureData(signature);
+                    }}
+                    width={Math.min(500, window.innerWidth - 100)}
+                    height={200}
+                    disabled={isLoading}
+                  />
                   {signatureData && (
                     <div className="p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
