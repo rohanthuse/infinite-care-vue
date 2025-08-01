@@ -25,11 +25,11 @@ const approveCarePlan = async ({ carePlanId, signatureData, comments }: ApproveC
     .then(data => data.ip)
     .catch(() => null);
 
-  // Update care plan with client acknowledgment
+  // Update care plan with client acknowledgment and activate it
   const { error } = await supabase
     .from('client_care_plans')
     .update({
-      status: 'approved',
+      status: 'active',
       client_acknowledged_at: new Date().toISOString(),
       client_signature_data: signatureData,
       client_acknowledgment_ip: clientIp,
@@ -81,7 +81,7 @@ export const useApproveCarePlan = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
-      toast.success('Care plan approved successfully! Your care team has been notified.');
+      toast.success('Care plan approved and activated successfully! Your care team has been notified.');
     },
     onError: (error) => {
       console.error('Failed to approve care plan:', error);
@@ -135,6 +135,12 @@ export const useCarePlanStatus = (carePlan: any) => {
       return { 
         status: 'approved', 
         label: 'Approved by You', 
+        variant: 'default' as const 
+      };
+    case 'active':
+      return { 
+        status: 'active', 
+        label: 'Active Care Plan', 
         variant: 'default' as const 
       };
     case 'rejected':
