@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, FileEdit, Download, PenLine } from "lucide-react";
+import { ArrowLeft, FileEdit, Download, PenLine, FileText, Grid3X3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -41,11 +41,13 @@ import { RiskAssessmentsTab } from "@/components/care/tabs/RiskAssessmentsTab";
 import { ServicePlanTab } from "@/components/care/tabs/ServicePlanTab";
 import { ServiceActionsTab } from "@/components/care/tabs/ServiceActionsTab";
 import { EventsLogsTab } from "@/components/care/tabs/EventsLogsTab";
+import { CarePlanDocumentView } from "@/components/care/CarePlanDocumentView";
 
 export default function CarePlanView() {
   const { carePlanId, branchId, branchName } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("personal");
+  const [viewMode, setViewMode] = useState<"document" | "tabs">("document");
 
   console.log('[CarePlanView] URL params:', { carePlanId, branchId, branchName });
   console.log('[CarePlanView] Current location:', window.location.pathname);
@@ -317,6 +319,26 @@ export default function CarePlanView() {
             </div>
             
             <div className="flex items-center space-x-2">
+              <div className="flex items-center border rounded-lg p-1">
+                <Button 
+                  variant={viewMode === "document" ? "default" : "ghost"} 
+                  size="sm" 
+                  onClick={() => setViewMode("document")}
+                  className="gap-1 text-xs"
+                >
+                  <FileText className="h-3 w-3" />
+                  Document
+                </Button>
+                <Button 
+                  variant={viewMode === "tabs" ? "default" : "ghost"} 
+                  size="sm" 
+                  onClick={() => setViewMode("tabs")}
+                  className="gap-1 text-xs"
+                >
+                  <Grid3X3 className="h-3 w-3" />
+                  Tabs
+                </Button>
+              </div>
               <Button variant="outline" onClick={handleExportCarePlan} className="flex items-center gap-2">
                 <Download className="h-4 w-4" />
                 <span>Export</span>
@@ -332,10 +354,33 @@ export default function CarePlanView() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <CarePlanTabBar activeTab={activeTab} onChange={setActiveTab} />
-          
-          <div className="mt-6">
+        {viewMode === "document" ? (
+          <div className="bg-white rounded-lg shadow-sm border h-[calc(100vh-200px)]">
+            <CarePlanDocumentView
+              carePlan={carePlan}
+              clientProfile={clientProfile}
+              personalInfo={personalInfo}
+              medicalInfo={medicalInfo}
+              dietaryRequirements={dietaryRequirements}
+              personalCare={personalCare}
+              assessments={assessments}
+              equipment={equipment}
+              riskAssessments={riskAssessments}
+              serviceActions={serviceActions}
+              onEditPersonalInfo={() => dialogState.setEditPersonalInfoOpen(true)}
+              onEditMedicalInfo={() => dialogState.setEditMedicalInfoOpen(true)}
+              onEditAboutMe={() => dialogState.setEditAboutMeOpen(true)}
+              onEditDietaryRequirements={() => dialogState.setEditDietaryOpen(true)}
+              onEditPersonalCare={() => dialogState.setEditPersonalCareOpen(true)}
+              onAddGoal={() => dialogState.setAddGoalDialogOpen(true)}
+              onToggleViewMode={() => setViewMode("tabs")}
+            />
+          </div>
+        ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <CarePlanTabBar activeTab={activeTab} onChange={setActiveTab} />
+            
+            <div className="mt-6">
             <TabsContent value="personal">
               <ErrorBoundary>
                 <PersonalInfoTab 
@@ -469,8 +514,9 @@ export default function CarePlanView() {
                 />
               </ErrorBoundary>
             </TabsContent>
-          </div>
-        </Tabs>
+            </div>
+          </Tabs>
+        )}
       </div>
 
       {/* All Dialog Components */}
