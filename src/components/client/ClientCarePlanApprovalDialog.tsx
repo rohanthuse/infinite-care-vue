@@ -206,7 +206,7 @@ export function ClientCarePlanApprovalDialog({
                     <strong>Instructions:</strong> Draw your signature in the box below using your mouse or finger, then click "Save" to confirm.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4 pb-2">
+                <CardContent className="overflow-y-auto max-h-[320px] space-y-4 pb-4">
                   <SignatureCanvas
                     onSave={(signature) => {
                       setSignatureData(signature);
