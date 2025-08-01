@@ -98,7 +98,7 @@ export function ClientCarePlanApprovalDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-6xl h-[95vh] flex flex-col">
+      <DialogContent className="w-full max-w-6xl max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
@@ -206,8 +206,8 @@ export function ClientCarePlanApprovalDialog({
                     <strong>Instructions:</strong> Draw your signature in the box below using your mouse or finger, then click "Save" to confirm.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="bg-muted/30 p-2 md:p-4 rounded-lg min-h-[280px]">
+                <CardContent className="space-y-4 pb-6">
+                  <div className="bg-muted/30 p-4 rounded-lg min-h-[320px] flex flex-col">
                     <SignatureCanvas
                       onSave={(signature) => {
                         setSignatureData(signature);
