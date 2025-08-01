@@ -77,11 +77,11 @@ export interface CarePlanWithDetails extends CarePlanData {
 const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {
   console.log(`[fetchCarePlanData] Input care plan ID: ${carePlanId}`);
   
-  // Resolve the care plan ID to get the actual UUID
-  const resolvedId = resolveCarePlanId(carePlanId);
-  console.log(`[fetchCarePlanData] Resolved care plan ID: ${resolvedId}`);
-
-  const { data, error } = await supabase
+  // Check if the input is a valid UUID format or a display ID (CP-XXX)
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(carePlanId);
+  const isDisplayId = /^CP-\d+$/i.test(carePlanId);
+  
+  let query = supabase
     .from('client_care_plans')
     .select(`
       *,
@@ -96,9 +96,27 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {
         first_name,
         last_name
       )
-    `)
-    .eq('id', resolvedId)
-    .single();
+    `);
+
+  // Query by appropriate field based on input format
+  if (isUuid) {
+    console.log(`[fetchCarePlanData] Querying by UUID: ${carePlanId}`);
+    query = query.eq('id', carePlanId);
+  } else if (isDisplayId) {
+    console.log(`[fetchCarePlanData] Querying by display_id: ${carePlanId}`);
+    query = query.eq('display_id', carePlanId);
+  } else {
+    // Fallback: try resolving via mapping first, then by display_id
+    const resolvedId = resolveCarePlanId(carePlanId);
+    console.log(`[fetchCarePlanData] Fallback resolved ID: ${resolvedId}`);
+    if (resolvedId !== carePlanId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedId)) {
+      query = query.eq('id', resolvedId);
+    } else {
+      query = query.eq('display_id', carePlanId);
+    }
+  }
+
+  const { data, error } = await query.single();
 
   if (error) {
     console.error('Error fetching care plan:', error);
