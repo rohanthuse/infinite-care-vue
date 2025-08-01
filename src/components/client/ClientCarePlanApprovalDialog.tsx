@@ -207,7 +207,7 @@ export function ClientCarePlanApprovalDialog({
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 pb-6">
-                  <div className="bg-muted/30 p-4 rounded-lg min-h-[320px] flex flex-col">
+                  <div className="bg-muted/30 p-4 rounded-lg">
                     <SignatureCanvas
                       onSave={(signature) => {
                         setSignatureData(signature);
