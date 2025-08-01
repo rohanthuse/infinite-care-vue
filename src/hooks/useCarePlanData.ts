@@ -293,7 +293,8 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
   const branchId = carerData?.branch_id;
 
   // Fetch care plans assigned directly to the carer OR in their branch (fallback)
-  const { data, error } = await supabase
+  // First get directly assigned care plans
+  const directQuery = supabase
     .from('client_care_plans')
     .select(`
       *,
@@ -313,17 +314,49 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
         last_name
       )
     `)
-    .or(`staff_id.eq.${carerId},and(client.branch_id.eq.${branchId},staff_id.is.null)`)
-    .in('status', ['active', 'pending_approval', 'approved'])
-    .order('created_at', { ascending: false });
+    .eq('staff_id', carerId)
+    .in('status', ['active', 'pending_approval', 'approved']);
 
-  if (error) {
-    console.error('Error fetching carer assigned care plans:', error);
-    throw error;
+  // Then get branch-level care plans where staff_id is null
+  const branchQuery = supabase
+    .from('client_care_plans')
+    .select(`
+      *,
+      client:clients!inner(
+        id,
+        first_name,
+        last_name,
+        avatar_initials,
+        branch_id
+      ),
+      goals:client_care_plan_goals(*),
+      activities:client_activities(*),
+      medications:client_medications(*),
+      staff:staff!staff_id(
+        id,
+        first_name,
+        last_name
+      )
+    `)
+    .eq('client.branch_id', branchId)
+    .is('staff_id', null)
+    .in('status', ['active', 'pending_approval', 'approved']);
+
+  const [directResult, branchResult] = await Promise.all([directQuery, branchQuery]);
+
+  if (directResult.error && branchResult.error) {
+    console.error('Error fetching carer assigned care plans:', directResult.error || branchResult.error);
+    throw directResult.error || branchResult.error;
   }
 
+  // Combine the results
+  const combinedData = [
+    ...(directResult.data || []),
+    ...(branchResult.data || [])
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
   // Transform the data to handle potential null staff relations and type casting
-  const transformedData: CarePlanWithDetails[] = (data || []).map(item => ({
+  const transformedData: CarePlanWithDetails[] = combinedData.map(item => ({
     ...item,
     staff: item.staff || null,
     client_acknowledgment_ip: item.client_acknowledgment_ip as string | null,
