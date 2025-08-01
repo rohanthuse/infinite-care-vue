@@ -260,40 +260,39 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
           )}
         />
         
-      </div>
-      
-      {/* Single row layout with placeholder and buttons */}
-      <div className="flex items-center justify-center gap-3 mt-4 pt-3 border-t border-border">
         {!hasContent && !disabled && (
-          <div className="flex items-center gap-2 text-muted-foreground mr-2">
-            <PenLine className="h-4 w-4" />
-            <span className="text-sm">Sign here →</span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 pointer-events-none">
+            <PenLine className="h-6 w-6 mb-2" />
+            <span className="text-sm">Sign here</span>
           </div>
         )}
-        
-        <Button 
-          type="button" 
-          variant="outline" 
-          size={isMobile ? "default" : "sm"}
-          onClick={undoStroke}
-          disabled={disabled || strokes.length === 0}
-          className="flex items-center gap-2 min-h-[40px] shadow-sm hover:shadow-md transition-shadow font-medium"
-        >
-          <Undo2 className="h-4 w-4" />
-          <span>Undo</span>
-        </Button>
-        
-        <Button 
-          type="button" 
-          variant="outline" 
-          size={isMobile ? "default" : "sm"}
-          onClick={clearCanvas}
-          disabled={disabled || strokes.length === 0}
-          className="flex items-center gap-2 min-h-[40px] shadow-sm hover:shadow-md transition-shadow font-medium"
-        >
-          <X className="h-4 w-4" />
-          <span>Clear</span>
-        </Button>
+      </div>
+      
+      <div className="flex justify-between gap-2 mt-4 pt-3 border-t border-border">
+        <div className="flex gap-2">
+          <Button 
+            type="button" 
+            variant="outline" 
+            size={isMobile ? "default" : "sm"}
+            onClick={undoStroke}
+            disabled={disabled || strokes.length === 0}
+            className="flex items-center gap-2 min-h-[40px] shadow-sm hover:shadow-md transition-shadow font-medium"
+          >
+            <Undo2 className="h-4 w-4" />
+            <span>Undo</span>
+          </Button>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size={isMobile ? "default" : "sm"}
+            onClick={clearCanvas}
+            disabled={disabled || strokes.length === 0}
+            className="flex items-center gap-2 min-h-[40px] shadow-sm hover:shadow-md transition-shadow font-medium"
+          >
+            <X className="h-4 w-4" />
+            <span>Clear</span>
+          </Button>
+        </div>
         
         <Button 
           type="button" 
