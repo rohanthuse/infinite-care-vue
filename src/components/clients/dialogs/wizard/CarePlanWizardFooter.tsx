@@ -122,8 +122,8 @@ export function CarePlanWizardFooter({
   };
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 border-t bg-white/95 backdrop-blur-sm px-6 py-4 z-10">
-      <div className="flex items-center justify-between">
+    <div className="border-t bg-white px-4 lg:px-6 py-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
         <div className="flex items-center space-x-2">
           <Button
             type="button"
@@ -133,17 +133,17 @@ export function CarePlanWizardFooter({
             className="flex items-center space-x-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Previous</span>
+            <span className="hidden sm:inline">Previous</span>
           </Button>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
           <Button
             type="button"
             variant="outline"
             onClick={handleSaveDraft}
             disabled={isLoading}
-            className="flex items-center space-x-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+            className="flex items-center space-x-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 w-full sm:w-auto"
           >
             <Save className="h-4 w-4" />
             <span>{isLoading ? "Saving..." : isDraft ? "Update Draft" : "Save as Draft"}</span>
@@ -154,7 +154,7 @@ export function CarePlanWizardFooter({
               type="button"
               onClick={handleFinalize}
               disabled={isLoading || !canFinalize}
-              className={`flex items-center space-x-2 ${
+              className={`flex items-center space-x-2 w-full sm:w-auto ${
                 canFinalize 
                   ? "bg-green-600 hover:bg-green-700" 
                   : "bg-gray-400 hover:bg-gray-400 cursor-not-allowed"
@@ -169,7 +169,7 @@ export function CarePlanWizardFooter({
               type="button"
               onClick={handleNext}
               disabled={isLoading}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 w-full sm:w-auto"
             >
               <span>{isLoading ? "Saving..." : "Next"}</span>
               <ArrowRight className="h-4 w-4" />
@@ -179,11 +179,11 @@ export function CarePlanWizardFooter({
       </div>
 
       <div className="mt-3 text-center">
-        <p className="text-sm text-gray-500">
+        <p className="text-xs sm:text-sm text-gray-500">
           Step {currentStep} of {totalSteps}
-          {isDraft && <span className="text-amber-600 ml-2">(Draft Mode - All changes are automatically saved)</span>}
+          {isDraft && <span className="text-amber-600 ml-2 block sm:inline">(Draft Mode - All changes are automatically saved)</span>}
           {isLastStep && !isDraft && (
-            <span className={`ml-2 ${canFinalize ? "text-green-600" : "text-red-600"}`}>
+            <span className={`ml-2 block sm:inline ${canFinalize ? "text-green-600" : "text-red-600"}`}>
               {canFinalize ? "Ready for approval" : getFinalizationMessage()}
             </span>
           )}

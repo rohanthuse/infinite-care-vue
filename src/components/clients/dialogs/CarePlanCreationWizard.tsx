@@ -353,8 +353,8 @@ export function CarePlanCreationWizard({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="px-6 py-4 border-b">
+      <DialogContent className="max-w-7xl h-[95vh] flex flex-col p-0">
+        <DialogHeader className="flex-shrink-0 px-6 py-4 border-b">
           <DialogTitle>
             {carePlanId ? "Edit Care Plan Draft" : "Create Care Plan"}
             {clientProfile && (
@@ -366,7 +366,7 @@ export function CarePlanCreationWizard({
         </DialogHeader>
         
         {stepError && (
-          <div className="px-6 py-2 bg-red-50 border-b border-red-200">
+          <div className="flex-shrink-0 px-6 py-2 bg-red-50 border-b border-red-200">
             <p className="text-red-700 text-sm">{stepError}</p>
             <button 
               onClick={() => setStepError(null)}
@@ -385,37 +385,44 @@ export function CarePlanCreationWizard({
             </div>
           </div>
         ) : (
-          <div className="flex flex-1 overflow-hidden">
-            {/* Sidebar */}
-            <CarePlanWizardSidebar
-              steps={wizardSteps}
-              currentStep={currentStep}
-              completedSteps={completedSteps}
-              onStepClick={handleStepClick}
-              completionPercentage={draftData?.completion_percentage || 0}
-            />
+          <div className="flex flex-1 min-h-0">
+            {/* Sidebar - Hidden on mobile, visible on lg+ */}
+            <div className="hidden lg:block flex-shrink-0">
+              <CarePlanWizardSidebar
+                steps={wizardSteps}
+                currentStep={currentStep}
+                completedSteps={completedSteps}
+                onStepClick={handleStepClick}
+                completionPercentage={draftData?.completion_percentage || 0}
+              />
+            </div>
             
             {/* Main Content */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <div className="flex-1 overflow-y-auto p-6 pb-24">
-                <CarePlanWizardSteps 
-                  currentStep={currentStep} 
-                  form={form} 
-                  clientId={clientId}
-                />
+            <div className="flex-1 flex flex-col min-h-0 relative">
+              <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4">
+                <div className="max-w-4xl mx-auto space-y-6">
+                  <CarePlanWizardSteps 
+                    currentStep={currentStep} 
+                    form={form} 
+                    clientId={clientId}
+                  />
+                </div>
               </div>
 
-              <CarePlanWizardFooter
-                currentStep={currentStep}
-                totalSteps={totalSteps}
-                onPrevious={handlePrevious}
-                onNext={handleNext}
-                onSaveDraft={handleSaveDraft}
-                onFinalize={handleFinalize}
-                isLoading={isSaving || isCreating}
-                isDraft={!!draftData}
-                formData={formData}
-              />
+              {/* Footer - Fixed at bottom */}
+              <div className="flex-shrink-0">
+                <CarePlanWizardFooter
+                  currentStep={currentStep}
+                  totalSteps={totalSteps}
+                  onPrevious={handlePrevious}
+                  onNext={handleNext}
+                  onSaveDraft={handleSaveDraft}
+                  onFinalize={handleFinalize}
+                  isLoading={isSaving || isCreating}
+                  isDraft={!!draftData}
+                  formData={formData}
+                />
+              </div>
             </div>
           </div>
         )}
