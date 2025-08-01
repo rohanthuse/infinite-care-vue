@@ -268,7 +268,7 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
         )}
       </div>
       
-      <div className="flex justify-between gap-2 mt-2">
+      <div className="flex justify-between gap-2 mt-4 pt-3 border-t border-border">
         <div className="flex gap-2">
           <Button 
             type="button" 
@@ -276,7 +276,7 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
             size={isMobile ? "default" : "sm"}
             onClick={undoStroke}
             disabled={disabled || strokes.length === 0}
-            className="flex items-center gap-1"
+            className="flex items-center gap-2 min-h-[40px] shadow-sm hover:shadow-md transition-shadow font-medium"
           >
             <Undo2 className="h-4 w-4" />
             <span>Undo</span>
@@ -286,8 +286,8 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
             variant="outline" 
             size={isMobile ? "default" : "sm"}
             onClick={clearCanvas}
-            disabled={disabled}
-            className="flex items-center gap-1"
+            disabled={disabled || strokes.length === 0}
+            className="flex items-center gap-2 min-h-[40px] shadow-sm hover:shadow-md transition-shadow font-medium"
           >
             <X className="h-4 w-4" />
             <span>Clear</span>
@@ -299,7 +299,7 @@ export const SignatureCanvas: React.FC<SignatureCanvasProps> = ({
           size={isMobile ? "default" : "sm"}
           onClick={saveSignature}
           disabled={disabled || !hasContent}
-          className="flex items-center gap-1"
+          className="flex items-center gap-2 min-h-[40px] bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all font-medium px-6"
         >
           <Save className="h-4 w-4" />
           <span>Save</span>
