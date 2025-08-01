@@ -185,11 +185,29 @@ export const useUnifiedDocuments = (branchId: string) => {
       console.log('[useUnifiedDocuments] Uploading to storage bucket: documents');
       const { data: uploadResult, error: uploadError } = await supabase.storage
         .from('documents')
-        .upload(filePath, uploadData.file);
+        .upload(filePath, uploadData.file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
-        console.error('[useUnifiedDocuments] File upload error:', uploadError);
-        throw new Error(`Failed to upload file: ${uploadError.message}`);
+        console.error('[useUnifiedDocuments] File upload error:', {
+          error: uploadError,
+          message: uploadError.message,
+          filePath,
+          fileName: uploadData.file.name,
+          fileSize: uploadData.file.size
+        });
+        
+        // Enhanced error message based on error type
+        let errorMessage = `Failed to upload file: ${uploadError.message}`;
+        if (uploadError.message.includes('policy')) {
+          errorMessage = 'Permission denied. Storage policies may need to be configured.';
+        } else if (uploadError.message.includes('size')) {
+          errorMessage = 'File is too large. Please try a smaller file.';
+        }
+        
+        throw new Error(errorMessage);
       }
 
       console.log('[useUnifiedDocuments] File uploaded successfully to storage:', uploadResult);
