@@ -62,6 +62,15 @@ export interface CarePlanWithDetails extends CarePlanData {
   goals_progress?: number;
   notes?: string;
   isDirectlyAssigned?: boolean; // Flag to indicate if directly assigned to carer
+  // Additional care plan details
+  personal_info?: any;
+  medical_info?: any;
+  personal_care?: any;
+  dietary_requirements?: any;
+  risk_assessments?: any[];
+  service_actions?: any[];
+  equipment?: any[];
+  documents?: any[];
 }
 
 const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {
@@ -135,12 +144,63 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
     throw error;
   }
 
-  // Transform the data to handle potential null staff relations and type casting
-  const transformedData: CarePlanWithDetails[] = (data || []).map(item => ({
-    ...item,
-    staff: item.staff || null,
-    client_acknowledgment_ip: item.client_acknowledgment_ip as string | null
-  }));
+  // Transform the data to handle potential null staff relations and extract data from auto_save_data
+  const transformedData: CarePlanWithDetails[] = (data || []).map(item => {
+    const autoSaveData = typeof item.auto_save_data === 'object' && item.auto_save_data !== null ? item.auto_save_data as Record<string, any> : {};
+    
+    // Extract goals from auto_save_data if not available from joined table
+    const goalsFromAutoSave = Array.isArray(autoSaveData.goals) ? autoSaveData.goals.map((goal: any, index: number) => ({
+      id: `goal-${index}`,
+      description: goal.description || goal.goal_description || '',
+      status: goal.status || 'active',
+      progress: goal.progress || 0,
+      notes: goal.notes || goal.additional_notes || ''
+    })) : [];
+
+    // Extract medications from auto_save_data if not available from joined table
+    const medicationsFromAutoSave = Array.isArray(autoSaveData.medications) ? autoSaveData.medications.map((med: any, index: number) => ({
+      id: `med-${index}`,
+      name: med.medication_name || med.name || '',
+      dosage: med.dosage || '',
+      frequency: med.frequency || '',
+      start_date: med.start_date || '',
+      end_date: med.end_date || '',
+      status: med.status || 'active'
+    })) : [];
+
+    // Extract activities from auto_save_data if not available from joined table
+    const activitiesFromAutoSave = Array.isArray(autoSaveData.activities) ? autoSaveData.activities.map((activity: any, index: number) => ({
+      id: `activity-${index}`,
+      name: activity.activity_name || activity.name || '',
+      description: activity.description || '',
+      frequency: activity.frequency || '',
+      status: activity.status || 'active'
+    })) : [];
+
+    return {
+      ...item,
+      staff: item.staff || null,
+      client_acknowledgment_ip: item.client_acknowledgment_ip as string | null,
+      // Use auto_save_data if joined tables are empty
+      goals: item.goals?.length > 0 ? item.goals : goalsFromAutoSave,
+      medications: item.medications?.length > 0 ? item.medications : medicationsFromAutoSave,
+      activities: item.activities?.length > 0 ? item.activities : activitiesFromAutoSave,
+      // Add additional extracted data from auto_save_data
+      care_plan_type: autoSaveData.care_plan_type || item.care_plan_type,
+      review_date: autoSaveData.review_date || item.review_date,
+      goals_progress: autoSaveData.goals_progress || item.goals_progress,
+      notes: autoSaveData.notes || item.notes,
+      // Extract additional care plan details
+      personal_info: autoSaveData.personal_info || {},
+      medical_info: autoSaveData.medical_info || {},
+      personal_care: autoSaveData.personal_care || {},
+      dietary_requirements: autoSaveData.dietary_requirements || {},
+      risk_assessments: Array.isArray(autoSaveData.risk_assessments) ? autoSaveData.risk_assessments : [],
+      service_actions: Array.isArray(autoSaveData.service_actions) ? autoSaveData.service_actions : [],
+      equipment: Array.isArray(autoSaveData.equipment) ? autoSaveData.equipment : [],
+      documents: Array.isArray(autoSaveData.documents) ? autoSaveData.documents : []
+    };
+  });
 
   return transformedData;
 };
