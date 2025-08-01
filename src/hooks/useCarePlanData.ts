@@ -69,6 +69,7 @@ export interface CarePlanWithDetails extends CarePlanData {
   dietary_requirements?: any;
   risk_assessments?: any[];
   service_actions?: any[];
+  service_plans?: any[];
   equipment?: any[];
   documents?: any[];
 }
@@ -177,6 +178,74 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
       status: activity.status || 'active'
     })) : [];
 
+    // Extract service plans from auto_save_data
+    const servicePlansFromAutoSave = Array.isArray(autoSaveData.service_plans) ? autoSaveData.service_plans.map((plan: any, index: number) => ({
+      id: `service-plan-${index}`,
+      service_name: plan.service_name || '',
+      service_category: plan.service_category || '',
+      provider_name: plan.provider_name || '',
+      frequency: plan.frequency || '',
+      start_date: plan.start_date || '',
+      end_date: plan.end_date || '',
+      duration: plan.duration || '',
+      goals: Array.isArray(plan.goals) ? plan.goals : [],
+      notes: plan.notes || ''
+    })) : [];
+
+    // Extract service actions from auto_save_data
+    const serviceActionsFromAutoSave = Array.isArray(autoSaveData.service_actions) ? autoSaveData.service_actions.map((action: any, index: number) => ({
+      id: `service-action-${index}`,
+      service_name: action.service_name || '',
+      service_category: action.service_category || '',
+      provider_name: action.provider_name || '',
+      start_date: action.start_date || '',
+      end_date: action.end_date || '',
+      objectives: action.objectives || '',
+      frequency: action.frequency || '',
+      duration: action.duration || '',
+      schedule_notes: action.schedule_notes || '',
+      status: action.status || 'active'
+    })) : [];
+
+    // Extract equipment from auto_save_data
+    const equipmentFromAutoSave = Array.isArray(autoSaveData.equipment) ? autoSaveData.equipment.map((item: any, index: number) => ({
+      id: `equipment-${index}`,
+      equipment_name: item.equipment_name || '',
+      equipment_type: item.equipment_type || '',
+      manufacturer: item.manufacturer || '',
+      model: item.model || '',
+      serial_number: item.serial_number || '',
+      location: item.location || '',
+      installation_date: item.installation_date || '',
+      maintenance_schedule: item.maintenance_schedule || '',
+      next_maintenance: item.next_maintenance || '',
+      status: item.status || 'active'
+    })) : [];
+
+    // Extract risk assessments from auto_save_data
+    const riskAssessmentsFromAutoSave = Array.isArray(autoSaveData.risk_assessments) ? autoSaveData.risk_assessments.map((risk: any, index: number) => ({
+      id: `risk-${index}`,
+      risk_type: risk.risk_type || '',
+      risk_level: risk.risk_level || '',
+      risk_factors: Array.isArray(risk.risk_factors) ? risk.risk_factors : [],
+      mitigation_strategies: Array.isArray(risk.mitigation_strategies) ? risk.mitigation_strategies : [],
+      assessment_date: risk.assessment_date || '',
+      next_review_date: risk.next_review_date || '',
+      assessed_by: risk.assessed_by || '',
+      status: risk.status || 'active'
+    })) : [];
+
+    // Extract documents from auto_save_data
+    const documentsFromAutoSave = Array.isArray(autoSaveData.documents) ? autoSaveData.documents.map((doc: any, index: number) => ({
+      id: `document-${index}`,
+      document_type: doc.document_type || '',
+      document_name: doc.document_name || '',
+      consent_given: doc.consent_given || false,
+      consent_date: doc.consent_date || '',
+      witness_name: doc.witness_name || '',
+      notes: doc.notes || ''
+    })) : [];
+
     return {
       ...item,
       staff: item.staff || null,
@@ -195,10 +264,11 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
       medical_info: autoSaveData.medical_info || {},
       personal_care: autoSaveData.personal_care || {},
       dietary_requirements: autoSaveData.dietary_requirements || {},
-      risk_assessments: Array.isArray(autoSaveData.risk_assessments) ? autoSaveData.risk_assessments : [],
-      service_actions: Array.isArray(autoSaveData.service_actions) ? autoSaveData.service_actions : [],
-      equipment: Array.isArray(autoSaveData.equipment) ? autoSaveData.equipment : [],
-      documents: Array.isArray(autoSaveData.documents) ? autoSaveData.documents : []
+      risk_assessments: riskAssessmentsFromAutoSave,
+      service_actions: serviceActionsFromAutoSave,
+      service_plans: servicePlansFromAutoSave,
+      equipment: equipmentFromAutoSave,
+      documents: documentsFromAutoSave
     };
   });
 
