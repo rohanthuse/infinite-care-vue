@@ -275,13 +275,6 @@ export function ClientCarePlanApprovalDialog({
                 Back to Review
               </Button>
               <Button
-                variant="destructive"
-                onClick={handleReject}
-                disabled={isLoading}
-              >
-                Need to Add Some Changes
-              </Button>
-              <Button
                 onClick={handleApprove}
                 disabled={!canApprove || isLoading}
               >

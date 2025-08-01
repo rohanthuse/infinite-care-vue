@@ -177,12 +177,21 @@ const ClientCarePlans = () => {
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2">
-                    {requiresApproval ? <Button onClick={() => handleOpenApprovalDialog(carePlan)} className="bg-green-600 hover:bg-green-700">
-                        <PenTool className="h-4 w-4 mr-2" />
-                        Care Plan is Approved
-                      </Button> : carePlan.status === 'approved' || carePlan.status === 'active' ? <Button variant="outline" onClick={handleRequestChanges}>
+                    {requiresApproval ? (
+                      <>
+                        <Button onClick={() => handleOpenApprovalDialog(carePlan)} className="bg-green-600 hover:bg-green-700">
+                          <PenTool className="h-4 w-4 mr-2" />
+                          Care Plan is Approved
+                        </Button>
+                        <Button variant="outline" onClick={handleRequestChanges}>
+                          Need to Add Some Changes
+                        </Button>
+                      </>
+                    ) : carePlan.status === 'approved' || carePlan.status === 'active' ? (
+                      <Button variant="outline" onClick={handleRequestChanges}>
                         Need to Add Some Changes
-                      </Button> : null}
+                      </Button>
+                    ) : null}
                   </div>
                 </div>
               </CardHeader>
