@@ -88,7 +88,8 @@ export function CarePlanCreationWizard({
     defaultValues: {
       title: "",
       provider_name: "",
-      provider_type: "individual",
+      provider_type: "staff",
+      staff_id: null,
       start_date: new Date().toISOString().split('T')[0],
       priority: "medium" as const,
       care_plan_type: "standard",

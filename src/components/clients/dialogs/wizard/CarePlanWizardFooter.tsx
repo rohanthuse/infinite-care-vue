@@ -65,6 +65,18 @@ export function CarePlanWizardFooter({
 
   const canFinalize = hasMinimumContent && hasProviderInfo;
 
+  // Debug logging to track validation states
+  console.log('[CarePlanWizardFooter] Validation Debug:', {
+    completedSections: completedSections.length,
+    hasMinimumContent,
+    providerType: formData?.provider_type,
+    staffId: formData?.staff_id,
+    providerName: formData?.provider_name,
+    hasProviderInfo,
+    canFinalize,
+    formDataKeys: Object.keys(formData || {})
+  });
+
   const handleNext = async () => {
     try {
       // Save draft before proceeding to next step
@@ -113,10 +125,16 @@ export function CarePlanWizardFooter({
 
   const getFinalizationMessage = () => {
     if (!hasMinimumContent) {
-      return "Complete at least 3 sections to finalize";
+      return `Complete at least 3 sections to finalize (${completedSections.length}/3)`;
     }
     if (!hasProviderInfo) {
-      return "Provider information is required to finalize";
+      if (formData?.provider_type === 'staff') {
+        return "Please select a staff member to assign";
+      }
+      if (formData?.provider_type === 'external') {
+        return "Please enter provider name";
+      }
+      return "Please select a provider type and assign";
     }
     return "Send for staff approval";
   };
