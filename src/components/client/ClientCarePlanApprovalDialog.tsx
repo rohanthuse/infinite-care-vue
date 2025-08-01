@@ -98,8 +98,8 @@ export function ClientCarePlanApprovalDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[95vh] flex flex-col overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="w-full max-w-6xl h-[95vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0 pb-4">
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
             Care Plan Approval Required
@@ -110,15 +110,15 @@ export function ClientCarePlanApprovalDialog({
         </DialogHeader>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-center mb-4">
-          <div className="flex items-center space-x-4">
+        <div className="flex-shrink-0 flex items-center justify-center mb-4">
+          <div className="flex items-center space-x-2 md:space-x-4 overflow-x-auto pb-2">
             {steps.map((step, index) => {
               const Icon = step.icon;
               const isActive = index === currentStep;
               const isCompleted = index < currentStep || (index === 0 && hasReadPlan);
               
               return (
-                <div key={step.id} className="flex items-center">
+                <div key={step.id} className="flex items-center flex-shrink-0">
                   <div className={`
                     flex items-center justify-center w-8 h-8 rounded-full border-2 transition-colors
                     ${isCompleted ? 'bg-primary border-primary text-primary-foreground' : 
@@ -126,13 +126,13 @@ export function ClientCarePlanApprovalDialog({
                   `}>
                     {isCompleted ? <CheckCircle className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
                   </div>
-                  <span className={`ml-2 text-sm font-medium ${
+                  <span className={`ml-2 text-sm font-medium whitespace-nowrap ${
                     isActive ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
                   }`}>
                     {step.title}
                   </span>
                   {index < steps.length - 1 && (
-                    <div className={`w-8 h-0.5 mx-4 ${
+                    <div className={`w-4 md:w-8 h-0.5 mx-2 md:mx-4 ${
                       isCompleted ? 'bg-primary' : 'bg-muted'
                     }`} />
                   )}
@@ -142,23 +142,23 @@ export function ClientCarePlanApprovalDialog({
           </div>
         </div>
 
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden">
           {currentStep === 0 && (
-            <div className="h-full flex flex-col">
+            <div className="h-full flex flex-col min-h-0">
               {/* Care Plan Summary */}
-              <Card className="mb-4">
+              <Card className="flex-shrink-0 mb-4">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center justify-between">
-                    <span>{carePlan.title}</span>
-                    <Badge variant="outline">
+                  <CardTitle className="text-lg flex items-center justify-between flex-wrap gap-2">
+                    <span className="min-w-0 truncate">{carePlan.title}</span>
+                    <Badge variant="outline" className="flex-shrink-0">
                       {carePlan.status === 'pending_client_approval' ? 'Pending Approval' : carePlan.status}
                     </Badge>
                   </CardTitle>
-                  <div className="text-sm text-muted-foreground flex items-center gap-4">
-                    <span>Provider: {carePlan.provider_name}</span>
-                    <span>Plan ID: {carePlan.display_id}</span>
+                  <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-2 md:gap-4">
+                    <span className="min-w-0">Provider: {carePlan.provider_name}</span>
+                    <span className="flex-shrink-0">Plan ID: {carePlan.display_id}</span>
                     {carePlan.review_date && (
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 flex-shrink-0">
                         <Clock className="h-3 w-3" />
                         Next Review: {new Date(carePlan.review_date).toLocaleDateString()}
                       </span>
@@ -168,21 +168,21 @@ export function ClientCarePlanApprovalDialog({
               </Card>
 
               {/* Care Plan Content */}
-              <Card className="flex-1">
-                <CardContent className="p-0 h-full">
-                  <ScrollArea className="h-96">
-                    <Tabs defaultValue="overview" className="w-full">
-                      <div className="p-4 border-b">
-                        <TabsList className="grid w-full grid-cols-4">
-                          <TabsTrigger value="overview">Overview</TabsTrigger>
-                          <TabsTrigger value="goals">Goals</TabsTrigger>
-                          <TabsTrigger value="medications">Medications</TabsTrigger>
-                          <TabsTrigger value="activities">Activities</TabsTrigger>
-                        </TabsList>
-                      </div>
+              <Card className="flex-1 min-h-0">
+                <CardContent className="p-0 h-full flex flex-col">
+                  <Tabs defaultValue="overview" className="w-full h-full flex flex-col">
+                    <div className="flex-shrink-0 p-4 border-b">
+                      <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-1">
+                        <TabsTrigger value="overview" className="text-xs md:text-sm">Overview</TabsTrigger>
+                        <TabsTrigger value="goals" className="text-xs md:text-sm">Goals</TabsTrigger>
+                        <TabsTrigger value="medications" className="text-xs md:text-sm">Medications</TabsTrigger>
+                        <TabsTrigger value="activities" className="text-xs md:text-sm">Activities</TabsTrigger>
+                      </TabsList>
+                    </div>
 
+                    <ScrollArea className="flex-1 min-h-0">
                       <div className="p-4">
-                        <TabsContent value="overview">
+                        <TabsContent value="overview" className="mt-0">
                           <div className="space-y-4">
                             <div>
                               <h4 className="font-medium mb-2">Care Plan Overview</h4>
@@ -201,19 +201,19 @@ export function ClientCarePlanApprovalDialog({
                               </div>
                             )}
 
-                            <div className="grid grid-cols-3 gap-4 text-center">
-                              <div className="p-3 bg-muted rounded-lg">
-                                <Target className="h-5 w-5 mx-auto mb-1 text-primary" />
+                            <div className="grid grid-cols-3 gap-2 md:gap-4 text-center">
+                              <div className="p-2 md:p-3 bg-muted rounded-lg">
+                                <Target className="h-4 md:h-5 w-4 md:w-5 mx-auto mb-1 text-primary" />
                                 <div className="text-sm font-medium">{carePlan.goals?.length || 0}</div>
                                 <div className="text-xs text-muted-foreground">Goals</div>
                               </div>
-                              <div className="p-3 bg-muted rounded-lg">
-                                <Pill className="h-5 w-5 mx-auto mb-1 text-primary" />
+                              <div className="p-2 md:p-3 bg-muted rounded-lg">
+                                <Pill className="h-4 md:h-5 w-4 md:w-5 mx-auto mb-1 text-primary" />
                                 <div className="text-sm font-medium">{carePlan.medications?.length || 0}</div>
                                 <div className="text-xs text-muted-foreground">Medications</div>
                               </div>
-                              <div className="p-3 bg-muted rounded-lg">
-                                <Activity className="h-5 w-5 mx-auto mb-1 text-primary" />
+                              <div className="p-2 md:p-3 bg-muted rounded-lg">
+                                <Activity className="h-4 md:h-5 w-4 md:w-5 mx-auto mb-1 text-primary" />
                                 <div className="text-sm font-medium">{carePlan.activities?.length || 0}</div>
                                 <div className="text-xs text-muted-foreground">Activities</div>
                               </div>
@@ -221,7 +221,7 @@ export function ClientCarePlanApprovalDialog({
                           </div>
                         </TabsContent>
 
-                        <TabsContent value="goals">
+                        <TabsContent value="goals" className="mt-0">
                           <div className="space-y-3">
                             {carePlan.goals && carePlan.goals.length > 0 ? (
                               carePlan.goals.map((goal) => (
@@ -249,7 +249,7 @@ export function ClientCarePlanApprovalDialog({
                           </div>
                         </TabsContent>
 
-                        <TabsContent value="medications">
+                        <TabsContent value="medications" className="mt-0">
                           <div className="space-y-3">
                             {carePlan.medications && carePlan.medications.length > 0 ? (
                               carePlan.medications.map((med) => (
@@ -279,7 +279,7 @@ export function ClientCarePlanApprovalDialog({
                           </div>
                         </TabsContent>
 
-                        <TabsContent value="activities">
+                        <TabsContent value="activities" className="mt-0">
                           <div className="space-y-3">
                             {carePlan.activities && carePlan.activities.length > 0 ? (
                               carePlan.activities.map((activity) => (
@@ -306,13 +306,13 @@ export function ClientCarePlanApprovalDialog({
                           </div>
                         </TabsContent>
                       </div>
-                    </Tabs>
-                  </ScrollArea>
+                    </ScrollArea>
+                  </Tabs>
                 </CardContent>
               </Card>
 
               {/* Acknowledgment */}
-              <Card className="mt-4">
+              <Card className="flex-shrink-0 mt-4">
                 <CardContent className="pt-4">
                   <div className="flex items-start gap-3">
                     <input
@@ -320,9 +320,9 @@ export function ClientCarePlanApprovalDialog({
                       id="readPlan"
                       checked={hasReadPlan}
                       onChange={(e) => setHasReadPlan(e.target.checked)}
-                      className="mt-1"
+                      className="mt-1 flex-shrink-0"
                     />
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <Label htmlFor="readPlan" className="text-sm font-medium cursor-pointer">
                         I have thoroughly reviewed this care plan
                       </Label>
@@ -337,8 +337,8 @@ export function ClientCarePlanApprovalDialog({
           )}
 
           {currentStep === 1 && (
-            <div className="h-full flex flex-col space-y-6">
-              <Card>
+            <div className="h-full flex flex-col space-y-4 min-h-0">
+              <Card className="flex-shrink-0">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <User className="h-5 w-5 text-primary" />
@@ -351,33 +351,33 @@ export function ClientCarePlanApprovalDialog({
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="bg-muted/30 p-4 rounded-lg">
+                  <div className="bg-muted/30 p-2 md:p-4 rounded-lg overflow-hidden">
                     <SignatureCanvas
                       onSave={(signature) => {
                         setSignatureData(signature);
                       }}
-                      width={500}
+                      width={Math.min(500, window.innerWidth - 100)}
                       height={200}
                       disabled={isLoading}
                     />
                   </div>
                   {signatureData && (
                     <div className="p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
                       <span className="text-sm text-green-800 font-medium">Signature captured successfully</span>
                     </div>
                   )}
                   {!signatureData && (
                     <div className="p-3 bg-blue-50 border border-blue-200 rounded-md flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-blue-600" />
+                      <AlertTriangle className="h-4 w-4 text-blue-600 flex-shrink-0" />
                       <span className="text-sm text-blue-800">Please draw your signature above and click "Save" to continue</span>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
+              <Card className="flex-1 min-h-0">
+                <CardHeader className="flex-shrink-0">
                   <CardTitle className="text-base">Comments (Optional)</CardTitle>
                   <CardDescription>
                     Any additional comments or questions about your care plan
