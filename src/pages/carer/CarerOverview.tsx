@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
 import { useCarerProfile } from "@/hooks/useCarerProfile";
+import { CarePlanStatusWidget } from "@/components/carer/CarePlanStatusWidget";
 
 const CarerOverview: React.FC = () => {
   const navigate = useNavigate();
@@ -164,8 +165,13 @@ const CarerOverview: React.FC = () => {
           )}
         </div>
 
+        {/* Care Plan Status Widget */}
+        <div className="lg:col-span-1">
+          <CarePlanStatusWidget />
+        </div>
+
         {/* Upcoming Appointments */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />

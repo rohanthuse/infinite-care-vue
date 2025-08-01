@@ -60,7 +60,7 @@ const CarerCarePlans: React.FC = () => {
     clientName: plan.client ? `${plan.client.first_name} ${plan.client.last_name}` : 'Unknown Client',
     dateCreated: new Date(plan.created_at),
     lastUpdated: new Date(plan.updated_at),
-    status: plan.status === 'approved' ? 'Active' : plan.status,
+    status: plan.status === 'active' ? 'Active' : plan.status,
     type: plan.care_plan_type || 'Standard Care',
     alerts: plan.status === 'rejected' ? 1 : 0, // Show alert if rejected
     isDirectlyAssigned: plan.isDirectlyAssigned || false,
