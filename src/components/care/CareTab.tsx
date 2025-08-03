@@ -554,10 +554,14 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-      {/* Staff Approval Section */}
-      {userRole?.role && ['super_admin', 'branch_admin', 'carer'].includes(userRole.role) && (
+      {/* Admin Care Plan Management Section */}
+      {userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role) && (
         <div className="mb-6">
-          <StaffCarePlanApproval carePlans={carePlans?.map((p: any) => p._fullPlanData).filter(Boolean) || []} />
+          <AdminCarePlanManagement 
+            carePlans={carePlans?.map((p: any) => p._fullPlanData).filter(Boolean) || []} 
+            branchId={branchId || ''}
+            branchName={branchName || ''}
+          />
         </div>
       )}
 

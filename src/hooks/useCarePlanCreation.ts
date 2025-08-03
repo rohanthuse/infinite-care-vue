@@ -168,7 +168,6 @@ export const useCarePlanCreation = () => {
 
             await supabase.from('notifications').insert([notification]);
           }
-        }
         } catch (notificationError) {
           console.error('[useCarePlanCreation] Error creating notifications:', notificationError);
           // Don't fail the operation for notification errors
