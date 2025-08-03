@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ClientCarePlanApprovalDialog } from "@/components/client/ClientCarePlanApprovalDialog";
 import { useApproveCarePlan, useRejectCarePlan, useCarePlanRequiresApproval, useCarePlanStatus } from "@/hooks/useCarePlanApproval";
 import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
+import { CarePlanDataEnhancer } from "@/components/care/CarePlanDataEnhancer";
 const ClientCarePlans = () => {
   const {
     toast
@@ -155,9 +156,20 @@ const ClientCarePlans = () => {
       {/* Care Plans List */}
       <div className="space-y-4">
         {carePlans.map(carePlan => {
+        // Add data enhancer for each care plan
+        const enhanceCarePlanData = clientId && (
+          <CarePlanDataEnhancer 
+            key={`enhancer-${carePlan.id}`}
+            carePlanId={carePlan.id} 
+            clientId={clientId} 
+          />
+        );
         const requiresApproval = useCarePlanRequiresApproval(carePlan);
         const statusInfo = useCarePlanStatus(carePlan);
-        return <Card key={carePlan.id} className={`${requiresApproval ? 'border-orange-200 bg-orange-50/30' : 'border-gray-200'}`}>
+        return (
+          <>
+            {enhanceCarePlanData}
+            <Card key={carePlan.id} className={`${requiresApproval ? 'border-orange-200 bg-orange-50/30' : 'border-gray-200'}`}>
               <CardHeader className="pb-4">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div className="flex-1">
@@ -220,10 +232,16 @@ const ClientCarePlans = () => {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    
+                    <FileText className="h-4 w-4 text-green-600" />
+                    <span className="text-sm">
+                      Provider: {carePlan.provider_name || 'Not assigned'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    
+                    <CheckCircle className="h-4 w-4 text-purple-600" />
+                    <span className="text-sm">
+                      Status: {carePlan.status?.replace('_', ' ') || 'Unknown'}
+                    </span>
                   </div>
                 </div>
 
@@ -256,20 +274,69 @@ const ClientCarePlans = () => {
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                           <h4 className="font-medium text-blue-800 text-sm">Goals & Activities</h4>
                           <p className="text-blue-600 text-xs">{carePlan.goals?.length || 0} goals • {carePlan.activities?.length || 0} activities</p>
+                          {carePlan.goals_progress !== undefined && (
+                            <div className="mt-2">
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 bg-blue-200 rounded-full h-1">
+                                  <div 
+                                    className="bg-blue-600 h-1 rounded-full" 
+                                    style={{ width: `${carePlan.goals_progress}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-xs text-blue-700">{carePlan.goals_progress}%</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                         <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                           <h4 className="font-medium text-green-800 text-sm">Medical Care</h4>
                           <p className="text-green-600 text-xs">{carePlan.medications?.length || 0} medications</p>
+                          {carePlan.medical_info && Object.keys(carePlan.medical_info).length > 0 && (
+                            <p className="text-green-600 text-xs mt-1">
+                              {carePlan.medical_info.conditions?.length || 0} conditions • 
+                              {carePlan.medical_info.allergies?.length || 0} allergies
+                            </p>
+                          )}
                         </div>
                         <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
                           <h4 className="font-medium text-purple-800 text-sm">Services</h4>
                           <p className="text-purple-600 text-xs">{(carePlan.service_plans?.length || 0) + (carePlan.service_actions?.length || 0)} service items</p>
+                          {carePlan.personal_care && Object.keys(carePlan.personal_care).length > 0 && (
+                            <p className="text-purple-600 text-xs mt-1">Personal care plan available</p>
+                          )}
                         </div>
                         <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                          <h4 className="font-medium text-orange-800 text-sm">Safety</h4>
+                          <h4 className="font-medium text-orange-800 text-sm">Safety & Risk</h4>
                           <p className="text-orange-600 text-xs">{carePlan.risk_assessments?.length || 0} risk assessments • {carePlan.equipment?.length || 0} equipment items</p>
+                          {carePlan.dietary_requirements && Object.keys(carePlan.dietary_requirements).length > 0 && (
+                            <p className="text-orange-600 text-xs mt-1">Dietary requirements documented</p>
+                          )}
                         </div>
                       </div>
+                      {/* Care Team Information */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 className="font-medium text-blue-800 text-sm mb-2">Care Team</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-sm font-medium text-blue-700">Primary Care Provider</p>
+                            <p className="text-blue-600 text-sm">{carePlan.provider_name || 'Not assigned'}</p>
+                            {carePlan.staff && (
+                              <p className="text-blue-500 text-xs">
+                                Assigned Carer: {carePlan.staff.first_name} {carePlan.staff.last_name}
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-blue-700">Plan Details</p>
+                            <p className="text-blue-600 text-xs">ID: {carePlan.display_id}</p>
+                            <p className="text-blue-600 text-xs">Created: {new Date(carePlan.created_at).toLocaleDateString()}</p>
+                            {(carePlan as any).finalized_at && (
+                              <p className="text-blue-600 text-xs">Finalized: {new Date((carePlan as any).finalized_at).toLocaleDateString()}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
                       {carePlan.notes && <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                           <h4 className="font-medium text-gray-800 text-sm mb-2">Care Plan Notes</h4>
                           <p className="text-gray-600 text-sm">{carePlan.notes}</p>
@@ -636,8 +703,10 @@ const ClientCarePlans = () => {
                   </TabsContent>
                 </Tabs>
               </CardContent>
-            </Card>;
-      })}
+            </Card>
+          </>
+        );
+        })}
       </div>
 
       {/* Approval Dialog */}
