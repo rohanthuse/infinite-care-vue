@@ -122,8 +122,8 @@ export const useCarePlanCreation = () => {
 
       console.log('[useCarePlanCreation] Care plan updated successfully:', updatedCarePlan);
 
-      // Create approval record if sending for approval
-      if (data.status === 'pending_approval') {
+      // Create approval record and notifications if sending for client approval
+      if (data.status === 'pending_client_approval') {
         const { error: approvalError } = await supabase
           .from('client_care_plan_approvals')
           .insert({
@@ -131,7 +131,7 @@ export const useCarePlanCreation = () => {
             action: 'submitted_for_approval',
             performed_by: user.id,
             performed_at: new Date().toISOString(),
-            comments: 'Care plan submitted for staff approval',
+            comments: 'Care plan submitted for client approval',
             previous_status: carePlan.status,
             new_status: data.status
           });
@@ -141,41 +141,34 @@ export const useCarePlanCreation = () => {
           // Don't fail the entire operation for this
         }
 
-        // Create notification for staff
+        // Create notification for client
         try {
           const { data: clientData } = await supabase
             .from('clients')
-            .select('first_name, last_name, branch_id')
+            .select('first_name, last_name, branch_id, auth_user_id')
             .eq('id', data.client_id)
             .single();
 
-          if (clientData) {
-            // Get branch admins to notify
-            const { data: adminBranches } = await supabase
-              .from('admin_branches')
-              .select('admin_id')
-              .eq('branch_id', clientData.branch_id);
+          if (clientData && clientData.auth_user_id) {
+            // Create notification for the client
+            const notification = {
+              user_id: clientData.auth_user_id,
+              branch_id: clientData.branch_id,
+              type: 'care_plan_approval',
+              category: 'info',
+              priority: 'high',
+              title: 'Care Plan Ready for Your Review',
+              message: `Your care plan is ready for review and approval`,
+              data: {
+                care_plan_id: data.care_plan_id,
+                client_id: data.client_id,
+                client_name: `${clientData.first_name} ${clientData.last_name}`
+              }
+            };
 
-            // Create notifications for each admin
-            if (adminBranches && adminBranches.length > 0) {
-              const notifications = adminBranches.map(ab => ({
-                user_id: ab.admin_id,
-                branch_id: clientData.branch_id,
-                type: 'care_plan_approval',
-                category: 'info',
-                priority: 'high',
-                title: 'New Care Plan Awaiting Approval',
-                message: `Care plan for ${clientData.first_name} ${clientData.last_name} is ready for review`,
-                data: {
-                  care_plan_id: data.care_plan_id,
-                  client_id: data.client_id,
-                  client_name: `${clientData.first_name} ${clientData.last_name}`
-                }
-              }));
-
-              await supabase.from('notifications').insert(notifications);
-            }
+            await supabase.from('notifications').insert([notification]);
           }
+        }
         } catch (notificationError) {
           console.error('[useCarePlanCreation] Error creating notifications:', notificationError);
           // Don't fail the operation for notification errors

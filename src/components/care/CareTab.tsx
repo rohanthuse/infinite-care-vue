@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from '@/hooks/useUserRole';
-import { StaffCarePlanApproval } from '@/components/admin/StaffCarePlanApproval';
+import { AdminCarePlanManagement } from '@/components/admin/AdminCarePlanManagement';
 import { 
   Table, TableHeader, TableBody, TableHead, 
   TableRow, TableCell, TableFooter

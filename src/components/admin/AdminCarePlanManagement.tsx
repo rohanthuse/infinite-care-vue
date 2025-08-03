@@ -1,0 +1,323 @@
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { 
+  Table, TableHeader, TableBody, TableHead, 
+  TableRow, TableCell
+} from '@/components/ui/table';
+import { 
+  Search, Filter, Eye, Edit, Trash2, 
+  MoreHorizontal, Users, CheckCircle, 
+  Clock, AlertCircle, FileX, UserCheck
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
+
+interface CarePlan {
+  id: string;
+  display_id: string;
+  title?: string;
+  client: {
+    first_name: string;
+    last_name: string;
+    id: string;
+  };
+  created_at: string;
+  updated_at: string;
+  status: string;
+  provider_name: string;
+  staff?: {
+    first_name: string;
+    last_name: string;
+  };
+  notes?: string;
+  completion_percentage?: number;
+}
+
+interface AdminCarePlanManagementProps {
+  carePlans: CarePlan[];
+  branchId: string | undefined;
+  branchName: string | undefined;
+  onEditDraft?: (draftId: string) => void;
+  onDeleteCarePlan?: (plan: CarePlan) => void;
+  onViewCarePlan?: (id: string) => void;
+  onEditCarePlan?: (id: string) => void;
+}
+
+const statusConfig = {
+  'draft': { 
+    label: 'Draft', 
+    variant: 'secondary' as const, 
+    color: 'text-gray-600 bg-gray-50', 
+    icon: FileX 
+  },
+  'pending_client_approval': { 
+    label: 'Pending Client Approval', 
+    variant: 'outline' as const, 
+    color: 'text-amber-600 bg-amber-50', 
+    icon: Clock 
+  },
+  'active': { 
+    label: 'Active', 
+    variant: 'default' as const, 
+    color: 'text-green-600 bg-green-50', 
+    icon: CheckCircle 
+  },
+  'approved': { 
+    label: 'Client Approved', 
+    variant: 'default' as const, 
+    color: 'text-blue-600 bg-blue-50', 
+    icon: UserCheck 
+  },
+  'rejected': { 
+    label: 'Changes Requested', 
+    variant: 'destructive' as const, 
+    color: 'text-red-600 bg-red-50', 
+    icon: AlertCircle 
+  }
+};
+
+export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = ({
+  carePlans,
+  branchId,
+  branchName,
+  onEditDraft,
+  onDeleteCarePlan,
+  onViewCarePlan,
+  onEditCarePlan
+}) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const navigate = useNavigate();
+
+  // Filter care plans based on search and status
+  const filteredPlans = carePlans.filter(plan => {
+    const matchesSearch = 
+      `${plan.client.first_name} ${plan.client.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      plan.display_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (plan.title && plan.title.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    const matchesStatus = statusFilter === 'all' || plan.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  // Group plans by status for better organization
+  const groupedPlans = {
+    draft: filteredPlans.filter(plan => plan.status === 'draft'),
+    pending_client_approval: filteredPlans.filter(plan => plan.status === 'pending_client_approval'),
+    active: filteredPlans.filter(plan => plan.status === 'active'),
+    approved: filteredPlans.filter(plan => plan.status === 'approved'),
+    rejected: filteredPlans.filter(plan => plan.status === 'rejected')
+  };
+
+  const getStatusConfig = (status: string) => {
+    return statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
+  };
+
+  const handleClientClick = (clientId: string) => {
+    if (branchId && branchName) {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${clientId}`);
+    }
+  };
+
+  const renderCarePlanRow = (plan: CarePlan) => {
+    const statusInfo = getStatusConfig(plan.status);
+    const StatusIcon = statusInfo.icon;
+
+    return (
+      <TableRow key={plan.id}>
+        <TableCell>
+          <div className="space-y-1">
+            <div className="font-medium">{plan.display_id}</div>
+            {plan.title && (
+              <div className="text-sm text-muted-foreground">{plan.title}</div>
+            )}
+          </div>
+        </TableCell>
+        
+        <TableCell>
+          <button 
+            onClick={() => handleClientClick(plan.client.id)}
+            className="text-left hover:underline"
+          >
+            <div className="font-medium">
+              {plan.client.first_name} {plan.client.last_name}
+            </div>
+          </button>
+        </TableCell>
+        
+        <TableCell>
+          <div className="flex items-center gap-2">
+            <StatusIcon className="h-4 w-4" />
+            <Badge variant={statusInfo.variant}>
+              {statusInfo.label}
+            </Badge>
+          </div>
+        </TableCell>
+        
+        <TableCell>
+          <div className="text-sm">
+            {plan.staff 
+              ? `${plan.staff.first_name} ${plan.staff.last_name}` 
+              : plan.provider_name || 'Unassigned'
+            }
+          </div>
+        </TableCell>
+        
+        <TableCell>
+          <div className="text-sm text-muted-foreground">
+            {format(new Date(plan.updated_at), 'MMM dd, yyyy')}
+          </div>
+        </TableCell>
+        
+        <TableCell>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {onViewCarePlan && (
+                <DropdownMenuItem onClick={() => onViewCarePlan(plan.id)}>
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </DropdownMenuItem>
+              )}
+              
+              {plan.status === 'draft' && onEditDraft && (
+                <DropdownMenuItem onClick={() => onEditDraft(plan.id)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Draft
+                </DropdownMenuItem>
+              )}
+              
+              {plan.status !== 'draft' && onEditCarePlan && (
+                <DropdownMenuItem onClick={() => onEditCarePlan(plan.id)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Care Plan
+                </DropdownMenuItem>
+              )}
+              
+              {plan.status === 'draft' && onDeleteCarePlan && (
+                <DropdownMenuItem 
+                  onClick={() => onDeleteCarePlan(plan)}
+                  className="text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Draft
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </TableCell>
+      </TableRow>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Search and Filter Controls */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search care plans..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-48">
+            <Filter className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="draft">Drafts</SelectItem>
+            <SelectItem value="pending_client_approval">Pending Client Approval</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="approved">Client Approved</SelectItem>
+            <SelectItem value="rejected">Changes Requested</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        {Object.entries(groupedPlans).map(([status, plans]) => {
+          const statusInfo = getStatusConfig(status);
+          const StatusIcon = statusInfo.icon;
+          
+          return (
+            <Card key={status}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <StatusIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">{statusInfo.label}</span>
+                  </div>
+                  <span className="text-2xl font-bold">{plans.length}</span>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Care Plans Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Client Care Plans ({filteredPlans.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {filteredPlans.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {searchQuery || statusFilter !== 'all' 
+                ? 'No care plans match your filters.'
+                : 'No care plans found for this branch.'
+              }
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Plan ID</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Assigned Provider</TableHead>
+                  <TableHead>Last Updated</TableHead>
+                  <TableHead className="w-[50px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredPlans.map(renderCarePlanRow)}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
