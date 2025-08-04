@@ -18,6 +18,7 @@ export interface VisitRecord {
   location_data?: any;
   visit_summary?: string;
   completion_percentage: number;
+  visit_photos?: string[];
   created_at: string;
   updated_at: string;
 }
@@ -167,13 +168,15 @@ export const useVisitRecord = (bookingId?: string) => {
       visitNotes, 
       clientSignature, 
       staffSignature,
-      visitSummary 
+      visitSummary,
+      visitPhotos 
     }: {
       visitRecordId: string;
       visitNotes?: string;
       clientSignature?: string;
       staffSignature?: string;
       visitSummary?: string;
+      visitPhotos?: string[];
     }) => {
       const visitEndTime = new Date().toISOString();
       
@@ -202,6 +205,7 @@ export const useVisitRecord = (bookingId?: string) => {
           staff_signature_data: staffSignature,
           visit_summary: visitSummary,
           completion_percentage: 100,
+          visit_photos: visitPhotos,
         })
         .eq('id', visitRecordId)
         .select()

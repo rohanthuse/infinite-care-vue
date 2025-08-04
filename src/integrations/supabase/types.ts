@@ -5479,6 +5479,7 @@ export type Database = {
           updated_at: string
           visit_end_time: string | null
           visit_notes: string | null
+          visit_photos: Json | null
           visit_start_time: string
           visit_summary: string | null
         }
@@ -5498,6 +5499,7 @@ export type Database = {
           updated_at?: string
           visit_end_time?: string | null
           visit_notes?: string | null
+          visit_photos?: Json | null
           visit_start_time?: string
           visit_summary?: string | null
         }
@@ -5517,6 +5519,7 @@ export type Database = {
           updated_at?: string
           visit_end_time?: string | null
           visit_notes?: string | null
+          visit_photos?: Json | null
           visit_start_time?: string
           visit_summary?: string | null
         }

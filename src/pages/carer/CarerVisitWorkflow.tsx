@@ -47,6 +47,7 @@ import VisitCarePlanUpdate from "@/components/carer/VisitCarePlanUpdate";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePhotoUpload } from "@/hooks/usePhotoUpload";
 
 interface Task {
   id: string;
@@ -140,6 +141,9 @@ const CarerVisitWorkflow = () => {
   const [carerSignature, setCarerSignature] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [photoAdded, setPhotoAdded] = useState(false);
+  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
+  
+  const { uploadPhoto, deletePhoto, uploading } = usePhotoUpload();
   const [eventCategory, setEventCategory] = useState("incident");
   const [eventDetails, setEventDetails] = useState("");
   const [eventLocation, setEventLocation] = useState("");
@@ -331,10 +335,37 @@ const CarerVisitWorkflow = () => {
     }
   };
   
-  const handleCapturePhoto = () => {
-    // In a real app, this would access the camera
-    setPhotoAdded(true);
-    toast.success("Photo added to visit record");
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || !currentAppointment?.client_id) return;
+
+    for (const file of Array.from(files)) {
+      try {
+        const photoUrl = await uploadPhoto(file, `visit-${visitRecord?.id || 'temp'}`);
+        if (photoUrl) {
+          setUploadedPhotos(prev => [...prev, photoUrl]);
+          toast.success("Photo uploaded successfully!");
+        }
+      } catch (error) {
+        toast.error("Failed to upload photo");
+      }
+    }
+    // Clear the input
+    event.target.value = '';
+  };
+
+  const handleDeletePhoto = async (photoUrl: string) => {
+    try {
+      const success = await deletePhoto(photoUrl);
+      if (success) {
+        setUploadedPhotos(prev => prev.filter(url => url !== photoUrl));
+        toast.success("Photo deleted successfully!");
+      } else {
+        toast.error("Failed to delete photo");
+      }
+    } catch (error) {
+      toast.error("Failed to delete photo");
+    }
   };
   
   const recordNews2Reading = () => {
@@ -492,6 +523,7 @@ const CarerVisitWorkflow = () => {
           updates: {
             completion_percentage: Math.round((currentStep / 9) * 100),
             visit_notes: notes,
+            visit_photos: uploadedPhotos,
           }
         });
     }
@@ -540,6 +572,7 @@ const CarerVisitWorkflow = () => {
         clientSignature: clientSignature || undefined,
         staffSignature: carerSignature || undefined,
         visitSummary: `Visit completed with ${tasks?.filter(t => t.is_completed).length} tasks completed, ${medications?.filter(m => m.is_administered).length} medications administered, and ${events?.length} events recorded.`,
+        visitPhotos: uploadedPhotos,
       });
 
       // Mark booking as completed
@@ -1297,20 +1330,57 @@ const CarerVisitWorkflow = () => {
                     </p>
                   </div>
                   
-                  <div className="flex items-center gap-4">
-                    <Button
-                      onClick={handleCapturePhoto}
-                      variant="outline"
-                      className="flex items-center gap-2"
-                    >
-                      <Camera className="w-4 h-4" />
-                      Add Photo
-                    </Button>
-                    
-                    {photoAdded && (
-                      <div className="flex items-center gap-2 text-green-600">
-                        <CheckCircle className="w-4 h-4" />
-                        <span className="text-sm">Photo added</span>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handlePhotoUpload}
+                          className="hidden"
+                        />
+                        <Button
+                          variant="outline"
+                          className="flex items-center gap-2"
+                          disabled={uploading}
+                        >
+                          <Camera className="w-4 h-4" />
+                          {uploading ? "Uploading..." : "Add Photos"}
+                        </Button>
+                      </label>
+                      
+                      {uploadedPhotos.length > 0 && (
+                        <div className="flex items-center gap-2 text-green-600">
+                          <CheckCircle className="w-4 h-4" />
+                          <span className="text-sm">{uploadedPhotos.length} photo(s) added</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Photo Gallery */}
+                    {uploadedPhotos.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Visit Photos</Label>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {uploadedPhotos.map((photoUrl, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={photoUrl}
+                                alt={`Visit photo ${index + 1}`}
+                                className="w-full h-24 object-cover rounded-lg border"
+                              />
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                                onClick={() => handleDeletePhoto(photoUrl)}
+                              >
+                                ×
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
