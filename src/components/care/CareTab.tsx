@@ -561,6 +561,11 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
             carePlans={carePlans?.map((p: any) => p._fullPlanData).filter(Boolean) || []} 
             branchId={branchId || ''}
             branchName={branchName || ''}
+            onView={handleViewCarePlan}
+            onEdit={handleEditCarePlan}
+            onEditDraft={handleEditDraft}
+            onDelete={handleDeleteCarePlan}
+            onStatusChange={openStatusChangeDialog}
           />
         </div>
       )}

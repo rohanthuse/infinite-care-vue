@@ -51,12 +51,13 @@ interface CarePlan {
 
 interface AdminCarePlanManagementProps {
   carePlans: CarePlan[];
-  branchId: string | undefined;
-  branchName: string | undefined;
-  onEditDraft?: (draftId: string) => void;
-  onDeleteCarePlan?: (plan: CarePlan) => void;
-  onViewCarePlan?: (id: string) => void;
-  onEditCarePlan?: (id: string) => void;
+  branchId: string;
+  branchName: string;
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+  onEditDraft: (id: string) => void;
+  onDelete: (plan: any) => void;
+  onStatusChange: (id: string) => void;
 }
 
 const statusConfig = {
@@ -96,10 +97,11 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
   carePlans,
   branchId,
   branchName,
+  onView,
+  onEdit,
   onEditDraft,
-  onDeleteCarePlan,
-  onViewCarePlan,
-  onEditCarePlan
+  onDelete,
+  onStatusChange
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -193,31 +195,32 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {onViewCarePlan && (
-                <DropdownMenuItem onClick={() => onViewCarePlan(plan.id)}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </DropdownMenuItem>
-              )}
+            <DropdownMenuContent align="end" className="bg-white z-50 border shadow-md">
+              <DropdownMenuItem onClick={() => onView(plan.display_id || plan.id)}>
+                <Eye className="h-4 w-4 mr-2" />
+                View Details
+              </DropdownMenuItem>
               
-              {plan.status === 'draft' && onEditDraft && (
+              {plan.status === 'draft' ? (
                 <DropdownMenuItem onClick={() => onEditDraft(plan.id)}>
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Draft
                 </DropdownMenuItem>
-              )}
-              
-              {plan.status !== 'draft' && onEditCarePlan && (
-                <DropdownMenuItem onClick={() => onEditCarePlan(plan.id)}>
+              ) : (
+                <DropdownMenuItem onClick={() => onEdit(plan.display_id || plan.id)}>
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Care Plan
                 </DropdownMenuItem>
               )}
               
-              {plan.status === 'draft' && onDeleteCarePlan && (
+              <DropdownMenuItem onClick={() => onStatusChange(plan.display_id || plan.id)}>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Change Status
+              </DropdownMenuItem>
+              
+              {plan.status === 'draft' && (
                 <DropdownMenuItem 
-                  onClick={() => onDeleteCarePlan(plan)}
+                  onClick={() => onDelete(plan)}
                   className="text-destructive"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
