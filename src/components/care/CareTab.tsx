@@ -294,6 +294,14 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const [selectedClientData, setSelectedClientData] = useState<any>(undefined);
   const [isCreateCarePlanWizardOpen, setIsCreateCarePlanWizardOpen] = useState(false);
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
+  const [selectedCarePlanId, setSelectedCarePlanId] = useState<string | null>(null);
+  const [isEditingChangeRequest, setIsEditingChangeRequest] = useState(false);
+  const [changeRequestData, setChangeRequestData] = useState<{
+    comments?: string;
+    requestedAt?: string;
+    requestedBy?: string;
+  } | null>(null);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   // Delete functionality
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -456,7 +464,28 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
       return;
     }
 
-    // For active care plans, navigate to the client edit page
+    // Check if this care plan has change requests from client
+    const hasChangeRequest = plan._fullPlanData?.changes_requested_at;
+    
+    if (hasChangeRequest) {
+      // For care plans with change requests, open the wizard in edit mode
+      console.log('[CareTab] Opening care plan wizard for editing change request:', plan);
+      
+      // Set the selected client data and open wizard in edit mode
+      setSelectedClientId(plan._fullPlanData.client_id);
+      setSelectedClientName(plan.client_name || 'Client');
+      setSelectedCarePlanId(plan._databaseId || id);
+      setIsEditingChangeRequest(true);
+      setChangeRequestData({
+        comments: plan._fullPlanData.change_request_comments,
+        requestedAt: plan._fullPlanData.changes_requested_at,
+        requestedBy: plan._fullPlanData.changes_requested_by
+      });
+      setIsWizardOpen(true);
+      return;
+    }
+
+    // For other active care plans, navigate to the client edit page
     if (plan.status !== 'Draft' && branchId && branchName) {
       // We need to get the actual client ID
       supabase
@@ -1047,14 +1076,6 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
         </DialogContent>
       </Dialog>
 
-      {/* Create Care Plan Wizard */}
-      {selectedClientId && selectedClientName && (
-        <CarePlanCreationWizard
-          isOpen={isCreateCarePlanWizardOpen}
-          onClose={() => setIsCreateCarePlanWizardOpen(false)}
-          clientId={selectedClientId}
-        />
-      )}
 
       {/* Delete Care Plan Dialog */}
       <DeleteCarePlanDialog

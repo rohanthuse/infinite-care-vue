@@ -8,6 +8,7 @@ interface CarePlanCreationData {
   care_plan_id?: string;
   provider_name?: string;
   staff_id?: string;
+  clear_change_request?: boolean;
   [key: string]: any;
 }
 
@@ -60,13 +61,20 @@ export const useCarePlanCreation = () => {
         throw new Error('Provider assignment is required. Please select a staff member or specify a provider name.');
       }
 
-      // Prepare update data with proper provider assignment
+       // Prepare update data with proper provider assignment
       const updateData: any = {
         status: data.status,
         finalized_at: new Date().toISOString(),
         finalized_by: user.id,
         updated_at: new Date().toISOString()
       };
+
+      // Clear change request fields if requested (when editing change requests)
+      if (data.clear_change_request) {
+        updateData.changes_requested_at = null;
+        updateData.changes_requested_by = null;
+        updateData.change_request_comments = null;
+      }
 
       // Handle provider assignment to satisfy check_provider_assignment constraint
       // The constraint requires: (staff_id IS NOT NULL AND provider_name IS NOT NULL) OR 

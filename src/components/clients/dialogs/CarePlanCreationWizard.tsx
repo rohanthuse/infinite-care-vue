@@ -39,6 +39,12 @@ interface CarePlanCreationWizardProps {
   onClose: () => void;
   clientId: string;
   carePlanId?: string;
+  isEditingChangeRequest?: boolean;
+  changeRequestData?: {
+    comments?: string;
+    requestedAt?: string;
+    requestedBy?: string;
+  } | null;
 }
 
 const wizardSteps = [
@@ -76,7 +82,9 @@ export function CarePlanCreationWizard({
   isOpen,
   onClose,
   clientId,
-  carePlanId
+  carePlanId,
+  isEditingChangeRequest = false,
+  changeRequestData = null
 }: CarePlanCreationWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [clientDataLoaded, setClientDataLoaded] = useState(false);
@@ -321,15 +329,26 @@ export function CarePlanCreationWizard({
       // First save as draft to get the latest data
       await saveDraft(formData, currentStep);
       
-      // Then finalize the care plan - set status to pending_approval for staff approval workflow
+      // Determine the appropriate status based on whether this is editing a change request
+      const status = isEditingChangeRequest ? 'pending_client_approval' : 'pending_approval';
+      
+      // Then finalize the care plan
       await createCarePlan({
         ...formData,
         client_id: clientId,
-        status: 'pending_approval',
-        care_plan_id: savedCarePlanId,
+        status: status,
+        care_plan_id: savedCarePlanId || carePlanId,
+        // Clear change request fields if editing a change request
+        ...(isEditingChangeRequest && {
+          clear_change_request: true
+        })
       });
 
-      toast.success("Care plan sent for staff approval successfully!");
+      const successMessage = isEditingChangeRequest 
+        ? "Care plan updated and sent back to client for approval!"
+        : "Care plan sent for staff approval successfully!";
+      
+      toast.success(successMessage);
       onClose();
       setStepError(null);
     } catch (error) {
@@ -357,13 +376,30 @@ export function CarePlanCreationWizard({
       <DialogContent className="max-w-7xl h-[95vh] flex flex-col p-0">
         <DialogHeader className="flex-shrink-0 px-6 py-4 border-b">
           <DialogTitle>
-            {carePlanId ? "Edit Care Plan Draft" : "Create Care Plan"}
+            {isEditingChangeRequest ? "Edit Care Plan - Addressing Client Changes" : 
+             carePlanId ? "Edit Care Plan Draft" : "Create Care Plan"}
             {clientProfile && (
               <span className="text-sm font-normal text-gray-600 ml-2">
                 for {clientProfile.first_name} {clientProfile.last_name}
               </span>
             )}
           </DialogTitle>
+          {isEditingChangeRequest && changeRequestData && (
+            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <div className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center mt-0.5">
+                  <span className="text-amber-600 text-xs">!</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-amber-800">Client Requested Changes</p>
+                  <p className="text-sm text-amber-700 mt-1">{changeRequestData.comments}</p>
+                  <p className="text-xs text-amber-600 mt-2">
+                    Requested on {new Date(changeRequestData.requestedAt!).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogHeader>
         
         {stepError && (
