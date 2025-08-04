@@ -1,0 +1,67 @@
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Clock, User, ArrowRight, Play } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useActiveVisits } from '@/hooks/useActiveVisits';
+import { format, differenceInMinutes } from 'date-fns';
+
+export const ActiveVisitBanner: React.FC = () => {
+  const navigate = useNavigate();
+  const { data: activeVisits = [], isLoading } = useActiveVisits();
+
+  if (isLoading || activeVisits.length === 0) {
+    return null;
+  }
+
+  const activeVisit = activeVisits[0]; // Show the first active visit
+  const startTime = new Date(activeVisit.visit_start_time);
+  const durationMinutes = differenceInMinutes(new Date(), startTime);
+
+  const handleContinueVisit = () => {
+    navigate(`/carer-dashboard/visit/${activeVisit.booking_id}`);
+  };
+
+  return (
+    <Card className="border-l-4 border-l-blue-500 bg-blue-50/50">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Play className="h-4 w-4 text-blue-600" />
+              <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                Visit in Progress
+              </Badge>
+            </div>
+            
+            <div className="flex items-center space-x-4 text-sm">
+              <div className="flex items-center space-x-1">
+                <User className="h-4 w-4 text-gray-500" />
+                <span className="font-medium">{activeVisit.client_name}</span>
+              </div>
+              
+              <div className="flex items-center space-x-1">
+                <Clock className="h-4 w-4 text-gray-500" />
+                <span>{durationMinutes}m elapsed</span>
+              </div>
+              
+              <span className="text-gray-500">{activeVisit.service_name}</span>
+            </div>
+          </div>
+
+          <Button onClick={handleContinueVisit} size="sm" className="flex items-center space-x-2">
+            <span>Continue Visit</span>
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {activeVisits.length > 1 && (
+          <div className="mt-2 text-xs text-gray-600">
+            +{activeVisits.length - 1} more active visit{activeVisits.length > 2 ? 's' : ''}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};

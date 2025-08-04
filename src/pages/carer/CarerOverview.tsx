@@ -12,6 +12,8 @@ import { useNavigate } from "react-router-dom";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
 import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { CarePlanStatusWidget } from "@/components/carer/CarePlanStatusWidget";
+import { ActiveVisitBanner } from "@/components/carer/ActiveVisitBanner";
+import { ActiveVisitsSection } from "@/components/carer/ActiveVisitsSection";
 
 const CarerOverview: React.FC = () => {
   const navigate = useNavigate();
@@ -91,6 +93,9 @@ const CarerOverview: React.FC = () => {
         </div>
       </div>
 
+      {/* Active Visit Banner */}
+      <ActiveVisitBanner />
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
@@ -142,7 +147,12 @@ const CarerOverview: React.FC = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+        {/* Active Visits */}
+        <div className="lg:col-span-1">
+          <ActiveVisitsSection />
+        </div>
+
         {/* Attendance Widget */}
         <div className="lg:col-span-1">
           {user && carerProfile ? (
