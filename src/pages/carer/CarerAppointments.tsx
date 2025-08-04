@@ -13,11 +13,14 @@ import { useCarerAuth } from "@/hooks/useCarerAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { useBookingAttendance } from "@/hooks/useBookingAttendance";
+import { CarerAppointmentDetailDialog } from "@/components/carer/CarerAppointmentDetailDialog";
 import { toast } from "sonner";
 
 const CarerAppointments: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
   const { user } = useCarerAuth();
   const navigate = useNavigate();
   const bookingAttendance = useBookingAttendance();
@@ -369,7 +372,18 @@ const CarerAppointments: React.FC = () => {
         }
 
         const renderAppointmentCard = (appointment: any) => (
-          <Card key={appointment.id} className="hover:shadow-md transition-shadow">
+          <Card 
+            key={appointment.id} 
+            className="hover:shadow-md transition-all cursor-pointer hover:border-primary/50"
+            onClick={(e) => {
+              // Prevent click when clicking on buttons
+              if ((e.target as HTMLElement).closest('button')) {
+                return;
+              }
+              setSelectedAppointment(appointment);
+              setShowDetailDialog(true);
+            }}
+          >
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -492,6 +506,15 @@ const CarerAppointments: React.FC = () => {
           </div>
         );
       })()}
+
+      {/* Appointment Detail Dialog */}
+      <CarerAppointmentDetailDialog
+        appointment={selectedAppointment}
+        open={showDetailDialog}
+        onOpenChange={setShowDetailDialog}
+        onStartVisit={handleStartVisit}
+        onContinueVisit={(appointment) => navigate(`/carer/visit/${appointment.id}`)}
+      />
     </div>
   );
 };
