@@ -23,10 +23,11 @@ import {
 import { 
   Search, Filter, Eye, Edit, Trash2, 
   MoreHorizontal, Users, CheckCircle, 
-  Clock, AlertCircle, FileX, UserCheck
+  Clock, AlertCircle, FileX, UserCheck, MessageSquare
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { AdminChangeRequestViewDialog } from './AdminChangeRequestViewDialog';
 
 interface CarePlan {
   id: string;
@@ -47,6 +48,9 @@ interface CarePlan {
   };
   notes?: string;
   completion_percentage?: number;
+  changes_requested_at?: string;
+  change_request_comments?: string;
+  changes_requested_by?: string;
 }
 
 interface AdminCarePlanManagementProps {
@@ -58,6 +62,7 @@ interface AdminCarePlanManagementProps {
   onEditDraft: (id: string) => void;
   onDelete: (plan: any) => void;
   onStatusChange: (id: string) => void;
+  onViewChangeRequest?: (plan: CarePlan) => void;
 }
 
 const statusConfig = {
@@ -101,10 +106,13 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
   onEdit,
   onEditDraft,
   onDelete,
-  onStatusChange
+  onStatusChange,
+  onViewChangeRequest
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [changeRequestDialogOpen, setChangeRequestDialogOpen] = useState(false);
+  const [selectedCarePlan, setSelectedCarePlan] = useState<CarePlan | null>(null);
   const navigate = useNavigate();
 
   // Filter care plans based on search and status
@@ -138,15 +146,32 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
     }
   };
 
+  const handleViewChangeRequest = (plan: CarePlan) => {
+    setSelectedCarePlan(plan);
+    setChangeRequestDialogOpen(true);
+  };
+
+  const handleEditFromChangeRequest = (carePlanId: string) => {
+    onEdit(carePlanId);
+  };
+
   const renderCarePlanRow = (plan: CarePlan) => {
     const statusInfo = getStatusConfig(plan.status);
     const StatusIcon = statusInfo.icon;
+    const hasChangeRequest = plan.changes_requested_at && plan.change_request_comments;
 
     return (
       <TableRow key={plan.id}>
         <TableCell>
           <div className="space-y-1">
-            <div className="font-medium">{plan.display_id}</div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{plan.display_id}</span>
+              {hasChangeRequest && (
+                <div className="h-4 w-4 text-amber-600" title="Has change request">
+                  <MessageSquare className="h-4 w-4" />
+                </div>
+              )}
+            </div>
             {plan.title && (
               <div className="text-sm text-muted-foreground">{plan.title}</div>
             )}
@@ -170,6 +195,11 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
             <Badge variant={statusInfo.variant}>
               {statusInfo.label}
             </Badge>
+            {hasChangeRequest && (
+              <Badge variant="outline" className="text-amber-600 border-amber-300">
+                Change Request
+              </Badge>
+            )}
           </div>
         </TableCell>
         
@@ -200,6 +230,13 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
                 <Eye className="h-4 w-4 mr-2" />
                 View Details
               </DropdownMenuItem>
+              
+              {hasChangeRequest && (
+                <DropdownMenuItem onClick={() => handleViewChangeRequest(plan)}>
+                  <MessageSquare className="h-4 w-4 mr-2 text-amber-600" />
+                  View Change Request
+                </DropdownMenuItem>
+              )}
               
               {plan.status === 'draft' ? (
                 <DropdownMenuItem onClick={() => onEditDraft(plan.id)}>
@@ -321,6 +358,14 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
           )}
         </CardContent>
       </Card>
+
+      {/* Change Request View Dialog */}
+      <AdminChangeRequestViewDialog
+        open={changeRequestDialogOpen}
+        onOpenChange={setChangeRequestDialogOpen}
+        carePlan={selectedCarePlan}
+        onEditCarePlan={handleEditFromChangeRequest}
+      />
     </div>
   );
 };
