@@ -159,9 +159,12 @@ const CarerVisitWorkflow = () => {
   const currentAppointment = appointmentData || appointment;
 
   // Auto-create visit record for in-progress appointments without visit records
+  const [autoCreateAttempted, setAutoCreateAttempted] = useState(false);
+  
   useEffect(() => {
-    if (currentAppointment?.status === 'in_progress' && !visitRecord && !visitLoading && user) {
+    if (currentAppointment?.status === 'in_progress' && !visitRecord && !visitLoading && user && !autoCreateAttempted) {
       console.log('Auto-creating visit record for in-progress appointment');
+      setAutoCreateAttempted(true);
       autoCreateVisitRecord.mutate({
         id: currentAppointment.id,
         client_id: currentAppointment.client_id,
@@ -169,7 +172,7 @@ const CarerVisitWorkflow = () => {
         branch_id: currentAppointment.clients?.branch_id || currentAppointment.branch_id,
       });
     }
-  }, [currentAppointment, visitRecord, visitLoading, user, autoCreateVisitRecord]);
+  }, [currentAppointment, visitRecord, visitLoading, user, autoCreateVisitRecord, autoCreateAttempted]);
 
   // Check if visit has been started and initialize data
   useEffect(() => {
@@ -179,20 +182,27 @@ const CarerVisitWorkflow = () => {
   }, [currentAppointment]);
 
   // Initialize tasks and medications when visit record is created
-  useEffect(() => {
-    if (visitRecord && tasks?.length === 0) {
-      addCommonTasks.mutate(visitRecord.id);
-    }
-  }, [visitRecord, tasks, addCommonTasks]);
+  const [tasksInitialized, setTasksInitialized] = useState(false);
+  const [medicationsInitialized, setMedicationsInitialized] = useState(false);
 
   useEffect(() => {
-    if (visitRecord && medications?.length === 0 && currentAppointment?.client_id) {
+    if (visitRecord && !tasksInitialized && (tasks?.length === 0 || tasks === undefined)) {
+      console.log('Initializing common tasks for visit record:', visitRecord.id);
+      setTasksInitialized(true);
+      addCommonTasks.mutate(visitRecord.id);
+    }
+  }, [visitRecord, tasks, addCommonTasks, tasksInitialized]);
+
+  useEffect(() => {
+    if (visitRecord && !medicationsInitialized && (medications?.length === 0 || medications === undefined) && currentAppointment?.client_id) {
+      console.log('Initializing common medications for visit record:', visitRecord.id);
+      setMedicationsInitialized(true);
       addCommonMedications.mutate({ 
         visitRecordId: visitRecord.id, 
         clientId: currentAppointment.client_id 
       });
     }
-  }, [visitRecord, medications, addCommonMedications, currentAppointment?.client_id]);
+  }, [visitRecord, medications, addCommonMedications, currentAppointment?.client_id, medicationsInitialized]);
 
   // Load existing visit data
   useEffect(() => {
@@ -288,7 +298,7 @@ const CarerVisitWorkflow = () => {
       setVisitStarted(true);
     } catch (error) {
       console.error('Error starting visit:', error);
-      toast.error('Failed to start visit');
+      // Error already handled in the hook
     }
   };
   
@@ -543,7 +553,7 @@ const CarerVisitWorkflow = () => {
 
       await bookingAttendance.mutateAsync(attendanceData);
       
-      toast.success("Visit completed successfully!");
+      // Success message already handled in the hook
       navigate("/carer-dashboard");
     } catch (error) {
       console.error('Error completing visit:', error);

@@ -16,7 +16,7 @@ export interface AutoAttendanceData {
   };
 }
 
-export const useAutomaticAttendance = () => {
+export const useAutomaticAttendance = (options?: { silent?: boolean }) => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -159,17 +159,24 @@ export const useAutomaticAttendance = () => {
       queryClient.invalidateQueries({ queryKey: ['attendance-records'] });
       queryClient.invalidateQueries({ queryKey: ['today-attendance', variables.personId] });
       
-      if (variables.action === 'check_in') {
-        toast.success("Checked in successfully");
-      } else if (variables.action === 'recheck_in') {
-        toast.success("Re-checked in successfully");
-      } else {
-        toast.success("Checked out successfully");
+      // Only show success toast if not in silent mode
+      if (!options?.silent) {
+        if (variables.action === 'check_in') {
+          toast.success("Checked in successfully");
+        } else if (variables.action === 'recheck_in') {
+          toast.success("Re-checked in successfully");
+        } else {
+          toast.success("Checked out successfully");
+        }
       }
     },
     onError: (error: any) => {
       console.error('Error processing automatic attendance:', error);
-      toast.error('Failed to process attendance: ' + (error.message || 'Unknown error'));
+      
+      // Only show error toast if not in silent mode
+      if (!options?.silent) {
+        toast.error('Failed to process attendance: ' + (error.message || 'Unknown error'));
+      }
     },
   });
 };

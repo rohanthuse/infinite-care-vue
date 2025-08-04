@@ -201,13 +201,15 @@ const CarerAppointments: React.FC = () => {
         }
       });
 
-      toast.success('Visit started successfully', { id: 'start-visit' });
+      // Success/error toasts are now handled in the hook
+      toast.dismiss('start-visit');
 
       // Navigate to visit workflow
       navigate(`/carer-dashboard/visit/${appointment.id}`);
     } catch (error) {
       console.error('[handleStartVisit] Error starting visit:', error);
-      toast.error(`Failed to start visit: ${error instanceof Error ? error.message : 'Unknown error'}`, { id: 'start-visit' });
+      toast.dismiss('start-visit');
+      // Error toast is now handled in the hook
     }
   };
 

@@ -16,9 +16,9 @@ export interface BookingAttendanceData {
   };
 }
 
-export const useBookingAttendance = () => {
+export const useBookingAttendance = (options?: { silent?: boolean }) => {
   const queryClient = useQueryClient();
-  const automaticAttendance = useAutomaticAttendance();
+  const automaticAttendance = useAutomaticAttendance({ silent: true });
 
   return useMutation({
     mutationFn: async (data: BookingAttendanceData) => {
@@ -84,10 +84,20 @@ export const useBookingAttendance = () => {
       queryClient.invalidateQueries({ queryKey: ['carer-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-records'] });
       queryClient.invalidateQueries({ queryKey: ['today-attendance'] });
+      
+      // Only show success toast if not in silent mode
+      if (!options?.silent) {
+        const actionText = variables.action === 'start_visit' ? 'started' : 'completed';
+        toast.success(`Visit ${actionText} successfully`);
+      }
     },
     onError: (error: any) => {
       console.error('[useBookingAttendance] Mutation error:', error);
-      // Don't show toast here - let the calling component handle it
+      
+      // Only show error toast if not in silent mode
+      if (!options?.silent) {
+        toast.error('Failed to update visit status');
+      }
     },
   });
 };
