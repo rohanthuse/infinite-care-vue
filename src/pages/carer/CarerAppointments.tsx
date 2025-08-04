@@ -234,7 +234,7 @@ const CarerAppointments: React.FC = () => {
           className="flex items-center gap-2"
           onClick={() => {
             console.log('[getActionButton] Navigating to completed visit:', appointment.id);
-            navigate(`/carer/visit/${appointment.id}`);
+            navigate(`/carer-dashboard/visit/${appointment.id}`);
           }}
           disabled={isLoading}
         >
@@ -251,7 +251,7 @@ const CarerAppointments: React.FC = () => {
           className="flex items-center gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/80"
           onClick={() => {
             console.log('[getActionButton] Navigating to in-progress visit:', appointment.id);
-            navigate(`/carer/visit/${appointment.id}`);
+            navigate(`/carer-dashboard/visit/${appointment.id}`);
           }}
           disabled={isLoading}
         >
@@ -513,7 +513,7 @@ const CarerAppointments: React.FC = () => {
         open={showDetailDialog}
         onOpenChange={setShowDetailDialog}
         onStartVisit={handleStartVisit}
-        onContinueVisit={(appointment) => navigate(`/carer/visit/${appointment.id}`)}
+        onContinueVisit={(appointment) => navigate(`/carer-dashboard/visit/${appointment.id}`)}
       />
     </div>
   );
