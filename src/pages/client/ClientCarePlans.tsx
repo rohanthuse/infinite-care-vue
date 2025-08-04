@@ -3,12 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Clock, CheckCircle, AlertCircle, Printer, FileDown, PenTool } from "lucide-react";
+import { FileText, Clock, CheckCircle, AlertCircle, Printer, FileDown, PenTool, MessageSquare } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useClientCarePlansWithDetails } from "@/hooks/useCarePlanData";
 import { useToast } from "@/hooks/use-toast";
 import { ClientCarePlanApprovalDialog } from "@/components/client/ClientCarePlanApprovalDialog";
-import { useApproveCarePlan, useRejectCarePlan, useCarePlanRequiresApproval, useCarePlanStatus } from "@/hooks/useCarePlanApproval";
+import { ClientChangeRequestDialog } from "@/components/client/ClientChangeRequestDialog";
+import { useApproveCarePlan, useRejectCarePlan, useCarePlanRequiresApproval, useCarePlanStatus, useRequestChanges, useCarePlanHasChangeRequest } from "@/hooks/useCarePlanApproval";
 import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 import { CarePlanDataEnhancer } from "@/components/care/CarePlanDataEnhancer";
 const ClientCarePlans = () => {
@@ -16,9 +17,11 @@ const ClientCarePlans = () => {
     toast
   } = useToast();
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [changeRequestDialogOpen, setChangeRequestDialogOpen] = useState(false);
   const [selectedCarePlan, setSelectedCarePlan] = useState<any>(null);
   const approveCarePlanMutation = useApproveCarePlan();
   const rejectCarePlanMutation = useRejectCarePlan();
+  const requestChangesMutation = useRequestChanges();
 
   // Get authenticated client using proper Supabase auth
   const {
@@ -32,11 +35,23 @@ const ClientCarePlans = () => {
     isLoading,
     error
   } = useClientCarePlansWithDetails(clientId || '');
-  const handleRequestChanges = () => {
-    toast({
-      title: "Request Changes",
-      description: "Your change request has been submitted to your care team. They will contact you soon."
-    });
+  const handleOpenChangeRequestDialog = (carePlan: any) => {
+    setSelectedCarePlan(carePlan);
+    setChangeRequestDialogOpen(true);
+  };
+
+  const handleSubmitChangeRequest = (comments: string) => {
+    if (!selectedCarePlan) return;
+    
+    requestChangesMutation.mutate(
+      { carePlanId: selectedCarePlan.id, comments },
+      {
+        onSuccess: () => {
+          setChangeRequestDialogOpen(false);
+          setSelectedCarePlan(null);
+        }
+      }
+    );
   };
   const handlePrintPlan = () => {
     window.print();
@@ -166,6 +181,7 @@ const ClientCarePlans = () => {
         );
         const requiresApproval = useCarePlanRequiresApproval(carePlan);
         const statusInfo = useCarePlanStatus(carePlan);
+        const changeRequestInfo = useCarePlanHasChangeRequest(carePlan);
         return (
           <>
             {enhanceCarePlanData}
@@ -186,6 +202,12 @@ const ClientCarePlans = () => {
                       {carePlan.client_acknowledged_at && <div className="text-green-600">
                           ✓ Approved by you on: {new Date(carePlan.client_acknowledged_at).toLocaleDateString()}
                         </div>}
+                      {changeRequestInfo.hasRequest && (
+                        <div className="text-amber-600">
+                          <MessageSquare className="h-4 w-4 inline mr-1" />
+                          Changes requested on: {new Date(changeRequestInfo.requestDate).toLocaleDateString()}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2">
@@ -195,13 +217,23 @@ const ClientCarePlans = () => {
                           <PenTool className="h-4 w-4 mr-2" />
                           Care Plan is Approved
                         </Button>
-                        <Button variant="outline" onClick={handleRequestChanges}>
-                          Need to Add Some Changes
+                        <Button 
+                          variant="outline" 
+                          onClick={() => handleOpenChangeRequestDialog(carePlan)}
+                          className={changeRequestInfo.hasRequest ? "border-amber-300 text-amber-700" : ""}
+                        >
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          {changeRequestInfo.hasRequest ? "Changes Requested" : "Need to Add Some Changes"}
                         </Button>
                       </>
                     ) : carePlan.status === 'approved' || carePlan.status === 'active' ? (
-                      <Button variant="outline" onClick={handleRequestChanges}>
-                        Need to Add Some Changes
+                      <Button 
+                        variant="outline" 
+                        onClick={() => handleOpenChangeRequestDialog(carePlan)}
+                        className={changeRequestInfo.hasRequest ? "border-amber-300 text-amber-700" : ""}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        {changeRequestInfo.hasRequest ? "Changes Requested" : "Need to Add Some Changes"}
                       </Button>
                     ) : null}
                   </div>
@@ -711,6 +743,18 @@ const ClientCarePlans = () => {
 
       {/* Approval Dialog */}
       {selectedCarePlan && <ClientCarePlanApprovalDialog open={approvalDialogOpen} onOpenChange={setApprovalDialogOpen} carePlan={selectedCarePlan} onApprove={handleApproveCarePlan} onReject={handleRejectCarePlan} isLoading={approveCarePlanMutation.isPending || rejectCarePlanMutation.isPending} />}
+
+      {/* Change Request Dialog */}
+      {selectedCarePlan && <ClientChangeRequestDialog 
+        open={changeRequestDialogOpen}
+        onOpenChange={setChangeRequestDialogOpen}
+        onSubmitRequest={handleSubmitChangeRequest}
+        carePlan={selectedCarePlan}
+        isLoading={requestChangesMutation.isPending}
+        hasExistingRequest={useCarePlanHasChangeRequest(selectedCarePlan).hasRequest}
+        existingRequestDate={selectedCarePlan?.changes_requested_at ? new Date(selectedCarePlan.changes_requested_at).toLocaleDateString() : undefined}
+        existingComments={selectedCarePlan?.change_request_comments}
+      />}
     </div>;
 };
 export default ClientCarePlans;

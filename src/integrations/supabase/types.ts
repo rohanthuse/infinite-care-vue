@@ -1239,6 +1239,9 @@ export type Database = {
           approved_by: string | null
           auto_save_data: Json | null
           care_plan_type: string | null
+          change_request_comments: string | null
+          changes_requested_at: string | null
+          changes_requested_by: string | null
           client_acknowledged_at: string | null
           client_acknowledgment_ip: unknown | null
           client_comments: string | null
@@ -1271,6 +1274,9 @@ export type Database = {
           approved_by?: string | null
           auto_save_data?: Json | null
           care_plan_type?: string | null
+          change_request_comments?: string | null
+          changes_requested_at?: string | null
+          changes_requested_by?: string | null
           client_acknowledged_at?: string | null
           client_acknowledgment_ip?: unknown | null
           client_comments?: string | null
@@ -1303,6 +1309,9 @@ export type Database = {
           approved_by?: string | null
           auto_save_data?: Json | null
           care_plan_type?: string | null
+          change_request_comments?: string | null
+          changes_requested_at?: string | null
+          changes_requested_by?: string | null
           client_acknowledged_at?: string | null
           client_acknowledgment_ip?: unknown | null
           client_comments?: string | null
