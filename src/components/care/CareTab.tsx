@@ -1077,6 +1077,32 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
       </Dialog>
 
 
+      {/* Care Plan Creation Wizard */}
+      {selectedClientId && selectedClientName && (
+        <CarePlanCreationWizard
+          isOpen={isCreateCarePlanWizardOpen}
+          onClose={() => setIsCreateCarePlanWizardOpen(false)}
+          clientId={selectedClientId}
+        />
+      )}
+
+      {/* Change Request Edit Wizard */}
+      {selectedCarePlanId && isEditingChangeRequest && (
+        <CarePlanCreationWizard
+          isOpen={isWizardOpen}
+          onClose={() => {
+            setIsWizardOpen(false);
+            setIsEditingChangeRequest(false);
+            setSelectedCarePlanId(null);
+            setChangeRequestData(null);
+          }}
+          clientId={selectedClientId || ''}
+          carePlanId={selectedCarePlanId}
+          isEditingChangeRequest={true}
+          changeRequestData={changeRequestData}
+        />
+      )}
+
       {/* Delete Care Plan Dialog */}
       <DeleteCarePlanDialog
         open={deleteDialogOpen}
