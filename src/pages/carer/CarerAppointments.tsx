@@ -244,7 +244,7 @@ const CarerAppointments: React.FC = () => {
       );
     }
     
-    if (status === 'in-progress') {
+    if (status === 'in_progress') {
       return (
         <Button 
           size="sm" 
