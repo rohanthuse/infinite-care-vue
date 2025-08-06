@@ -134,6 +134,7 @@ const CarerVisitWorkflow = () => {
   
   const [activeTab, setActiveTab] = useState("check-in");
   const [currentStep, setCurrentStep] = useState(1);
+  const [completedTabs, setCompletedTabs] = useState<string[]>([]);
   const [visitStarted, setVisitStarted] = useState(false);
   const [visitTimer, setVisitTimer] = useState(0);
   const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
@@ -478,7 +479,72 @@ const CarerVisitWorkflow = () => {
     }
   };
   
+  // Define tab order and completion requirements
+  const tabOrder = ["check-in", "tasks", "medication", "news2", "events", "care-plan", "notes", "sign-off", "complete"];
+  
+  // Check if a tab is completed
+  const isTabCompleted = (tabName: string): boolean => {
+    switch (tabName) {
+      case "check-in":
+        return visitStarted;
+      case "tasks":
+        return tasks ? 
+          tasks.filter(task => task.priority === 'high' || task.priority === 'urgent')
+            .every(task => task.is_completed) : false;
+      case "medication":
+        return medications ? 
+          medications.length === 0 || medications.every(med => med.is_administered || med.missed_reason) : true;
+      case "news2":
+        return news2Readings ? news2Readings.length > 0 : false; // Optional but good to have
+      case "events":
+        return true; // Events are optional
+      case "care-plan":
+        return true; // Care plan updates are optional
+      case "notes":
+        return notes.trim().length >= 10; // Minimum note length
+      case "sign-off":
+        return !!clientSignature;
+      case "complete":
+        return tabOrder.slice(0, -1).every(tab => isTabCompleted(tab));
+      default:
+        return false;
+    }
+  };
+  
+  // Check if a tab can be accessed
+  const canAccessTab = (tabName: string): boolean => {
+    const tabIndex = tabOrder.indexOf(tabName);
+    if (tabIndex === 0) return true; // Check-in is always accessible
+    
+    // Can access if it's the current active tab
+    if (tabName === activeTab) return true;
+    
+    // Can access any previously completed tab
+    if (completedTabs.includes(tabName)) return true;
+    
+    // Can access next tab if current tab is completed
+    const currentTabIndex = tabOrder.indexOf(activeTab);
+    const isCurrentCompleted = isTabCompleted(activeTab);
+    
+    return tabIndex <= currentTabIndex + (isCurrentCompleted ? 1 : 0);
+  };
+
   const handleTabChange = (tabValue: string) => {
+    if (!canAccessTab(tabValue)) {
+      const currentTabIndex = tabOrder.indexOf(activeTab);
+      const targetTabIndex = tabOrder.indexOf(tabValue);
+      
+      if (targetTabIndex > currentTabIndex) {
+        toast.error(`Please complete the current tab before proceeding to ${tabValue}`);
+      }
+      return;
+    }
+    
+    // Mark previous tab as completed if it meets requirements
+    if (isTabCompleted(activeTab) && !completedTabs.includes(activeTab)) {
+      setCompletedTabs(prev => [...prev, activeTab]);
+    }
+    
     setActiveTab(tabValue);
     
     // Map tabs to steps
@@ -528,37 +594,54 @@ const CarerVisitWorkflow = () => {
         });
     }
 
-    // Validate current step
-    if (currentStep === 2) {
-      const requiredTasksCompleted = tasks
-        ?.filter(task => task.priority === 'high' || task.priority === 'urgent')
-        .every(task => task.is_completed);
-        
-      if (!requiredTasksCompleted) {
-        toast.error("Please complete all high priority tasks");
-        return;
+    // Check if current tab is completed
+    if (!isTabCompleted(activeTab)) {
+      let errorMessage = "";
+      switch (activeTab) {
+        case "check-in":
+          errorMessage = "Please start the visit first";
+          break;
+        case "tasks":
+          errorMessage = "Please complete all high priority tasks";
+          break;
+        case "medication":
+          errorMessage = "Please complete all medication tasks or mark as not administered";
+          break;
+        case "news2":
+          errorMessage = "Please record at least one NEWS2 reading";
+          break;
+        case "notes":
+          errorMessage = "Please enter visit notes (minimum 10 characters)";
+          break;
+        case "sign-off":
+          errorMessage = "Client signature is required";
+          break;
+        default:
+          errorMessage = "Please complete this section before proceeding";
       }
-    }
-    
-    if (currentStep === 3 && medications && medications.length > 0) {
-      const allMedicationsCompleted = medications.every(med => med.is_administered);
-      
-      if (!allMedicationsCompleted) {
-        toast.error("Please complete all medication tasks or mark as not administered");
-        return;
-      }
-    }
-    
-    if (currentStep === 8 && !clientSignature) {
-      toast.error("Client signature is required");
+      toast.error(errorMessage);
       return;
     }
     
-    handleStepChange(currentStep + 1);
+    // Mark current tab as completed
+    if (!completedTabs.includes(activeTab)) {
+      setCompletedTabs(prev => [...prev, activeTab]);
+    }
+    
+    // Move to next tab
+    const currentTabIndex = tabOrder.indexOf(activeTab);
+    if (currentTabIndex < tabOrder.length - 1) {
+      const nextTab = tabOrder[currentTabIndex + 1];
+      handleTabChange(nextTab);
+    }
   };
   
   const handlePreviousStep = () => {
-    handleStepChange(currentStep - 1);
+    const currentTabIndex = tabOrder.indexOf(activeTab);
+    if (currentTabIndex > 0) {
+      const previousTab = tabOrder[currentTabIndex - 1];
+      handleTabChange(previousTab);
+    }
   };
   
   const handleCompleteVisit = async () => {
@@ -696,57 +779,120 @@ const CarerVisitWorkflow = () => {
       <div className="max-w-4xl mx-auto p-4">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-9">
-            <TabsTrigger value="check-in">
+            <TabsTrigger 
+              value="check-in" 
+              disabled={!canAccessTab("check-in")}
+              className={`${isTabCompleted("check-in") ? "bg-green-50 border-green-200" : ""}`}
+            >
               <div className="flex flex-col items-center gap-1">
-                <UserCheck className="w-4 h-4" />
+                <div className="flex items-center gap-1">
+                  <UserCheck className="w-4 h-4" />
+                  {isTabCompleted("check-in") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                </div>
                 <span className="text-xs">Check-in</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger value="tasks">
+            <TabsTrigger 
+              value="tasks" 
+              disabled={!canAccessTab("tasks")}
+              className={`${isTabCompleted("tasks") ? "bg-green-50 border-green-200" : ""}`}
+            >
               <div className="flex flex-col items-center gap-1">
-                <Clipboard className="w-4 h-4" />
+                <div className="flex items-center gap-1">
+                  <Clipboard className="w-4 h-4" />
+                  {isTabCompleted("tasks") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                </div>
                 <span className="text-xs">Tasks</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger value="medication">
+            <TabsTrigger 
+              value="medication" 
+              disabled={!canAccessTab("medication")}
+              className={`${isTabCompleted("medication") ? "bg-green-50 border-green-200" : ""}`}
+            >
               <div className="flex flex-col items-center gap-1">
-                <Pill className="w-4 h-4" />
+                <div className="flex items-center gap-1">
+                  <Pill className="w-4 h-4" />
+                  {isTabCompleted("medication") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                </div>
                 <span className="text-xs">Medication</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger value="news2">
+            <TabsTrigger 
+              value="news2" 
+              disabled={!canAccessTab("news2")}
+              className={`${isTabCompleted("news2") ? "bg-green-50 border-green-200" : ""}`}
+            >
               <div className="flex flex-col items-center gap-1">
-                <Activity className="w-4 h-4" />
+                <div className="flex items-center gap-1">
+                  <Activity className="w-4 h-4" />
+                  {isTabCompleted("news2") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                </div>
                 <span className="text-xs">NEWS2</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger value="events">
+            <TabsTrigger 
+              value="events" 
+              disabled={!canAccessTab("events")}
+              className={`${isTabCompleted("events") ? "bg-green-50 border-green-200" : ""}`}
+            >
               <div className="flex flex-col items-center gap-1">
-                <AlertCircle className="w-4 h-4" />
+                <div className="flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  {isTabCompleted("events") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                </div>
                 <span className="text-xs">Events</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger value="care-plan">
+            <TabsTrigger 
+              value="care-plan" 
+              disabled={!canAccessTab("care-plan")}
+              className={`${isTabCompleted("care-plan") ? "bg-green-50 border-green-200" : ""}`}
+            >
               <div className="flex flex-col items-center gap-1">
-                <FileBarChart2 className="w-4 h-4" />
+                <div className="flex items-center gap-1">
+                  <FileBarChart2 className="w-4 h-4" />
+                  {isTabCompleted("care-plan") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                </div>
                 <span className="text-xs">Care Plan</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger value="notes">
+            <TabsTrigger 
+              value="notes" 
+              disabled={!canAccessTab("notes")}
+              className={`${isTabCompleted("notes") ? "bg-green-50 border-green-200" : ""}`}
+            >
               <div className="flex flex-col items-center gap-1">
-                <FileText className="w-4 h-4" />
+                <div className="flex items-center gap-1">
+                  <FileText className="w-4 h-4" />
+                  {isTabCompleted("notes") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                </div>
                 <span className="text-xs">Notes</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger value="sign-off">
+            <TabsTrigger 
+              value="sign-off" 
+              disabled={!canAccessTab("sign-off")}
+              className={`${isTabCompleted("sign-off") ? "bg-green-50 border-green-200" : ""}`}
+            >
               <div className="flex flex-col items-center gap-1">
-                <Edit className="w-4 h-4" />
+                <div className="flex items-center gap-1">
+                  <Edit className="w-4 h-4" />
+                  {isTabCompleted("sign-off") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                </div>
                 <span className="text-xs">Sign-off</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger value="complete">
+            <TabsTrigger 
+              value="complete" 
+              disabled={!canAccessTab("complete")}
+              className={`${isTabCompleted("complete") ? "bg-green-50 border-green-200" : ""}`}
+            >
               <div className="flex flex-col items-center gap-1">
-                <CheckCircle className="w-4 h-4" />
+                <div className="flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4" />
+                  {isTabCompleted("complete") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                </div>
                 <span className="text-xs">Complete</span>
               </div>
             </TabsTrigger>
@@ -815,7 +961,10 @@ const CarerVisitWorkflow = () => {
               
               {visitStarted && (
                 <div className="border-t p-6 flex justify-end">
-                  <Button onClick={handleNextStep}>
+                  <Button 
+                    onClick={handleNextStep}
+                    disabled={!isTabCompleted("check-in")}
+                  >
                     Next Step
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
@@ -881,10 +1030,17 @@ const CarerVisitWorkflow = () => {
               </CardContent>
               
               <div className="border-t p-6 flex justify-between">
-                <Button variant="outline" onClick={handlePreviousStep}>
+                <Button 
+                  variant="outline" 
+                  onClick={handlePreviousStep}
+                  disabled={activeTab === "check-in"}
+                >
                   Back
                 </Button>
-                <Button onClick={handleNextStep}>
+                <Button 
+                  onClick={handleNextStep}
+                  disabled={!isTabCompleted("tasks")}
+                >
                   Next Step
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -956,10 +1112,17 @@ const CarerVisitWorkflow = () => {
               </CardContent>
               
               <div className="border-t p-6 flex justify-between">
-                <Button variant="outline" onClick={handlePreviousStep}>
+                <Button 
+                  variant="outline" 
+                  onClick={handlePreviousStep}
+                  disabled={activeTab === "check-in"}
+                >
                   Back
                 </Button>
-                <Button onClick={handleNextStep}>
+                <Button 
+                  onClick={handleNextStep}
+                  disabled={!isTabCompleted("medication")}
+                >
                   Next Step
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -1143,10 +1306,17 @@ const CarerVisitWorkflow = () => {
               </CardContent>
               
               <div className="border-t p-6 flex justify-between">
-                <Button variant="outline" onClick={handlePreviousStep}>
+                <Button 
+                  variant="outline" 
+                  onClick={handlePreviousStep}
+                  disabled={activeTab === "check-in"}
+                >
                   Back
                 </Button>
-                <Button onClick={handleNextStep}>
+                <Button 
+                  onClick={handleNextStep}
+                  disabled={!isTabCompleted("news2")}
+                >
                   Next Step
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -1265,10 +1435,17 @@ const CarerVisitWorkflow = () => {
               </CardContent>
               
               <div className="border-t p-6 flex justify-between">
-                <Button variant="outline" onClick={handlePreviousStep}>
+                <Button 
+                  variant="outline" 
+                  onClick={handlePreviousStep}
+                  disabled={activeTab === "check-in"}
+                >
                   Back
                 </Button>
-                <Button onClick={handleNextStep}>
+                <Button 
+                  onClick={handleNextStep}
+                  disabled={!isTabCompleted("events")}
+                >
                   Next Step
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -1293,10 +1470,17 @@ const CarerVisitWorkflow = () => {
               </CardContent>
               
               <div className="border-t p-6 flex justify-between">
-                <Button variant="outline" onClick={handlePreviousStep}>
+                <Button 
+                  variant="outline" 
+                  onClick={handlePreviousStep}
+                  disabled={activeTab === "check-in"}
+                >
                   Back
                 </Button>
-                <Button onClick={handleNextStep}>
+                <Button 
+                  onClick={handleNextStep}
+                  disabled={!isTabCompleted("care-plan")}
+                >
                   Next Step
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -1388,10 +1572,17 @@ const CarerVisitWorkflow = () => {
               </CardContent>
               
               <div className="border-t p-6 flex justify-between">
-                <Button variant="outline" onClick={handlePreviousStep}>
+                <Button 
+                  variant="outline" 
+                  onClick={handlePreviousStep}
+                  disabled={activeTab === "check-in"}
+                >
                   Back
                 </Button>
-                <Button onClick={handleNextStep}>
+                <Button 
+                  onClick={handleNextStep}
+                  disabled={!isTabCompleted("notes")}
+                >
                   Next Step
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -1459,12 +1650,16 @@ const CarerVisitWorkflow = () => {
               </CardContent>
               
               <div className="border-t p-6 flex justify-between">
-                <Button variant="outline" onClick={handlePreviousStep}>
+                <Button 
+                  variant="outline" 
+                  onClick={handlePreviousStep}
+                  disabled={activeTab === "check-in"}
+                >
                   Back
                 </Button>
                 <Button 
                   onClick={handleNextStep}
-                  disabled={!clientSignature}
+                  disabled={!isTabCompleted("sign-off")}
                 >
                   Complete Visit
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -1517,10 +1712,18 @@ const CarerVisitWorkflow = () => {
               </CardContent>
               
               <div className="border-t p-6 flex justify-between">
-                <Button variant="outline" onClick={handlePreviousStep}>
+                <Button 
+                  variant="outline" 
+                  onClick={handlePreviousStep}
+                  disabled={activeTab === "check-in"}
+                >
                   Back
                 </Button>
-                <Button onClick={handleCompleteVisit} size="lg">
+                <Button 
+                  onClick={handleCompleteVisit} 
+                  size="lg"
+                  disabled={!isTabCompleted("complete")}
+                >
                   <Send className="w-5 h-5 mr-2" />
                   Complete Visit
                 </Button>
