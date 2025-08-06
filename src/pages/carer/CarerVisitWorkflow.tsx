@@ -790,9 +790,9 @@ const CarerVisitWorkflow = () => {
         <div className="max-w-4xl mx-auto mt-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-700">Progress</span>
-            <span className="text-sm text-gray-500">{Math.round((currentStep / 8) * 100)}% complete</span>
+            <span className="text-sm text-gray-500">{Math.round((currentStep / 9) * 100)}% complete</span>
           </div>
-          <Progress value={(currentStep / 8) * 100} className="h-2" />
+          <Progress value={(currentStep / 9) * 100} className="h-2" />
         </div>
       </div>
 
