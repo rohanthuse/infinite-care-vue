@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Form, AssigneeType, FormPermissions } from '@/types/form-builder';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,10 @@ import { Check, Search, FileText, Calendar, Clock, AlertTriangle, Upload, Shield
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useBranchStaffAndClients } from '@/hooks/useBranchStaffAndClients';
+import { useBranchCarers } from '@/data/hooks/useBranchCarers';
+import { useBranchNavigation } from '@/hooks/useBranchNavigation';
+import { useBranchAdmins } from '@/hooks/useBranchAdmins';
 
 interface FormBuilderPublishProps {
   form: Form;
@@ -49,32 +53,62 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
 
   const [activePermissionsTab, setActivePermissionsTab] = useState<string>('view');
   
-  // Mock data - in a real app, this would be fetched from your API
-  const mockClients = [
-    { id: 'c1', name: 'John Smith', type: 'client', email: 'john.smith@example.com', avatar: 'JS' },
-    { id: 'c2', name: 'Jane Doe', type: 'client', email: 'jane.doe@example.com', avatar: 'JD' },
-    { id: 'c3', name: 'Robert Johnson', type: 'client', email: 'robert.j@example.com', avatar: 'RJ' },
-    { id: 'c4', name: 'Sarah Williams', type: 'client', email: 'sarah.w@example.com', avatar: 'SW' },
-    { id: 'c5', name: 'Michael Brown', type: 'client', email: 'michael.b@example.com', avatar: 'MB' }
-  ];
-  
-  const mockStaff = [
-    { id: 's1', name: 'Dr. Emma Wilson', type: 'staff', role: 'Doctor', avatar: 'EW' },
-    { id: 's2', name: 'Nurse David Chen', type: 'staff', role: 'Nurse', avatar: 'DC' },
-    { id: 's3', name: 'Dr. Lisa Patel', type: 'staff', role: 'Doctor', avatar: 'LP' }
-  ];
-  
-  const mockCarers = [
-    { id: 'ca1', name: 'George Thompson', type: 'carer', experience: '5 years', avatar: 'GT' },
-    { id: 'ca2', name: 'Mary Wilson', type: 'carer', experience: '3 years', avatar: 'MW' },
-    { id: 'ca3', name: 'James Harris', type: 'carer', experience: '2 years', avatar: 'JH' },
-    { id: 'ca4', name: 'Patricia Moore', type: 'carer', experience: '4 years', avatar: 'PM' }
-  ];
-  
-  const mockBranches = [
-    { id: 'b1', name: 'Main Branch', type: 'branch', location: 'London', avatar: 'MB' },
-    { id: 'b2', name: 'North Branch', type: 'branch', location: 'Manchester', avatar: 'NB' }
-  ];
+  // Fetch real data from hooks
+  const { staff, clients, isLoading: isLoadingStaffAndClients } = useBranchStaffAndClients(branchId);
+  const { data: carers = [], isLoading: isLoadingCarers } = useBranchCarers(branchId);
+  const { data: branches = [], isLoading: isLoadingBranches } = useBranchNavigation();
+  const { data: branchAdmins = [], isLoading: isLoadingAdmins } = useBranchAdmins(branchId);
+
+  // Transform the real data into the format expected by the UI
+  const realClients = useMemo(() => {
+    return clients.map(client => ({
+      id: client.id,
+      name: `${client.first_name} ${client.last_name}`.trim(),
+      type: 'client' as const,
+      email: client.email || '',
+      avatar: `${client.first_name?.charAt(0) || ''}${client.last_name?.charAt(0) || ''}`.toUpperCase()
+    }));
+  }, [clients]);
+
+  const realStaff = useMemo(() => {
+    return staff.map(member => ({
+      id: member.id,
+      name: `${member.first_name} ${member.last_name}`.trim(),
+      type: 'staff' as const,
+      role: member.specialization || 'Staff Member',
+      avatar: `${member.first_name?.charAt(0) || ''}${member.last_name?.charAt(0) || ''}`.toUpperCase()
+    }));
+  }, [staff]);
+
+  const realCarers = useMemo(() => {
+    return carers.map(carer => ({
+      id: carer.id,
+      name: `${carer.first_name} ${carer.last_name}`.trim(),
+      type: 'carer' as const,
+      experience: carer.experience || 'Experience not specified',
+      avatar: `${carer.first_name?.charAt(0) || ''}${carer.last_name?.charAt(0) || ''}`.toUpperCase()
+    }));
+  }, [carers]);
+
+  const realBranches = useMemo(() => {
+    return branches.map(branch => ({
+      id: branch.id,
+      name: branch.name,
+      type: 'branch' as const,
+      location: branch.country || 'Location not specified',
+      avatar: branch.name.split(' ').map(word => word.charAt(0)).join('').toUpperCase().substring(0, 2)
+    }));
+  }, [branches]);
+
+  const realBranchAdmins = useMemo(() => {
+    return branchAdmins.map(admin => ({
+      id: admin.id,
+      name: `${admin.first_name} ${admin.last_name}`.trim(),
+      type: 'branch_admin' as const,
+      email: admin.email || '',
+      avatar: `${admin.first_name?.charAt(0) || ''}${admin.last_name?.charAt(0) || ''}`.toUpperCase()
+    }));
+  }, [branchAdmins]);
 
   // Mock roles for permissions
   const mockRoles = [
@@ -85,25 +119,40 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
     { id: 'client', name: 'Client', description: 'Receives services' }
   ];
 
-  // Filter the data based on search value
-  const filteredClients = mockClients.filter(client => 
-    client.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchValue.toLowerCase())
-  );
+  // Filter the real data based on search value
+  const filteredClients = useMemo(() => {
+    return realClients.filter(client => 
+      client.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+      client.email.toLowerCase().includes(searchValue.toLowerCase())
+    );
+  }, [realClients, searchValue]);
   
-  const filteredStaff = mockStaff.filter(staff => 
-    staff.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-    staff.role.toLowerCase().includes(searchValue.toLowerCase())
-  );
+  const filteredStaff = useMemo(() => {
+    return realStaff.filter(staff => 
+      staff.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+      staff.role.toLowerCase().includes(searchValue.toLowerCase())
+    );
+  }, [realStaff, searchValue]);
   
-  const filteredCarers = mockCarers.filter(carer => 
-    carer.name.toLowerCase().includes(searchValue.toLowerCase())
-  );
+  const filteredCarers = useMemo(() => {
+    return realCarers.filter(carer => 
+      carer.name.toLowerCase().includes(searchValue.toLowerCase())
+    );
+  }, [realCarers, searchValue]);
   
-  const filteredBranches = mockBranches.filter(branch => 
-    branch.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-    branch.location.toLowerCase().includes(searchValue.toLowerCase())
-  );
+  const filteredBranches = useMemo(() => {
+    return realBranches.filter(branch => 
+      branch.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+      (branch.location && branch.location.toLowerCase().includes(searchValue.toLowerCase()))
+    );
+  }, [realBranches, searchValue]);
+
+  const filteredBranchAdmins = useMemo(() => {
+    return realBranchAdmins.filter(admin => 
+      admin.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+      admin.email.toLowerCase().includes(searchValue.toLowerCase())
+    );
+  }, [realBranchAdmins, searchValue]);
 
   const handleTabChange = (value: string) => {
     setSelectedTab(value);
@@ -121,7 +170,7 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
     const assignees = Object.entries(selectedAssignees)
       .filter(([_, isSelected]) => isSelected)
       .map(([id, _]) => {
-        const allEntities = [...mockClients, ...mockStaff, ...mockCarers, ...mockBranches];
+        const allEntities = [...realClients, ...realStaff, ...realCarers, ...realBranches, ...realBranchAdmins];
         const entity = allEntities.find(entity => entity.id === id);
         if (!entity) return null;
         
@@ -356,16 +405,19 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
             </div>
             
             <Tabs value={selectedTab} onValueChange={handleTabChange}>
-              <TabsList className="grid grid-cols-4">
+              <TabsList className="grid grid-cols-5">
                 <TabsTrigger value="clients">Clients</TabsTrigger>
                 <TabsTrigger value="staff">Staff</TabsTrigger>
                 <TabsTrigger value="carers">Carers</TabsTrigger>
                 <TabsTrigger value="branches">Branches</TabsTrigger>
+                <TabsTrigger value="admins">Admins</TabsTrigger>
               </TabsList>
               
               <ScrollArea className="h-[250px] mt-2">
                 <TabsContent value="clients" className="space-y-2 py-2">
-                  {filteredClients.length === 0 ? (
+                  {isLoadingStaffAndClients ? (
+                    <div className="text-center py-8 text-gray-500">Loading clients...</div>
+                  ) : filteredClients.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">No clients found</div>
                   ) : (
                     filteredClients.map(client => (
@@ -390,7 +442,9 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="staff" className="space-y-2 py-2">
-                  {filteredStaff.length === 0 ? (
+                  {isLoadingStaffAndClients ? (
+                    <div className="text-center py-8 text-gray-500">Loading staff...</div>
+                  ) : filteredStaff.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">No staff found</div>
                   ) : (
                     filteredStaff.map(staff => (
@@ -415,7 +469,9 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="carers" className="space-y-2 py-2">
-                  {filteredCarers.length === 0 ? (
+                  {isLoadingCarers ? (
+                    <div className="text-center py-8 text-gray-500">Loading carers...</div>
+                  ) : filteredCarers.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">No carers found</div>
                   ) : (
                     filteredCarers.map(carer => (
@@ -440,7 +496,9 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="branches" className="space-y-2 py-2">
-                  {filteredBranches.length === 0 ? (
+                  {isLoadingBranches ? (
+                    <div className="text-center py-8 text-gray-500">Loading branches...</div>
+                  ) : filteredBranches.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">No branches found</div>
                   ) : (
                     filteredBranches.map(branch => (
@@ -457,6 +515,33 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
                           <Label htmlFor={`branch-${branch.id}`} className="flex-1 cursor-pointer">
                             <div className="font-medium">{branch.name}</div>
                             <div className="text-xs text-gray-500">{branch.location}</div>
+                          </Label>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </TabsContent>
+
+                <TabsContent value="admins" className="space-y-2 py-2">
+                  {isLoadingAdmins ? (
+                    <div className="text-center py-8 text-gray-500">Loading branch admins...</div>
+                  ) : filteredBranchAdmins.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">No branch admins found</div>
+                  ) : (
+                    filteredBranchAdmins.map(admin => (
+                      <div key={admin.id} className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded">
+                        <Checkbox 
+                          id={`admin-${admin.id}`} 
+                          checked={!!selectedAssignees[admin.id]} 
+                          onCheckedChange={(checked) => handleSelectAssignee(admin.id, !!checked)}
+                        />
+                        <div className="flex items-center flex-1 gap-2">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="bg-red-100 text-red-600">{admin.avatar}</AvatarFallback>
+                          </Avatar>
+                          <Label htmlFor={`admin-${admin.id}`} className="flex-1 cursor-pointer">
+                            <div className="font-medium">{admin.name}</div>
+                            <div className="text-xs text-gray-500">{admin.email}</div>
                           </Label>
                         </div>
                       </div>
