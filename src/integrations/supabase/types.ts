@@ -29,13 +29,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "admin_branches_admin_id_fkey"
-            columns: ["admin_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "admin_branches_branch_id_fkey"
             columns: ["branch_id"]
             isOneToOne: false
