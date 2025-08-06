@@ -164,12 +164,13 @@ export const AdminsTable = () => {
       }
 
       // Check the function response
-      if (data?.success) {
-        toast.success(`Admin deleted completely - email ${data.admin_email} is now available for reuse`);
+      const result = data as any; // Type assertion for function response
+      if (result?.success) {
+        toast.success(`Admin deleted completely - email ${result.admin_email} is now available for reuse`);
         refetch();
       } else {
-        console.error('Delete function returned error:', data);
-        throw new Error(data?.error || 'Unknown error during deletion');
+        console.error('Delete function returned error:', result);
+        throw new Error(result?.error || 'Unknown error during deletion');
       }
     } catch (error: any) {
       console.error('Delete admin error:', error);

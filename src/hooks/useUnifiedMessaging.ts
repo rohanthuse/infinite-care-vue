@@ -149,34 +149,36 @@ export const useAvailableContacts = () => {
           .maybeSingle();
 
         if (client?.branch_id) {
-          // Get admins for this branch
+          // Get admin branches first, then profiles separately to avoid RLS issues
           const { data: adminBranches } = await supabase
             .from('admin_branches')
-            .select(`
-              admin_id,
-              profiles!inner(
-                id,
-                first_name,
-                last_name,
-                email
-              )
-            `)
+            .select('admin_id')
             .eq('branch_id', client.branch_id);
 
-          if (adminBranches) {
+          if (adminBranches && adminBranches.length > 0) {
+            const adminIds = adminBranches.map(ab => ab.admin_id);
+            
+            const { data: profiles } = await supabase
+              .from('profiles')
+              .select('id, first_name, last_name, email')
+              .in('id', adminIds);
+
             adminBranches.forEach(admin => {
-              if (admin.profiles) {
-                contacts.push({
-                  id: admin.admin_id,
-                  name: `${admin.profiles.first_name || ''} ${admin.profiles.last_name || ''}`.trim() || 'Admin',
-                  avatar: `${admin.profiles.first_name?.charAt(0) || 'A'}${admin.profiles.last_name?.charAt(0) || 'D'}`,
-                  type: 'branch_admin' as const,
-                  status: 'online' as const,
-                  unread: 0,
-                  email: admin.profiles.email,
-                  role: 'branch_admin'
-                });
-              }
+              const profile = profiles?.find(p => p.id === admin.admin_id);
+              contacts.push({
+                id: admin.admin_id,
+                name: profile 
+                  ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Admin'
+                  : 'Admin',
+                avatar: profile 
+                  ? `${profile.first_name?.charAt(0) || 'A'}${profile.last_name?.charAt(0) || 'D'}`
+                  : 'AD',
+                type: 'branch_admin' as const,
+                status: 'online' as const,
+                unread: 0,
+                email: profile?.email || 'admin@system.com',
+                role: 'branch_admin'
+              });
             });
           }
         }

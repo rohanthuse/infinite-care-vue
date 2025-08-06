@@ -94,17 +94,10 @@ export const useClientCareTeam = () => {
       console.log('[useClientCareTeam] Found client:', client);
 
       // Get only admins for this branch
+      // Get admin branches first, then profiles separately to avoid RLS issues
       const { data: adminBranches, error: adminError } = await supabase
         .from('admin_branches')
-        .select(`
-          admin_id,
-          profiles!inner(
-            id,
-            first_name,
-            last_name,
-            email
-          )
-        `)
+        .select('admin_id')
         .eq('branch_id', client.branch_id);
 
       if (adminError) {
@@ -114,21 +107,36 @@ export const useClientCareTeam = () => {
 
       const contacts: ClientContact[] = [];
 
-      // Add only admins with explicit type casting
-      if (adminBranches) {
+      // Get admin profiles separately if we have admin IDs
+      if (adminBranches && adminBranches.length > 0) {
+        const adminIds = adminBranches.map(ab => ab.admin_id);
+        
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, email')
+          .in('id', adminIds);
+
+        if (profileError) {
+          console.error('[useClientCareTeam] Profile lookup error:', profileError);
+          // Continue with default admin data if profiles fail
+        }
+
         adminBranches.forEach(admin => {
-          if (admin.profiles) {
-            contacts.push({
-              id: admin.admin_id,
-              name: `${admin.profiles.first_name || ''} ${admin.profiles.last_name || ''}`.trim() || 'Admin',
-              avatar: `${admin.profiles.first_name?.charAt(0) || 'A'}${admin.profiles.last_name?.charAt(0) || 'D'}`,
-              type: 'admin' as const, // Explicitly cast to 'admin'
-              status: 'online' as const,
-              unread: 0,
-              email: admin.profiles.email,
-              role: 'admin'
-            });
-          }
+          const profile = profiles?.find(p => p.id === admin.admin_id);
+          contacts.push({
+            id: admin.admin_id,
+            name: profile 
+              ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Admin'
+              : 'Admin',
+            avatar: profile 
+              ? `${profile.first_name?.charAt(0) || 'A'}${profile.last_name?.charAt(0) || 'D'}`
+              : 'AD',
+            type: 'admin' as const,
+            status: 'online' as const,
+            unread: 0,
+            email: profile?.email || 'admin@system.com',
+            role: 'admin'
+          });
         });
       }
 
