@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,14 +62,26 @@ export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
   };
 
   const handleSave = () => {
-    // Force blur any active editing fields before saving
+    console.log('FormBuilderNavBar - handleSave called with:', { title, description });
+    
+    // Force blur any active editing fields and synchronize state immediately
     if (isTitleEditing || isDescriptionEditing) {
-      onFormChange(title, description);
-      setIsTitleEditing(false);
-      setIsDescriptionEditing(false);
+      flushSync(() => {
+        setIsTitleEditing(false);
+        setIsDescriptionEditing(false);
+      });
+      
+      // Ensure parent state is updated immediately
+      flushSync(() => {
+        onFormChange(title, description);
+      });
     }
-    // Call save with current title and description values
-    onSave(title, description);
+    
+    // Add a small delay to ensure state updates are processed
+    setTimeout(() => {
+      console.log('FormBuilderNavBar - Calling onSave with:', { title, description });
+      onSave(title, description);
+    }, 50);
   };
 
   // Update local state when form prop changes

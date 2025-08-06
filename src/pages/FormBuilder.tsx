@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { BranchInfoHeader } from '@/components/BranchInfoHeader';
@@ -186,9 +187,20 @@ const FormBuilder = () => {
     setActiveTab(value);
   };
 
-  const handleFormChange = (updatedForm: Form) => {
-    setForm(updatedForm);
-    setIsFormDirty(true);
+  const handleFormChange = (title: string, description: string) => {
+    console.log('FormBuilder - handleFormChange called with:', { title, description });
+    
+    flushSync(() => {
+      setForm(prev => ({
+        ...prev,
+        title,
+        description,
+        updatedAt: new Date().toISOString()
+      }));
+      setIsFormDirty(true);
+    });
+    
+    console.log('FormBuilder - Form state updated');
   };
 
   const handleSaveForm = async (overrideTitle?: string, overrideDescription?: string) => {
@@ -197,6 +209,15 @@ const FormBuilder = () => {
     // Use override values if provided (from navbar), otherwise use form state
     const titleToSave = overrideTitle !== undefined ? overrideTitle : form.title;
     const descriptionToSave = overrideDescription !== undefined ? overrideDescription : form.description;
+    
+    console.log('FormBuilder - handleSaveForm called with:', { 
+      overrideTitle, 
+      overrideDescription, 
+      formTitle: form.title, 
+      formDescription: form.description,
+      titleToSave, 
+      descriptionToSave 
+    });
 
     try {
       if (formId) {
