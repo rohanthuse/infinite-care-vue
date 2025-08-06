@@ -5783,6 +5783,10 @@ export type Database = {
         Args: { request_id_param: string }
         Returns: string
       }
+      delete_admin_completely: {
+        Args: { admin_user_id: string }
+        Returns: Json
+      }
       expire_third_party_access: {
         Args: Record<PropertyKey, never>
         Returns: undefined

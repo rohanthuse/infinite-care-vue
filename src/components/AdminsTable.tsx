@@ -153,40 +153,24 @@ export const AdminsTable = () => {
 
   const handleDeleteAdmin = async (adminId: string) => {
     try {
-      // Delete admin permissions first
-      const { error: permissionsError } = await supabase
-        .from('admin_permissions')
-        .delete()
-        .eq('admin_id', adminId);
+      // Use the comprehensive deletion function that removes ALL admin data
+      const { data, error } = await supabase.rpc('delete_admin_completely', {
+        admin_user_id: adminId
+      });
 
-      if (permissionsError) {
-        console.error('Error deleting admin permissions:', permissionsError);
+      if (error) {
+        console.error('Error calling delete_admin_completely:', error);
+        throw error;
       }
 
-      // Delete admin-branch association
-      const { error: branchError } = await supabase
-        .from('admin_branches')
-        .delete()
-        .eq('admin_id', adminId);
-
-      if (branchError) {
-        console.error('Error deleting admin-branch association:', branchError);
+      // Check the function response
+      if (data?.success) {
+        toast.success(`Admin deleted completely - email ${data.admin_email} is now available for reuse`);
+        refetch();
+      } else {
+        console.error('Delete function returned error:', data);
+        throw new Error(data?.error || 'Unknown error during deletion');
       }
-
-      // Delete user role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', adminId)
-        .eq('role', 'branch_admin');
-
-      if (roleError) {
-        console.error('Error deleting user role:', roleError);
-        throw roleError;
-      }
-
-      toast.success("Admin deleted successfully");
-      refetch();
     } catch (error: any) {
       console.error('Delete admin error:', error);
       toast.error("Failed to delete admin: " + error.message);
