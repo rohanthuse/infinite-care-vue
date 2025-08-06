@@ -143,17 +143,15 @@ export const useFormManagement = (branchId: string) => {
       return data;
     },
     onSuccess: (data) => {
+      console.log('Form created successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['forms', branchId] });
       toast({
         title: "Success",
         description: "Form created successfully",
       });
       
-      // Navigate to the newly created form
-      const encodedBranchName = encodeURIComponent(window.location.pathname.split('/')[3] || 'branch');
-      const currentUrl = new URL(window.location.href);
-      const sourceParam = currentUrl.pathname.includes('/forms') ? '?source=forms' : '';
-      window.location.href = `/branch-dashboard/${branchId}/${encodedBranchName}/form-builder/${data.id}${sourceParam}`;
+      // Return the created form data instead of redirecting immediately
+      return data;
     },
     onError: (error) => {
       toast({
@@ -302,6 +300,7 @@ export const useFormManagement = (branchId: string) => {
     isLoading: isLoadingForms || isLoadingElements || isLoadingAssignees,
     error: formsError,
     createForm: createFormMutation.mutate,
+    createFormAsync: createFormMutation.mutateAsync,
     updateForm: updateFormMutation.mutate,
     deleteForm: deleteFormMutation.mutate,
     duplicateForm: duplicateFormMutation.mutate,

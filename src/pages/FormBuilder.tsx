@@ -30,6 +30,7 @@ const FormBuilder = () => {
   const { 
     forms, 
     createForm, 
+    createFormAsync,
     updateForm, 
     isCreating, 
     isUpdating 
@@ -240,7 +241,8 @@ const FormBuilder = () => {
         });
       } else {
         // Create new form
-        createForm({
+        console.log('Creating new form with:', { titleToSave, descriptionToSave });
+        const createdForm = await createFormAsync({
           title: titleToSave,
           description: descriptionToSave,
           created_by: userId,
@@ -248,12 +250,26 @@ const FormBuilder = () => {
           requires_review: form.requiresReview,
           settings: form.settings
         });
+        
+        console.log('Form created, updating URL:', createdForm);
+        // Update the URL to include the new form ID without page refresh
+        const encodedBranchName = encodeURIComponent(branchName || 'branch');
+        const newUrl = `/branch-dashboard/${branchId}/${encodedBranchName}/form-builder/${createdForm.id}`;
+        window.history.replaceState({}, '', newUrl);
+        
+        // Update local form state with the created form data
+        setForm(prev => ({
+          ...prev,
+          id: createdForm.id,
+          title: createdForm.title,
+          description: createdForm.description || ''
+        }));
+        setIsFormDirty(false);
 
-        // Note: For new forms, we'll need to save elements after the form is created
-        // This could be improved by handling the creation response
+        // Save elements for the newly created form
         if (form.elements.length > 0) {
           saveElements({
-            formId: form.id,
+            formId: createdForm.id,
             elements: form.elements
           });
         }
