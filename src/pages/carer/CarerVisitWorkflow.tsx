@@ -342,12 +342,13 @@ const CarerVisitWorkflow = () => {
 
     for (const file of Array.from(files)) {
       try {
-        const photoUrl = await uploadPhoto(file, `visit-${visitRecord?.id || 'temp'}`);
+        const photoUrl = await uploadPhoto(file, currentAppointment.client_id);
         if (photoUrl) {
           setUploadedPhotos(prev => [...prev, photoUrl]);
           toast.success("Photo uploaded successfully!");
         }
       } catch (error) {
+        console.error("Photo upload error:", error);
         toast.error("Failed to upload photo");
       }
     }
