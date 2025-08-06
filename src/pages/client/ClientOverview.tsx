@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, CreditCard, Star, FileText, User, AlertCircle } from "lucide-react";
@@ -11,11 +11,16 @@ import { formatCurrency } from "@/utils/currencyFormatter";
 import { format, parseISO, isAfter, isSameDay } from "date-fns";
 import { Link } from "react-router-dom";
 import { ReviewPrompt } from "@/components/client/ReviewPrompt";
+import { SubmitReviewDialog } from "@/components/client/SubmitReviewDialog";
 import { useClientAuth } from "@/hooks/useClientAuth";
 
 const ClientOverview = () => {
   // Get authenticated client ID using centralized auth
   const { clientId, isAuthenticated } = useClientAuth();
+
+  // State for review dialog
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
 
   const { data: appointments } = useClientAppointments(clientId || undefined);
   const { data: invoices } = useEnhancedClientBilling(clientId || undefined);
@@ -45,6 +50,27 @@ const ClientOverview = () => {
   const nextAppointment = upcomingAppointments.sort((a, b) => 
     new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime()
   )[0];
+
+  // Handler for opening review dialog
+  const handleLeaveReview = (appointment: any) => {
+    // Convert pending review format to appointment format expected by dialog
+    const appointmentForDialog = {
+      id: appointment.id,
+      appointment_type: appointment.type,
+      provider_name: appointment.provider,
+      appointment_date: appointment.date,
+      appointment_time: appointment.time,
+      staff_id: appointment.staff_id || '',
+      client_id: clientId
+    };
+    setSelectedAppointment(appointmentForDialog);
+    setReviewDialogOpen(true);
+  };
+
+  const handleCloseReviewDialog = () => {
+    setReviewDialogOpen(false);
+    setSelectedAppointment(null);
+  };
 
   if (!clientId) {
     return (
@@ -250,7 +276,11 @@ const ClientOverview = () => {
                         <Star key={i} className="h-4 w-4 text-gray-300" />
                       ))}
                     </div>
-                    <Button size="sm" className="ml-2">
+                    <Button 
+                      size="sm" 
+                      className="ml-2"
+                      onClick={() => handleLeaveReview(appointment)}
+                    >
                       Leave Review
                     </Button>
                   </div>
@@ -277,6 +307,13 @@ const ClientOverview = () => {
 
       {/* Review Prompt Component */}
       <ReviewPrompt completedAppointments={pendingReviews || []} />
+
+      {/* Submit Review Dialog */}
+      <SubmitReviewDialog
+        open={reviewDialogOpen}
+        onOpenChange={handleCloseReviewDialog}
+        appointment={selectedAppointment}
+      />
     </div>
   );
 };
