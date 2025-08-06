@@ -665,10 +665,28 @@ const CarerVisitWorkflow = () => {
     }
   };
   
+  const [isCompletingVisit, setIsCompletingVisit] = useState(false);
+
   const handleCompleteVisit = async () => {
-    if (!currentAppointment || !user?.id || !visitRecord) return;
+    console.log('Starting visit completion process...');
+    
+    if (!currentAppointment || !user?.id || !visitRecord) {
+      console.error('Missing required data:', { currentAppointment: !!currentAppointment, userId: !!user?.id, visitRecord: !!visitRecord });
+      toast.error('Missing required data to complete visit');
+      return;
+    }
+
+    // Validation checks
+    if (!carerSignature) {
+      toast.error('Carer signature is required to complete the visit');
+      setActiveTab("sign-off");
+      return;
+    }
+
+    setIsCompletingVisit(true);
     
     try {
+      console.log('Completing visit record...');
       // Complete the visit record with all final data
       await completeVisit.mutateAsync({
         visitRecordId: visitRecord.id,
@@ -679,6 +697,7 @@ const CarerVisitWorkflow = () => {
         visitPhotos: uploadedPhotos,
       });
 
+      console.log('Visit record completed, updating booking status...');
       // Mark booking as completed
       const attendanceData: BookingAttendanceData = {
         bookingId: currentAppointment.id,
@@ -690,11 +709,31 @@ const CarerVisitWorkflow = () => {
 
       await bookingAttendance.mutateAsync(attendanceData);
       
-      // Success message already handled in the hook
-      navigate("/carer-dashboard");
+      console.log('Visit completion successful, navigating...');
+      toast.success('Visit completed successfully!');
+      
+      // Delay navigation slightly to ensure all operations complete
+      setTimeout(() => {
+        navigate("/carer-dashboard");
+      }, 500);
+      
     } catch (error) {
       console.error('Error completing visit:', error);
-      toast.error('Failed to complete visit');
+      
+      // More specific error handling
+      if (error instanceof Error) {
+        if (error.message.includes('policy')) {
+          toast.error('Permission denied. Please check your access rights.');
+        } else if (error.message.includes('network')) {
+          toast.error('Network error. Please check your connection and try again.');
+        } else {
+          toast.error(`Failed to complete visit: ${error.message}`);
+        }
+      } else {
+        toast.error('Failed to complete visit. Please try again.');
+      }
+    } finally {
+      setIsCompletingVisit(false);
     }
   };
 
@@ -1700,13 +1739,67 @@ const CarerVisitWorkflow = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  <div className="text-center py-6">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <CheckCircle className="w-8 h-8 text-green-600" />
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-900">Visit Ready for Completion</h3>
-                    <p className="text-gray-600 mt-1">Review the summary below and click Complete Visit to finish.</p>
-                  </div>
+                   <div className="text-center py-6">
+                     {isTabCompleted("complete") ? (
+                       <>
+                         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                           <CheckCircle className="w-8 h-8 text-green-600" />
+                         </div>
+                         <h3 className="text-lg font-medium text-gray-900">Visit Ready for Completion</h3>
+                         <p className="text-gray-600 mt-1">Review the summary below and click Complete Visit to finish.</p>
+                       </>
+                     ) : (
+                       <>
+                         <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                           <CheckCircle className="w-8 h-8 text-orange-600" />
+                         </div>
+                         <h3 className="text-lg font-medium text-gray-900">Complete Required Sections</h3>
+                         <p className="text-gray-600 mt-1">Please complete all required sections before finishing the visit.</p>
+                         
+                         {/* Validation checklist */}
+                         <div className="mt-4 text-left max-w-md mx-auto">
+                           <ul className="space-y-2 text-sm">
+                             {!visitStarted && (
+                               <li className="flex items-center gap-2 text-red-600">
+                                 <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                                 Complete check-in process
+                               </li>
+                             )}
+                             {tasks && tasks.filter(task => task.priority === 'high' || task.priority === 'urgent').some(task => !task.is_completed) && (
+                               <li className="flex items-center gap-2 text-red-600">
+                                 <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                                 Complete all high/urgent priority tasks
+                               </li>
+                             )}
+                             {medications && medications.some(med => !med.is_administered && !med.missed_reason) && (
+                               <li className="flex items-center gap-2 text-red-600">
+                                 <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                                 Address all medications (administer or record reason)
+                               </li>
+                             )}
+                             {notes.trim().length < 10 && (
+                               <li className="flex items-center gap-2 text-red-600">
+                                 <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                                 Add visit notes (minimum 10 characters)
+                               </li>
+                             )}
+                             {!clientSignature && (
+                               <li className="flex items-center gap-2 text-red-600">
+                                 <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                                 Obtain client signature
+                               </li>
+                             )}
+                             {!carerSignature && (
+                               <li className="flex items-center gap-2 text-red-600">
+                                 <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                                 Add carer signature
+                               </li>
+                             )}
+                           </ul>
+                         </div>
+                       </>
+                     )}
+                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -1743,10 +1836,19 @@ const CarerVisitWorkflow = () => {
                 <Button 
                   onClick={handleCompleteVisit} 
                   size="lg"
-                  disabled={!isTabCompleted("complete")}
+                  disabled={isCompletingVisit || !carerSignature}
                 >
-                  <Send className="w-5 h-5 mr-2" />
-                  Complete Visit
+                  {isCompletingVisit ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Completing...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5 mr-2" />
+                      Complete Visit
+                    </>
+                  )}
                 </Button>
               </div>
             </Card>
