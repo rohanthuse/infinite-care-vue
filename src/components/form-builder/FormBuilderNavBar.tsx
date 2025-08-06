@@ -9,7 +9,7 @@ import { Form } from '@/types/form-builder';
 
 interface FormBuilderNavBarProps {
   form: Form;
-  onSave: () => void;
+  onSave: (overrideTitle?: string, overrideDescription?: string) => void;
   onFormChange: (title: string, description: string) => void;
   isFormDirty: boolean;
   isSaving?: boolean;
@@ -60,6 +60,17 @@ export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
     onFormChange(title, description);
   };
 
+  const handleSave = () => {
+    // Force blur any active editing fields before saving
+    if (isTitleEditing || isDescriptionEditing) {
+      onFormChange(title, description);
+      setIsTitleEditing(false);
+      setIsDescriptionEditing(false);
+    }
+    // Call save with current title and description values
+    onSave(title, description);
+  };
+
   // Update local state when form prop changes
   React.useEffect(() => {
     setTitle(form.title);
@@ -79,7 +90,7 @@ export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
         </div>
         <div>
           <Button 
-            onClick={onSave} 
+            onClick={handleSave} 
             disabled={!isFormDirty || isSaving}
             variant={isFormDirty ? "default" : "outline"}
           >

@@ -191,8 +191,12 @@ const FormBuilder = () => {
     setIsFormDirty(true);
   };
 
-  const handleSaveForm = async () => {
+  const handleSaveForm = async (overrideTitle?: string, overrideDescription?: string) => {
     const userId = user?.id || 'temp-user-id';
+    
+    // Use override values if provided (from navbar), otherwise use form state
+    const titleToSave = overrideTitle !== undefined ? overrideTitle : form.title;
+    const descriptionToSave = overrideDescription !== undefined ? overrideDescription : form.description;
 
     try {
       if (formId) {
@@ -200,8 +204,8 @@ const FormBuilder = () => {
         updateForm({
           formId: form.id,
           updates: {
-            title: form.title,
-            description: form.description,
+            title: titleToSave,
+            description: descriptionToSave,
             published: form.published,
             requires_review: form.requiresReview,
             settings: form.settings
@@ -216,8 +220,8 @@ const FormBuilder = () => {
       } else {
         // Create new form
         createForm({
-          title: form.title,
-          description: form.description,
+          title: titleToSave,
+          description: descriptionToSave,
           created_by: userId,
           published: form.published,
           requires_review: form.requiresReview,
@@ -233,6 +237,14 @@ const FormBuilder = () => {
           });
         }
       }
+      
+      // Update form state with saved values to ensure UI reflects saved data
+      setForm(prev => ({
+        ...prev,
+        title: titleToSave,
+        description: descriptionToSave,
+        updatedAt: new Date().toISOString(),
+      }));
       
       setIsFormDirty(false);
       toast({
