@@ -401,8 +401,14 @@ export const FormBuilderDesigner: React.FC<FormBuilderDesignerProps> = ({
       </div>
       
       {/* Element Editor Dialog */}
-      <Dialog open={isEditorOpen && selectedElement !== null} onOpenChange={setIsEditorOpen}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={isEditorOpen && selectedElement !== null} onOpenChange={(open) => {
+        // Only allow closing when explicitly triggered by the close button
+        if (!open && selectedElement) {
+          return; // Prevent accidental closing
+        }
+        setIsEditorOpen(open);
+      }}>
+        <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Edit {selectedElement?.type} Element</DialogTitle>
           </DialogHeader>

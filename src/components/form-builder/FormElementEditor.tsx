@@ -468,8 +468,13 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
         
         <Separator className="my-6" />
         
-        <div className="flex justify-end">
-          <Button onClick={onClose}>Done</Button>
+        <div className="flex justify-between">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={onClose}>
+            Done
+          </Button>
         </div>
       </div>
     </ScrollArea>
