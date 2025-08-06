@@ -57,6 +57,11 @@ const CarerDashboard: React.FC = () => {
       icon: FileText 
     },
     { 
+      name: "My Forms", 
+      path: "/carer-dashboard/forms", 
+      icon: FileText 
+    },
+    { 
       name: "Tasks", 
       path: "/carer-dashboard/tasks", 
       icon: ClipboardList 

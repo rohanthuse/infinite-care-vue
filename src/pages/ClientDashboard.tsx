@@ -24,6 +24,7 @@ const ClientDashboard = () => {
     { label: "Overview", icon: Home, path: "/client-dashboard" },
     { label: "Appointments", icon: Calendar, path: "/client-dashboard/appointments" },
     { label: "Care Plans", icon: FileText, path: "/client-dashboard/care-plans" },
+    { label: "My Forms", icon: FileText, path: "/client-dashboard/forms" },
     { label: "Reviews", icon: Star, path: "/client-dashboard/reviews" },
     { label: "Payments", icon: CreditCard, path: "/client-dashboard/payments" },
     { label: "Documents", icon: File, path: "/client-dashboard/documents" },
@@ -44,6 +45,8 @@ const ClientDashboard = () => {
       setPageTitle("Appointments");
     } else if (path.includes("/care-plans")) {
       setPageTitle("Care Plans");
+    } else if (path.includes("/forms")) {
+      setPageTitle("My Forms");
     } else if (path.includes("/reviews")) {
       setPageTitle("Reviews");
     } else if (path.includes("/payments")) {
