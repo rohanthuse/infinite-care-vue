@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Star, Calendar, User } from "lucide-react";
-import { useCheckExistingReview } from "@/hooks/useClientReviews";
-import { SubmitReviewDialog } from "./SubmitReviewDialog";
 
 interface ReviewPromptProps {
   completedAppointments: Array<{
@@ -21,11 +20,8 @@ interface ReviewPromptProps {
 
 export function ReviewPrompt({ completedAppointments }: ReviewPromptProps) {
   const [showPrompt, setShowPrompt] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [pendingReviews, setPendingReviews] = useState([]);
-
-  const clientId = localStorage.getItem("clientId") || '';
+  const navigate = useNavigate();
 
   // Check for appointments that need reviews
   useEffect(() => {
@@ -43,9 +39,8 @@ export function ReviewPrompt({ completedAppointments }: ReviewPromptProps) {
   }, [completedAppointments]);
 
   const handleReviewAppointment = (appointment: any) => {
-    setSelectedAppointment(appointment);
-    setReviewDialogOpen(true);
     setShowPrompt(false);
+    navigate('/client-dashboard');
   };
 
   const handleSkipReviews = () => {
@@ -147,14 +142,6 @@ export function ReviewPrompt({ completedAppointments }: ReviewPromptProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Review Submission Dialog */}
-      {selectedAppointment && (
-        <SubmitReviewDialog
-          open={reviewDialogOpen}
-          onOpenChange={setReviewDialogOpen}
-          appointment={selectedAppointment}
-        />
-      )}
     </>
   );
 }
