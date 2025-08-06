@@ -68,7 +68,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
               <Label htmlFor="label">Field Label</Label>
               <Input
                 id="label"
-                value={element.label}
+                value={element.label || ''}
                 onChange={(e) => handleBasicInfoChange('label', e.target.value)}
               />
             </div>
@@ -91,7 +91,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
               <Label htmlFor="placeholder">Placeholder Text</Label>
               <Input
                 id="placeholder"
-                value={(element as any).placeholder}
+                value={(element as any).placeholder || ''}
                 onChange={(e) => handleBasicInfoChange('placeholder', e.target.value)}
               />
             </div>
@@ -100,7 +100,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
               <Label htmlFor="defaultValue">Default Value</Label>
               <Input
                 id="defaultValue"
-                value={(element as any).defaultValue}
+                value={(element as any).defaultValue || ''}
                 onChange={(e) => handleBasicInfoChange('defaultValue', e.target.value)}
               />
             </div>
@@ -113,7 +113,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
               <Label htmlFor="placeholder">Placeholder Text</Label>
               <Input
                 id="placeholder"
-                value={element.placeholder}
+                value={element.placeholder || ''}
                 onChange={(e) => handleBasicInfoChange('placeholder', e.target.value)}
               />
             </div>
@@ -122,7 +122,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
               <Label htmlFor="defaultValue">Default Value</Label>
               <Textarea
                 id="defaultValue"
-                value={element.defaultValue}
+                value={element.defaultValue || ''}
                 onChange={(e) => handleBasicInfoChange('defaultValue', e.target.value)}
               />
             </div>
@@ -134,7 +134,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
                 type="number"
                 min={1}
                 max={20}
-                value={element.rows}
+                value={element.rows || 3}
                 onChange={(e) => handleBasicInfoChange('rows', parseInt(e.target.value) || 3)}
               />
             </div>
@@ -147,7 +147,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
               <Label htmlFor="placeholder">Placeholder Text</Label>
               <Input
                 id="placeholder"
-                value={element.placeholder}
+                value={element.placeholder || ''}
                 onChange={(e) => handleBasicInfoChange('placeholder', e.target.value)}
               />
             </div>
@@ -157,7 +157,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
               <Input
                 id="defaultValue"
                 type="number"
-                value={element.defaultValue}
+                value={element.defaultValue || ''}
                 onChange={(e) => handleBasicInfoChange('defaultValue', parseFloat(e.target.value) || 0)}
               />
             </div>
@@ -168,7 +168,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
                 <Input
                   id="min"
                   type="number"
-                  value={element.min}
+                  value={element.min || ''}
                   onChange={(e) => handleBasicInfoChange('min', parseFloat(e.target.value))}
                 />
               </div>
@@ -177,7 +177,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
                 <Input
                   id="max"
                   type="number"
-                  value={element.max}
+                  value={element.max || ''}
                   onChange={(e) => handleBasicInfoChange('max', parseFloat(e.target.value))}
                 />
               </div>
@@ -191,7 +191,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
               <Label htmlFor="placeholder">Placeholder Text</Label>
               <Input
                 id="placeholder"
-                value={element.placeholder}
+                value={element.placeholder || ''}
                 onChange={(e) => handleBasicInfoChange('placeholder', e.target.value)}
               />
             </div>
@@ -201,7 +201,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
               <Input
                 id="defaultValue"
                 type={element.type}
-                value={element.defaultValue}
+                value={element.defaultValue || ''}
                 onChange={(e) => handleBasicInfoChange('defaultValue', e.target.value)}
               />
             </div>
@@ -215,7 +215,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
               <Input
                 id="defaultValue"
                 type="date"
-                value={element.defaultValue}
+                value={element.defaultValue || ''}
                 onChange={(e) => handleBasicInfoChange('defaultValue', e.target.value)}
               />
             </div>
@@ -226,7 +226,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
                 <Input
                   id="min"
                   type="date"
-                  value={element.min}
+                  value={element.min || ''}
                   onChange={(e) => handleBasicInfoChange('min', e.target.value)}
                 />
               </div>
@@ -235,7 +235,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
                 <Input
                   id="max"
                   type="date"
-                  value={element.max}
+                  value={element.max || ''}
                   onChange={(e) => handleBasicInfoChange('max', e.target.value)}
                 />
               </div>
@@ -249,7 +249,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
             <Input
               id="defaultValue"
               type="time"
-              value={element.defaultValue}
+              value={element.defaultValue || ''}
               onChange={(e) => handleBasicInfoChange('defaultValue', e.target.value)}
             />
           </div>
@@ -302,7 +302,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
                 <Label htmlFor="placeholder">Placeholder Text</Label>
                 <Input
                   id="placeholder"
-                  value={(element as SelectElement | MultiSelectElement).placeholder}
+                  value={(element as SelectElement | MultiSelectElement).placeholder || ''}
                   onChange={(e) => handleBasicInfoChange('placeholder', e.target.value)}
                 />
               </div>
@@ -316,7 +316,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
               <Label htmlFor="accept">Accepted File Types</Label>
               <Input
                 id="accept"
-                value={element.accept}
+                value={element.accept || ''}
                 onChange={(e) => handleBasicInfoChange('accept', e.target.value)}
                 placeholder="e.g., image/*,.pdf,.doc"
               />
@@ -340,7 +340,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
               <Label htmlFor="text">Heading Text</Label>
               <Input
                 id="text"
-                value={element.text}
+                value={element.text || ''}
                 onChange={(e) => handleBasicInfoChange('text', e.target.value)}
               />
             </div>
@@ -372,7 +372,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
             <Label htmlFor="text">Paragraph Text</Label>
             <Textarea
               id="text"
-              value={element.text}
+              value={element.text || ''}
               onChange={(e) => handleBasicInfoChange('text', e.target.value)}
               rows={4}
             />
@@ -385,7 +385,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
               <Label htmlFor="title">Section Title</Label>
               <Input
                 id="title"
-                value={element.title}
+                value={element.title || ''}
                 onChange={(e) => handleBasicInfoChange('title', e.target.value)}
               />
             </div>
@@ -394,7 +394,7 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
               <Label htmlFor="description">Section Description</Label>
               <Textarea
                 id="description"
-                value={element.description}
+                value={element.description || ''}
                 onChange={(e) => handleBasicInfoChange('description', e.target.value)}
                 rows={3}
               />
