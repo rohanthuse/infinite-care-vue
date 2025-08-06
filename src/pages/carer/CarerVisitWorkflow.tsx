@@ -338,18 +338,38 @@ const CarerVisitWorkflow = () => {
   
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (!files || !currentAppointment?.client_id) return;
+    console.log("Photo upload started:", { files: files?.length, clientId: currentAppointment?.client_id });
+    
+    if (!files || files.length === 0) {
+      console.log("No files selected");
+      toast.error("Please select files to upload");
+      return;
+    }
+
+    if (!currentAppointment?.client_id) {
+      console.error("Missing client ID:", currentAppointment);
+      toast.error("Cannot upload photos: Client information not available");
+      return;
+    }
+
+    console.log("Starting upload for", files.length, "files with client ID:", currentAppointment.client_id);
 
     for (const file of Array.from(files)) {
       try {
+        console.log("Uploading file:", file.name, "size:", file.size);
         const photoUrl = await uploadPhoto(file, currentAppointment.client_id);
+        console.log("Upload result:", photoUrl);
+        
         if (photoUrl) {
           setUploadedPhotos(prev => [...prev, photoUrl]);
-          toast.success("Photo uploaded successfully!");
+          toast.success(`Photo ${file.name} uploaded successfully!`);
+        } else {
+          console.error("Upload returned null/undefined");
+          toast.error(`Failed to upload ${file.name}: No URL returned`);
         }
       } catch (error) {
-        console.error("Photo upload error:", error);
-        toast.error("Failed to upload photo");
+        console.error("Photo upload error for", file.name, ":", error);
+        toast.error(`Failed to upload ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
     // Clear the input
