@@ -56,10 +56,10 @@ const ClientOverview = () => {
     // Convert pending review format to appointment format expected by dialog
     const appointmentForDialog = {
       id: appointment.id,
-      appointment_type: appointment.type,
-      provider_name: appointment.provider,
-      appointment_date: appointment.date,
-      appointment_time: appointment.time,
+      type: appointment.type,
+      provider: appointment.provider,
+      date: appointment.date,
+      time: appointment.time,
       staff_id: appointment.staff_id || '',
       client_id: clientId
     };
