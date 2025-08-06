@@ -29,15 +29,18 @@ export function BookingValidationAlert({
 
   if (validationError) {
     return (
-      <Alert variant="destructive">
+      <Alert variant="destructive" className="animate-in slide-in-from-top-1 duration-300">
         <Shield className="h-4 w-4" />
         <AlertDescription>
-          <strong>Booking Blocked:</strong> {validationError}
+          <strong>Carer Already Assigned:</strong> {validationError}
           {conflictCount > 0 && (
-            <span className="block mt-1 text-sm">
-              {conflictCount} conflicting appointment{conflictCount > 1 ? 's' : ''} detected.
+            <span className="block mt-2 text-sm font-medium">
+              ⚠️ {conflictCount} conflicting appointment{conflictCount > 1 ? 's' : ''} found at this time.
             </span>
           )}
+          <div className="mt-2 text-xs text-muted-foreground">
+            Please select a different carer or modify the appointment time.
+          </div>
         </AlertDescription>
       </Alert>
     );

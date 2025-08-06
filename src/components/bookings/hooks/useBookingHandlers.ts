@@ -121,8 +121,14 @@ export function useBookingHandlers(branchId?: string, user?: any) {
           setPendingUpdateData(bookingToUpdate);
           setUpdateOverlapAlertOpen(true);
           
-          toast.error("Booking Conflict Detected!", {
-            description: validation.error || "Overlapping appointments found. Please resolve the conflict."
+          const carerName = carers.find(c => c.id === bookingToUpdate.carerId)?.name || "This carer";
+          toast.error(`${carerName} Unavailable`, {
+            description: validation.error || "The selected carer has a conflicting appointment at the new time",
+            duration: 5000,
+            action: {
+              label: "Choose Different Carer",
+              onClick: () => setUpdateOverlapAlertOpen(true)
+            }
           });
           
           return;
@@ -211,6 +217,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
 
     if (overlap.hasOverlap) {
       const selectedCarer = carers.find(c => c.id === bookingData.carerId);
+      const carerName = selectedCarer?.name || "Unknown Carer";
       const availableCarers = findAvailableCarers(
         carers,
         firstSchedule.startTime,
@@ -218,9 +225,19 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         proposedDate
       );
 
+      // Enhanced error messaging with toast notification
+      toast.error(`${carerName} Already Assigned`, {
+        description: `This carer has ${overlap.conflictingBookings.length} conflicting appointment${overlap.conflictingBookings.length > 1 ? 's' : ''} at the selected time`,
+        duration: 5000,
+        action: {
+          label: "View Alternatives",
+          onClick: () => setOverlapAlertOpen(true)
+        }
+      });
+
       setOverlapData({
         conflictingBookings: overlap.conflictingBookings,
-        carerName: selectedCarer?.name || "Unknown Carer",
+        carerName,
         proposedTime: `${firstSchedule.startTime} - ${firstSchedule.endTime}`,
         proposedDate,
         availableCarers,

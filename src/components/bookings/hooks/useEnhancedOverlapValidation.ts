@@ -2,6 +2,7 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 export interface ValidationResult {
   isValid: boolean;
@@ -110,8 +111,13 @@ export function useEnhancedOverlapValidation(branchId?: string) {
         }))
       };
 
-      if (!result.isValid) {
-        result.error = `Booking conflict: ${conflicts.length} overlapping appointment${conflicts.length > 1 ? 's' : ''} found`;
+        if (!result.isValid) {
+        // Get the first conflicting booking for specific error message
+        const firstConflict = conflicts[0];
+        const conflictStart = format(new Date(firstConflict?.start_time), 'HH:mm');
+        const conflictEnd = format(new Date(firstConflict?.end_time), 'HH:mm');
+        
+        result.error = `This carer is already assigned to ${firstConflict?.clients?.first_name || 'another client'} from ${conflictStart} to ${conflictEnd}`;
         console.log("[useEnhancedOverlapValidation] ❌ Validation failed:", result.error);
       } else {
         console.log("[useEnhancedOverlapValidation] ✅ Validation passed");
