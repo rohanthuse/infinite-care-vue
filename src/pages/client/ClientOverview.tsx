@@ -174,6 +174,42 @@ const ClientOverview = () => {
         </Card>
       )}
 
+      {/* Care Plan Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <FileText className="h-5 w-5 mr-2" />
+            Care Plan Status
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center space-x-3">
+                <div className="bg-green-100 p-2 rounded-full">
+                  <FileText className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <div className="font-medium text-sm">Current Care Plan</div>
+                  <div className="text-sm text-gray-600">Active and up to date</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Last updated: {format(new Date(), 'MMM d, yyyy')}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  Active
+                </span>
+                <Button variant="outline" size="sm">
+                  View Details
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Pending Reviews */}
       <Card>
         <CardHeader>
