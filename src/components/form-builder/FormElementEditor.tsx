@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { FormElement, CheckboxElement, RadioElement, SelectElement, MultiSelectElement } from '@/types/form-builder';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -25,9 +25,9 @@ export const FormElementEditor: React.FC<FormElementEditorProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<string>('basic');
   
-  const handleBasicInfoChange = (field: string, value: any) => {
+  const handleBasicInfoChange = useCallback((field: string, value: any) => {
     onUpdate({ [field]: value });
-  };
+  }, [onUpdate]);
   
   const handleAddOption = () => {
     if (['checkbox', 'radio', 'select', 'multiselect'].includes(element.type)) {

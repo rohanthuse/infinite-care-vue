@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { BranchInfoHeader } from '@/components/BranchInfoHeader';
@@ -146,22 +146,38 @@ const FormBuilder = () => {
     }
   }, [formId, forms.length, isLoadingElements, isLoadingForm, branchId, branchName]);
 
-  // Auto-save elements when form elements change
-  const saveFormElements = useCallback(async (elements: FormElement[]) => {
+  // Debounced auto-save to prevent excessive API calls
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const saveFormElements = useCallback(async (elements: FormElement[], immediate = false) => {
     if (formId && elements.length >= 0) {
-      try {
-        console.log('Auto-saving form elements:', elements);
-        saveElements({
-          formId: formId,
-          elements: elements
-        });
-      } catch (error) {
-        console.error('Failed to auto-save elements:', error);
-        toast({
-          title: 'Auto-save Failed',
-          description: 'Failed to save form elements automatically',
-          variant: 'destructive',
-        });
+      // Clear existing timeout
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+
+      const performSave = () => {
+        try {
+          console.log('Auto-saving form elements:', elements);
+          saveElements({
+            formId: formId,
+            elements: elements
+          });
+        } catch (error) {
+          console.error('Failed to auto-save elements:', error);
+          toast({
+            title: 'Auto-save Failed',
+            description: 'Failed to save form elements automatically',
+            variant: 'destructive',
+          });
+        }
+      };
+
+      if (immediate) {
+        performSave();
+      } else {
+        // Debounce the save operation
+        saveTimeoutRef.current = setTimeout(performSave, 1000);
       }
     }
   }, [formId, saveElements, toast]);
@@ -332,8 +348,8 @@ const FormBuilder = () => {
     }));
     setIsFormDirty(true);
     
-    // Auto-save elements immediately
-    saveFormElements(updatedElements);
+    // Auto-save elements immediately for new elements
+    saveFormElements(updatedElements, true);
     
     toast({
       title: 'Element Added',
@@ -352,8 +368,8 @@ const FormBuilder = () => {
     }));
     setIsFormDirty(true);
     
-    // Auto-save elements immediately
-    saveFormElements(updatedElements);
+    // Use debounced auto-save for element updates
+    saveFormElements(updatedElements, false);
   };
 
   const removeElement = (elementId: string) => {
@@ -364,8 +380,8 @@ const FormBuilder = () => {
     }));
     setIsFormDirty(true);
     
-    // Auto-save elements immediately
-    saveFormElements(updatedElements);
+    // Auto-save elements immediately for removal
+    saveFormElements(updatedElements, true);
     
     toast({
       title: 'Element Removed',
@@ -380,8 +396,8 @@ const FormBuilder = () => {
     }));
     setIsFormDirty(true);
     
-    // Auto-save elements immediately
-    saveFormElements(elements);
+    // Auto-save elements immediately for reordering
+    saveFormElements(elements, true);
   };
 
   const decodedBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
