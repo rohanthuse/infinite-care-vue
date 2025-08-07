@@ -4,8 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface SystemUser {
   id: string;
   email: string;
-  first_name: string;
-  last_name: string;
+  name: string;
   roles: string[];
 }
 

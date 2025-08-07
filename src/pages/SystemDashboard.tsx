@@ -147,7 +147,7 @@ export default function SystemDashboard() {
         {/* Welcome Section */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-foreground mb-2">
-            Welcome back, {user.first_name}
+            Welcome back, {user.name}
           </h2>
           <p className="text-muted-foreground">
             Manage the platform, monitor performance, and configure system settings.
