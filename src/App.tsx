@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TaskProvider } from "@/contexts/TaskContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { TenantProvider } from "@/contexts/TenantContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { AuthErrorBoundary } from "@/components/AuthErrorBoundary";
 import Index from "./pages/Index";
@@ -22,6 +23,7 @@ import CarerRoutes from "./routes/CarerRoutes";
 import ClientRoutes from "./routes/ClientRoutes";
 import { ErrorBoundary } from "@/components/care/ErrorBoundary";
 import { useAuth } from "@/hooks/useAuth";
+import { TenantSetup } from "./pages/TenantSetup";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,7 +60,8 @@ const AppContent = () => {
     '/carer-login', 
     '/client-login', 
     '/carer-invitation', 
-    '/carer-onboarding'
+    '/carer-onboarding',
+    '/tenant-setup'
   ].includes(window.location.pathname);
 
   if (loading && !isPublicRoute) {
@@ -80,6 +83,7 @@ const AppContent = () => {
               <Route path="/carer-invitation" element={<CarerInvitation />} />
               <Route path="/carer-onboarding" element={<CarerOnboarding />} />
               <Route path="/client-login" element={<ClientLogin />} />
+              <Route path="/tenant-setup" element={<TenantSetup />} />
               
               {/* Protected Routes */}
               {AdminRoutes()}
@@ -101,9 +105,11 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <AppContent />
+          <TenantProvider>
+            <Toaster />
+            <Sonner />
+            <AppContent />
+          </TenantProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>

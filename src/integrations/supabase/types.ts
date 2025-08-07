@@ -706,6 +706,7 @@ export type Database = {
           phone: string | null
           regulatory: string
           status: string
+          tenant_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -723,6 +724,7 @@ export type Database = {
           phone?: string | null
           regulatory: string
           status: string
+          tenant_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -740,9 +742,18 @@ export type Database = {
           phone?: string | null
           regulatory?: string
           status?: string
+          tenant_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "branches_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       care_plan_forms: {
         Row: {
@@ -3834,6 +3845,119 @@ export type Database = {
           },
         ]
       }
+      organization_members: {
+        Row: {
+          created_at: string
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          joined_at: string | null
+          organization_id: string
+          permissions: Json | null
+          role: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          joined_at?: string | null
+          organization_id: string
+          permissions?: Json | null
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          joined_at?: string | null
+          organization_id?: string
+          permissions?: Json | null
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          address: string | null
+          billing_email: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          id: string
+          logo_url: string | null
+          max_branches: number | null
+          max_users: number | null
+          name: string
+          primary_color: string | null
+          secondary_color: string | null
+          settings: Json | null
+          slug: string
+          subdomain: string
+          subscription_plan: string
+          subscription_status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          billing_email?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          max_branches?: number | null
+          max_users?: number | null
+          name: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          settings?: Json | null
+          slug: string
+          subdomain: string
+          subscription_plan?: string
+          subscription_status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          billing_email?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          max_branches?: number | null
+          max_users?: number | null
+          name?: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          settings?: Json | null
+          slug?: string
+          subdomain?: string
+          subscription_plan?: string
+          subscription_status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payment_records: {
         Row: {
           created_at: string
@@ -6044,6 +6168,10 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
         }[]
       }
+      get_user_organization_id: {
+        Args: { user_id_param: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _user_id: string
@@ -6086,6 +6214,10 @@ export type Database = {
       update_resource_stats: {
         Args: { resource_id: string; stat_type: string }
         Returns: undefined
+      }
+      user_belongs_to_organization: {
+        Args: { org_id: string; user_id_param: string }
+        Returns: boolean
       }
       user_can_access_thread: {
         Args: { thread_id_param: string; user_id_param: string }
