@@ -29,6 +29,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
+import { useAdminPermissions, hasTabPermission } from "@/hooks/useAdminPermissions";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface TabItem {
   icon: React.ElementType;
@@ -95,7 +97,28 @@ interface TabNavigationProps {
 export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false, hideQuickAdd = false }: TabNavigationProps) => {
   const navigate = useNavigate();
   const { id, branchName } = useParams();
-  const allTabs = [...primaryTabs, ...secondaryTabs];
+  const { data: userRole } = useUserRole();
+  const { data: permissions } = useAdminPermissions(id);
+  
+  // Filter tabs based on permissions for branch admins
+  const filterTabsByPermissions = (tabs: TabItem[]) => {
+    // Super admins see all tabs
+    if (userRole?.role === 'super_admin') {
+      return tabs;
+    }
+    
+    // Branch admins see only permitted tabs
+    if (userRole?.role === 'branch_admin') {
+      return tabs.filter(tab => hasTabPermission(permissions || null, tab.value));
+    }
+    
+    // Other roles see all tabs (for now)
+    return tabs;
+  };
+  
+  const filteredPrimaryTabs = filterTabsByPermissions(primaryTabs);
+  const filteredSecondaryTabs = filterTabsByPermissions(secondaryTabs);
+  const allTabs = [...filteredPrimaryTabs, ...filteredSecondaryTabs];
   const activeTabObject = allTabs.find(tab => tab.value === activeTab);
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -112,6 +135,15 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
   };
 
   const handleTabNavigation = (tabValue: string) => {
+    // Check permissions for branch admins
+    if (userRole?.role === 'branch_admin' && !hasTabPermission(permissions || null, tabValue)) {
+      toast.error("Access denied", {
+        description: "You don't have permission to access this section",
+        position: "top-center",
+      });
+      return;
+    }
+    
     if (tabValue === "events-logs" && id && branchName) {
       // Navigate to dedicated Events & Logs page
       navigate(`/branch-dashboard/${id}/${branchName}/events-logs`);
@@ -180,7 +212,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
 
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 z-30 md:hidden">
           <div className="flex justify-around">
-            {primaryTabs.slice(0, 5).map((tab) => {
+            {filteredPrimaryTabs.slice(0, 5).map((tab) => {
               const Icon = tab.icon;
               const isActive = tab.value === activeTab;
               return (
@@ -229,7 +261,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                 <div className="max-h-[50vh] overflow-y-auto p-1">
                   {filteredTabs.length > 0 ? (
                     <>
-                      {primaryTabs.slice(5).map((tab) => {
+                      {filteredPrimaryTabs.slice(5).map((tab) => {
                         const Icon = tab.icon;
                         return (
                           <Button
@@ -250,16 +282,20 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                         );
                       })}
                       
-                      {secondaryTabGroups.map((group) => (
+                      {secondaryTabGroups.map((group) => {
+                        const filteredGroupItems = group.items.filter(item => 
+                          filteredSecondaryTabs.some(tab => tab.value === item.value) &&
+                          filteredTabs.some(tab => tab.value === item.value)
+                        );
+                        
+                        if (filteredGroupItems.length === 0) return null;
+                        
+                        return (
                         <div key={group.label} className="py-1">
                           <div className="px-3 py-1 text-xs font-semibold text-gray-500">
                             {group.label}
                           </div>
-                          {group.items
-                            .filter(item => 
-                              filteredTabs.some(tab => tab.value === item.value)
-                            )
-                            .map((item) => {
+                          {filteredGroupItems.map((item) => {
                               const Icon = item.icon;
                               return (
                                 <Button
@@ -278,9 +314,10 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                                   <span>{item.label}</span>
                                 </Button>
                               );
-                            })}
+                          })}
                         </div>
-                      ))}
+                        );
+                      })}
                     </>
                   ) : (
                     <div className="text-center py-4 text-gray-500">No modules found</div>
@@ -300,7 +337,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                 className="w-full"
               >
                 <TabsList className="bg-white p-1 rounded-xl w-full justify-start">
-                  {primaryTabs.map((tab) => {
+                  {filteredPrimaryTabs.map((tab) => {
                     const Icon = tab.icon;
                     return (
                       <TabsTrigger 
@@ -375,14 +412,21 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 p-1 bg-white border border-gray-200 shadow-lg rounded-lg">
-                  {secondaryTabGroups.slice(0, 3).map((group) => (
+                  {secondaryTabGroups.slice(0, 3).map((group) => {
+                    const filteredGroupItems = group.items.filter(item => 
+                      filteredSecondaryTabs.some(tab => tab.value === item.value)
+                    );
+                    
+                    if (filteredGroupItems.length === 0) return null;
+                    
+                    return (
                     <DropdownMenuSub key={group.label}>
                       <DropdownMenuSubTrigger className="py-2 px-3 rounded-md my-1 text-sm hover:bg-gray-50">
                         <span>{group.label}</span>
                       </DropdownMenuSubTrigger>
                       <DropdownMenuPortal>
                         <DropdownMenuSubContent className="min-w-[220px] p-1 bg-white border border-gray-200 shadow-lg rounded-lg">
-                          {group.items.map((item) => {
+                          {filteredGroupItems.map((item) => {
                             const Icon = item.icon;
                             const isActive = item.value === activeTab;
                             return (
@@ -402,7 +446,8 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
                         </DropdownMenuSubContent>
                       </DropdownMenuPortal>
                     </DropdownMenuSub>
-                  ))}
+                    );
+                  })}
                   
                   {/* Direct Reports menu item without submenu */}
                   {secondaryTabGroups[3]?.items.map((item) => {

@@ -14,6 +14,7 @@ import { useNotificationGenerator } from "@/hooks/useNotificationGenerator";
 import { useBranchAdminAccess } from "@/hooks/useBranchAdminAccess";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminPermissions, hasTabPermission } from "@/hooks/useAdminPermissions";
 
 // Import refactored sections
 import { DashboardStatsSection } from "@/components/branch-dashboard/DashboardStatsSection";
@@ -60,6 +61,9 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
 
   // Always call branch access hook - we'll handle the logic inside
   const { data: branchAccess, isLoading: accessLoading, error: accessError } = useBranchAdminAccess(id || "");
+  
+  // Get admin permissions for permission-based content filtering
+  const { data: permissions } = useAdminPermissions(id);
 
   // Always initialize notification generator
   useNotificationGenerator(id);
@@ -251,12 +255,48 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   };
 
   const enhancedHandleTabChange = (value: string) => {
+    // Check permissions for branch admins before allowing tab change
+    if (userRole?.role === 'branch_admin' && !hasTabPermission(permissions || null, value)) {
+      console.warn('[BranchDashboard] Access denied to tab:', value);
+      return; // Silently prevent navigation to restricted tabs
+    }
+    
     if (value === "events-logs" && id && branchName) {
       navigate(`/branch-dashboard/${id}/${branchName}/events-logs`);
     } else {
       handleTabChange(value);
     }
   };
+
+  // Helper function to check if user can access a specific tab content
+  const canAccessTab = (tabValue: string): boolean => {
+    // Super admins can access everything
+    if (userRole?.role === 'super_admin') {
+      return true;
+    }
+    
+    // Branch admins need permissions
+    if (userRole?.role === 'branch_admin') {
+      return hasTabPermission(permissions || null, tabValue);
+    }
+    
+    // Other roles can access everything (for now)
+    return true;
+  };
+
+  // Component to show access denied for restricted content
+  const AccessDeniedTab = ({ tabName }: { tabName: string }) => (
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8 text-center">
+      <div className="text-red-500 text-6xl mb-4">🔒</div>
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">Access Restricted</h2>
+      <p className="text-gray-600 mb-4">
+        You don't have permission to access the {tabName} section.
+      </p>
+      <p className="text-sm text-gray-500">
+        Contact your administrator if you need access to this feature.
+      </p>
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
@@ -306,40 +346,146 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         
         {/* Dashboard Tab */}
         {activeTab === "dashboard" && (
-          <>
-            <DashboardStatsSection
-              branchId={id}
-              onNewClient={handleNewClient}
-              onTabChange={enhancedHandleTabChange}
-            />
-            <DashboardChartsSection branchId={id} />
-            <DashboardActivitySection branchId={id} />
-          </>
+          canAccessTab("dashboard") ? (
+            <>
+              <DashboardStatsSection
+                branchId={id}
+                onNewClient={handleNewClient}
+                onTabChange={enhancedHandleTabChange}
+              />
+              <DashboardChartsSection branchId={id} />
+              <DashboardActivitySection branchId={id} />
+            </>
+          ) : (
+            <AccessDeniedTab tabName="Dashboard" />
+          )
         )}
         
-        {/* Other Tabs */}
-        {activeTab === "key-parameters" && <KeyParametersContent branchId={id} branchName={branchName} />}
-        {activeTab === "workflow" && <WorkflowContent branchId={id} branchName={branchName} />}
-        {activeTab === "task-matrix" && <TaskMatrix branchId={id || "main"} branchName={displayBranchName} />}
-        {activeTab === "training-matrix" && <TrainingMatrix branchId={id || "main"} branchName={displayBranchName} />}
-        {activeTab === "bookings" && <BookingsTab branchId={id} />}
-        {activeTab === "carers" && <CarersTab branchId={id} branchName={branchName} />}
-        {activeTab === "clients" && (
-          <ClientsManagementSection
-            branchId={id}
-            onNewClient={handleNewClient}
-            onViewClient={handleViewClient}
-            onEditClient={handleEditClient}
-          />
+        {/* Other Tabs with Permission Checks */}
+        {activeTab === "key-parameters" && (
+          canAccessTab("key-parameters") ? (
+            <KeyParametersContent branchId={id} branchName={branchName} />
+          ) : (
+            <AccessDeniedTab tabName="Key Parameters" />
+          )
         )}
-        {activeTab === "reviews" && <ReviewsTab branchId={id} branchName={branchName} />}
-        {activeTab === "communication" && <CommunicationsTab branchId={id} branchName={branchName} />}
-        {activeTab === "medication" && <MedicationTab branchId={id} branchName={branchName} />}
-        {activeTab === "accounting" && <AccountingTab branchId={id} branchName={displayBranchName} />}
-        {activeTab === "finance" && <AccountingTab branchId={id} branchName={displayBranchName} />}
-        {activeTab === "care-plan" && <CareTab branchId={id} branchName={branchName} />}
-        {activeTab === "agreements" && <BranchAgreementsTab branchId={id || ""} branchName={displayBranchName} />}
-        {activeTab === "forms" && <FormBuilderTab branchId={id || ""} branchName={displayBranchName} />}
+        
+        {activeTab === "workflow" && (
+          canAccessTab("workflow") ? (
+            <WorkflowContent branchId={id} branchName={branchName} />
+          ) : (
+            <AccessDeniedTab tabName="Workflow" />
+          )
+        )}
+        
+        {activeTab === "task-matrix" && (
+          canAccessTab("task-matrix") ? (
+            <TaskMatrix branchId={id || "main"} branchName={displayBranchName} />
+          ) : (
+            <AccessDeniedTab tabName="Task Matrix" />
+          )
+        )}
+        
+        {activeTab === "training-matrix" && (
+          canAccessTab("training-matrix") ? (
+            <TrainingMatrix branchId={id || "main"} branchName={displayBranchName} />
+          ) : (
+            <AccessDeniedTab tabName="Training Matrix" />
+          )
+        )}
+        
+        {activeTab === "bookings" && (
+          canAccessTab("bookings") ? (
+            <BookingsTab branchId={id} />
+          ) : (
+            <AccessDeniedTab tabName="Bookings" />
+          )
+        )}
+        
+        {activeTab === "carers" && (
+          canAccessTab("carers") ? (
+            <CarersTab branchId={id} branchName={branchName} />
+          ) : (
+            <AccessDeniedTab tabName="Staff" />
+          )
+        )}
+        
+        {activeTab === "clients" && (
+          canAccessTab("clients") ? (
+            <ClientsManagementSection
+              branchId={id}
+              onNewClient={handleNewClient}
+              onViewClient={handleViewClient}
+              onEditClient={handleEditClient}
+            />
+          ) : (
+            <AccessDeniedTab tabName="Clients" />
+          )
+        )}
+        
+        {activeTab === "reviews" && (
+          canAccessTab("reviews") ? (
+            <ReviewsTab branchId={id} branchName={branchName} />
+          ) : (
+            <AccessDeniedTab tabName="Reviews" />
+          )
+        )}
+        
+        {activeTab === "communication" && (
+          canAccessTab("communication") ? (
+            <CommunicationsTab branchId={id} branchName={branchName} />
+          ) : (
+            <AccessDeniedTab tabName="Communication" />
+          )
+        )}
+        
+        {activeTab === "medication" && (
+          canAccessTab("medication") ? (
+            <MedicationTab branchId={id} branchName={branchName} />
+          ) : (
+            <AccessDeniedTab tabName="Medication" />
+          )
+        )}
+        
+        {activeTab === "accounting" && (
+          canAccessTab("finance") ? (
+            <AccountingTab branchId={id} branchName={displayBranchName} />
+          ) : (
+            <AccessDeniedTab tabName="Accounting" />
+          )
+        )}
+        
+        {activeTab === "finance" && (
+          canAccessTab("finance") ? (
+            <AccountingTab branchId={id} branchName={displayBranchName} />
+          ) : (
+            <AccessDeniedTab tabName="Finance" />
+          )
+        )}
+        
+        {activeTab === "care-plan" && (
+          canAccessTab("care-plan") ? (
+            <CareTab branchId={id} branchName={branchName} />
+          ) : (
+            <AccessDeniedTab tabName="Care Plan" />
+          )
+        )}
+        
+        {activeTab === "agreements" && (
+          canAccessTab("agreements") ? (
+            <BranchAgreementsTab branchId={id || ""} branchName={displayBranchName} />
+          ) : (
+            <AccessDeniedTab tabName="Agreements" />
+          )
+        )}
+        
+        {activeTab === "forms" && (
+          canAccessTab("form-builder") ? (
+            <FormBuilderTab branchId={id || ""} branchName={displayBranchName} />
+          ) : (
+            <AccessDeniedTab tabName="Form Builder" />
+          )
+        )}
         
         {/* Events & Logs fallback - redirect to dedicated page */}
         {activeTab === "events-logs" && (() => {
@@ -358,10 +504,11 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         
         {/* Notifications Tab */}
         {activeTab === "notifications" && (
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-            <h2 className="text-2xl font-bold mb-4">Notifications</h2>
-            <p className="text-gray-500 mb-6">Branch: {displayBranchName} (ID: {id})</p>
-            <NotificationsOverview branchId={id} branchName={branchName} />
+          canAccessTab("notifications") ? (
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+              <h2 className="text-2xl font-bold mb-4">Notifications</h2>
+              <p className="text-gray-500 mb-6">Branch: {displayBranchName} (ID: {id})</p>
+              <NotificationsOverview branchId={id} branchName={branchName} />
             
             <div className="mt-6 space-y-4">
               <div className="p-4 border border-blue-200 rounded-lg bg-blue-50 flex items-start">
@@ -420,6 +567,9 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
               </div>
             </div>
           </div>
+          ) : (
+            <AccessDeniedTab tabName="Notifications" />
+          )
         )}
       </main>
     </div>
