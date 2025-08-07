@@ -31,6 +31,37 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const checkExistingSession = async () => {
     try {
+      // First try to check if there's a regular Supabase session with super_admin role
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        console.log('[SystemAuth] Found Supabase session, checking for super_admin role...');
+        
+        // Check if user has super_admin role
+        const { data: userRoles, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .eq('role', 'super_admin');
+
+        if (!rolesError && userRoles && userRoles.length > 0) {
+          console.log('[SystemAuth] User has super_admin role, setting up system user');
+          
+          // Create system user object
+          const systemUser: SystemUser = {
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.full_name || session.user.email || 'System Admin',
+            roles: ['super_admin']
+          };
+          
+          setUser(systemUser);
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // Fallback to system session token method
       const sessionToken = localStorage.getItem('system_session_token');
       if (!sessionToken) {
         setIsLoading(false);
@@ -66,6 +97,44 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
     setIsLoading(true);
 
     try {
+      // Try regular Supabase auth first
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (!authError && authData.user) {
+        console.log('[SystemAuth] Supabase auth successful, checking for super_admin role...');
+        
+        // Check if user has super_admin role
+        const { data: userRoles, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', authData.user.id)
+          .eq('role', 'super_admin');
+
+        if (!rolesError && userRoles && userRoles.length > 0) {
+          console.log('[SystemAuth] User has super_admin role, login successful');
+          
+          // Create system user object
+          const systemUser: SystemUser = {
+            id: authData.user.id,
+            email: authData.user.email || '',
+            name: authData.user.user_metadata?.full_name || authData.user.email || 'System Admin',
+            roles: ['super_admin']
+          };
+          
+          setUser(systemUser);
+          return {};
+        } else {
+          // User doesn't have super_admin role, sign them out
+          await supabase.auth.signOut();
+          setError('Insufficient permissions for system access');
+          return { error: 'Insufficient permissions for system access' };
+        }
+      }
+
+      // Fallback to system authentication method
       const { data, error } = await supabase.rpc('system_authenticate', {
         p_email: email,
         p_password: password,
@@ -103,6 +172,10 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      // Sign out from Supabase auth
+      await supabase.auth.signOut();
+      
+      // Also try system logout if there's a session token
       const sessionToken = localStorage.getItem('system_session_token');
       if (sessionToken) {
         await supabase.rpc('system_logout', {

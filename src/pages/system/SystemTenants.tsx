@@ -49,19 +49,27 @@ export default function SystemTenants() {
   const { data: stats, error: statsError } = useQuery({
     queryKey: ['tenant-stats'],
     queryFn: async () => {
-      console.log('Fetching tenant stats...');
+      console.log('[SystemTenants] Fetching tenant stats...', { user: user?.email, roles: user?.roles });
       
+      // Check authentication state
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('[SystemTenants] Current Supabase session:', { 
+        userId: session?.user?.id, 
+        email: session?.user?.email 
+      });
+
       // Simplified query without nested organization_members
       const { data: orgs, error } = await supabase
         .from('organizations')
         .select('id, subscription_plan, created_at');
 
       if (error) {
-        console.error('Stats query error:', error);
+        console.error('[SystemTenants] Stats query error:', error);
+        console.error('[SystemTenants] Error details:', { message: error.message, code: error.code, hint: error.hint });
         throw error;
       }
 
-      console.log('Stats orgs fetched:', orgs?.length || 0);
+      console.log('[SystemTenants] Stats orgs fetched:', orgs?.length || 0);
 
       // Get organization members count separately
       const { data: members, error: membersError } = await supabase
@@ -70,7 +78,7 @@ export default function SystemTenants() {
         .eq('status', 'active');
 
       if (membersError) {
-        console.error('Members query error:', membersError);
+        console.error('[SystemTenants] Members query error:', membersError);
         // Don't throw, just use 0 for active users
       }
 
@@ -111,8 +119,26 @@ export default function SystemTenants() {
   const { data: tenants, isLoading, error: tenantsError } = useQuery({
     queryKey: ['system-tenants'],
     queryFn: async () => {
-      console.log('Fetching tenants list...');
+      console.log('[SystemTenants] Fetching tenants list...', { user: user?.email, roles: user?.roles });
       
+      // Check authentication state
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('[SystemTenants] Current Supabase session for tenants query:', { 
+        userId: session?.user?.id, 
+        email: session?.user?.email 
+      });
+
+      // Test is_system_admin function first
+      if (session?.user?.id) {
+        const { data: isAdminResult, error: adminError } = await supabase
+          .rpc('is_system_admin', { user_id_param: session.user.id });
+        
+        console.log('[SystemTenants] is_system_admin check:', { 
+          result: isAdminResult, 
+          error: adminError 
+        });
+      }
+
       // Simplified query without nested organization_members
       const { data, error } = await supabase
         .from('organizations')
@@ -128,11 +154,12 @@ export default function SystemTenants() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Tenants query error:', error);
+        console.error('[SystemTenants] Tenants query error:', error);
+        console.error('[SystemTenants] Error details:', { message: error.message, code: error.code, hint: error.hint });
         throw error;
       }
 
-      console.log('Tenants fetched:', data?.length || 0, data);
+      console.log('[SystemTenants] Tenants fetched:', data?.length || 0, data);
 
       // Get active users count for each organization separately
       const { data: membersData, error: membersError } = await supabase
@@ -141,7 +168,7 @@ export default function SystemTenants() {
         .eq('status', 'active');
 
       if (membersError) {
-        console.error('Members query error:', membersError);
+        console.error('[SystemTenants] Members query error:', membersError);
       }
 
       // Map active users to organizations
