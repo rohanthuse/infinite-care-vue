@@ -6360,6 +6360,10 @@ export type Database = {
         Args: { staff_id_param: string }
         Returns: boolean
       }
+      is_system_admin: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
       is_thread_participant: {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: boolean
@@ -6410,6 +6414,10 @@ export type Database = {
         Returns: undefined
       }
       user_belongs_to_organization: {
+        Args: { org_id: string; user_id_param: string }
+        Returns: boolean
+      }
+      user_belongs_to_organization_safe: {
         Args: { org_id: string; user_id_param: string }
         Returns: boolean
       }
