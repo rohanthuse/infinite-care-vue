@@ -45,15 +45,32 @@ export const useCommunicationTypeOptions = () => {
   return useQuery({
     queryKey: ['communication-type-options'],
     queryFn: async () => {
-      return [
-        { value: 'email', label: 'Email' },
-        { value: 'phone', label: 'Phone Call' },
-        { value: 'sms', label: 'SMS' },
-        { value: 'meeting', label: 'Meeting' },
-        { value: 'video_call', label: 'Video Call' },
-        { value: 'letter', label: 'Letter' },
-        { value: 'other', label: 'Other' },
-      ];
+      // First try to get from communication_types table
+      const { data: communicationTypes, error } = await supabase
+        .from('communication_types')
+        .select('title')
+        .eq('status', 'Active')
+        .order('title');
+      
+      if (error) {
+        console.error('Error fetching communication types:', error);
+        // Fallback to static options if table doesn't exist or has issues
+        return [
+          { value: 'email', label: 'Email' },
+          { value: 'phone', label: 'Phone Call' },
+          { value: 'sms', label: 'SMS' },
+          { value: 'meeting', label: 'Meeting' },
+          { value: 'video_call', label: 'Video Call' },
+          { value: 'letter', label: 'Letter' },
+          { value: 'other', label: 'Other' },
+        ];
+      }
+      
+      // Convert database results to option format
+      return communicationTypes.map(type => ({
+        value: type.title.toLowerCase().replace(/\s+/g, '_'),
+        label: type.title
+      }));
     },
   });
 };
@@ -62,16 +79,71 @@ export const useFileCategoryOptions = () => {
   return useQuery({
     queryKey: ['file-category-options'],
     queryFn: async () => {
-      return [
-        { value: 'medical_report', label: 'Medical Report' },
-        { value: 'care_plan', label: 'Care Plan' },
-        { value: 'legal_document', label: 'Legal Document' },
-        { value: 'insurance', label: 'Insurance' },
-        { value: 'assessment', label: 'Assessment' },
-        { value: 'identification', label: 'Identification' },
-        { value: 'consent_form', label: 'Consent Form' },
-        { value: 'other', label: 'Other' },
-      ];
+      // First try to get from file_categories table
+      const { data: fileCategories, error } = await supabase
+        .from('file_categories')
+        .select('title')
+        .eq('status', 'Active')
+        .order('title');
+      
+      if (error) {
+        console.error('Error fetching file categories:', error);
+        // Fallback to static options if table doesn't exist or has issues
+        return [
+          { value: 'medical_report', label: 'Medical Report' },
+          { value: 'care_plan', label: 'Care Plan' },
+          { value: 'legal_document', label: 'Legal Document' },
+          { value: 'insurance', label: 'Insurance' },
+          { value: 'assessment', label: 'Assessment' },
+          { value: 'identification', label: 'Identification' },
+          { value: 'consent_form', label: 'Consent Form' },
+          { value: 'other', label: 'Other' },
+        ];
+      }
+      
+      // Convert database results to option format
+      return fileCategories.map(category => ({
+        value: category.title.toLowerCase().replace(/\s+/g, '_'),
+        label: category.title
+      }));
+    },
+  });
+};
+
+// Hook for expense type options from database
+export const useExpenseTypeOptions = () => {
+  return useQuery({
+    queryKey: ['expense-type-options'],
+    queryFn: async () => {
+      // First try to get from expense_types table
+      const { data: expenseTypes, error } = await supabase
+        .from('expense_types')
+        .select('title')
+        .eq('status', 'Active')
+        .order('title');
+      
+      if (error) {
+        console.error('Error fetching expense types:', error);
+        // Fallback to static options if table doesn't exist or has issues
+        return [
+          { value: 'office_supplies', label: 'Office Supplies' },
+          { value: 'travel', label: 'Travel' },
+          { value: 'meals', label: 'Meals' },
+          { value: 'equipment', label: 'Equipment' },
+          { value: 'utilities', label: 'Utilities' },
+          { value: 'rent', label: 'Rent' },
+          { value: 'software', label: 'Software' },
+          { value: 'training', label: 'Training' },
+          { value: 'medical_supplies', label: 'Medical Supplies' },
+          { value: 'other', label: 'Other' },
+        ];
+      }
+      
+      // Convert database results to option format
+      return expenseTypes.map(type => ({
+        value: type.title.toLowerCase().replace(/\s+/g, '_'),
+        label: type.title
+      }));
     },
   });
 };

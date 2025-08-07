@@ -43,6 +43,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { BankHolidayNotification } from "@/components/scheduling/BankHolidayNotification";
 
 const scheduleSchema = z.object({
   startTime: z.string().min(5, { message: "Start time required" }),
@@ -501,6 +502,22 @@ export function NewBookingDialog({
                   )}
                 />
               </div>
+
+              {/* Bank Holiday Notifications */}
+              {form.watch("fromDate") && (
+                <BankHolidayNotification 
+                  date={form.watch("fromDate")} 
+                  variant="info"
+                  className="mb-4"
+                />
+              )}
+              {form.watch("untilDate") && form.watch("untilDate") !== form.watch("fromDate") && (
+                <BankHolidayNotification 
+                  date={form.watch("untilDate")} 
+                  variant="info"
+                  className="mb-4"
+                />
+              )}
 
               <div>
                 <FormLabel>Schedules</FormLabel>

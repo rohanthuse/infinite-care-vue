@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { ExpenseRecord } from "@/hooks/useAccountingData";
+import { useExpenseTypeOptions } from "@/hooks/useParameterOptions";
 
 interface AddExpenseDialogProps {
   open: boolean;
@@ -86,6 +87,8 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
   initialData,
   isEditing = false
 }) => {
+  const { data: expenseTypeOptions = [], isLoading: expenseTypesLoading } = useExpenseTypeOptions();
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData ? {
@@ -213,16 +216,17 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
+                      disabled={expenseTypesLoading}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
+                          <SelectValue placeholder={expenseTypesLoading ? "Loading categories..." : "Select category"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Object.entries(categoryLabels).map(([key, label]) => (
-                          <SelectItem key={key} value={key}>
-                            {label}
+                        {expenseTypeOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
                           </SelectItem>
                         ))}
                       </SelectContent>

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useExpenseTypeOptions } from "@/hooks/useParameterOptions";
 
 interface EditExpenseDialogProps {
   open: boolean;
@@ -23,6 +24,7 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
   onUpdate,
   isUpdating
 }) => {
+  const { data: expenseTypeOptions = [], isLoading: expenseTypesLoading } = useExpenseTypeOptions();
   const [expenseForm, setExpenseForm] = useState({
     description: "",
     category: "",
@@ -119,17 +121,20 @@ const EditExpenseDialog: React.FC<EditExpenseDialogProps> = ({
           
           <div className="space-y-2">
             <label className="text-sm font-medium">Category *</label>
-            <Select value={expenseForm.category} onValueChange={(value) => setExpenseForm(prev => ({ ...prev, category: value }))}>
+            <Select 
+              value={expenseForm.category} 
+              onValueChange={(value) => setExpenseForm(prev => ({ ...prev, category: value }))}
+              disabled={expenseTypesLoading}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Select category" />
+                <SelectValue placeholder={expenseTypesLoading ? "Loading categories..." : "Select category"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="travel">Travel</SelectItem>
-                <SelectItem value="training">Training</SelectItem>
-                <SelectItem value="uniform">Uniform</SelectItem>
-                <SelectItem value="communication">Communication</SelectItem>
-                <SelectItem value="supplies">Supplies</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                {expenseTypeOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
