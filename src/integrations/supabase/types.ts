@@ -6393,12 +6393,14 @@ export type Database = {
         Returns: undefined
       }
       system_authenticate: {
-        Args: {
-          p_email: string
-          p_password: string
-          p_ip_address?: unknown
-          p_user_agent?: string
-        }
+        Args:
+          | { p_email: string; p_password: string }
+          | {
+              p_email: string
+              p_password: string
+              p_ip_address?: unknown
+              p_user_agent?: string
+            }
         Returns: Json
       }
       system_logout: {
