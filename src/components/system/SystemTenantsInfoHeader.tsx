@@ -41,12 +41,6 @@ export const SystemTenantsInfoHeader = ({
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
-          <Button onClick={onAddTenant} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add New Tenant
-          </Button>
-        </div>
       </div>
     </div>
   );

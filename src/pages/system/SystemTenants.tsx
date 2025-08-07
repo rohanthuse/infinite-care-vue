@@ -94,28 +94,19 @@ export default function SystemTenants() {
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/system-dashboard')}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Dashboard
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Tenant Organizations</h1>
-              <p className="text-muted-foreground">Manage and monitor all tenant organizations</p>
-            </div>
+        <div className="mb-8">
+          <div className="mb-4">
+            <h1 className="text-2xl font-bold text-foreground">Tenant Organizations</h1>
+            <p className="text-muted-foreground">Manage and monitor all tenant organizations</p>
           </div>
           <Button
-            onClick={() => setIsCreateDialogOpen(true)}
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/system-dashboard')}
             className="flex items-center gap-2"
           >
-            <Plus className="h-4 w-4" />
-            Add New Tenant
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
           </Button>
         </div>
 
