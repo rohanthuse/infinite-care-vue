@@ -102,17 +102,35 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
   
   // Filter tabs based on permissions for branch admins
   const filterTabsByPermissions = (tabs: TabItem[]) => {
+    console.log('[TabNavigation] Filtering tabs:', {
+      userRole: userRole?.role,
+      permissions,
+      tabs: tabs.map(t => t.value)
+    });
+    
     // Super admins see all tabs
     if (userRole?.role === 'super_admin') {
+      console.log('[TabNavigation] Super admin - showing all tabs');
       return tabs;
     }
     
     // Branch admins see only permitted tabs
     if (userRole?.role === 'branch_admin') {
-      return tabs.filter(tab => hasTabPermission(permissions || null, tab.value));
+      const filteredTabs = tabs.filter(tab => {
+        const hasPermission = hasTabPermission(permissions || null, tab.value);
+        console.log('[TabNavigation] Tab permission check:', {
+          tab: tab.value,
+          hasPermission,
+          permissions
+        });
+        return hasPermission;
+      });
+      console.log('[TabNavigation] Branch admin filtered tabs:', filteredTabs.map(t => t.value));
+      return filteredTabs;
     }
     
     // Other roles see all tabs (for now)
+    console.log('[TabNavigation] Other role - showing all tabs');
     return tabs;
   };
   
@@ -135,8 +153,16 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
   };
 
   const handleTabNavigation = (tabValue: string) => {
+    console.log('[TabNavigation] Tab navigation attempt:', {
+      tabValue,
+      userRole: userRole?.role,
+      hasPermission: hasTabPermission(permissions || null, tabValue),
+      permissions
+    });
+    
     // Check permissions for branch admins
     if (userRole?.role === 'branch_admin' && !hasTabPermission(permissions || null, tabValue)) {
+      console.warn('[TabNavigation] Access denied to tab:', tabValue);
       toast.error("Access denied", {
         description: "You don't have permission to access this section",
         position: "top-center",

@@ -31,6 +31,9 @@ import { MedicationTab } from "@/components/medication/MedicationTab";
 import { CareTab } from "@/components/care/CareTab";
 import { BranchAgreementsTab } from "@/components/agreements/BranchAgreementsTab";
 import { FormBuilderTab } from "@/components/form-builder/FormBuilderTab";
+import { ThirdPartyAccessManagement } from "@/components/third-party-access/ThirdPartyAccessManagement";
+import { UnifiedDocumentsList } from "@/components/documents/UnifiedDocumentsList";
+import { useUnifiedDocuments } from "@/hooks/useUnifiedDocuments";
 import KeyParametersContent from "@/components/keyparameters/KeyParametersContent";
 import WorkflowContent from "@/components/workflow/WorkflowContent";
 import NotificationsOverview from "@/components/workflow/NotificationsOverview";
@@ -63,7 +66,25 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const { data: branchAccess, isLoading: accessLoading, error: accessError } = useBranchAdminAccess(id || "");
   
   // Get admin permissions for permission-based content filtering
-  const { data: permissions } = useAdminPermissions(id);
+  const { data: permissions, isLoading: permissionsLoading } = useAdminPermissions(id);
+  
+  // Add unified documents hook for documents tab
+  const {
+    documents,
+    isLoading: documentsLoading,
+    deleteDocument,
+    downloadDocument,
+    viewDocument
+  } = useUnifiedDocuments(id || '');
+  
+  // Debug logging for permissions
+  console.log('[BranchDashboard] Permission Check:', {
+    userRole: userRole?.role,
+    branchId: id,
+    permissionsLoading,
+    permissions,
+    activeTab
+  });
 
   // Always initialize notification generator
   useNotificationGenerator(id);
@@ -257,7 +278,12 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const enhancedHandleTabChange = (value: string) => {
     // Check permissions for branch admins before allowing tab change
     if (userRole?.role === 'branch_admin' && !hasTabPermission(permissions || null, value)) {
-      console.warn('[BranchDashboard] Access denied to tab:', value);
+      console.warn('[BranchDashboard] Access denied to tab:', value, {
+        userRole: userRole?.role,
+        permissions,
+        tabValue: value,
+        hasPermission: hasTabPermission(permissions || null, value)
+      });
       return; // Silently prevent navigation to restricted tabs
     }
     
@@ -502,6 +528,64 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
           );
         })()}
         
+        {/* Documents Tab */}
+        {activeTab === "documents" && (
+          canAccessTab("documents") ? (
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold">Documents & Resources</h2>
+                    <p className="text-gray-500 mt-1">
+                      Manage documents for {displayBranchName} - {documents.length} documents
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-6">
+                <UnifiedDocumentsList
+                  documents={documents}
+                  onViewDocument={viewDocument}
+                  onDownloadDocument={downloadDocument}
+                  onDeleteDocument={async (documentId: string) => {
+                    if (window.confirm('Are you sure you want to delete this document?')) {
+                      await deleteDocument(documentId);
+                    }
+                  }}
+                  isLoading={documentsLoading}
+                />
+              </div>
+            </div>
+          ) : (
+            <AccessDeniedTab tabName="Documents" />
+          )
+        )}
+
+        {/* Third Party Access Tab */}
+        {activeTab === "third-party" && (
+          canAccessTab("third-party") ? (
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold">Third Party Access</h2>
+                    <p className="text-gray-500 mt-1">
+                      Manage external access for {displayBranchName}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-6">
+                <ThirdPartyAccessManagement branchId={id || ""} />
+              </div>
+            </div>
+          ) : (
+            <AccessDeniedTab tabName="Third Party Access" />
+          )
+        )}
+
         {/* Notifications Tab */}
         {activeTab === "notifications" && (
           canAccessTab("notifications") ? (
