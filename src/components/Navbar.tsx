@@ -106,6 +106,14 @@ const Navbar = () => {
             Branch Admin Login
           </CustomButton>
           <CustomButton 
+            variant="outline" 
+            size="sm" 
+            className="border-slate-600 text-slate-600 hover:bg-slate-50"
+            onClick={() => window.location.href = '/system-login'}
+          >
+            System Portal
+          </CustomButton>
+          <CustomButton 
             variant="pill" 
             size="sm" 
             className="bg-blue-600 hover:bg-blue-700"

@@ -4903,6 +4903,183 @@ export type Database = {
           },
         ]
       }
+      system_audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: unknown | null
+          resource_id: string | null
+          resource_type: string
+          system_user_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type: string
+          system_user_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          resource_id?: string | null
+          resource_type?: string
+          system_user_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_audit_logs_system_user_id_fkey"
+            columns: ["system_user_id"]
+            isOneToOne: false
+            referencedRelation: "system_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          ip_address: unknown | null
+          last_activity_at: string
+          session_token: string
+          system_user_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          ip_address?: unknown | null
+          last_activity_at?: string
+          session_token: string
+          system_user_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          ip_address?: unknown | null
+          last_activity_at?: string
+          session_token?: string
+          system_user_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_sessions_system_user_id_fkey"
+            columns: ["system_user_id"]
+            isOneToOne: false
+            referencedRelation: "system_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_user_roles: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["system_role"]
+          system_user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["system_role"]
+          system_user_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["system_role"]
+          system_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_user_roles_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "system_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_user_roles_system_user_id_fkey"
+            columns: ["system_user_id"]
+            isOneToOne: false
+            referencedRelation: "system_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_users: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          email: string
+          encrypted_password: string
+          failed_login_attempts: number
+          first_name: string
+          id: string
+          is_active: boolean
+          last_login_at: string | null
+          last_name: string
+          locked_until: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          email: string
+          encrypted_password: string
+          failed_login_attempts?: number
+          first_name: string
+          id?: string
+          is_active?: boolean
+          last_login_at?: string | null
+          last_name: string
+          locked_until?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          encrypted_password?: string
+          failed_login_attempts?: number
+          first_name?: string
+          id?: string
+          is_active?: boolean
+          last_login_at?: string | null
+          last_name?: string
+          locked_until?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_users_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "system_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assignee_id: string | null
@@ -6211,6 +6388,23 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      system_authenticate: {
+        Args: {
+          p_email: string
+          p_password: string
+          p_ip_address?: unknown
+          p_user_agent?: string
+        }
+        Returns: Json
+      }
+      system_logout: {
+        Args: { p_session_token: string }
+        Returns: Json
+      }
+      system_validate_session: {
+        Args: { p_session_token: string }
+        Returns: Json
+      }
       update_resource_stats: {
         Args: { resource_id: string; stat_type: string }
         Returns: undefined
@@ -6238,6 +6432,11 @@ export type Database = {
         | "Under Review"
         | "Completed"
         | "Cancelled"
+      system_role:
+        | "super_admin"
+        | "tenant_manager"
+        | "support_admin"
+        | "analytics_viewer"
       third_party_access_type: "client" | "staff" | "both"
       third_party_request_status:
         | "pending"
@@ -6390,6 +6589,12 @@ export const Constants = {
         "Under Review",
         "Completed",
         "Cancelled",
+      ],
+      system_role: [
+        "super_admin",
+        "tenant_manager",
+        "support_admin",
+        "analytics_viewer",
       ],
       third_party_access_type: ["client", "staff", "both"],
       third_party_request_status: [

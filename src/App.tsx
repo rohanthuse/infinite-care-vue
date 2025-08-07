@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TaskProvider } from "@/contexts/TaskContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { TenantProvider } from "@/contexts/TenantContext";
+import { SystemAuthProvider } from "@/contexts/SystemAuthContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { AuthErrorBoundary } from "@/components/AuthErrorBoundary";
 import Index from "./pages/Index";
@@ -24,6 +25,9 @@ import ClientRoutes from "./routes/ClientRoutes";
 import { ErrorBoundary } from "@/components/care/ErrorBoundary";
 import { useAuth } from "@/hooks/useAuth";
 import { TenantSetup } from "./pages/TenantSetup";
+import SystemLogin from "./pages/SystemLogin";
+import SystemDashboard from "./pages/SystemDashboard";
+import { SystemGuard } from "@/components/system/SystemGuard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,7 +65,8 @@ const AppContent = () => {
     '/client-login', 
     '/carer-invitation', 
     '/carer-onboarding',
-    '/tenant-setup'
+    '/tenant-setup',
+    '/system-login'
   ].includes(window.location.pathname);
 
   if (loading && !isPublicRoute) {
@@ -84,6 +89,19 @@ const AppContent = () => {
               <Route path="/carer-onboarding" element={<CarerOnboarding />} />
               <Route path="/client-login" element={<ClientLogin />} />
               <Route path="/tenant-setup" element={<TenantSetup />} />
+              <Route path="/system-login" element={<SystemLogin />} />
+              
+              {/* System Dashboard Routes */}
+              <Route path="/system-dashboard" element={
+                <SystemGuard>
+                  <SystemDashboard />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/*" element={
+                <SystemGuard>
+                  <SystemDashboard />
+                </SystemGuard>
+              } />
               
               {/* Protected Routes */}
               {AdminRoutes()}
@@ -104,13 +122,15 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AuthProvider>
-          <TenantProvider>
-            <Toaster />
-            <Sonner />
-            <AppContent />
-          </TenantProvider>
-        </AuthProvider>
+        <SystemAuthProvider>
+          <AuthProvider>
+            <TenantProvider>
+              <Toaster />
+              <Sonner />
+              <AppContent />
+            </TenantProvider>
+          </AuthProvider>
+        </SystemAuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
