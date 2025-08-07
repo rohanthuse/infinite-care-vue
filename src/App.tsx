@@ -27,6 +27,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { TenantSetup } from "./pages/TenantSetup";
 import SystemLogin from "./pages/SystemLogin";
 import SystemDashboard from "./pages/SystemDashboard";
+import SystemTenants from "./pages/system/SystemTenants";
+import SystemUsers from "./pages/system/SystemUsers";
+import SystemAnalytics from "./pages/system/SystemAnalytics";
+import SystemSettings from "./pages/system/SystemSettings";
 import { SystemGuard } from "@/components/system/SystemGuard";
 
 const queryClient = new QueryClient({
@@ -97,9 +101,34 @@ const AppContent = () => {
                   <SystemDashboard />
                 </SystemGuard>
               } />
-              <Route path="/system-dashboard/*" element={
+              <Route path="/system-dashboard/tenants" element={
                 <SystemGuard>
-                  <SystemDashboard />
+                  <SystemTenants />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/users" element={
+                <SystemGuard>
+                  <SystemUsers />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/analytics" element={
+                <SystemGuard>
+                  <SystemAnalytics />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/settings" element={
+                <SystemGuard>
+                  <SystemSettings />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/audit" element={
+                <SystemGuard>
+                  <SystemAnalytics />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/database" element={
+                <SystemGuard>
+                  <SystemAnalytics />
                 </SystemGuard>
               } />
               
