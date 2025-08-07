@@ -86,7 +86,7 @@ const BranchAdminLogin = () => {
 
         console.log('[BranchAdminLogin] Branch admin role confirmed');
 
-        // Fetch the branch admin's assigned branch
+        // Fetch the branch admin's assigned branches
         const { data: adminBranchData, error: branchError } = await supabase
           .from("admin_branches")
           .select(`
@@ -97,10 +97,9 @@ const BranchAdminLogin = () => {
               status
             )
           `)
-          .eq("admin_id", data.user.id)
-          .single();
+          .eq("admin_id", data.user.id);
 
-        if (branchError || !adminBranchData?.branches) {
+        if (branchError || !adminBranchData || adminBranchData.length === 0) {
           console.error('[BranchAdminLogin] Branch assignment error:', branchError);
           toast({
             variant: "destructive",
@@ -111,11 +110,39 @@ const BranchAdminLogin = () => {
           return;
         }
 
-        const branch = adminBranchData.branches;
-        console.log('[BranchAdminLogin] Branch assignment found:', branch);
+        console.log('[BranchAdminLogin] Branch assignments found:', adminBranchData);
         
         // Store branch information
         localStorage.setItem("userType", "branch_admin");
+        
+        // If admin has multiple branches, navigate to branch selection
+        if (adminBranchData.length > 1) {
+          const branchesData = adminBranchData.map(item => item.branches).filter(Boolean);
+          localStorage.setItem("availableBranches", JSON.stringify(branchesData));
+          
+          toast({
+            title: "Login Successful",
+            description: "Please select your branch to continue.",
+          });
+          
+          setTimeout(() => {
+            navigate('/branch-selection', { replace: true });
+          }, 1000);
+          return;
+        }
+
+        // Single branch assignment - proceed directly
+        const branch = adminBranchData[0].branches;
+        if (!branch) {
+          toast({
+            variant: "destructive",
+            title: "Access Error",
+            description: "Branch information is incomplete. Please contact support.",
+          });
+          await supabase.auth.signOut();
+          return;
+        }
+        
         localStorage.setItem("currentBranchId", branch.id);
         localStorage.setItem("currentBranchName", branch.name);
         

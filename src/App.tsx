@@ -15,6 +15,7 @@ import CarerInvitation from "./pages/CarerInvitation";
 import CarerOnboarding from "./pages/CarerOnboarding";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
 import BranchAdminLogin from "./pages/BranchAdminLogin";
+import BranchSelection from "./pages/BranchSelection";
 import ClientLogin from "./pages/ClientLogin";
 import AdminRoutes from "./routes/AdminRoutes";
 import CarerRoutes from "./routes/CarerRoutes";
@@ -53,6 +54,7 @@ const AppContent = () => {
     '/', 
     '/super-admin', 
     '/branch-admin-login',
+    '/branch-selection',
     '/carer-login', 
     '/client-login', 
     '/carer-invitation', 
@@ -73,6 +75,7 @@ const AppContent = () => {
               <Route path="/" element={<Index />} />
               <Route path="/super-admin" element={<SuperAdminLogin />} />
               <Route path="/branch-admin-login" element={<BranchAdminLogin />} />
+              <Route path="/branch-selection" element={<BranchSelection />} />
               <Route path="/carer-login" element={<CarerLoginSafe />} />
               <Route path="/carer-invitation" element={<CarerInvitation />} />
               <Route path="/carer-onboarding" element={<CarerOnboarding />} />
