@@ -6221,6 +6221,14 @@ export type Database = {
         }
         Returns: Json
       }
+      get_current_system_session: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_current_system_user_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_financial_reports_data: {
         Args: {
           p_branch_id: string
@@ -6354,6 +6362,10 @@ export type Database = {
           _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
         }
+        Returns: boolean
+      }
+      is_authenticated_admin: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       is_current_staff_member: {
