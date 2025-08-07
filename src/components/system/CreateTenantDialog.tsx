@@ -21,9 +21,10 @@ import { toast } from 'sonner';
 interface CreateTenantDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
-export function CreateTenantDialog({ open, onOpenChange }: CreateTenantDialogProps) {
+export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTenantDialogProps) {
   const { user } = useSystemAuth();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
@@ -67,6 +68,7 @@ export function CreateTenantDialog({ open, onOpenChange }: CreateTenantDialogPro
       queryClient.invalidateQueries({ queryKey: ['tenant-stats'] });
       resetForm();
       onOpenChange(false);
+      onSuccess?.();
     },
     onError: (error: any) => {
       console.error('Error creating organization:', error);

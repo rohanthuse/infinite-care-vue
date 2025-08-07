@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useSystemAuth } from '@/contexts/SystemAuthContext';
@@ -10,11 +10,40 @@ import { TenantsTable } from '@/components/system/TenantsTable';
 import { CreateTenantDialog } from '@/components/system/CreateTenantDialog';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Plus } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function SystemTenants() {
   const { user } = useSystemAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+  const handleCreateSuccess = () => {
+    // Invalidate queries to refresh the data
+    queryClient.invalidateQueries({ queryKey: ['tenant-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['system-tenants'] });
+    setIsCreateDialogOpen(false);
+    toast.success('Tenant created successfully! The list has been refreshed.');
+  };
+
+  const handleViewTenant = (tenant: any) => {
+    // For now, show tenant details in a toast
+    toast.info(`Viewing details for ${tenant.name}`, {
+      description: `Subdomain: ${tenant.subdomain} | Plan: ${tenant.subscription_plan} | Status: ${tenant.subscription_status}`
+    });
+  };
+
+  const handleEditTenant = (tenant: any) => {
+    // For now, show edit intent
+    toast.info(`Edit functionality for ${tenant.name} coming soon`);
+  };
+
+  const handleDeleteTenant = (tenant: any) => {
+    // For now, show delete confirmation
+    toast.warning(`Delete functionality for ${tenant.name} coming soon`, {
+      description: 'This will permanently remove the tenant and all associated data.'
+    });
+  };
 
   // Fetch tenant statistics
   const { data: stats, error: statsError } = useQuery({
@@ -167,11 +196,15 @@ export default function SystemTenants() {
           tenants={tenants}
           isLoading={isLoading}
           onAddTenant={() => setIsCreateDialogOpen(true)}
+          onViewTenant={handleViewTenant}
+          onEditTenant={handleEditTenant}
+          onDeleteTenant={handleDeleteTenant}
         />
 
         <CreateTenantDialog
           open={isCreateDialogOpen}
           onOpenChange={setIsCreateDialogOpen}
+          onSuccess={handleCreateSuccess}
         />
       </main>
     </div>
