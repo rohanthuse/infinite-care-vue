@@ -6398,8 +6398,8 @@ export type Database = {
           | {
               p_email: string
               p_password: string
-              p_ip_address: unknown
-              p_user_agent: string
+              p_ip_address?: unknown
+              p_user_agent?: string
             }
         Returns: Json
       }
