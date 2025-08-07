@@ -7,17 +7,7 @@ import { Loader2, ShieldCheck, AlertTriangle, Building2, ChevronLeft, ChevronRig
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 const initialPermissions = {
   dashboard: true,
   bookings: true,
@@ -40,16 +30,13 @@ const initialPermissions = {
   library: true,
   third_party: true,
   reports: true,
-  system: true,
+  system: true
 };
-
 type Permissions = typeof initialPermissions;
-
 interface AdminBranch {
   branch_id: string;
   branch_name: string;
 }
-
 interface EditAdminPermissionsDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -60,53 +47,63 @@ interface EditAdminPermissionsDialogProps {
   adminBranches?: AdminBranch[];
   onBranchSwitch?: (branchId: string, branchName: string) => void;
 }
-
-export function EditAdminPermissionsDialog({ 
-  isOpen, 
-  onClose, 
-  adminId, 
-  branchId, 
-  branchName, 
-  adminName, 
+export function EditAdminPermissionsDialog({
+  isOpen,
+  onClose,
+  adminId,
+  branchId,
+  branchName,
+  adminName,
   adminBranches = [],
-  onBranchSwitch 
+  onBranchSwitch
 }: EditAdminPermissionsDialogProps) {
   const [permissions, setPermissions] = useState<Permissions>(initialPermissions);
   const [originalPermissions, setOriginalPermissions] = useState<Permissions>(initialPermissions);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showUnsavedChangesAlert, setShowUnsavedChangesAlert] = useState(false);
   const [showBranchSwitchAlert, setShowBranchSwitchAlert] = useState(false);
-  const [pendingSwitchBranch, setPendingSwitchBranch] = useState<{ branchId: string; branchName: string } | null>(null);
-  const { toast } = useToast();
+  const [pendingSwitchBranch, setPendingSwitchBranch] = useState<{
+    branchId: string;
+    branchName: string;
+  } | null>(null);
+  const {
+    toast
+  } = useToast();
   const queryClient = useQueryClient();
 
   // Get current branch info
-  const currentBranch = adminBranches.find(b => b.branch_id === branchId) || 
-    { branch_id: branchId, branch_name: branchName || 'Unknown Branch' };
+  const currentBranch = adminBranches.find(b => b.branch_id === branchId) || {
+    branch_id: branchId,
+    branch_name: branchName || 'Unknown Branch'
+  };
   const isMultiBranch = adminBranches.length > 1;
-
-  const { data: existingPermissions, isLoading: isLoadingPermissions } = useQuery({
+  const {
+    data: existingPermissions,
+    isLoading: isLoadingPermissions
+  } = useQuery({
     queryKey: ['adminPermissions', adminId, branchId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('admin_permissions')
-        .select('*')
-        .eq('admin_id', adminId)
-        .eq('branch_id', branchId)
-        .maybeSingle();
-
+      const {
+        data,
+        error
+      } = await supabase.from('admin_permissions').select('*').eq('admin_id', adminId).eq('branch_id', branchId).maybeSingle();
       if (error) {
-        toast({ title: "Error", description: "Could not fetch permissions.", variant: "destructive" });
+        toast({
+          title: "Error",
+          description: "Could not fetch permissions.",
+          variant: "destructive"
+        });
         throw error;
       }
       return data;
     },
-    enabled: isOpen,
+    enabled: isOpen
   });
-
   useEffect(() => {
     if (existingPermissions) {
-      const loadedPermissions = { ...initialPermissions };
+      const loadedPermissions = {
+        ...initialPermissions
+      };
       for (const key in loadedPermissions) {
         if (Object.prototype.hasOwnProperty.call(existingPermissions, key)) {
           // @ts-ignore
@@ -126,11 +123,12 @@ export function EditAdminPermissionsDialog({
   const hasUnsavedChanges = () => {
     return JSON.stringify(permissions) !== JSON.stringify(originalPermissions);
   };
-
   const handlePermissionChange = (permission: keyof Permissions, value: boolean) => {
-    setPermissions(prev => ({ ...prev, [permission]: value }));
+    setPermissions(prev => ({
+      ...prev,
+      [permission]: value
+    }));
   };
-
   const handleClose = () => {
     if (hasUnsavedChanges()) {
       setShowUnsavedChangesAlert(true);
@@ -138,29 +136,28 @@ export function EditAdminPermissionsDialog({
       onClose();
     }
   };
-
   const handleForceClose = () => {
     setShowUnsavedChangesAlert(false);
     // Reset to original permissions
     setPermissions(originalPermissions);
     onClose();
   };
-
   const handleBranchSwitch = (targetBranchId: string, targetBranchName: string) => {
     if (hasUnsavedChanges()) {
-      setPendingSwitchBranch({ branchId: targetBranchId, branchName: targetBranchName });
+      setPendingSwitchBranch({
+        branchId: targetBranchId,
+        branchName: targetBranchName
+      });
       setShowBranchSwitchAlert(true);
     } else {
       switchToBranch(targetBranchId, targetBranchName);
     }
   };
-
   const switchToBranch = (targetBranchId: string, targetBranchName: string) => {
     if (onBranchSwitch) {
       onBranchSwitch(targetBranchId, targetBranchName);
     }
   };
-
   const handleConfirmBranchSwitch = () => {
     if (pendingSwitchBranch) {
       setShowBranchSwitchAlert(false);
@@ -171,34 +168,34 @@ export function EditAdminPermissionsDialog({
       setOriginalPermissions(initialPermissions);
     }
   };
-
   const handleCancelBranchSwitch = () => {
     setShowBranchSwitchAlert(false);
     setPendingSwitchBranch(null);
   };
-
   const handleSubmit = async (e: React.FormEvent, shouldCloseDialog = true) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     try {
-      const { error } = await supabase.from('admin_permissions').upsert({
+      const {
+        error
+      } = await supabase.from('admin_permissions').upsert({
         admin_id: adminId,
         branch_id: branchId,
         ...permissions
-      }, { onConflict: 'admin_id, branch_id' });
-
+      }, {
+        onConflict: 'admin_id, branch_id'
+      });
       if (error) throw error;
-
       toast({
         title: "Permissions Updated",
-        description: `Permissions for ${adminName} have been successfully updated.`,
+        description: `Permissions for ${adminName} have been successfully updated.`
       });
-      
+
       // Update original permissions to reflect saved state
       setOriginalPermissions(permissions);
-      queryClient.invalidateQueries({ queryKey: ['adminPermissions', adminId, branchId] });
-      
+      queryClient.invalidateQueries({
+        queryKey: ['adminPermissions', adminId, branchId]
+      });
       if (shouldCloseDialog) {
         onClose();
       }
@@ -206,20 +203,21 @@ export function EditAdminPermissionsDialog({
       toast({
         title: "Update Failed",
         description: error.message || "An unexpected error occurred.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-
   const handleSaveAndSwitchBranch = async () => {
     if (pendingSwitchBranch) {
       try {
         // Create a mock form event
-        const mockEvent = { preventDefault: () => {} } as React.FormEvent;
+        const mockEvent = {
+          preventDefault: () => {}
+        } as React.FormEvent;
         await handleSubmit(mockEvent, false); // Don't close dialog after saving
-        
+
         // Switch to the new branch after successful save
         setShowBranchSwitchAlert(false);
         switchToBranch(pendingSwitchBranch.branchId, pendingSwitchBranch.branchName);
@@ -230,33 +228,21 @@ export function EditAdminPermissionsDialog({
       }
     }
   };
-  
-  const renderPermissionSwitch = (key: keyof Permissions, label: string) => (
-    <div className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-white/50 transition-colors">
+  const renderPermissionSwitch = (key: keyof Permissions, label: string) => <div className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-white/50 transition-colors">
       <Label htmlFor={key} className="text-gray-700 text-sm cursor-pointer flex-1">{label}</Label>
-      <Switch 
-        id={key} 
-        checked={permissions[key]} 
-        onCheckedChange={(value) => handlePermissionChange(key, value)} 
-        className="ml-2"
-      />
-    </div>
-  );
-
-  return (
-    <>
+      <Switch id={key} checked={permissions[key]} onCheckedChange={value => handlePermissionChange(key, value)} className="ml-2" />
+    </div>;
+  return <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-[650px] max-h-[90vh] p-0 overflow-hidden rounded-xl flex flex-col">
           <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
             <DialogTitle className="text-xl flex items-center font-semibold text-gray-800">
               <ShieldCheck className="h-5 w-5 mr-2 text-blue-600" />
               Edit Permissions
-              {hasUnsavedChanges() && (
-                <span className="ml-2 text-sm text-orange-600 font-normal flex items-center">
+              {hasUnsavedChanges() && <span className="ml-2 text-sm text-orange-600 font-normal flex items-center">
                   <AlertTriangle className="h-4 w-4 mr-1" />
                   Unsaved changes
-                </span>
-              )}
+                </span>}
             </DialogTitle>
             <DialogDescription className="space-y-2">
               <div>
@@ -267,29 +253,22 @@ export function EditAdminPermissionsDialog({
                 <span className="font-medium text-blue-800">
                   {currentBranch.branch_name}
                 </span>
-                {isMultiBranch && (
-                  <span className="ml-2 text-blue-600">
+                {isMultiBranch && <span className="ml-2 text-blue-600">
                     (Branch {adminBranches.findIndex(b => b.branch_id === branchId) + 1} of {adminBranches.length})
-                  </span>
-                )}
+                  </span>}
               </div>
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
             <div className="px-6 py-4 overflow-y-auto flex-1 space-y-6">
-              {isLoadingPermissions ? (
-                <div className="flex justify-center items-center h-64">
+              {isLoadingPermissions ? <div className="flex justify-center items-center h-64">
                   <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
                   <span className="ml-2 text-gray-600">Loading Permissions...</span>
-                </div>
-              ) : (
-                <>
+                </div> : <>
                   {/* Core Features */}
                   <div className="space-y-4 border rounded-lg p-4 bg-gradient-to-br from-blue-50 to-blue-100/30">
-                    <h3 className="font-semibold text-gray-800 flex items-center text-base">
-                      📊 Core Features
-                    </h3>
+                    <h3 className="font-semibold text-gray-800 flex items-center text-base"> Core Features</h3>
                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
                       {renderPermissionSwitch('dashboard', 'Dashboard')}
                       {renderPermissionSwitch('bookings', 'Bookings')}
@@ -302,9 +281,7 @@ export function EditAdminPermissionsDialog({
 
                   {/* Advanced Features */}
                   <div className="space-y-4 border rounded-lg p-4 bg-gradient-to-br from-green-50 to-green-100/30">
-                    <h3 className="font-semibold text-gray-800 flex items-center text-base">
-                      ⚙️ Advanced Features
-                    </h3>
+                    <h3 className="font-semibold text-gray-800 flex items-center text-base"> Advanced Features</h3>
                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
                       {renderPermissionSwitch('reviews', 'Reviews')}
                       {renderPermissionSwitch('medication', 'Medication')}
@@ -324,65 +301,34 @@ export function EditAdminPermissionsDialog({
                       {renderPermissionSwitch('system', 'System')}
                     </div>
                   </div>
-                </>
-              )}
+                </>}
             </div>
 
             <DialogFooter className="px-6 py-4 border-t bg-gray-50/80 flex-shrink-0">
               <div className="flex justify-between items-center w-full">
                 {/* Branch Navigation - Left Side */}
-                {isMultiBranch && (
-                  <div className="flex items-center gap-2">
+                {isMultiBranch && <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600">Switch Branch:</span>
                     <div className="flex gap-1">
-                      {adminBranches.map((branch, index) => (
-                        <Button
-                          key={branch.branch_id}
-                          type="button"
-                          variant={branch.branch_id === branchId ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handleBranchSwitch(branch.branch_id, branch.branch_name)}
-                          className="text-xs px-2 py-1"
-                          disabled={isSubmitting}
-                        >
+                      {adminBranches.map((branch, index) => <Button key={branch.branch_id} type="button" variant={branch.branch_id === branchId ? "default" : "outline"} size="sm" onClick={() => handleBranchSwitch(branch.branch_id, branch.branch_name)} className="text-xs px-2 py-1" disabled={isSubmitting}>
                           {branch.branch_name}
-                        </Button>
-                      ))}
+                        </Button>)}
                     </div>
-                  </div>
-                )}
+                  </div>}
                 
                 {/* Action Buttons - Right Side */}
                 <div className="flex gap-2">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handleClose} 
-                    className="border-gray-200 rounded-md" 
-                    disabled={isSubmitting}
-                  >
+                  <Button type="button" variant="outline" onClick={handleClose} className="border-gray-200 rounded-md" disabled={isSubmitting}>
                     Cancel
                   </Button>
-                  <Button 
-                    type="submit" 
-                    className={`font-medium rounded-md ${
-                      hasUnsavedChanges() 
-                        ? 'bg-orange-600 hover:bg-orange-700' 
-                        : 'bg-blue-600 hover:bg-blue-700'
-                    } text-white`}
-                    disabled={isSubmitting || isLoadingPermissions}
-                  >
-                    {isSubmitting ? (
-                      <>
+                  <Button type="submit" className={`font-medium rounded-md ${hasUnsavedChanges() ? 'bg-orange-600 hover:bg-orange-700' : 'bg-blue-600 hover:bg-blue-700'} text-white`} disabled={isSubmitting || isLoadingPermissions}>
+                    {isSubmitting ? <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
                         Saving...
-                      </>
-                    ) : (
-                      <>
+                      </> : <>
                         Save Changes
                         {hasUnsavedChanges() && <span className="ml-1">*</span>}
-                      </>
-                    )}
+                      </>}
                   </Button>
                 </div>
               </div>
@@ -408,10 +354,7 @@ export function EditAdminPermissionsDialog({
             <AlertDialogCancel onClick={() => setShowUnsavedChangesAlert(false)}>
               Continue Editing
             </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleForceClose}
-              className="bg-red-600 hover:bg-red-700"
-            >
+            <AlertDialogAction onClick={handleForceClose} className="bg-red-600 hover:bg-red-700">
               Discard Changes
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -435,30 +378,17 @@ export function EditAdminPermissionsDialog({
             <AlertDialogCancel onClick={handleCancelBranchSwitch}>
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleSaveAndSwitchBranch}
-              className="bg-blue-600 hover:bg-blue-700"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
+            <AlertDialogAction onClick={handleSaveAndSwitchBranch} className="bg-blue-600 hover:bg-blue-700" disabled={isSubmitting}>
+              {isSubmitting ? <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
-                </>
-              ) : (
-                'Save Changes & Switch Branch'
-              )}
+                </> : 'Save Changes & Switch Branch'}
             </AlertDialogAction>
-            <AlertDialogAction 
-              onClick={handleConfirmBranchSwitch}
-              className="bg-orange-600 hover:bg-orange-700"
-              disabled={isSubmitting}
-            >
+            <AlertDialogAction onClick={handleConfirmBranchSwitch} className="bg-orange-600 hover:bg-orange-700" disabled={isSubmitting}>
               Switch Branch (Discard Changes)
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
-  );
+    </>;
 }
