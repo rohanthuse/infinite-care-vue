@@ -2,9 +2,14 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CustomButton } from '@/components/ui/CustomButton';
 import { ArrowLeft, Users, Plus, Shield, UserCheck, UserX } from 'lucide-react';
+import { useSystemUserStats } from '@/hooks/useSystemUsers';
+import { AddSystemUserDialog } from '@/components/system/AddSystemUserDialog';
+import { SystemUsersTable } from '@/components/system/SystemUsersTable';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SystemUsers() {
   const navigate = useNavigate();
+  const { data: stats, isLoading: statsLoading } = useSystemUserStats();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -34,10 +39,7 @@ export default function SystemUsers() {
               </div>
             </div>
             
-            <CustomButton className="flex items-center space-x-2">
-              <Plus className="h-4 w-4" />
-              <span>Add User</span>
-            </CustomButton>
+            <AddSystemUserDialog />
           </div>
         </div>
       </header>
@@ -50,7 +52,11 @@ export default function SystemUsers() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Users</p>
-                <p className="text-2xl font-bold text-foreground">5</p>
+                {statsLoading ? (
+                  <Skeleton className="h-8 w-8" />
+                ) : (
+                  <p className="text-2xl font-bold text-foreground">{stats?.total || 0}</p>
+                )}
               </div>
               <Users className="h-8 w-8 text-primary" />
             </div>
@@ -60,7 +66,11 @@ export default function SystemUsers() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Super Admins</p>
-                <p className="text-2xl font-bold text-foreground">2</p>
+                {statsLoading ? (
+                  <Skeleton className="h-8 w-8" />
+                ) : (
+                  <p className="text-2xl font-bold text-foreground">{stats?.superAdmins || 0}</p>
+                )}
               </div>
               <Shield className="h-8 w-8 text-primary" />
             </div>
@@ -70,7 +80,11 @@ export default function SystemUsers() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Active Users</p>
-                <p className="text-2xl font-bold text-foreground">4</p>
+                {statsLoading ? (
+                  <Skeleton className="h-8 w-8" />
+                ) : (
+                  <p className="text-2xl font-bold text-foreground">{stats?.active || 0}</p>
+                )}
               </div>
               <UserCheck className="h-8 w-8 text-primary" />
             </div>
@@ -80,7 +94,11 @@ export default function SystemUsers() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Inactive Users</p>
-                <p className="text-2xl font-bold text-foreground">1</p>
+                {statsLoading ? (
+                  <Skeleton className="h-8 w-8" />
+                ) : (
+                  <p className="text-2xl font-bold text-foreground">{stats?.inactive || 0}</p>
+                )}
               </div>
               <UserX className="h-8 w-8 text-primary" />
             </div>
@@ -95,17 +113,7 @@ export default function SystemUsers() {
           </div>
           
           <div className="p-6">
-            <div className="text-center py-12">
-              <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">User Management</h3>
-              <p className="text-muted-foreground mb-4">
-                This feature will allow you to manage system users, assign roles, and control access permissions.
-              </p>
-              <CustomButton>
-                <Plus className="h-4 w-4 mr-2" />
-                Add System User
-              </CustomButton>
-            </div>
+            <SystemUsersTable />
           </div>
         </div>
       </main>
