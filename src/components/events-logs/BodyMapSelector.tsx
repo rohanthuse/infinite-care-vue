@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,15 +41,38 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
   const [loadedImages, setLoadedImages] = useState<Record<string, LoadedImageState>>({});
   const [debugInfo, setDebugInfo] = useState<string>('');
 
-  const injuryTypes = [
-    { value: 'bruise', label: 'Bruise', color: '#8B5CF6' },
-    { value: 'cut', label: 'Cut', color: '#EF4444' },
-    { value: 'burn', label: 'Burn', color: '#F97316' },
-    { value: 'swelling', label: 'Swelling', color: '#06B6D4' },
-    { value: 'rash', label: 'Rash', color: '#EC4899' },
-    { value: 'pain', label: 'Pain', color: '#FBBF24' },
-    { value: 'other', label: 'Other', color: '#6B7280' },
-  ];
+  // Fetch body map points from database
+  const { data: bodyMapPoints = [], isLoading: isLoadingPoints } = useQuery({
+    queryKey: ['body_map_points'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('body_map_points')
+        .select('*')
+        .eq('status', 'Active')
+        .order('letter');
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Transform body map points to injury types format
+  const injuryTypes = bodyMapPoints.length > 0 
+    ? bodyMapPoints.map(point => ({
+        value: point.title.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+        label: `${point.letter} - ${point.title}`,
+        color: point.color,
+      }))
+    : [
+        // Fallback injury types if database is empty
+        { value: 'bruise', label: 'Bruise', color: '#8B5CF6' },
+        { value: 'cut', label: 'Cut', color: '#EF4444' },
+        { value: 'burn', label: 'Burn', color: '#F97316' },
+        { value: 'swelling', label: 'Swelling', color: '#06B6D4' },
+        { value: 'rash', label: 'Rash', color: '#EC4899' },
+        { value: 'pain', label: 'Pain', color: '#FBBF24' },
+        { value: 'other', label: 'Other', color: '#6B7280' },
+      ];
 
   const severityLevels = [
     { value: 'minor', label: 'Minor' },
@@ -162,15 +187,16 @@ export function BodyMapSelector({ selectedPoints, onPointsChange }: BodyMapSelec
     const x = ((event.clientX - rect.left) / rect.width) * 100;
     const y = ((event.clientY - rect.top) / rect.height) * 100;
 
+    const defaultType = injuryTypes[0];
     const newPoint: BodyMapPoint = {
       id: `point-${Date.now()}`,
       x,
       y,
       side: currentSide,
-      type: 'bruise',
+      type: defaultType.value,
       severity: 'minor',
       description: '',
-      color: '#8B5CF6',
+      color: defaultType.color,
     };
 
     setSelectedPoint(newPoint);

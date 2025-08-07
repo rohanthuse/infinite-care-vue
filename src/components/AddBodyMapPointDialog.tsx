@@ -37,6 +37,22 @@ export function AddBodyMapPointDialog() {
     { value: "#ff8000", label: "Orange" },
     { value: "#8000ff", label: "Purple" },
     { value: "#ffff00", label: "Yellow" },
+    { value: "#800000", label: "Maroon" },
+    { value: "#000080", label: "Navy" },
+    { value: "#008080", label: "Teal" },
+    { value: "#32cd32", label: "Lime" },
+    { value: "#808000", label: "Olive" },
+    { value: "#c0c0c0", label: "Silver" },
+    { value: "#808080", label: "Gray" },
+    { value: "#000000", label: "Black" },
+    { value: "#ffffff", label: "White" },
+    { value: "#ff7f50", label: "Coral" },
+    { value: "#fa8072", label: "Salmon" },
+    { value: "#ffd700", label: "Gold" },
+    { value: "#da70d6", label: "Orchid" },
+    { value: "#40e0d0", label: "Turquoise" },
+    { value: "#ee82ee", label: "Violet" },
+    { value: "#98fb98", label: "Pale Green" },
   ];
 
   const { mutate: addBodyMapPoint, isPending } = useMutation({
@@ -154,8 +170,8 @@ export function AddBodyMapPointDialog() {
                       <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-64 p-0" align="start">
-                    <div className="grid grid-cols-2 gap-2 p-2">
+                  <PopoverContent className="w-80 p-0" align="start">
+                    <div className="grid grid-cols-3 gap-2 p-2">
                       {colors.map((colorOption) => (
                         <Button
                           key={colorOption.value}
