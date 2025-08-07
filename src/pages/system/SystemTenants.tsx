@@ -93,12 +93,8 @@ export default function SystemTenants() {
       <DashboardHeader />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header Section */}
-        <div className="mb-8">
-          <div className="mb-4">
-            <h1 className="text-2xl font-bold text-foreground">Tenant Organizations</h1>
-            <p className="text-muted-foreground">Manage and monitor all tenant organizations</p>
-          </div>
+        {/* Back Navigation */}
+        <div className="mb-6">
           <Button
             variant="outline"
             size="sm"
