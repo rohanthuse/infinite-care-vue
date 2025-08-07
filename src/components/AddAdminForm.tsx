@@ -21,28 +21,28 @@ import { toast } from "sonner";
 import { Loader2, User, Shield, Building2 } from "lucide-react";
 
 const initialPermissions = {
-  system: true,
-  finance: true,
-  under_review_care_plan: true,
-  confirmed_care_plan: true,
+  dashboard: true,
+  bookings: true,
+  clients: true,
+  carers: true,
   reviews: true,
+  communication: true,
+  medication: true,
+  finance: true,
+  workflow: true,
+  key_parameters: true,
+  care_plan: true,
+  under_review_care_plan: true,
+  agreements: true,
+  events_logs: true,
+  attendance: true,
+  form_builder: true,
+  documents: true,
+  notifications: true,
+  library: true,
   third_party: true,
-  report_accounting: true,
-  report_total_working_hours: true,
-  report_staff: true,
-  report_client: true,
-  report_service: true,
-  accounting_extra_time: true,
-  accounting_expense: true,
-  accounting_travel: true,
-  accounting_invoices: true,
-  accounting_gross_payslip: true,
-  accounting_travel_management: true,
-  accounting_client_rate: true,
-  accounting_authority_rate: true,
-  accounting_staff_rate: true,
-  accounting_rate_management: true,
-  accounting_staff_bank_detail: true,
+  reports: true,
+  system: true,
 };
 
 type Permissions = typeof initialPermissions;
@@ -401,13 +401,13 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-lg border">
                       <div>
-                        <Label htmlFor="confirmed_care_plan" className="font-medium">Confirmed Care Plan</Label>
-                        <p className="text-sm text-muted-foreground">Access to confirmed care plans</p>
+                        <Label htmlFor="care_plan" className="font-medium">Care Plan</Label>
+                        <p className="text-sm text-muted-foreground">Access to care plans</p>
                       </div>
                       <Switch
-                        id="confirmed_care_plan"
-                        checked={permissions.confirmed_care_plan}
-                        onCheckedChange={(checked) => handlePermissionChange('confirmed_care_plan', checked)}
+                        id="care_plan"
+                        checked={permissions.care_plan}
+                        onCheckedChange={(checked) => handlePermissionChange('care_plan', checked)}
                       />
                     </div>
                   </div>

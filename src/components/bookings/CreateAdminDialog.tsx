@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateAdmin } from "@/data/hooks/useCreateAdmin";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface CreateAdminDialogProps {
@@ -48,7 +49,47 @@ export const CreateAdminDialog: React.FC<CreateAdminDialogProps> = ({
         branch_ids: [branchId],
       },
       {
-        onSuccess: () => {
+        onSuccess: async (adminResult) => {
+          // Create default permissions for the new admin
+          if (adminResult?.user?.id) {
+            try {
+              const { error: permissionsError } = await supabase
+                .from('admin_permissions')
+                .insert({
+                  admin_id: adminResult.user.id,
+                  branch_id: branchId,
+                  dashboard: true,
+                  bookings: true,
+                  clients: true,
+                  carers: true,
+                  reviews: true,
+                  communication: true,
+                  medication: true,
+                  finance: true,
+                  workflow: true,
+                  key_parameters: true,
+                  care_plan: true,
+                  under_review_care_plan: true,
+                  agreements: true,
+                  events_logs: true,
+                  attendance: true,
+                  form_builder: true,
+                  documents: true,
+                  notifications: true,
+                  library: true,
+                  third_party: true,
+                  reports: true,
+                  system: true,
+                });
+
+              if (permissionsError) {
+                console.error("Error creating admin permissions:", permissionsError);
+              }
+            } catch (error) {
+              console.error("Error setting up permissions:", error);
+            }
+          }
+          
           toast.success("Admin user created successfully!");
           setFormData({ email: "", first_name: "", last_name: "", password: "" });
           onOpenChange(false);

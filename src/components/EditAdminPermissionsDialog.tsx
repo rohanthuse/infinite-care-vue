@@ -19,28 +19,28 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const initialPermissions = {
-  system: true,
-  finance: true,
-  under_review_care_plan: true,
-  confirmed_care_plan: true,
+  dashboard: true,
+  bookings: true,
+  clients: true,
+  carers: true,
   reviews: true,
+  communication: true,
+  medication: true,
+  finance: true,
+  workflow: true,
+  key_parameters: true,
+  care_plan: true,
+  under_review_care_plan: true,
+  agreements: true,
+  events_logs: true,
+  attendance: true,
+  form_builder: true,
+  documents: true,
+  notifications: true,
+  library: true,
   third_party: true,
-  report_accounting: true,
-  report_total_working_hours: true,
-  report_staff: true,
-  report_client: true,
-  report_service: true,
-  accounting_extra_time: true,
-  accounting_expense: true,
-  accounting_travel: true,
-  accounting_invoices: true,
-  accounting_gross_payslip: true,
-  accounting_travel_management: true,
-  accounting_client_rate: true,
-  accounting_authority_rate: true,
-  accounting_staff_rate: true,
-  accounting_rate_management: true,
-  accounting_staff_bank_detail: true,
+  reports: true,
+  system: true,
 };
 
 type Permissions = typeof initialPermissions;
@@ -195,67 +195,53 @@ export function EditAdminPermissionsDialog({ isOpen, onClose, adminId, branchId,
                 </div>
               ) : (
                 <>
-                  {/* Branch Settings Section */}
+                  {/* Dashboard Navigation */}
                   <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
-                    <h3 className="font-semibold text-gray-800 border-b pb-2">Branch Settings</h3>
-                    <div className="space-y-4">
-                      {renderPermissionSwitch('system', 'System')}
+                    <h3 className="font-semibold text-gray-800 border-b pb-2">Core Modules</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                      {renderPermissionSwitch('dashboard', 'Dashboard')}
+                      {renderPermissionSwitch('bookings', 'Bookings')}
+                      {renderPermissionSwitch('clients', 'Clients')}
+                      {renderPermissionSwitch('carers', 'Carers')}
+                      {renderPermissionSwitch('reviews', 'Reviews')}
+                      {renderPermissionSwitch('communication', 'Communication')}
+                      {renderPermissionSwitch('medication', 'Medication')}
                       {renderPermissionSwitch('finance', 'Finance')}
                     </div>
                   </div>
 
-                  {/* Care Plan Section */}
+                  {/* Workflow & Care Plans */}
                   <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
-                    <h3 className="font-semibold text-gray-800 border-b pb-2">Care Plan</h3>
-                    <div className="space-y-4">
+                    <h3 className="font-semibold text-gray-800 border-b pb-2">Workflow & Care Plans</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                      {renderPermissionSwitch('workflow', 'Workflow')}
+                      {renderPermissionSwitch('key_parameters', 'Key Parameters')}
+                      {renderPermissionSwitch('care_plan', 'Care Plan')}
                       {renderPermissionSwitch('under_review_care_plan', 'Under Review Care Plan')}
-                      {renderPermissionSwitch('confirmed_care_plan', 'Confirmed Care Plan')}
                     </div>
                   </div>
 
-                  {/* Reviews & Third Party Section */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
-                      <h3 className="font-semibold text-gray-800 border-b pb-2">Reviews</h3>
-                      <div className="space-y-4">
-                        {renderPermissionSwitch('reviews', 'Reviews')}
-                      </div>
-                    </div>
-                    <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
-                      <h3 className="font-semibold text-gray-800 border-b pb-2">Third Party</h3>
-                      <div className="space-y-4">
-                        {renderPermissionSwitch('third_party', 'Third Party')}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Branch Report Section */}
+                  {/* Administration */}
                   <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
-                    <h3 className="font-semibold text-gray-800 border-b pb-2">Branch Report</h3>
+                    <h3 className="font-semibold text-gray-800 border-b pb-2">Administration</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                      {renderPermissionSwitch('report_accounting', 'Accounting')}
-                      {renderPermissionSwitch('report_total_working_hours', 'Total Working Hours')}
-                      {renderPermissionSwitch('report_staff', 'Staff')}
-                      {renderPermissionSwitch('report_client', 'Client')}
-                      {renderPermissionSwitch('report_service', 'Service')}
+                      {renderPermissionSwitch('agreements', 'Agreements')}
+                      {renderPermissionSwitch('events_logs', 'Events Logs')}
+                      {renderPermissionSwitch('attendance', 'Attendance')}
+                      {renderPermissionSwitch('system', 'System')}
                     </div>
                   </div>
 
-                  {/* Accounting Section */}
+                  {/* Resources */}
                   <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
-                    <h3 className="font-semibold text-gray-800 border-b pb-2">Accounting</h3>
+                    <h3 className="font-semibold text-gray-800 border-b pb-2">Resources</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                      {renderPermissionSwitch('accounting_extra_time', 'Extra Time')}
-                      {renderPermissionSwitch('accounting_expense', 'Expense')}
-                      {renderPermissionSwitch('accounting_travel', 'Travel')}
-                      {renderPermissionSwitch('accounting_invoices', 'Invoices')}
-                      {renderPermissionSwitch('accounting_gross_payslip', 'Gross Payslip')}
-                      {renderPermissionSwitch('accounting_travel_management', 'Travel Management')}
-                      {renderPermissionSwitch('accounting_client_rate', 'Client Rate')}
-                      {renderPermissionSwitch('accounting_authority_rate', 'Authority Rate')}
-                      {renderPermissionSwitch('accounting_staff_rate', 'Staff Rate')}
-                      {renderPermissionSwitch('accounting_rate_management', 'Rate Management')}
-                      {renderPermissionSwitch('accounting_staff_bank_detail', "Staff's Bank Detail")}
+                      {renderPermissionSwitch('form_builder', 'Form Builder')}
+                      {renderPermissionSwitch('documents', 'Documents')}
+                      {renderPermissionSwitch('notifications', 'Notifications')}
+                      {renderPermissionSwitch('library', 'Library')}
+                      {renderPermissionSwitch('third_party', 'Third Party')}
+                      {renderPermissionSwitch('reports', 'Reports')}
                     </div>
                   </div>
                 </>
