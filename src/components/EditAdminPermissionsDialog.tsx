@@ -58,6 +58,7 @@ interface EditAdminPermissionsDialogProps {
   branchName?: string;
   adminName: string;
   adminBranches?: AdminBranch[];
+  onBranchSwitch?: (branchId: string, branchName: string) => void;
 }
 
 export function EditAdminPermissionsDialog({ 
@@ -67,13 +68,15 @@ export function EditAdminPermissionsDialog({
   branchId, 
   branchName, 
   adminName, 
-  adminBranches = [] 
+  adminBranches = [],
+  onBranchSwitch 
 }: EditAdminPermissionsDialogProps) {
   const [permissions, setPermissions] = useState<Permissions>(initialPermissions);
   const [originalPermissions, setOriginalPermissions] = useState<Permissions>(initialPermissions);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showUnsavedChangesAlert, setShowUnsavedChangesAlert] = useState(false);
-  const [currentBranchIndex, setCurrentBranchIndex] = useState(0);
+  const [showBranchSwitchAlert, setShowBranchSwitchAlert] = useState(false);
+  const [pendingSwitchBranch, setPendingSwitchBranch] = useState<{ branchId: string; branchName: string } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -141,6 +144,37 @@ export function EditAdminPermissionsDialog({
     // Reset to original permissions
     setPermissions(originalPermissions);
     onClose();
+  };
+
+  const handleBranchSwitch = (targetBranchId: string, targetBranchName: string) => {
+    if (hasUnsavedChanges()) {
+      setPendingSwitchBranch({ branchId: targetBranchId, branchName: targetBranchName });
+      setShowBranchSwitchAlert(true);
+    } else {
+      switchToBranch(targetBranchId, targetBranchName);
+    }
+  };
+
+  const switchToBranch = (targetBranchId: string, targetBranchName: string) => {
+    if (onBranchSwitch) {
+      onBranchSwitch(targetBranchId, targetBranchName);
+    }
+  };
+
+  const handleConfirmBranchSwitch = () => {
+    if (pendingSwitchBranch) {
+      setShowBranchSwitchAlert(false);
+      switchToBranch(pendingSwitchBranch.branchId, pendingSwitchBranch.branchName);
+      setPendingSwitchBranch(null);
+      // Reset permissions to avoid confusion
+      setPermissions(initialPermissions);
+      setOriginalPermissions(initialPermissions);
+    }
+  };
+
+  const handleCancelBranchSwitch = () => {
+    setShowBranchSwitchAlert(false);
+    setPendingSwitchBranch(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -295,11 +329,9 @@ export function EditAdminPermissionsDialog({
                           type="button"
                           variant={branch.branch_id === branchId ? "default" : "outline"}
                           size="sm"
-                          onClick={() => {
-                            // Here you would trigger branch switch logic
-                            console.log('Switch to branch:', branch);
-                          }}
+                          onClick={() => handleBranchSwitch(branch.branch_id, branch.branch_name)}
                           className="text-xs px-2 py-1"
+                          disabled={isSubmitting}
                         >
                           {branch.branch_name}
                         </Button>
@@ -369,6 +401,33 @@ export function EditAdminPermissionsDialog({
               className="bg-red-600 hover:bg-red-700"
             >
               Discard Changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Branch Switch Alert Dialog */}
+      <AlertDialog open={showBranchSwitchAlert} onOpenChange={setShowBranchSwitchAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center">
+              <AlertTriangle className="h-5 w-5 mr-2 text-orange-600" />
+              Switch Branch with Unsaved Changes
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes for <strong>{adminName}</strong> on <strong>{currentBranch.branch_name}</strong>. 
+              Switching to <strong>{pendingSwitchBranch?.branchName}</strong> will discard these changes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelBranchSwitch}>
+              Cancel Switch
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmBranchSwitch}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              Switch Branch (Discard Changes)
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

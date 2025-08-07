@@ -27,7 +27,7 @@ export function BranchSelectionDialog({
   
   const handleBranchClick = (branchId: string, branchName: string) => {
     onBranchSelect(branchId, branchName);
-    onClose();
+    // Don't auto-close - let parent component handle the dialog flow
   };
 
   return (

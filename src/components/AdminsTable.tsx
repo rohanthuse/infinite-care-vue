@@ -412,33 +412,38 @@ export const AdminsTable = () => {
             ? `${selectedAdmin.first_name} ${selectedAdmin.last_name}` 
             : selectedAdmin.email}
           branches={selectedAdmin.branches}
-          onBranchSelect={(branchId, branchName) => {
-            setSelectedBranchId(branchId);
-            setSelectedBranchName(branchName);
-            setIsPermissionsDialogOpen(true);
-          }}
+           onBranchSelect={(branchId, branchName) => {
+             setSelectedBranchId(branchId);
+             setSelectedBranchName(branchName);
+             setIsBranchSelectionOpen(false); // Close branch selection
+             setIsPermissionsDialogOpen(true); // Open permissions dialog
+           }}
         />
       )}
 
       {/* Edit Permissions Dialog */}
       {selectedAdmin && selectedBranchId && (
-        <EditAdminPermissionsDialog
-          isOpen={isPermissionsDialogOpen}
-          onClose={() => {
-            setIsPermissionsDialogOpen(false);
-            setSelectedAdmin(null);
-            setSelectedBranchId("");
-            setSelectedBranchName("");
-            refetch(); // Refetch data when dialog closes
-          }}
-          adminId={selectedAdmin.id}
-          branchId={selectedBranchId}
-          branchName={selectedBranchName}
-          adminName={selectedAdmin.first_name && selectedAdmin.last_name 
-            ? `${selectedAdmin.first_name} ${selectedAdmin.last_name}` 
-            : selectedAdmin.email}
-          adminBranches={selectedAdmin.branches}
-        />
+         <EditAdminPermissionsDialog
+           isOpen={isPermissionsDialogOpen}
+           onClose={() => {
+             setIsPermissionsDialogOpen(false);
+             setSelectedAdmin(null);
+             setSelectedBranchId("");
+             setSelectedBranchName("");
+             refetch(); // Refetch data when dialog closes
+           }}
+           adminId={selectedAdmin.id}
+           branchId={selectedBranchId}
+           branchName={selectedBranchName}
+           adminName={selectedAdmin.first_name && selectedAdmin.last_name 
+             ? `${selectedAdmin.first_name} ${selectedAdmin.last_name}` 
+             : selectedAdmin.email}
+           adminBranches={selectedAdmin.branches}
+           onBranchSwitch={(newBranchId, newBranchName) => {
+             setSelectedBranchId(newBranchId);
+             setSelectedBranchName(newBranchName);
+           }}
+         />
       )}
     </div>
   );
