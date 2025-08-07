@@ -51,20 +51,37 @@ export type Database = {
           accounting_travel: boolean
           accounting_travel_management: boolean
           admin_id: string
+          agreements: boolean | null
+          attendance: boolean | null
+          bookings: boolean | null
           branch_id: string
+          care_plan: boolean | null
+          carers: boolean | null
+          clients: boolean | null
+          communication: boolean | null
           confirmed_care_plan: boolean
           created_at: string
+          dashboard: boolean | null
+          documents: boolean | null
+          events_logs: boolean | null
           finance: boolean
+          form_builder: boolean | null
           id: string
+          key_parameters: boolean | null
+          library: boolean | null
+          medication: boolean | null
+          notifications: boolean | null
           report_accounting: boolean
           report_client: boolean
           report_service: boolean
           report_staff: boolean
           report_total_working_hours: boolean
+          reports: boolean | null
           reviews: boolean
           system: boolean
           third_party: boolean
           under_review_care_plan: boolean
+          workflow: boolean | null
         }
         Insert: {
           accounting_authority_rate?: boolean
@@ -79,20 +96,37 @@ export type Database = {
           accounting_travel?: boolean
           accounting_travel_management?: boolean
           admin_id: string
+          agreements?: boolean | null
+          attendance?: boolean | null
+          bookings?: boolean | null
           branch_id: string
+          care_plan?: boolean | null
+          carers?: boolean | null
+          clients?: boolean | null
+          communication?: boolean | null
           confirmed_care_plan?: boolean
           created_at?: string
+          dashboard?: boolean | null
+          documents?: boolean | null
+          events_logs?: boolean | null
           finance?: boolean
+          form_builder?: boolean | null
           id?: string
+          key_parameters?: boolean | null
+          library?: boolean | null
+          medication?: boolean | null
+          notifications?: boolean | null
           report_accounting?: boolean
           report_client?: boolean
           report_service?: boolean
           report_staff?: boolean
           report_total_working_hours?: boolean
+          reports?: boolean | null
           reviews?: boolean
           system?: boolean
           third_party?: boolean
           under_review_care_plan?: boolean
+          workflow?: boolean | null
         }
         Update: {
           accounting_authority_rate?: boolean
@@ -107,20 +141,37 @@ export type Database = {
           accounting_travel?: boolean
           accounting_travel_management?: boolean
           admin_id?: string
+          agreements?: boolean | null
+          attendance?: boolean | null
+          bookings?: boolean | null
           branch_id?: string
+          care_plan?: boolean | null
+          carers?: boolean | null
+          clients?: boolean | null
+          communication?: boolean | null
           confirmed_care_plan?: boolean
           created_at?: string
+          dashboard?: boolean | null
+          documents?: boolean | null
+          events_logs?: boolean | null
           finance?: boolean
+          form_builder?: boolean | null
           id?: string
+          key_parameters?: boolean | null
+          library?: boolean | null
+          medication?: boolean | null
+          notifications?: boolean | null
           report_accounting?: boolean
           report_client?: boolean
           report_service?: boolean
           report_staff?: boolean
           report_total_working_hours?: boolean
+          reports?: boolean | null
           reviews?: boolean
           system?: boolean
           third_party?: boolean
           under_review_care_plan?: boolean
+          workflow?: boolean | null
         }
         Relationships: [
           {
