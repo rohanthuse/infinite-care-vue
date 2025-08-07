@@ -39,24 +39,27 @@ export function CreateTenantDialog({ open, onOpenChange }: CreateTenantDialogPro
     mutationFn: async (data: typeof formData) => {
       if (!user) throw new Error('User not authenticated');
 
-      // Create organization
-      const { data: org, error: orgError } = await supabase
-        .from('organizations')
-        .insert({
+      // Call the system edge function to create organization
+      const { data: result, error } = await supabase.functions.invoke('create-system-tenant', {
+        body: {
           name: data.name,
           subdomain: data.subdomain,
-          slug: data.subdomain,
-          contact_email: data.contact_email,
-          contact_phone: data.contact_phone,
+          contactEmail: data.contact_email,
+          contactPhone: data.contact_phone,
           address: data.address,
-          subscription_plan: data.subscription_plan,
-        })
-        .select()
-        .single();
-
-      if (orgError) throw orgError;
-
-      return org;
+          subscriptionPlan: data.subscription_plan
+        }
+      });
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      if (!result?.success) {
+        throw new Error(result?.error || 'Failed to create organization');
+      }
+      
+      return result.data;
     },
     onSuccess: (org) => {
       toast.success(`Organization "${org.name}" created successfully!`);

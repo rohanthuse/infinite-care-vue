@@ -55,3 +55,6 @@ enable_confirmations = false
 
 [functions.send-carer-invitation]
 verify_jwt = false
+
+[functions.create-system-tenant]
+verify_jwt = false

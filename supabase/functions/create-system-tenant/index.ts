@@ -1,0 +1,125 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeaders } from '../_shared/cors.ts'
+
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
+  try {
+    // Create admin client with service role key to bypass RLS
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+
+    const { 
+      name, 
+      subdomain, 
+      contactEmail, 
+      contactPhone, 
+      address, 
+      subscriptionPlan 
+    } = await req.json()
+
+    console.log('Creating organization with data:', { name, subdomain, contactEmail })
+
+    // Validate required fields
+    if (!name || !subdomain || !contactEmail) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Missing required fields: name, subdomain, and contactEmail are required' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Check if subdomain already exists
+    const { data: existingOrg } = await supabaseAdmin
+      .from('organizations')
+      .select('id')
+      .eq('subdomain', subdomain)
+      .single()
+
+    if (existingOrg) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Subdomain already exists' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Create the organization
+    const { data: organization, error: orgError } = await supabaseAdmin
+      .from('organizations')
+      .insert({
+        name,
+        subdomain,
+        slug: subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+        contact_email: contactEmail,
+        contact_phone: contactPhone,
+        address,
+        subscription_plan: subscriptionPlan || 'basic',
+        subscription_status: 'active'
+      })
+      .select()
+      .single()
+
+    if (orgError) {
+      console.error('Error creating organization:', orgError)
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Failed to create organization: ${orgError.message}` 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    console.log('Successfully created organization:', organization.id)
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        data: organization,
+        message: 'Organization created successfully' 
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
+
+  } catch (error) {
+    console.error('Error in create-system-tenant function:', error)
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: `Internal server error: ${error.message}` 
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
+  }
+})
