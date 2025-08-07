@@ -93,7 +93,7 @@ export default function SystemDashboard() {
   ];
 
   const accessibleItems = dashboardItems.filter(item => 
-    item.roles.some(role => hasRole(role))
+    user?.roles && item.roles.some(role => hasRole(role))
   );
 
   return (
@@ -149,14 +149,18 @@ export default function SystemDashboard() {
         <div className="mb-8 p-4 bg-card/50 border border-border/50 rounded-lg">
           <h3 className="text-sm font-medium text-foreground mb-2">Your Roles:</h3>
           <div className="flex flex-wrap gap-2">
-            {user.roles.map((role) => (
-              <span
-                key={role}
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20"
-              >
-                {role.replace('_', ' ').toUpperCase()}
-              </span>
-            ))}
+            {user?.roles && user.roles.length > 0 ? (
+              user.roles.map((role) => (
+                <span
+                  key={role}
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20"
+                >
+                  {role.replace('_', ' ').toUpperCase()}
+                </span>
+              ))
+            ) : (
+              <span className="text-sm text-muted-foreground">No roles assigned</span>
+            )}
           </div>
         </div>
 
@@ -197,7 +201,7 @@ export default function SystemDashboard() {
         <div className="mt-12">
           <h3 className="text-xl font-semibold text-foreground mb-6">Quick Actions</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {hasRole('super_admin') && (
+            {user?.roles && hasRole('super_admin') && (
               <>
                 <CustomButton
                   variant="outline"
