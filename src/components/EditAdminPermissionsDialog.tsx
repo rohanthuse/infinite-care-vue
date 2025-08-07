@@ -177,7 +177,7 @@ export function EditAdminPermissionsDialog({
     setPendingSwitchBranch(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, shouldCloseDialog = true) => {
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -198,7 +198,10 @@ export function EditAdminPermissionsDialog({
       // Update original permissions to reflect saved state
       setOriginalPermissions(permissions);
       queryClient.invalidateQueries({ queryKey: ['adminPermissions', adminId, branchId] });
-      onClose();
+      
+      if (shouldCloseDialog) {
+        onClose();
+      }
     } catch (error: any) {
       toast({
         title: "Update Failed",
@@ -209,14 +212,33 @@ export function EditAdminPermissionsDialog({
       setIsSubmitting(false);
     }
   };
+
+  const handleSaveAndSwitchBranch = async () => {
+    if (pendingSwitchBranch) {
+      try {
+        // Create a mock form event
+        const mockEvent = { preventDefault: () => {} } as React.FormEvent;
+        await handleSubmit(mockEvent, false); // Don't close dialog after saving
+        
+        // Switch to the new branch after successful save
+        setShowBranchSwitchAlert(false);
+        switchToBranch(pendingSwitchBranch.branchId, pendingSwitchBranch.branchName);
+        setPendingSwitchBranch(null);
+      } catch (error) {
+        // Error handling is already done in handleSubmit
+        console.error('Failed to save and switch branch:', error);
+      }
+    }
+  };
   
   const renderPermissionSwitch = (key: keyof Permissions, label: string) => (
-    <div className="flex items-center justify-between">
-      <Label htmlFor={key} className="text-gray-700">{label}</Label>
+    <div className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-white/50 transition-colors">
+      <Label htmlFor={key} className="text-gray-700 text-sm cursor-pointer flex-1">{label}</Label>
       <Switch 
         id={key} 
         checked={permissions[key]} 
         onCheckedChange={(value) => handlePermissionChange(key, value)} 
+        className="ml-2"
       />
     </div>
   );
@@ -263,53 +285,43 @@ export function EditAdminPermissionsDialog({
                 </div>
               ) : (
                 <>
-                  {/* Dashboard Navigation */}
-                  <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
-                    <h3 className="font-semibold text-gray-800 border-b pb-2">Core Modules</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                  {/* Core Features */}
+                  <div className="space-y-4 border rounded-lg p-4 bg-gradient-to-br from-blue-50 to-blue-100/30">
+                    <h3 className="font-semibold text-gray-800 flex items-center text-base">
+                      📊 Core Features
+                    </h3>
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
                       {renderPermissionSwitch('dashboard', 'Dashboard')}
                       {renderPermissionSwitch('bookings', 'Bookings')}
                       {renderPermissionSwitch('clients', 'Clients')}
                       {renderPermissionSwitch('carers', 'Carers')}
-                      {renderPermissionSwitch('reviews', 'Reviews')}
                       {renderPermissionSwitch('communication', 'Communication')}
-                      {renderPermissionSwitch('medication', 'Medication')}
                       {renderPermissionSwitch('finance', 'Finance')}
                     </div>
                   </div>
 
-                  {/* Workflow & Care Plans */}
-                  <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
-                    <h3 className="font-semibold text-gray-800 border-b pb-2">Workflow & Care Plans</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                  {/* Advanced Features */}
+                  <div className="space-y-4 border rounded-lg p-4 bg-gradient-to-br from-green-50 to-green-100/30">
+                    <h3 className="font-semibold text-gray-800 flex items-center text-base">
+                      ⚙️ Advanced Features
+                    </h3>
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
+                      {renderPermissionSwitch('reviews', 'Reviews')}
+                      {renderPermissionSwitch('medication', 'Medication')}
                       {renderPermissionSwitch('workflow', 'Workflow')}
                       {renderPermissionSwitch('key_parameters', 'Key Parameters')}
                       {renderPermissionSwitch('care_plan', 'Care Plan')}
                       {renderPermissionSwitch('under_review_care_plan', 'Under Review Care Plan')}
-                    </div>
-                  </div>
-
-                  {/* Administration */}
-                  <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
-                    <h3 className="font-semibold text-gray-800 border-b pb-2">Administration</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                       {renderPermissionSwitch('agreements', 'Agreements')}
                       {renderPermissionSwitch('events_logs', 'Events Logs')}
                       {renderPermissionSwitch('attendance', 'Attendance')}
-                      {renderPermissionSwitch('system', 'System')}
-                    </div>
-                  </div>
-
-                  {/* Resources */}
-                  <div className="space-y-4 border rounded-lg p-4 bg-gray-50/50">
-                    <h3 className="font-semibold text-gray-800 border-b pb-2">Resources</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                       {renderPermissionSwitch('form_builder', 'Form Builder')}
                       {renderPermissionSwitch('documents', 'Documents')}
                       {renderPermissionSwitch('notifications', 'Notifications')}
                       {renderPermissionSwitch('library', 'Library')}
                       {renderPermissionSwitch('third_party', 'Third Party')}
                       {renderPermissionSwitch('reports', 'Reports')}
+                      {renderPermissionSwitch('system', 'System')}
                     </div>
                   </div>
                 </>
@@ -419,13 +431,28 @@ export function EditAdminPermissionsDialog({
               Switching to <strong>{pendingSwitchBranch?.branchName}</strong> will discard these changes.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex gap-2">
             <AlertDialogCancel onClick={handleCancelBranchSwitch}>
-              Cancel Switch
+              Cancel
             </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleSaveAndSwitchBranch}
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes & Switch Branch'
+              )}
+            </AlertDialogAction>
             <AlertDialogAction 
               onClick={handleConfirmBranchSwitch}
               className="bg-orange-600 hover:bg-orange-700"
+              disabled={isSubmitting}
             >
               Switch Branch (Discard Changes)
             </AlertDialogAction>
