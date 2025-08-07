@@ -82,7 +82,7 @@ export const useBranchAdminAccess = (targetBranchId?: string) => {
         throw new Error('Not a branch admin');
       }
 
-      // Get the admin's branch assignment
+      // Get the admin's branch assignments (can be multiple)
       const { data: adminBranchData, error } = await supabase
         .from('admin_branches')
         .select(`
@@ -93,42 +93,68 @@ export const useBranchAdminAccess = (targetBranchId?: string) => {
             status
           )
         `)
-        .eq('admin_id', session.user.id)
-        .single();
+        .eq('admin_id', session.user.id);
 
       if (error) {
         console.error('[useBranchAdminAccess] Error fetching branch access:', error);
-        
-        // If no branch assignment found, return specific error
-        if (error.code === 'PGRST116') {
-          throw new Error('No branch assignment found for this admin');
-        }
-        
         throw new Error('Unable to fetch branch access');
       }
 
-      if (!adminBranchData?.branches) {
-        console.error('[useBranchAdminAccess] No branch assignment found');
-        throw new Error('No branch assignment found');
+      if (!adminBranchData || adminBranchData.length === 0) {
+        console.error('[useBranchAdminAccess] No branch assignments found');
+        throw new Error('No branch assignment found for this admin');
       }
 
-      const branch = adminBranchData.branches;
-      const canAccess = !targetBranchId || branch.id === targetBranchId;
+      // If a specific branch is requested, check if admin has access to it
+      if (targetBranchId) {
+        const targetBranch = adminBranchData.find(assignment => 
+          assignment.branches?.id === targetBranchId
+        );
+        
+        if (!targetBranch?.branches) {
+          console.error('[useBranchAdminAccess] Admin does not have access to target branch:', targetBranchId);
+          throw new Error('You do not have access to this branch');
+        }
 
-      console.log('[useBranchAdminAccess] Branch admin access result:', {
-        assignedBranch: branch.id,
-        targetBranch: targetBranchId,
-        canAccess
-      });
+        const branch = targetBranch.branches;
+        
+        console.log('[useBranchAdminAccess] Branch admin access result:', {
+          assignedBranch: branch.id,
+          targetBranch: targetBranchId,
+          canAccess: true
+        });
 
-      return {
-        branchId: branch.id,
-        branchName: branch.name,
-        branchStatus: branch.status,
-        canAccess,
-        isLoading: false,
-        error: null
-      };
+        return {
+          branchId: branch.id,
+          branchName: branch.name,
+          branchStatus: branch.status,
+          canAccess: true,
+          isLoading: false,
+          error: null
+        };
+      } else {
+        // No specific branch requested, return the first assigned branch
+        const firstAssignment = adminBranchData[0];
+        if (!firstAssignment?.branches) {
+          throw new Error('Invalid branch assignment data');
+        }
+
+        const branch = firstAssignment.branches;
+        
+        console.log('[useBranchAdminAccess] Branch admin access result (first branch):', {
+          assignedBranch: branch.id,
+          canAccess: true
+        });
+
+        return {
+          branchId: branch.id,
+          branchName: branch.name,
+          branchStatus: branch.status,
+          canAccess: true,
+          isLoading: false,
+          error: null
+        };
+      }
     },
     enabled: !!session?.user?.id,
     retry: (failureCount, error) => {
