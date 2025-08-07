@@ -1,8 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Building, Plus, Clock, Activity, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Building, Plus, Clock, Activity } from 'lucide-react';
 
 interface SystemTenantsInfoHeaderProps {
   totalTenants: number;
@@ -13,21 +12,10 @@ export const SystemTenantsInfoHeader = ({
   totalTenants,
   onAddTenant 
 }: SystemTenantsInfoHeaderProps) => {
-  const navigate = useNavigate();
-
   return (
-      <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 mb-8">
+    <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 mb-8">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <div className="flex items-start gap-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/system-dashboard')}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Button>
           <div className="p-3 bg-primary/10 rounded-lg">
             <Building className="h-8 w-8 text-primary" />
           </div>
