@@ -22,14 +22,14 @@ export default function SystemTenants() {
           id,
           subscription_plan,
           created_at,
-          organization_members!inner(user_id, status)
+          organization_members(user_id, status)
         `);
 
       if (error) throw error;
 
       const totalTenants = orgs.length;
       const activeUsers = orgs.reduce((sum, org) => 
-        sum + org.organization_members.filter(m => m.status === 'active').length, 0
+        sum + (org.organization_members || []).filter(m => m.status === 'active').length, 0
       );
       
       // Calculate growth (placeholder logic)
@@ -70,7 +70,7 @@ export default function SystemTenants() {
           subscription_plan,
           subscription_status,
           created_at,
-          organization_members!inner(user_id, status)
+          organization_members(user_id, status)
         `)
         .order('created_at', { ascending: false });
 
@@ -78,7 +78,7 @@ export default function SystemTenants() {
 
       return data.map(org => ({
         ...org,
-        activeUsers: org.organization_members.filter(m => m.status === 'active').length
+        activeUsers: (org.organization_members || []).filter(m => m.status === 'active').length
       }));
     },
     enabled: !!user
