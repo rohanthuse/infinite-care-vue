@@ -16,6 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { AddAdminForm } from "./AddAdminForm";
 import { EditAdminPermissionsDialog } from "./EditAdminPermissionsDialog";
+import { BranchSelectionDialog } from "./BranchSelectionDialog";
 import { Search, Plus, Settings, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -50,7 +51,10 @@ export const AdminsTable = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<AdminData | null>(null);
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("");
+  const [selectedBranchName, setSelectedBranchName] = useState<string>("");
   const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
+  const [isBranchSelectionOpen, setIsBranchSelectionOpen] = useState(false);
 
   // Get current user authentication state with enhanced error handling
   const { data: currentUser, isLoading: authLoading, error: authError } = useUserRole();
@@ -340,7 +344,15 @@ export const AdminsTable = () => {
                         size="sm"
                         onClick={() => {
                           setSelectedAdmin(admin);
-                          setIsPermissionsDialogOpen(true);
+                          // Check if admin has multiple branches
+                          if (admin.branches.length > 1) {
+                            setIsBranchSelectionOpen(true);
+                          } else {
+                            // Single branch - go directly to permissions
+                            setSelectedBranchId(admin.branches[0]?.branch_id || '');
+                            setSelectedBranchName(admin.branches[0]?.branch_name || '');
+                            setIsPermissionsDialogOpen(true);
+                          }
                         }}
                       >
                         <Settings className="h-4 w-4" />
@@ -388,20 +400,44 @@ export const AdminsTable = () => {
         }}
       />
 
-      {/* Edit Permissions Dialog */}
+      {/* Branch Selection Dialog */}
       {selectedAdmin && (
+        <BranchSelectionDialog
+          isOpen={isBranchSelectionOpen}
+          onClose={() => {
+            setIsBranchSelectionOpen(false);
+            setSelectedAdmin(null);
+          }}
+          adminName={selectedAdmin.first_name && selectedAdmin.last_name 
+            ? `${selectedAdmin.first_name} ${selectedAdmin.last_name}` 
+            : selectedAdmin.email}
+          branches={selectedAdmin.branches}
+          onBranchSelect={(branchId, branchName) => {
+            setSelectedBranchId(branchId);
+            setSelectedBranchName(branchName);
+            setIsPermissionsDialogOpen(true);
+          }}
+        />
+      )}
+
+      {/* Edit Permissions Dialog */}
+      {selectedAdmin && selectedBranchId && (
         <EditAdminPermissionsDialog
           isOpen={isPermissionsDialogOpen}
           onClose={() => {
             setIsPermissionsDialogOpen(false);
             setSelectedAdmin(null);
+            setSelectedBranchId("");
+            setSelectedBranchName("");
             refetch(); // Refetch data when dialog closes
           }}
           adminId={selectedAdmin.id}
-          branchId={selectedAdmin.branches[0]?.branch_id || ''}
+          branchId={selectedBranchId}
+          branchName={selectedBranchName}
           adminName={selectedAdmin.first_name && selectedAdmin.last_name 
             ? `${selectedAdmin.first_name} ${selectedAdmin.last_name}` 
             : selectedAdmin.email}
+          adminBranches={selectedAdmin.branches}
         />
       )}
     </div>
