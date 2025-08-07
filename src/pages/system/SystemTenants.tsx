@@ -17,36 +17,48 @@ export default function SystemTenants() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   // Fetch tenant statistics
-  const { data: stats } = useQuery({
+  const { data: stats, error: statsError } = useQuery({
     queryKey: ['tenant-stats'],
     queryFn: async () => {
+      console.log('Fetching tenant stats...');
+      
+      // Simplified query without nested organization_members
       const { data: orgs, error } = await supabase
         .from('organizations')
-        .select(`
-          id,
-          subscription_plan,
-          created_at,
-          organization_members(user_id, status)
-        `);
+        .select('id, subscription_plan, created_at');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Stats query error:', error);
+        throw error;
+      }
 
-      const totalTenants = orgs.length;
-      const activeUsers = orgs.reduce((sum, org) => 
-        sum + (org.organization_members || []).filter(m => m.status === 'active').length, 0
-      );
+      console.log('Stats orgs fetched:', orgs?.length || 0);
+
+      // Get organization members count separately
+      const { data: members, error: membersError } = await supabase
+        .from('organization_members')
+        .select('organization_id, status')
+        .eq('status', 'active');
+
+      if (membersError) {
+        console.error('Members query error:', membersError);
+        // Don't throw, just use 0 for active users
+      }
+
+      const totalTenants = orgs?.length || 0;
+      const activeUsers = members?.length || 0;
       
       // Calculate growth (placeholder logic)
-      const thisMonth = orgs.filter(org => 
+      const thisMonth = orgs?.filter(org => 
         new Date(org.created_at) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-      ).length;
+      ).length || 0;
       
-      const lastMonth = orgs.filter(org => {
+      const lastMonth = orgs?.filter(org => {
         const orgDate = new Date(org.created_at);
         const lastMonthStart = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
         const lastMonthEnd = new Date(new Date().getFullYear(), new Date().getMonth(), 0);
         return orgDate >= lastMonthStart && orgDate <= lastMonthEnd;
-      }).length;
+      }).length || 0;
 
       const growthRate = lastMonth > 0 ? Math.round(((thisMonth - lastMonth) / lastMonth) * 100) : 0;
 
@@ -57,13 +69,22 @@ export default function SystemTenants() {
         growthRate: `${growthRate >= 0 ? '+' : ''}${growthRate}%`
       };
     },
-    enabled: !!user
+    enabled: !!user,
+    retry: 2
   });
 
+  // Log stats errors
+  if (statsError) {
+    console.error('Stats error:', statsError);
+  }
+
   // Fetch tenant list
-  const { data: tenants, isLoading } = useQuery({
+  const { data: tenants, isLoading, error: tenantsError } = useQuery({
     queryKey: ['system-tenants'],
     queryFn: async () => {
+      console.log('Fetching tenants list...');
+      
+      // Simplified query without nested organization_members
       const { data, error } = await supabase
         .from('organizations')
         .select(`
@@ -73,20 +94,46 @@ export default function SystemTenants() {
           contact_email,
           subscription_plan,
           subscription_status,
-          created_at,
-          organization_members(user_id, status)
+          created_at
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Tenants query error:', error);
+        throw error;
+      }
 
-      return data.map(org => ({
+      console.log('Tenants fetched:', data?.length || 0, data);
+
+      // Get active users count for each organization separately
+      const { data: membersData, error: membersError } = await supabase
+        .from('organization_members')
+        .select('organization_id, status')
+        .eq('status', 'active');
+
+      if (membersError) {
+        console.error('Members query error:', membersError);
+      }
+
+      // Map active users to organizations
+      const memberCounts = membersData?.reduce((acc, member) => {
+        acc[member.organization_id] = (acc[member.organization_id] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+      return data?.map(org => ({
         ...org,
-        activeUsers: (org.organization_members || []).filter(m => m.status === 'active').length
-      }));
+        activeUsers: memberCounts[org.id] || 0
+      })) || [];
     },
-    enabled: !!user
+    enabled: !!user,
+    retry: 2
   });
+
+  // Log tenants errors
+  if (tenantsError) {
+    console.error('Tenants error:', tenantsError);
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
