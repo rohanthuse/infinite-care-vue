@@ -80,12 +80,18 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
       }
 
       if ((data as any)?.success) {
-        localStorage.setItem('system_session_token', (data as any).session_token);
-        setUser((data as any).user);
+        const sessionToken = (data as any).session_token;
+        const userData = (data as any).user;
+        
+        console.log('[SystemAuth] Login successful for user:', userData.email);
+        localStorage.setItem('system_session_token', sessionToken);
+        setUser(userData);
         return {};
       } else {
-        setError((data as any)?.error || 'Authentication failed');
-        return { error: (data as any)?.error || 'Authentication failed' };
+        const errorMessage = (data as any)?.error || 'Authentication failed';
+        console.error('[SystemAuth] Login failed:', errorMessage);
+        setError(errorMessage);
+        return { error: errorMessage };
       }
     } catch (err) {
       console.error('Sign in error:', err);

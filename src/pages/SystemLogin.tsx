@@ -1,182 +1,178 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSystemAuth } from '@/contexts/SystemAuthContext';
+import { Link, useNavigate } from 'react-router-dom';
+import { Heart, Lock, Mail, Eye, EyeOff, AlertCircle, X, Shield } from 'lucide-react';
 import { CustomButton } from '@/components/ui/CustomButton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Shield, Settings } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { useSystemAuth } from '@/contexts/SystemAuthContext';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 export default function SystemLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const { user, signIn, isLoading, error } = useSystemAuth();
   const navigate = useNavigate();
-  const { user, signIn, error } = useSystemAuth();
 
   // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      navigate('/system-dashboard');
+      console.log('[SystemLogin] User already authenticated, redirecting to dashboard');
+      navigate('/system-dashboard', { replace: true });
     }
   }, [user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
+    console.log('[SystemLogin] Attempting login for:', email);
+    const result = await signIn(email, password);
     
-    try {
-      const result = await signIn(email, password);
-      if (result.error) {
-        toast({
-          title: "Login Failed",
-          description: result.error,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Login Successful",
-          description: "Welcome to the system administration portal",
-        });
-        navigate('/system-dashboard');
-      }
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+    if (!result.error) {
+      toast.success('Successfully signed in!');
+      console.log('[SystemLogin] Login successful, navigating to dashboard');
+      navigate('/system-dashboard', { replace: true });
+    } else {
+      console.error('[SystemLogin] Login failed:', result.error);
+      toast.error(result.error);
     }
   };
 
+  if (user) {
+    return null; // Will redirect
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
-      
-      <div className="relative flex min-h-screen">
-        {/* Left Column - Branding */}
-        <div className="hidden lg:flex lg:w-1/2 flex-col justify-center p-12">
-          <div className="max-w-md">
-            <div className="flex items-center space-x-3 mb-8">
-              <div className="p-3 bg-primary/20 rounded-lg">
-                <Shield className="h-8 w-8 text-primary" />
+    <div className="min-h-screen flex">
+      {/* Left section with gradient background */}
+      <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-8 flex-col justify-center relative overflow-hidden">
+        <div className="z-10 max-w-lg">
+          <div className="flex items-center space-x-2 text-2xl font-semibold mb-6">
+            <Shield className="h-7 w-7" />
+            <span>System Portal</span>
+          </div>
+          
+          <h1 className="text-4xl lg:text-5xl font-bold mb-6">
+            System Administration
+          </h1>
+          
+          <p className="text-xl font-light mb-4">
+            Secure Access to System Management
+          </p>
+          
+          <p className="text-slate-300 mb-8 max-w-md">
+            Manage tenants, users, system configuration, and monitor platform health from this secure administrative portal.
+          </p>
+        </div>
+
+        {/* Abstract pattern background */}
+        <div className="absolute inset-0 opacity-10">
+          <svg className="w-full h-full" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Right section with login form */}
+      <div className="w-full md:w-1/2 bg-white flex items-center justify-center p-6">
+        <div className="max-w-md w-full">
+          <div className="text-center md:text-left mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">System Portal</h2>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">Administrator Sign In</h3>
+            <p className="text-gray-600">Access system management tools</p>
+          </div>
+
+          {error && (
+            <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start">
+              <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <span>{error}</span>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">System Portal</h1>
-                <p className="text-slate-300">Admin Control Center</p>
+            </div>
+          )}
+          
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="admin@system.local"
+                  className="pl-10"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  disabled={isLoading}
+                  required
+                />
               </div>
             </div>
             
-            <div className="space-y-6">
-              <div className="flex items-start space-x-4">
-                <Settings className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-2">Platform Management</h3>
-                  <p className="text-slate-300">
-                    Manage tenant organizations, system users, and platform-wide settings from a centralized dashboard.
-                  </p>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
                 </div>
-              </div>
-              
-              <div className="flex items-start space-x-4">
-                <Shield className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-2">Enhanced Security</h3>
-                  <p className="text-slate-300">
-                    Advanced authentication, role-based access control, and comprehensive audit logging.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column - Login Form */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-          <div className="w-full max-w-md">
-            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-8 shadow-2xl">
-              <div className="text-center mb-8">
-                <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-foreground">System Administration</h2>
-                <p className="text-muted-foreground mt-2">
-                  Secure access to platform management
-                </p>
-              </div>
-
-              <form onSubmit={handleLogin} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@system.local"
-                    required
-                    className="bg-background/50 border-border/50"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="bg-background/50 border-border/50"
-                  />
-                </div>
-
-                {error && (
-                  <div className="flex items-center space-x-2 text-destructive text-sm">
-                    <AlertCircle className="h-4 w-4" />
-                    <span>{error}</span>
-                  </div>
-                )}
-
-                <CustomButton
-                  type="submit"
-                  className="w-full"
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  className="pl-10 pr-10"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Authenticating...' : 'Access System Portal'}
-                </CustomButton>
-              </form>
-
-              <div className="mt-6 pt-6 border-t border-border/50">
-                <div className="text-center">
-                  <button
-                    onClick={() => navigate('/')}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    ← Back to Main Portal
-                  </button>
-                </div>
-              </div>
-
-              {/* Demo Credentials */}
-              <div className="mt-6 p-4 bg-muted/30 rounded-lg">
-                <p className="text-xs text-muted-foreground text-center mb-2">Demo Credentials:</p>
-                <div className="text-xs text-center space-y-1">
-                  <p><strong>Email:</strong> admin@system.local</p>
-                  <p><strong>Password:</strong> admin123</p>
-                </div>
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400" />
+                  )}
+                </button>
               </div>
             </div>
+            
+            <div>
+              <CustomButton
+                type="submit"
+                className={cn(
+                  "w-full bg-slate-800 hover:bg-slate-900 transition-all",
+                  isLoading && "opacity-70 cursor-not-allowed"
+                )}
+                disabled={isLoading || !email || !password}
+              >
+                {isLoading ? "Signing in..." : "Sign In"}
+              </CustomButton>
+            </div>
+          </form>
+          
+          <div className="mt-6 p-3 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600 mb-1 font-medium">Demo Credentials:</p>
+            <p className="text-xs text-gray-500 font-mono">admin@system.local</p>
+            <p className="text-xs text-gray-500 font-mono">admin123</p>
+          </div>
+          
+          <div className="mt-6 text-center">
+            <Link to="/" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+              ← Return to homepage
+            </Link>
           </div>
         </div>
       </div>

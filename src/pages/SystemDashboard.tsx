@@ -28,8 +28,16 @@ export default function SystemDashboard() {
     navigate('/system-login');
   };
 
+  // Debug logging
+  React.useEffect(() => {
+    console.log('[SystemDashboard] Component mounted');
+    console.log('[SystemDashboard] User:', user);
+    console.log('[SystemDashboard] Current path:', window.location.pathname);
+  }, [user]);
+
   if (!user) {
-    navigate('/system-login');
+    console.log('[SystemDashboard] No user found, redirecting to login');
+    navigate('/system-login', { replace: true });
     return null;
   }
 

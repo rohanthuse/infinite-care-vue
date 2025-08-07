@@ -19,14 +19,18 @@ export const SystemGuard: React.FC<SystemGuardProps> = ({
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        navigate(fallbackPath);
+        console.log('[SystemGuard] No user found, redirecting to', fallbackPath);
+        navigate(fallbackPath, { replace: true });
         return;
       }
 
       if (requiredRoles.length > 0 && !requiredRoles.some(role => hasRole(role))) {
-        navigate('/system-dashboard'); // Redirect to dashboard if no required role
+        console.log('[SystemGuard] User lacks required roles, redirecting to dashboard');
+        navigate('/system-dashboard', { replace: true });
         return;
       }
+      
+      console.log('[SystemGuard] Authentication check passed for user:', user.email);
     }
   }, [user, isLoading, requiredRoles, hasRole, navigate, fallbackPath]);
 
