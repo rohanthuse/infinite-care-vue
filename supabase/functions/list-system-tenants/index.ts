@@ -29,19 +29,30 @@ serve(async (req) => {
       )
     }
 
-    // Fetch active member counts
-    const { data: members, error: memErr } = await supabaseAdmin
-      .from('organization_members')
-      .select('organization_id, status')
-      .eq('status', 'active')
+    // Fetch system user relations and active users
+    const { data: rels, error: relErr } = await supabaseAdmin
+      .from('system_user_organizations')
+      .select('organization_id, system_user_id')
 
-    if (memErr) {
-      console.error('[list-system-tenants] Error fetching members:', memErr)
+    if (relErr) {
+      console.error('[list-system-tenants] Error fetching system_user_organizations:', relErr)
     }
 
+    const { data: sysUsers, error: suErr } = await supabaseAdmin
+      .from('system_users')
+      .select('id, is_active')
+
+    if (suErr) {
+      console.error('[list-system-tenants] Error fetching system_users:', suErr)
+    }
+
+    const activeUserIds = new Set((sysUsers || []).filter((u: any) => u.is_active).map((u: any) => u.id))
+
     const memberCounts: Record<string, number> = {}
-    for (const m of members || []) {
-      memberCounts[m.organization_id] = (memberCounts[m.organization_id] || 0) + 1
+    for (const r of (rels || []) as any[]) {
+      if (activeUserIds.has(r.system_user_id)) {
+        memberCounts[r.organization_id] = (memberCounts[r.organization_id] || 0) + 1
+      }
     }
 
     const tenants = (orgs || []).map((org) => ({
