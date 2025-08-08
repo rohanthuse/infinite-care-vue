@@ -1,7 +1,7 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getSystemSessionToken } from '@/utils/systemSession';
 
 interface SystemUser {
   id: string;
@@ -26,19 +26,26 @@ export const useSystemUsers = () => {
   return useQuery({
     queryKey: ['system-users'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('system_users')
-        .select(`
-          *,
-          system_user_roles:system_user_roles!system_user_roles_system_user_id_fkey(role)
-        `)
-        .order('created_at', { ascending: false });
+      const token = getSystemSessionToken();
+      if (!token) {
+        console.error('[useSystemUsers] Missing system session token');
+        throw new Error('Not authenticated as system admin. Please sign in again.');
+      }
 
-      if (error) throw error;
+      console.log('[useSystemUsers] Fetching via RPC list_system_users_with_session');
+      const { data, error } = await supabase.rpc('list_system_users_with_session', {
+        p_session_token: token,
+      });
 
-      return data.map((user: any) => ({
+      if (error) {
+        console.error('[useSystemUsers] RPC error:', error);
+        throw error;
+      }
+
+      // data is a table-returning RPC (array of rows)
+      return (data || []).map((user: any) => ({
         ...user,
-        role: user.system_user_roles?.[0]?.role || 'support_admin'
+        role: user.role || 'support_admin',
       })) as SystemUser[];
     },
   });
@@ -48,23 +55,35 @@ export const useSystemUserStats = () => {
   return useQuery({
     queryKey: ['system-user-stats'],
     queryFn: async () => {
-      const { data: users, error } = await supabase
-        .from('system_users')
-        .select(`
-          *,
-          system_user_roles:system_user_roles!system_user_roles_system_user_id_fkey(role)
-        `);
+      const token = getSystemSessionToken();
+      if (!token) {
+        console.error('[useSystemUserStats] Missing system session token');
+        throw new Error('Not authenticated as system admin. Please sign in again.');
+      }
 
-      if (error) throw error;
+      console.log('[useSystemUserStats] Fetching via RPC get_system_user_stats_with_session');
+      const { data, error } = await supabase.rpc('get_system_user_stats_with_session', {
+        p_session_token: token,
+      });
 
-      const total = users.length;
-      const active = users.filter(user => user.is_active).length;
-      const inactive = total - active;
-      const superAdmins = users.filter(user => 
-        user.system_user_roles?.some((role: any) => role.role === 'super_admin')
-      ).length;
+      if (error) {
+        console.error('[useSystemUserStats] RPC error:', error);
+        throw error;
+      }
 
-      return { total, active, inactive, superAdmins };
+      const result = data as any;
+      if (!result?.success) {
+        const msg = result?.error || 'Failed to fetch system user stats';
+        console.error('[useSystemUserStats] RPC returned failure:', msg);
+        throw new Error(msg);
+      }
+
+      return {
+        total: result.total || 0,
+        active: result.active || 0,
+        inactive: result.inactive || 0,
+        superAdmins: result.superAdmins || 0,
+      };
     },
   });
 };
@@ -75,8 +94,15 @@ export const useCreateSystemUser = () => {
 
   return useMutation({
     mutationFn: async (userData: CreateSystemUserData) => {
-      console.log('[useCreateSystemUser] Creating system user via RPC...');
-      const { data, error } = await supabase.rpc('create_system_user_and_role', {
+      const token = getSystemSessionToken();
+      if (!token) {
+        console.error('[useCreateSystemUser] Missing system session token');
+        throw new Error('Not authenticated as system admin. Please sign in again.');
+      }
+
+      console.log('[useCreateSystemUser] Creating via RPC create_system_user_and_role_with_session...');
+      const { data, error } = await supabase.rpc('create_system_user_and_role_with_session', {
+        p_session_token: token,
         p_email: userData.email,
         p_password: userData.password,
         p_first_name: userData.first_name,
@@ -107,6 +133,7 @@ export const useCreateSystemUser = () => {
       });
     },
     onError: (error: any) => {
+      // Keep toast UX unchanged
       toast({
         title: "Error",
         description: error?.message || "Failed to create system user.",

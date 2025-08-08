@@ -6038,6 +6038,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _is_system_super_admin: {
+        Args: { p_system_user_id: string }
+        Returns: boolean
+      }
+      _validate_system_session: {
+        Args: { p_session_token: string }
+        Returns: string
+      }
       admin_set_client_password: {
         Args: {
           p_client_id: string
@@ -6124,6 +6132,17 @@ export type Database = {
       }
       create_system_user_and_role: {
         Args: {
+          p_email: string
+          p_password: string
+          p_first_name: string
+          p_last_name: string
+          p_role?: Database["public"]["Enums"]["system_role"]
+        }
+        Returns: Json
+      }
+      create_system_user_and_role_with_session: {
+        Args: {
+          p_session_token: string
           p_email: string
           p_password: string
           p_first_name: string
@@ -6329,6 +6348,10 @@ export type Database = {
         }
         Returns: Json
       }
+      get_system_user_stats_with_session: {
+        Args: { p_session_token: string }
+        Returns: Json
+      }
       get_third_party_user_by_token: {
         Args: { token_param: string }
         Returns: {
@@ -6401,6 +6424,19 @@ export type Database = {
           p_admin_id: string
         }
         Returns: Json
+      }
+      list_system_users_with_session: {
+        Args: { p_session_token: string }
+        Returns: {
+          id: string
+          email: string
+          first_name: string
+          last_name: string
+          is_active: boolean
+          last_login_at: string
+          created_at: string
+          role: Database["public"]["Enums"]["system_role"]
+        }[]
       }
       safe_setup_client_auth: {
         Args: { p_client_id: string; p_password: string; p_admin_id: string }
