@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -74,32 +75,28 @@ export const useCreateSystemUser = () => {
 
   return useMutation({
     mutationFn: async (userData: CreateSystemUserData) => {
-      // First create the system user
-      const { data: newUser, error: userError } = await supabase
-        .from('system_users')
-        .insert({
-          email: userData.email,
-          first_name: userData.first_name,
-          last_name: userData.last_name,
-          encrypted_password: userData.password, // In production, this should be hashed
-          is_active: true
-        })
-        .select()
-        .single();
+      console.log('[useCreateSystemUser] Creating system user via RPC...');
+      const { data, error } = await supabase.rpc('create_system_user_and_role', {
+        p_email: userData.email,
+        p_password: userData.password,
+        p_first_name: userData.first_name,
+        p_last_name: userData.last_name,
+        p_role: userData.role,
+      });
 
-      if (userError) throw userError;
+      if (error) {
+        console.error('[useCreateSystemUser] RPC error:', error);
+        throw error;
+      }
 
-      // Then create the role assignment
-      const { error: roleError } = await supabase
-        .from('system_user_roles')
-        .insert({
-          system_user_id: newUser.id,
-          role: userData.role
-        });
+      const result = data as { success: boolean; error?: string; user?: any };
+      if (!result?.success) {
+        const msg = result?.error || 'Failed to create system user';
+        console.error('[useCreateSystemUser] RPC returned failure:', msg);
+        throw new Error(msg);
+      }
 
-      if (roleError) throw roleError;
-
-      return newUser;
+      return result.user;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system-users'] });
@@ -112,7 +109,7 @@ export const useCreateSystemUser = () => {
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to create system user.",
+        description: error?.message || "Failed to create system user.",
         variant: "destructive",
       });
     },

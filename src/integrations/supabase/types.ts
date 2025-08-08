@@ -6122,6 +6122,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      create_system_user_and_role: {
+        Args: {
+          p_email: string
+          p_password: string
+          p_first_name: string
+          p_last_name: string
+          p_role?: Database["public"]["Enums"]["system_role"]
+        }
+        Returns: Json
+      }
       create_third_party_login_session: {
         Args: {
           token_param: string
