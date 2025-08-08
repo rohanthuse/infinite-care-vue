@@ -6512,6 +6512,17 @@ export type Database = {
         Args: { resource_id: string; stat_type: string }
         Returns: undefined
       }
+      update_system_user_with_session: {
+        Args: {
+          p_session_token: string
+          p_user_id: string
+          p_email: string
+          p_first_name: string
+          p_last_name: string
+          p_role: Database["public"]["Enums"]["system_role"]
+        }
+        Returns: Json
+      }
       user_belongs_to_organization: {
         Args: { org_id: string; user_id_param: string }
         Returns: boolean

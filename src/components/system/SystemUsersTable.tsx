@@ -29,14 +29,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useSystemUsers, useToggleUserStatus } from '@/hooks/useSystemUsers';
 import { format } from 'date-fns';
+import { EditSystemUserDialog } from '@/components/system/EditSystemUserDialog';
 
 export const SystemUsersTable: React.FC = () => {
   const { data: users, isLoading } = useSystemUsers();
   const toggleUserStatus = useToggleUserStatus();
+  const [editingUser, setEditingUser] = React.useState<any | null>(null);
 
   const handleToggleStatus = (userId: string, currentStatus: boolean) => {
     toggleUserStatus.mutate({ userId, isActive: !currentStatus });
   };
+  const handleEditUser = (u: any) => setEditingUser(u);
 
   if (isLoading) {
     return (
@@ -153,7 +156,7 @@ export const SystemUsersTable: React.FC = () => {
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="flex items-center space-x-2">
+                    <DropdownMenuItem onClick={() => handleEditUser(user)} className="flex items-center space-x-2">
                       <Edit className="h-4 w-4" />
                       <span>Edit User</span>
                     </DropdownMenuItem>
@@ -179,7 +182,14 @@ export const SystemUsersTable: React.FC = () => {
             </TableRow>
           ))}
         </TableBody>
-      </Table>
-    </div>
+        </Table>
+        {editingUser && (
+          <EditSystemUserDialog
+            open={!!editingUser}
+            onOpenChange={(o) => { if (!o) setEditingUser(null); }}
+            user={editingUser}
+          />
+        )}
+      </div>
   );
 };
