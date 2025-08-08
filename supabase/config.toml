@@ -1,4 +1,3 @@
-
 project_id = "vcrjntfjsmpoupgairep"
 
 [api]
@@ -63,4 +62,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.delete-system-tenant]
+verify_jwt = false
+
+[functions.assign-user-to-organization]
 verify_jwt = false

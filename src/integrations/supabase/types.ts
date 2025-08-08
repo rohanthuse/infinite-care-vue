@@ -4988,6 +4988,45 @@ export type Database = {
           },
         ]
       }
+      system_user_organizations: {
+        Row: {
+          assigned_at: string
+          id: string
+          organization_id: string
+          role: string
+          system_user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          id?: string
+          organization_id: string
+          role?: string
+          system_user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          id?: string
+          organization_id?: string
+          role?: string
+          system_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_user_organizations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_user_organizations_system_user_id_fkey"
+            columns: ["system_user_id"]
+            isOneToOne: false
+            referencedRelation: "system_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_user_roles: {
         Row: {
           granted_at: string
