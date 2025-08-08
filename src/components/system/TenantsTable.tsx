@@ -7,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Building, Eye, Edit, Trash2, Plus, Search, Download, Filter } from 'lucide-react';
 import { toast } from 'sonner';
-
 interface Tenant {
   id: string;
   name: string;
@@ -18,7 +17,6 @@ interface Tenant {
   created_at: string;
   activeUsers: number;
 }
-
 interface TenantsTableProps {
   tenants: Tenant[] | undefined;
   isLoading: boolean;
@@ -27,28 +25,28 @@ interface TenantsTableProps {
   onEditTenant: (tenant: Tenant) => void;
   onDeleteTenant: (tenant: Tenant) => void;
 }
-
-export const TenantsTable = ({ tenants, isLoading, onAddTenant, onViewTenant, onEditTenant, onDeleteTenant }: TenantsTableProps) => {
+export const TenantsTable = ({
+  tenants,
+  isLoading,
+  onAddTenant,
+  onViewTenant,
+  onEditTenant,
+  onDeleteTenant
+}: TenantsTableProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Filter tenants based on search and status
   const filteredTenants = tenants?.filter(tenant => {
-    const matchesSearch = tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tenant.subdomain.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tenant.contact_email?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+    const matchesSearch = tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) || tenant.subdomain.toLowerCase().includes(searchTerm.toLowerCase()) || tenant.contact_email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || tenant.subscription_status === statusFilter;
-    
     return matchesSearch && matchesStatus;
   }) || [];
-
   const handleExport = () => {
     if (!tenants?.length) {
       toast.error('No tenant data to export');
       return;
     }
-
     const csvData = tenants.map(tenant => ({
       Name: tenant.name,
       Subdomain: tenant.subdomain,
@@ -58,37 +56,32 @@ export const TenantsTable = ({ tenants, isLoading, onAddTenant, onViewTenant, on
       'Active Users': tenant.activeUsers,
       'Created Date': format(new Date(tenant.created_at), 'yyyy-MM-dd')
     }));
-
     const headers = Object.keys(csvData[0]).join(',');
     const rows = csvData.map(row => Object.values(row).join(',')).join('\n');
     const csv = `${headers}\n${rows}`;
-
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob([csv], {
+      type: 'text/csv'
+    });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `tenants-${format(new Date(), 'yyyy-MM-dd')}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
-    
     toast.success('Tenant data exported successfully');
   };
   if (isLoading) {
-    return (
-      <Card>
+    return <Card>
         <CardContent className="p-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-muted-foreground">Loading tenant organizations...</p>
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
   if (!tenants || tenants.length === 0) {
-    return (
-      <Card>
+    return <Card>
         <CardContent className="p-8">
           <div className="text-center">
             <div className="p-4 bg-muted/50 rounded-full w-fit mx-auto mb-4">
@@ -104,12 +97,9 @@ export const TenantsTable = ({ tenants, isLoading, onAddTenant, onViewTenant, on
             </Button>
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
-  return (
-    <Card>
+  return <Card>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div>
@@ -119,10 +109,7 @@ export const TenantsTable = ({ tenants, isLoading, onAddTenant, onViewTenant, on
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleExport} className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
+            
             <Button size="sm" onClick={onAddTenant} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Add Tenant
@@ -134,20 +121,11 @@ export const TenantsTable = ({ tenants, isLoading, onAddTenant, onViewTenant, on
         <div className="flex items-center gap-4 mt-4">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search tenants..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+            <Input placeholder="Search tenants..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
           </div>
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            >
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring">
               <option value="all">All Status</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
@@ -172,8 +150,7 @@ export const TenantsTable = ({ tenants, isLoading, onAddTenant, onViewTenant, on
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTenants.map((tenant) => (
-                <TableRow key={tenant.id} className="hover:bg-muted/50">
+              {filteredTenants.map(tenant => <TableRow key={tenant.id} className="hover:bg-muted/50">
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-primary/10 rounded-lg">
@@ -181,9 +158,7 @@ export const TenantsTable = ({ tenants, isLoading, onAddTenant, onViewTenant, on
                       </div>
                       <div>
                         <div className="font-medium text-foreground">{tenant.name}</div>
-                        {tenant.contact_email && (
-                          <div className="text-sm text-muted-foreground">{tenant.contact_email}</div>
-                        )}
+                        {tenant.contact_email && <div className="text-sm text-muted-foreground">{tenant.contact_email}</div>}
                       </div>
                     </div>
                   </TableCell>
@@ -198,10 +173,7 @@ export const TenantsTable = ({ tenants, isLoading, onAddTenant, onViewTenant, on
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge 
-                      variant={tenant.subscription_status === 'active' ? 'default' : 'destructive'}
-                      className="capitalize"
-                    >
+                    <Badge variant={tenant.subscription_status === 'active' ? 'default' : 'destructive'} className="capitalize">
                       {tenant.subscription_status}
                     </Badge>
                   </TableCell>
@@ -218,41 +190,21 @@ export const TenantsTable = ({ tenants, isLoading, onAddTenant, onViewTenant, on
                   </TableCell>
                   <TableCell className="text-right">
                      <div className="flex items-center justify-end gap-1">
-                       <Button
-                         size="sm"
-                         variant="ghost"
-                         className="h-8 w-8 p-0 hover:bg-primary/10"
-                         onClick={() => onViewTenant(tenant)}
-                         title="View tenant details"
-                       >
+                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-primary/10" onClick={() => onViewTenant(tenant)} title="View tenant details">
                          <Eye className="h-4 w-4" />
                        </Button>
-                       <Button
-                         size="sm"
-                         variant="ghost"
-                         className="h-8 w-8 p-0 hover:bg-blue-50 dark:hover:bg-blue-950"
-                         onClick={() => onEditTenant(tenant)}
-                         title="Edit tenant"
-                       >
+                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0 hover:bg-blue-50 dark:hover:bg-blue-950" onClick={() => onEditTenant(tenant)} title="Edit tenant">
                          <Edit className="h-4 w-4" />
                        </Button>
-                       <Button
-                         size="sm"
-                         variant="ghost"
-                         className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                         onClick={() => onDeleteTenant(tenant)}
-                         title="Delete tenant"
-                       >
+                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => onDeleteTenant(tenant)} title="Delete tenant">
                          <Trash2 className="h-4 w-4" />
                        </Button>
                      </div>
                   </TableCell>
-                </TableRow>
-              ))}
+                </TableRow>)}
             </TableBody>
           </Table>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
