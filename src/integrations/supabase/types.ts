@@ -6448,6 +6448,10 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: boolean
       }
+      is_system_super_admin: {
+        Args: { _system_user_id: string }
+        Returns: boolean
+      }
       is_thread_participant: {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: boolean
