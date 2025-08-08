@@ -21,7 +21,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
-import { SystemUsersTab } from '@/components/system/dashboard/SystemUsersTab';
+
 import { ReportsTab } from '@/components/system/dashboard/ReportsTab';
 
 
@@ -34,6 +34,10 @@ export default function SystemDashboard() {
   const handleTabChange = (next: string) => {
     if (next === 'tenants') {
       navigate('/system-dashboard/tenants');
+      // Keep dashboard selected while navigating to full page
+      setTab('dashboard');
+    } else if (next === 'users') {
+      navigate('/system-dashboard/users');
       // Keep dashboard selected while navigating to full page
       setTab('dashboard');
     } else {
@@ -278,9 +282,6 @@ export default function SystemDashboard() {
           </TabsContent>
 
 
-          <TabsContent value="users">
-            <SystemUsersTab />
-          </TabsContent>
 
           <TabsContent value="reports">
             <ReportsTab />
