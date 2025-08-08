@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+
 import { supabase } from '@/integrations/supabase/client';
 import { useSystemAuth } from '@/contexts/SystemAuthContext';
 import { DashboardHeader } from '@/components/DashboardHeader';
@@ -8,8 +8,8 @@ import { SystemTenantsInfoHeader } from '@/components/system/SystemTenantsInfoHe
 import { SystemTenantsStats } from '@/components/system/SystemTenantsStats';
 import { TenantsTable } from '@/components/system/TenantsTable';
 import { CreateTenantDialog } from '@/components/system/CreateTenantDialog';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus } from 'lucide-react';
+
+
 import { toast } from 'sonner';
 import { ViewTenantDialog } from '@/components/system/ViewTenantDialog';
 import { EditTenantDialog } from '@/components/system/EditTenantDialog';
@@ -20,7 +20,7 @@ import { SystemInfoHeader } from '@/components/system/SystemInfoHeader';
 
 export default function SystemTenants() {
   const { user } = useSystemAuth();
-  const navigate = useNavigate();
+  
   const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<any | null>(null);
@@ -141,18 +141,6 @@ export default function SystemTenants() {
         <Tabs value="tenants" className="w-full">
           <SystemSectionTabs value="tenants" />
         </Tabs>
-        {/* Back Navigation */}
-        <div className="mb-6">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/system-dashboard')}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Button>
-        </div>
 
         <SystemTenantsInfoHeader 
           totalTenants={stats?.totalTenants || 0}

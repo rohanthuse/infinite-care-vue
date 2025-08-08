@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SystemTenantsStats } from "@/components/system/SystemTenantsStats";
 import { SystemUsersStats } from "@/components/system/SystemUsersStats";
+import { useSystemUserStats } from "@/hooks/useSystemUsers";
 
 interface TenantItem {
   id?: string;
@@ -34,7 +35,7 @@ export const SystemReports: React.FC = () => {
   // System users stats
   // Using existing hook to keep consistency with dashboard
   // Importing here avoids UI changes elsewhere
-  const { data: userStats, isLoading: usersLoading } = require("@/hooks/useSystemUsers").useSystemUserStats();
+  const { data: userStats, isLoading: usersLoading } = useSystemUserStats();
 
   return (
     <div className="space-y-8">
