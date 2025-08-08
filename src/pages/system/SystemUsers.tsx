@@ -10,6 +10,7 @@ import { DashboardHeader } from '@/components/DashboardHeader';
 import { useNavigate } from 'react-router-dom';
 import { Tabs } from '@/components/ui/tabs';
 import { SystemSectionTabs } from '@/components/system/SystemSectionTabs';
+import { SystemInfoHeader } from '@/components/system/SystemInfoHeader';
 export default function SystemUsers() {
   const navigate = useNavigate();
   const { data: stats, isLoading: statsLoading } = useSystemUserStats();
@@ -18,6 +19,17 @@ export default function SystemUsers() {
       <DashboardHeader />
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* System Info Header */}
+        <SystemInfoHeader
+          systemInfo={{
+            status: "Operational",
+            version: "v1.0.0",
+            uptime: "99.99%",
+            serverLocation: "EU-West",
+            lastUpdate: new Date().toLocaleString(),
+          }}
+          onQuickAction={() => {}}
+        />
         {/* System Tabs */}
         <div className="mb-4">
           <Tabs value="users" className="w-full">

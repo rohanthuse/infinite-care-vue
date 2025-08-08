@@ -16,6 +16,7 @@ import { EditTenantDialog } from '@/components/system/EditTenantDialog';
 import { ConfirmDeleteTenantDialog } from '@/components/system/ConfirmDeleteTenantDialog';
 import { Tabs } from '@/components/ui/tabs';
 import { SystemSectionTabs } from '@/components/system/SystemSectionTabs';
+import { SystemInfoHeader } from '@/components/system/SystemInfoHeader';
 
 export default function SystemTenants() {
   const { user } = useSystemAuth();
@@ -125,6 +126,17 @@ export default function SystemTenants() {
       <DashboardHeader />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* System Info Header */}
+        <SystemInfoHeader
+          systemInfo={{
+            status: "Operational",
+            version: "v1.0.0",
+            uptime: "99.99%",
+            serverLocation: "EU-West",
+            lastUpdate: new Date().toLocaleString(),
+          }}
+          onQuickAction={() => {}}
+        />
         {/* System Tabs */}
         <Tabs value="tenants" className="w-full">
           <SystemSectionTabs value="tenants" />
