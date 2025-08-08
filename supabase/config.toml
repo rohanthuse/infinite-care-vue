@@ -58,3 +58,9 @@ verify_jwt = false
 
 [functions.create-system-tenant]
 verify_jwt = false
+
+[functions.update-system-tenant]
+verify_jwt = false
+
+[functions.delete-system-tenant]
+verify_jwt = false

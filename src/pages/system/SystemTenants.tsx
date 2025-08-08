@@ -11,12 +11,19 @@ import { CreateTenantDialog } from '@/components/system/CreateTenantDialog';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { ViewTenantDialog } from '@/components/system/ViewTenantDialog';
+import { EditTenantDialog } from '@/components/system/EditTenantDialog';
+import { ConfirmDeleteTenantDialog } from '@/components/system/ConfirmDeleteTenantDialog';
 
 export default function SystemTenants() {
   const { user } = useSystemAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState<any | null>(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const handleCreateSuccess = () => {
     // Invalidate queries to refresh the data
@@ -27,22 +34,18 @@ export default function SystemTenants() {
   };
 
   const handleViewTenant = (tenant: any) => {
-    // For now, show tenant details in a toast
-    toast.info(`Viewing details for ${tenant.name}`, {
-      description: `Subdomain: ${tenant.subdomain} | Plan: ${tenant.subscription_plan} | Status: ${tenant.subscription_status}`
-    });
+    setSelectedTenant(tenant);
+    setIsViewOpen(true);
   };
 
   const handleEditTenant = (tenant: any) => {
-    // For now, show edit intent
-    toast.info(`Edit functionality for ${tenant.name} coming soon`);
+    setSelectedTenant(tenant);
+    setIsEditOpen(true);
   };
 
   const handleDeleteTenant = (tenant: any) => {
-    // For now, show delete confirmation
-    toast.warning(`Delete functionality for ${tenant.name} coming soon`, {
-      description: 'This will permanently remove the tenant and all associated data.'
-    });
+    setSelectedTenant(tenant);
+    setIsDeleteOpen(true);
   };
 
   // Fetch tenant statistics
@@ -155,6 +158,26 @@ export default function SystemTenants() {
         <CreateTenantDialog
           open={isCreateDialogOpen}
           onOpenChange={setIsCreateDialogOpen}
+          onSuccess={handleCreateSuccess}
+        />
+
+        <ViewTenantDialog
+          open={isViewOpen}
+          onOpenChange={setIsViewOpen}
+          tenant={selectedTenant}
+        />
+
+        <EditTenantDialog
+          open={isEditOpen}
+          onOpenChange={setIsEditOpen}
+          tenant={selectedTenant}
+          onSuccess={handleCreateSuccess}
+        />
+
+        <ConfirmDeleteTenantDialog
+          open={isDeleteOpen}
+          onOpenChange={setIsDeleteOpen}
+          tenant={selectedTenant}
           onSuccess={handleCreateSuccess}
         />
       </main>
