@@ -18,6 +18,9 @@ import {
 } from '@/components/ui/select';
 import { Plus, Loader2 } from 'lucide-react';
 import { useCreateSystemUser } from '@/hooks/useSystemUsers';
+import { useOrganizations } from '@/hooks/useOrganizations';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface AddSystemUserDialogProps {
   children?: React.ReactNode;
@@ -32,9 +35,12 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
     password: '',
     confirmPassword: '',
     role: 'support_admin' as 'super_admin' | 'tenant_manager' | 'support_admin' | 'analytics_viewer',
+    organization_id: '',
   });
 
   const createUser = useCreateSystemUser();
+  const { data: organizations, isLoading: orgLoading } = useOrganizations();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,13 +54,38 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
     }
 
     try {
-      await createUser.mutateAsync({
+      const newUser = await createUser.mutateAsync({
         email: formData.email,
         first_name: formData.first_name,
         last_name: formData.last_name,
         password: formData.password,
         role: formData.role,
       });
+
+      // Optionally assign user to an organization
+      if (formData.organization_id) {
+        try {
+          const { data: assignData, error: assignError } = await supabase.functions.invoke(
+            'assign-user-to-organization',
+            {
+              body: {
+                system_user_id: newUser.id,
+                organization_id: formData.organization_id,
+              },
+            }
+          );
+          if (assignError || assignData?.success === false) {
+            throw new Error(assignError?.message || assignData?.error || 'Failed to assign user to organization');
+          }
+        } catch (err: any) {
+          console.error('[AddSystemUserDialog] Organization assignment failed:', err);
+          toast({
+            title: 'Assignment failed',
+            description: err?.message || 'Could not link user to organization.',
+            variant: 'destructive',
+          });
+        }
+      }
       
       setFormData({
         email: '',
@@ -63,6 +94,7 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
         password: '',
         confirmPassword: '',
         role: 'support_admin',
+        organization_id: '',
       });
       setOpen(false);
     } catch (error) {
@@ -119,6 +151,20 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
               onChange={(e) => handleInputChange('email', e.target.value)}
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="organization">Organization</Label>
+            <Select value={formData.organization_id} onValueChange={(value) => handleInputChange('organization_id', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder={orgLoading ? 'Loading...' : 'Select organization (optional)'} />
+              </SelectTrigger>
+              <SelectContent>
+                {organizations?.map((org) => (
+                  <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
