@@ -6,11 +6,10 @@ interface SystemTenantsStatsProps {
   stats: {
     totalTenants: number;
     activeUsers: number;
-    totalRevenue: string;
-    growthRate: string;
   } | undefined;
   isLoading?: boolean;
 }
+
 
 export const SystemTenantsStats = ({ stats, isLoading }: SystemTenantsStatsProps) => {
   const statsData = [

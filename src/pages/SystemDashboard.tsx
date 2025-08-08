@@ -19,6 +19,11 @@ import {
   Activity
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { TenantOrganizationsTab } from '@/components/system/dashboard/TenantOrganizationsTab';
+import { SystemUsersTab } from '@/components/system/dashboard/SystemUsersTab';
+import { ReportsTab } from '@/components/system/dashboard/ReportsTab';
+
 
 export default function SystemDashboard() {
   const { user, hasRole } = useSystemAuth();
@@ -144,111 +149,134 @@ export default function SystemDashboard() {
           onQuickAction={handleQuickAction}
         />
 
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-2">
-            Welcome back, {user.name}
-          </h2>
-          <p className="text-muted-foreground">
-            Manage the platform, monitor performance, and configure system settings.
-          </p>
-          
-          {/* User Roles */}
-          <div className="mt-4 p-4 bg-card border border-border rounded-lg">
-            <h3 className="text-sm font-medium text-foreground mb-2">Your Roles:</h3>
-            <div className="flex flex-wrap gap-2">
-              {user?.roles && user.roles.length > 0 ? (
-                user.roles.map((role) => (
-                  <span
-                    key={role}
-                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20"
-                  >
-                    {role.replace('_', ' ').toUpperCase()}
-                  </span>
-                ))
-              ) : (
-                <span className="text-sm text-muted-foreground">No roles assigned</span>
-              )}
+        <Tabs defaultValue="dashboard" className="w-full">
+          <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 mb-6">
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="tenants">Tenant Organizations</TabsTrigger>
+            <TabsTrigger value="users">System Users</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dashboard">
+            {/* Welcome Section */}
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold text-foreground mb-2">
+                Welcome back, {user.name}
+              </h2>
+              <p className="text-muted-foreground">
+                Manage the platform, monitor performance, and configure system settings.
+              </p>
+              
+              {/* User Roles */}
+              <div className="mt-4 p-4 bg-card border border-border rounded-lg">
+                <h3 className="text-sm font-medium text-foreground mb-2">Your Roles:</h3>
+                <div className="flex flex-wrap gap-2">
+                  {user?.roles && user.roles.length > 0 ? (
+                    user.roles.map((role) => (
+                      <span
+                        key={role}
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20"
+                      >
+                        {role.replace('_', ' ').toUpperCase()}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">No roles assigned</span>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* System Statistics */}
-        <SystemDashboardStats 
-          stats={systemStats}
-          onStatClick={handleStatClick}
-        />
+            {/* System Statistics */}
+            <SystemDashboardStats 
+              stats={systemStats}
+              onStatClick={handleStatClick}
+            />
 
-        {/* Dashboard Grid */}
-        <div className="mb-8">
-          <h3 className="text-xl font-semibold text-foreground mb-6">System Management</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {accessibleItems.map((item) => (
-              <ModernSystemCard
-                key={item.title}
-                title={item.title}
-                description={item.description}
-                icon={item.icon}
-                stats={item.stats}
-                onClick={() => navigate(item.href)}
-              />
-            ))}
-          </div>
-        </div>
+            {/* Dashboard Grid */}
+            <div className="mb-8">
+              <h3 className="text-xl font-semibold text-foreground mb-6">System Management</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {accessibleItems.map((item) => (
+                  <ModernSystemCard
+                    key={item.title}
+                    title={item.title}
+                    description={item.description}
+                    icon={item.icon}
+                    stats={item.stats}
+                    onClick={() => navigate(item.href)}
+                  />
+                ))}
+              </div>
+            </div>
 
-        {/* Quick Actions */}
-        <div className="mt-12">
-          <h3 className="text-xl font-semibold text-foreground mb-6">Quick Actions</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {user?.roles && hasRole('super_admin') && (
-              <>
+            {/* Quick Actions */}
+            <div className="mt-12">
+              <h3 className="text-xl font-semibold text-foreground mb-6">Quick Actions</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {user?.roles && hasRole('super_admin') && (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow"
+                      onClick={() => navigate('/system-dashboard/tenants/new')}
+                    >
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <Building className="h-6 w-6 text-primary" />
+                      </div>
+                      <span className="font-medium">Create Tenant</span>
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow"
+                      onClick={() => navigate('/system-dashboard/users/new')}
+                    >
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <Users className="h-6 w-6 text-primary" />
+                      </div>
+                      <span className="font-medium">Add System User</span>
+                    </Button>
+                  </>
+                )}
+                
                 <Button
                   variant="outline"
                   className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow"
-                  onClick={() => navigate('/system-dashboard/tenants/new')}
+                  onClick={() => navigate('/system-dashboard/analytics')}
                 >
                   <div className="p-2 bg-primary/10 rounded-lg">
-                    <Building className="h-6 w-6 text-primary" />
+                    <BarChart3 className="h-6 w-6 text-primary" />
                   </div>
-                  <span className="font-medium">Create Tenant</span>
+                  <span className="font-medium">View Analytics</span>
                 </Button>
                 
                 <Button
                   variant="outline"
                   className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow"
-                  onClick={() => navigate('/system-dashboard/users/new')}
+                  onClick={() => navigate('/system-dashboard/audit')}
                 >
                   <div className="p-2 bg-primary/10 rounded-lg">
-                    <Users className="h-6 w-6 text-primary" />
+                    <FileText className="h-6 w-6 text-primary" />
                   </div>
-                  <span className="font-medium">Add System User</span>
+                  <span className="font-medium">Recent Activity</span>
                 </Button>
-              </>
-            )}
-            
-            <Button
-              variant="outline"
-              className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow"
-              onClick={() => navigate('/system-dashboard/analytics')}
-            >
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <BarChart3 className="h-6 w-6 text-primary" />
               </div>
-              <span className="font-medium">View Analytics</span>
-            </Button>
-            
-            <Button
-              variant="outline"
-              className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow"
-              onClick={() => navigate('/system-dashboard/audit')}
-            >
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <FileText className="h-6 w-6 text-primary" />
-              </div>
-              <span className="font-medium">Recent Activity</span>
-            </Button>
-          </div>
-        </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="tenants">
+            <TenantOrganizationsTab />
+          </TabsContent>
+
+          <TabsContent value="users">
+            <SystemUsersTab />
+          </TabsContent>
+
+          <TabsContent value="reports">
+            <ReportsTab />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
