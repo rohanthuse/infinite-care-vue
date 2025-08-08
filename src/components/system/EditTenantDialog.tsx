@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getSystemSessionToken } from '@/utils/systemSession';
 import { toast } from 'sonner';
 
 interface EditTenantDialogProps {
@@ -41,8 +42,9 @@ export const EditTenantDialog: React.FC<EditTenantDialogProps> = ({ open, onOpen
   const { mutate: updateTenant, isPending } = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error('Missing tenant id');
+      const sessionToken = getSystemSessionToken();
       const { data, error } = await supabase.functions.invoke('update-system-tenant', {
-        body: { id: tenant.id, ...form }
+        body: { id: tenant.id, ...form, session_token: sessionToken }
       });
       if (error) throw error;
       if (!(data as any)?.success) throw new Error((data as any)?.error || 'Update failed');
