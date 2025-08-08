@@ -156,19 +156,57 @@ export const useToggleUserStatus = () => {
 
       if (error) throw error;
     },
-    onSuccess: (_, { isActive }) => {
+    onMutate: async ({ userId, isActive }) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ['system-users'] }),
+        queryClient.cancelQueries({ queryKey: ['system-user-stats'] }),
+      ]);
+
+      const previousUsers = queryClient.getQueryData<SystemUser[]>(['system-users']);
+      const previousStats = queryClient.getQueryData<{ total: number; active: number; inactive: number; superAdmins: number }>(['system-user-stats']);
+
+      const prevIsActive = previousUsers?.find(u => u.id === userId)?.is_active;
+
+      if (previousUsers) {
+        queryClient.setQueryData<SystemUser[]>(
+          ['system-users'],
+          previousUsers.map(u => (u.id === userId ? { ...u, is_active: isActive } : u))
+        );
+      }
+
+      if (previousStats != null && prevIsActive !== undefined && prevIsActive !== isActive) {
+        const next = { ...previousStats };
+        if (isActive) {
+          next.active = Math.max(0, next.active + 1);
+          next.inactive = Math.max(0, next.inactive - 1);
+        } else {
+          next.active = Math.max(0, next.active - 1);
+          next.inactive = Math.max(0, next.inactive + 1);
+        }
+        queryClient.setQueryData(['system-user-stats'], next);
+      }
+
+      return { previousUsers, previousStats };
+    },
+    onError: (error: any, _variables, context) => {
+      if (context?.previousUsers) {
+        queryClient.setQueryData(['system-users'], context.previousUsers);
+      }
+      if (context?.previousStats) {
+        queryClient.setQueryData(['system-user-stats'], context.previousStats);
+      }
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to update user status.",
+        variant: "destructive",
+      });
+    },
+    onSuccess: (_data, { isActive }) => {
       queryClient.invalidateQueries({ queryKey: ['system-users'] });
       queryClient.invalidateQueries({ queryKey: ['system-user-stats'] });
       toast({
         title: "User Updated",
         description: `User has been ${isActive ? 'activated' : 'deactivated'} successfully.`,
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update user status.",
-        variant: "destructive",
       });
     },
   });
