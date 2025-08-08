@@ -20,31 +20,26 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-
-
+import { useLocation } from 'react-router-dom';
+import { SystemSectionTabs, SystemTabValue } from '@/components/system/SystemSectionTabs';
 import { useSystemDashboard } from '@/hooks/useSystemDashboard';
 import { ReportsTab } from '@/components/system/dashboard/ReportsTab';
-
 
 export default function SystemDashboard() {
   const { user, hasRole } = useSystemAuth();
   const navigate = useNavigate();
 
-  // Controlled tabs: keep dashboard active, navigate on certain tabs
-  const [tab, setTab] = React.useState<'dashboard' | 'users' | 'reports'>('dashboard');
-  const handleTabChange = (next: string) => {
-    if (next === 'tenants') {
-      navigate('/system-dashboard/tenants');
-      // Keep dashboard selected while navigating to full page
-      setTab('dashboard');
-    } else if (next === 'users') {
-      navigate('/system-dashboard/users');
-      // Keep dashboard selected while navigating to full page
-      setTab('dashboard');
-    } else {
-      setTab(next as 'dashboard' | 'users' | 'reports');
-    }
+  // Control tabs via URL param to keep consistency across pages
+  const location = useLocation();
+  const getTabFromSearch = (): SystemTabValue => {
+    const params = new URLSearchParams(location.search);
+    const t = (params.get('tab') || 'dashboard') as SystemTabValue;
+    return ['dashboard', 'reports', 'tenants', 'users'].includes(t) ? t : 'dashboard';
   };
+  const [tab, setTab] = React.useState<SystemTabValue>(getTabFromSearch());
+  React.useEffect(() => {
+    setTab(getTabFromSearch());
+  }, [location.search]);
 
   // Debug logging
   React.useEffect(() => {
@@ -104,13 +99,10 @@ export default function SystemDashboard() {
           onQuickAction={handleQuickAction}
         />
 
-        <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 mb-6">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="tenants">Tenant Organizations</TabsTrigger>
-            <TabsTrigger value="users">System Users</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-          </TabsList>
+        <Tabs value={tab === 'tenants' || tab === 'users' ? 'dashboard' : tab} onValueChange={(v) => {
+            if (v === 'dashboard' || v === 'reports') setTab(v as SystemTabValue);
+          }} className="w-full">
+          <SystemSectionTabs value={tab} />
 
           <TabsContent value="dashboard">
             {/* Welcome Section */}

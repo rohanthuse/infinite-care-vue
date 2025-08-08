@@ -14,6 +14,8 @@ import { toast } from 'sonner';
 import { ViewTenantDialog } from '@/components/system/ViewTenantDialog';
 import { EditTenantDialog } from '@/components/system/EditTenantDialog';
 import { ConfirmDeleteTenantDialog } from '@/components/system/ConfirmDeleteTenantDialog';
+import { Tabs } from '@/components/ui/tabs';
+import { SystemSectionTabs } from '@/components/system/SystemSectionTabs';
 
 export default function SystemTenants() {
   const { user } = useSystemAuth();
@@ -123,6 +125,10 @@ export default function SystemTenants() {
       <DashboardHeader />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* System Tabs */}
+        <Tabs value="tenants" className="w-full">
+          <SystemSectionTabs value="tenants" />
+        </Tabs>
         {/* Back Navigation */}
         <div className="mb-6">
           <Button

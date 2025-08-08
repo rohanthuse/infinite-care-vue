@@ -8,6 +8,8 @@ import { SystemUsersStats } from '@/components/system/SystemUsersStats';
 import { Button } from '@/components/ui/button';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { useNavigate } from 'react-router-dom';
+import { Tabs } from '@/components/ui/tabs';
+import { SystemSectionTabs } from '@/components/system/SystemSectionTabs';
 export default function SystemUsers() {
   const navigate = useNavigate();
   const { data: stats, isLoading: statsLoading } = useSystemUserStats();
@@ -16,7 +18,14 @@ export default function SystemUsers() {
       <DashboardHeader />
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* System Tabs */}
         <div className="mb-4">
+          <Tabs value="users" className="w-full">
+            <SystemSectionTabs value="users" />
+          </Tabs>
+        </div>
+      {/* Back Navigation */}
+      <div className="mb-4">
           <Button variant="ghost" size="sm" onClick={() => navigate('/system-dashboard')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
