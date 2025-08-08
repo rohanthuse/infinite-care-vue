@@ -39,6 +39,8 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
     organization_id: '',
   });
 
+  const [orgError, setOrgError] = useState<string | null>(null);
+
   const createUser = useCreateSystemUser();
   const { data: organizations, isLoading: orgLoading } = useOrganizations();
   const { toast } = useToast();
@@ -54,6 +56,16 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
       return;
     }
 
+    if (!formData.organization_id) {
+      setOrgError('Organization is required');
+      toast({
+        title: 'Organization required',
+        description: 'Please select an organization.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       const newUser = await createUser.mutateAsync({
         email: formData.email,
@@ -63,29 +75,28 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
         role: formData.role,
       });
 
-      // Optionally assign user to an organization
-      if (formData.organization_id) {
-        try {
-          const { data: assignData, error: assignError } = await supabase.functions.invoke(
-            'assign-user-to-organization',
-            {
-              body: {
-                system_user_id: newUser.id,
-                organization_id: formData.organization_id,
-              },
-            }
-          );
-          if (assignError || assignData?.success === false) {
-            throw new Error(assignError?.message || assignData?.error || 'Failed to assign user to organization');
+      // Assign user to an organization (required)
+      try {
+        const { data: assignData, error: assignError } = await supabase.functions.invoke(
+          'assign-user-to-organization',
+          {
+            body: {
+              system_user_id: newUser.id,
+              organization_id: formData.organization_id,
+            },
           }
-        } catch (err: any) {
-          console.error('[AddSystemUserDialog] Organization assignment failed:', err);
-          toast({
-            title: 'Assignment failed',
-            description: err?.message || 'Could not link user to organization.',
-            variant: 'destructive',
-          });
+        );
+        if (assignError || assignData?.success === false) {
+          throw new Error(assignError?.message || assignData?.error || 'Failed to assign user to organization');
         }
+      } catch (err: any) {
+        console.error('[AddSystemUserDialog] Organization assignment failed:', err);
+        toast({
+          title: 'Assignment failed',
+          description: err?.message || 'Could not link user to organization.',
+          variant: 'destructive',
+        });
+        return;
       }
       
       setFormData({
@@ -105,6 +116,9 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'organization_id') {
+      setOrgError(null);
+    }
   };
 
   return (
@@ -156,10 +170,10 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="organization">Organization (Optional)</Label>
+            <Label htmlFor="organization">Organization <span aria-hidden="true">*</span></Label>
             <Select value={formData.organization_id} onValueChange={(value) => handleInputChange('organization_id', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder={orgLoading ? 'Loading...' : 'Select organization (optional)'} />
+              <SelectTrigger aria-required="true">
+                <SelectValue placeholder={orgLoading ? 'Loading...' : 'Select organization'} />
               </SelectTrigger>
               <SelectContent>
                 {organizations?.map((org) => (
@@ -167,6 +181,9 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
                 ))}
               </SelectContent>
             </Select>
+            {orgError && (
+              <p className="text-sm text-destructive">{orgError}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -221,6 +238,7 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
               type="submit"
               disabled={
                 createUser.isPending ||
+                !formData.organization_id ||
                 !formData.email ||
                 !formData.first_name ||
                 !formData.last_name ||
