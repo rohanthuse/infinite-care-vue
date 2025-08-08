@@ -1,6 +1,6 @@
 import React from 'react';
 import { DashboardStat } from '@/components/dashboard/DashboardStat';
-import { Building, Users, DollarSign, TrendingUp } from 'lucide-react';
+import { Building, Users } from 'lucide-react';
 
 interface SystemTenantsStatsProps {
   stats: {
@@ -28,24 +28,10 @@ export const SystemTenantsStats = ({ stats, isLoading }: SystemTenantsStatsProps
       icon: <Users className="h-5 w-5" />,
       positive: true,
     },
-    {
-      title: 'Total Revenue',
-      value: stats?.totalRevenue || '£0',
-      change: '+15% from last month',
-      icon: <DollarSign className="h-5 w-5" />,
-      positive: true,
-    },
-    {
-      title: 'Growth Rate',
-      value: stats?.growthRate || '0%',
-      change: 'This month',
-      icon: <TrendingUp className="h-5 w-5" />,
-      positive: true,
-    },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
       {statsData.map((stat, index) => (
         <DashboardStat
           key={index}
