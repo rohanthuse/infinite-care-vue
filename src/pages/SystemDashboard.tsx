@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { TenantOrganizationsTab } from '@/components/system/dashboard/TenantOrganizationsTab';
+
 import { SystemUsersTab } from '@/components/system/dashboard/SystemUsersTab';
 import { ReportsTab } from '@/components/system/dashboard/ReportsTab';
 
@@ -28,6 +28,18 @@ import { ReportsTab } from '@/components/system/dashboard/ReportsTab';
 export default function SystemDashboard() {
   const { user, hasRole } = useSystemAuth();
   const navigate = useNavigate();
+
+  // Controlled tabs: keep dashboard active, navigate on certain tabs
+  const [tab, setTab] = React.useState<'dashboard' | 'users' | 'reports'>('dashboard');
+  const handleTabChange = (next: string) => {
+    if (next === 'tenants') {
+      navigate('/system-dashboard/tenants');
+      // Keep dashboard selected while navigating to full page
+      setTab('dashboard');
+    } else {
+      setTab(next as 'dashboard' | 'users' | 'reports');
+    }
+  };
 
   // Debug logging
   React.useEffect(() => {
@@ -149,7 +161,7 @@ export default function SystemDashboard() {
           onQuickAction={handleQuickAction}
         />
 
-        <Tabs defaultValue="dashboard" className="w-full">
+        <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 mb-6">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="tenants">Tenant Organizations</TabsTrigger>
@@ -265,9 +277,6 @@ export default function SystemDashboard() {
             </div>
           </TabsContent>
 
-          <TabsContent value="tenants">
-            <TenantOrganizationsTab />
-          </TabsContent>
 
           <TabsContent value="users">
             <SystemUsersTab />
