@@ -4,7 +4,7 @@ import { useSystemAuth } from '@/contexts/SystemAuthContext';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { SystemInfoHeader } from '@/components/system/SystemInfoHeader';
 import { SystemDashboardStats } from '@/components/system/SystemDashboardStats';
-import { ModernSystemCard } from '@/components/system/ModernSystemCard';
+
 import { Button } from '@/components/ui/button';
 import { 
   Shield, 
@@ -22,6 +22,7 @@ import { toast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 
+import { useSystemDashboard } from '@/hooks/useSystemDashboard';
 import { ReportsTab } from '@/components/system/dashboard/ReportsTab';
 
 
@@ -58,70 +59,8 @@ export default function SystemDashboard() {
     return null;
   }
 
-  const dashboardItems = [
-    {
-      title: 'Tenant Organizations',
-      description: 'Manage tenant organizations and their settings',
-      icon: Building,
-      href: '/system-dashboard/tenants',
-      roles: ['super_admin', 'tenant_manager'],
-      stats: '12 Active Tenants'
-    },
-    {
-      title: 'System Users',
-      description: 'Manage system administrators and their roles',
-      icon: Users,
-      href: '/system-dashboard/users',
-      roles: ['super_admin'],
-      stats: '5 System Users'
-    },
-    {
-      title: 'Platform Analytics',
-      description: 'View platform-wide analytics and performance metrics',
-      icon: BarChart3,
-      href: '/system-dashboard/analytics',
-      roles: ['super_admin', 'analytics_viewer'],
-      stats: '99.9% Uptime'
-    },
-    {
-      title: 'Global Settings',
-      description: 'Configure platform-wide settings and features',
-      icon: Settings,
-      href: '/system-dashboard/settings',
-      roles: ['super_admin'],
-      stats: 'System Health: Good'
-    },
-    {
-      title: 'Audit Logs',
-      description: 'Review system activities and security events',
-      icon: FileText,
-      href: '/system-dashboard/audit',
-      roles: ['super_admin', 'support_admin'],
-      stats: '1,234 Events Today'
-    },
-    {
-      title: 'Database Management',
-      description: 'Monitor database performance and usage',
-      icon: Database,
-      href: '/system-dashboard/database',
-      roles: ['super_admin'],
-      stats: '85% Capacity'
-    }
-  ];
 
-  const accessibleItems = dashboardItems.filter(item => 
-    user?.roles && item.roles.some(role => hasRole(role))
-  );
-
-  // Mock system statistics - in real app, this would come from API
-  const systemStats = {
-    totalTenants: 12,
-    totalUsers: 5,
-    systemUptime: "99.9%",
-    databaseHealth: "Excellent",
-    activeConnections: 47,
-    securityScore: "A+"
-  };
+  const { systemStats, isLoading } = useSystemDashboard();
 
   // Mock system info - in real app, this would come from API
   const systemInfo = {
@@ -206,25 +145,10 @@ export default function SystemDashboard() {
             {/* System Statistics */}
             <SystemDashboardStats 
               stats={systemStats}
+              isLoading={isLoading}
               onStatClick={handleStatClick}
             />
 
-            {/* Dashboard Grid */}
-            <div className="mb-8">
-              <h3 className="text-xl font-semibold text-foreground mb-6">System Management</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {accessibleItems.map((item) => (
-                  <ModernSystemCard
-                    key={item.title}
-                    title={item.title}
-                    description={item.description}
-                    icon={item.icon}
-                    stats={item.stats}
-                    onClick={() => navigate(item.href)}
-                  />
-                ))}
-              </div>
-            </div>
 
             {/* Quick Actions */}
             <div className="mt-12">
