@@ -1,11 +1,10 @@
 import React from 'react';
-import { Users, Shield, UserCheck, UserX, Activity, Clock } from 'lucide-react';
+import { Users, Activity, Clock } from 'lucide-react';
 import { useSystemUserStats } from '@/hooks/useSystemUsers';
 import { AddSystemUserDialog } from '@/components/system/AddSystemUserDialog';
 import { SystemUsersTable } from '@/components/system/SystemUsersTable';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-
+import { SystemUsersStats } from '@/components/system/SystemUsersStats';
 export default function SystemUsers() {
   const { data: stats, isLoading: statsLoading } = useSystemUserStats();
 
@@ -45,64 +44,8 @@ export default function SystemUsers() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Users</p>
-                {statsLoading ? (
-                  <Skeleton className="h-8 w-8" />
-                ) : (
-                  <p className="text-2xl font-bold text-foreground">{stats?.total || 0}</p>
-                )}
-              </div>
-              <Users className="h-8 w-8 text-primary" />
-            </div>
-          </div>
-          
-          <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Super Admins</p>
-                {statsLoading ? (
-                  <Skeleton className="h-8 w-8" />
-                ) : (
-                  <p className="text-2xl font-bold text-foreground">{stats?.superAdmins || 0}</p>
-                )}
-              </div>
-              <Shield className="h-8 w-8 text-primary" />
-            </div>
-          </div>
-          
-          <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Active Users</p>
-                {statsLoading ? (
-                  <Skeleton className="h-8 w-8" />
-                ) : (
-                  <p className="text-2xl font-bold text-foreground">{stats?.active || 0}</p>
-                )}
-              </div>
-              <UserCheck className="h-8 w-8 text-primary" />
-            </div>
-          </div>
-          
-          <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Inactive Users</p>
-                {statsLoading ? (
-                  <Skeleton className="h-8 w-8" />
-                ) : (
-                  <p className="text-2xl font-bold text-foreground">{stats?.inactive || 0}</p>
-                )}
-              </div>
-              <UserX className="h-8 w-8 text-primary" />
-            </div>
-          </div>
-        </div>
+        {/* Stats */}
+        <SystemUsersStats stats={stats} isLoading={statsLoading} />
 
         {/* User List */}
         <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl">
