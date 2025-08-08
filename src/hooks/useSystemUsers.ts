@@ -29,7 +29,7 @@ export const useSystemUsers = () => {
         .from('system_users')
         .select(`
           *,
-          system_user_roles(role)
+          system_user_roles:system_user_roles!system_user_roles_system_user_id_fkey(role)
         `)
         .order('created_at', { ascending: false });
 
@@ -51,7 +51,7 @@ export const useSystemUserStats = () => {
         .from('system_users')
         .select(`
           *,
-          system_user_roles(role)
+          system_user_roles:system_user_roles!system_user_roles_system_user_id_fkey(role)
         `);
 
       if (error) throw error;
