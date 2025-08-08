@@ -1,17 +1,25 @@
 import React from 'react';
-import { Users, Activity, Clock } from 'lucide-react';
+import { Users, Activity, Clock, ArrowLeft } from 'lucide-react';
 import { useSystemUserStats } from '@/hooks/useSystemUsers';
 import { AddSystemUserDialog } from '@/components/system/AddSystemUserDialog';
 import { SystemUsersTable } from '@/components/system/SystemUsersTable';
 import { Badge } from '@/components/ui/badge';
 import { SystemUsersStats } from '@/components/system/SystemUsersStats';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 export default function SystemUsers() {
+  const navigate = useNavigate();
   const { data: stats, isLoading: statsLoading } = useSystemUserStats();
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-4">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/system-dashboard')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </div>
         {/* Info Header - matching Tenant Organizations */}
         <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
