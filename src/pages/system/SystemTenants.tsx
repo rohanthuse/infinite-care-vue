@@ -49,62 +49,37 @@ export default function SystemTenants() {
   const { data: stats, error: statsError } = useQuery({
     queryKey: ['tenant-stats'],
     queryFn: async () => {
-      console.log('[SystemTenants] Fetching tenant stats...', { user: user?.email, roles: user?.roles });
-      
-      // Check authentication state
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('[SystemTenants] Current Supabase session:', { 
-        userId: session?.user?.id, 
-        email: session?.user?.email 
-      });
+      console.log('[SystemTenants] Fetching tenant stats via edge function...')
 
-      // Simplified query without nested organization_members
-      const { data: orgs, error } = await supabase
-        .from('organizations')
-        .select('id, subscription_plan, created_at');
-
+      const { data, error } = await supabase.functions.invoke('list-system-tenants')
       if (error) {
-        console.error('[SystemTenants] Stats query error:', error);
-        console.error('[SystemTenants] Error details:', { message: error.message, code: error.code, hint: error.hint });
-        throw error;
+        console.error('[SystemTenants] list-system-tenants error:', error)
+        throw error
       }
 
-      console.log('[SystemTenants] Stats orgs fetched:', orgs?.length || 0);
+      const tenants = (data as any)?.tenants || []
+      const totalTenants = tenants.length
+      const activeUsers = tenants.reduce((sum: number, t: any) => sum + (t.activeUsers || 0), 0)
 
-      // Get organization members count separately
-      const { data: members, error: membersError } = await supabase
-        .from('organization_members')
-        .select('organization_id, status')
-        .eq('status', 'active');
+      const now = new Date()
+      const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
 
-      if (membersError) {
-        console.error('[SystemTenants] Members query error:', membersError);
-        // Don't throw, just use 0 for active users
-      }
+      const thisMonth = tenants.filter((t: any) => new Date(t.created_at) >= thisMonthStart).length
+      const lastMonth = tenants.filter((t: any) => {
+        const d = new Date(t.created_at)
+        return d >= lastMonthStart && d <= lastMonthEnd
+      }).length
 
-      const totalTenants = orgs?.length || 0;
-      const activeUsers = members?.length || 0;
-      
-      // Calculate growth (placeholder logic)
-      const thisMonth = orgs?.filter(org => 
-        new Date(org.created_at) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-      ).length || 0;
-      
-      const lastMonth = orgs?.filter(org => {
-        const orgDate = new Date(org.created_at);
-        const lastMonthStart = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
-        const lastMonthEnd = new Date(new Date().getFullYear(), new Date().getMonth(), 0);
-        return orgDate >= lastMonthStart && orgDate <= lastMonthEnd;
-      }).length || 0;
-
-      const growthRate = lastMonth > 0 ? Math.round(((thisMonth - lastMonth) / lastMonth) * 100) : 0;
+      const growthRate = lastMonth > 0 ? Math.round(((thisMonth - lastMonth) / lastMonth) * 100) : 0
 
       return {
         totalTenants,
         activeUsers,
-        totalRevenue: '£45.2K', // Placeholder
+        totalRevenue: '£45.2K',
         growthRate: `${growthRate >= 0 ? '+' : ''}${growthRate}%`
-      };
+      }
     },
     enabled: !!user,
     retry: 2
@@ -119,68 +94,17 @@ export default function SystemTenants() {
   const { data: tenants, isLoading, error: tenantsError } = useQuery({
     queryKey: ['system-tenants'],
     queryFn: async () => {
-      console.log('[SystemTenants] Fetching tenants list...', { user: user?.email, roles: user?.roles });
-      
-      // Check authentication state
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('[SystemTenants] Current Supabase session for tenants query:', { 
-        userId: session?.user?.id, 
-        email: session?.user?.email 
-      });
+      console.log('[SystemTenants] Fetching tenants list via edge function...')
 
-      // Test is_system_admin function first
-      if (session?.user?.id) {
-        const { data: isAdminResult, error: adminError } = await supabase
-          .rpc('is_system_admin', { user_id_param: session.user.id });
-        
-        console.log('[SystemTenants] is_system_admin check:', { 
-          result: isAdminResult, 
-          error: adminError 
-        });
-      }
-
-      // Simplified query without nested organization_members
-      const { data, error } = await supabase
-        .from('organizations')
-        .select(`
-          id,
-          name,
-          subdomain,
-          contact_email,
-          subscription_plan,
-          subscription_status,
-          created_at
-        `)
-        .order('created_at', { ascending: false });
-
+      const { data, error } = await supabase.functions.invoke('list-system-tenants')
       if (error) {
-        console.error('[SystemTenants] Tenants query error:', error);
-        console.error('[SystemTenants] Error details:', { message: error.message, code: error.code, hint: error.hint });
-        throw error;
+        console.error('[SystemTenants] list-system-tenants error:', error)
+        throw error
       }
 
-      console.log('[SystemTenants] Tenants fetched:', data?.length || 0, data);
-
-      // Get active users count for each organization separately
-      const { data: membersData, error: membersError } = await supabase
-        .from('organization_members')
-        .select('organization_id, status')
-        .eq('status', 'active');
-
-      if (membersError) {
-        console.error('[SystemTenants] Members query error:', membersError);
-      }
-
-      // Map active users to organizations
-      const memberCounts = membersData?.reduce((acc, member) => {
-        acc[member.organization_id] = (acc[member.organization_id] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>) || {};
-
-      return data?.map(org => ({
-        ...org,
-        activeUsers: memberCounts[org.id] || 0
-      })) || [];
+      const tenants = (data as any)?.tenants || []
+      console.log('[SystemTenants] Tenants fetched (edge):', tenants.length)
+      return tenants
     },
     enabled: !!user,
     retry: 2
