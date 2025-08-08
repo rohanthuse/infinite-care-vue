@@ -1,12 +1,19 @@
 import React from "react";
 import { useOrganizations } from "@/hooks/useOrganizations";
-
+import { SystemTenantsStats } from "@/components/system/SystemTenantsStats";
 
 export const TenantOrganizationsTab: React.FC = () => {
   const { data: organizations, isLoading, error } = useOrganizations();
 
+  const stats = {
+    totalTenants: organizations?.length ?? 0,
+    activeUsers: 0,
+  };
+
   return (
     <section>
+      <SystemTenantsStats stats={stats} isLoading={isLoading} />
+
       <div className="bg-card border border-border rounded-lg p-4">
         <h3 className="text-lg font-semibold mb-4">Tenant Organizations</h3>
         {isLoading && (
