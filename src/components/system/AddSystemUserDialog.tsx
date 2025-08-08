@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { CustomButton } from '@/components/ui/CustomButton';
 import { Input } from '@/components/ui/input';
@@ -116,9 +117,10 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
           </CustomButton>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add System User</DialogTitle>
+          <DialogDescription className="sr-only">Create a new system user and optionally assign an organization.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -154,7 +156,7 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="organization">Organization</Label>
+            <Label htmlFor="organization">Organization (Optional)</Label>
             <Select value={formData.organization_id} onValueChange={(value) => handleInputChange('organization_id', value)}>
               <SelectTrigger>
                 <SelectValue placeholder={orgLoading ? 'Loading...' : 'Select organization (optional)'} />
