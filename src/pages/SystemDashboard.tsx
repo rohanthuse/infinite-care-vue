@@ -28,6 +28,7 @@ import { ReportsTab } from '@/components/system/dashboard/ReportsTab';
 export default function SystemDashboard() {
   const { user, hasRole } = useSystemAuth();
   const navigate = useNavigate();
+  const [tab, setTab] = React.useState('dashboard');
 
   // Debug logging
   React.useEffect(() => {
@@ -119,10 +120,10 @@ export default function SystemDashboard() {
   const handleStatClick = (statType: string) => {
     switch (statType) {
       case 'tenants':
-        navigate('/system-dashboard/tenants');
+        setTab('tenants');
         break;
       case 'users':
-        navigate('/system-dashboard/users');
+        setTab('users');
         break;
       case 'uptime':
       case 'database':
@@ -149,7 +150,7 @@ export default function SystemDashboard() {
           onQuickAction={handleQuickAction}
         />
 
-        <Tabs defaultValue="dashboard" className="w-full">
+        <Tabs value={tab} onValueChange={setTab} className="w-full">
           <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 mb-6">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="tenants">Tenant Organizations</TabsTrigger>
