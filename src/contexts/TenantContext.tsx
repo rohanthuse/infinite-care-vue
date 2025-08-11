@@ -101,17 +101,34 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
 
       // If a user is logged in, verify membership for protected access
       if (user) {
-        const { error: memberError } = await supabase
-          .from('organization_members')
-          .select('id')
-          .eq('organization_id', orgData.id)
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .single();
+        // Check if user is a super admin; if so, bypass org membership requirement
+        const { data: roleRows, error: roleErr } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id);
 
-        if (memberError) {
-          console.error('User is not a member of this organization:', memberError);
-          throw new Error('Access denied: You are not a member of this organization');
+        if (roleErr) {
+          console.warn('[TenantProvider] Failed to fetch roles, proceeding with membership check:', roleErr);
+        }
+
+        const isSuperAdmin = (roleRows || []).some(r => r.role === 'super_admin');
+
+        if (!isSuperAdmin) {
+          // Require active membership for non-super admins
+          const { error: memberError } = await supabase
+            .from('organization_members')
+            .select('id')
+            .eq('organization_id', orgData.id)
+            .eq('user_id', user.id)
+            .eq('status', 'active')
+            .single();
+
+          if (memberError) {
+            console.error('User is not a member of this organization:', memberError);
+            throw new Error('Access denied: You are not a member of this organization');
+          }
+        } else {
+          console.log('[TenantProvider] Super admin detected; bypassing org membership check.');
         }
       }
 
