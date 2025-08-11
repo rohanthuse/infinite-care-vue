@@ -51,22 +51,28 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
   // Extract subdomain from hostname
   useEffect(() => {
     const hostname = window.location.hostname;
-    
+
     // Handle localhost development
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      // For development, check for a stored subdomain or use default
-      const devSubdomain = localStorage.getItem('dev-subdomain') || 'demo';
-      setSubdomain(devSubdomain);
+      // For development, allow overriding subdomain via localStorage
+      const devSubdomain = localStorage.getItem('dev-subdomain');
+      setSubdomain(devSubdomain || null);
       return;
     }
 
-    // Extract subdomain from production hostname
+    // Extract subdomain (supports med-infinite.care and other custom domains)
     const parts = hostname.split('.');
     if (parts.length >= 3) {
-      setSubdomain(parts[0]);
+      const sd = parts[0]?.toLowerCase();
+      // Ignore common non-tenant subdomains
+      if (sd === 'www') {
+        setSubdomain(null);
+      } else {
+        setSubdomain(sd);
+      }
     } else {
-      // Default subdomain if none found
-      setSubdomain('demo');
+      // Root domain (no tenant)
+      setSubdomain(null);
     }
   }, []);
 
@@ -79,9 +85,9 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
   } = useQuery({
     queryKey: ['organization', subdomain, user?.id],
     queryFn: async () => {
-      if (!user || !subdomain) return null;
+      if (!subdomain) return null;
 
-      // First, try to find organization by subdomain
+      // Find organization by subdomain
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select('*')
@@ -93,23 +99,25 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
         throw orgError;
       }
 
-      // Verify user is a member of this organization
-      const { data: memberData, error: memberError } = await supabase
-        .from('organization_members')
-        .select('*')
-        .eq('organization_id', orgData.id)
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .single();
+      // If a user is logged in, verify membership for protected access
+      if (user) {
+        const { error: memberError } = await supabase
+          .from('organization_members')
+          .select('id')
+          .eq('organization_id', orgData.id)
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .single();
 
-      if (memberError) {
-        console.error('User is not a member of this organization:', memberError);
-        throw new Error('Access denied: You are not a member of this organization');
+        if (memberError) {
+          console.error('User is not a member of this organization:', memberError);
+          throw new Error('Access denied: You are not a member of this organization');
+        }
       }
 
       return orgData as Organization;
     },
-    enabled: !!user && !!subdomain,
+    enabled: subdomain !== null,
     retry: 1,
   });
 
