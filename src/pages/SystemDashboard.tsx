@@ -93,7 +93,7 @@ export default function SystemDashboard() {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-muted/30">
       <DashboardHeader />
       
-      <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <SystemInfoHeader 
           systemInfo={systemInfo}
           onQuickAction={handleQuickAction}
