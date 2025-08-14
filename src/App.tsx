@@ -20,6 +20,7 @@ import BranchAdminLogin from "./pages/BranchAdminLogin";
 import BranchSelection from "./pages/BranchSelection";
 import ClientLogin from "./pages/ClientLogin";
 import AdminRoutes from "./routes/AdminRoutes";
+import { SystemRoutes } from "./routes/SystemRoutes";
 import CarerRoutes from "./routes/CarerRoutes";
 import ClientRoutes from "./routes/ClientRoutes";
 import { ErrorBoundary } from "@/components/care/ErrorBoundary";
@@ -101,42 +102,8 @@ const AppContent = () => {
               <Route path="/tenant-error" element={<TenantError />} />
               <Route path="/system-login" element={<SystemLogin />} />
               
-              {/* System Dashboard Routes */}
-              <Route path="/system-dashboard" element={
-                <SystemGuard>
-                  <SystemDashboard />
-                </SystemGuard>
-              } />
-              <Route path="/system-dashboard/tenants" element={
-                <SystemGuard>
-                  <SystemTenants />
-                </SystemGuard>
-              } />
-              <Route path="/system-dashboard/users" element={
-                <SystemGuard>
-                  <SystemUsers />
-                </SystemGuard>
-              } />
-              <Route path="/system-dashboard/analytics" element={
-                <SystemGuard>
-                  <SystemAnalytics />
-                </SystemGuard>
-              } />
-              <Route path="/system-dashboard/settings" element={
-                <SystemGuard>
-                  <SystemSettings />
-                </SystemGuard>
-              } />
-              <Route path="/system-dashboard/audit" element={
-                <SystemGuard>
-                  <SystemAnalytics />
-                </SystemGuard>
-              } />
-              <Route path="/system-dashboard/database" element={
-                <SystemGuard>
-                  <SystemAnalytics />
-                </SystemGuard>
-              } />
+              {/* System Portal Routes */}
+              <Route path="/system/*" element={<SystemRoutes />} />
               
               {/* Tenant-specific Protected Routes */}
               <Route path="/:tenantSlug/*" element={
