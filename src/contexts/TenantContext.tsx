@@ -57,19 +57,26 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     const pathParts = pathname.split('/').filter(Boolean);
     console.log('[TenantProvider] Path parts:', pathParts);
 
-    // Skip system routes and public routes
+    // Define system and public routes that don't require tenant resolution
+    const systemRoutes = ['system', 'tenant-selection'];
     const publicRoutes = ['super-admin', 'branch-admin-login', 'branch-selection', 'carer-login', 'client-login', 'carer-invitation', 'carer-onboarding', 'tenant-setup', 'tenant-error', 'system-login', 'system-dashboard'];
     
-    // Also check for tenant-specific login routes (e.g., /hcl/branch-admin-login)
-    const isTenantLoginRoute = pathParts.length === 2 && publicRoutes.slice(1, 6).includes(pathParts[1]); // Exclude 'super-admin' and system routes
+    // Handle system routes (no tenant needed)
+    if (pathParts.length > 0 && systemRoutes.includes(pathParts[0])) {
+      console.log('[TenantProvider] System route detected - no tenant needed');
+      setSubdomain(null);
+      return;
+    }
     
-    // Handle tenant-specific login routes first
+    // Handle tenant-specific login routes (e.g., /hcl/branch-admin-login)
+    const isTenantLoginRoute = pathParts.length === 2 && publicRoutes.slice(1, 6).includes(pathParts[1]);
     if (isTenantLoginRoute) {
       console.log('[TenantProvider] Tenant-specific login route detected, setting tenant:', pathParts[0]);
       setSubdomain(pathParts[0]);
       return;
     }
     
+    // Handle root and public routes
     if (pathParts.length === 0 || publicRoutes.includes(pathParts[0])) {
       console.log('[TenantProvider] Public route or root - no tenant');
       setSubdomain(null);
@@ -79,7 +86,7 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     // For development, allow overriding tenant via localStorage (ONLY for localhost)
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       const devTenant = localStorage.getItem('dev-tenant');
-      if (devTenant) {
+      if (devTenant && pathParts[0] !== 'system' && pathParts[0] !== 'tenant-selection') {
         console.log('[TenantProvider] Development mode - using tenant from localStorage:', devTenant);
         setSubdomain(devTenant);
         return;
@@ -108,19 +115,33 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
 
       console.log('[TenantProvider] Fetching organization for subdomain:', subdomain);
 
-      // Find organization by slug
-      const { data: orgData, error: orgError } = await supabase
+      // Find organization by slug (try both slug and subdomain fields)
+      let { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select('*')
         .eq('slug', subdomain)
-        .single();
+        .maybeSingle();
+
+      // If not found by slug, try subdomain field
+      if (!orgData && !orgError) {
+        const { data: orgBySubdomain, error: subdomainError } = await supabase
+          .from('organizations')
+          .select('*')
+          .eq('subdomain', subdomain)
+          .maybeSingle();
+        
+        orgData = orgBySubdomain;
+        orgError = subdomainError;
+      }
 
       if (orgError) {
         console.error('[TenantProvider] Error fetching organization:', orgError);
-        if (orgError.code === 'PGRST116') {
-          throw new Error(`Organization with slug "${subdomain}" not found`);
-        }
         throw orgError;
+      }
+
+      if (!orgData) {
+        console.error('[TenantProvider] Organization not found for subdomain:', subdomain);
+        throw new Error(`Organization "${subdomain}" not found. Please check the URL or contact your administrator.`);
       }
 
       console.log('[TenantProvider] Found organization:', orgData);

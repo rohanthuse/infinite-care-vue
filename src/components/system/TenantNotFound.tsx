@@ -50,16 +50,23 @@ export const TenantNotFound: React.FC<TenantNotFoundProps> = ({ subdomain }) => 
               Go to Main Site
             </Button>
             
-            {window.location.hostname === 'localhost' && (
-              <Button 
-                variant="outline" 
-                onClick={() => window.location.href = '/system-dashboard'}
-                className="w-full"
-              >
-                <Building className="mr-2 h-4 w-4" />
-                System Dashboard
-              </Button>
-            )}
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/system'}
+              className="w-full"
+            >
+              <Building className="mr-2 h-4 w-4" />
+              System Dashboard
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/tenant-selection'}
+              className="w-full"
+            >
+              <Building className="mr-2 h-4 w-4" />
+              Select Tenant
+            </Button>
           </div>
         </CardContent>
       </Card>
