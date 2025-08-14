@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -6087,14 +6087,14 @@ export type Database = {
       }
       admin_set_client_password: {
         Args: {
+          p_admin_id: string
           p_client_id: string
           p_new_password: string
-          p_admin_id: string
         }
         Returns: Json
       }
       admin_set_staff_password: {
-        Args: { p_staff_id: string; p_new_password: string; p_admin_id: string }
+        Args: { p_admin_id: string; p_new_password: string; p_staff_id: string }
         Returns: Json
       }
       calculate_invoice_total: {
@@ -6102,40 +6102,40 @@ export type Database = {
         Returns: number
       }
       calculate_leave_days: {
-        Args: { p_start_date: string; p_end_date: string }
+        Args: { p_end_date: string; p_start_date: string }
         Returns: number
       }
       calculate_news2_score: {
         Args:
           | {
-              resp_rate: number
+              consciousness: string
+              dias_bp: number
               o2_sat: number
+              pulse: number
+              resp_rate: number
               supp_o2: boolean
               sys_bp: number
-              dias_bp: number
-              pulse: number
-              consciousness: string
               temp: number
             }
           | {
-              resp_rate: number
+              consciousness: string
               o2_sat: number
+              pulse: number
+              resp_rate: number
               supp_o2: boolean
               sys_bp: number
-              pulse: number
-              consciousness: string
               temp: number
             }
         Returns: {
-          resp_score: number
-          o2_score: number
-          supp_o2_score: number
           bp_score: number
-          pulse_score: number
           consciousness_score: number
+          o2_score: number
+          pulse_score: number
+          resp_score: number
+          risk: string
+          supp_o2_score: number
           temp_score: number
           total: number
-          risk: string
         }[]
       }
       can_access_thread: {
@@ -6153,16 +6153,16 @@ export type Database = {
       check_user_role_health: {
         Args: Record<PropertyKey, never>
         Returns: {
-          user_id: string
           email: string
           has_auth: boolean
           has_role: boolean
-          suggested_role: string
           issue_type: string
+          suggested_role: string
+          user_id: string
         }[]
       }
       create_carer_with_invitation: {
-        Args: { p_carer_data: Json; p_branch_id: string }
+        Args: { p_branch_id: string; p_carer_data: Json }
         Returns: string
       }
       create_overdue_booking_notifications: {
@@ -6172,30 +6172,30 @@ export type Database = {
       create_system_user_and_role: {
         Args: {
           p_email: string
-          p_password: string
           p_first_name: string
           p_last_name: string
+          p_password: string
           p_role?: Database["public"]["Enums"]["system_role"]
         }
         Returns: Json
       }
       create_system_user_and_role_with_session: {
         Args: {
-          p_session_token: string
           p_email: string
-          p_password: string
           p_first_name: string
           p_last_name: string
+          p_password: string
           p_role?: Database["public"]["Enums"]["system_role"]
+          p_session_token: string
         }
         Returns: Json
       }
       create_third_party_login_session: {
         Args: {
-          token_param: string
-          user_id_param: string
           ip_address_param?: unknown
+          token_param: string
           user_agent_param?: string
+          user_id_param: string
         }
         Returns: string
       }
@@ -6222,17 +6222,17 @@ export type Database = {
       fix_client_message_participants: {
         Args: Record<PropertyKey, never>
         Returns: {
-          fixed_count: number
-          error_count: number
           details: Json
+          error_count: number
+          fixed_count: number
         }[]
       }
       fix_message_participants_user_ids: {
         Args: Record<PropertyKey, never>
         Returns: {
-          fixed_count: number
-          error_count: number
           details: Json
+          error_count: number
+          fixed_count: number
         }[]
       }
       fix_staff_auth_links: {
@@ -6254,38 +6254,38 @@ export type Database = {
       get_branch_documents: {
         Args: { p_branch_id: string }
         Returns: {
-          id: string
-          name: string
-          type: string
           category: string
+          client_name: string
+          created_at: string
           description: string
           file_path: string
           file_size: string
           file_type: string
-          uploaded_by_name: string
-          client_name: string
-          staff_name: string
-          tags: string[]
-          status: string
-          created_at: string
-          updated_at: string
-          source_table: string
+          id: string
+          name: string
           related_entity: string
+          source_table: string
+          staff_name: string
+          status: string
+          tags: string[]
+          type: string
+          updated_at: string
+          uploaded_by_name: string
         }[]
       }
       get_client_reports_data: {
         Args: {
           p_branch_id: string
-          p_start_date?: string
           p_end_date?: string
+          p_start_date?: string
         }
         Returns: Json
       }
       get_compliance_reports_data: {
         Args: {
           p_branch_id: string
-          p_start_date?: string
           p_end_date?: string
+          p_start_date?: string
         }
         Returns: Json
       }
@@ -6300,90 +6300,90 @@ export type Database = {
       get_financial_reports_data: {
         Args: {
           p_branch_id: string
-          p_start_date?: string
           p_end_date?: string
+          p_start_date?: string
         }
         Returns: Json
       }
       get_notification_stats: {
-        Args: { p_user_id: string; p_branch_id?: string }
+        Args: { p_branch_id?: string; p_user_id: string }
         Returns: {
+          by_type: Json
+          high_priority_count: number
           total_count: number
           unread_count: number
-          high_priority_count: number
-          by_type: Json
         }[]
       }
       get_operational_reports_data: {
         Args: {
           p_branch_id: string
-          p_start_date?: string
           p_end_date?: string
+          p_start_date?: string
         }
         Returns: Json
       }
       get_service_reports_data: {
         Args: {
           p_branch_id: string
-          p_start_date?: string
           p_end_date?: string
+          p_start_date?: string
         }
         Returns: Json
       }
       get_staff_profile: {
         Args: { staff_user_id: string }
         Returns: {
-          id: string
-          first_name: string
-          last_name: string
-          email: string
-          phone: string
           address: string
-          status: string
-          experience: string
-          specialization: string
           availability: string
-          date_of_birth: string
-          hire_date: string
           branch_id: string
+          date_of_birth: string
+          email: string
+          experience: string
+          first_name: string
+          hire_date: string
+          id: string
+          last_name: string
+          phone: string
+          specialization: string
+          status: string
         }[]
       }
       get_staff_profile_by_auth_user_id: {
         Args: { auth_user_id_param: string }
         Returns: {
-          id: string
-          auth_user_id: string
-          first_name: string
-          last_name: string
-          email: string
-          phone: string
           address: string
-          status: string
-          experience: string
-          specialization: string
+          auth_user_id: string
           availability: string
-          date_of_birth: string
-          hire_date: string
-          branch_id: string
-          first_login_completed: boolean
-          profile_completed: boolean
-          national_insurance_number: string
-          emergency_contact_name: string
-          emergency_contact_phone: string
-          qualifications: string[]
-          certifications: string[]
-          bank_name: string
           bank_account_name: string
           bank_account_number: string
+          bank_name: string
           bank_sort_code: string
+          branch_id: string
+          certifications: string[]
+          date_of_birth: string
+          email: string
+          emergency_contact_name: string
+          emergency_contact_phone: string
+          experience: string
+          first_login_completed: boolean
+          first_name: string
+          hire_date: string
+          id: string
           invitation_accepted_at: string
+          last_name: string
+          national_insurance_number: string
+          phone: string
+          profile_completed: boolean
+          qualifications: string[]
+          specialization: string
+          status: string
         }[]
       }
       get_staff_reports_data: {
         Args: {
           p_branch_id: string
-          p_start_date?: string
           p_end_date?: string
+          p_start_date?: string
         }
         Returns: Json
       }
@@ -6394,16 +6394,16 @@ export type Database = {
       get_third_party_user_by_token: {
         Args: { token_param: string }
         Returns: {
-          user_id: string
+          access_expires_at: string
+          access_type: Database["public"]["Enums"]["third_party_access_type"]
+          branch_id: string
           email: string
           first_name: string
-          surname: string
+          is_active: boolean
           organisation: string
           role: string
-          branch_id: string
-          access_type: Database["public"]["Enums"]["third_party_access_type"]
-          access_expires_at: string
-          is_active: boolean
+          surname: string
+          user_id: string
         }[]
       }
       get_uninvoiced_bookings: {
@@ -6412,11 +6412,11 @@ export type Database = {
           booking_id: string
           client_id: string
           client_name: string
-          service_title: string
-          start_time: string
+          days_since_service: number
           end_time: string
           revenue: number
-          days_since_service: number
+          service_title: string
+          start_time: string
         }[]
       }
       get_user_highest_role: {
@@ -6431,8 +6431,8 @@ export type Database = {
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
@@ -6462,27 +6462,27 @@ export type Database = {
       }
       link_client_to_auth_user: {
         Args: {
-          p_client_id: string
-          p_auth_user_id: string
           p_admin_id: string
+          p_auth_user_id: string
+          p_client_id: string
         }
         Returns: Json
       }
       list_system_users_with_session: {
         Args: { p_session_token: string }
         Returns: {
-          id: string
+          created_at: string
           email: string
           first_name: string
-          last_name: string
+          id: string
           is_active: boolean
           last_login_at: string
-          created_at: string
+          last_name: string
           role: Database["public"]["Enums"]["system_role"]
         }[]
       }
       safe_setup_client_auth: {
-        Args: { p_client_id: string; p_password: string; p_admin_id: string }
+        Args: { p_admin_id: string; p_client_id: string; p_password: string }
         Returns: Json
       }
       safe_setup_client_messaging_auth: {
@@ -6495,13 +6495,13 @@ export type Database = {
       }
       system_authenticate: {
         Args:
-          | { p_email: string; p_password: string }
           | {
               p_email: string
-              p_password: string
               p_ip_address?: unknown
+              p_password: string
               p_user_agent?: string
             }
+          | { p_email: string; p_password: string }
         Returns: Json
       }
       system_logout: {
@@ -6518,12 +6518,12 @@ export type Database = {
       }
       update_system_user_with_session: {
         Args: {
-          p_session_token: string
-          p_user_id: string
           p_email: string
           p_first_name: string
           p_last_name: string
           p_role: Database["public"]["Enums"]["system_role"]
+          p_session_token: string
+          p_user_id: string
         }
         Returns: Json
       }
