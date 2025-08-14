@@ -6730,7 +6730,13 @@ export type Database = {
         }[]
       }
       reset_system_user_password_with_session: {
-        Args: { p_admin_id: string; p_new_password: string; p_user_id: string }
+        Args:
+          | { p_admin_id: string; p_new_password: string; p_user_id: string }
+          | {
+              p_new_password: string
+              p_session_token: string
+              p_user_id: string
+            }
         Returns: Json
       }
       safe_setup_client_auth: {

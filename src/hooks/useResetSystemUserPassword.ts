@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getSystemSessionToken } from "@/utils/systemSession";
 
 interface ResetSystemUserPasswordData {
   userId: string;
@@ -19,15 +20,15 @@ export const useResetSystemUserPassword = () => {
 
   return useMutation({
     mutationFn: async ({ userId, newPassword }: ResetSystemUserPasswordData) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const sessionToken = getSystemSessionToken();
+      if (!sessionToken) throw new Error('Not authenticated');
 
       console.log('[useResetSystemUserPassword] Resetting password for user:', userId);
 
       const { data, error } = await supabase.rpc('reset_system_user_password_with_session', {
         p_user_id: userId,
         p_new_password: newPassword,
-        p_admin_id: user.id
+        p_session_token: sessionToken
       });
 
       if (error) {
