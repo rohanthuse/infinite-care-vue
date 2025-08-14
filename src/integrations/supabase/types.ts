@@ -18,14 +18,20 @@ export type Database = {
         Row: {
           admin_id: string
           branch_id: string
+          created_at: string | null
+          updated_at: string | null
         }
         Insert: {
           admin_id: string
           branch_id: string
+          created_at?: string | null
+          updated_at?: string | null
         }
         Update: {
           admin_id?: string
           branch_id?: string
+          created_at?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -6409,7 +6415,9 @@ export type Database = {
         }[]
       }
       create_auth_user_for_system_user: {
-        Args: { p_email: string; p_password?: string; p_system_user_id: string }
+        Args:
+          | { p_email: string; p_password?: string; p_system_user_id: string }
+          | { p_password?: string; p_system_user_id: string }
         Returns: Json
       }
       create_carer_with_invitation: {
