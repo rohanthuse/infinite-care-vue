@@ -40,8 +40,14 @@ export type Branch = {
     updated_at: string;
 };
 
-const fetchBranches = async (searchQuery: string): Promise<Branch[]> => {
+const fetchBranches = async (searchQuery: string, organizationId?: string): Promise<Branch[]> => {
     let query = supabase.from('branches').select('*').order('name');
+    
+    // Only show branches for the current organization
+    if (organizationId) {
+        query = query.eq('organization_id', organizationId);
+    }
+    
     if (searchQuery) {
         query = query.or(`name.ilike.%${searchQuery}%,country.ilike.%${searchQuery}%,branch_type.ilike.%${searchQuery}%,regulatory.ilike.%${searchQuery}%`);
     }
@@ -54,12 +60,13 @@ const Branch = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { tenantSlug } = useTenant();
+  const { tenantSlug, organization } = useTenant();
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: branches, isLoading, error } = useQuery({
-      queryKey: ['branches', searchQuery],
-      queryFn: () => fetchBranches(searchQuery),
+    queryKey: ['branches', searchQuery, organization?.id],
+    queryFn: () => fetchBranches(searchQuery, organization?.id),
+    enabled: !!organization?.id,
   });
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);

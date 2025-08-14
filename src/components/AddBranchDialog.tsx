@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/contexts/TenantContext";
 
 export function AddBranchDialog() {
   const [open, setOpen] = useState(false);
@@ -27,6 +28,7 @@ export function AddBranchDialog() {
   const [branchType, setBranchType] = useState("HomeCare");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { organization } = useTenant();
 
   const { mutate: addBranch, isPending } = useMutation({
     mutationFn: async (newBranch: {
@@ -36,6 +38,7 @@ export function AddBranchDialog() {
       regulatory: string;
       branch_type: string;
       status: string;
+      organization_id: string;
     }) => {
       const { data, error } = await supabase
         .from('branches')
@@ -81,13 +84,23 @@ export function AddBranchDialog() {
       return;
     }
 
+    if (!organization?.id) {
+      toast({
+        title: "Organization required",
+        description: "No organization context found",
+        variant: "destructive",
+      });
+      return;
+    }
+
     addBranch({ 
       name: title, 
       country, 
       currency, 
       regulatory, 
       branch_type: branchType, 
-      status: "Active" 
+      status: "Active",
+      organization_id: organization.id
     });
   };
 

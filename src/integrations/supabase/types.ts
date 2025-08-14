@@ -6548,6 +6548,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_current_user_organization_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_financial_reports_data: {
         Args: {
           p_branch_id: string
