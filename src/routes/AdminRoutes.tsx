@@ -93,6 +93,16 @@ const RequireAdminAuth = () => {
   }
 
   if (!session) {
+    // Extract tenant slug from current path for tenant-aware redirect
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const tenantSlug = pathParts[0];
+    
+    // If we have a tenant slug, redirect to tenant-specific login
+    if (tenantSlug && !['super-admin', 'system-dashboard', 'system-login'].includes(tenantSlug)) {
+      return <Navigate to={`/${tenantSlug}/branch-admin-login`} replace />;
+    }
+    
+    // Default to super admin login
     return <Navigate to="/super-admin" replace />;
   }
 
