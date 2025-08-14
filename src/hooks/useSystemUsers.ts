@@ -12,6 +12,11 @@ interface SystemUser {
   last_login_at: string | null;
   created_at: string;
   role?: string;
+  organizations?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+  }>;
 }
 
 interface CreateSystemUserData {
@@ -42,11 +47,41 @@ export const useSystemUsers = () => {
         throw error;
       }
 
+      // Fetch user-organization associations
+      const userIds = (data || []).map((user: any) => user.id);
+      let organizationAssociations = [];
+
+      if (userIds.length > 0) {
+        const { data: orgData, error: orgError } = await supabase
+          .from('system_user_organizations')
+          .select(`
+            system_user_id,
+            organizations:organization_id (
+              id,
+              name,
+              slug
+            )
+          `)
+          .in('system_user_id', userIds);
+
+        if (!orgError) {
+          organizationAssociations = orgData || [];
+        }
+      }
+
       // data is a table-returning RPC (array of rows)
-      return (data || []).map((user: any) => ({
-        ...user,
-        role: user.role || 'support_admin',
-      })) as SystemUser[];
+      return (data || []).map((user: any) => {
+        const userOrgs = organizationAssociations
+          .filter((assoc: any) => assoc.system_user_id === user.id)
+          .map((assoc: any) => assoc.organizations)
+          .filter(Boolean);
+
+        return {
+          ...user,
+          role: user.role || 'support_admin',
+          organizations: userOrgs,
+        };
+      }) as SystemUser[];
     },
   });
 };

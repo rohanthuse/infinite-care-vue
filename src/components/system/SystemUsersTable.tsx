@@ -80,6 +80,7 @@ export const SystemUsersTable: React.FC = () => {
           <TableRow className="bg-muted/30">
             <TableHead>User</TableHead>
             <TableHead>Role</TableHead>
+            <TableHead>Organizations</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Last Login</TableHead>
             <TableHead>Created</TableHead>
@@ -120,6 +121,23 @@ export const SystemUsersTable: React.FC = () => {
                      user.role === 'analytics_viewer' ? 'Analytics Viewer' : 'Support Admin'}
                   </span>
                 </Badge>
+              </TableCell>
+              <TableCell>
+                <div className="flex flex-wrap gap-1">
+                  {user.organizations && user.organizations.length > 0 ? (
+                    user.organizations.map((org) => (
+                      <Badge 
+                        key={org.id}
+                        variant="outline" 
+                        className="text-xs"
+                      >
+                        {org.name}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">System Admin</span>
+                  )}
+                </div>
               </TableCell>
               <TableCell>
                 <Badge 
