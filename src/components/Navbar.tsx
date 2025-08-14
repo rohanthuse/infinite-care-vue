@@ -30,7 +30,8 @@ const Navbar = () => {
   };
   
   const handleGetStarted = () => {
-    navigate("/super-admin");
+    // Show organization selector for tenant login
+    navigate("/");
   };
 
   const handleCarerLogin = () => {

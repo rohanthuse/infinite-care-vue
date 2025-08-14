@@ -93,7 +93,7 @@ const RequireAdminAuth = () => {
   }
 
   if (!session) {
-    return <Navigate to="/super-admin" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;

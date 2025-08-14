@@ -42,7 +42,7 @@ export function DashboardHeader() {
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
-      navigate('/super-admin');
+      navigate('/');
     } catch (error) {
       console.error('Logout error:', error);
       toast({

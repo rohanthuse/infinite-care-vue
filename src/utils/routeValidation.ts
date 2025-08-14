@@ -3,7 +3,7 @@ export const validateRoute = (path: string): boolean => {
   // Basic route validation - can be expanded based on your needs
   const validRoutePatterns = [
     /^\/$/,                                                          // Home
-    /^\/super-admin$/,                                              // Super admin login
+    /^\/[^\/]+\/login$/,                                           // Tenant login
     /^\/carer-login$/,                                              // Carer login
     /^\/client-login$/,                                             // Client login
     /^\/[^\/]+\/dashboard$/,                                        // Tenant admin dashboard

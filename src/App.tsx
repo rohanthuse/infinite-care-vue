@@ -66,7 +66,6 @@ const AppContent = () => {
   // Show loading screen only for protected routes, not public routes
   const isPublicRoute = [
     '/', 
-    '/super-admin', 
     '/branch-admin-login',
     '/branch-selection',
     '/carer-login', 
@@ -75,7 +74,7 @@ const AppContent = () => {
     '/carer-onboarding',
     '/tenant-setup',
     '/system-login'
-  ].includes(window.location.pathname);
+  ].includes(window.location.pathname) || window.location.pathname.includes('/login');
 
   if (loading && !isPublicRoute) {
     return <LoadingScreen />;
@@ -89,7 +88,8 @@ const AppContent = () => {
             <Routes>
               {/* Public Routes - Always accessible */}
               <Route path="/" element={<Index />} />
-              <Route path="/super-admin" element={<SuperAdminLogin />} />
+              {/* Redirect old super-admin route to main page */}
+              <Route path="/super-admin" element={<Index />} />
               <Route path="/branch-admin-login" element={<BranchAdminLogin />} />
               <Route path="/branch-selection" element={<BranchSelection />} />
               <Route path="/carer-login" element={<CarerLoginSafe />} />

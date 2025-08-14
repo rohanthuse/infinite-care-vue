@@ -1,8 +1,27 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { ArrowRight, Shield, BarChart3, Users, Play, CheckCircle } from "lucide-react";
+import { ArrowRight, Shield, BarChart3, Users, Play, CheckCircle, Building } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 const Hero = () => {
   const heroRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const [selectedOrganization, setSelectedOrganization] = useState<string>("");
+
+  // Available organizations (subset of main ones for demo)
+  const organizations = [
+    { slug: "care", name: "Care Services" },
+    { slug: "lala", name: "Lala Healthcare" },
+    { slug: "demo", name: "Demo Care Services" },
+    { slug: "purecare", name: "Purecare" },
+    { slug: "audi", name: "Audi Health" }
+  ];
+
+  const handleOrganizationLogin = () => {
+    if (selectedOrganization) {
+      navigate(`/${selectedOrganization}/login`);
+    }
+  };
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
@@ -49,7 +68,7 @@ const Hero = () => {
               Our intelligent platform seamlessly connects healthcare providers, patients, and caregivers to deliver better outcomes with less administrative burden.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 mb-10">
+            <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <CustomButton size="lg" className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 border-0 shadow-lg shadow-blue-500/20">
                 Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
               </CustomButton>
@@ -57,6 +76,36 @@ const Hero = () => {
               <CustomButton variant="outline" size="lg" className="bg-white/80 backdrop-blur-sm border-blue-200 text-blue-700 hover:bg-blue-50">
                 <Play className="mr-2 h-4 w-4 fill-blue-500" /> Watch Demo
               </CustomButton>
+            </div>
+
+            {/* Organization Login Section */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100 mb-10">
+              <div className="flex items-center gap-2 mb-4">
+                <Building className="h-5 w-5 text-blue-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Organization Login</h3>
+              </div>
+              <p className="text-gray-600 mb-4">Select your organization to access your personalized dashboard</p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Select value={selectedOrganization} onValueChange={setSelectedOrganization}>
+                  <SelectTrigger className="sm:w-64">
+                    <SelectValue placeholder="Select your organization" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {organizations.map((org) => (
+                      <SelectItem key={org.slug} value={org.slug}>
+                        {org.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <CustomButton 
+                  onClick={handleOrganizationLogin}
+                  disabled={!selectedOrganization}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                >
+                  Access Portal <ArrowRight className="ml-2 h-4 w-4" />
+                </CustomButton>
+              </div>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
