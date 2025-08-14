@@ -64,8 +64,9 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
       
       return result.data;
     },
-    onSuccess: (org) => {
-      toast.success(`Organization "${org.name}" created successfully!`);
+    onSuccess: (result) => {
+      const org = result?.data || result; // Handle both response formats
+      toast.success(`Organization "${org?.name || 'New organization'}" created successfully!`);
       queryClient.invalidateQueries({ queryKey: ['system-tenants'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-stats'] });
       resetForm();
