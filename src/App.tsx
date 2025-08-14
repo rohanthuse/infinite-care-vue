@@ -62,6 +62,7 @@ const AppContent = () => {
   const { loading, error } = useAuth();
 
   // Show loading screen only for protected routes, not public routes
+  const pathname = window.location.pathname;
   const isPublicRoute = [
     '/', 
     '/super-admin', 
@@ -73,7 +74,9 @@ const AppContent = () => {
     '/carer-onboarding',
     '/tenant-setup',
     '/system-login'
-  ].includes(window.location.pathname);
+  ].includes(pathname) || 
+  // Also check for tenant-specific login routes
+  pathname.match(/^\/[^\/]+\/(branch-admin-login|carer-login|client-login|carer-invitation|carer-onboarding)$/);
 
   if (loading && !isPublicRoute) {
     return <LoadingScreen />;
@@ -140,6 +143,14 @@ const AppContent = () => {
                 <TenantProvider>
                   <TenantErrorWrapper>
                     <Routes>
+                      {/* Tenant-specific login routes */}
+                      <Route path="branch-admin-login" element={<BranchAdminLogin />} />
+                      <Route path="carer-login" element={<CarerLoginSafe />} />
+                      <Route path="client-login" element={<ClientLogin />} />
+                      <Route path="carer-invitation" element={<CarerInvitation />} />
+                      <Route path="carer-onboarding" element={<CarerOnboarding />} />
+                      
+                      {/* Protected routes */}
                       {AdminRoutes()}
                       {CarerRoutes()}
                       {ClientRoutes()}

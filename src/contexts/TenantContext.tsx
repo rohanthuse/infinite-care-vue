@@ -60,6 +60,16 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     // Skip system routes and public routes
     const publicRoutes = ['super-admin', 'branch-admin-login', 'branch-selection', 'carer-login', 'client-login', 'carer-invitation', 'carer-onboarding', 'tenant-setup', 'tenant-error', 'system-login', 'system-dashboard'];
     
+    // Also check for tenant-specific login routes (e.g., /hcl/branch-admin-login)
+    const isTenantLoginRoute = pathParts.length === 2 && publicRoutes.slice(1, 6).includes(pathParts[1]); // Exclude 'super-admin' and system routes
+    
+    // Handle tenant-specific login routes first
+    if (isTenantLoginRoute) {
+      console.log('[TenantProvider] Tenant-specific login route detected, setting tenant:', pathParts[0]);
+      setSubdomain(pathParts[0]);
+      return;
+    }
+    
     if (pathParts.length === 0 || publicRoutes.includes(pathParts[0])) {
       console.log('[TenantProvider] Public route or root - no tenant');
       setSubdomain(null);
