@@ -153,20 +153,21 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
                 required
               />
               <p className="text-xs text-muted-foreground">
-                Organization will be accessible at: {formData.subdomain || 'subdomain'}.lovable.app
+                Organization will be accessible at: {formData.subdomain || 'subdomain'}.med-infinite.care
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="contact_email">Contact Email</Label>
+              <Label htmlFor="contact_email">Contact Email *</Label>
               <Input
                 id="contact_email"
                 type="email"
                 placeholder="contact@abc-care.com"
                 value={formData.contact_email}
                 onChange={(e) => handleInputChange('contact_email', e.target.value)}
+                required
               />
             </div>
 
@@ -220,7 +221,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
             </Button>
             <Button 
               type="submit" 
-              disabled={createTenant.isPending || !formData.name || !formData.subdomain}
+              disabled={createTenant.isPending || !formData.name || !formData.subdomain || !formData.contact_email}
             >
               {createTenant.isPending ? (
                 <>

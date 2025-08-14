@@ -96,6 +96,9 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
 
       if (orgError) {
         console.error('Error fetching organization:', orgError);
+        if (orgError.code === 'PGRST116') {
+          throw new Error(`Organization with subdomain "${subdomain}" not found`);
+        }
         throw orgError;
       }
 

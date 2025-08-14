@@ -32,6 +32,8 @@ import SystemUsers from "./pages/system/SystemUsers";
 import SystemAnalytics from "./pages/system/SystemAnalytics";
 import SystemSettings from "./pages/system/SystemSettings";
 import { SystemGuard } from "@/components/system/SystemGuard";
+import { TenantError } from "./pages/TenantError";
+import { TenantErrorWrapper } from "@/components/TenantErrorWrapper";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -93,6 +95,7 @@ const AppContent = () => {
               <Route path="/carer-onboarding" element={<CarerOnboarding />} />
               <Route path="/client-login" element={<ClientLogin />} />
               <Route path="/tenant-setup" element={<TenantSetup />} />
+              <Route path="/tenant-error" element={<TenantError />} />
               <Route path="/system-login" element={<SystemLogin />} />
               
               {/* System Dashboard Routes */}
@@ -154,9 +157,11 @@ function App() {
         <SystemAuthProvider>
           <AuthProvider>
             <TenantProvider>
-              <Toaster />
-              <Sonner />
-              <AppContent />
+              <TenantErrorWrapper>
+                <Toaster />
+                <Sonner />
+                <AppContent />
+              </TenantErrorWrapper>
             </TenantProvider>
           </AuthProvider>
         </SystemAuthProvider>
