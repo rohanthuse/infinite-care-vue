@@ -57,6 +57,7 @@ export function AddBranchDialog() {
             description: `${newBranch?.name} has been added successfully`,
         });
         queryClient.invalidateQueries({ queryKey: ['branches'] });
+        queryClient.invalidateQueries({ queryKey: ['organization-branches', organization?.id] });
         setOpen(false);
         setTitle("");
         setCountry("England");

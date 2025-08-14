@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import { useTenant } from '@/contexts/TenantContext';
+import { AddBranchDialog } from '@/components/AddBranchDialog';
 
 interface Branch {
   id: string;
@@ -42,7 +42,7 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
         .from('branches')
         .select('*')
         .eq('organization_id', organizationId)
-        .eq('status', 'active');
+        .ilike('status', 'active');
 
       if (error) {
         console.error('Error fetching organization branches:', error);
@@ -117,16 +117,7 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
           <div className="text-sm text-gray-500">
             {branches?.length || 0} active branches
           </div>
-          <Button
-            onClick={() => {
-              toast.info("Add branch functionality coming soon!");
-            }}
-            size="sm"
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Branch
-          </Button>
+          <AddBranchDialog />
         </div>
       </div>
 

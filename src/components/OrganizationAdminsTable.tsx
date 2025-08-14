@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Search, Plus, Settings, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { AddMemberDialog } from "@/components/AddMemberDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -165,15 +166,7 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
             className="pl-10"
           />
         </div>
-        <Button
-          onClick={() => {
-            toast.info("Add member functionality coming soon!");
-          }}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Member
-        </Button>
+        <AddMemberDialog />
       </div>
 
       {/* Table */}
