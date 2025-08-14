@@ -81,6 +81,7 @@ export const SystemUsersTable: React.FC = () => {
           <TableRow className="bg-muted/30">
             <TableHead>User</TableHead>
             <TableHead>Role</TableHead>
+            <TableHead>Selected Organization</TableHead>
             <TableHead>Organizations</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Last Login</TableHead>
@@ -124,6 +125,15 @@ export const SystemUsersTable: React.FC = () => {
                 </Badge>
               </TableCell>
               <TableCell>
+                {user.selectedOrganization ? (
+                  <Badge variant="success" className="text-xs">
+                    {user.selectedOrganization.name}
+                  </Badge>
+                ) : (
+                  <span className="text-sm text-muted-foreground">System Admin</span>
+                )}
+              </TableCell>
+              <TableCell>
                 <div className="flex flex-wrap gap-1">
                   {user.organizations && user.organizations.length > 0 ? (
                     user.organizations.map((org) => (
@@ -136,7 +146,7 @@ export const SystemUsersTable: React.FC = () => {
                       </Badge>
                     ))
                   ) : (
-                    <span className="text-sm text-muted-foreground">System Admin</span>
+                    <span className="text-sm text-muted-foreground">None</span>
                   )}
                 </div>
               </TableCell>
