@@ -35,7 +35,7 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
     last_name: '',
     password: '',
     confirmPassword: '',
-    role: 'support_admin' as 'super_admin' | 'tenant_manager' | 'support_admin' | 'analytics_viewer',
+    role: 'super_admin' as 'super_admin' | 'tenant_manager' | 'support_admin' | 'analytics_viewer',
     organization_id: '',
   });
 
@@ -105,7 +105,7 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
         last_name: '',
         password: '',
         confirmPassword: '',
-        role: 'support_admin',
+        role: 'super_admin',
         organization_id: '',
       });
       setOpen(false);
@@ -193,10 +193,10 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="support_admin">Support Admin</SelectItem>
-                <SelectItem value="tenant_manager">Tenant Manager</SelectItem>
-                <SelectItem value="analytics_viewer">Analytics Viewer</SelectItem>
                 <SelectItem value="super_admin">Super Admin</SelectItem>
+                <SelectItem value="tenant_manager">Tenant Manager</SelectItem>
+                <SelectItem value="support_admin">Support Admin</SelectItem>
+                <SelectItem value="analytics_viewer">Analytics Viewer</SelectItem>
               </SelectContent>
             </Select>
           </div>

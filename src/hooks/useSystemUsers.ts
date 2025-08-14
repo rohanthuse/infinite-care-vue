@@ -127,6 +127,7 @@ export const useCreateSystemUser = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system-users'] });
       queryClient.invalidateQueries({ queryKey: ['system-user-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['organizations', 'system-tenants'] });
       toast({
         title: "User Created",
         description: "System user has been created successfully.",
