@@ -125,8 +125,18 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
 
       console.log('[TenantProvider] Found organization:', orgData);
 
-      // If a user is logged in, verify membership for protected access
-      if (user) {
+      // Check if we're on a login route - skip membership check for these
+      const pathname = window.location.pathname;
+      const pathParts = pathname.split('/').filter(Boolean);
+      const loginRoutes = ['branch-admin-login', 'carer-login', 'client-login', 'carer-invitation', 'carer-onboarding'];
+      const isOnLoginRoute = pathParts.length === 2 && loginRoutes.includes(pathParts[1]);
+      
+      console.log('[TenantProvider] Current route check - pathname:', pathname, 'isOnLoginRoute:', isOnLoginRoute);
+
+      // If a user is logged in AND we're not on a login route, verify membership for protected access
+      if (user && !isOnLoginRoute) {
+        console.log('[TenantProvider] Performing membership check for authenticated user on protected route');
+        
         // Check if user is a super admin; if so, bypass org membership requirement
         const { data: roleRows, error: roleErr } = await supabase
           .from('user_roles')
@@ -150,12 +160,14 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
             .single();
 
           if (memberError) {
-            console.error('User is not a member of this organization:', memberError);
+            console.error('[TenantProvider] User is not a member of this organization:', memberError);
             throw new Error('Access denied: You are not a member of this organization');
           }
         } else {
           console.log('[TenantProvider] Super admin detected; bypassing org membership check.');
         }
+      } else if (isOnLoginRoute) {
+        console.log('[TenantProvider] On login route - skipping membership check');
       }
 
       return orgData as Organization;
