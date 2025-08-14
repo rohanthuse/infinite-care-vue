@@ -11,6 +11,7 @@ import { SystemAuthProvider } from "@/contexts/SystemAuthContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { AuthErrorBoundary } from "@/components/AuthErrorBoundary";
 import Index from "./pages/Index";
+import UnifiedLogin from "./components/UnifiedLogin";
 import CarerLogin from "./pages/CarerLogin";
 import CarerLoginSafe from "./pages/CarerLoginSafe";
 import CarerInvitation from "./pages/CarerInvitation";
@@ -68,6 +69,7 @@ const AppContent = () => {
   // Show loading screen only for protected routes, not public routes
   const isPublicRoute = [
     '/', 
+    '/login',
     '/branch-admin-login',
     '/branch-selection',
     '/carer-login', 
@@ -90,6 +92,7 @@ const AppContent = () => {
             <Routes>
               {/* Public Routes - Always accessible */}
               <Route path="/" element={<Index />} />
+              <Route path="/login" element={<UnifiedLogin />} />
               {/* Redirect old super-admin route to main page */}
               <Route path="/super-admin" element={<Index />} />
               <Route path="/branch-admin-login" element={<BranchAdminLogin />} />

@@ -1,27 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { ArrowRight, Shield, BarChart3, Users, Play, CheckCircle, Building } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowRight, Shield, BarChart3, Users, Play, CheckCircle, LogIn } from "lucide-react";
 const Hero = () => {
   const heroRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const [selectedOrganization, setSelectedOrganization] = useState<string>("");
-
-  // Available organizations (subset of main ones for demo)
-  const organizations = [
-    { slug: "care", name: "Care Services" },
-    { slug: "lala", name: "Lala Healthcare" },
-    { slug: "demo", name: "Demo Care Services" },
-    { slug: "purecare", name: "Purecare" },
-    { slug: "audi", name: "Audi Health" }
-  ];
-
-  const handleOrganizationLogin = () => {
-    if (selectedOrganization) {
-      navigate(`/${selectedOrganization}/login`);
-    }
-  };
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
@@ -78,52 +61,25 @@ const Hero = () => {
               </CustomButton>
             </div>
 
-            {/* Organization Login Section */}
+            {/* Unified Login Section */}
             <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100 mb-10">
               <div className="flex items-center gap-2 mb-4">
-                <Building className="h-5 w-5 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Organization Login</h3>
+                <LogIn className="h-5 w-5 text-blue-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Access Your Dashboard</h3>
               </div>
-              <p className="text-gray-600 mb-4">Select your organization to access your dashboard</p>
+              <p className="text-gray-600 mb-4">Sign in to access your organization's healthcare management platform</p>
               <div className="space-y-4">
-                <Select value={selectedOrganization} onValueChange={setSelectedOrganization}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select your organization" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {organizations.map((org) => (
-                      <SelectItem key={org.slug} value={org.slug}>
-                        {org.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                {selectedOrganization && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <CustomButton 
-                      onClick={() => navigate(`/${selectedOrganization}/login`)}
-                      variant="outline"
-                      className="border-blue-200 text-blue-700 hover:bg-blue-50"
-                    >
-                      Admin Login
-                    </CustomButton>
-                    <CustomButton 
-                      onClick={() => navigate(`/${selectedOrganization}/carer-login`)}
-                      variant="outline"
-                      className="border-green-200 text-green-700 hover:bg-green-50"
-                    >
-                      Carer Login
-                    </CustomButton>
-                    <CustomButton 
-                      onClick={() => navigate(`/${selectedOrganization}/client-login`)}
-                      variant="outline"
-                      className="border-purple-200 text-purple-700 hover:bg-purple-50"
-                    >
-                      Client Login
-                    </CustomButton>
-                  </div>
-                )}
+                <CustomButton 
+                  onClick={() => navigate('/login')}
+                  size="lg"
+                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 border-0 shadow-lg shadow-blue-500/20"
+                >
+                  <LogIn className="mr-2 h-5 w-5" />
+                  Sign In to Your Account
+                </CustomButton>
+                <p className="text-xs text-gray-500 text-center">
+                  Your dashboard will be automatically customized for your organization
+                </p>
               </div>
             </div>
             
