@@ -90,14 +90,19 @@ export const useSystemUsers = () => {
         const userAssociations = (userOrgAssociations || [])
           .filter((assoc: any) => assoc.system_user_id === user.id);
         
+        console.log(`[useSystemUsers] User ${user.email} associations:`, userAssociations);
+        
         const userOrgs = userAssociations
           .map((assoc: any) => assoc.organization)
           .filter(Boolean);
         
         const primaryOrg = userAssociations
           .find((assoc: any) => assoc.is_primary)?.organization || null;
+          
+        console.log(`[useSystemUsers] User ${user.email} primary org:`, primaryOrg);
+        console.log(`[useSystemUsers] User ${user.email} all orgs:`, userOrgs);
 
-        return {
+        const finalUser = {
           id: user.id,
           email: user.email,
           first_name: user.first_name,
@@ -109,6 +114,9 @@ export const useSystemUsers = () => {
           last_login_at: user.last_login_at,
           created_at: user.created_at,
         };
+        
+        console.log(`[useSystemUsers] Final user object for ${user.email}:`, finalUser);
+        return finalUser;
       });
 
       return usersWithOrganizations as SystemUser[];
