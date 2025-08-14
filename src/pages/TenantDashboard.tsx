@@ -17,6 +17,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { CustomButton } from '@/components/ui/CustomButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { DashboardHeader } from "@/components/DashboardHeader";
+import { DashboardNavbar } from "@/components/DashboardNavbar";
+import { OrganizationAdminsTable } from "@/components/OrganizationAdminsTable";
+import { TenantBranchNavigation } from "@/components/dashboard/TenantBranchNavigation";
 
 interface Organization {
   id: string;
@@ -149,6 +153,43 @@ const TenantDashboard = () => {
     return null;
   }
 
+  // Check if user has admin role (owner/admin) to show old-style dashboard
+  const isOrganizationAdmin = userRole && (userRole.role === 'owner' || userRole.role === 'admin');
+
+  // If user is organization admin, show the old Dashboard style interface
+  if (isOrganizationAdmin) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        <DashboardNavbar />
+        
+        <motion.main 
+          className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          {/* Organization Branch Navigation */}
+          <TenantBranchNavigation organizationId={organization.id} />
+          
+          <div className="flex justify-between items-center mb-6 md:mb-8">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">
+                {organization.name} - Organization Management
+              </h1>
+              <p className="text-gray-500 mt-2 font-medium">
+                Manage and monitor all {organization.name} administrators and branches.
+              </p>
+            </div>
+          </div>
+
+          <OrganizationAdminsTable organizationId={organization.id} />
+        </motion.main>
+      </div>
+    );
+  }
+
+  // Regular tenant dashboard for non-admin users
   const quickActions = [
     {
       title: 'User Management',

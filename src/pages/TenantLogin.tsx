@@ -89,13 +89,23 @@ const TenantLogin = () => {
         return;
       }
 
-      // Success - redirect to tenant dashboard
+      // Success - redirect based on role
       toast({
         title: 'Welcome!',
         description: `Successfully logged in to ${organization.name}.`,
       });
 
-      navigate(`/${tenantSlug}/dashboard`);
+      // Redirect based on user role within the organization
+      if (memberData.role === 'owner' || memberData.role === 'admin') {
+        // Organization admin - go to tenant dashboard which will show old-style admin interface
+        navigate(`/${tenantSlug}/dashboard`);
+      } else if (memberData.role === 'branch_admin') {
+        // Branch admin - redirect to branch selection or specific branch
+        navigate(`/${tenantSlug}/branches`);
+      } else {
+        // Regular member - go to regular tenant dashboard
+        navigate(`/${tenantSlug}/dashboard`);
+      }
     } catch (error: any) {
       console.error('Login error:', error);
       toast({
