@@ -32,6 +32,7 @@ import SystemTenants from "./pages/system/SystemTenants";
 import SystemUsers from "./pages/system/SystemUsers";
 import SystemAnalytics from "./pages/system/SystemAnalytics";
 import SystemSettings from "./pages/system/SystemSettings";
+import { AppAdmin } from "./pages/AppAdmin";
 import { SystemGuard } from "@/components/system/SystemGuard";
 import { TenantError } from "./pages/TenantError";
 import { TenantErrorWrapper } from "@/components/TenantErrorWrapper";
@@ -101,6 +102,9 @@ const AppContent = () => {
               <Route path="/tenant-setup" element={<TenantSetup />} />
               <Route path="/tenant-error" element={<TenantError />} />
               <Route path="/system-login" element={<SystemLogin />} />
+              
+              {/* App Admin Route */}
+              <Route path="/app-admin" element={<AppAdmin />} />
               
               {/* System Portal Routes */}
               <Route path="/system/*" element={<SystemRoutes />} />

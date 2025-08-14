@@ -506,6 +506,38 @@ export type Database = {
           },
         ]
       }
+      app_admin_organizations: {
+        Row: {
+          app_admin_id: string
+          created_at: string
+          id: string
+          organization_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          app_admin_id: string
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          app_admin_id?: string
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_admin_organizations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_records: {
         Row: {
           attendance_date: string
@@ -6649,6 +6681,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_app_admin: {
+        Args: { user_id_param: string }
         Returns: boolean
       }
       is_authenticated_admin: {
