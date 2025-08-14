@@ -34,7 +34,6 @@ import SystemAnalytics from "./pages/system/SystemAnalytics";
 import SystemSettings from "./pages/system/SystemSettings";
 import { SystemGuard } from "@/components/system/SystemGuard";
 import { TenantError } from "./pages/TenantError";
-import { TenantSelection } from "./pages/TenantSelection";
 import { TenantErrorWrapper } from "@/components/TenantErrorWrapper";
 
 const queryClient = new QueryClient({
@@ -101,7 +100,6 @@ const AppContent = () => {
               <Route path="/client-login" element={<ClientLogin />} />
               <Route path="/tenant-setup" element={<TenantSetup />} />
               <Route path="/tenant-error" element={<TenantError />} />
-              <Route path="/tenant-selection" element={<TenantSelection />} />
               <Route path="/system-login" element={<SystemLogin />} />
               
               {/* System Portal Routes */}

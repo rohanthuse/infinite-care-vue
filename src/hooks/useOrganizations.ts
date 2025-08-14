@@ -5,9 +5,6 @@ export interface OrganizationOption {
   id: string;
   name: string;
   subdomain?: string;
-  subscription_status?: string;
-  max_users?: number;
-  max_branches?: number;
 }
 
 const fetchOrganizations = async (): Promise<OrganizationOption[]> => {
@@ -17,14 +14,7 @@ const fetchOrganizations = async (): Promise<OrganizationOption[]> => {
 
   // data may be { tenants: [...] } or an array depending on function implementation
   const tenants = Array.isArray(data) ? data : data?.tenants || [];
-  return tenants.map((t: any) => ({ 
-    id: t.id, 
-    name: t.name, 
-    subdomain: t.subdomain,
-    subscription_status: t.subscription_status || 'active',
-    max_users: t.max_users || 50,
-    max_branches: t.max_branches || 5
-  })) as OrganizationOption[];
+  return tenants.map((t: any) => ({ id: t.id, name: t.name, subdomain: t.subdomain })) as OrganizationOption[];
 };
 
 export const useOrganizations = () => {
