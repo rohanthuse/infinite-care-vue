@@ -39,25 +39,38 @@ serve(async (req) => {
       global: { headers: { 'x-client-info': 'assign-user-to-organization' } },
     });
 
-    // Upsert relation to avoid duplicates
-    const { data, error } = await supabase
-      .from('system_user_organizations')
-      .upsert(
-        [{ system_user_id, organization_id, role: role || 'member' }],
-        { onConflict: 'system_user_id,organization_id' }
-      )
-      .select()
-      .single();
+    // Use the new sync function to handle both system_user_organizations AND organization_members
+    const { data: syncResult, error: syncError } = await supabase.rpc(
+      'sync_system_user_to_organization',
+      {
+        p_system_user_id: system_user_id,
+        p_organization_id: organization_id,
+        p_role: role || 'member'
+      }
+    );
 
-    if (error) {
-      console.error('[assign-user-to-organization] upsert error:', error);
-      return new Response(JSON.stringify({ success: false, error: error.message }), {
+    if (syncError) {
+      console.error('[assign-user-to-organization] sync error:', syncError);
+      return new Response(JSON.stringify({ success: false, error: syncError.message }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       });
     }
 
-    return new Response(JSON.stringify({ success: true, relation: data }), {
+    // Check if the sync was successful
+    if (!syncResult?.success) {
+      console.error('[assign-user-to-organization] sync failed:', syncResult);
+      return new Response(JSON.stringify({ success: false, error: syncResult?.error || 'Sync operation failed' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
+    }
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      relation: syncResult,
+      message: 'User successfully assigned to organization with auth setup'
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });

@@ -5291,6 +5291,7 @@ export type Database = {
       }
       system_users: {
         Row: {
+          auth_user_id: string | null
           created_at: string
           created_by: string | null
           email: string
@@ -5305,6 +5306,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auth_user_id?: string | null
           created_at?: string
           created_by?: string | null
           email: string
@@ -5319,6 +5321,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auth_user_id?: string | null
           created_at?: string
           created_by?: string | null
           email?: string
@@ -6405,6 +6408,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      create_auth_user_for_system_user: {
+        Args: { p_email: string; p_password?: string; p_system_user_id: string }
+        Returns: Json
+      }
       create_carer_with_invitation: {
         Args: { p_branch_id: string; p_carer_data: Json }
         Returns: string
@@ -6750,6 +6757,14 @@ export type Database = {
       sync_client_message_participants: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      sync_system_user_to_organization: {
+        Args: {
+          p_organization_id: string
+          p_role?: string
+          p_system_user_id: string
+        }
+        Returns: Json
       }
       system_authenticate: {
         Args:
