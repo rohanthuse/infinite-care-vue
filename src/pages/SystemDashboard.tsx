@@ -24,7 +24,7 @@ import { useLocation } from 'react-router-dom';
 import { SystemSectionTabs, SystemTabValue } from '@/components/system/SystemSectionTabs';
 import { useSystemDashboard } from '@/hooks/useSystemDashboard';
 import { ReportsTab } from '@/components/system/dashboard/ReportsTab';
-import { DevSubdomainSwitcher } from '@/components/system/DevSubdomainSwitcher';
+import { DevTenantSwitcher } from '@/components/system/DevTenantSwitcher';
 
 export default function SystemDashboard() {
   const { user, hasRole } = useSystemAuth();
@@ -201,7 +201,7 @@ export default function SystemDashboard() {
             {window.location.hostname === 'localhost' && (
               <div className="mt-12">
                 <h3 className="text-xl font-semibold text-foreground mb-6">Development Tools</h3>
-                <DevSubdomainSwitcher />
+                <DevTenantSwitcher />
               </div>
             )}
           </TabsContent>

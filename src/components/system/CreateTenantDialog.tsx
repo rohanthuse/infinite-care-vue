@@ -29,7 +29,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     name: '',
-    subdomain: '',
+    slug: '',
     contact_email: '',
     contact_phone: '',
     address: '',
@@ -44,7 +44,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
       const { data: result, error } = await supabase.functions.invoke('create-system-tenant', {
         body: {
           name: data.name,
-          subdomain: data.subdomain,
+          slug: data.slug,
           contactEmail: data.contact_email,
           contactPhone: data.contact_phone,
           address: data.address,
@@ -74,8 +74,8 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
     },
     onError: (error: any) => {
       console.error('Error creating organization:', error);
-      if (error.message?.includes('subdomain')) {
-        toast.error('Subdomain already exists. Please choose a different subdomain.');
+      if (error.message?.includes('slug')) {
+        toast.error('URL slug already exists. Please choose a different slug.');
       } else {
         toast.error('Failed to create organization. Please try again.');
       }
@@ -85,14 +85,14 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate subdomain
-    if (!/^[a-z0-9-]+$/.test(formData.subdomain)) {
-      toast.error('Subdomain can only contain lowercase letters, numbers, and hyphens');
+    // Validate slug
+    if (!/^[a-z0-9-]+$/.test(formData.slug)) {
+      toast.error('URL slug can only contain lowercase letters, numbers, and hyphens');
       return;
     }
 
-    if (formData.subdomain.length < 3) {
-      toast.error('Subdomain must be at least 3 characters long');
+    if (formData.slug.length < 3) {
+      toast.error('URL slug must be at least 3 characters long');
       return;
     }
 
@@ -106,7 +106,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
   const resetForm = () => {
     setFormData({
       name: '',
-      subdomain: '',
+      slug: '',
       contact_email: '',
       contact_phone: '',
       address: '',
@@ -144,17 +144,17 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="subdomain">Subdomain *</Label>
+              <Label htmlFor="slug">URL Slug *</Label>
               <Input
-                id="subdomain"
+                id="slug"
                 placeholder="abc-care"
-                value={formData.subdomain}
-                onChange={(e) => handleInputChange('subdomain', e.target.value.toLowerCase())}
+                value={formData.slug}
+                onChange={(e) => handleInputChange('slug', e.target.value.toLowerCase())}
                 pattern="^[a-z0-9-]+$"
                 required
               />
               <p className="text-xs text-muted-foreground">
-                Organization will be accessible at: {formData.subdomain || 'subdomain'}.med-infinite.care
+                Organization will be accessible at: med-infinite.care/{formData.slug || 'slug'}
               </p>
             </div>
           </div>
@@ -222,7 +222,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
             </Button>
             <Button 
               type="submit" 
-              disabled={createTenant.isPending || !formData.name || !formData.subdomain || !formData.contact_email}
+              disabled={createTenant.isPending || !formData.name || !formData.slug || !formData.contact_email}
             >
               {createTenant.isPending ? (
                 <>

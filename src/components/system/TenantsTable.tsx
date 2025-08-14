@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 interface Tenant {
   id: string;
   name: string;
-  subdomain: string;
+  slug: string;
   contact_email: string | null;
   subscription_plan: string;
   subscription_status: string;
@@ -38,7 +38,7 @@ export const TenantsTable = ({
 
   // Filter tenants based on search and status
   const filteredTenants = tenants?.filter(tenant => {
-    const matchesSearch = tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) || tenant.subdomain.toLowerCase().includes(searchTerm.toLowerCase()) || tenant.contact_email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) || tenant.slug.toLowerCase().includes(searchTerm.toLowerCase()) || tenant.contact_email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || tenant.subscription_status === statusFilter;
     return matchesSearch && matchesStatus;
   }) || [];
@@ -49,7 +49,7 @@ export const TenantsTable = ({
     }
     const csvData = tenants.map(tenant => ({
       Name: tenant.name,
-      Subdomain: tenant.subdomain,
+      'URL Slug': tenant.slug,
       'Contact Email': tenant.contact_email || '',
       Plan: tenant.subscription_plan,
       Status: tenant.subscription_status,
@@ -141,7 +141,7 @@ export const TenantsTable = ({
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="font-semibold">Organization</TableHead>
-                <TableHead className="font-semibold">Subdomain</TableHead>
+                <TableHead className="font-semibold">URL Slug</TableHead>
                 <TableHead className="font-semibold">Plan</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
                 <TableHead className="font-semibold">Users</TableHead>
@@ -164,7 +164,7 @@ export const TenantsTable = ({
                   </TableCell>
                   <TableCell>
                     <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
-                      {tenant.subdomain}
+                      med-infinite.care/{tenant.slug}
                     </code>
                   </TableCell>
                   <TableCell>

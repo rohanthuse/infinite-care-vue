@@ -6,7 +6,7 @@ import Features from "@/components/Features";
 import Testimonials from "@/components/Testimonials";
 import CallToAction from "@/components/CallToAction";
 import Footer from "@/components/Footer";
-import { DevSubdomainSwitcher } from "@/components/system/DevSubdomainSwitcher";
+import { DevTenantSwitcher } from "@/components/system/DevTenantSwitcher";
 
 const Index = () => {
   useEffect(() => {
@@ -68,7 +68,7 @@ const Index = () => {
       {/* Development Tools - Only visible on localhost */}
       {window.location.hostname === 'localhost' && (
         <div className="fixed bottom-4 right-4 z-50">
-          <DevSubdomainSwitcher />
+          <DevTenantSwitcher />
         </div>
       )}
     </main>

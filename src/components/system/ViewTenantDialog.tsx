@@ -23,8 +23,8 @@ export const ViewTenantDialog: React.FC<ViewTenantDialogProps> = ({ open, onOpen
               <div className="font-medium">{tenant.name}</div>
             </div>
             <div>
-              <div className="text-sm text-muted-foreground">Subdomain</div>
-              <div className="font-mono text-sm bg-muted px-2 py-1 rounded">{tenant.subdomain}</div>
+              <div className="text-sm text-muted-foreground">URL Slug</div>
+              <div className="font-mono text-sm bg-muted px-2 py-1 rounded">med-infinite.care/{tenant.slug}</div>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="capitalize">{tenant.subscription_plan}</Badge>

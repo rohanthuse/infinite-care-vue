@@ -11,56 +11,56 @@ import { toast } from 'sonner';
 import { useTenant } from '@/contexts/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
 
-export const DevSubdomainSwitcher: React.FC = () => {
-  const [currentSubdomain, setCurrentSubdomain] = useState<string>('');
-  const [customSubdomain, setCustomSubdomain] = useState<string>('');
+export const DevTenantSwitcher: React.FC = () => {
+  const [currentTenantSlug, setCurrentTenantSlug] = useState<string>('');
+  const [customTenantSlug, setCustomTenantSlug] = useState<string>('');
   const [testingConnectivity, setTestingConnectivity] = useState<boolean>(false);
   const { data: organizations, isLoading, error: orgsError } = useOrganizations();
-  const { organization, subdomain: contextSubdomain, error: tenantError } = useTenant();
+  const { organization, subdomain: contextTenantSlug, error: tenantError } = useTenant();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const stored = localStorage.getItem('dev-subdomain') || '';
-    setCurrentSubdomain(stored);
+    const stored = localStorage.getItem('dev-tenant') || '';
+    setCurrentTenantSlug(stored);
   }, []);
 
-  const handleSubdomainChange = (subdomain: string) => {
-    console.log('[DevSubdomainSwitcher] Switching to subdomain:', subdomain);
+  const handleTenantChange = (slug: string) => {
+    console.log('[DevTenantSwitcher] Switching to tenant slug:', slug);
     
-    if (subdomain) {
-      localStorage.setItem('dev-subdomain', subdomain);
-      toast.success(`Switched to tenant: ${subdomain}`);
-      console.log('[DevSubdomainSwitcher] Set localStorage dev-subdomain to:', subdomain);
+    if (slug) {
+      localStorage.setItem('dev-tenant', slug);
+      toast.success(`Switched to tenant: ${slug}`);
+      console.log('[DevTenantSwitcher] Set localStorage dev-tenant to:', slug);
     } else {
-      localStorage.removeItem('dev-subdomain');
-      toast.success('Cleared tenant subdomain');
-      console.log('[DevSubdomainSwitcher] Cleared localStorage dev-subdomain');
+      localStorage.removeItem('dev-tenant');
+      toast.success('Cleared tenant slug');
+      console.log('[DevTenantSwitcher] Cleared localStorage dev-tenant');
     }
     
     // Invalidate tenant queries and reload
     queryClient.invalidateQueries({ queryKey: ['organization'] });
     setTimeout(() => {
-      console.log('[DevSubdomainSwitcher] Reloading page...');
+      console.log('[DevTenantSwitcher] Reloading page...');
       window.location.reload();
     }, 500);
   };
 
-  const handleCustomSubdomain = () => {
-    if (!customSubdomain.trim()) {
-      toast.error('Please enter a subdomain');
+  const handleCustomTenantSlug = () => {
+    if (!customTenantSlug.trim()) {
+      toast.error('Please enter a tenant slug');
       return;
     }
-    handleSubdomainChange(customSubdomain.trim().toLowerCase());
+    handleTenantChange(customTenantSlug.trim().toLowerCase());
   };
 
-  const clearSubdomain = () => {
-    setCustomSubdomain('');
-    handleSubdomainChange('');
+  const clearTenantSlug = () => {
+    setCustomTenantSlug('');
+    handleTenantChange('');
   };
 
   const testConnectivity = async () => {
-    if (!currentSubdomain) {
-      toast.error('No subdomain set to test');
+    if (!currentTenantSlug) {
+      toast.error('No tenant slug set to test');
       return;
     }
     
@@ -68,19 +68,19 @@ export const DevSubdomainSwitcher: React.FC = () => {
     try {
       // Test if the edge function can load the organization
       const result = await queryClient.fetchQuery({
-        queryKey: ['test-tenant', currentSubdomain],
+        queryKey: ['test-tenant', currentTenantSlug],
         queryFn: async () => {
           const { data, error } = await supabase.functions.invoke('list-system-tenants');
           if (error) throw error;
           const tenants = Array.isArray(data) ? data : data?.tenants || [];
-          return tenants.find((t: any) => t.subdomain === currentSubdomain);
+          return tenants.find((t: any) => t.slug === currentTenantSlug);
         }
       });
       
       if (result) {
-        toast.success(`✅ Connectivity test passed for ${currentSubdomain}`);
+        toast.success(`✅ Connectivity test passed for ${currentTenantSlug}`);
       } else {
-        toast.error(`❌ No organization found with subdomain: ${currentSubdomain}`);
+        toast.error(`❌ No organization found with slug: ${currentTenantSlug}`);
       }
     } catch (error: any) {
       toast.error(`❌ Connectivity test failed: ${error.message}`);
@@ -102,7 +102,7 @@ export const DevSubdomainSwitcher: React.FC = () => {
           Development Tools
         </CardTitle>
         <CardDescription>
-          Switch between tenant organizations for testing
+          Switch between tenant organizations for testing (path-based routing)
         </CardDescription>
       </CardHeader>
       
@@ -112,12 +112,12 @@ export const DevSubdomainSwitcher: React.FC = () => {
           <Label>Current Status</Label>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span>Subdomain:</span>
-              <span className="font-mono">{currentSubdomain || '(none)'}</span>
+              <span>Tenant Slug:</span>
+              <span className="font-mono">{currentTenantSlug || '(none)'}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span>Context Subdomain:</span>
-              <span className="font-mono">{contextSubdomain || '(none)'}</span>
+              <span>Context Slug:</span>
+              <span className="font-mono">{contextTenantSlug || '(none)'}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span>Organization:</span>
@@ -160,7 +160,7 @@ export const DevSubdomainSwitcher: React.FC = () => {
 
         <div className="space-y-2">
           <Label>Available Organizations</Label>
-          <Select onValueChange={handleSubdomainChange} disabled={isLoading}>
+          <Select onValueChange={handleTenantChange} disabled={isLoading}>
             <SelectTrigger>
               <SelectValue placeholder={isLoading ? "Loading..." : "Select organization"} />
             </SelectTrigger>
@@ -176,15 +176,15 @@ export const DevSubdomainSwitcher: React.FC = () => {
         </div>
 
         <div className="space-y-2">
-          <Label>Custom Subdomain</Label>
+          <Label>Custom Tenant Slug</Label>
           <div className="flex gap-2">
             <Input
-              placeholder="Enter subdomain"
-              value={customSubdomain}
-              onChange={(e) => setCustomSubdomain(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCustomSubdomain()}
+              placeholder="Enter tenant slug"
+              value={customTenantSlug}
+              onChange={(e) => setCustomTenantSlug(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCustomTenantSlug()}
             />
-            <Button onClick={handleCustomSubdomain} size="sm">
+            <Button onClick={handleCustomTenantSlug} size="sm">
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
@@ -192,7 +192,7 @@ export const DevSubdomainSwitcher: React.FC = () => {
 
         {/* Action Buttons */}
         <div className="space-y-2">
-          {currentSubdomain && (
+          {currentTenantSlug && (
             <>
               <Button 
                 onClick={testConnectivity} 
@@ -210,7 +210,7 @@ export const DevSubdomainSwitcher: React.FC = () => {
               </Button>
               
               <Button 
-                onClick={() => window.open(`https://${currentSubdomain}.med-infinite.care`, '_blank')}
+                onClick={() => window.open(`https://med-infinite.care/${currentTenantSlug}`, '_blank')}
                 variant="outline" 
                 size="sm" 
                 className="w-full"
@@ -219,9 +219,9 @@ export const DevSubdomainSwitcher: React.FC = () => {
                 Test Production URL
               </Button>
               
-              <Button onClick={clearSubdomain} variant="destructive" size="sm" className="w-full">
+              <Button onClick={clearTenantSlug} variant="destructive" size="sm" className="w-full">
                 <Trash2 className="mr-2 h-4 w-4" />
-                Clear Subdomain
+                Clear Tenant Slug
               </Button>
             </>
           )}

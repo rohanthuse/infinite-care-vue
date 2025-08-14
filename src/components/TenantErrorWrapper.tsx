@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTenant } from '@/contexts/TenantContext';
 import { TenantNotFound } from '@/components/system/TenantNotFound';
-import { DevSubdomainSwitcher } from '@/components/system/DevSubdomainSwitcher';
+import { DevTenantSwitcher } from '@/components/system/DevTenantSwitcher';
 import { LoadingScreen } from '@/components/LoadingScreen';
 
 interface TenantErrorWrapperProps {
@@ -24,7 +24,7 @@ export const TenantErrorWrapper: React.FC<TenantErrorWrapperProps> = ({ children
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4 gap-8">
         <TenantNotFound subdomain={subdomain} />
-        {window.location.hostname === 'localhost' && <DevSubdomainSwitcher />}
+        {window.location.hostname === 'localhost' && <DevTenantSwitcher />}
       </div>
     );
   }

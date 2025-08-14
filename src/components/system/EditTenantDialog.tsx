@@ -19,7 +19,7 @@ export const EditTenantDialog: React.FC<EditTenantDialogProps> = ({ open, onOpen
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
     name: '',
-    subdomain: '',
+    slug: '',
     subscription_plan: 'basic',
     subscription_status: 'active',
     contact_email: '',
@@ -30,7 +30,7 @@ export const EditTenantDialog: React.FC<EditTenantDialogProps> = ({ open, onOpen
     if (tenant) {
       setForm({
         name: tenant.name || '',
-        subdomain: tenant.subdomain || '',
+        slug: tenant.slug || '',
         subscription_plan: tenant.subscription_plan || 'basic',
         subscription_status: tenant.subscription_status || 'active',
         contact_email: tenant.contact_email || '',
@@ -82,8 +82,8 @@ export const EditTenantDialog: React.FC<EditTenantDialogProps> = ({ open, onOpen
               <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             </div>
             <div>
-              <Label htmlFor="subdomain">Subdomain</Label>
-              <Input id="subdomain" value={form.subdomain} onChange={(e) => setForm({ ...form, subdomain: e.target.value })} required />
+              <Label htmlFor="slug">URL Slug</Label>
+              <Input id="slug" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} required />
             </div>
             <div>
               <Label htmlFor="plan">Plan</Label>

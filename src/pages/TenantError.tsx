@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { TenantNotFound } from '@/components/system/TenantNotFound';
-import { DevSubdomainSwitcher } from '@/components/system/DevSubdomainSwitcher';
+import { DevTenantSwitcher } from '@/components/system/DevTenantSwitcher';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle } from 'lucide-react';
 
@@ -36,7 +36,7 @@ export const TenantError: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 gap-8">
       <TenantNotFound subdomain={subdomain} />
-      {window.location.hostname === 'localhost' && <DevSubdomainSwitcher />}
+      {window.location.hostname === 'localhost' && <DevTenantSwitcher />}
     </div>
   );
 };
