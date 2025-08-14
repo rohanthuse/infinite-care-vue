@@ -37,64 +37,47 @@ export const useSystemUsers = () => {
         throw new Error('Not authenticated as system admin. Please sign in again.');
       }
 
-      console.log('[useSystemUsers] Fetching via RPC list_system_users_with_session');
-      const { data, error } = await supabase.rpc('list_system_users_with_session', {
+      console.log('[useSystemUsers] Fetching system users via RPC (then organizations separately)');
+      
+      // Use the working RPC to get system users data
+      const { data: systemUsers, error: usersError } = await supabase.rpc('list_system_users_with_session', {
         p_session_token: token,
       });
 
-      if (error) {
-        console.error('[useSystemUsers] RPC error:', error);
-        throw error;
+      if (usersError) {
+        console.error('[useSystemUsers] RPC error:', usersError);
+        throw usersError;
       }
 
-      // Fetch user-organization associations
-      const userIds = (data || []).map((user: any) => user.id);
-      let organizationAssociations = [];
+      console.log('[useSystemUsers] System users fetched:', systemUsers);
 
-      if (userIds.length > 0) {
-        console.log('[useSystemUsers] Fetching organizations for user IDs:', userIds);
-        
-        // First get the organization associations
-        const { data: userOrgData, error: userOrgError } = await supabase
-          .from('system_user_organizations')
-          .select('system_user_id, organization_id')
-          .in('system_user_id', userIds);
-
-        if (userOrgError) {
-          console.error('[useSystemUsers] Error fetching user organizations:', userOrgError);
-        } else {
-          console.log('[useSystemUsers] User organization associations:', userOrgData);
-          
-          // Get unique organization IDs
-          const orgIds = [...new Set(userOrgData?.map(item => item.organization_id) || [])];
-          
-          if (orgIds.length > 0) {
-            // Fetch organization details
-            const { data: orgsData, error: orgsError } = await supabase
-              .from('organizations')
-              .select('id, name, slug')
-              .in('id', orgIds);
-
-            if (!orgsError && orgsData) {
-              console.log('[useSystemUsers] Organization data:', orgsData);
-              
-              // Map user organizations with full organization data
-              organizationAssociations = userOrgData?.map(userOrg => ({
-                system_user_id: userOrg.system_user_id,
-                organization: orgsData.find(org => org.id === userOrg.organization_id)
-              })).filter(item => item.organization) || [];
-              
-              console.log('[useSystemUsers] Final organization associations:', organizationAssociations);
-            } else {
-              console.error('[useSystemUsers] Error fetching organizations:', orgsError);
-            }
-          }
-        }
+      if (!systemUsers || systemUsers.length === 0) {
+        return [];
       }
 
-      // data is a table-returning RPC (array of rows)
-      return (data || []).map((user: any) => {
-        const userOrgs = organizationAssociations
+      // Get organization associations for all users
+      const userIds = systemUsers.map(user => user.id);
+      const { data: userOrgAssociations, error: orgError } = await supabase
+        .from('system_user_organizations')
+        .select(`
+          system_user_id,
+          organization:organizations(
+            id,
+            name,
+            slug
+          )
+        `)
+        .in('system_user_id', userIds);
+
+      if (orgError) {
+        console.error('[useSystemUsers] Error fetching organization associations:', orgError);
+      }
+
+      console.log('[useSystemUsers] Organization associations:', userOrgAssociations);
+
+      // Map organizations to users
+      const usersWithOrganizations = systemUsers.map((user: any) => {
+        const userOrgs = (userOrgAssociations || [])
           .filter((assoc: any) => assoc.system_user_id === user.id)
           .map((assoc: any) => assoc.organization)
           .filter(Boolean);
@@ -106,7 +89,9 @@ export const useSystemUsers = () => {
           role: user.role || 'support_admin',
           organizations: userOrgs,
         };
-      }) as SystemUser[];
+      });
+
+      return usersWithOrganizations as SystemUser[];
     },
   });
 };
