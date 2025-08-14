@@ -5221,6 +5221,7 @@ export type Database = {
         Row: {
           assigned_at: string
           id: string
+          is_primary: boolean
           organization_id: string
           role: string
           system_user_id: string
@@ -5228,6 +5229,7 @@ export type Database = {
         Insert: {
           assigned_at?: string
           id?: string
+          is_primary?: boolean
           organization_id: string
           role?: string
           system_user_id: string
@@ -5235,6 +5237,7 @@ export type Database = {
         Update: {
           assigned_at?: string
           id?: string
+          is_primary?: boolean
           organization_id?: string
           role?: string
           system_user_id?: string
