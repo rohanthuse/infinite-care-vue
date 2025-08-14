@@ -1,11 +1,28 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { formatDistanceToNow } from 'date-fns';
 
 interface ViewTenantDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  tenant: any | null;
+  tenant: {
+    id: string;
+    name: string;
+    slug: string;
+    subscription_plan: string;
+    subscription_status: string;
+    contact_email: string;
+    activeUsers: number;
+    users?: Array<{
+      id: string;
+      first_name: string;
+      last_name: string;
+      email: string;
+      last_login_at: string | null;
+      user_type: 'staff' | 'client' | 'admin';
+    }>;
+  } | null;
 }
 
 export const ViewTenantDialog: React.FC<ViewTenantDialogProps> = ({ open, onOpenChange, tenant }) => {
@@ -42,6 +59,33 @@ export const ViewTenantDialog: React.FC<ViewTenantDialogProps> = ({ open, onOpen
                 <div className="text-sm">{tenant.activeUsers ?? 0}</div>
               </div>
             </div>
+            
+            {tenant.users && tenant.users.length > 0 && (
+              <div className="space-y-3">
+                <div className="text-sm font-medium text-muted-foreground">Users</div>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {tenant.users.map((user) => (
+                    <div key={user.id} className="flex items-center justify-between p-2 border rounded-lg">
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">
+                          {user.first_name} {user.last_name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">{user.email}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Last login: {user.last_login_at 
+                            ? formatDistanceToNow(new Date(user.last_login_at), { addSuffix: true })
+                            : 'Never'
+                          }
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="capitalize text-xs">
+                        {user.user_type}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </DialogContent>

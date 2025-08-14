@@ -29,35 +29,81 @@ serve(async (req) => {
       )
     }
 
-    // Fetch system user relations and active users
-    const { data: rels, error: relErr } = await supabaseAdmin
-      .from('system_user_organizations')
-      .select('organization_id, system_user_id')
-
-    if (relErr) {
-      console.error('[list-system-tenants] Error fetching system_user_organizations:', relErr)
-    }
-
-    const { data: sysUsers, error: suErr } = await supabaseAdmin
-      .from('system_users')
-      .select('id, is_active')
-
-    if (suErr) {
-      console.error('[list-system-tenants] Error fetching system_users:', suErr)
-    }
-
-    const activeUserIds = new Set((sysUsers || []).filter((u: any) => u.is_active).map((u: any) => u.id))
-
+    // Fetch real tenant users (staff, clients, admins) for each organization
     const memberCounts: Record<string, number> = {}
-    for (const r of (rels || []) as any[]) {
-      if (activeUserIds.has(r.system_user_id)) {
-        memberCounts[r.organization_id] = (memberCounts[r.organization_id] || 0) + 1
+    const userDetails: Record<string, any[]> = {}
+    
+    for (const org of (orgs || [])) {
+      // Get branches for this organization
+      const { data: branches, error: branchErr } = await supabaseAdmin
+        .from('branches')
+        .select('id')
+        .eq('organization_id', org.id)
+
+      if (branchErr) {
+        console.error(`[list-system-tenants] Error fetching branches for org ${org.id}:`, branchErr)
+        continue
       }
+
+      const branchIds = (branches || []).map(b => b.id)
+      let totalUsers = 0
+      const orgUsers: any[] = []
+
+      if (branchIds.length > 0) {
+        // Count and fetch staff
+        const { data: staff, error: staffErr } = await supabaseAdmin
+          .from('staff')
+          .select('id, first_name, last_name, email, last_login_at, status')
+          .in('branch_id', branchIds)
+          .eq('status', 'Active')
+
+        if (!staffErr && staff) {
+          totalUsers += staff.length
+          orgUsers.push(...staff.map(s => ({ ...s, user_type: 'staff' })))
+        }
+
+        // Count and fetch clients
+        const { data: clients, error: clientErr } = await supabaseAdmin
+          .from('clients')
+          .select('id, first_name, last_name, email, last_login_at')
+          .in('branch_id', branchIds)
+
+        if (!clientErr && clients) {
+          totalUsers += clients.length
+          orgUsers.push(...clients.map(c => ({ ...c, user_type: 'client' })))
+        }
+
+        // Count and fetch branch admins
+        const { data: admins, error: adminErr } = await supabaseAdmin
+          .from('admin_branches')
+          .select(`
+            admin_id,
+            admin_profiles:admin_id (
+              id, first_name, last_name, email, last_login_at
+            )
+          `)
+          .in('branch_id', branchIds)
+
+        if (!adminErr && admins) {
+          const adminUsers = admins
+            .filter(a => a.admin_profiles)
+            .map(a => ({ 
+              ...a.admin_profiles, 
+              user_type: 'admin' 
+            }))
+          totalUsers += adminUsers.length
+          orgUsers.push(...adminUsers)
+        }
+      }
+
+      memberCounts[org.id] = totalUsers
+      userDetails[org.id] = orgUsers
     }
 
     const tenants = (orgs || []).map((org) => ({
       ...org,
       activeUsers: memberCounts[org.id] || 0,
+      users: userDetails[org.id] || [],
     }))
 
     return new Response(
