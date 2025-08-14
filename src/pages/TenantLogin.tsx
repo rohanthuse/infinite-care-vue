@@ -70,23 +70,48 @@ const TenantLogin = () => {
         throw new Error('Authentication failed');
       }
 
-      // Verify user has access to this organization
-      const { data: memberData, error: memberError } = await supabase
-        .from('organization_members')
-        .select('role, status')
-        .eq('organization_id', organization.id)
-        .eq('user_id', authData.user.id)
-        .eq('status', 'active')
+      // Check if user is a super admin first by joining through email
+      const { data: systemUserRole, error: systemRoleError } = await supabase
+        .from('system_user_roles')
+        .select('role, system_users!inner(email)')
+        .eq('system_users.email', authData.user.email)
+        .eq('role', 'super_admin')
         .maybeSingle();
 
-      if (memberError || !memberData) {
-        await supabase.auth.signOut();
-        toast({
-          title: 'Access Denied',
-          description: 'You don\'t have permission to access this organization.',
-          variant: 'destructive',
-        });
-        return;
+      let memberData = null;
+      let isSuperAdmin = !systemRoleError && systemUserRole;
+
+      if (!isSuperAdmin) {
+        // For non-super admins, verify organization membership
+        const { data: orgMemberData, error: memberError } = await supabase
+          .from('organization_members')
+          .select('role, status')
+          .eq('organization_id', organization.id)
+          .eq('user_id', authData.user.id)
+          .eq('status', 'active')
+          .maybeSingle();
+
+        if (memberError || !orgMemberData) {
+          await supabase.auth.signOut();
+          toast({
+            title: 'Access Denied',
+            description: 'You don\'t have permission to access this organization.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        memberData = orgMemberData;
+      } else {
+        // For super admins, check if they also have organization membership
+        const { data: orgMemberData } = await supabase
+          .from('organization_members')
+          .select('role, status')
+          .eq('organization_id', organization.id)
+          .eq('user_id', authData.user.id)
+          .eq('status', 'active')
+          .maybeSingle();
+        
+        memberData = orgMemberData || { role: 'admin', status: 'active' }; // Default super admin privileges
       }
 
       // Success - redirect based on role
@@ -96,7 +121,14 @@ const TenantLogin = () => {
       });
 
       // Redirect based on user role within the organization
-      if (memberData.role === 'owner' || memberData.role === 'admin') {
+      if (isSuperAdmin) {
+        // Super admin accessing organization - go to organization dashboard
+        toast({
+          title: 'Welcome, Super Administrator!',
+          description: `Accessing ${organization.name} organization dashboard.`,
+        });
+        navigate(`/${tenantSlug}/dashboard`);
+      } else if (memberData.role === 'owner' || memberData.role === 'admin') {
         // Organization admin - go to tenant dashboard which will show old-style admin interface
         navigate(`/${tenantSlug}/dashboard`);
       } else if (memberData.role === 'branch_admin') {
