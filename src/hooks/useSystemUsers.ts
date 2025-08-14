@@ -56,7 +56,8 @@ export const useSystemUsers = () => {
           .from('system_user_organizations')
           .select(`
             system_user_id,
-            organizations:organization_id (
+            role,
+            organization:organization_id (
               id,
               name,
               slug
@@ -66,6 +67,9 @@ export const useSystemUsers = () => {
 
         if (!orgError) {
           organizationAssociations = orgData || [];
+          console.log('Organization associations fetched:', organizationAssociations);
+        } else {
+          console.error('Error fetching organization associations:', orgError);
         }
       }
 
@@ -73,8 +77,10 @@ export const useSystemUsers = () => {
       return (data || []).map((user: any) => {
         const userOrgs = organizationAssociations
           .filter((assoc: any) => assoc.system_user_id === user.id)
-          .map((assoc: any) => assoc.organizations)
+          .map((assoc: any) => assoc.organization)
           .filter(Boolean);
+
+        console.log(`User ${user.email} organizations:`, userOrgs);
 
         return {
           ...user,
