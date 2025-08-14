@@ -99,7 +99,7 @@ export const useSystemUsers = () => {
           .map((assoc: any) => assoc.organization)
           .filter(Boolean);
 
-        console.log(`[useSystemUsers] User ${user.email} organizations:`, userOrgs);
+        console.log(`[useSystemUsers] User ${user.email} (ID: ${user.id}) organizations:`, userOrgs);
 
         return {
           ...user,
