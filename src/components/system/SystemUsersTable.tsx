@@ -18,7 +18,8 @@ import {
   Shield, 
   User,
   Calendar,
-  Key
+  Key,
+  Building2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -185,6 +186,11 @@ export const SystemUsersTable: React.FC = () => {
                     <DropdownMenuItem onClick={() => handleResetPassword(user)} className="flex items-center space-x-2">
                       <Key className="h-4 w-4" />
                       <span>Reset Password</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleEditUser(user)} className="flex items-center space-x-2">
+                      <Building2 className="h-4 w-4" />
+                      <span>Manage Organizations</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={() => handleToggleStatus(user.id, user.is_active)}
