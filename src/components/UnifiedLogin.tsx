@@ -63,16 +63,7 @@ const UnifiedLogin = () => {
         throw new Error("Authentication failed");
       }
 
-      // Detect user's organization
-      const orgSlug = await detectUserOrganization(authData.user.id);
-
-      if (!orgSlug) {
-        toast.error("No organization access found for your account");
-        await supabase.auth.signOut();
-        return;
-      }
-
-      // Get user's highest priority role
+      // Get user's highest priority role first
       const { data: roleData, error: roleError } = await supabase
         .rpc('get_user_highest_role', { p_user_id: authData.user.id })
         .single();
@@ -86,11 +77,32 @@ const UnifiedLogin = () => {
       const userRole = roleData.role;
       console.log('User role detected:', userRole);
 
-      // Route based on role
+      // For super admins, check if they have organization membership first
       if (userRole === 'super_admin') {
-        console.log('Super admin detected, redirecting to system dashboard');
-        toast.success("Welcome back, System Administrator!");
-        navigate('/system-dashboard');
+        // Try to detect organization membership
+        const orgSlug = await detectUserOrganization(authData.user.id);
+        
+        if (orgSlug) {
+          // Super admin with organization membership - redirect to organization dashboard
+          console.log('Super admin with organization membership, redirecting to organization dashboard');
+          toast.success("Welcome back, Super Administrator!");
+          navigate(`/${orgSlug}/dashboard`);
+          return;
+        } else {
+          // Super admin without organization membership - redirect to system dashboard
+          console.log('Super admin without organization membership, redirecting to system dashboard');
+          toast.success("Welcome back, System Administrator!");
+          navigate('/system-dashboard');
+          return;
+        }
+      }
+
+      // For non-super admin users, detect organization membership
+      const orgSlug = await detectUserOrganization(authData.user.id);
+
+      if (!orgSlug) {
+        toast.error("No organization access found for your account");
+        await supabase.auth.signOut();
         return;
       }
 
