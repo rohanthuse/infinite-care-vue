@@ -44,7 +44,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
       const { data: result, error } = await supabase.functions.invoke('create-system-tenant', {
         body: {
           name: data.name,
-          slug: data.slug,
+          subdomain: data.slug, // Backend expects 'subdomain', not 'slug'
           contactEmail: data.contact_email,
           contactPhone: data.contact_phone,
           address: data.address,
