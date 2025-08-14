@@ -32,7 +32,7 @@ export const useSystemDashboard = () => {
   const isLoading = tenantsSummary.isLoading || userStats.isLoading;
   const systemStats: SystemStatsData = {
     totalTenants: tenantsSummary.data?.totalTenants ?? 0,
-    totalUsers: (userStats.data as any)?.total ?? 0,
+    totalUsers: userStats.data?.total ?? 0,
     systemUptime: 'Operational',
     databaseHealth: 'Good',
     activeConnections: tenantsSummary.data?.activeUsers ?? 0,

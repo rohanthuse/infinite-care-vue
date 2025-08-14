@@ -1,135 +1,87 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { getSystemSessionToken } from '@/utils/systemSession';
 
-export interface SystemUser {
+interface SystemUser {
   id: string;
   email: string;
   first_name: string;
   last_name: string;
+  is_active: boolean;
+  last_login_at: string | null;
+  created_at: string;
   role?: string;
   organizations?: Array<{
     id: string;
     name: string;
     slug: string;
   }>;
-  selectedOrganization?: {
-    id: string;
-    name: string;
-    slug: string;
-  } | null;
-  is_active?: boolean;
-  last_login_at?: string;
-  created_at?: string;
 }
 
-export interface CreateSystemUserData {
+interface CreateSystemUserData {
   email: string;
-  password: string;
   first_name: string;
   last_name: string;
-  role: string;
+  password: string;
+  role: 'super_admin' | 'tenant_manager' | 'support_admin' | 'analytics_viewer';
 }
 
 export const useSystemUsers = () => {
   return useQuery({
     queryKey: ['system-users'],
     queryFn: async () => {
-      console.log('[useSystemUsers] Starting to fetch system users');
-      
-      // Try to get session token from Supabase auth first
-      const { data: { session } } = await supabase.auth.getSession();
-      let token = session?.access_token;
-
-      // Fallback to system session token from localStorage
+      const token = getSystemSessionToken();
       if (!token) {
-        const systemToken = getSystemSessionToken();
-        if (systemToken) {
-          token = systemToken;
-          console.log('[useSystemUsers] Using system session token from localStorage');
-        }
-      }
-
-      if (!token) {
-        console.error('[useSystemUsers] No session token found');
+        console.error('[useSystemUsers] Missing system session token');
         throw new Error('Not authenticated as system admin. Please sign in again.');
       }
 
-      console.log('[useSystemUsers] Fetching system users via RPC (then organizations separately)');
-      
-      // Use the working RPC to get system users data
-      const { data: systemUsers, error: usersError } = await supabase.rpc('list_system_users_with_session', {
+      console.log('[useSystemUsers] Fetching via RPC list_system_users_with_session');
+      const { data, error } = await supabase.rpc('list_system_users_with_session', {
         p_session_token: token,
       });
 
-      if (usersError) {
-        console.error('[useSystemUsers] RPC error:', usersError);
-        throw usersError;
+      if (error) {
+        console.error('[useSystemUsers] RPC error:', error);
+        throw error;
       }
 
-      console.log('[useSystemUsers] System users fetched:', systemUsers);
+      // Fetch user-organization associations
+      const userIds = (data || []).map((user: any) => user.id);
+      let organizationAssociations = [];
 
-      if (!systemUsers || systemUsers.length === 0) {
-        return [];
+      if (userIds.length > 0) {
+        const { data: orgData, error: orgError } = await supabase
+          .from('system_user_organizations')
+          .select(`
+            system_user_id,
+            organizations:organization_id (
+              id,
+              name,
+              slug
+            )
+          `)
+          .in('system_user_id', userIds);
+
+        if (!orgError) {
+          organizationAssociations = orgData || [];
+        }
       }
 
-      // Get organization associations for all users
-      const userIds = systemUsers.map(user => user.id);
-      const { data: userOrgAssociations, error: orgError } = await supabase
-        .from('system_user_organizations')
-        .select(`
-          system_user_id,
-          is_primary,
-          organization:organizations(
-            id,
-            name,
-            slug
-          )
-        `)
-        .in('system_user_id', userIds);
-
-      if (orgError) {
-        console.error('[useSystemUsers] Error fetching organization associations:', orgError);
-      }
-
-      console.log('[useSystemUsers] Organization associations:', userOrgAssociations);
-
-      // Map organizations to users
-      const usersWithOrganizations = systemUsers.map((user: any) => {
-        const userAssociations = (userOrgAssociations || [])
-          .filter((assoc: any) => assoc.system_user_id === user.id);
-        
-        console.log(`[useSystemUsers] User ${user.email} associations:`, userAssociations);
-        
-        const userOrgs = userAssociations
-          .map((assoc: any) => assoc.organization)
+      // data is a table-returning RPC (array of rows)
+      return (data || []).map((user: any) => {
+        const userOrgs = organizationAssociations
+          .filter((assoc: any) => assoc.system_user_id === user.id)
+          .map((assoc: any) => assoc.organizations)
           .filter(Boolean);
-        
-        const primaryOrg = userAssociations
-          .find((assoc: any) => assoc.is_primary)?.organization || null;
-          
-        console.log(`[useSystemUsers] User ${user.email} primary org:`, primaryOrg);
-        console.log(`[useSystemUsers] User ${user.email} all orgs:`, userOrgs);
 
-        const finalUser = {
-          id: user.id,
-          email: user.email,
-          first_name: user.first_name,
-          last_name: user.last_name,
+        return {
+          ...user,
           role: user.role || 'support_admin',
           organizations: userOrgs,
-          selectedOrganization: primaryOrg,
-          is_active: user.is_active,
-          last_login_at: user.last_login_at,
-          created_at: user.created_at,
         };
-        
-        console.log(`[useSystemUsers] Final user object for ${user.email}:`, finalUser);
-        return finalUser;
-      });
-
-      return usersWithOrganizations as SystemUser[];
+      }) as SystemUser[];
     },
   });
 };
@@ -138,23 +90,9 @@ export const useSystemUserStats = () => {
   return useQuery({
     queryKey: ['system-user-stats'],
     queryFn: async () => {
-      console.log('[useSystemUserStats] Fetching system user stats');
-      
-      // Try to get session token from Supabase auth first
-      const { data: { session } } = await supabase.auth.getSession();
-      let token = session?.access_token;
-
-      // Fallback to system session token from localStorage
+      const token = getSystemSessionToken();
       if (!token) {
-        const systemToken = getSystemSessionToken();
-        if (systemToken) {
-          token = systemToken;
-          console.log('[useSystemUserStats] Using system session token from localStorage');
-        }
-      }
-
-      if (!token) {
-        console.error('[useSystemUserStats] No session token found');
+        console.error('[useSystemUserStats] Missing system session token');
         throw new Error('Not authenticated as system admin. Please sign in again.');
       }
 
@@ -168,12 +106,18 @@ export const useSystemUserStats = () => {
         throw error;
       }
 
-      console.log('[useSystemUserStats] Stats fetched:', data);
-      return data || {
-        total: 0,
-        active: 0,
-        inactive: 0,
-        super_admins: 0,
+      const result = data as any;
+      if (!result?.success) {
+        const msg = result?.error || 'Failed to fetch system user stats';
+        console.error('[useSystemUserStats] RPC returned failure:', msg);
+        throw new Error(msg);
+      }
+
+      return {
+        total: result.total || 0,
+        active: result.active || 0,
+        inactive: result.inactive || 0,
+        superAdmins: result.superAdmins || 0,
       };
     },
   });
@@ -181,37 +125,24 @@ export const useSystemUserStats = () => {
 
 export const useCreateSystemUser = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (userData: CreateSystemUserData) => {
-      console.log('[useCreateSystemUser] Creating system user:', userData);
-      
-      // Try to get session token from Supabase auth first
-      const { data: { session } } = await supabase.auth.getSession();
-      let token = session?.access_token;
-
-      // Fallback to system session token from localStorage
+      const token = getSystemSessionToken();
       if (!token) {
-        const systemToken = getSystemSessionToken();
-        if (systemToken) {
-          token = systemToken;
-          console.log('[useCreateSystemUser] Using system session token from localStorage');
-        }
-      }
-
-      if (!token) {
-        console.error('[useCreateSystemUser] No session token found');
+        console.error('[useCreateSystemUser] Missing system session token');
         throw new Error('Not authenticated as system admin. Please sign in again.');
       }
 
-      console.log('[useCreateSystemUser] Calling RPC create_system_user_and_role_with_session');
+      console.log('[useCreateSystemUser] Creating via RPC create_system_user_and_role_with_session...');
       const { data, error } = await supabase.rpc('create_system_user_and_role_with_session', {
         p_session_token: token,
         p_email: userData.email,
         p_password: userData.password,
         p_first_name: userData.first_name,
         p_last_name: userData.last_name,
-        p_role: userData.role as any,
+        p_role: userData.role,
       });
 
       if (error) {
@@ -219,140 +150,133 @@ export const useCreateSystemUser = () => {
         throw error;
       }
 
-      if (!(data as any)?.success) {
-        console.error('[useCreateSystemUser] RPC returned failure:', data);
-        throw new Error((data as any)?.error || 'Failed to create system user');
+      const result = data as { success: boolean; error?: string; user?: any };
+      if (!result?.success) {
+        const msg = result?.error || 'Failed to create system user';
+        console.error('[useCreateSystemUser] RPC returned failure:', msg);
+        throw new Error(msg);
       }
 
-      console.log('[useCreateSystemUser] User created successfully:', data);
-      return data;
+      return result.user;
     },
     onSuccess: () => {
-      toast.success('System user created successfully');
       queryClient.invalidateQueries({ queryKey: ['system-users'] });
       queryClient.invalidateQueries({ queryKey: ['system-user-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['organizations', 'system-tenants'] });
+      toast({
+        title: "User Created",
+        description: "System user has been created successfully.",
+      });
     },
-    onError: (error: Error) => {
-      console.error('[useCreateSystemUser] Mutation error:', error);
-      toast.error(`Failed to create user: ${error.message}`);
-    }
+    onError: (error: any) => {
+      // Keep toast UX unchanged
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to create system user.",
+        variant: "destructive",
+      });
+    },
   });
 };
 
 export const useToggleUserStatus = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ userId, isActive }: { userId: string; isActive: boolean }) => {
-      console.log('[useToggleUserStatus] Toggling user status:', { userId, isActive });
-      
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('system_users')
-        .update({ is_active: isActive, updated_at: new Date().toISOString() })
-        .eq('id', userId)
-        .select();
+        .update({ is_active: isActive })
+        .eq('id', userId);
 
-      if (error) {
-        console.error('[useToggleUserStatus] Database error:', error);
-        throw error;
-      }
-
-      console.log('[useToggleUserStatus] Status updated successfully:', data);
-      return data;
+      if (error) throw error;
     },
     onMutate: async ({ userId, isActive }) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['system-users'] });
-      await queryClient.cancelQueries({ queryKey: ['system-user-stats'] });
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ['system-users'] }),
+        queryClient.cancelQueries({ queryKey: ['system-user-stats'] }),
+      ]);
 
-      // Snapshot the previous values
-      const previousUsers = queryClient.getQueryData(['system-users']);
-      const previousStats = queryClient.getQueryData(['system-user-stats']);
+      const previousUsers = queryClient.getQueryData<SystemUser[]>(['system-users']);
+      const previousStats = queryClient.getQueryData<{ total: number; active: number; inactive: number; superAdmins: number }>(['system-user-stats']);
 
-      // Optimistically update the user list
-      queryClient.setQueryData(['system-users'], (old: SystemUser[] | undefined) => {
-        if (!old) return old;
-        return old.map(user => 
-          user.id === userId ? { ...user, is_active: isActive } : user
+      const prevIsActive = previousUsers?.find(u => u.id === userId)?.is_active;
+
+      if (previousUsers) {
+        queryClient.setQueryData<SystemUser[]>(
+          ['system-users'],
+          previousUsers.map(u => (u.id === userId ? { ...u, is_active: isActive } : u))
         );
-      });
+      }
 
-      // Optimistically update the stats
-      queryClient.setQueryData(['system-user-stats'], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          active: isActive ? old.active + 1 : old.active - 1,
-          inactive: isActive ? old.inactive - 1 : old.inactive + 1,
-        };
-      });
+      if (previousStats != null && prevIsActive !== undefined && prevIsActive !== isActive) {
+        const next = { ...previousStats };
+        if (isActive) {
+          next.active = Math.max(0, next.active + 1);
+          next.inactive = Math.max(0, next.inactive - 1);
+        } else {
+          next.active = Math.max(0, next.active - 1);
+          next.inactive = Math.max(0, next.inactive + 1);
+        }
+        queryClient.setQueryData(['system-user-stats'], next);
+      }
 
       return { previousUsers, previousStats };
     },
-    onError: (err, variables, context) => {
-      // Rollback on error
+    onError: (error: any, _variables, context) => {
       if (context?.previousUsers) {
         queryClient.setQueryData(['system-users'], context.previousUsers);
       }
       if (context?.previousStats) {
         queryClient.setQueryData(['system-user-stats'], context.previousStats);
       }
-      
-      console.error('[useToggleUserStatus] Error toggling user status:', err);
-      toast.error(`Failed to ${variables.isActive ? 'activate' : 'deactivate'} user: ${err.message}`);
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to update user status.",
+        variant: "destructive",
+      });
     },
-    onSuccess: (data, { isActive }) => {
-      toast.success(`User ${isActive ? 'activated' : 'deactivated'} successfully`);
-    },
-    onSettled: () => {
-      // Always refetch after error or success
+    onSuccess: (_data, { isActive }) => {
       queryClient.invalidateQueries({ queryKey: ['system-users'] });
       queryClient.invalidateQueries({ queryKey: ['system-user-stats'] });
+      toast({
+        title: "User Updated",
+        description: `User has been ${isActive ? 'activated' : 'deactivated'} successfully.`,
+      });
     },
   });
 };
 
+// Update system user (edit profile & role)
 export interface UpdateSystemUserData {
   id: string;
   email: string;
   first_name: string;
   last_name: string;
-  role: string;
+  role: 'super_admin' | 'tenant_manager' | 'support_admin' | 'analytics_viewer';
 }
 
 export const useUpdateSystemUser = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (userData: UpdateSystemUserData) => {
-      console.log('[useUpdateSystemUser] Updating system user:', userData);
-      
-      // Try to get session token from Supabase auth first
-      const { data: { session } } = await supabase.auth.getSession();
-      let token = session?.access_token;
-
-      // Fallback to system session token from localStorage
+      const token = getSystemSessionToken();
       if (!token) {
-        const systemToken = getSystemSessionToken();
-        if (systemToken) {
-          token = systemToken;
-          console.log('[useUpdateSystemUser] Using system session token from localStorage');
-        }
-      }
-
-      if (!token) {
-        console.error('[useUpdateSystemUser] No session token found');
+        console.error('[useUpdateSystemUser] Missing system session token');
         throw new Error('Not authenticated as system admin. Please sign in again.');
       }
 
-      console.log('[useUpdateSystemUser] Calling RPC update_system_user_with_session');
+      console.log('[useUpdateSystemUser] Updating via RPC update_system_user_with_session...');
       const { data, error } = await supabase.rpc('update_system_user_with_session', {
         p_session_token: token,
         p_user_id: userData.id,
         p_email: userData.email,
         p_first_name: userData.first_name,
         p_last_name: userData.last_name,
-        p_role: userData.role as any,
+        p_role: userData.role,
       });
 
       if (error) {
@@ -360,21 +284,29 @@ export const useUpdateSystemUser = () => {
         throw error;
       }
 
-      if (!(data as any)?.success) {
-        console.error('[useUpdateSystemUser] RPC returned failure:', data);
-        throw new Error((data as any)?.error || 'Failed to update system user');
+      const result = data as { success: boolean; error?: string; user?: any };
+      if (!result?.success) {
+        const msg = result?.error || 'Failed to update system user';
+        console.error('[useUpdateSystemUser] RPC returned failure:', msg);
+        throw new Error(msg);
       }
 
-      console.log('[useUpdateSystemUser] User updated successfully:', data);
-      return data;
+      return result.user;
     },
     onSuccess: () => {
-      toast.success('System user updated successfully');
       queryClient.invalidateQueries({ queryKey: ['system-users'] });
+      queryClient.invalidateQueries({ queryKey: ['system-user-stats'] });
+      toast({
+        title: 'User Updated',
+        description: 'System user has been updated successfully.'
+      });
     },
-    onError: (error: Error) => {
-      console.error('[useUpdateSystemUser] Mutation error:', error);
-      toast.error(`Failed to update user: ${error.message}`);
-    }
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to update system user.',
+        variant: 'destructive',
+      });
+    },
   });
 };

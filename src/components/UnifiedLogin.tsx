@@ -18,107 +18,20 @@ const UnifiedLogin = () => {
 
   const detectUserOrganization = async (userId: string) => {
     try {
-      // First, check direct organization membership
-      const { data: membership, error: orgError } = await supabase
+      // Check organization membership
+      const { data: membership, error } = await supabase
         .from('organization_members')
         .select('organization_id, organizations(slug)')
         .eq('user_id', userId)
         .eq('status', 'active')
         .single();
 
-      if (!orgError && membership?.organizations?.slug) {
-        console.log('Found organization through direct membership:', membership.organizations.slug);
-        return membership.organizations.slug;
+      if (error || !membership) {
+        console.error('No organization membership found:', error);
+        return null;
       }
 
-      console.log('No direct organization membership found, checking branch affiliations...');
-      
-      // Check if user is a staff member (carer) with branch assignment
-      const { data: staffData } = await supabase
-        .from('staff')
-        .select('branch_id')
-        .eq('id', userId)
-        .single();
-
-      if (staffData?.branch_id) {
-        const { data: branchData } = await supabase
-          .from('branches')
-          .select('organization_id')
-          .eq('id', staffData.branch_id)
-          .single();
-
-        if (branchData?.organization_id) {
-          const { data: orgData } = await supabase
-            .from('organizations')
-            .select('slug')
-            .eq('id', branchData.organization_id)
-            .single();
-
-          if (orgData?.slug) {
-            console.log('Found organization through staff branch assignment:', orgData.slug);
-            return orgData.slug;
-          }
-        }
-      }
-
-      // Check if user is a client with branch assignment
-      const { data: clientData } = await supabase
-        .from('clients')
-        .select('branch_id')
-        .eq('auth_user_id', userId)
-        .single();
-
-      if (clientData?.branch_id) {
-        const { data: branchData } = await supabase
-          .from('branches')
-          .select('organization_id')
-          .eq('id', clientData.branch_id)
-          .single();
-
-        if (branchData?.organization_id) {
-          const { data: orgData } = await supabase
-            .from('organizations')
-            .select('slug')
-            .eq('id', branchData.organization_id)
-            .single();
-
-          if (orgData?.slug) {
-            console.log('Found organization through client branch assignment:', orgData.slug);
-            return orgData.slug;
-          }
-        }
-      }
-
-      // Check if user is a branch admin
-      const { data: adminData } = await supabase
-        .from('admin_branches')
-        .select('branch_id')
-        .eq('admin_id', userId)
-        .single();
-
-      if (adminData?.branch_id) {
-        const { data: branchData } = await supabase
-          .from('branches')
-          .select('organization_id')
-          .eq('id', adminData.branch_id)
-          .single();
-
-        if (branchData?.organization_id) {
-          const { data: orgData } = await supabase
-            .from('organizations')
-            .select('slug')
-            .eq('id', branchData.organization_id)
-            .single();
-
-          if (orgData?.slug) {
-            console.log('Found organization through branch admin assignment:', orgData.slug);
-            return orgData.slug;
-          }
-        }
-      }
-
-      console.log('No organization found through any method');
-      return null;
+      return membership.organizations?.slug;
     } catch (error) {
       console.error('Error detecting organization:', error);
       return null;

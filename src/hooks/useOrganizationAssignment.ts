@@ -33,33 +33,12 @@ export const useAssignUserToOrganization = () => {
 
   return useMutation({
     mutationFn: assignUserToOrganization,
-    onSuccess: (result, variables) => {
-      console.log('[useOrganizationAssignment] User assignment successful, invalidating queries');
-      
+    onSuccess: () => {
       toast.success('User assigned to organization successfully');
-      
-      // Comprehensive cache invalidation to ensure UI updates
-      Promise.all([
-        // Invalidate system users data
-        queryClient.invalidateQueries({ queryKey: ['system-users'] }),
-        
-        // Invalidate organizations with users data
-        queryClient.invalidateQueries({ queryKey: ['organizations-with-users'] }),
-        
-        // Invalidate system user stats
-        queryClient.invalidateQueries({ queryKey: ['system-user-stats'] }),
-        
-        // Force refetch to ensure fresh data
-        queryClient.refetchQueries({ queryKey: ['organizations-with-users'] }),
-        queryClient.refetchQueries({ queryKey: ['system-users'] })
-      ]).then(() => {
-        console.log('[useOrganizationAssignment] All queries invalidated and refetched');
-      }).catch((error) => {
-        console.error('[useOrganizationAssignment] Error during cache invalidation:', error);
-      });
+      queryClient.invalidateQueries({ queryKey: ['system-users'] });
+      queryClient.invalidateQueries({ queryKey: ['organizations-with-users'] });
     },
     onError: (error: Error) => {
-      console.error('[useOrganizationAssignment] Assignment failed:', error);
       toast.error(`Failed to assign user: ${error.message}`);
     }
   });
