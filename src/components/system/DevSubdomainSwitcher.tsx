@@ -21,17 +21,24 @@ export const DevSubdomainSwitcher: React.FC = () => {
   }, []);
 
   const handleSubdomainChange = (subdomain: string) => {
+    console.log('[DevSubdomainSwitcher] Switching to subdomain:', subdomain);
+    
     if (subdomain) {
       localStorage.setItem('dev-subdomain', subdomain);
       toast.success(`Switched to tenant: ${subdomain}`);
+      console.log('[DevSubdomainSwitcher] Set localStorage dev-subdomain to:', subdomain);
     } else {
       localStorage.removeItem('dev-subdomain');
       toast.success('Cleared tenant subdomain');
+      console.log('[DevSubdomainSwitcher] Cleared localStorage dev-subdomain');
     }
     
     // Invalidate tenant queries and reload
     queryClient.invalidateQueries({ queryKey: ['organization'] });
-    setTimeout(() => window.location.reload(), 500);
+    setTimeout(() => {
+      console.log('[DevSubdomainSwitcher] Reloading page...');
+      window.location.reload();
+    }, 500);
   };
 
   const handleCustomSubdomain = () => {

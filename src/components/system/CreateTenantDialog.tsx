@@ -49,7 +49,8 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
           contactPhone: data.contact_phone,
           address: data.address,
           subscriptionPlan: data.subscription_plan,
-          creatorEmail: user.email
+          creatorEmail: user.email,
+          creatorUserId: user.id
         }
       });
       

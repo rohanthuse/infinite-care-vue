@@ -51,27 +51,38 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
   // Extract subdomain from hostname
   useEffect(() => {
     const hostname = window.location.hostname;
+    console.log('[TenantProvider] Current hostname:', hostname);
 
     // Handle localhost development
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       // For development, allow overriding subdomain via localStorage
       const devSubdomain = localStorage.getItem('dev-subdomain');
+      console.log('[TenantProvider] Development mode - using subdomain from localStorage:', devSubdomain);
       setSubdomain(devSubdomain || null);
       return;
     }
 
-    // Extract subdomain (supports med-infinite.care and other custom domains)
+    // Extract subdomain - support both .lovable.app and .med-infinite.care formats
     const parts = hostname.split('.');
+    console.log('[TenantProvider] Hostname parts:', parts);
+    
     if (parts.length >= 3) {
       const sd = parts[0]?.toLowerCase();
       // Ignore common non-tenant subdomains
       if (sd === 'www') {
+        console.log('[TenantProvider] Ignoring www subdomain');
         setSubdomain(null);
       } else {
+        console.log('[TenantProvider] Extracted subdomain:', sd);
         setSubdomain(sd);
       }
+    } else if (parts.length === 2 && parts[1] === 'lovable.app') {
+      // Handle case where it might be yourproject.lovable.app
+      console.log('[TenantProvider] Single level .lovable.app domain - no tenant');
+      setSubdomain(null);
     } else {
       // Root domain (no tenant)
+      console.log('[TenantProvider] Root domain - no tenant subdomain');
       setSubdomain(null);
     }
   }, []);
@@ -85,7 +96,12 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
   } = useQuery({
     queryKey: ['organization', subdomain, user?.id],
     queryFn: async () => {
-      if (!subdomain) return null;
+      if (!subdomain) {
+        console.log('[TenantProvider] No subdomain - returning null');
+        return null;
+      }
+
+      console.log('[TenantProvider] Fetching organization for subdomain:', subdomain);
 
       // Find organization by subdomain
       const { data: orgData, error: orgError } = await supabase
@@ -95,12 +111,14 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
         .single();
 
       if (orgError) {
-        console.error('Error fetching organization:', orgError);
+        console.error('[TenantProvider] Error fetching organization:', orgError);
         if (orgError.code === 'PGRST116') {
           throw new Error(`Organization with subdomain "${subdomain}" not found`);
         }
         throw orgError;
       }
+
+      console.log('[TenantProvider] Found organization:', orgData);
 
       // If a user is logged in, verify membership for protected access
       if (user) {
