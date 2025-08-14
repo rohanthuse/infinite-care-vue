@@ -6762,7 +6762,13 @@ export type Database = {
     Enums: {
       agreement_party: "client" | "staff" | "other"
       agreement_status: "Active" | "Pending" | "Expired" | "Terminated"
-      app_role: "super_admin" | "branch_admin" | "admin" | "carer" | "client"
+      app_role:
+        | "super_admin"
+        | "branch_admin"
+        | "admin"
+        | "carer"
+        | "client"
+        | "app_admin"
       scheduled_agreement_status:
         | "Upcoming"
         | "Pending Approval"
@@ -6919,7 +6925,14 @@ export const Constants = {
     Enums: {
       agreement_party: ["client", "staff", "other"],
       agreement_status: ["Active", "Pending", "Expired", "Terminated"],
-      app_role: ["super_admin", "branch_admin", "admin", "carer", "client"],
+      app_role: [
+        "super_admin",
+        "branch_admin",
+        "admin",
+        "carer",
+        "client",
+        "app_admin",
+      ],
       scheduled_agreement_status: [
         "Upcoming",
         "Pending Approval",
