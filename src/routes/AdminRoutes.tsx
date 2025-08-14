@@ -84,7 +84,14 @@ const BranchAdminRedirector = () => {
 const RequireAdminAuth = () => {
   const { session, loading } = useAuth();
 
+  console.log('[RequireAdminAuth] State:', { 
+    hasSession: !!session, 
+    loading,
+    pathname: window.location.pathname 
+  });
+
   if (loading) {
+    console.log('[RequireAdminAuth] Showing loading screen');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -97,6 +104,12 @@ const RequireAdminAuth = () => {
     const pathParts = window.location.pathname.split('/').filter(Boolean);
     const tenantSlug = pathParts[0];
     
+    console.log('[RequireAdminAuth] No session - redirecting', { 
+      pathParts, 
+      tenantSlug, 
+      redirectTo: `/${tenantSlug}/branch-admin-login` 
+    });
+    
     // If we have a tenant slug, redirect to tenant-specific login
     if (tenantSlug && !['super-admin', 'system-dashboard', 'system-login'].includes(tenantSlug)) {
       return <Navigate to={`/${tenantSlug}/branch-admin-login`} replace />;
@@ -106,31 +119,34 @@ const RequireAdminAuth = () => {
     return <Navigate to="/super-admin" replace />;
   }
 
+  console.log('[RequireAdminAuth] Session found - rendering outlet');
   return <Outlet />;
 };
 
-const AdminRoutes = () => [
-  <Route key="admin-auth" element={<RequireAdminAuth />}>
-    <Route path="admin" element={<BranchAdminRedirector />} />
-    <Route path="dashboard" element={<BranchAdminRedirector />} />
-    <Route path="notifications" element={<Notifications />} />
-    <Route path="notifications/:categoryId" element={<Notifications />} />
-    <Route path="services" element={<Services />} />
-    <Route path="settings" element={<Settings />} />
-    <Route path="agreement" element={<Agreement />} />
-    <Route path="hobbies" element={<Hobbies />} />
-    <Route path="skills" element={<Skills />} />
-    <Route path="medical-mental" element={<MedicalMental />} />
-    <Route path="type-of-work" element={<TypeOfWork />} />
-    <Route path="body-map-points" element={<BodyMapPoints />} />
-    <Route path="branch" element={<Branch />} />
-    <Route path="branch-details/:id" element={<BranchDetails />} />
-    <Route path="branch-admins" element={<BranchAdmins />} />
-    <Route path="workflow" element={<Workflow />} />
-    <Route path="task-matrix" element={<TaskMatrix branchId="main" branchName="Main Branch" />} />
-    <Route path="training-matrix" element={<TrainingMatrix branchId="main" branchName="Main Branch" />} />
-    <Route path="key-parameters" element={<KeyParameters />} />
-    <Route path="booking-approvals" element={<BookingApprovals />} />
+const AdminRoutes = () => {
+  console.log('[AdminRoutes] Rendering routes');
+  return [
+    <Route key="admin-auth" element={<RequireAdminAuth />}>
+      <Route path="admin" element={<BranchAdminRedirector />} />
+      <Route path="dashboard" element={<BranchAdminRedirector />} />
+      <Route path="notifications" element={<Notifications />} />
+      <Route path="notifications/:categoryId" element={<Notifications />} />
+      <Route path="services" element={<Services />} />
+      <Route path="settings" element={<Settings />} />
+      <Route path="agreement" element={<Agreement />} />
+      <Route path="hobbies" element={<Hobbies />} />
+      <Route path="skills" element={<Skills />} />
+      <Route path="medical-mental" element={<MedicalMental />} />
+      <Route path="type-of-work" element={<TypeOfWork />} />
+      <Route path="body-map-points" element={<BodyMapPoints />} />
+      <Route path="branch" element={<Branch />} />
+      <Route path="branch-details/:id" element={<BranchDetails />} />
+      <Route path="branch-admins" element={<BranchAdmins />} />
+      <Route path="workflow" element={<Workflow />} />
+      <Route path="task-matrix" element={<TaskMatrix branchId="main" branchName="Main Branch" />} />
+      <Route path="training-matrix" element={<TrainingMatrix branchId="main" branchName="Main Branch" />} />
+      <Route path="key-parameters" element={<KeyParameters />} />
+      <Route path="booking-approvals" element={<BookingApprovals />} />
     
     {/* Branch Dashboard Routes - Enhanced error handling */}
     <Route path="branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
@@ -169,6 +185,7 @@ const AdminRoutes = () => [
     <Route path="branch-dashboard/:id/:branchName/reports" element={<Reports />} />
     <Route path="branch-dashboard/:id/:branchName/booking-approvals" element={<BookingApprovals />} />
   </Route>
-];
+  ];
+};
 
 export default AdminRoutes;
