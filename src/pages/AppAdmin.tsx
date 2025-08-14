@@ -182,109 +182,113 @@ export const AppAdmin: React.FC = () => {
               Create Tenant
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
+          <DialogContent className="sm:max-w-[500px] max-h-[85vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>Create New Tenant</DialogTitle>
               <DialogDescription>
                 Create a new tenant organization with automatic Super Admin assignment
               </DialogDescription>
             </DialogHeader>
             
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name">Tenant Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    placeholder="ABC Hospital"
-                    required
-                  />
+            <div className="flex-1 overflow-y-auto pr-2">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="name">Tenant Name *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      placeholder="ABC Hospital"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="slug">URL Slug *</Label>
+                    <Input
+                      id="slug"
+                      value={formData.slug}
+                      onChange={(e) => handleInputChange('slug', e.target.value)}
+                      placeholder="abc-hospital"
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      URL: med-infinite.care/{formData.slug}
+                    </p>
+                  </div>
                 </div>
+
                 <div>
-                  <Label htmlFor="slug">URL Slug *</Label>
+                  <Label htmlFor="contactEmail">Contact Email *</Label>
                   <Input
-                    id="slug"
-                    value={formData.slug}
-                    onChange={(e) => handleInputChange('slug', e.target.value)}
-                    placeholder="abc-hospital"
+                    id="contactEmail"
+                    type="email"
+                    value={formData.contactEmail}
+                    onChange={(e) => handleInputChange('contactEmail', e.target.value)}
+                    placeholder="admin@abc-hospital.com"
                     required
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    URL: med-infinite.care/{formData.slug}
+                    This email will be assigned as Super Admin
                   </p>
                 </div>
-              </div>
 
-              <div>
-                <Label htmlFor="contactEmail">Contact Email *</Label>
-                <Input
-                  id="contactEmail"
-                  type="email"
-                  value={formData.contactEmail}
-                  onChange={(e) => handleInputChange('contactEmail', e.target.value)}
-                  placeholder="admin@abc-hospital.com"
-                  required
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  This email will be assigned as Super Admin
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="contactPhone">Contact Phone</Label>
-                <Input
-                  id="contactPhone"
-                  value={formData.contactPhone}
-                  onChange={(e) => handleInputChange('contactPhone', e.target.value)}
-                  placeholder="+1 (555) 123-4567"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="address">Address</Label>
-                <Textarea
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  placeholder="123 Healthcare St, Medical City, MC 12345"
-                  rows={2}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="logoUrl">Logo URL</Label>
-                <Input
-                  id="logoUrl"
-                  value={formData.logoUrl}
-                  onChange={(e) => handleInputChange('logoUrl', e.target.value)}
-                  placeholder="https://example.com/logo.png"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="primaryColor">Primary Color</Label>
+                  <Label htmlFor="contactPhone">Contact Phone</Label>
                   <Input
-                    id="primaryColor"
-                    type="color"
-                    value={formData.primaryColor}
-                    onChange={(e) => handleInputChange('primaryColor', e.target.value)}
+                    id="contactPhone"
+                    value={formData.contactPhone}
+                    onChange={(e) => handleInputChange('contactPhone', e.target.value)}
+                    placeholder="+1 (555) 123-4567"
                   />
                 </div>
+
                 <div>
-                  <Label htmlFor="secondaryColor">Secondary Color</Label>
-                  <Input
-                    id="secondaryColor"
-                    type="color"
-                    value={formData.secondaryColor}
-                    onChange={(e) => handleInputChange('secondaryColor', e.target.value)}
+                  <Label htmlFor="address">Address</Label>
+                  <Textarea
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    placeholder="123 Healthcare St, Medical City, MC 12345"
+                    rows={2}
                   />
                 </div>
-              </div>
 
-              <div className="flex justify-end gap-2 pt-4">
+                <div>
+                  <Label htmlFor="logoUrl">Logo URL</Label>
+                  <Input
+                    id="logoUrl"
+                    value={formData.logoUrl}
+                    onChange={(e) => handleInputChange('logoUrl', e.target.value)}
+                    placeholder="https://example.com/logo.png"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="primaryColor">Primary Color</Label>
+                    <Input
+                      id="primaryColor"
+                      type="color"
+                      value={formData.primaryColor}
+                      onChange={(e) => handleInputChange('primaryColor', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="secondaryColor">Secondary Color</Label>
+                    <Input
+                      id="secondaryColor"
+                      type="color"
+                      value={formData.secondaryColor}
+                      onChange={(e) => handleInputChange('secondaryColor', e.target.value)}
+                    />
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <div className="flex-shrink-0 border-t pt-4 mt-4">
+              <div className="flex justify-end gap-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -294,6 +298,7 @@ export const AppAdmin: React.FC = () => {
                 </Button>
                 <Button
                   type="submit"
+                  onClick={handleSubmit}
                   disabled={createTenantMutation.isPending || !formData.name || !formData.slug || !formData.contactEmail}
                   className="min-w-[120px]"
                 >
@@ -307,7 +312,7 @@ export const AppAdmin: React.FC = () => {
                   )}
                 </Button>
               </div>
-            </form>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
