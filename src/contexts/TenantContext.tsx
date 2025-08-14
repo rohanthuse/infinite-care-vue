@@ -102,14 +102,16 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
         .from('organizations')
         .select('*')
         .eq('slug', tenantSlug)
-        .single();
+        .maybeSingle();
 
       if (orgError) {
         console.error('[TenantProvider] Error fetching organization:', orgError);
-        if (orgError.code === 'PGRST116') {
-          throw new Error(`Organization with slug "${tenantSlug}" not found`);
-        }
         throw orgError;
+      }
+
+      if (!orgData) {
+        console.error('[TenantProvider] Organization not found for slug:', tenantSlug);
+        throw new Error(`Organization with slug "${tenantSlug}" not found`);
       }
 
       console.log('[TenantProvider] Found organization:', orgData);
