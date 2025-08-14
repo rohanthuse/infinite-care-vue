@@ -37,7 +37,9 @@ const RequireClientAuth = () => {
   
   if (error || !authData || !authData.isClient) {
     console.log('[RequireClientAuth] Redirecting to login - invalid client:', error?.message);
-    return <Navigate to="/client-login" replace />;
+    // Get tenant slug from current path for redirection
+    const tenantSlug = window.location.pathname.split('/')[1];
+    return <Navigate to={`/${tenantSlug}/client-login`} replace />;
   }
   
   console.log('[RequireClientAuth] Client authenticated successfully');

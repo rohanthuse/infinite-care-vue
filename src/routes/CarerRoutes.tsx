@@ -30,7 +30,9 @@ const RequireCarerAuth = () => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/carer-login" replace />;
+    // Get tenant slug from current path for redirection
+    const tenantSlug = window.location.pathname.split('/')[1];
+    return <Navigate to={`/${tenantSlug}/carer-login`} replace />;
   }
 
   return <Outlet />;

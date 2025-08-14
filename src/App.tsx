@@ -32,6 +32,8 @@ import SystemUsers from "./pages/system/SystemUsers";
 import SystemAnalytics from "./pages/system/SystemAnalytics";
 import SystemSettings from "./pages/system/SystemSettings";
 import TenantLogin from "./pages/TenantLogin";
+import TenantClientLogin from "./pages/TenantClientLogin";
+import TenantCarerLogin from "./pages/TenantCarerLogin";
 import TenantDashboard from "./pages/TenantDashboard";
 import { SystemGuard } from "@/components/system/SystemGuard";
 import { TenantError } from "./pages/TenantError";
@@ -138,10 +140,20 @@ const AppContent = () => {
                 </SystemGuard>
               } />
               
-              {/* Tenant Login Route - Separate from protected routes */}
+              {/* Tenant Login Routes - Separate from protected routes */}
               <Route path="/:tenantSlug/login" element={
                 <TenantProvider>
                   <TenantLogin />
+                </TenantProvider>
+              } />
+              <Route path="/:tenantSlug/client-login" element={
+                <TenantProvider>
+                  <TenantClientLogin />
+                </TenantProvider>
+              } />
+              <Route path="/:tenantSlug/carer-login" element={
+                <TenantProvider>
+                  <TenantCarerLogin />
                 </TenantProvider>
               } />
               

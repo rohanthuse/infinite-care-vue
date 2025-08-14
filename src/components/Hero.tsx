@@ -84,10 +84,10 @@ const Hero = () => {
                 <Building className="h-5 w-5 text-blue-600" />
                 <h3 className="text-lg font-semibold text-gray-900">Organization Login</h3>
               </div>
-              <p className="text-gray-600 mb-4">Select your organization to access your personalized dashboard</p>
-              <div className="flex flex-col sm:flex-row gap-3">
+              <p className="text-gray-600 mb-4">Select your organization to access your dashboard</p>
+              <div className="space-y-4">
                 <Select value={selectedOrganization} onValueChange={setSelectedOrganization}>
-                  <SelectTrigger className="sm:w-64">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select your organization" />
                   </SelectTrigger>
                   <SelectContent>
@@ -98,13 +98,32 @@ const Hero = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                <CustomButton 
-                  onClick={handleOrganizationLogin}
-                  disabled={!selectedOrganization}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-                >
-                  Access Portal <ArrowRight className="ml-2 h-4 w-4" />
-                </CustomButton>
+                
+                {selectedOrganization && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <CustomButton 
+                      onClick={() => navigate(`/${selectedOrganization}/login`)}
+                      variant="outline"
+                      className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                    >
+                      Admin Login
+                    </CustomButton>
+                    <CustomButton 
+                      onClick={() => navigate(`/${selectedOrganization}/carer-login`)}
+                      variant="outline"
+                      className="border-green-200 text-green-700 hover:bg-green-50"
+                    >
+                      Carer Login
+                    </CustomButton>
+                    <CustomButton 
+                      onClick={() => navigate(`/${selectedOrganization}/client-login`)}
+                      variant="outline"
+                      className="border-purple-200 text-purple-700 hover:bg-purple-50"
+                    >
+                      Client Login
+                    </CustomButton>
+                  </div>
+                )}
               </div>
             </div>
             
