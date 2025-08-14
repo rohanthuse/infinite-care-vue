@@ -72,24 +72,53 @@ const UnifiedLogin = () => {
         return;
       }
 
-      // Check if user is system admin
-      const { data: systemRole } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', authData.user.id)
-        .eq('role', 'app_admin')
+      // Get user's highest priority role
+      const { data: roleData, error: roleError } = await supabase
+        .rpc('get_user_highest_role', { p_user_id: authData.user.id })
         .single();
 
-      if (systemRole) {
-        // System admin goes to system dashboard
-        navigate('/system-dashboard');
-        toast.success("Welcome back, System Administrator!");
+      if (roleError) {
+        console.error('Role detection error:', roleError);
+        toast.error("Unable to determine your access level. Please contact support.");
         return;
       }
 
-      // Regular user goes to their organization dashboard
-      navigate(`/${orgSlug}/dashboard`);
-      toast.success("Login successful!");
+      const userRole = roleData.role;
+      console.log('User role detected:', userRole);
+
+      // Route based on role
+      if (userRole === 'super_admin') {
+        console.log('Super admin detected, redirecting to system dashboard');
+        toast.success("Welcome back, System Administrator!");
+        navigate('/system-dashboard');
+        return;
+      }
+
+      // Route to appropriate dashboard based on role
+      let dashboardPath = `/${orgSlug}`;
+      
+      switch (userRole) {
+        case 'branch_admin':
+          dashboardPath += '/dashboard';
+          toast.success("Welcome back, Branch Administrator!");
+          break;
+        case 'carer':
+          dashboardPath += '/carer-dashboard';
+          toast.success("Welcome back!");
+          break;
+        case 'client':
+          dashboardPath += '/client-dashboard';
+          toast.success("Welcome back!");
+          break;
+        default:
+          // Fallback to admin dashboard
+          dashboardPath += '/dashboard';
+          toast.success("Login successful!");
+          break;
+      }
+
+      console.log('Redirecting to:', dashboardPath);
+      navigate(dashboardPath);
 
     } catch (error: any) {
       console.error('Login error:', error);
