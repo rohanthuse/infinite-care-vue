@@ -33,6 +33,7 @@ import ThirdPartyAccess from "@/pages/ThirdPartyAccess";
 import Reports from "@/pages/Reports";
 import BookingApprovals from "@/pages/BookingApprovals";
 import ClientEdit from "@/pages/client/ClientEdit";
+import { TenantDashboard } from "@/components/TenantDashboard";
 
 const BranchAdminRedirector = () => {
   const { data: userRole } = useUserRole();
@@ -128,7 +129,7 @@ const AdminRoutes = () => {
   return [
     <Route key="admin-auth" element={<RequireAdminAuth />}>
       <Route path="admin" element={<BranchAdminRedirector />} />
-      <Route path="dashboard" element={<BranchAdminRedirector />} />
+      <Route path="dashboard" element={<TenantDashboard />} />
       <Route path="notifications" element={<Notifications />} />
       <Route path="notifications/:categoryId" element={<Notifications />} />
       <Route path="services" element={<Services />} />
