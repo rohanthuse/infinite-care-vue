@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
+  // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -506,38 +506,6 @@ export type Database = {
           },
         ]
       }
-      app_admin_organizations: {
-        Row: {
-          app_admin_id: string
-          created_at: string
-          id: string
-          organization_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          app_admin_id: string
-          created_at?: string
-          id?: string
-          organization_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          app_admin_id?: string
-          created_at?: string
-          id?: string
-          organization_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "app_admin_organizations_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       attendance_records: {
         Row: {
           attendance_date: string
@@ -661,7 +629,6 @@ export type Database = {
           created_at: string | null
           end_time: string
           id: string
-          organization_id: string | null
           revenue: number | null
           service_id: string | null
           staff_id: string | null
@@ -674,7 +641,6 @@ export type Database = {
           created_at?: string | null
           end_time: string
           id?: string
-          organization_id?: string | null
           revenue?: number | null
           service_id?: string | null
           staff_id?: string | null
@@ -687,7 +653,6 @@ export type Database = {
           created_at?: string | null
           end_time?: string
           id?: string
-          organization_id?: string | null
           revenue?: number | null
           service_id?: string | null
           staff_id?: string | null
@@ -707,13 +672,6 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -745,7 +703,6 @@ export type Database = {
           id: string
           name: string
           operating_hours: string | null
-          organization_id: string | null
           phone: string | null
           regulatory: string
           status: string
@@ -764,7 +721,6 @@ export type Database = {
           id?: string
           name: string
           operating_hours?: string | null
-          organization_id?: string | null
           phone?: string | null
           regulatory: string
           status: string
@@ -783,7 +739,6 @@ export type Database = {
           id?: string
           name?: string
           operating_hours?: string | null
-          organization_id?: string | null
           phone?: string | null
           regulatory?: string
           status?: string
@@ -791,13 +746,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "branches_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "branches_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -1172,7 +1120,6 @@ export type Database = {
           invoice_number: string
           invoice_type: string | null
           notes: string | null
-          organization_id: string | null
           overdue_date: string | null
           paid_date: string | null
           payment_terms: string | null
@@ -1197,7 +1144,6 @@ export type Database = {
           invoice_number: string
           invoice_type?: string | null
           notes?: string | null
-          organization_id?: string | null
           overdue_date?: string | null
           paid_date?: string | null
           payment_terms?: string | null
@@ -1222,7 +1168,6 @@ export type Database = {
           invoice_number?: string
           invoice_type?: string | null
           notes?: string | null
-          organization_id?: string | null
           overdue_date?: string | null
           paid_date?: string | null
           payment_terms?: string | null
@@ -1246,13 +1191,6 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "client_billing_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2286,7 +2224,6 @@ export type Database = {
           middle_name: string | null
           mobile_number: string | null
           mobility_status: string | null
-          organization_id: string | null
           other_identifier: string | null
           password_set_by: string | null
           phone: string | null
@@ -2324,7 +2261,6 @@ export type Database = {
           middle_name?: string | null
           mobile_number?: string | null
           mobility_status?: string | null
-          organization_id?: string | null
           other_identifier?: string | null
           password_set_by?: string | null
           phone?: string | null
@@ -2362,7 +2298,6 @@ export type Database = {
           middle_name?: string | null
           mobile_number?: string | null
           mobility_status?: string | null
-          organization_id?: string | null
           other_identifier?: string | null
           password_set_by?: string | null
           phone?: string | null
@@ -2384,13 +2319,6 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "clients_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2485,7 +2413,6 @@ export type Database = {
           id: string
           metadata: Json | null
           name: string
-          organization_id: string | null
           staff_id: string | null
           status: string
           storage_bucket: string | null
@@ -2512,7 +2439,6 @@ export type Database = {
           id?: string
           metadata?: Json | null
           name: string
-          organization_id?: string | null
           staff_id?: string | null
           status?: string
           storage_bucket?: string | null
@@ -2539,7 +2465,6 @@ export type Database = {
           id?: string
           metadata?: Json | null
           name?: string
-          organization_id?: string | null
           staff_id?: string | null
           status?: string
           storage_bucket?: string | null
@@ -2583,13 +2508,6 @@ export type Database = {
             columns: ["form_id"]
             isOneToOne: false
             referencedRelation: "forms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "documents_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -2648,7 +2566,6 @@ export type Database = {
           expense_date: string
           id: string
           notes: string | null
-          organization_id: string | null
           payment_method: string
           receipt_url: string | null
           staff_id: string | null
@@ -2668,7 +2585,6 @@ export type Database = {
           expense_date?: string
           id?: string
           notes?: string | null
-          organization_id?: string | null
           payment_method?: string
           receipt_url?: string | null
           staff_id?: string | null
@@ -2688,7 +2604,6 @@ export type Database = {
           expense_date?: string
           id?: string
           notes?: string | null
-          organization_id?: string | null
           payment_method?: string
           receipt_url?: string | null
           staff_id?: string | null
@@ -2725,13 +2640,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "expenses_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "expenses_staff_id_fkey"
             columns: ["staff_id"]
             isOneToOne: false
@@ -2759,7 +2667,6 @@ export type Database = {
           invoice_id: string | null
           invoiced: boolean
           notes: string | null
-          organization_id: string | null
           reason: string | null
           scheduled_duration_minutes: number
           scheduled_end_time: string
@@ -2788,7 +2695,6 @@ export type Database = {
           invoice_id?: string | null
           invoiced?: boolean
           notes?: string | null
-          organization_id?: string | null
           reason?: string | null
           scheduled_duration_minutes: number
           scheduled_end_time: string
@@ -2817,7 +2723,6 @@ export type Database = {
           invoice_id?: string | null
           invoiced?: boolean
           notes?: string | null
-          organization_id?: string | null
           reason?: string | null
           scheduled_duration_minutes?: number
           scheduled_end_time?: string
@@ -2862,13 +2767,6 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "client_billing"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "extra_time_records_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -3078,7 +2976,6 @@ export type Database = {
           created_by: string
           description: string | null
           id: string
-          organization_id: string | null
           published: boolean
           requires_review: boolean
           settings: Json | null
@@ -3093,7 +2990,6 @@ export type Database = {
           created_by: string
           description?: string | null
           id?: string
-          organization_id?: string | null
           published?: boolean
           requires_review?: boolean
           settings?: Json | null
@@ -3108,7 +3004,6 @@ export type Database = {
           created_by?: string
           description?: string | null
           id?: string
-          organization_id?: string | null
           published?: boolean
           requires_review?: boolean
           settings?: Json | null
@@ -3117,15 +3012,7 @@ export type Database = {
           updated_at?: string
           version?: number
         }
-        Relationships: [
-          {
-            foreignKeyName: "forms_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       hobbies: {
         Row: {
@@ -3542,7 +3429,6 @@ export type Database = {
           id: string
           is_archived: boolean | null
           last_message_at: string | null
-          organization_id: string | null
           requires_action: boolean | null
           subject: string
           thread_type: string | null
@@ -3556,7 +3442,6 @@ export type Database = {
           id?: string
           is_archived?: boolean | null
           last_message_at?: string | null
-          organization_id?: string | null
           requires_action?: boolean | null
           subject: string
           thread_type?: string | null
@@ -3570,7 +3455,6 @@ export type Database = {
           id?: string
           is_archived?: boolean | null
           last_message_at?: string | null
-          organization_id?: string | null
           requires_action?: boolean | null
           subject?: string
           thread_type?: string | null
@@ -3582,13 +3466,6 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "message_threads_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -3921,7 +3798,6 @@ export type Database = {
           expires_at: string | null
           id: string
           message: string
-          organization_id: string | null
           priority: string
           read_at: string | null
           title: string
@@ -3937,7 +3813,6 @@ export type Database = {
           expires_at?: string | null
           id?: string
           message: string
-          organization_id?: string | null
           priority?: string
           read_at?: string | null
           title: string
@@ -3953,7 +3828,6 @@ export type Database = {
           expires_at?: string | null
           id?: string
           message?: string
-          organization_id?: string | null
           priority?: string
           read_at?: string | null
           title?: string
@@ -3967,13 +3841,6 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notifications_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -4036,7 +3903,6 @@ export type Database = {
           contact_phone: string | null
           created_at: string
           id: string
-          is_trial: boolean | null
           logo_url: string | null
           max_branches: number | null
           max_users: number | null
@@ -4046,11 +3912,8 @@ export type Database = {
           settings: Json | null
           slug: string
           subdomain: string
-          subscription_expires_at: string | null
           subscription_plan: string
-          subscription_plan_id: string | null
           subscription_status: string
-          trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
@@ -4060,7 +3923,6 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           id?: string
-          is_trial?: boolean | null
           logo_url?: string | null
           max_branches?: number | null
           max_users?: number | null
@@ -4070,11 +3932,8 @@ export type Database = {
           settings?: Json | null
           slug: string
           subdomain: string
-          subscription_expires_at?: string | null
           subscription_plan?: string
-          subscription_plan_id?: string | null
           subscription_status?: string
-          trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -4084,7 +3943,6 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           id?: string
-          is_trial?: boolean | null
           logo_url?: string | null
           max_branches?: number | null
           max_users?: number | null
@@ -4094,22 +3952,11 @@ export type Database = {
           settings?: Json | null
           slug?: string
           subdomain?: string
-          subscription_expires_at?: string | null
           subscription_plan?: string
-          subscription_plan_id?: string | null
           subscription_status?: string
-          trial_ends_at?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "organizations_subscription_plan_id_fkey"
-            columns: ["subscription_plan_id"]
-            isOneToOne: false
-            referencedRelation: "subscription_plans"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       payment_records: {
         Row: {
@@ -4324,7 +4171,6 @@ export type Database = {
           comment: string | null
           created_at: string | null
           id: string
-          organization_id: string | null
           rating: number
           service_date: string
           service_type: string | null
@@ -4339,7 +4185,6 @@ export type Database = {
           comment?: string | null
           created_at?: string | null
           id?: string
-          organization_id?: string | null
           rating: number
           service_date?: string
           service_type?: string | null
@@ -4354,7 +4199,6 @@ export type Database = {
           comment?: string | null
           created_at?: string | null
           id?: string
-          organization_id?: string | null
           rating?: number
           service_date?: string
           service_type?: string | null
@@ -4387,13 +4231,6 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "reviews_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -4597,7 +4434,6 @@ export type Database = {
           description: string | null
           double_handed: boolean
           id: string
-          organization_id: string | null
           title: string
           updated_at: string
         }
@@ -4607,7 +4443,6 @@ export type Database = {
           description?: string | null
           double_handed?: boolean
           id?: string
-          organization_id?: string | null
           title: string
           updated_at?: string
         }
@@ -4617,19 +4452,10 @@ export type Database = {
           description?: string | null
           double_handed?: boolean
           id?: string
-          organization_id?: string | null
           title?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "services_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       skills: {
         Row: {
@@ -4689,7 +4515,6 @@ export type Database = {
           invitation_sent_at: string | null
           last_name: string
           national_insurance_number: string | null
-          organization_id: string | null
           phone: string | null
           profile_completed: boolean | null
           qualifications: string[] | null
@@ -4731,7 +4556,6 @@ export type Database = {
           invitation_sent_at?: string | null
           last_name: string
           national_insurance_number?: string | null
-          organization_id?: string | null
           phone?: string | null
           profile_completed?: boolean | null
           qualifications?: string[] | null
@@ -4773,7 +4597,6 @@ export type Database = {
           invitation_sent_at?: string | null
           last_name?: string
           national_insurance_number?: string | null
-          organization_id?: string | null
           phone?: string | null
           profile_completed?: boolean | null
           qualifications?: string[] | null
@@ -4791,13 +4614,6 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "staff_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -5086,48 +4902,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      subscription_plans: {
-        Row: {
-          created_at: string
-          description: string | null
-          features: Json | null
-          id: string
-          is_active: boolean | null
-          max_branches: number | null
-          max_users: number | null
-          name: string
-          price_monthly: number
-          price_yearly: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          features?: Json | null
-          id?: string
-          is_active?: boolean | null
-          max_branches?: number | null
-          max_users?: number | null
-          name: string
-          price_monthly?: number
-          price_yearly?: number
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          features?: Json | null
-          id?: string
-          is_active?: boolean | null
-          max_branches?: number | null
-          max_users?: number | null
-          name?: string
-          price_monthly?: number
-          price_yearly?: number
-          updated_at?: string
-        }
-        Relationships: []
       }
       system_audit_logs: {
         Row: {
@@ -5817,7 +5591,6 @@ export type Database = {
           id: string
           mileage_rate: number
           notes: string | null
-          organization_id: string | null
           purpose: string
           receipt_url: string | null
           reimbursed_at: string | null
@@ -5842,7 +5615,6 @@ export type Database = {
           id?: string
           mileage_rate: number
           notes?: string | null
-          organization_id?: string | null
           purpose: string
           receipt_url?: string | null
           reimbursed_at?: string | null
@@ -5867,7 +5639,6 @@ export type Database = {
           id?: string
           mileage_rate?: number
           notes?: string | null
-          organization_id?: string | null
           purpose?: string
           receipt_url?: string | null
           reimbursed_at?: string | null
@@ -5907,13 +5678,6 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "travel_records_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -6093,7 +5857,6 @@ export type Database = {
           created_at: string
           id: string
           location_data: Json | null
-          organization_id: string | null
           staff_id: string
           staff_signature_data: string | null
           status: string
@@ -6114,7 +5877,6 @@ export type Database = {
           created_at?: string
           id?: string
           location_data?: Json | null
-          organization_id?: string | null
           staff_id: string
           staff_signature_data?: string | null
           status?: string
@@ -6135,7 +5897,6 @@ export type Database = {
           created_at?: string
           id?: string
           location_data?: Json | null
-          organization_id?: string | null
           staff_id?: string
           staff_signature_data?: string | null
           status?: string
@@ -6146,15 +5907,7 @@ export type Database = {
           visit_start_time?: string
           visit_summary?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "visit_records_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       visit_tasks: {
         Row: {
@@ -6334,14 +6087,14 @@ export type Database = {
       }
       admin_set_client_password: {
         Args: {
-          p_admin_id: string
           p_client_id: string
           p_new_password: string
+          p_admin_id: string
         }
         Returns: Json
       }
       admin_set_staff_password: {
-        Args: { p_admin_id: string; p_new_password: string; p_staff_id: string }
+        Args: { p_staff_id: string; p_new_password: string; p_admin_id: string }
         Returns: Json
       }
       calculate_invoice_total: {
@@ -6349,40 +6102,40 @@ export type Database = {
         Returns: number
       }
       calculate_leave_days: {
-        Args: { p_end_date: string; p_start_date: string }
+        Args: { p_start_date: string; p_end_date: string }
         Returns: number
       }
       calculate_news2_score: {
         Args:
           | {
-              consciousness: string
-              dias_bp: number
-              o2_sat: number
-              pulse: number
               resp_rate: number
+              o2_sat: number
               supp_o2: boolean
               sys_bp: number
+              dias_bp: number
+              pulse: number
+              consciousness: string
               temp: number
             }
           | {
-              consciousness: string
-              o2_sat: number
-              pulse: number
               resp_rate: number
+              o2_sat: number
               supp_o2: boolean
               sys_bp: number
+              pulse: number
+              consciousness: string
               temp: number
             }
         Returns: {
-          bp_score: number
-          consciousness_score: number
-          o2_score: number
-          pulse_score: number
           resp_score: number
-          risk: string
+          o2_score: number
           supp_o2_score: number
+          bp_score: number
+          pulse_score: number
+          consciousness_score: number
           temp_score: number
           total: number
+          risk: string
         }[]
       }
       can_access_thread: {
@@ -6400,16 +6153,16 @@ export type Database = {
       check_user_role_health: {
         Args: Record<PropertyKey, never>
         Returns: {
+          user_id: string
           email: string
           has_auth: boolean
           has_role: boolean
-          issue_type: string
           suggested_role: string
-          user_id: string
+          issue_type: string
         }[]
       }
       create_carer_with_invitation: {
-        Args: { p_branch_id: string; p_carer_data: Json }
+        Args: { p_carer_data: Json; p_branch_id: string }
         Returns: string
       }
       create_overdue_booking_notifications: {
@@ -6419,30 +6172,30 @@ export type Database = {
       create_system_user_and_role: {
         Args: {
           p_email: string
+          p_password: string
           p_first_name: string
           p_last_name: string
-          p_password: string
           p_role?: Database["public"]["Enums"]["system_role"]
         }
         Returns: Json
       }
       create_system_user_and_role_with_session: {
         Args: {
+          p_session_token: string
           p_email: string
+          p_password: string
           p_first_name: string
           p_last_name: string
-          p_password: string
           p_role?: Database["public"]["Enums"]["system_role"]
-          p_session_token: string
         }
         Returns: Json
       }
       create_third_party_login_session: {
         Args: {
-          ip_address_param?: unknown
           token_param: string
-          user_agent_param?: string
           user_id_param: string
+          ip_address_param?: unknown
+          user_agent_param?: string
         }
         Returns: string
       }
@@ -6469,17 +6222,17 @@ export type Database = {
       fix_client_message_participants: {
         Args: Record<PropertyKey, never>
         Returns: {
-          details: Json
-          error_count: number
           fixed_count: number
+          error_count: number
+          details: Json
         }[]
       }
       fix_message_participants_user_ids: {
         Args: Record<PropertyKey, never>
         Returns: {
-          details: Json
-          error_count: number
           fixed_count: number
+          error_count: number
+          details: Json
         }[]
       }
       fix_staff_auth_links: {
@@ -6501,38 +6254,38 @@ export type Database = {
       get_branch_documents: {
         Args: { p_branch_id: string }
         Returns: {
+          id: string
+          name: string
+          type: string
           category: string
-          client_name: string
-          created_at: string
           description: string
           file_path: string
           file_size: string
           file_type: string
-          id: string
-          name: string
-          related_entity: string
-          source_table: string
-          staff_name: string
-          status: string
-          tags: string[]
-          type: string
-          updated_at: string
           uploaded_by_name: string
+          client_name: string
+          staff_name: string
+          tags: string[]
+          status: string
+          created_at: string
+          updated_at: string
+          source_table: string
+          related_entity: string
         }[]
       }
       get_client_reports_data: {
         Args: {
           p_branch_id: string
-          p_end_date?: string
           p_start_date?: string
+          p_end_date?: string
         }
         Returns: Json
       }
       get_compliance_reports_data: {
         Args: {
           p_branch_id: string
-          p_end_date?: string
           p_start_date?: string
+          p_end_date?: string
         }
         Returns: Json
       }
@@ -6547,90 +6300,90 @@ export type Database = {
       get_financial_reports_data: {
         Args: {
           p_branch_id: string
-          p_end_date?: string
           p_start_date?: string
+          p_end_date?: string
         }
         Returns: Json
       }
       get_notification_stats: {
-        Args: { p_branch_id?: string; p_user_id: string }
+        Args: { p_user_id: string; p_branch_id?: string }
         Returns: {
-          by_type: Json
-          high_priority_count: number
           total_count: number
           unread_count: number
+          high_priority_count: number
+          by_type: Json
         }[]
       }
       get_operational_reports_data: {
         Args: {
           p_branch_id: string
-          p_end_date?: string
           p_start_date?: string
+          p_end_date?: string
         }
         Returns: Json
       }
       get_service_reports_data: {
         Args: {
           p_branch_id: string
-          p_end_date?: string
           p_start_date?: string
+          p_end_date?: string
         }
         Returns: Json
       }
       get_staff_profile: {
         Args: { staff_user_id: string }
         Returns: {
-          address: string
-          availability: string
-          branch_id: string
-          date_of_birth: string
-          email: string
-          experience: string
-          first_name: string
-          hire_date: string
           id: string
+          first_name: string
           last_name: string
+          email: string
           phone: string
-          specialization: string
+          address: string
           status: string
+          experience: string
+          specialization: string
+          availability: string
+          date_of_birth: string
+          hire_date: string
+          branch_id: string
         }[]
       }
       get_staff_profile_by_auth_user_id: {
         Args: { auth_user_id_param: string }
         Returns: {
-          address: string
+          id: string
           auth_user_id: string
-          availability: string
-          bank_account_name: string
-          bank_account_number: string
-          bank_name: string
-          bank_sort_code: string
-          branch_id: string
-          certifications: string[]
-          date_of_birth: string
+          first_name: string
+          last_name: string
           email: string
+          phone: string
+          address: string
+          status: string
+          experience: string
+          specialization: string
+          availability: string
+          date_of_birth: string
+          hire_date: string
+          branch_id: string
+          first_login_completed: boolean
+          profile_completed: boolean
+          national_insurance_number: string
           emergency_contact_name: string
           emergency_contact_phone: string
-          experience: string
-          first_login_completed: boolean
-          first_name: string
-          hire_date: string
-          id: string
-          invitation_accepted_at: string
-          last_name: string
-          national_insurance_number: string
-          phone: string
-          profile_completed: boolean
           qualifications: string[]
-          specialization: string
-          status: string
+          certifications: string[]
+          bank_name: string
+          bank_account_name: string
+          bank_account_number: string
+          bank_sort_code: string
+          invitation_accepted_at: string
         }[]
       }
       get_staff_reports_data: {
         Args: {
           p_branch_id: string
-          p_end_date?: string
           p_start_date?: string
+          p_end_date?: string
         }
         Returns: Json
       }
@@ -6641,16 +6394,16 @@ export type Database = {
       get_third_party_user_by_token: {
         Args: { token_param: string }
         Returns: {
-          access_expires_at: string
-          access_type: Database["public"]["Enums"]["third_party_access_type"]
-          branch_id: string
+          user_id: string
           email: string
           first_name: string
-          is_active: boolean
+          surname: string
           organisation: string
           role: string
-          surname: string
-          user_id: string
+          branch_id: string
+          access_type: Database["public"]["Enums"]["third_party_access_type"]
+          access_expires_at: string
+          is_active: boolean
         }[]
       }
       get_uninvoiced_bookings: {
@@ -6659,11 +6412,11 @@ export type Database = {
           booking_id: string
           client_id: string
           client_name: string
-          days_since_service: number
-          end_time: string
-          revenue: number
           service_title: string
           start_time: string
+          end_time: string
+          revenue: number
+          days_since_service: number
         }[]
       }
       get_user_highest_role: {
@@ -6678,13 +6431,9 @@ export type Database = {
       }
       has_role: {
         Args: {
-          _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
         }
-        Returns: boolean
-      }
-      is_app_admin: {
-        Args: { user_id_param: string }
         Returns: boolean
       }
       is_authenticated_admin: {
@@ -6713,27 +6462,27 @@ export type Database = {
       }
       link_client_to_auth_user: {
         Args: {
-          p_admin_id: string
-          p_auth_user_id: string
           p_client_id: string
+          p_auth_user_id: string
+          p_admin_id: string
         }
         Returns: Json
       }
       list_system_users_with_session: {
         Args: { p_session_token: string }
         Returns: {
-          created_at: string
+          id: string
           email: string
           first_name: string
-          id: string
+          last_name: string
           is_active: boolean
           last_login_at: string
-          last_name: string
+          created_at: string
           role: Database["public"]["Enums"]["system_role"]
         }[]
       }
       safe_setup_client_auth: {
-        Args: { p_admin_id: string; p_client_id: string; p_password: string }
+        Args: { p_client_id: string; p_password: string; p_admin_id: string }
         Returns: Json
       }
       safe_setup_client_messaging_auth: {
@@ -6746,13 +6495,13 @@ export type Database = {
       }
       system_authenticate: {
         Args:
+          | { p_email: string; p_password: string }
           | {
               p_email: string
-              p_ip_address?: unknown
               p_password: string
+              p_ip_address?: unknown
               p_user_agent?: string
             }
-          | { p_email: string; p_password: string }
         Returns: Json
       }
       system_logout: {
@@ -6769,12 +6518,12 @@ export type Database = {
       }
       update_system_user_with_session: {
         Args: {
+          p_session_token: string
+          p_user_id: string
           p_email: string
           p_first_name: string
           p_last_name: string
           p_role: Database["public"]["Enums"]["system_role"]
-          p_session_token: string
-          p_user_id: string
         }
         Returns: Json
       }
@@ -6798,13 +6547,7 @@ export type Database = {
     Enums: {
       agreement_party: "client" | "staff" | "other"
       agreement_status: "Active" | "Pending" | "Expired" | "Terminated"
-      app_role:
-        | "super_admin"
-        | "branch_admin"
-        | "admin"
-        | "carer"
-        | "client"
-        | "app_admin"
+      app_role: "super_admin" | "branch_admin" | "admin" | "carer" | "client"
       scheduled_agreement_status:
         | "Upcoming"
         | "Pending Approval"
@@ -6961,14 +6704,7 @@ export const Constants = {
     Enums: {
       agreement_party: ["client", "staff", "other"],
       agreement_status: ["Active", "Pending", "Expired", "Terminated"],
-      app_role: [
-        "super_admin",
-        "branch_admin",
-        "admin",
-        "carer",
-        "client",
-        "app_admin",
-      ],
+      app_role: ["super_admin", "branch_admin", "admin", "carer", "client"],
       scheduled_agreement_status: [
         "Upcoming",
         "Pending Approval",

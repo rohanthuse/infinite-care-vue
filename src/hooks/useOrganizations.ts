@@ -19,7 +19,7 @@ const fetchOrganizations = async (): Promise<OrganizationOption[]> => {
 
 export const useOrganizations = () => {
   return useQuery({
-    queryKey: ['system-tenants'],
+    queryKey: ['organizations', 'system-tenants'],
     queryFn: fetchOrganizations,
   });
 };

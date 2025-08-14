@@ -44,7 +44,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
       const { data: result, error } = await supabase.functions.invoke('create-system-tenant', {
         body: {
           name: data.name,
-          subdomain: data.slug, // Backend expects 'subdomain', not 'slug'
+          slug: data.slug,
           contactEmail: data.contact_email,
           contactPhone: data.contact_phone,
           address: data.address,
@@ -64,16 +64,10 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
       
       return result.data;
     },
-    onSuccess: (result) => {
-      const org = result?.data || result; // Handle both response formats
-      console.log('[CreateTenantDialog] Organization created:', org);
-      toast.success(`Organization "${org?.name || 'New organization'}" created successfully!`);
-      
-      // Invalidate queries to refresh data
-      console.log('[CreateTenantDialog] Invalidating queries...');
+    onSuccess: (org) => {
+      toast.success(`Organization "${org.name}" created successfully!`);
       queryClient.invalidateQueries({ queryKey: ['system-tenants'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-stats'] });
-      
       resetForm();
       onOpenChange(false);
       onSuccess?.();

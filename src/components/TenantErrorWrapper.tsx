@@ -11,26 +11,15 @@ interface TenantErrorWrapperProps {
 export const TenantErrorWrapper: React.FC<TenantErrorWrapperProps> = ({ children }) => {
   const { subdomain, isLoading, error, organization } = useTenant();
 
-  // Enhanced debugging
-  console.log('[TenantErrorWrapper] State:', { 
-    subdomain, 
-    isLoading, 
-    hasError: !!error, 
-    errorMessage: error?.message, 
-    hasOrganization: !!organization,
-    pathname: window.location.pathname 
-  });
-
   // Show loading state
   if (isLoading) {
-    console.log('[TenantErrorWrapper] Showing loading screen');
     return <LoadingScreen />;
   }
 
   // If there's a subdomain but no organization or error, show tenant not found
   if (subdomain && (!organization || error)) {
     const errorMessage = error?.message || 'Unknown error';
-    console.error('[TenantErrorWrapper] Tenant error for subdomain:', subdomain, 'Error:', errorMessage);
+    console.error('Tenant error:', errorMessage);
     
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4 gap-8">
@@ -41,6 +30,5 @@ export const TenantErrorWrapper: React.FC<TenantErrorWrapperProps> = ({ children
   }
 
   // Normal rendering
-  console.log('[TenantErrorWrapper] Rendering children normally');
   return <>{children}</>;
 };

@@ -60,24 +60,14 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     // Skip system routes and public routes
     const publicRoutes = ['super-admin', 'branch-admin-login', 'branch-selection', 'carer-login', 'client-login', 'carer-invitation', 'carer-onboarding', 'tenant-setup', 'tenant-error', 'system-login', 'system-dashboard'];
     
-    // Also check for tenant-specific login routes (e.g., /hcl/branch-admin-login)
-    const isTenantLoginRoute = pathParts.length === 2 && publicRoutes.slice(1, 6).includes(pathParts[1]); // Exclude 'super-admin' and system routes
-    
-    // Handle tenant-specific login routes first
-    if (isTenantLoginRoute) {
-      console.log('[TenantProvider] Tenant-specific login route detected, setting tenant:', pathParts[0]);
-      setSubdomain(pathParts[0]);
-      return;
-    }
-    
     if (pathParts.length === 0 || publicRoutes.includes(pathParts[0])) {
       console.log('[TenantProvider] Public route or root - no tenant');
       setSubdomain(null);
       return;
     }
 
-    // For development, allow overriding tenant via localStorage (ONLY for localhost)
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    // For development, allow overriding tenant via localStorage
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('.lovableproject.com')) {
       const devTenant = localStorage.getItem('dev-tenant');
       if (devTenant) {
         console.log('[TenantProvider] Development mode - using tenant from localStorage:', devTenant);
@@ -125,18 +115,8 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
 
       console.log('[TenantProvider] Found organization:', orgData);
 
-      // Check if we're on a login route - skip membership check for these
-      const pathname = window.location.pathname;
-      const pathParts = pathname.split('/').filter(Boolean);
-      const loginRoutes = ['branch-admin-login', 'carer-login', 'client-login', 'carer-invitation', 'carer-onboarding'];
-      const isOnLoginRoute = pathParts.length === 2 && loginRoutes.includes(pathParts[1]);
-      
-      console.log('[TenantProvider] Current route check - pathname:', pathname, 'isOnLoginRoute:', isOnLoginRoute);
-
-      // If a user is logged in AND we're not on a login route, verify membership for protected access
-      if (user && !isOnLoginRoute) {
-        console.log('[TenantProvider] Performing membership check for authenticated user on protected route');
-        
+      // If a user is logged in, verify membership for protected access
+      if (user) {
         // Check if user is a super admin; if so, bypass org membership requirement
         const { data: roleRows, error: roleErr } = await supabase
           .from('user_roles')
@@ -160,14 +140,12 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
             .single();
 
           if (memberError) {
-            console.error('[TenantProvider] User is not a member of this organization:', memberError);
+            console.error('User is not a member of this organization:', memberError);
             throw new Error('Access denied: You are not a member of this organization');
           }
         } else {
           console.log('[TenantProvider] Super admin detected; bypassing org membership check.');
         }
-      } else if (isOnLoginRoute) {
-        console.log('[TenantProvider] On login route - skipping membership check');
       }
 
       return orgData as Organization;

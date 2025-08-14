@@ -18,10 +18,8 @@ serve(async (req) => {
     // Fetch organizations
     const { data: orgs, error: orgErr } = await supabaseAdmin
       .from('organizations')
-      .select('id, name, slug, subdomain, contact_email, subscription_plan, subscription_status, created_at')
+      .select('id, name, subdomain, contact_email, subscription_plan, subscription_status, created_at')
       .order('created_at', { ascending: false })
-    
-    console.log('[list-system-tenants] Fetched organizations:', orgs?.length || 0)
 
     if (orgErr) {
       console.error('[list-system-tenants] Error fetching organizations:', orgErr)
@@ -61,8 +59,6 @@ serve(async (req) => {
       ...org,
       activeUsers: memberCounts[org.id] || 0,
     }))
-
-    console.log('[list-system-tenants] Returning tenants:', tenants?.length || 0)
 
     return new Response(
       JSON.stringify({ success: true, tenants }),

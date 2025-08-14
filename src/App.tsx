@@ -20,7 +20,6 @@ import BranchAdminLogin from "./pages/BranchAdminLogin";
 import BranchSelection from "./pages/BranchSelection";
 import ClientLogin from "./pages/ClientLogin";
 import AdminRoutes from "./routes/AdminRoutes";
-import { SystemRoutes } from "./routes/SystemRoutes";
 import CarerRoutes from "./routes/CarerRoutes";
 import ClientRoutes from "./routes/ClientRoutes";
 import { ErrorBoundary } from "@/components/care/ErrorBoundary";
@@ -32,7 +31,6 @@ import SystemTenants from "./pages/system/SystemTenants";
 import SystemUsers from "./pages/system/SystemUsers";
 import SystemAnalytics from "./pages/system/SystemAnalytics";
 import SystemSettings from "./pages/system/SystemSettings";
-import { AppAdmin } from "./pages/AppAdmin";
 import { SystemGuard } from "@/components/system/SystemGuard";
 import { TenantError } from "./pages/TenantError";
 import { TenantErrorWrapper } from "@/components/TenantErrorWrapper";
@@ -64,7 +62,6 @@ const AppContent = () => {
   const { loading, error } = useAuth();
 
   // Show loading screen only for protected routes, not public routes
-  const pathname = window.location.pathname;
   const isPublicRoute = [
     '/', 
     '/super-admin', 
@@ -76,9 +73,7 @@ const AppContent = () => {
     '/carer-onboarding',
     '/tenant-setup',
     '/system-login'
-  ].includes(pathname) || 
-  // Also check for tenant-specific login routes
-  pathname.match(/^\/[^\/]+\/(branch-admin-login|carer-login|client-login|carer-invitation|carer-onboarding)$/);
+  ].includes(window.location.pathname);
 
   if (loading && !isPublicRoute) {
     return <LoadingScreen />;
@@ -103,25 +98,48 @@ const AppContent = () => {
               <Route path="/tenant-error" element={<TenantError />} />
               <Route path="/system-login" element={<SystemLogin />} />
               
-              {/* App Admin Route */}
-              <Route path="/app-admin" element={<AppAdmin />} />
-              
-              {/* System Portal Routes */}
-              <Route path="/system/*" element={<SystemRoutes />} />
+              {/* System Dashboard Routes */}
+              <Route path="/system-dashboard" element={
+                <SystemGuard>
+                  <SystemDashboard />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/tenants" element={
+                <SystemGuard>
+                  <SystemTenants />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/users" element={
+                <SystemGuard>
+                  <SystemUsers />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/analytics" element={
+                <SystemGuard>
+                  <SystemAnalytics />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/settings" element={
+                <SystemGuard>
+                  <SystemSettings />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/audit" element={
+                <SystemGuard>
+                  <SystemAnalytics />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/database" element={
+                <SystemGuard>
+                  <SystemAnalytics />
+                </SystemGuard>
+              } />
               
               {/* Tenant-specific Protected Routes */}
               <Route path="/:tenantSlug/*" element={
                 <TenantProvider>
                   <TenantErrorWrapper>
                     <Routes>
-                      {/* Tenant-specific login routes */}
-                      <Route path="branch-admin-login" element={<BranchAdminLogin />} />
-                      <Route path="carer-login" element={<CarerLoginSafe />} />
-                      <Route path="client-login" element={<ClientLogin />} />
-                      <Route path="carer-invitation" element={<CarerInvitation />} />
-                      <Route path="carer-onboarding" element={<CarerOnboarding />} />
-                      
-                      {/* Protected routes */}
                       {AdminRoutes()}
                       {CarerRoutes()}
                       {ClientRoutes()}
