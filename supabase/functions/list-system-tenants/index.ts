@@ -18,7 +18,7 @@ serve(async (req) => {
     // Fetch organizations
     const { data: orgs, error: orgErr } = await supabaseAdmin
       .from('organizations')
-      .select('id, name, subdomain, contact_email, subscription_plan, subscription_status, created_at')
+      .select('id, name, slug, contact_email, subscription_plan, subscription_status, created_at')
       .order('created_at', { ascending: false })
 
     if (orgErr) {

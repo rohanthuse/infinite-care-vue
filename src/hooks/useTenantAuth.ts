@@ -23,7 +23,7 @@ export const useTenantAuth = () => {
 
     // Tenant state
     organization: tenant.organization,
-    subdomain: tenant.subdomain,
+    tenantSlug: tenant.tenantSlug,
     tenantLoading: tenant.isLoading,
     tenantError: tenant.error,
     refreshOrganization: tenant.refreshOrganization,

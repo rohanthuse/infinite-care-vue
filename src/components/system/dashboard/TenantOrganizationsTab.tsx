@@ -30,8 +30,8 @@ export const TenantOrganizationsTab: React.FC = () => {
                   <li key={org.id} className="py-3 flex items-center justify-between">
                     <div>
                       <p className="font-medium">{org.name}</p>
-                      {org.subdomain && (
-                        <p className="text-sm text-muted-foreground">{org.subdomain}</p>
+                      {org.slug && (
+                        <p className="text-sm text-muted-foreground">{org.slug}</p>
                       )}
                     </div>
                   </li>

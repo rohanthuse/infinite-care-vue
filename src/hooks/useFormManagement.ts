@@ -67,7 +67,17 @@ export const useFormManagement = (branchId: string) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as DatabaseForm[];
+      return (data || []).map(form => ({
+        ...form,
+        settings: form.settings as any || {
+          showProgressBar: false,
+          allowSaveAsDraft: false,
+          autoSaveEnabled: false,
+          autoSaveInterval: 60,
+          redirectAfterSubmit: false,
+          submitButtonText: 'Submit'
+        }
+      })) as DatabaseForm[];
     },
   });
 

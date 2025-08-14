@@ -16,7 +16,7 @@ export const DevTenantSwitcher: React.FC = () => {
   const [customTenantSlug, setCustomTenantSlug] = useState<string>('');
   const [testingConnectivity, setTestingConnectivity] = useState<boolean>(false);
   const { data: organizations, isLoading, error: orgsError } = useOrganizations();
-  const { organization, subdomain: contextTenantSlug, error: tenantError } = useTenant();
+  const { organization, tenantSlug: contextTenantSlug, error: tenantError } = useTenant();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -167,8 +167,8 @@ export const DevTenantSwitcher: React.FC = () => {
             <SelectContent>
               <SelectItem value="">Clear (Main Site)</SelectItem>
               {organizations?.map((org) => (
-                <SelectItem key={org.id} value={org.subdomain || ''}>
-                  {org.name} ({org.subdomain})
+                <SelectItem key={org.id} value={org.slug || ''}>
+                  {org.name} ({org.slug})
                 </SelectItem>
               ))}
             </SelectContent>

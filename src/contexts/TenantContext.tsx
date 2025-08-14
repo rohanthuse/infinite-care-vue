@@ -6,7 +6,6 @@ import { useAuth } from '@/hooks/useAuth';
 interface Organization {
   id: string;
   name: string;
-  subdomain: string;
   slug: string;
   logo_url?: string;
   primary_color: string;
@@ -24,7 +23,7 @@ interface Organization {
 
 interface TenantContextType {
   organization: Organization | null;
-  subdomain: string | null;
+  tenantSlug: string | null;
   isLoading: boolean;
   error: Error | null;
   refreshOrganization: () => void;
@@ -46,7 +45,7 @@ interface TenantProviderProps {
 
 export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
   const { user } = useAuth();
-  const [subdomain, setSubdomain] = useState<string | null>(null);
+  const [tenantSlug, setTenantSlug] = useState<string | null>(null);
 
   // Extract tenant slug from URL path
   useEffect(() => {
@@ -62,7 +61,7 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     
     if (pathParts.length === 0 || publicRoutes.includes(pathParts[0])) {
       console.log('[TenantProvider] Public route or root - no tenant');
-      setSubdomain(null);
+      setTenantSlug(null);
       return;
     }
 
@@ -71,15 +70,15 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
       const devTenant = localStorage.getItem('dev-tenant');
       if (devTenant) {
         console.log('[TenantProvider] Development mode - using tenant from localStorage:', devTenant);
-        setSubdomain(devTenant);
+        setTenantSlug(devTenant);
         return;
       }
     }
 
     // First path segment should be the tenant slug
-    const tenantSlug = pathParts[0]?.toLowerCase();
-    console.log('[TenantProvider] Extracted tenant slug:', tenantSlug);
-    setSubdomain(tenantSlug);
+    const extractedSlug = pathParts[0]?.toLowerCase();
+    console.log('[TenantProvider] Extracted tenant slug:', extractedSlug);
+    setTenantSlug(extractedSlug);
   }, [window.location.pathname]);
 
   // Fetch organization data
@@ -89,26 +88,26 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     error, 
     refetch: refreshOrganization 
   } = useQuery({
-    queryKey: ['organization', subdomain, user?.id],
+    queryKey: ['organization', tenantSlug, user?.id],
     queryFn: async () => {
-      if (!subdomain) {
-        console.log('[TenantProvider] No subdomain - returning null');
+      if (!tenantSlug) {
+        console.log('[TenantProvider] No tenant slug - returning null');
         return null;
       }
 
-      console.log('[TenantProvider] Fetching organization for subdomain:', subdomain);
+      console.log('[TenantProvider] Fetching organization for slug:', tenantSlug);
 
       // Find organization by slug
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select('*')
-        .eq('slug', subdomain)
+        .eq('slug', tenantSlug)
         .single();
 
       if (orgError) {
         console.error('[TenantProvider] Error fetching organization:', orgError);
         if (orgError.code === 'PGRST116') {
-          throw new Error(`Organization with slug "${subdomain}" not found`);
+          throw new Error(`Organization with slug "${tenantSlug}" not found`);
         }
         throw orgError;
       }
@@ -150,7 +149,7 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
 
       return orgData as Organization;
     },
-    enabled: subdomain !== null,
+    enabled: tenantSlug !== null,
     retry: 1,
   });
 
@@ -168,7 +167,7 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
 
   const value: TenantContextType = {
     organization,
-    subdomain,
+    tenantSlug,
     isLoading,
     error: error as Error | null,
     refreshOrganization,

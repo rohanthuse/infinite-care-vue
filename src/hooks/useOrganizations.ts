@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface OrganizationOption {
   id: string;
   name: string;
-  subdomain?: string;
+  slug: string;
 }
 
 const fetchOrganizations = async (): Promise<OrganizationOption[]> => {
@@ -14,7 +14,7 @@ const fetchOrganizations = async (): Promise<OrganizationOption[]> => {
 
   // data may be { tenants: [...] } or an array depending on function implementation
   const tenants = Array.isArray(data) ? data : data?.tenants || [];
-  return tenants.map((t: any) => ({ id: t.id, name: t.name, subdomain: t.subdomain })) as OrganizationOption[];
+  return tenants.map((t: any) => ({ id: t.id, name: t.name, slug: t.slug })) as OrganizationOption[];
 };
 
 export const useOrganizations = () => {

@@ -22,7 +22,7 @@ export const TenantGuard: React.FC<TenantGuardProps> = ({
     user,
     organization,
     tenantError,
-    subdomain,
+    tenantSlug,
     refreshOrganization
   } = useTenantAuth();
 
@@ -37,7 +37,7 @@ export const TenantGuard: React.FC<TenantGuardProps> = ({
               <div className="text-center space-y-2">
                 <h3 className="text-lg font-semibold">Loading...</h3>
                 <p className="text-sm text-muted-foreground">
-                  Verifying tenant access for {subdomain}
+                  Verifying tenant access for {tenantSlug}
                 </p>
               </div>
             </div>
@@ -63,13 +63,13 @@ export const TenantGuard: React.FC<TenantGuardProps> = ({
             </div>
             <CardTitle className="text-xl">Access Denied</CardTitle>
             <CardDescription>
-              You don't have access to organization "{subdomain}"
+              You don't have access to organization "{tenantSlug}"
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="text-sm text-muted-foreground text-center">
               <p>Signed in as: {user?.email}</p>
-              <p>Requested subdomain: {subdomain}</p>
+              <p>Requested tenant: {tenantSlug}</p>
             </div>
             
             <div className="space-y-2">
