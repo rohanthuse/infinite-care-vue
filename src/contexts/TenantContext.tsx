@@ -53,8 +53,8 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     const hostname = window.location.hostname;
     console.log('[TenantProvider] Current hostname:', hostname);
 
-    // Handle localhost development
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    // Handle localhost development OR Lovable development URLs
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('.lovableproject.com')) {
       // For development, allow overriding subdomain via localStorage
       const devSubdomain = localStorage.getItem('dev-subdomain');
       console.log('[TenantProvider] Development mode - using subdomain from localStorage:', devSubdomain);
