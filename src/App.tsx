@@ -138,6 +138,13 @@ const AppContent = () => {
                 </SystemGuard>
               } />
               
+              {/* Tenant Login Route - Separate from protected routes */}
+              <Route path="/:tenantSlug/login" element={
+                <TenantProvider>
+                  <TenantLogin />
+                </TenantProvider>
+              } />
+              
               {/* Tenant Dashboard Route */}
               <Route path="/:tenantSlug/dashboard" element={<TenantDashboard />} />
               

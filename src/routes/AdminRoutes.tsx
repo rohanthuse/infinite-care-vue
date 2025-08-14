@@ -101,8 +101,6 @@ const RequireAdminAuth = () => {
 };
 
 const AdminRoutes = () => [
-  // Public tenant login route - no auth required
-  <Route key="tenant-login" path="login" element={<TenantLogin />} />,
   <Route key="admin-auth" element={<RequireAdminAuth />}>
     <Route path="admin" element={<BranchAdminRedirector />} />
     <Route path="dashboard" element={<BranchAdminRedirector />} />

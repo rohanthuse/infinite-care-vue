@@ -14,7 +14,16 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 const TenantLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { organization, tenantSlug, isLoading } = useTenant();
+  const { organization, tenantSlug, isLoading, error } = useTenant();
+
+  // Add debug logging
+  console.log('[TenantLogin] Debug info:', {
+    organization: organization?.name,
+    tenantSlug,
+    isLoading,
+    error: error?.message,
+    pathname: window.location.pathname
+  });
   
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
