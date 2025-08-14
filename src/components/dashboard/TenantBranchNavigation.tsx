@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useTenant } from '@/contexts/TenantContext';
 
 interface Branch {
   id: string;
@@ -28,6 +29,7 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
   organizationId 
 }) => {
   const navigate = useNavigate();
+  const { tenantSlug } = useTenant();
   const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch branches for this organization
@@ -57,7 +59,14 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
     // For tenant context, navigate to tenant-specific branch dashboard
     const encodedBranchName = encodeURIComponent(branch.name);
     console.log('Navigating to tenant branch:', branch.id, branch.name, encodedBranchName);
-    navigate(`/branch-dashboard/${branch.id}/${encodedBranchName}`);
+    
+    // Use tenant-aware path
+    if (tenantSlug) {
+      navigate(`/${tenantSlug}/branch-dashboard/${branch.id}/${encodedBranchName}`);
+    } else {
+      // Fallback for non-tenant context
+      navigate(`/branch-dashboard/${branch.id}/${encodedBranchName}`);
+    }
   };
 
   const filteredBranches = branches?.filter(branch =>

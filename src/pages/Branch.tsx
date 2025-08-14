@@ -10,6 +10,7 @@ import { EditBranchDialog } from "@/components/EditBranchDialog";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useTenant } from "@/contexts/TenantContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -53,6 +54,7 @@ const Branch = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { tenantSlug } = useTenant();
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: branches, isLoading, error } = useQuery({
@@ -82,7 +84,11 @@ const Branch = () => {
   });
 
   const handleViewBranchDetails = (branchId: string) => {
-    navigate(`/branch-details/${branchId}`);
+    if (tenantSlug) {
+      navigate(`/${tenantSlug}/branch-details/${branchId}`);
+    } else {
+      navigate(`/branch-details/${branchId}`);
+    }
   };
 
   const handleEdit = (branch: Branch) => {

@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { EditBranchDialog } from "@/components/EditBranchDialog";
+import { useTenant } from "@/contexts/TenantContext";
 import { motion } from "framer-motion";
 import { 
   Building2, Calendar, Users, FileText, Clock, 
@@ -23,6 +24,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 const BranchDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { tenantSlug } = useTenant();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   const { data: branchData, isLoading, error } = useBranch(id);
@@ -31,13 +33,21 @@ const BranchDetails = () => {
 
   const handleNavigateToBranchAdmins = () => {
     toast.success("Navigating to Branch Admins dashboard");
-    navigate('/branch-admins');
+    if (tenantSlug) {
+      navigate(`/${tenantSlug}/branch-admins`);
+    } else {
+      navigate('/branch-admins');
+    }
   };
 
   const handleNavigateToBranchDashboard = () => {
     toast.success("Navigating to Branch Dashboard");
     if (branchData) {
-      navigate(`/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.name)}`);
+      if (tenantSlug) {
+        navigate(`/${tenantSlug}/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.name)}`);
+      } else {
+        navigate(`/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.name)}`);
+      }
     }
   };
 
@@ -48,7 +58,11 @@ const BranchDetails = () => {
   const handleManageCarers = () => {
     toast.success("Navigating to Carers Management");
     if (branchData) {
-      navigate(`/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.name)}/carers`);
+      if (tenantSlug) {
+        navigate(`/${tenantSlug}/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.name)}/carers`);
+      } else {
+        navigate(`/branch-dashboard/${branchData.id}/${encodeURIComponent(branchData.name)}/carers`);
+      }
     }
   };
 
@@ -95,27 +109,39 @@ const BranchDetails = () => {
                 <AlertCircle className="h-12 w-12 mb-4" />
                 <h2 className="text-xl font-bold mb-2">Error loading branch details</h2>
                 <p>{error.message}</p>
-                <Button 
-                  variant="outline" 
-                  className="mt-6"
-                  onClick={() => navigate('/branch')}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Branches
-                </Button>
+                 <Button 
+                   variant="outline" 
+                   className="mt-6"
+                   onClick={() => {
+                     if (tenantSlug) {
+                       navigate(`/${tenantSlug}/branch`);
+                     } else {
+                       navigate('/branch');
+                     }
+                   }}
+                 >
+                   <ArrowLeft className="h-4 w-4 mr-2" />
+                   Back to Branches
+                 </Button>
             </div>
         ) : branchData ? (
           <>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <div className="flex items-start gap-4">
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  className="rounded-full border-gray-200"
-                  onClick={() => navigate('/branch')}
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
+                 <Button 
+                   variant="outline" 
+                   size="icon"
+                   className="rounded-full border-gray-200"
+                   onClick={() => {
+                     if (tenantSlug) {
+                       navigate(`/${tenantSlug}/branch`);
+                     } else {
+                       navigate('/branch');
+                     }
+                   }}
+                 >
+                   <ArrowLeft className="h-4 w-4" />
+                 </Button>
                 <div>
                   <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">{branchData.name}</h1>
                   <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1">
