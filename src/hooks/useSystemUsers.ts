@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getSystemSessionToken } from '@/utils/systemSession';
 
 export interface SystemUser {
   id: string;
@@ -37,9 +38,18 @@ export const useSystemUsers = () => {
     queryFn: async () => {
       console.log('[useSystemUsers] Starting to fetch system users');
       
-      // Get current session
+      // Try to get session token from Supabase auth first
       const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      let token = session?.access_token;
+
+      // Fallback to system session token from localStorage
+      if (!token) {
+        const systemToken = getSystemSessionToken();
+        if (systemToken) {
+          token = systemToken;
+          console.log('[useSystemUsers] Using system session token from localStorage');
+        }
+      }
 
       if (!token) {
         console.error('[useSystemUsers] No session token found');
@@ -130,9 +140,18 @@ export const useSystemUserStats = () => {
     queryFn: async () => {
       console.log('[useSystemUserStats] Fetching system user stats');
       
-      // Get current session
+      // Try to get session token from Supabase auth first
       const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      let token = session?.access_token;
+
+      // Fallback to system session token from localStorage
+      if (!token) {
+        const systemToken = getSystemSessionToken();
+        if (systemToken) {
+          token = systemToken;
+          console.log('[useSystemUserStats] Using system session token from localStorage');
+        }
+      }
 
       if (!token) {
         console.error('[useSystemUserStats] No session token found');
@@ -167,9 +186,18 @@ export const useCreateSystemUser = () => {
     mutationFn: async (userData: CreateSystemUserData) => {
       console.log('[useCreateSystemUser] Creating system user:', userData);
       
-      // Get current session
+      // Try to get session token from Supabase auth first
       const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      let token = session?.access_token;
+
+      // Fallback to system session token from localStorage
+      if (!token) {
+        const systemToken = getSystemSessionToken();
+        if (systemToken) {
+          token = systemToken;
+          console.log('[useCreateSystemUser] Using system session token from localStorage');
+        }
+      }
 
       if (!token) {
         console.error('[useCreateSystemUser] No session token found');
@@ -299,9 +327,18 @@ export const useUpdateSystemUser = () => {
     mutationFn: async (userData: UpdateSystemUserData) => {
       console.log('[useUpdateSystemUser] Updating system user:', userData);
       
-      // Get current session
+      // Try to get session token from Supabase auth first
       const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      let token = session?.access_token;
+
+      // Fallback to system session token from localStorage
+      if (!token) {
+        const systemToken = getSystemSessionToken();
+        if (systemToken) {
+          token = systemToken;
+          console.log('[useUpdateSystemUser] Using system session token from localStorage');
+        }
+      }
 
       if (!token) {
         console.error('[useUpdateSystemUser] No session token found');
