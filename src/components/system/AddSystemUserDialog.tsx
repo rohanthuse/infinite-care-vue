@@ -81,7 +81,7 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
           'assign-user-to-organization',
           {
             body: {
-              system_user_id: newUser.id,
+              system_user_id: (newUser as any).id,
               organization_id: formData.organization_id,
             },
           }

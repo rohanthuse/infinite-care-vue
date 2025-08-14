@@ -52,7 +52,7 @@ export default function SystemUsers() {
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="flex items-center gap-1">
                       <Activity className="h-3 w-3" />
-                      {stats?.total || 0} Total Users
+                      {(stats as any)?.total || 0} Total Users
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2">
@@ -69,7 +69,7 @@ export default function SystemUsers() {
         </div>
 
         {/* Stats */}
-        <SystemUsersStats stats={stats} isLoading={statsLoading} />
+        <SystemUsersStats stats={stats as any} isLoading={statsLoading} />
 
         {/* User List */}
         <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl">

@@ -74,7 +74,7 @@ export const SystemReports: React.FC = () => {
 
       <section>
         <h3 className="text-lg font-semibold mb-4">System Users</h3>
-        <SystemUsersStats stats={userStats} isLoading={usersLoading} />
+        <SystemUsersStats stats={userStats as any} isLoading={usersLoading} />
       </section>
     </div>
   );
