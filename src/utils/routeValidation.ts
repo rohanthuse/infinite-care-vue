@@ -2,14 +2,15 @@
 export const validateRoute = (path: string): boolean => {
   // Basic route validation - can be expanded based on your needs
   const validRoutePatterns = [
-    /^\/$/,                                                    // Home
-    /^\/super-admin$/,                                        // Super admin login
-    /^\/carer-login$/,                                        // Carer login
-    /^\/client-login$/,                                       // Client login
-    /^\/dashboard$/,                                          // Admin dashboard
-    /^\/branch-dashboard\/[^\/]+\/[^\/]+(?:\/[^\/]+)*$/,     // Branch dashboard with params
-    /^\/carer-dashboard(?:\/[^\/]+)*$/,                      // Carer dashboard
-    /^\/client-dashboard(?:\/[^\/]+)*$/,                     // Client dashboard
+    /^\/$/,                                                          // Home
+    /^\/super-admin$/,                                              // Super admin login
+    /^\/carer-login$/,                                              // Carer login
+    /^\/client-login$/,                                             // Client login
+    /^\/[^\/]+\/dashboard$/,                                        // Tenant admin dashboard
+    /^\/[^\/]+\/branch-dashboard\/[^\/]+\/[^\/]+(?:\/[^\/]+)*$/,   // Tenant branch dashboard with params
+    /^\/[^\/]+\/carer-dashboard(?:\/[^\/]+)*$/,                    // Tenant carer dashboard
+    /^\/[^\/]+\/client-dashboard(?:\/[^\/]+)*$/,                   // Tenant client dashboard
+    /^\/system-dashboard(?:\/[^\/]+)*$/,                           // System dashboard
   ];
 
   return validRoutePatterns.some(pattern => pattern.test(path));

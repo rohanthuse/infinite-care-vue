@@ -25,7 +25,9 @@ export const useBranchDashboardNavigation = () => {
 
   const handleTabChange = (tab: string) => {
     if (id && branchName) {
-      const basePath = `/branch-dashboard/${id}/${branchName}`;
+      // Extract tenant slug from current path
+      const tenantSlug = location.pathname.split('/')[1];
+      const basePath = `/${tenantSlug}/branch-dashboard/${id}/${branchName}`;
       const targetPath = tab === 'dashboard' ? basePath : `${basePath}/${tab}`;
       navigate(targetPath);
     }
@@ -33,7 +35,9 @@ export const useBranchDashboardNavigation = () => {
 
   const handleWorkflowNavigation = (section: string) => {
     if (id && branchName) {
-      navigate(`/branch-dashboard/${id}/${branchName}/workflow/${section}`);
+      // Extract tenant slug from current path
+      const tenantSlug = location.pathname.split('/')[1];
+      navigate(`/${tenantSlug}/branch-dashboard/${id}/${branchName}/workflow/${section}`);
     }
   };
 

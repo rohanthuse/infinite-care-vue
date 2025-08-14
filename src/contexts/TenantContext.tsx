@@ -48,44 +48,39 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const [subdomain, setSubdomain] = useState<string | null>(null);
 
-  // Extract subdomain from hostname
+  // Extract tenant slug from URL path
   useEffect(() => {
-    const hostname = window.location.hostname;
-    console.log('[TenantProvider] Current hostname:', hostname);
+    const pathname = window.location.pathname;
+    console.log('[TenantProvider] Current pathname:', pathname);
 
-    // Handle localhost development OR Lovable development URLs
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('.lovableproject.com')) {
-      // For development, allow overriding subdomain via localStorage
-      const devSubdomain = localStorage.getItem('dev-subdomain');
-      console.log('[TenantProvider] Development mode - using subdomain from localStorage:', devSubdomain);
-      setSubdomain(devSubdomain || null);
+    // Extract tenant slug from URL path (e.g., /hcl/dashboard -> hcl)
+    const pathParts = pathname.split('/').filter(Boolean);
+    console.log('[TenantProvider] Path parts:', pathParts);
+
+    // Skip system routes and public routes
+    const publicRoutes = ['super-admin', 'branch-admin-login', 'branch-selection', 'carer-login', 'client-login', 'carer-invitation', 'carer-onboarding', 'tenant-setup', 'tenant-error', 'system-login', 'system-dashboard'];
+    
+    if (pathParts.length === 0 || publicRoutes.includes(pathParts[0])) {
+      console.log('[TenantProvider] Public route or root - no tenant');
+      setSubdomain(null);
       return;
     }
 
-    // Extract subdomain - support both .lovable.app and .med-infinite.care formats
-    const parts = hostname.split('.');
-    console.log('[TenantProvider] Hostname parts:', parts);
-    
-    if (parts.length >= 3) {
-      const sd = parts[0]?.toLowerCase();
-      // Ignore common non-tenant subdomains
-      if (sd === 'www') {
-        console.log('[TenantProvider] Ignoring www subdomain');
-        setSubdomain(null);
-      } else {
-        console.log('[TenantProvider] Extracted subdomain:', sd);
-        setSubdomain(sd);
+    // For development, allow overriding tenant via localStorage
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('.lovableproject.com')) {
+      const devTenant = localStorage.getItem('dev-tenant');
+      if (devTenant) {
+        console.log('[TenantProvider] Development mode - using tenant from localStorage:', devTenant);
+        setSubdomain(devTenant);
+        return;
       }
-    } else if (parts.length === 2 && parts[1] === 'lovable.app') {
-      // Handle case where it might be yourproject.lovable.app
-      console.log('[TenantProvider] Single level .lovable.app domain - no tenant');
-      setSubdomain(null);
-    } else {
-      // Root domain (no tenant)
-      console.log('[TenantProvider] Root domain - no tenant subdomain');
-      setSubdomain(null);
     }
-  }, []);
+
+    // First path segment should be the tenant slug
+    const tenantSlug = pathParts[0]?.toLowerCase();
+    console.log('[TenantProvider] Extracted tenant slug:', tenantSlug);
+    setSubdomain(tenantSlug);
+  }, [window.location.pathname]);
 
   // Fetch organization data
   const { 
@@ -103,17 +98,17 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
 
       console.log('[TenantProvider] Fetching organization for subdomain:', subdomain);
 
-      // Find organization by subdomain
+      // Find organization by slug
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select('*')
-        .eq('subdomain', subdomain)
+        .eq('slug', subdomain)
         .single();
 
       if (orgError) {
         console.error('[TenantProvider] Error fetching organization:', orgError);
         if (orgError.code === 'PGRST116') {
-          throw new Error(`Organization with subdomain "${subdomain}" not found`);
+          throw new Error(`Organization with slug "${subdomain}" not found`);
         }
         throw orgError;
       }

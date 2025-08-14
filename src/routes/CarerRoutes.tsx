@@ -42,7 +42,7 @@ const RequireCarerAuth = () => {
  */
 const CarerRoutes = () => [
   <Route key="carer-auth" element={<RequireCarerAuth />}>
-    <Route path="/carer-dashboard" element={<CarerDashboard />}>
+    <Route path="carer-dashboard" element={<CarerDashboard />}>
       <Route index element={<CarerOverview />} />
       <Route path="profile" element={<CarerProfile />} />
       <Route path="schedule" element={<CarerSchedule />} />

@@ -135,10 +135,18 @@ const AppContent = () => {
                 </SystemGuard>
               } />
               
-              {/* Protected Routes */}
-              {AdminRoutes()}
-              {CarerRoutes()}
-              {ClientRoutes()}
+              {/* Tenant-specific Protected Routes */}
+              <Route path="/:tenantSlug/*" element={
+                <TenantProvider>
+                  <TenantErrorWrapper>
+                    <Routes>
+                      {AdminRoutes()}
+                      {CarerRoutes()}
+                      {ClientRoutes()}
+                    </Routes>
+                  </TenantErrorWrapper>
+                </TenantProvider>
+              } />
               
               {/* Fallback route for unmatched paths */}
               <Route path="*" element={<RoutingErrorFallback />} />
@@ -156,13 +164,9 @@ function App() {
       <TooltipProvider>
         <SystemAuthProvider>
           <AuthProvider>
-            <TenantProvider>
-              <TenantErrorWrapper>
-                <Toaster />
-                <Sonner />
-                <AppContent />
-              </TenantErrorWrapper>
-            </TenantProvider>
+            <Toaster />
+            <Sonner />
+            <AppContent />
           </AuthProvider>
         </SystemAuthProvider>
       </TooltipProvider>

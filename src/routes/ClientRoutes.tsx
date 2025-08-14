@@ -54,7 +54,7 @@ const LoadingFallback = () => (
 // Client routes definition for use in App.tsx - returns array for consistency
 const ClientRoutes = () => [
   <Route key="client-auth" element={<RequireClientAuth />}>
-    <Route path="/client-dashboard" element={<ClientDashboard />}>
+    <Route path="client-dashboard" element={<ClientDashboard />}>
       <Route index element={<ClientOverview />} />
       <Route path="appointments" element={<ClientAppointments />} />
       <Route path="care-plans" element={<ClientCarePlans />} />

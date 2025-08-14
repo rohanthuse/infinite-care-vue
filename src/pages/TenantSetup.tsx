@@ -17,7 +17,7 @@ export const TenantSetup: React.FC = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
-    subdomain: '',
+    slug: '',
     contact_email: '',
     contact_phone: '',
     address: '',
@@ -33,8 +33,8 @@ export const TenantSetup: React.FC = () => {
         .from('organizations')
         .insert({
           name: data.name,
-          subdomain: data.subdomain,
-          slug: data.subdomain,
+          subdomain: data.slug, // Keep subdomain for backward compatibility
+          slug: data.slug,
           contact_email: data.contact_email,
           contact_phone: data.contact_phone,
           address: data.address,
@@ -63,13 +63,13 @@ export const TenantSetup: React.FC = () => {
     onSuccess: (org) => {
       toast.success('Organization created successfully!');
       
-      // For development, store subdomain in localStorage
+      // For development, store tenant in localStorage
       if (window.location.hostname === 'localhost') {
-        localStorage.setItem('dev-subdomain', org.subdomain);
-        window.location.reload(); // Reload to pick up new subdomain
+        localStorage.setItem('dev-tenant', org.slug);
+        navigate(`/${org.slug}/dashboard`);
       } else {
-        // In production, redirect to subdomain
-        window.location.href = `https://${org.subdomain}.${window.location.hostname.split('.').slice(1).join('.')}`;
+        // In production, redirect to path-based URL
+        window.location.href = `/${org.slug}/dashboard`;
       }
     },
     onError: (error) => {
@@ -81,14 +81,14 @@ export const TenantSetup: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate subdomain
-    if (!/^[a-z0-9-]+$/.test(formData.subdomain)) {
-      toast.error('Subdomain can only contain lowercase letters, numbers, and hyphens');
+    // Validate slug
+    if (!/^[a-z0-9-]+$/.test(formData.slug)) {
+      toast.error('Organization slug can only contain lowercase letters, numbers, and hyphens');
       return;
     }
 
-    if (formData.subdomain.length < 3) {
-      toast.error('Subdomain must be at least 3 characters long');
+    if (formData.slug.length < 3) {
+      toast.error('Organization slug must be at least 3 characters long');
       return;
     }
 
@@ -127,17 +127,17 @@ export const TenantSetup: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="subdomain">Subdomain *</Label>
+                <Label htmlFor="slug">Organization Slug *</Label>
                 <Input
-                  id="subdomain"
+                  id="slug"
                   placeholder="abc-care"
-                  value={formData.subdomain}
-                  onChange={(e) => handleInputChange('subdomain', e.target.value.toLowerCase())}
+                  value={formData.slug}
+                  onChange={(e) => handleInputChange('slug', e.target.value.toLowerCase())}
                   pattern="^[a-z0-9-]+$"
                   required
                 />
                 <p className="text-xs text-muted-foreground">
-                  Your organization will be accessible at: {formData.subdomain || 'your-subdomain'}.med-infinite.care
+                  Your organization will be accessible at: med-infinite.care/{formData.slug || 'your-org-slug'}
                 </p>
               </div>
             </div>
@@ -197,7 +197,7 @@ export const TenantSetup: React.FC = () => {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={createOrganization.isPending || !formData.name || !formData.subdomain}
+              disabled={createOrganization.isPending || !formData.name || !formData.slug}
             >
               {createOrganization.isPending ? (
                 <>
