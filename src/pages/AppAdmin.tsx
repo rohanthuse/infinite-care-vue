@@ -73,14 +73,22 @@ export const AppAdmin: React.FC = () => {
   // Create tenant mutation
   const createTenantMutation = useMutation({
     mutationFn: async (tenantData: CreateTenantFormData) => {
+      console.log('Mutation function called with data:', tenantData);
+      
       const { data, error } = await supabase.functions.invoke('create-app-tenant', {
         body: tenantData
       });
 
-      if (error) throw error;
+      console.log('Edge function response:', { data, error });
+      
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Mutation success:', data);
       toast.success('Tenant created successfully!');
       setIsCreateDialogOpen(false);
       setFormData({
@@ -96,8 +104,8 @@ export const AppAdmin: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['app-admin-organizations'] });
     },
     onError: (error: any) => {
-      console.error('Error creating tenant:', error);
-      toast.error(error.message || 'Failed to create tenant');
+      console.error('Mutation error:', error);
+      toast.error(error.message || 'Failed to create tenant. Please check console for details.');
     }
   });
 
@@ -118,11 +126,15 @@ export const AppAdmin: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Form submission started:', formData);
+    
     if (!formData.name || !formData.slug || !formData.contactEmail) {
+      console.error('Validation failed: Missing required fields');
       toast.error('Please fill in all required fields');
       return;
     }
 
+    console.log('Calling create tenant mutation...');
     createTenantMutation.mutate(formData);
   };
 
@@ -282,9 +294,17 @@ export const AppAdmin: React.FC = () => {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={createTenantMutation.isPending}
+                  disabled={createTenantMutation.isPending || !formData.name || !formData.slug || !formData.contactEmail}
+                  className="min-w-[120px]"
                 >
-                  {createTenantMutation.isPending ? 'Creating...' : 'Create Tenant'}
+                  {createTenantMutation.isPending ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Creating...
+                    </div>
+                  ) : (
+                    'Create Tenant'
+                  )}
                 </Button>
               </div>
             </form>
