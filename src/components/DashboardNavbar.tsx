@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface NavTileProps {
   icon: React.ElementType;
@@ -123,24 +124,32 @@ const SubNavTile = ({
 export function DashboardNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { tenantSlug } = useTenant();
   const [activeItem, setActiveItem] = useState("Home");
   const [activeSubItem, setActiveSubItem] = useState("");
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
   
+  const getTenantAwarePath = (path: string) => {
+    if (tenantSlug && !path.startsWith('#')) {
+      return `/${tenantSlug}${path}`;
+    }
+    return path;
+  };
+
   const handleNavClick = (label: string, path: string) => {
     if (label === "Key Parameters") {
       setIsSubmenuOpen(!isSubmenuOpen);
     } else {
       setActiveItem(label);
       setIsSubmenuOpen(false);
-      navigate(path);
+      navigate(getTenantAwarePath(path));
     }
   };
 
   const handleSubNavClick = (label: string, path: string) => {
     setActiveSubItem(label);
     setActiveItem("Key Parameters");
-    navigate(path);
+    navigate(getTenantAwarePath(path));
   };
 
   const mainNavItems = [
@@ -164,24 +173,29 @@ export function DashboardNavbar() {
   useEffect(() => {
     const path = location.pathname;
     
-    if (path === '/dashboard') {
+    // Remove tenant slug prefix for path matching
+    const normalizedPath = tenantSlug && path.startsWith(`/${tenantSlug}`) 
+      ? path.substring(`/${tenantSlug}`.length) 
+      : path;
+    
+    if (normalizedPath === '/dashboard' || normalizedPath === '') {
       setActiveItem("Home");
       setActiveSubItem("");
-    } else if (path === '/settings') {
+    } else if (normalizedPath === '/settings') {
       setActiveItem("Settings");
       setActiveSubItem("");
-    } else if (path === '/agreement') {
+    } else if (normalizedPath === '/agreement') {
       setActiveItem("Agreement");
       setActiveSubItem("");
     } else {
-      const submenuItem = keyParametersSubItems.find(item => item.path === path);
+      const submenuItem = keyParametersSubItems.find(item => item.path === normalizedPath);
       if (submenuItem) {
         setActiveItem("Key Parameters");
         setActiveSubItem(submenuItem.label);
         setIsSubmenuOpen(true);
       }
     }
-  }, [location.pathname]);
+  }, [location.pathname, tenantSlug]);
 
   return (
     <div className="sticky top-[4.5rem] z-10">

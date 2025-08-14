@@ -102,6 +102,7 @@ const RequireAdminAuth = () => {
 
 const AdminRoutes = () => [
   <Route key="admin-auth" element={<RequireAdminAuth />}>
+    {/* Tenant-specific routes - these work within a tenant context */}
     <Route path="admin" element={<BranchAdminRedirector />} />
     <Route path="dashboard" element={<BranchAdminRedirector />} />
     <Route path="notifications" element={<Notifications />} />

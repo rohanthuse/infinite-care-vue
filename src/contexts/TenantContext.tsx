@@ -56,11 +56,21 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     const pathParts = pathname.split('/').filter(Boolean);
     console.log('[TenantProvider] Path parts:', pathParts);
 
-    // Skip system routes and public routes
-    const publicRoutes = ['super-admin', 'branch-admin-login', 'branch-selection', 'carer-login', 'client-login', 'carer-invitation', 'carer-onboarding', 'tenant-setup', 'tenant-error', 'system-login', 'system-dashboard'];
+    // Skip system routes and public routes that should not be treated as tenant slugs
+    const publicRoutes = [
+      'super-admin', 'branch-admin-login', 'branch-selection', 'carer-login', 
+      'client-login', 'carer-invitation', 'carer-onboarding', 'tenant-setup', 
+      'tenant-error', 'system-login', 'system-dashboard'
+    ];
     
-    if (pathParts.length === 0 || publicRoutes.includes(pathParts[0])) {
-      console.log('[TenantProvider] Public route or root - no tenant');
+    // Also skip standalone routes that might conflict with tenant slugs
+    const standaloneRoutes = [
+      'services', 'settings', 'dashboard', 'agreement', 'hobbies', 'skills',
+      'medical-mental', 'type-of-work', 'body-map-points', 'branch', 'branch-admins'
+    ];
+    
+    if (pathParts.length === 0 || publicRoutes.includes(pathParts[0]) || standaloneRoutes.includes(pathParts[0])) {
+      console.log('[TenantProvider] Public route, standalone route, or root - no tenant');
       setTenantSlug(null);
       return;
     }
