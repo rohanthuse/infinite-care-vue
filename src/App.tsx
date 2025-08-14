@@ -100,10 +100,6 @@ const AppContent = () => {
               <Route path="/tenant-error" element={<TenantError />} />
               <Route path="/system-login" element={<SystemLogin />} />
               
-              {/* Tenant Login Routes */}
-              <Route path="/:tenantSlug/login" element={
-                <TenantLogin />
-              } />
               
               {/* System Dashboard Routes */}
               <Route path="/system-dashboard" element={

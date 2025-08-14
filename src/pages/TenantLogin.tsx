@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, Building2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -8,86 +8,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-
-interface Organization {
-  id: string;
-  name: string;
-  slug: string;
-  logo_url?: string;
-  primary_color?: string;
-  secondary_color?: string;
-}
+import { useTenant } from '@/contexts/TenantContext';
+import { LoadingScreen } from '@/components/LoadingScreen';
 
 const TenantLogin = () => {
-  const { tenantSlug } = useParams<{ tenantSlug: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { organization, tenantSlug, isLoading } = useTenant();
   
-  const [organization, setOrganization] = useState<Organization | null>(null);
-  const [loading, setLoading] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Fetch organization details
-  useEffect(() => {
-    const fetchOrganization = async () => {
-      if (!tenantSlug) {
-        toast({
-          title: 'Invalid URL',
-          description: 'No organization specified.',
-          variant: 'destructive',
-        });
-        navigate('/');
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('organizations')
-          .select('id, name, slug, logo_url, primary_color, secondary_color')
-          .eq('slug', tenantSlug)
-          .single();
-
-        if (error || !data) {
-          toast({
-            title: 'Organization Not Found',
-            description: 'The organization you\'re looking for doesn\'t exist.',
-            variant: 'destructive',
-          });
-          navigate('/');
-          return;
-        }
-
-        setOrganization(data);
-        
-        // Apply branding
-        if (data.primary_color) {
-          document.documentElement.style.setProperty('--primary', data.primary_color);
-        }
-        if (data.secondary_color) {
-          document.documentElement.style.setProperty('--secondary', data.secondary_color);
-        }
-        
-        document.title = `${data.name} - Login`;
-      } catch (error) {
-        console.error('Error fetching organization:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load organization details.',
-          variant: 'destructive',
-        });
-        navigate('/');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrganization();
-  }, [tenantSlug, navigate, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,7 +68,7 @@ const TenantLogin = () => {
         .eq('organization_id', organization.id)
         .eq('user_id', authData.user.id)
         .eq('status', 'active')
-        .single();
+        .maybeSingle();
 
       if (memberError || !memberData) {
         await supabase.auth.signOut();
@@ -169,18 +103,24 @@ const TenantLogin = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="animate-pulse">
-          <div className="w-8 h-8 bg-blue-600 rounded-full"></div>
-        </div>
-      </div>
-    );
+  if (isLoading) {
+    return <LoadingScreen />;
   }
 
   if (!organization) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Organization Not Found</h1>
+          <p className="text-gray-600 mb-4">
+            The organization "{tenantSlug}" could not be found.
+          </p>
+          <a href="/" className="text-blue-600 hover:text-blue-800 underline">
+            Return to Home
+          </a>
+        </div>
+      </div>
+    );
   }
 
   return (
