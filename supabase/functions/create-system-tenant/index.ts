@@ -22,7 +22,7 @@ serve(async (req) => {
 
     const { 
       name, 
-      subdomain, 
+      slug, 
       contactEmail, 
       contactPhone, 
       address, 
@@ -31,14 +31,14 @@ serve(async (req) => {
       creatorUserId
     } = await req.json()
 
-    console.log('Creating organization with data:', { name, subdomain, contactEmail })
+    console.log('Creating organization with data:', { name, slug, contactEmail })
 
     // Validate required fields
-    if (!name || !subdomain || !contactEmail) {
+    if (!name || !slug || !contactEmail) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Missing required fields: name, subdomain, and contactEmail are required' 
+          error: 'Missing required fields: name, slug, and contactEmail are required' 
         }),
         { 
           status: 400, 
@@ -47,18 +47,18 @@ serve(async (req) => {
       )
     }
 
-    // Check if subdomain already exists
+    // Check if slug already exists
     const { data: existingOrg } = await supabaseAdmin
       .from('organizations')
       .select('id')
-      .eq('subdomain', subdomain)
+      .eq('slug', slug)
       .single()
 
     if (existingOrg) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Subdomain already exists' 
+          error: 'Slug already exists' 
         }),
         { 
           status: 400, 
@@ -72,8 +72,7 @@ serve(async (req) => {
       .from('organizations')
       .insert({
         name,
-        subdomain,
-        slug: subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+        slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
         contact_email: contactEmail,
         contact_phone: contactPhone,
         address,
