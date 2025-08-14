@@ -17,7 +17,8 @@ import {
   PowerOff, 
   Shield, 
   User,
-  Calendar
+  Calendar,
+  Key
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -30,16 +31,19 @@ import {
 import { useSystemUsers, useToggleUserStatus } from '@/hooks/useSystemUsers';
 import { format } from 'date-fns';
 import { EditSystemUserDialog } from '@/components/system/EditSystemUserDialog';
+import { SetSystemUserPasswordDialog } from '@/components/system/SetSystemUserPasswordDialog';
 
 export const SystemUsersTable: React.FC = () => {
   const { data: users, isLoading } = useSystemUsers();
   const toggleUserStatus = useToggleUserStatus();
   const [editingUser, setEditingUser] = React.useState<any | null>(null);
+  const [passwordResetUser, setPasswordResetUser] = React.useState<any | null>(null);
 
   const handleToggleStatus = (userId: string, currentStatus: boolean) => {
     toggleUserStatus.mutate({ userId, isActive: !currentStatus });
   };
   const handleEditUser = (u: any) => setEditingUser(u);
+  const handleResetPassword = (u: any) => setPasswordResetUser(u);
 
   if (isLoading) {
     return (
@@ -160,6 +164,10 @@ export const SystemUsersTable: React.FC = () => {
                       <Edit className="h-4 w-4" />
                       <span>Edit User</span>
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleResetPassword(user)} className="flex items-center space-x-2">
+                      <Key className="h-4 w-4" />
+                      <span>Reset Password</span>
+                    </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={() => handleToggleStatus(user.id, user.is_active)}
                       className="flex items-center space-x-2"
@@ -188,6 +196,13 @@ export const SystemUsersTable: React.FC = () => {
             open={!!editingUser}
             onOpenChange={(o) => { if (!o) setEditingUser(null); }}
             user={editingUser}
+          />
+        )}
+        {passwordResetUser && (
+          <SetSystemUserPasswordDialog
+            open={!!passwordResetUser}
+            onOpenChange={(o) => { if (!o) setPasswordResetUser(null); }}
+            user={passwordResetUser}
           />
         )}
       </div>
