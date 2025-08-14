@@ -52,20 +52,43 @@ export const useSystemUsers = () => {
       let organizationAssociations = [];
 
       if (userIds.length > 0) {
-        const { data: orgData, error: orgError } = await supabase
+        console.log('[useSystemUsers] Fetching organizations for user IDs:', userIds);
+        
+        // First get the organization associations
+        const { data: userOrgData, error: userOrgError } = await supabase
           .from('system_user_organizations')
-          .select(`
-            system_user_id,
-            organizations:organization_id (
-              id,
-              name,
-              slug
-            )
-          `)
+          .select('system_user_id, organization_id')
           .in('system_user_id', userIds);
 
-        if (!orgError) {
-          organizationAssociations = orgData || [];
+        if (userOrgError) {
+          console.error('[useSystemUsers] Error fetching user organizations:', userOrgError);
+        } else {
+          console.log('[useSystemUsers] User organization associations:', userOrgData);
+          
+          // Get unique organization IDs
+          const orgIds = [...new Set(userOrgData?.map(item => item.organization_id) || [])];
+          
+          if (orgIds.length > 0) {
+            // Fetch organization details
+            const { data: orgsData, error: orgsError } = await supabase
+              .from('organizations')
+              .select('id, name, slug')
+              .in('id', orgIds);
+
+            if (!orgsError && orgsData) {
+              console.log('[useSystemUsers] Organization data:', orgsData);
+              
+              // Map user organizations with full organization data
+              organizationAssociations = userOrgData?.map(userOrg => ({
+                system_user_id: userOrg.system_user_id,
+                organization: orgsData.find(org => org.id === userOrg.organization_id)
+              })).filter(item => item.organization) || [];
+              
+              console.log('[useSystemUsers] Final organization associations:', organizationAssociations);
+            } else {
+              console.error('[useSystemUsers] Error fetching organizations:', orgsError);
+            }
+          }
         }
       }
 
@@ -73,8 +96,10 @@ export const useSystemUsers = () => {
       return (data || []).map((user: any) => {
         const userOrgs = organizationAssociations
           .filter((assoc: any) => assoc.system_user_id === user.id)
-          .map((assoc: any) => assoc.organizations)
+          .map((assoc: any) => assoc.organization)
           .filter(Boolean);
+
+        console.log(`[useSystemUsers] User ${user.email} organizations:`, userOrgs);
 
         return {
           ...user,
