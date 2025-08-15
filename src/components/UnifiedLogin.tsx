@@ -248,7 +248,7 @@ const UnifiedLogin = () => {
         <div className="relative z-10 flex flex-col justify-center px-12 py-16 text-white">
           <div className="max-w-md">
             <div className="flex items-center mb-8">
-              <Heart className="h-8 w-8 text-white mr-3" />
+              <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="h-8 w-8 mr-3" />
               <h1 className="text-2xl font-bold">Med-Infinite</h1>
             </div>
             
