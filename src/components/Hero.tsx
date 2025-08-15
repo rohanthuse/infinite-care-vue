@@ -53,11 +53,7 @@ const Hero = () => {
             
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <CustomButton size="lg" className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 border-0 shadow-lg shadow-blue-500/20">
-                Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
-              </CustomButton>
-              
-              <CustomButton variant="outline" size="lg" className="bg-white/80 backdrop-blur-sm border-blue-200 text-blue-700 hover:bg-blue-50">
-                <Play className="mr-2 h-4 w-4 fill-blue-500" /> Watch Demo
+                Request a Demo <ArrowRight className="ml-2 h-5 w-5" />
               </CustomButton>
             </div>
 
