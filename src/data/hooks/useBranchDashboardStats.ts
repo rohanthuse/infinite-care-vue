@@ -66,6 +66,28 @@ const fetchBranchDashboardStats = async (branchId: string): Promise<BranchDashbo
         .select('id', { count: 'exact', head: true })
         .eq('branch_id', branchId);
 
+    // Monthly revenue queries - current month
+    const currentMonthRevenueQuery = supabase
+        .from('payment_records')
+        .select(`
+            payment_amount,
+            client_billing!inner(
+                client_id,
+                clients!inner(
+                    branch_id
+                )
+            )
+        `)
+        .gte('payment_date', startOfCurrentMonth.split('T')[0])
+        .eq('client_billing.clients.branch_id', branchId);
+
+    // Fallback to bookings revenue for current month if no payments
+    const currentMonthBookingsQuery = supabase
+        .from('bookings')
+        .select('revenue')
+        .eq('branch_id', branchId)
+        .gte('start_time', startOfCurrentMonth);
+
     // Previous period queries for comparison
     const yesterdaysBookingsQuery = supabase
         .from('bookings')
@@ -87,6 +109,30 @@ const fetchBranchDashboardStats = async (branchId: string): Promise<BranchDashbo
         .gte('created_at', startOfPreviousMonth)
         .lt('created_at', startOfCurrentMonth);
 
+    // Previous month revenue queries
+    const previousMonthRevenueQuery = supabase
+        .from('payment_records')
+        .select(`
+            payment_amount,
+            client_billing!inner(
+                client_id,
+                clients!inner(
+                    branch_id
+                )
+            )
+        `)
+        .gte('payment_date', startOfPreviousMonth.split('T')[0])
+        .lt('payment_date', startOfCurrentMonth.split('T')[0])
+        .eq('client_billing.clients.branch_id', branchId);
+
+    // Fallback to bookings revenue for previous month if no payments
+    const previousMonthBookingsQuery = supabase
+        .from('bookings')
+        .select('revenue')
+        .eq('branch_id', branchId)
+        .gte('start_time', startOfPreviousMonth)
+        .lt('start_time', startOfCurrentMonth);
+
     const [
         { count: clientsCount, error: clientsError },
         { count: todaysBookingsCount, error: todaysBookingsError },
@@ -94,6 +140,10 @@ const fetchBranchDashboardStats = async (branchId: string): Promise<BranchDashbo
         { count: yesterdaysBookingsCount, error: yesterdaysBookingsError },
         { count: previousMonthClientsCount, error: previousMonthClientsError },
         { count: previousMonthReviewsCount, error: previousMonthReviewsError },
+        { data: currentMonthPayments, error: currentMonthRevenueError },
+        { data: currentMonthBookings, error: currentMonthBookingsError },
+        { data: previousMonthPayments, error: previousMonthRevenueError },
+        { data: previousMonthBookings, error: previousMonthBookingsError },
     ] = await Promise.all([
         clientsQuery,
         todaysBookingsQuery,
@@ -101,6 +151,10 @@ const fetchBranchDashboardStats = async (branchId: string): Promise<BranchDashbo
         yesterdaysBookingsQuery,
         previousMonthClientsQuery,
         previousMonthReviewsQuery,
+        currentMonthRevenueQuery,
+        currentMonthBookingsQuery,
+        previousMonthRevenueQuery,
+        previousMonthBookingsQuery,
     ]);
 
     const errors = [
@@ -109,12 +163,32 @@ const fetchBranchDashboardStats = async (branchId: string): Promise<BranchDashbo
         reviewsError, 
         yesterdaysBookingsError, 
         previousMonthClientsError, 
-        previousMonthReviewsError
+        previousMonthReviewsError,
+        currentMonthRevenueError,
+        currentMonthBookingsError,
+        previousMonthRevenueError,
+        previousMonthBookingsError
     ].filter(Boolean);
     
     if (errors.length > 0) {
         throw new Error(errors.map(e => (e as any).message).join(', '));
     }
+
+    // Calculate monthly revenue from payment records with fallback to bookings
+    const calculateRevenue = (payments: any[], bookings: any[]) => {
+        // Primary: Sum up actual payments
+        const paymentsTotal = payments?.reduce((sum, payment) => sum + (payment.payment_amount || 0), 0) || 0;
+        
+        // Fallback: Sum up bookings revenue if no payments
+        if (paymentsTotal === 0) {
+            return bookings?.reduce((sum, booking) => sum + (booking.revenue || 0), 0) || 0;
+        }
+        
+        return paymentsTotal;
+    };
+
+    const monthlyRevenue = calculateRevenue(currentMonthPayments, currentMonthBookings);
+    const previousMonthRevenue = calculateRevenue(previousMonthPayments, previousMonthBookings);
 
     // Calculate percentage changes
     const clientsChangeData = calculatePercentageChange(
@@ -132,9 +206,6 @@ const fetchBranchDashboardStats = async (branchId: string): Promise<BranchDashbo
         previousMonthReviewsCount || 0
     );
 
-    // Monthly revenue is still placeholder - calculate change based on mock previous value
-    const monthlyRevenue = 18947;
-    const previousMonthRevenue = 16500; // Mock previous month revenue
     const revenueChangeData = calculatePercentageChange(monthlyRevenue, previousMonthRevenue);
 
     return {
