@@ -1,21 +1,17 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useTenantAwareQuery, createTenantQuery } from './useTenantAware';
 import type { Branch } from '@/pages/Branch';
 
-const fetchBranchesForNavigation = async (): Promise<Branch[]> => {
-  const { data, error } = await supabase
-    .from('branches')
-    .select('*')
-    .eq('status', 'Active')
-    .order('name');
-  
-  if (error) throw error;
-  return data as Branch[];
-};
-
 export const useBranchNavigation = () => {
-  return useQuery({
-    queryKey: ['branches-navigation'],
-    queryFn: fetchBranchesForNavigation,
-  });
+  return useTenantAwareQuery(
+    ['branches-navigation'],
+    async (organizationId: string) => {
+      const { data, error } = await createTenantQuery(organizationId)
+        .branches()
+        .eq('status', 'Active')
+        .order('name');
+      
+      if (error) throw error;
+      return data as Branch[];
+    }
+  );
 };

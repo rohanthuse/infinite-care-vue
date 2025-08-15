@@ -1,6 +1,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/contexts/TenantContext';
+import { validateBranchInOrganization } from './useTenantAware';
 
 export interface BranchStaff {
   id: string;
@@ -11,7 +13,13 @@ export interface BranchStaff {
   specialization?: string;
 }
 
-const fetchBranchStaff = async (branchId: string): Promise<BranchStaff[]> => {
+const fetchBranchStaff = async (branchId: string, organizationId: string): Promise<BranchStaff[]> => {
+  // Validate branch belongs to organization
+  const isValidBranch = await validateBranchInOrganization(branchId, organizationId);
+  if (!isValidBranch) {
+    throw new Error('Branch does not belong to current organization');
+  }
+
   const { data, error } = await supabase
     .from('staff')
     .select('id, first_name, last_name, email, status, specialization')
@@ -28,9 +36,16 @@ const fetchBranchStaff = async (branchId: string): Promise<BranchStaff[]> => {
 };
 
 export const useBranchStaff = (branchId: string) => {
+  const { organization } = useTenant();
+  
   return useQuery({
-    queryKey: ['branch-staff', branchId],
-    queryFn: () => fetchBranchStaff(branchId),
-    enabled: Boolean(branchId),
+    queryKey: ['branch-staff', branchId, organization?.id],
+    queryFn: () => {
+      if (!organization?.id) {
+        throw new Error('Organization context required');
+      }
+      return fetchBranchStaff(branchId, organization.id);
+    },
+    enabled: Boolean(branchId) && Boolean(organization?.id),
   });
 };
