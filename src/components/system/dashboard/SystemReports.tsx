@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SystemTenantsStats } from "@/components/system/SystemTenantsStats";
 import { SystemUsersStats } from "@/components/system/SystemUsersStats";
 import { useSystemUserStats } from "@/hooks/useSystemUsers";
+import { DemoRequestsTable } from "@/components/system/DemoRequestsTable";
 import { Building, Users, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -135,6 +136,26 @@ export const SystemReports: React.FC = () => {
 
         <div className="bg-card/30 backdrop-blur-sm border border-border/30 rounded-lg p-4">
           <SystemUsersStats stats={userStats} isLoading={usersLoading} />
+        </div>
+      </section>
+
+      {/* Demo Requests Section */}
+      <section>
+        <div className="border-b border-border/50 pb-4 mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold text-foreground">Demo Requests</h3>
+            <Badge variant="secondary" className="text-xs">
+              Lead Management
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Track and manage demo requests from potential customers
+          </p>
+        </div>
+
+        <div className="bg-card/30 backdrop-blur-sm border border-border/30 rounded-lg">
+          <DemoRequestsTable />
         </div>
       </section>
     </div>

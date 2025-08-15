@@ -2473,6 +2473,51 @@ export type Database = {
         }
         Relationships: []
       }
+      demo_requests: {
+        Row: {
+          contacted_at: string | null
+          contacted_by: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          message: string | null
+          notes: string | null
+          organization_name: string | null
+          phone_number: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          contacted_at?: string | null
+          contacted_by?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          message?: string | null
+          notes?: string | null
+          organization_name?: string | null
+          phone_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          contacted_at?: string | null
+          contacted_by?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          message?: string | null
+          notes?: string | null
+          organization_name?: string | null
+          phone_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           access_level: string

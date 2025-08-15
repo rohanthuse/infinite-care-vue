@@ -41,6 +41,7 @@ import { TenantError } from "./pages/TenantError";
 import { TenantErrorWrapper } from "@/components/TenantErrorWrapper";
 import { BranchDashboardRedirect } from "@/components/BranchDashboardRedirect";
 import { CarerDashboardRedirect } from "@/components/CarerDashboardRedirect";
+import DemoRequest from "./pages/DemoRequest";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -71,6 +72,7 @@ const AppContent = () => {
   // Show loading screen only for protected routes, not public routes
   const isPublicRoute = [
     '/', 
+    '/demo-request',
     '/login',
     '/branch-admin-login',
     '/branch-selection',
@@ -94,6 +96,7 @@ const AppContent = () => {
             <Routes>
               {/* Public Routes - Always accessible */}
               <Route path="/" element={<Index />} />
+              <Route path="/demo-request" element={<DemoRequest />} />
               <Route path="/login" element={<UnifiedLogin />} />
               {/* Redirect old super-admin route to main page */}
               <Route path="/super-admin" element={<Index />} />

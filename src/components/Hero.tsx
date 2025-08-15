@@ -52,7 +52,11 @@ const Hero = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <CustomButton size="lg" className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 border-0 shadow-lg shadow-blue-500/20">
+              <CustomButton 
+                size="lg" 
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 border-0 shadow-lg shadow-blue-500/20"
+                onClick={() => window.location.href = '/demo-request'}
+              >
                 Request a Demo <ArrowRight className="ml-2 h-5 w-5" />
               </CustomButton>
             </div>
