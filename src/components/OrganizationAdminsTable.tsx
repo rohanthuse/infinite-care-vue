@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Plus, Settings, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { AddMemberDialog } from "@/components/AddMemberDialog";
+import { EditOrganizationMemberPermissionsDialog } from "@/components/EditOrganizationMemberPermissionsDialog";
+import { getPermissionsSummary } from "@/hooks/useOrganizationMemberPermissions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +38,7 @@ interface OrganizationMember {
   role: string;
   status: string;
   joined_at: string;
+  permissions?: any;
 }
 
 interface OrganizationAdminsTableProps {
@@ -46,6 +49,13 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
   organizationId 
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedMember, setSelectedMember] = useState<{
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  } | null>(null);
+  const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
 
   // Fetch organization members with their profile data
   const { data: members = [], isLoading, error, refetch } = useQuery({
@@ -61,7 +71,8 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
           user_id,
           role,
           status,
-          joined_at
+          joined_at,
+          permissions
         `)
         .eq('organization_id', organizationId)
         .eq('status', 'active');
@@ -105,6 +116,7 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
           role: member.role,
           status: member.status,
           joined_at: member.joined_at,
+          permissions: member.permissions,
         };
       });
 
@@ -213,12 +225,19 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge 
-                      variant={member.status === 'active' ? "default" : "destructive"}
-                      className="text-xs"
-                    >
-                      {member.status}
-                    </Badge>
+                    <div className="space-y-1">
+                      <Badge 
+                        variant={member.status === 'active' ? "default" : "destructive"}
+                        className="text-xs"
+                      >
+                        {member.status}
+                      </Badge>
+                      {member.permissions && (
+                        <div className="text-xs text-gray-500">
+                          {getPermissionsSummary(member.permissions as any)}
+                        </div>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {new Date(member.joined_at).toLocaleDateString()}
@@ -229,7 +248,15 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          toast.info("Member settings functionality coming soon!");
+                          setSelectedMember({
+                            id: member.id,
+                            name: member.first_name && member.last_name 
+                              ? `${member.first_name} ${member.last_name}` 
+                              : 'N/A',
+                            email: member.email,
+                            role: member.role
+                          });
+                          setIsPermissionsDialogOpen(true);
                         }}
                       >
                         <Settings className="h-4 w-4" />
@@ -267,6 +294,22 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
           </TableBody>
         </Table>
       </div>
+
+      {/* Edit Permissions Dialog */}
+      {selectedMember && (
+        <EditOrganizationMemberPermissionsDialog
+          isOpen={isPermissionsDialogOpen}
+          onClose={() => {
+            setIsPermissionsDialogOpen(false);
+            setSelectedMember(null);
+            refetch(); // Refetch data when dialog closes
+          }}
+          memberId={selectedMember.id}
+          memberName={selectedMember.name}
+          memberEmail={selectedMember.email}
+          memberRole={selectedMember.role}
+        />
+      )}
     </div>
   );
 };

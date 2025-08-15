@@ -39,6 +39,10 @@ export function AddMemberDialog() {
       // In a real app, you'd validate against existing users or send invitations
       const tempUserId = crypto.randomUUID();
 
+      // Get default permissions based on role
+      const { getPermissionTemplateByRole } = await import('@/hooks/useOrganizationMemberPermissions');
+      const defaultPermissions = getPermissionTemplateByRole(newMember.role);
+
       // Add as organization member
       const { data, error } = await supabase
         .from('organization_members')
@@ -46,6 +50,7 @@ export function AddMemberDialog() {
           organization_id: newMember.organization_id,
           user_id: tempUserId,
           role: newMember.role,
+          permissions: defaultPermissions as any,
           status: 'pending', // Set as pending until user accepts
           invited_by: (await supabase.auth.getUser()).data.user?.id,
           invited_at: new Date().toISOString()
