@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useTenant } from "@/contexts/TenantContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -58,24 +59,37 @@ export const AdminsTable = () => {
 
   // Get current user authentication state with enhanced error handling
   const { data: currentUser, isLoading: authLoading, error: authError } = useUserRole();
+  
+  // Get current organization context for tenant isolation
+  const { organization, isLoading: tenantLoading, error: tenantError } = useTenant();
 
-  // Fetch all branch admins with proper authentication dependency
+  // Fetch branch admins filtered by organization
   const { data: admins = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['branch-admins', currentUser?.id],
+    queryKey: ['branch-admins', currentUser?.id, organization?.id],
     queryFn: async () => {
-      console.log('Fetching branch admins...', { currentUser });
+      if (!organization?.id) {
+        console.log('No organization context available');
+        return [];
+      }
+
+      console.log('Fetching branch admins for organization:', { 
+        organizationId: organization.id, 
+        organizationName: organization.name 
+      });
       
-      // First, get admin branches - this is much simpler and avoids RLS conflicts
+      // Get admin branches filtered by organization
       const { data: adminBranches, error: branchError } = await supabase
         .from('admin_branches')
         .select(`
           admin_id,
           branch_id,
-          branches(
+          branches!inner(
             id,
-            name
+            name,
+            organization_id
           )
-        `);
+        `)
+        .eq('branches.organization_id', organization.id);
 
       if (branchError) {
         console.error('Error fetching admin branches:', branchError);
@@ -147,10 +161,10 @@ export const AdminsTable = () => {
       });
 
       const transformedData = Array.from(adminMap.values());
-      console.log('Grouped admin data:', transformedData);
+      console.log('Grouped admin data for organization:', transformedData);
       return transformedData;
     },
-    enabled: !!currentUser && (currentUser.role === 'super_admin' || currentUser.role === 'branch_admin'),
+    enabled: !!currentUser && !!organization?.id && (currentUser.role === 'super_admin' || currentUser.role === 'branch_admin'),
     retry: 3,
     retryDelay: 1000,
   });
@@ -188,8 +202,33 @@ export const AdminsTable = () => {
     admin.branches.some(branch => branch.branch_name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Show loading while authenticating or fetching data
-  const isLoadingData = authLoading || isLoading;
+  // Show loading while authenticating, loading tenant context, or fetching data
+  const isLoadingData = authLoading || tenantLoading || isLoading;
+
+  // Show tenant error with debugging info
+  if (tenantError && !tenantLoading) {
+    return (
+      <div className="p-4 text-center space-y-4">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h3 className="text-red-800 font-medium mb-2">Organization Context Error</h3>
+          <p className="text-red-700 text-sm mb-3">{tenantError.message}</p>
+          <details className="text-left">
+            <summary className="text-red-600 cursor-pointer text-sm font-medium">Show Debug Info</summary>
+            <div className="mt-2 text-xs text-red-600 bg-red-100 p-2 rounded border font-mono">
+              Unable to load organization context. Check console for details.
+            </div>
+          </details>
+        </div>
+        <Button 
+          onClick={() => window.location.reload()} 
+          variant="outline"
+          className="border-red-300 text-red-700 hover:bg-red-50"
+        >
+          Refresh Page
+        </Button>
+      </div>
+    );
+  }
 
   // Show authentication error with debugging info
   if (authError && !authLoading) {
@@ -298,7 +337,9 @@ export const AdminsTable = () => {
             ) : filteredAdmins.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                  {searchTerm ? "No admins match your search." : "No admins found."}
+                  {searchTerm ? "No admins match your search." : 
+                   organization?.name ? `No branch admins found for ${organization.name}.` : 
+                   "No branch admins found."}
                 </TableCell>
               </TableRow>
             ) : (
