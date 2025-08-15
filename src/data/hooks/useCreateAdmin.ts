@@ -145,6 +145,40 @@ export async function createAdmin(input: CreateAdminInput) {
 
     console.log(`Branch associations created successfully for ${input.branch_ids.length} branches`);
 
+    // Get organization IDs from the branches and create organization memberships
+    const { data: branchData, error: branchDataError } = await supabase
+      .from("branches")
+      .select("organization_id")
+      .in("id", input.branch_ids);
+
+    if (branchDataError) {
+      console.error('Failed to get branch organization data:', branchDataError);
+      // Don't throw here as admin creation was successful, just log the issue
+    } else if (branchData && branchData.length > 0) {
+      // Get unique organization IDs
+      const uniqueOrgIds = [...new Set(branchData.map(b => b.organization_id))];
+      
+      // Create organization memberships for each unique organization
+      const orgMemberships = uniqueOrgIds.map(orgId => ({
+        organization_id: orgId,
+        user_id: authData.user.id,
+        role: 'admin',
+        status: 'active',
+        joined_at: new Date().toISOString()
+      }));
+
+      const { error: orgMemberError } = await supabase
+        .from("organization_members")
+        .insert(orgMemberships);
+
+      if (orgMemberError) {
+        console.error('Organization membership creation error:', orgMemberError);
+        // Don't throw here as the trigger should have handled this, but log for debugging
+      } else {
+        console.log(`Organization memberships created for ${uniqueOrgIds.length} organizations`);
+      }
+    }
+
     // Ensure profile exists (should be created by trigger, but verify)
     const { data: existingProfile } = await supabase
       .from("profiles")

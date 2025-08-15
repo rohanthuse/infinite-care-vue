@@ -6481,6 +6481,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      fix_branch_admin_organization_memberships: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       fix_client_auth_links: {
         Args: Record<PropertyKey, never>
         Returns: Json
