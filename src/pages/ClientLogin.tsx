@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useClientAuthFallback } from "@/hooks/useClientAuthFallback";
+import { supabase } from "@/integrations/supabase/client";
 
 const ClientLogin = () => {
   const [email, setEmail] = useState("");
@@ -43,12 +44,39 @@ const ClientLogin = () => {
     
     if (result.success) {
       console.log('[ClientLogin] Login successful, navigating to dashboard');
-      if (potentialTenant && potentialTenant !== 'client-login') {
-        navigate(`/${potentialTenant}/client-dashboard`);
-      } else {
-        // Fallback for direct access - could redirect to tenant selection
-        navigate("/client-dashboard");
+      
+      // Check if we can determine the client's organization from the login result
+      try {
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select(`
+            id,
+            first_name,
+            last_name,
+            branch_id,
+            branches!inner(
+              organization_id,
+              organizations!branches_organization_id_fkey!inner(slug)
+            )
+          `)
+          .eq('email', email.trim().toLowerCase())
+          .single();
+        
+        if (clientData?.branches?.organizations?.slug) {
+          const orgSlug = clientData.branches.organizations.slug;
+          navigate(`/${orgSlug}/client-dashboard`);
+          return;
+        }
+      } catch (error) {
+        console.error('[ClientLogin] Error getting client organization:', error);
       }
+      
+      // Fallback - redirect to tenant selection or show error
+      toast({
+        title: "Organization Not Found",
+        description: "Please use your organization's specific login page.",
+        variant: "destructive",
+      });
     }
   };
 
