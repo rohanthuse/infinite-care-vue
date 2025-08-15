@@ -30,7 +30,10 @@ export function DashboardSidebar() {
   return (
     <div className="w-64 border-r border-gray-200 h-screen bg-white">
       <div className="p-4 border-b border-gray-200">
-        <h2 className="text-lg font-bold text-blue-600">Med-Infinite</h2>
+        <div className="flex items-center space-x-2">
+          <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="h-6 w-6" />
+          <h2 className="text-lg font-bold text-blue-600">Med-Infinite</h2>
+        </div>
       </div>
       <div className="py-2">
         <SidebarItem icon={Home} label="Home" active />

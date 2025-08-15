@@ -61,7 +61,7 @@ const Navbar = () => {
       <div className="container mx-auto px-4 flex items-center justify-between">
         {/* Logo */}
         <a href="#" className="flex items-center space-x-2 text-2xl font-semibold">
-          <Heart className="text-blue-600 h-7 w-7" />
+          <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="h-8 w-8" />
           <span className="bg-gradient-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent">
             Med-Infinite
           </span>

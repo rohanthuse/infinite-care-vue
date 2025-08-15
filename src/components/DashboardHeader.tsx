@@ -97,9 +97,7 @@ export function DashboardHeader() {
       <div className="container mx-auto px-4 flex justify-between items-center relative">
         {/* Logo aligned to the left - simplified for mobile */}
         <div className="flex items-center gap-2 md:gap-4">
-          <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white flex items-center justify-center font-bold text-lg shadow-sm">
-            <Heart className="w-4 h-4 md:w-5 md:h-5" />
-          </div>
+          <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="w-8 h-8 md:w-10 md:h-10" />
           <h2 className="text-base md:text-xl font-bold tracking-tight">
             Med-infinite 
           </h2>

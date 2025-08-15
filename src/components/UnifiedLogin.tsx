@@ -226,9 +226,7 @@ const UnifiedLogin = () => {
         <Card className="bg-white/80 backdrop-blur-sm border border-gray-100 shadow-xl">
           <CardHeader className="text-center space-y-2">
             <div className="flex justify-center mb-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-500 to-cyan-500 flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
+              <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="w-12 h-12" />
             </div>
             <CardTitle className="text-2xl font-bold text-gray-900">
               Med-Infinite Login

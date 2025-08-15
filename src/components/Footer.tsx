@@ -39,7 +39,7 @@ const Footer = () => {
           {/* Logo and description */}
           <div className="md:col-span-2">
             <div className="flex items-center space-x-2 text-2xl font-semibold mb-4">
-              <Heart className="text-blue-600 h-6 w-6" />
+              <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="h-7 w-7" />
               <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
                 Med-Infinite
               </span>

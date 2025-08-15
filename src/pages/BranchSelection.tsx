@@ -73,7 +73,7 @@ const BranchSelection = () => {
         {/* Header */}
         <div className="text-center">
           <div className="flex items-center justify-center space-x-3 mb-6">
-            <Heart className="h-10 w-10 text-blue-600" />
+            <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="h-10 w-10" />
             <span className="text-3xl font-bold text-gray-900">Med-Infinite</span>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
