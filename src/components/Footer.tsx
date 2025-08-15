@@ -40,9 +40,12 @@ const Footer = () => {
           <div className="md:col-span-2">
             <div className="flex items-center space-x-2 text-2xl font-semibold mb-4">
               <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="h-7 w-7" />
-              <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">
-                Med-Infinite
-              </span>
+              <div className="flex flex-col">
+                <span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent text-xl font-bold">
+                  MED-INFINITE
+                </span>
+                <span className="text-xs text-gray-500 -mt-1">ENDLESS CARE</span>
+              </div>
             </div>
             <p className="text-gray-600 mb-6 max-w-md">
               Empowering healthcare providers and caregivers with innovative solutions for better patient outcomes and streamlined care management.

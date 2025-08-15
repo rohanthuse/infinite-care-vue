@@ -74,7 +74,10 @@ const BranchSelection = () => {
         <div className="text-center">
           <div className="flex items-center justify-center space-x-3 mb-6">
             <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="h-10 w-10" />
-            <span className="text-3xl font-bold text-gray-900">Med-Infinite</span>
+            <div className="flex flex-col text-center">
+              <span className="text-2xl font-bold text-gray-900">MED-INFINITE</span>
+              <span className="text-sm text-gray-500 -mt-1">ENDLESS CARE</span>
+            </div>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
             Select Your Branch

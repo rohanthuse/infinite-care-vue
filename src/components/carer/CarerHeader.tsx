@@ -83,9 +83,12 @@ export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMo
         {/* Logo aligned to the left - with Heart icon to match Super Admin */}
         <div className="flex items-center gap-2 md:gap-4">
           <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="w-8 h-8 md:w-10 md:h-10" />
-          <h2 className="text-base md:text-xl font-bold tracking-tight">
-            Med-infinite 
-          </h2>
+          <div className="flex flex-col">
+            <h2 className="text-sm md:text-lg font-bold tracking-tight">
+              MED-INFINITE 
+            </h2>
+            <span className="text-xs text-gray-500 -mt-0.5 hidden md:block">ENDLESS CARE</span>
+          </div>
         </div>
         
         {/* Search in center for desktop view */}

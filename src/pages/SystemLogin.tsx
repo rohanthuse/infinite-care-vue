@@ -50,7 +50,10 @@ export default function SystemLogin() {
         <div className="z-10 max-w-lg">
           <div className="flex items-center space-x-2 text-2xl font-semibold mb-6">
             <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="h-7 w-7" />
-            <span>Med-Infinite System Portal</span>
+            <div className="flex flex-col">
+              <span className="text-xl font-bold">MED-INFINITE</span>
+              <span className="text-xs text-gray-300 -mt-1">ENDLESS CARE</span>
+            </div>
           </div>
           
           <h1 className="text-4xl lg:text-5xl font-bold mb-6">
@@ -83,7 +86,7 @@ export default function SystemLogin() {
       <div className="w-full md:w-1/2 bg-white flex items-center justify-center p-6">
         <div className="max-w-md w-full">
           <div className="text-center md:text-left mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Med-Infinite System Portal</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">MED-INFINITE System Portal</h2>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">Administrator Sign In</h3>
             <p className="text-gray-600">Access system management tools</p>
           </div>

@@ -35,9 +35,12 @@ const NotFound = () => {
         <div className="w-full md:w-1/2 flex flex-col items-center md:items-start relative z-10">
           <div className="flex items-center space-x-2 mb-8">
             <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="h-6 w-6" />
-            <span className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent text-2xl font-semibold">
-              Med-Infinite
-            </span>
+            <div className="flex flex-col">
+              <span className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent text-xl font-bold">
+                MED-INFINITE
+              </span>
+              <span className="text-xs text-gray-500 -mt-1">ENDLESS CARE</span>
+            </div>
           </div>
           
           <motion.div 
