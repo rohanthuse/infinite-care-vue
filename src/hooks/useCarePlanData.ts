@@ -300,7 +300,7 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
   const { data: carerData, error: carerError } = await supabase
     .from('staff')
     .select('branch_id')
-    .eq('id', carerId)
+    .eq('auth_user_id', carerId)
     .single();
 
   if (carerError) {
