@@ -4,36 +4,36 @@ import { useBranchDashboardNavigation } from './useBranchDashboardNavigation';
 
 export const useMedicationNavigation = () => {
   const navigate = useNavigate();
-  const { id: branchId, branchName } = useBranchDashboardNavigation();
+  const { id: branchId, branchName, createTenantAwarePath } = useBranchDashboardNavigation();
 
   const navigateToCarePlan = (carePlanId: string) => {
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/care-plan/${carePlanId}`);
+      navigate(createTenantAwarePath(`/care-plan/${carePlanId}`));
     }
   };
 
   const navigateToClientProfile = (clientId: string) => {
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/clients/${clientId}`);
+      navigate(createTenantAwarePath(`/clients/${clientId}`));
     }
   };
 
   const navigateToBookings = (clientId?: string) => {
     if (branchId && branchName) {
-      const baseUrl = `/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/bookings`;
+      const baseUrl = createTenantAwarePath('/bookings');
       navigate(clientId ? `${baseUrl}?client=${clientId}` : baseUrl);
     }
   };
 
   const navigateToStaffProfile = (staffId: string) => {
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/carers/${staffId}`);
+      navigate(createTenantAwarePath(`/carers/${staffId}`));
     }
   };
 
   const navigateToReports = () => {
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/reports`);
+      navigate(createTenantAwarePath('/reports'));
     }
   };
 

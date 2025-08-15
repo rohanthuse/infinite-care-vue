@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTenant } from "@/contexts/TenantContext";
 import { Plus, Search, MoreHorizontal, Edit, Trash2, Shield, UserCheck, Eye, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +59,7 @@ const ITEMS_PER_PAGE = 10;
 
 export function TeamManagementSection({ branchId, branchName }: TeamManagementSectionProps) {
   const navigate = useNavigate();
+  const { tenantSlug } = useTenant();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [specializationFilter, setSpecializationFilter] = useState("all");
@@ -74,7 +76,10 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
   const updateCarerMutation = useUpdateCarer();
 
   const handleViewDetails = (carer: CarerDB) => {
-    navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName || '')}/carers/${carer.id}`);
+    const path = tenantSlug 
+      ? `/${tenantSlug}/branch-dashboard/${branchId}/${encodeURIComponent(branchName || '')}/carers/${carer.id}`
+      : `/branch-dashboard/${branchId}/${encodeURIComponent(branchName || '')}/carers/${carer.id}`;
+    navigate(path);
   };
 
   const filteredCarers = useMemo(() => {

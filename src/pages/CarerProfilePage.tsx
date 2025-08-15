@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTenant } from "@/contexts/TenantContext";
 import { ArrowLeft, User, Mail, Phone, MapPin, Briefcase, Calendar, CheckCircle, Clock, Users, FileText, BarChart3, Award, Star, Share2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { ErrorBoundary } from "@/components/care/ErrorBoundary";
 const CarerProfilePage: React.FC = () => {
   const { id: branchId, branchName, carerId } = useParams();
   const navigate = useNavigate();
+  const { tenantSlug } = useTenant();
   const [showSharingDialog, setShowSharingDialog] = useState(false);
   
   console.log('[CarerProfilePage] Rendering with carerId:', carerId);
@@ -30,7 +32,10 @@ const CarerProfilePage: React.FC = () => {
   console.log('[CarerProfilePage] Carer data:', { carer, isLoading, error, carerId });
 
   const handleGoBack = () => {
-    navigate(`/branch-dashboard/${branchId}/${branchName}/carers`);
+    const path = tenantSlug 
+      ? `/${tenantSlug}/branch-dashboard/${branchId}/${branchName}/carers`
+      : `/branch-dashboard/${branchId}/${branchName}/carers`;
+    navigate(path);
   };
 
   const getAvatarInitials = (firstName?: string, lastName?: string) => {

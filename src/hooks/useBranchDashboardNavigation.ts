@@ -1,5 +1,6 @@
 
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useTenant } from '@/contexts/TenantContext';
 
 export const useBranchDashboardNavigation = () => {
   const { id, branchName } = useParams<{ 
@@ -8,6 +9,7 @@ export const useBranchDashboardNavigation = () => {
   }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { tenantSlug } = useTenant();
 
   // Define valid tab names
   const validTabs = [
@@ -24,9 +26,7 @@ export const useBranchDashboardNavigation = () => {
   const activeTab = validTabs.includes(lastPathPart) ? lastPathPart : 'dashboard';
 
   const handleTabChange = (tab: string) => {
-    if (id && branchName) {
-      // Extract tenant slug from current path
-      const tenantSlug = location.pathname.split('/')[1];
+    if (id && branchName && tenantSlug) {
       const basePath = `/${tenantSlug}/branch-dashboard/${id}/${branchName}`;
       const targetPath = tab === 'dashboard' ? basePath : `${basePath}/${tab}`;
       navigate(targetPath);
@@ -34,11 +34,16 @@ export const useBranchDashboardNavigation = () => {
   };
 
   const handleWorkflowNavigation = (section: string) => {
-    if (id && branchName) {
-      // Extract tenant slug from current path
-      const tenantSlug = location.pathname.split('/')[1];
+    if (id && branchName && tenantSlug) {
       navigate(`/${tenantSlug}/branch-dashboard/${id}/${branchName}/workflow/${section}`);
     }
+  };
+
+  const createTenantAwarePath = (path: string) => {
+    if (tenantSlug && id && branchName) {
+      return `/${tenantSlug}/branch-dashboard/${id}/${branchName}${path}`;
+    }
+    return `/branch-dashboard/${id}/${branchName}${path}`;
   };
 
   return {
@@ -46,6 +51,8 @@ export const useBranchDashboardNavigation = () => {
     branchName: branchName ? decodeURIComponent(branchName) : undefined,
     activeTab,
     handleTabChange,
-    handleWorkflowNavigation
+    handleWorkflowNavigation,
+    createTenantAwarePath,
+    tenantSlug
   };
 };
