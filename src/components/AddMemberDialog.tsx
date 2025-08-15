@@ -113,6 +113,23 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
     setPermissions(templatePermissions);
   };
 
+  // Select All functionality
+  const areAllPermissionsEnabled = () => {
+    return Object.values(permissions).every(value => value === true);
+  };
+
+  const areAllPermissionsDisabled = () => {
+    return Object.values(permissions).every(value => value === false);
+  };
+
+  const handleSelectAll = (enabled: boolean) => {
+    const newPermissions = Object.keys(permissions).reduce((acc, key) => {
+      acc[key as keyof OrganizationMemberPermissions] = enabled;
+      return acc;
+    }, {} as OrganizationMemberPermissions);
+    setPermissions(newPermissions);
+  };
+
   const renderPermissionSwitch = (key: keyof OrganizationMemberPermissions, label: string) => (
     <div className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-white/50 transition-colors">
       <Label htmlFor={key} className="text-gray-700 text-sm cursor-pointer flex-1">{label}</Label>
@@ -250,6 +267,25 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
               </TabsContent>
 
               <TabsContent value="permissions" className="space-y-6 m-0 pr-2">
+                {/* Select All Toggle */}
+                <div className="space-y-4 border rounded-lg p-4 bg-gradient-to-br from-indigo-50 to-indigo-100/30">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-800 flex items-center text-base">Select All Permissions</h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {areAllPermissionsEnabled() ? 'All permissions enabled' : 
+                         areAllPermissionsDisabled() ? 'All permissions disabled' : 
+                         `${Object.values(permissions).filter(Boolean).length} of ${Object.keys(permissions).length} permissions enabled`}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={areAllPermissionsEnabled()}
+                      onCheckedChange={handleSelectAll}
+                      className="ml-4"
+                    />
+                  </div>
+                </div>
+
                 {/* Core Features */}
                 <div className="space-y-4 border rounded-lg p-4 bg-gradient-to-br from-blue-50 to-blue-100/30">
                   <h3 className="font-semibold text-gray-800 flex items-center text-base">
