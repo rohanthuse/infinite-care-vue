@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from './useUserRole';
+import { useTenant } from '@/contexts/TenantContext';
 import { toast } from 'sonner';
 
 export interface UnifiedContact {
@@ -61,31 +62,34 @@ const parseAttachments = (attachments: any): any[] => {
 // Get available contacts for messaging (admins, carers, clients based on user type)
 export const useAvailableContacts = () => {
   const { data: currentUser } = useUserRole();
+  const { organization } = useTenant();
   
   return useQuery({
-    queryKey: ['available-contacts', currentUser?.id],
+    queryKey: ['available-contacts', currentUser?.id, organization?.id],
     queryFn: async (): Promise<UnifiedContact[]> => {
-      if (!currentUser) return [];
+      if (!currentUser || !organization?.id) return [];
 
       const contacts: UnifiedContact[] = [];
 
-      // If user is admin/super_admin, get clients and carers in their branches
+      // If user is admin/super_admin, get clients and carers in their branches (filtered by organization)
       if (currentUser.role === 'branch_admin' || currentUser.role === 'super_admin') {
-        // Get branch access for admin
+        // Get branch access for admin within current organization only
         let branchIds: string[] = [];
         
         if (currentUser.role === 'super_admin') {
-          // Super admin can see all branches
+          // Super admin can see branches ONLY within current organization
           const { data: branches } = await supabase
             .from('branches')
-            .select('id');
+            .select('id')
+            .eq('organization_id', organization.id);
           branchIds = branches?.map(b => b.id) || [];
         } else {
-          // Regular admin - get their assigned branches
+          // Regular admin - get their assigned branches within current organization
           const { data: adminBranches } = await supabase
             .from('admin_branches')
-            .select('branch_id')
-            .eq('admin_id', currentUser.id);
+            .select('branch_id, branches!inner(organization_id)')
+            .eq('admin_id', currentUser.id)
+            .eq('branches.organization_id', organization.id);
           branchIds = adminBranches?.map(ab => ab.branch_id) || [];
         }
 
@@ -186,7 +190,7 @@ export const useAvailableContacts = () => {
 
       return contacts;
     },
-    enabled: !!currentUser,
+    enabled: !!currentUser && !!organization?.id,
     staleTime: 300000, // 5 minutes
   });
 };
@@ -194,14 +198,15 @@ export const useAvailableContacts = () => {
 // Get message threads for current user
 export const useUnifiedMessageThreads = () => {
   const { data: currentUser } = useUserRole();
+  const { organization } = useTenant();
   
   return useQuery({
-    queryKey: ['unified-message-threads', currentUser?.id],
+    queryKey: ['unified-message-threads', currentUser?.id, organization?.id],
     queryFn: async (): Promise<UnifiedMessageThread[]> => {
-      console.log('[useUnifiedMessageThreads] Starting with user:', currentUser);
+      console.log('[useUnifiedMessageThreads] Starting with user:', currentUser, 'org:', organization?.id);
       
-      if (!currentUser) {
-        console.log('[useUnifiedMessageThreads] No current user found');
+      if (!currentUser || !organization?.id) {
+        console.log('[useUnifiedMessageThreads] No current user or organization found');
         return [];
       }
 
@@ -214,12 +219,14 @@ export const useUnifiedMessageThreads = () => {
             created_at,
             updated_at,
             last_message_at,
+            organization_id,
             message_participants (
               user_id,
               user_type,
               user_name
             )
           `)
+          .eq('organization_id', organization.id)
           .order('last_message_at', { ascending: false });
 
         if (error) {
@@ -251,9 +258,9 @@ export const useUnifiedMessageThreads = () => {
             return true;
           }
           
-          // For super admins, show all threads
+          // For super admins, show threads only within current organization (already filtered by query)
           if (currentUser.role === 'super_admin') {
-            console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - super admin access`);
+            console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - super admin access within organization`);
             return true;
           }
           
@@ -377,7 +384,7 @@ export const useUnifiedMessageThreads = () => {
         throw error;
       }
     },
-    enabled: !!currentUser,
+    enabled: !!currentUser && !!organization?.id,
     refetchInterval: 30000, // Refetch every 30 seconds for real-time feel
     retry: 2,
     retryDelay: 1000,
@@ -571,6 +578,7 @@ export const useMarkMessagesAsRead = () => {
 export const useUnifiedCreateThread = () => {
   const queryClient = useQueryClient();
   const { data: currentUser } = useUserRole();
+  const { organization } = useTenant();
 
   return useMutation({
     mutationFn: async ({ 
@@ -604,8 +612,8 @@ export const useUnifiedCreateThread = () => {
     }) => {
       console.log('[useUnifiedCreateThread] Starting thread creation...');
       
-      if (!currentUser) {
-        throw new Error('Not authenticated - please log in again');
+      if (!currentUser || !organization?.id) {
+        throw new Error('Not authenticated or organization context missing');
       }
 
       // Get user's branch for thread context
@@ -627,6 +635,7 @@ export const useUnifiedCreateThread = () => {
           const { data: firstBranch } = await supabase
             .from('branches')
             .select('id')
+            .eq('organization_id', organization.id)
             .limit(1)
             .single();
           branchId = firstBranch?.id || null;
@@ -641,12 +650,13 @@ export const useUnifiedCreateThread = () => {
         }
       }
 
-      // Create thread
+      // Create thread with organization context
       const { data: thread, error: threadError } = await supabase
         .from('message_threads')
         .insert({
           subject,
           branch_id: branchId,
+          organization_id: organization.id,
           created_by: currentUser.id,
           thread_type: threadType,
           requires_action: requiresAction,
