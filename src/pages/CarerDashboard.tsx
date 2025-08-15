@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
 import { useCarerProfile } from "@/hooks/useCarerProfile";
+import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 
 const CarerDashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -28,78 +29,34 @@ const CarerDashboard: React.FC = () => {
   const location = useLocation();
   const { user, isAuthenticated, loading, signOut } = useCarerAuth();
   const { data: carerProfile } = useCarerProfile();
+  const { getCarerMenuItems, createCarerPath, tenantSlug } = useCarerNavigation();
 
-  // Menu items for mobile view
-  const menuItems = [
-    { 
-      name: "Dashboard", 
-      path: "/carer-dashboard", 
-      icon: Home 
-    },
-    { 
-      name: "Profile", 
-      path: "/carer-dashboard/profile", 
-      icon: User 
-    },
-    { 
-      name: "Booking Calendar", 
-      path: "/carer-dashboard/schedule", 
-      icon: Calendar 
-    },
-    { 
-      name: "Appointments", 
-      path: "/carer-dashboard/appointments", 
-      icon: CalendarDays 
-    },
-    { 
-      name: "Care Plans", 
-      path: "/carer-dashboard/careplans", 
-      icon: FileText 
-    },
-    { 
-      name: "My Forms", 
-      path: "/carer-dashboard/forms", 
-      icon: FileText 
-    },
-    { 
-      name: "Tasks", 
-      path: "/carer-dashboard/tasks", 
-      icon: ClipboardList 
-    },
-    { 
-      name: "News2", 
-      path: "/carer-dashboard/news2", 
-      icon: Newspaper 
-    },
-    { 
-      name: "Reports", 
-      path: "/carer-dashboard/reports", 
-      icon: FileBarChart 
-    },
-    { 
-      name: "Payments", 
-      path: "/carer-dashboard/payments", 
-      icon: Wallet 
-    },
-    { 
-      name: "Training", 
-      path: "/carer-dashboard/training", 
-      icon: GraduationCap 
-    },
-    { 
-      name: "Clients", 
-      path: "/carer-dashboard/clients", 
-      icon: Users 
-    }
-  ];
+  // Get tenant-aware menu items
+  const menuItems = getCarerMenuItems().map(item => ({
+    ...item,
+    icon: {
+      "Home": Home,
+      "User": User,
+      "Calendar": Calendar,
+      "CalendarDays": CalendarDays,
+      "FileText": FileText,
+      "ClipboardList": ClipboardList,
+      "Newspaper": Newspaper,
+      "FileBarChart": FileBarChart,
+      "Wallet": Wallet,
+      "GraduationCap": GraduationCap,
+      "Users": Users
+    }[item.icon] || Home
+  }));
 
   // Check authentication status - only redirect if truly unauthenticated
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       console.log('[CarerDashboard] User not authenticated, redirecting to login');
-      navigate("/carer-login");
+      const loginPath = tenantSlug ? `/${tenantSlug}/carer-login` : "/carer-login";
+      navigate(loginPath);
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, loading, navigate, tenantSlug]);
 
   const handleMobileLogout = async () => {
     try {
