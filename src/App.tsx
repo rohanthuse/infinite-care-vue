@@ -40,6 +40,7 @@ import { SystemGuard } from "@/components/system/SystemGuard";
 import { TenantError } from "./pages/TenantError";
 import { TenantErrorWrapper } from "@/components/TenantErrorWrapper";
 import { BranchDashboardRedirect } from "@/components/BranchDashboardRedirect";
+import { CarerDashboardRedirect } from "@/components/CarerDashboardRedirect";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -146,6 +147,9 @@ const AppContent = () => {
               
               {/* Branch Dashboard Redirect - Ensure tenant-aware URLs */}
               <Route path="/branch-dashboard/*" element={<BranchDashboardRedirect />} />
+              
+              {/* Carer Dashboard Redirect - Ensure tenant-aware URLs */}
+              <Route path="/carer-dashboard/*" element={<CarerDashboardRedirect />} />
               
               {/* Tenant Login Routes - Separate from protected routes */}
               <Route path="/:tenantSlug/login" element={

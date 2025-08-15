@@ -35,67 +35,18 @@ import { cn } from "@/lib/utils";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
 import { useCarerProfile } from "@/hooks/useCarerProfile";
+import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 
 export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMobileMenuToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut } = useCarerAuth();
   const { data: carerProfile } = useCarerProfile();
+  const { getCarerMenuItems, createCarerPath } = useCarerNavigation();
   const [searchValue, setSearchValue] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
-  const menuItems = [
-    { 
-      name: "Dashboard", 
-      path: "/carer-dashboard", 
-      icon: Home 
-    },
-    { 
-      name: "Profile", 
-      path: "/carer-dashboard/profile", 
-      icon: User 
-    },
-    { 
-      name: "Booking Calendar", 
-      path: "/carer-dashboard/schedule", 
-      icon: Calendar 
-    },
-    { 
-      name: "Appointments", 
-      path: "/carer-dashboard/appointments", 
-      icon: CalendarDays 
-    },
-    { 
-      name: "Care Plans", 
-      path: "/carer-dashboard/careplans", 
-      icon: FileText 
-    },
-    { 
-      name: "Tasks", 
-      path: "/carer-dashboard/tasks", 
-      icon: ClipboardList 
-    },
-    { 
-      name: "News2", 
-      path: "/carer-dashboard/news2", 
-      icon: Newspaper 
-    },
-    { 
-      name: "Reports", 
-      path: "/carer-dashboard/reports", 
-      icon: FileBarChart 
-    },
-    { 
-      name: "Payments", 
-      path: "/carer-dashboard/payments", 
-      icon: Wallet 
-    },
-    { 
-      name: "Training", 
-      path: "/carer-dashboard/training", 
-      icon: GraduationCap 
-    },
-  ];
+  const menuItems = getCarerMenuItems();
 
   const handleLogout = async () => {
     try {
@@ -106,7 +57,7 @@ export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMo
   };
 
   const handleViewAllNotifications = () => {
-    navigate('/carer-dashboard/notifications');
+    navigate(createCarerPath('/notifications'));
   };
 
   const carerName = carerProfile ? `${carerProfile.first_name} ${carerProfile.last_name}` : "Carer";
@@ -178,6 +129,7 @@ export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMo
                   : "border-transparent text-gray-700 hover:text-blue-600 hover:border-blue-200"
               )}
             >
+              {/* @ts-ignore */}
               <item.icon className="h-4 w-4 mr-2" />
               {item.name}
             </Link>

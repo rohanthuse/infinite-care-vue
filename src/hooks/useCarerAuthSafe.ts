@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
+import { useTenant } from '@/contexts/TenantContext';
 
 export interface CarerAuthState {
   user: User | null;
@@ -22,6 +23,7 @@ export function useCarerAuthSafe() {
   const [carerProfile, setCarerProfile] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { tenantSlug } = useTenant();
 
   useEffect(() => {
     let mounted = true;
@@ -89,7 +91,8 @@ export function useCarerAuthSafe() {
               if (!staffRecord.first_login_completed) {
                 navigate('/carer-onboarding');
               } else {
-                navigate('/carer-dashboard');
+                const dashboardPath = tenantSlug ? `/${tenantSlug}/carer-dashboard` : '/carer-dashboard';
+                navigate(dashboardPath);
               }
             }
           } else {
@@ -107,7 +110,8 @@ export function useCarerAuthSafe() {
         console.log('[useCarerAuthSafe] User signed out');
         setCarerProfile(null);
         setError(null);
-        navigate('/carer-login');
+        const loginPath = tenantSlug ? `/${tenantSlug}/carer-login` : '/carer-login';
+        navigate(loginPath);
       }
 
       setLoading(false);
@@ -212,7 +216,8 @@ export function useCarerAuthSafe() {
       setCarerProfile(null);
       setError(null);
       toast.success('Signed out successfully');
-      navigate('/carer-login');
+      const loginPath = tenantSlug ? `/${tenantSlug}/carer-login` : '/carer-login';
+      navigate(loginPath);
     } catch (error: any) {
       console.error('[useCarerAuthSafe] Sign out error:', error);
       setError('Sign out failed. Please try again.');

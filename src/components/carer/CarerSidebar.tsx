@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 
 interface CarerSidebarProps {
   isOpen: boolean;
@@ -20,37 +21,38 @@ interface CarerSidebarProps {
 
 export const CarerSidebar: React.FC<CarerSidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
+  const { getCarerMenuItems } = useCarerNavigation();
   const carerName = localStorage.getItem("carerName") || "Carer";
   
   const menuItems = [
     { 
       name: "Dashboard", 
-      path: "/carer-dashboard", 
+      path: getCarerMenuItems().find(item => item.name === "Dashboard")?.path || "/carer-dashboard", 
       icon: Home 
     },
     { 
       name: "My Schedule", 
-      path: "/carer-dashboard/schedule", 
+      path: getCarerMenuItems().find(item => item.name === "Booking Calendar")?.path || "/carer-dashboard/schedule", 
       icon: Calendar 
     },
     { 
       name: "My Clients", 
-      path: "/carer-dashboard/clients", 
+      path: getCarerMenuItems().find(item => item.name === "Clients")?.path || "/carer-dashboard/clients", 
       icon: Users 
     },
     { 
       name: "My Tasks", 
-      path: "/carer-dashboard/tasks", 
+      path: getCarerMenuItems().find(item => item.name === "Tasks")?.path || "/carer-dashboard/tasks", 
       icon: ClipboardList 
     },
     { 
       name: "Attendance", 
-      path: "/carer-dashboard/attendance", 
+      path: getCarerMenuItems().find(item => item.name === "Reports")?.path || "/carer-dashboard/attendance", 
       icon: Clock 
     },
     { 
       name: "Documents", 
-      path: "/carer-dashboard/documents", 
+      path: getCarerMenuItems().find(item => item.name === "My Forms")?.path || "/carer-dashboard/documents", 
       icon: FileText 
     },
   ];
