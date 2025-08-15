@@ -141,8 +141,9 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
         const isSuperAdmin = (roleRows || []).some(r => r.role === 'super_admin');
 
         if (!isSuperAdmin) {
-          // Check if user is a client - clients are linked through branches, not organization_members
+          // Check user role type for specific verification logic
           const isClient = (roleRows || []).some(r => r.role === 'client');
+          const isCarer = (roleRows || []).some(r => r.role === 'carer');
           
           if (isClient) {
             // For clients, verify access through their branch-organization relationship
@@ -159,8 +160,24 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
             }
             
             console.log('[TenantProvider] Client access verified through branch relationship');
+          } else if (isCarer) {
+            // For carers, verify access through their staff-branch-organization relationship
+            const { error: carerAccessError } = await supabase
+              .from('staff')
+              .select('branch_id, branches!inner(organization_id)')
+              .eq('auth_user_id', user.id)
+              .eq('branches.organization_id', orgData.id)
+              .eq('status', 'Active')
+              .single();
+
+            if (carerAccessError) {
+              console.error('Carer does not belong to this organization:', carerAccessError);
+              throw new Error('Access denied: You are not authorized to access this organization');
+            }
+            
+            console.log('[TenantProvider] Carer access verified through staff-branch relationship');
           } else {
-            // For non-client users, check organization_members table
+            // For other user types (admins, etc.), check organization_members table
             const { error: memberError } = await supabase
               .from('organization_members')
               .select('id')
