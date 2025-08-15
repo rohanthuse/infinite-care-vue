@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCarerProfile } from "@/data/hooks/useBranchCarers";
+import { useCarerProfileById } from "@/hooks/useCarerProfile";
 import { useCarerBookings } from "@/hooks/useCarerBookings";
 import { useCarerDocuments } from "@/hooks/useCarerDocuments";
 import { useCarerPerformance } from "@/hooks/useCarerPerformance";
@@ -22,7 +22,7 @@ const CarerProfilePage: React.FC = () => {
   
   console.log('[CarerProfilePage] Rendering with carerId:', carerId);
   
-  const { data: carer, isLoading, error } = useCarerProfile(carerId);
+  const { data: carer, isLoading, error } = useCarerProfileById(carerId);
   const { data: bookings = [], isLoading: bookingsLoading } = useCarerBookings(carerId || '');
   const { data: documents = [], isLoading: documentsLoading } = useCarerDocuments(carerId || '');
   const { data: performanceData, isLoading: performanceLoading } = useCarerPerformance(carerId || '');
