@@ -15,7 +15,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCreateAdmin } from "@/data/hooks/useCreateAdmin";
-import { useQuery } from "@tanstack/react-query";
+import { useTenantAwareQuery } from "@/hooks/useTenantAware";
+import { useTenant } from "@/contexts/TenantContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, User, Shield, Building2 } from "lucide-react";
@@ -70,20 +71,22 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
   const [activeTab, setActiveTab] = useState("basic");
 
   const createAdminMutation = useCreateAdmin();
+  const { organization } = useTenant();
 
-  // Fetch branches for the dropdown
-  const { data: branches = [], isLoading: branchesLoading } = useQuery({
-    queryKey: ['branches'],
-    queryFn: async () => {
+  // Fetch branches for the dropdown using tenant-aware query
+  const { data: branches = [], isLoading: branchesLoading } = useTenantAwareQuery(
+    ['branches'],
+    async (organizationId) => {
       const { data, error } = await supabase
         .from('branches')
         .select('id, name, address')
+        .eq('organization_id', organizationId)
         .order('name');
       
       if (error) throw error;
       return data || [];
     }
-  });
+  );
 
   const handlePermissionChange = (permission: keyof Permissions, value: boolean) => {
     setPermissions(prev => ({ ...prev, [permission]: value }));
