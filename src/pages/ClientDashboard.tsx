@@ -104,20 +104,7 @@ const ClientDashboard = () => {
           return;
         }
 
-        // Fix: Use case-insensitive comparison for status check
-        if (clientData.status?.toLowerCase() !== 'active') {
-          await supabase.auth.signOut();
-          localStorage.removeItem("userType");
-          localStorage.removeItem("clientName");
-          localStorage.removeItem("clientId");
-          toast({
-            title: "Account Inactive",
-            description: "Your account is not active. Please contact support.",
-            variant: "destructive",
-          });
-          navigate("/client-login", { replace: true });
-          return;
-        }
+        // Status check removed - allow clients to access dashboard regardless of status
 
         // Update local storage with current client info
         localStorage.setItem("clientName", clientData.first_name);

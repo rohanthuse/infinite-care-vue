@@ -67,13 +67,7 @@ export const useClientAuthFallback = () => {
         return { success: false, error: errorMsg };
       }
 
-      // Check if client is active
-      if (clientData.status?.toLowerCase() !== 'active') {
-        await supabase.auth.signOut();
-        const errorMsg = 'Your account is not active. Please contact support.';
-        setError(errorMsg);
-        return { success: false, error: errorMsg };
-      }
+      // Status check removed - allow clients to login regardless of status
 
       // Check if auth_user_id is properly linked
       if (!clientData.auth_user_id || clientData.auth_user_id !== data.user.id) {

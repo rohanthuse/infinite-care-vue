@@ -74,7 +74,7 @@ const TenantClientLogin = () => {
         `)
         .eq('auth_user_id', authData.user.id)
         .eq('branches.organization_id', organization.id)
-        .eq('status', 'active')
+        // Status filter removed - allow clients regardless of status
         .maybeSingle();
 
       if (clientError || !clientData) {
