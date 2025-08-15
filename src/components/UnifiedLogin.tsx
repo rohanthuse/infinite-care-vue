@@ -1,19 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CustomButton } from "@/components/ui/CustomButton";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff, LogIn, Shield } from "lucide-react";
-import { motion } from "framer-motion";
+import { Eye, EyeOff, Mail, Lock, Heart } from "lucide-react";
 
 const UnifiedLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const navigate = useNavigate();
 
   const detectUserOrganization = async (userId: string) => {
@@ -211,107 +210,165 @@ const UnifiedLogin = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast.error("Please enter your email address first");
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/login`,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success("Password reset link sent to your email");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send reset email");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/30 via-white to-blue-50/50 p-4">
-      {/* Background Elements */}
-      <div className="absolute w-[500px] h-[500px] rounded-full bg-gradient-to-r from-blue-100/60 to-blue-300/20 top-[-100px] right-[-200px] blur-3xl" aria-hidden="true"></div>
-      <div className="absolute w-[600px] h-[600px] rounded-full bg-gradient-to-r from-cyan-100/40 to-blue-200/30 bottom-[-200px] left-[-200px] blur-3xl" aria-hidden="true"></div>
-      
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
-      >
-        <Card className="bg-white/80 backdrop-blur-sm border border-gray-100 shadow-xl">
-          <CardHeader className="text-center space-y-2">
-            <div className="flex justify-center mb-4">
-              <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="w-12 h-12" />
+    <div className="min-h-screen flex">
+      {/* Left Column - Gradient Background with Info */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-cyan-600 relative">
+        {/* Wave Pattern */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-cyan-500/20">
+          <svg className="absolute bottom-0 left-0 w-full h-32 text-blue-600/10" viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path d="M0,60 C240,20 480,100 720,60 C960,20 1200,100 1200,60 L1200,120 L0,120 Z" fill="currentColor"></path>
+          </svg>
+        </div>
+        
+        <div className="relative z-10 flex flex-col justify-center px-12 py-16 text-white">
+          <div className="max-w-md">
+            <div className="flex items-center mb-8">
+              <Heart className="h-8 w-8 text-white mr-3" />
+              <h1 className="text-2xl font-bold">Med-Infinite</h1>
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">
-              Med-Infinite Login
-            </CardTitle>
-            <CardDescription className="text-gray-600">
-              Access your healthcare management platform
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                  Email Address
-                </Label>
+            
+            <h2 className="text-4xl font-bold mb-6 leading-tight">
+              Welcome to Med-Infinite
+            </h2>
+            
+            <p className="text-xl text-blue-100 mb-8">
+              Your Gateway to Effortless Management
+            </p>
+            
+            <p className="text-blue-100 leading-relaxed">
+              Streamline your healthcare administration with our comprehensive platform designed for modern healthcare organizations.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Column - Login Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 py-12 bg-white">
+        <div className="w-full max-w-md space-y-8">
+          {/* Logo and Title */}
+          <div className="text-center">
+            <div className="flex justify-center mb-6">
+              <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="w-16 h-16" />
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900">Sign in to your account</h2>
+            <p className="mt-2 text-sm text-gray-600">Access your healthcare management platform</p>
+          </div>
+
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <Label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email address
+              </Label>
+              <div className="mt-1 relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
                   id="email"
+                  name="email"
                   type="email"
-                  placeholder="Enter your email"
+                  autoComplete="email"
+                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
-                  className="w-full"
-                  autoComplete="email"
-                  required
+                  className="pl-10 block w-full"
+                  placeholder="Enter your email"
                 />
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="block text-sm font-medium text-gray-700">
                   Password
                 </Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
-                    className="w-full pr-10"
-                    autoComplete="current-password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    tabIndex={-1}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={resetLoading}
+                  className="text-sm text-blue-600 hover:text-blue-500 disabled:opacity-50"
+                >
+                  {resetLoading ? "Sending..." : "Forgot password?"}
+                </button>
               </div>
-              
-              <Button
+              <div className="mt-1 relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  className="pl-10 pr-10 block w-full"
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <CustomButton
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 shadow-lg shadow-blue-500/20"
+                className="w-full bg-blue-600 hover:bg-blue-700"
                 disabled={loading}
               >
                 {loading ? (
-                  <div className="flex items-center justify-center">
+                  <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                     Signing in...
-                  </div>
+                  </>
                 ) : (
-                  <div className="flex items-center justify-center">
-                    <LogIn className="w-4 h-4 mr-2" />
-                    Sign In
-                  </div>
+                  "Sign In"
                 )}
-              </Button>
-            </form>
-            
-            <div className="mt-6 text-center text-sm text-gray-600">
-              <p>
-                Need help? Contact{" "}
-                <a href="mailto:support@med-infinite.com" className="text-blue-600 hover:text-blue-800 underline">
-                  support@med-infinite.com
-                </a>
-              </p>
+              </CustomButton>
             </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+          </form>
+
+          {/* Support Link */}
+          <div className="text-center">
+            <p className="text-sm text-gray-600">
+              Need help?{" "}
+              <a href="mailto:support@med-infinite.com" className="font-medium text-blue-600 hover:text-blue-500">
+                Contact Support
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
