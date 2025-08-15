@@ -105,9 +105,9 @@ export default function SystemDashboard() {
           }} className="w-full">
           <SystemSectionTabs value={tab} />
 
-          <TabsContent value="dashboard">
+          <TabsContent value="dashboard" className="space-y-6">
             {/* Welcome Section */}
-            <div className="mb-8">
+            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6">
               <h2 className="text-3xl font-bold text-foreground mb-2">
                 Welcome back, {user.name}
               </h2>
@@ -116,7 +116,7 @@ export default function SystemDashboard() {
               </p>
               
               {/* User Roles */}
-              <div className="mt-4 p-4 bg-card border border-border rounded-lg">
+              <div className="mt-4 p-4 bg-card/30 border border-border/30 rounded-lg">
                 <h3 className="text-sm font-medium text-foreground mb-2">Your Roles:</h3>
                 <div className="flex flex-wrap gap-2">
                   {user?.roles && user.roles.length > 0 ? (
@@ -136,15 +136,16 @@ export default function SystemDashboard() {
             </div>
 
             {/* System Statistics */}
-            <SystemDashboardStats 
-              stats={systemStats}
-              isLoading={isLoading}
-              onStatClick={handleStatClick}
-            />
-
+            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6">
+              <SystemDashboardStats 
+                stats={systemStats}
+                isLoading={isLoading}
+                onStatClick={handleStatClick}
+              />
+            </div>
 
             {/* Quick Actions */}
-            <div className="mt-12">
+            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6">
               <h3 className="text-xl font-semibold text-foreground mb-6">Quick Actions</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {user?.roles && hasRole('super_admin') && (
@@ -199,14 +200,14 @@ export default function SystemDashboard() {
 
             {/* Development Tools (localhost only) */}
             {window.location.hostname === 'localhost' && (
-              <div className="mt-12">
+              <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6">
                 <h3 className="text-xl font-semibold text-foreground mb-6">Development Tools</h3>
                 <DevTenantSwitcher />
               </div>
             )}
           </TabsContent>
 
-          <TabsContent value="reports">
+          <TabsContent value="reports" className="space-y-6">
             <ReportsTab />
           </TabsContent>
         </Tabs>
