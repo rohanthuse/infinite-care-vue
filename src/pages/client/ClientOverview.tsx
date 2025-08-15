@@ -13,10 +13,12 @@ import { Link } from "react-router-dom";
 import { ReviewPrompt } from "@/components/client/ReviewPrompt";
 import { SubmitReviewDialog } from "@/components/client/SubmitReviewDialog";
 import { useClientAuth } from "@/hooks/useClientAuth";
+import { useTenant } from "@/contexts/TenantContext";
 
 const ClientOverview = () => {
   // Get authenticated client ID using centralized auth
   const { clientId, isAuthenticated } = useClientAuth();
+  const { tenantSlug } = useTenant();
 
   // State for review dialog
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
@@ -167,7 +169,7 @@ const ClientOverview = () => {
                   </span>
                 </div>
               </div>
-              <Link to="/client-dashboard/appointments">
+              <Link to={tenantSlug ? `/${tenantSlug}/client-dashboard/appointments` : "/client-dashboard/appointments"}>
                 <Button>View All</Button>
               </Link>
             </div>
@@ -192,7 +194,7 @@ const ClientOverview = () => {
                   {pendingInvoices.length} pending {pendingInvoices.length === 1 ? 'invoice' : 'invoices'}
                 </p>
               </div>
-              <Link to="/client-dashboard/payments">
+              <Link to={tenantSlug ? `/${tenantSlug}/client-dashboard/payments` : "/client-dashboard/payments"}>
                 <Button>Pay Now</Button>
               </Link>
             </div>
@@ -244,7 +246,7 @@ const ClientOverview = () => {
               <Star className="h-5 w-5 mr-2" />
               Leave Reviews
             </CardTitle>
-            <Link to="/client-dashboard/reviews">
+            <Link to={tenantSlug ? `/${tenantSlug}/client-dashboard/reviews` : "/client-dashboard/reviews"}>
               <Button variant="outline" size="sm">View All Reviews</Button>
             </Link>
           </div>
@@ -297,7 +299,7 @@ const ClientOverview = () => {
               <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">All caught up!</h3>
               <p className="text-gray-600">You don't have any completed appointments that need reviews right now.</p>
-              <Link to="/client-dashboard/reviews">
+              <Link to={tenantSlug ? `/${tenantSlug}/client-dashboard/reviews` : "/client-dashboard/reviews"}>
                 <Button variant="outline" className="mt-3">View Your Reviews</Button>
               </Link>
             </div>

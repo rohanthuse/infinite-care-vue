@@ -6,13 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/contexts/TenantContext";
 
 const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const { tenantSlug } = useTenant();
   const clientName = localStorage.getItem("clientName") || "Client";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -30,7 +33,11 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
 
   const handleViewAllNotifications = () => {
     // For clients, we'll navigate to their messages page which includes notifications
-    navigate("/client-dashboard/messages");
+    if (tenantSlug) {
+      navigate(`/${tenantSlug}/client-dashboard/messages`);
+    } else {
+      navigate("/client-dashboard/messages");
+    }
   };
 
   const handleLogout = async () => {
@@ -60,7 +67,11 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
       
       // The navigation will be handled by the auth state listener in ClientDashboard
       // But we'll also manually navigate as a fallback
-      navigate("/client-login");
+      if (tenantSlug) {
+        navigate(`/${tenantSlug}/client-login`);
+      } else {
+        navigate("/client-login");
+      }
     } catch (error) {
       console.error('Unexpected logout error:', error);
       toast({

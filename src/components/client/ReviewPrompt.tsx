@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Star, Calendar, User } from "lucide-react";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface ReviewPromptProps {
   completedAppointments: Array<{
@@ -22,6 +23,7 @@ export function ReviewPrompt({ completedAppointments }: ReviewPromptProps) {
   const [showPrompt, setShowPrompt] = useState(false);
   const [pendingReviews, setPendingReviews] = useState([]);
   const navigate = useNavigate();
+  const { tenantSlug } = useTenant();
 
   // Check for appointments that need reviews
   useEffect(() => {
@@ -40,7 +42,11 @@ export function ReviewPrompt({ completedAppointments }: ReviewPromptProps) {
 
   const handleReviewAppointment = (appointment: any) => {
     setShowPrompt(false);
-    navigate('/client-dashboard');
+    if (tenantSlug) {
+      navigate(`/${tenantSlug}/client-dashboard/reviews`);
+    } else {
+      navigate('/client-dashboard/reviews');
+    }
   };
 
   const handleSkipReviews = () => {

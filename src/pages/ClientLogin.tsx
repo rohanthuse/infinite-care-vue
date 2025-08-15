@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Heart, Lock, User, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,11 @@ const ClientLogin = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Try to get tenant from URL or fallback to default behavior
+  const currentPath = window.location.pathname;
+  const pathParts = currentPath.split('/').filter(Boolean);
+  const potentialTenant = pathParts.length > 0 ? pathParts[0] : null;
   
   const { signIn, loading, error, clearError } = useClientAuthFallback();
 
@@ -38,7 +43,12 @@ const ClientLogin = () => {
     
     if (result.success) {
       console.log('[ClientLogin] Login successful, navigating to dashboard');
-      navigate("/client-dashboard");
+      if (potentialTenant && potentialTenant !== 'client-login') {
+        navigate(`/${potentialTenant}/client-dashboard`);
+      } else {
+        // Fallback for direct access - could redirect to tenant selection
+        navigate("/client-dashboard");
+      }
     }
   };
 

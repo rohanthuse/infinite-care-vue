@@ -3,9 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useUserRole } from './useUserRole';
+import { useTenant } from '@/contexts/TenantContext';
 
 export const useClientMessageNotifications = () => {
   const { data: currentUser } = useUserRole();
+  const { tenantSlug } = useTenant();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export const useClientMessageNotifications = () => {
           
           // Handle new message notifications
           if (payload.eventType === 'INSERT' && payload.new.sender_id !== currentUser.id) {
-            handleNewMessage(payload.new, currentUser.id, queryClient);
+            handleNewMessage(payload.new, currentUser.id, queryClient, tenantSlug);
           }
         }
       )
@@ -66,7 +68,7 @@ export const useClientMessageNotifications = () => {
 };
 
 // Helper function to handle new message notifications
-const handleNewMessage = async (message: any, currentUserId: string, queryClient: any) => {
+const handleNewMessage = async (message: any, currentUserId: string, queryClient: any, tenantSlug?: string) => {
   try {
     // Check if the message is in a thread where the current user is a participant
     const { data: participants } = await supabase
@@ -94,7 +96,10 @@ const handleNewMessage = async (message: any, currentUserId: string, queryClient
         action: {
           label: 'View',
           onClick: () => {
-            window.location.href = '/client-dashboard/messages';
+            const messagesPath = tenantSlug 
+              ? `/${tenantSlug}/client-dashboard/messages`
+              : '/client-dashboard/messages';
+            window.location.href = messagesPath;
           }
         },
         duration: 5000,
