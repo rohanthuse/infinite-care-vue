@@ -34,14 +34,16 @@ const UnifiedLogin = () => {
       // Then check staff table (for carers) - use separate queries to avoid join issues
       const { data: staffMember, error: staffError } = await supabase
         .from('staff')
-        .select('id, branch_id')
+        .select('id, branch_id, status')
         .eq('auth_user_id', userId)
-        .eq('status', 'active')
+        .eq('status', 'Active')
         .single();
 
       if (staffError && staffError.code !== 'PGRST116') {
         console.error('Error querying staff table:', staffError);
       }
+      
+      console.log('Staff query result:', { staffMember, staffError });
 
       if (staffMember?.branch_id) {
         const { data: staffBranch } = await supabase
