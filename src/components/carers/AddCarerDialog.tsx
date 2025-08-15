@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateCarerWithInvitation, CreateCarerData } from "@/data/hooks/useBranchCarers";
+import { useCreateCarerPreapproved, CreateCarerData } from "@/data/hooks/useBranchCarers";
 import { toast } from "sonner";
 
 interface AddCarerDialogProps {
@@ -29,7 +29,7 @@ export const AddCarerDialog = ({ open, onOpenChange, branchId }: AddCarerDialogP
     branch_id: branchId
   });
 
-  const createCarerMutation = useCreateCarerWithInvitation();
+  const createCarerMutation = useCreateCarerPreapproved();
 
   const handleInputChange = (field: keyof CreateCarerData, value: string) => {
     setFormData(prev => ({
@@ -198,7 +198,7 @@ export const AddCarerDialog = ({ open, onOpenChange, branchId }: AddCarerDialogP
               Cancel
             </Button>
             <Button type="submit" disabled={createCarerMutation.isPending}>
-              {createCarerMutation.isPending ? "Creating..." : "Create Carer"}
+              {createCarerMutation.isPending ? "Creating..." : "Create Pre-Approved Carer"}
             </Button>
           </div>
         </form>

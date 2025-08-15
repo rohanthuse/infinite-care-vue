@@ -6427,6 +6427,22 @@ export type Database = {
           | { p_password?: string; p_system_user_id: string }
         Returns: Json
       }
+      create_carer_preapproved: {
+        Args: {
+          p_address: string
+          p_admin_id: string
+          p_availability: string
+          p_branch_id: string
+          p_date_of_birth: string
+          p_email: string
+          p_experience: string
+          p_first_name: string
+          p_last_name: string
+          p_phone: string
+          p_specialization: string
+        }
+        Returns: Json
+      }
       create_carer_with_invitation: {
         Args: { p_branch_id: string; p_carer_data: Json }
         Returns: string

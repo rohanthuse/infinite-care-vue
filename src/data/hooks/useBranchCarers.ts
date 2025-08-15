@@ -120,6 +120,44 @@ export async function fetchCarerProfile(carerId: string) {
   return data;
 }
 
+// Create pre-approved carer function
+export async function createCarerPreapproved(carerData: CreateCarerData) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  console.log('[createCarerPreapproved] Creating carer:', carerData);
+
+  const { data, error } = await supabase.rpc('create_carer_preapproved', {
+    p_first_name: carerData.first_name,
+    p_last_name: carerData.last_name,
+    p_email: carerData.email,
+    p_phone: carerData.phone,
+    p_address: carerData.address,
+    p_specialization: carerData.specialization,
+    p_availability: carerData.availability,
+    p_experience: carerData.experience,
+    p_date_of_birth: carerData.date_of_birth,
+    p_branch_id: carerData.branch_id,
+    p_admin_id: user.id
+  });
+
+  if (error) {
+    console.error('[createCarerPreapproved] Error:', error);
+    throw new Error(error.message);
+  }
+
+  // Type cast the response to ensure we can access properties
+  const result = data as any;
+
+  if (!result?.success) {
+    console.error('[createCarerPreapproved] Function error:', result?.error);
+    throw new Error(result?.error || 'Failed to create carer');
+  }
+
+  console.log('[createCarerPreapproved] Success:', result);
+  return result;
+}
+
 export async function createCarerWithInvitation(carerData: CreateCarerData) {
   console.log('[createCarerWithInvitation] Creating carer with invitation:', carerData);
   
@@ -274,6 +312,30 @@ export function useCarerProfile(carerId?: string) {
     enabled: !!carerId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
+  });
+}
+
+export function useCreateCarerPreapproved() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createCarerPreapproved,
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["branch-carers", variables.branch_id] });
+      
+      // Show success with temporary password
+      toast.success(
+        `Carer created successfully! Temporary password: ${(data as any)?.temporary_password}`,
+        {
+          duration: 10000,
+          description: 'Share these credentials with the carer to get started.',
+        }
+      );
+    },
+    onError: (error: Error) => {
+      console.error('Error creating carer:', error);
+      toast.error(error.message || 'Failed to create carer');
+    },
   });
 }
 
