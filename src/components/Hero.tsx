@@ -61,27 +61,6 @@ const Hero = () => {
               </CustomButton>
             </div>
 
-            {/* Unified Login Section */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-gray-100 mb-10">
-              <div className="flex items-center gap-2 mb-4">
-                <LogIn className="h-5 w-5 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Access Your Dashboard</h3>
-              </div>
-              <p className="text-gray-600 mb-4">Sign in to access your organization's healthcare management platform</p>
-              <div className="space-y-4">
-                <CustomButton 
-                  onClick={() => navigate('/login')}
-                  size="lg"
-                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 border-0 shadow-lg shadow-blue-500/20"
-                >
-                  <LogIn className="mr-2 h-5 w-5" />
-                  Sign In to Your Account
-                </CustomButton>
-                <p className="text-xs text-gray-500 text-center">
-                  Your dashboard will be automatically customized for your organization
-                </p>
-              </div>
-            </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">

@@ -29,21 +29,8 @@ const Navbar = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
   
-  const handleGetStarted = () => {
-    // Show organization selector for tenant login
-    navigate("/");
-  };
-
-  const handleCarerLogin = () => {
-    navigate("/carer-login");
-  };
-
-  const handleClientLogin = () => {
-    navigate("/client-login");
-  };
-
-  const handleBranchAdminLogin = () => {
-    navigate("/branch-admin-login");
+  const handleSignIn = () => {
+    navigate("/login");
   };
   
   const navItems = [
@@ -84,38 +71,14 @@ const Navbar = () => {
         </nav>
 
         {/* Call to Action Buttons */}
-        <div className="hidden md:flex items-center space-x-3">
-          <CustomButton 
-            variant="outline" 
-            size="sm" 
-            className="border-blue-600 text-blue-600 hover:bg-blue-50"
-            onClick={handleClientLogin}
-          >
-            Client Login
-          </CustomButton>
-          <CustomButton 
-            variant="outline" 
-            size="sm" 
-            className="border-blue-600 text-blue-600 hover:bg-blue-50"
-            onClick={handleCarerLogin}
-          >
-            Staff Login
-          </CustomButton>
-          <CustomButton 
-            variant="outline" 
-            size="sm" 
-            className="border-blue-600 text-blue-600 hover:bg-blue-50"
-            onClick={handleBranchAdminLogin}
-          >
-            Branch Admin Login
-          </CustomButton>
+        <div className="hidden md:flex items-center">
           <CustomButton 
             variant="pill" 
             size="sm" 
             className="bg-blue-600 hover:bg-blue-700"
-            onClick={handleGetStarted}
+            onClick={handleSignIn}
           >
-            Admin Login
+            Sign In to Your Account
           </CustomButton>
         </div>
 
@@ -147,45 +110,15 @@ const Navbar = () => {
               {item.text}
             </a>
           ))}
-          <div className="pt-4 space-y-3">
-            <CustomButton 
-              className="w-full"
-              variant="outline"
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                handleClientLogin();
-              }}
-            >
-              Client Login
-            </CustomButton>
-            <CustomButton 
-              className="w-full"
-              variant="outline"
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                handleCarerLogin();
-              }}
-            >
-              Staff Login
-            </CustomButton>
-            <CustomButton 
-              className="w-full"
-              variant="outline"
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                handleBranchAdminLogin();
-              }}
-            >
-              Branch Admin Login
-            </CustomButton>
+          <div className="pt-4">
             <CustomButton 
               className="w-full bg-blue-600 hover:bg-blue-700"
               onClick={() => {
                 setIsMobileMenuOpen(false);
-                handleGetStarted();
+                handleSignIn();
               }}
             >
-              Admin Login
+              Sign In to Your Account
             </CustomButton>
           </div>
         </nav>
