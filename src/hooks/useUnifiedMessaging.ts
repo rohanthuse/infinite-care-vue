@@ -224,6 +224,9 @@ export const useUnifiedMessageThreads = () => {
               user_id,
               user_type,
               user_name
+            ),
+            messages!inner (
+              id
             )
           `)
           .eq('organization_id', organization.id)
@@ -595,7 +598,7 @@ export const useUnifiedCreateThread = () => {
       actionRequired = false,
       adminEyesOnly = false,
       notificationMethods = []
-    }: { 
+     }: { 
       recipientIds: string[];
       recipientNames: string[];
       recipientTypes: string[];
