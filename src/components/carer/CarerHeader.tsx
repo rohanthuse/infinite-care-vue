@@ -37,6 +37,21 @@ import { useCarerAuth } from "@/hooks/useCarerAuth";
 import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 
+// Icon mapping for carer navigation
+const iconMap = {
+  Home,
+  User,
+  Calendar,
+  CalendarDays,
+  FileText,
+  ClipboardList,
+  Newspaper,
+  FileBarChart,
+  Wallet,
+  GraduationCap,
+  Users,
+};
+
 export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMobileMenuToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -118,22 +133,24 @@ export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMo
       {/* Top Navigation Menu */}
       <div className="bg-white border-b border-gray-200 px-4 hidden md:block">
         <nav className="flex flex-wrap">
-          {menuItems.map((item) => (
-            <Link
-              key={item.name}
-              to={item.path}
-              className={cn(
-                "flex items-center px-4 py-3 text-sm font-medium border-b-2 transition-colors",
-                location.pathname === item.path || (item.path === "/carer-dashboard" && location.pathname === "/carer-dashboard")
-                  ? "border-blue-600 text-blue-700"
-                  : "border-transparent text-gray-700 hover:text-blue-600 hover:border-blue-200"
-              )}
-            >
-              {/* @ts-ignore */}
-              <item.icon className="h-4 w-4 mr-2" />
-              {item.name}
-            </Link>
-          ))}
+          {menuItems.map((item) => {
+            const IconComponent = iconMap[item.icon as keyof typeof iconMap];
+            return (
+              <Link
+                key={item.name}
+                to={item.path}
+                className={cn(
+                  "flex items-center px-4 py-3 text-sm font-medium border-b-2 transition-colors",
+                  location.pathname === item.path || (item.path === "/carer-dashboard" && location.pathname === "/carer-dashboard")
+                    ? "border-blue-600 text-blue-700"
+                    : "border-transparent text-gray-700 hover:text-blue-600 hover:border-blue-200"
+                )}
+              >
+                {IconComponent && <IconComponent className="h-4 w-4 mr-2" />}
+                {item.name}
+              </Link>
+            );
+          })}
         </nav>
       </div>
     </header>
