@@ -154,10 +154,10 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
           console.error("Error creating admin permissions:", permissionsError);
           toast.error("Admin created but permissions setup failed");
         } else {
-          toast.success(`Admin user created successfully with access to ${formData.branch_ids.length} branch${formData.branch_ids.length > 1 ? 'es' : ''}!`);
+          toast.success(`Branch admin created successfully! They can log in immediately with access to ${formData.branch_ids.length} branch${formData.branch_ids.length > 1 ? 'es' : ''}!`);
         }
       } else {
-        toast.success("Admin user created successfully!");
+        toast.success("Branch admin created successfully! They can log in immediately!");
       }
 
       // Reset form

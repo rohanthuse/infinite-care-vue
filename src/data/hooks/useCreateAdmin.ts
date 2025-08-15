@@ -93,6 +93,24 @@ export async function createAdmin(input: CreateAdminInput) {
 
     console.log('User existence verified, proceeding with role assignment');
 
+    // Auto-confirm the email for branch admins (no confirmation required)
+    try {
+      const { error: confirmError } = await supabase.auth.admin.updateUserById(
+        authData.user.id,
+        { email_confirm: true }
+      );
+      
+      if (confirmError) {
+        console.warn('Auto-confirmation warning:', confirmError);
+        // Don't throw here as the main functionality should still work
+      } else {
+        console.log('Email auto-confirmed for branch admin');
+      }
+    } catch (confirmError) {
+      console.warn('Auto-confirmation failed:', confirmError);
+      // Continue with role assignment even if auto-confirmation fails
+    }
+
     // Assign branch_admin role
     const { error: roleError } = await supabase
       .from("user_roles")

@@ -6353,6 +6353,10 @@ export type Database = {
         Args: { p_admin_id: string; p_new_password: string; p_staff_id: string }
         Returns: Json
       }
+      auto_confirm_branch_admins: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       calculate_invoice_total: {
         Args: { invoice_id: string }
         Returns: number
