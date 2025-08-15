@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/contexts/TenantContext';
 import { AddBranchDialog } from '@/components/AddBranchDialog';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface Branch {
   id: string;
@@ -31,28 +32,71 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
   const navigate = useNavigate();
   const { tenantSlug } = useTenant();
   const [searchQuery, setSearchQuery] = useState('');
+  const { data: userRole, isLoading: roleLoading, error: roleError } = useUserRole();
 
-  // Fetch branches for this organization
+  // Fetch branches for this organization with role-based filtering
   const { data: branches, isLoading, error } = useQuery({
-    queryKey: ['organization-branches', organizationId],
+    queryKey: ['organization-branches', organizationId, userRole?.role],
     queryFn: async () => {
-      console.log('Fetching branches for organization:', organizationId);
+      console.log('Fetching branches for organization:', organizationId, 'with role:', userRole?.role);
       
-      const { data, error } = await supabase
-        .from('branches')
-        .select('*')
-        .eq('organization_id', organizationId)
-        .ilike('status', 'active');
+      if (userRole?.role === 'super_admin') {
+        // Super admins can see all branches in the organization
+        const { data, error } = await supabase
+          .from('branches')
+          .select('*')
+          .eq('organization_id', organizationId)
+          .ilike('status', 'active');
 
-      if (error) {
-        console.error('Error fetching organization branches:', error);
-        throw error;
+        if (error) {
+          console.error('Error fetching organization branches:', error);
+          throw error;
+        }
+
+        console.log('Organization branches (super admin):', data);
+        return data || [];
+      } else if (userRole?.role === 'branch_admin') {
+        // Branch admins can only see their assigned branches
+        // First get the assigned branch IDs
+        const { data: adminBranches, error: adminError } = await supabase
+          .from('admin_branches')
+          .select('branch_id')
+          .eq('admin_id', userRole.id);
+
+        if (adminError) {
+          console.error('Error fetching admin branches:', adminError);
+          throw adminError;
+        }
+
+        if (!adminBranches || adminBranches.length === 0) {
+          console.log('No branches assigned to branch admin');
+          return [];
+        }
+
+        const branchIds = adminBranches.map(ab => ab.branch_id);
+
+        // Then get the actual branches
+        const { data, error } = await supabase
+          .from('branches')
+          .select('*')
+          .eq('organization_id', organizationId)
+          .ilike('status', 'active')
+          .in('id', branchIds);
+
+        if (error) {
+          console.error('Error fetching branch admin branches:', error);
+          throw error;
+        }
+
+        console.log('Branch admin branches:', data);
+        return data || [];
+      } else {
+        // Other roles have no branch access
+        console.log('User role has no branch access:', userRole?.role);
+        return [];
       }
-
-      console.log('Organization branches:', data);
-      return data || [];
     },
-    enabled: !!organizationId,
+    enabled: !!organizationId && !!userRole && !roleLoading,
   });
 
   const handleEnterBranch = (branch: Branch) => {
@@ -75,22 +119,37 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
     branch.branch_type.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
-  if (isLoading) {
+  if (roleLoading || isLoading) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <span className="ml-2 text-gray-600">Loading organization branches...</span>
+          <span className="ml-2 text-gray-600">
+            {roleLoading ? 'Loading user permissions...' : 'Loading organization branches...'}
+          </span>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error || roleError) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
         <div className="text-center py-8">
-          <p className="text-red-600">Error loading branches: {error.message}</p>
+          <p className="text-red-600">
+            Error loading {roleError ? 'user permissions' : 'branches'}: {(error || roleError)?.message}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle case where user has no branch access
+  if (userRole && !['super_admin', 'branch_admin'].includes(userRole.role)) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+        <div className="text-center py-8">
+          <p className="text-gray-600">You don't have permission to access branches.</p>
         </div>
       </div>
     );
@@ -135,7 +194,12 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
       {/* Branches Grid */}
       {filteredBranches.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          {searchQuery ? "No branches match your search." : "No active branches found for this organization."}
+          {searchQuery 
+            ? "No branches match your search." 
+            : userRole?.role === 'branch_admin' 
+              ? "No branches assigned to you." 
+              : "No active branches found for this organization."
+          }
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
