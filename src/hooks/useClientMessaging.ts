@@ -196,10 +196,13 @@ export const useClientMessageThreads = () => {
 
       if (!threads) return [];
 
-      // Filter threads where current user is a participant
-      const userThreads = threads.filter(thread => 
-        thread.message_participants?.some(p => p.user_id === currentUser.id)
-      );
+      // STRICT: Only threads where current user is a DIRECT participant
+      const userThreads = threads.filter(thread => {
+        if (!thread.message_participants || thread.message_participants.length === 0) {
+          return false;
+        }
+        return thread.message_participants.some(p => p.user_id === currentUser.id);
+      });
 
       const processedThreads = await Promise.all(
         userThreads.map(async (thread) => {

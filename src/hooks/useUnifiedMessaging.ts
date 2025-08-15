@@ -225,7 +225,7 @@ export const useUnifiedMessageThreads = () => {
               user_type,
               user_name
             ),
-            messages!inner (
+            messages (
               id
             )
           `)
@@ -244,45 +244,27 @@ export const useUnifiedMessageThreads = () => {
 
         console.log('[useUnifiedMessageThreads] Raw threads:', threads.length);
 
-        // Simplified filtering - more permissive approach
+        // STRICT PARTICIPANT-ONLY ACCESS - NO CROSS-ORGANIZATION LEAKAGE
         const userThreads = threads.filter(thread => {
           if (!thread.message_participants || thread.message_participants.length === 0) {
             console.log(`[useUnifiedMessageThreads] Thread ${thread.id} has no participants, skipping`);
             return false;
           }
           
-          // Check if current user is a direct participant
+          // ONLY show threads where current user is a DIRECT participant - NO exceptions
           const isDirectParticipant = thread.message_participants.some(p => 
             p.user_id === currentUser.id
           );
           
           if (isDirectParticipant) {
-            console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - direct participant match`);
+            console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - direct participant access granted`);
             return true;
           }
           
-          // For super admins, show threads only within current organization (already filtered by query)
-          if (currentUser.role === 'super_admin') {
-            console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - super admin access within organization`);
-            return true;
-          }
-          
-          // For branch admins and carers, show threads in their branch context
-          if (currentUser.role === 'branch_admin' || currentUser.role === 'carer') {
-            const hasRelevantParticipants = thread.message_participants.some(p => 
-              p.user_type === 'client' || p.user_type === 'carer' || p.user_type === 'branch_admin'
-            );
-            
-            if (hasRelevantParticipants) {
-              console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - staff access granted`);
-              return true;
-            }
-          }
-          
-          console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - no access`, {
+          console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - access denied - not a participant`, {
             currentUserId: currentUser.id,
             currentUserRole: currentUser.role,
-            participantCount: thread.message_participants.length
+            participantIds: thread.message_participants.map(p => p.user_id)
           });
           
           return false;

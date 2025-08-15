@@ -44,6 +44,19 @@ export const useMessageThreads = (branchId: string) => {
         return [];
       }
 
+      // First get threads where user is a participant, then filter by branch and organization
+      const { data: userParticipations } = await supabase
+        .from('message_participants')
+        .select('thread_id')
+        .eq('user_id', currentUser.id);
+
+      if (!userParticipations || userParticipations.length === 0) {
+        console.log('No thread participations found for user');
+        return [];
+      }
+
+      const threadIds = userParticipations.map(p => p.thread_id);
+
       const { data: threads, error } = await supabase
         .from('message_threads')
         .select(`
@@ -57,8 +70,12 @@ export const useMessageThreads = (branchId: string) => {
             user_id,
             user_type,
             user_name
+          ),
+          messages (
+            id
           )
         `)
+        .in('id', threadIds)
         .eq('branch_id', branchId)
         .eq('organization_id', organization.id)
         .order('last_message_at', { ascending: false });
@@ -75,8 +92,13 @@ export const useMessageThreads = (branchId: string) => {
         return [];
       }
 
-      const threadsWithMessages = await Promise.all(
-        threads.map(async (thread) => {
+      // Filter out threads with no actual messages (empty conversations)
+      const threadsWithMessages = threads.filter(thread => 
+        thread.messages && thread.messages.length > 0
+      );
+
+      const processedThreads = await Promise.all(
+        threadsWithMessages.map(async (thread) => {
           // Get latest message
           const { data: latestMessage } = await supabase
             .from('messages')
@@ -144,8 +166,8 @@ export const useMessageThreads = (branchId: string) => {
         })
       );
 
-      console.log('Processed threads with messages:', threadsWithMessages.length);
-      return threadsWithMessages;
+      console.log('Processed threads with messages:', processedThreads.length);
+      return processedThreads;
     },
     enabled: !!currentUser && !userLoading && !!branchId && !!organization,
     retry: 1,
