@@ -47,39 +47,16 @@ export const useSystemUsers = () => {
         throw error;
       }
 
-      // Fetch user-organization associations
-      const userIds = (data || []).map((user: any) => user.id);
-      let organizationAssociations = [];
-
-      if (userIds.length > 0) {
-        const { data: orgData, error: orgError } = await supabase
-          .from('system_user_organizations')
-          .select(`
-            system_user_id,
-            organizations:organization_id (
-              id,
-              name,
-              slug
-            )
-          `)
-          .in('system_user_id', userIds);
-
-        if (!orgError) {
-          organizationAssociations = orgData || [];
-        }
-      }
-
-      // data is a table-returning RPC (array of rows)
+      // The RPC now returns organizations directly as JSONB
       return (data || []).map((user: any) => {
-        const userOrgs = organizationAssociations
-          .filter((assoc: any) => assoc.system_user_id === user.id)
-          .map((assoc: any) => assoc.organizations)
-          .filter(Boolean);
+        // Parse organizations from JSONB if present
+        const organizations = user.organizations ? 
+          (Array.isArray(user.organizations) ? user.organizations : []) : [];
 
         return {
           ...user,
           role: user.role || 'support_admin',
-          organizations: userOrgs,
+          organizations,
         };
       }) as SystemUser[];
     },

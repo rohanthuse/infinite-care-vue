@@ -6748,7 +6748,22 @@ export type Database = {
           is_active: boolean
           last_login_at: string
           last_name: string
-          role: Database["public"]["Enums"]["system_role"]
+          organizations: Json
+          role: string
+        }[]
+      }
+      list_system_users_with_session_and_orgs: {
+        Args: { p_session_token: string }
+        Returns: {
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          is_active: boolean
+          last_login_at: string
+          last_name: string
+          organizations: Json
+          role: string
         }[]
       }
       reset_system_user_password_with_session: {
