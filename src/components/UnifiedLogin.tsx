@@ -65,7 +65,6 @@ const UnifiedLogin = () => {
         .from('clients')
         .select('id, branch_id')
         .eq('auth_user_id', userId)
-        .eq('status', 'active')
         .single();
 
       if (clientMember?.branch_id) {
