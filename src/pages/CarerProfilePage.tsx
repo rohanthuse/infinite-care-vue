@@ -13,16 +13,21 @@ import { useCarerPerformance } from "@/hooks/useCarerPerformance";
 import { CarerScheduleTab } from "@/components/carer-profile/CarerScheduleTab";
 import { CarerPerformanceTab } from "@/components/carer-profile/CarerPerformanceTab";
 import { CarerProfileSharingDialog } from "@/components/carers/CarerProfileSharingDialog";
+import { ErrorBoundary } from "@/components/care/ErrorBoundary";
 
 const CarerProfilePage: React.FC = () => {
   const { id: branchId, branchName, carerId } = useParams();
   const navigate = useNavigate();
   const [showSharingDialog, setShowSharingDialog] = useState(false);
   
+  console.log('[CarerProfilePage] Rendering with carerId:', carerId);
+  
   const { data: carer, isLoading, error } = useCarerProfile(carerId);
   const { data: bookings = [], isLoading: bookingsLoading } = useCarerBookings(carerId || '');
   const { data: documents = [], isLoading: documentsLoading } = useCarerDocuments(carerId || '');
   const { data: performanceData, isLoading: performanceLoading } = useCarerPerformance(carerId || '');
+  
+  console.log('[CarerProfilePage] Carer data:', { carer, isLoading, error, carerId });
 
   const handleGoBack = () => {
     navigate(`/branch-dashboard/${branchId}/${branchName}/carers`);
@@ -315,7 +320,9 @@ const CarerProfilePage: React.FC = () => {
               </TabsContent>
               
               <TabsContent value="schedule" className="mt-6">
-                <CarerScheduleTab carerId={carerId || ''} />
+                <ErrorBoundary>
+                  <CarerScheduleTab carerId={carerId || ''} />
+                </ErrorBoundary>
               </TabsContent>
               
               <TabsContent value="assignments" className="mt-6">
@@ -434,7 +441,9 @@ const CarerProfilePage: React.FC = () => {
               </TabsContent>
 
               <TabsContent value="performance" className="mt-6">
-                <CarerPerformanceTab carerId={carerId || ''} />
+                <ErrorBoundary>
+                  <CarerPerformanceTab carerId={carerId || ''} />
+                </ErrorBoundary>
               </TabsContent>
 
               <TabsContent value="bookings" className="mt-6">
