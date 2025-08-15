@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole, canCommunicateWith, type UserRole } from './useUserRole';
+import { useTenant } from '@/contexts/TenantContext';
 
 export interface Contact {
   id: string;
@@ -15,21 +16,22 @@ export interface Contact {
 
 export const useContacts = (branchId: string, contactType: string = 'all') => {
   const { data: currentUser } = useUserRole();
+  const { organization } = useTenant();
 
   return useQuery({
-    queryKey: ['contacts', branchId, contactType, currentUser?.role],
+    queryKey: ['contacts', branchId, contactType, currentUser?.role, organization?.id],
     queryFn: async () => {
-      if (!currentUser) {
-        console.log('No current user found for contacts');
+      if (!currentUser || !organization) {
+        console.log('No current user or organization found for contacts');
         return [];
       }
 
-      console.log('Fetching contacts for user:', currentUser.id, 'role:', currentUser.role, 'contactType:', contactType);
+      console.log('Fetching contacts for user:', currentUser.id, 'role:', currentUser.role, 'contactType:', contactType, 'org:', organization.id);
       
       // Use Map to deduplicate contacts by user ID
       const contactsMap = new Map<string, Contact>();
 
-      // Get staff (carers and admins)
+      // Get staff (carers and admins) - filter by organization first
       if (contactType === 'all' || contactType === 'carers' || contactType === 'admins') {
         const { data: staff, error: staffError } = await supabase
           .from('staff')
@@ -37,10 +39,16 @@ export const useContacts = (branchId: string, contactType: string = 'all') => {
             id,
             first_name,
             last_name,
-            status
+            status,
+            branch_id,
+            branches!inner (
+              id,
+              organization_id
+            )
           `)
           .eq('branch_id', branchId)
-          .eq('status', 'Active');
+          .eq('status', 'Active')
+          .eq('branches.organization_id', organization.id);
 
         if (staffError) {
           console.error('Error fetching staff:', staffError);
@@ -104,7 +112,7 @@ export const useContacts = (branchId: string, contactType: string = 'all') => {
         }
       }
 
-      // Get clients (only if user can communicate with clients)
+      // Get clients (only if user can communicate with clients) - filter by organization
       if ((contactType === 'all' || contactType === 'clients') && 
           (currentUser.role === 'super_admin' || currentUser.role === 'branch_admin')) {
         const { data: clients, error: clientsError } = await supabase
@@ -113,9 +121,15 @@ export const useContacts = (branchId: string, contactType: string = 'all') => {
             id,
             first_name,
             last_name,
-            status
+            status,
+            branch_id,
+            branches!inner (
+              id,
+              organization_id
+            )
           `)
-          .eq('branch_id', branchId);
+          .eq('branch_id', branchId)
+          .eq('branches.organization_id', organization.id);
 
         if (clientsError) {
           console.error('Error fetching clients:', clientsError);
@@ -145,6 +159,6 @@ export const useContacts = (branchId: string, contactType: string = 'all') => {
       console.log('Final contacts list:', contacts.length, 'contacts (deduplicated)');
       return contacts;
     },
-    enabled: !!currentUser,
+    enabled: !!currentUser && !!organization,
   });
 };

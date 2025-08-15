@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole, type UserRole } from './useUserRole';
+import { useTenant } from '@/contexts/TenantContext';
 
 export interface Message {
   id: string;
@@ -31,14 +32,15 @@ export interface MessageThread {
 
 export const useMessageThreads = (branchId: string) => {
   const { data: currentUser, isLoading: userLoading } = useUserRole();
+  const { organization } = useTenant();
 
   return useQuery({
-    queryKey: ['messageThreads', branchId, currentUser?.id],
+    queryKey: ['messageThreads', branchId, currentUser?.id, organization?.id],
     queryFn: async () => {
-      console.log('Fetching message threads for user:', currentUser?.id, 'branch:', branchId);
+      console.log('Fetching message threads for user:', currentUser?.id, 'branch:', branchId, 'org:', organization?.id);
       
-      if (!currentUser) {
-        console.log('No current user, returning empty array');
+      if (!currentUser || !organization) {
+        console.log('No current user or organization, returning empty array');
         return [];
       }
 
@@ -50,6 +52,7 @@ export const useMessageThreads = (branchId: string) => {
           created_at,
           updated_at,
           last_message_at,
+          organization_id,
           message_participants (
             user_id,
             user_type,
@@ -57,6 +60,7 @@ export const useMessageThreads = (branchId: string) => {
           )
         `)
         .eq('branch_id', branchId)
+        .eq('organization_id', organization.id)
         .order('last_message_at', { ascending: false });
 
       if (error) {
@@ -143,7 +147,7 @@ export const useMessageThreads = (branchId: string) => {
       console.log('Processed threads with messages:', threadsWithMessages.length);
       return threadsWithMessages;
     },
-    enabled: !!currentUser && !userLoading && !!branchId,
+    enabled: !!currentUser && !userLoading && !!branchId && !!organization,
     retry: 1,
     staleTime: 30000, // 30 seconds
   });
@@ -258,6 +262,7 @@ export const useSendMessage = () => {
 export const useCreateThread = () => {
   const queryClient = useQueryClient();
   const { data: currentUser } = useUserRole();
+  const { organization } = useTenant();
 
   return useMutation({
     mutationFn: async ({ 
@@ -271,7 +276,7 @@ export const useCreateThread = () => {
       participants: Array<{ id: string; name: string; type: UserRole }>; 
       initialMessage: string 
     }) => {
-      if (!currentUser) throw new Error('Not authenticated');
+      if (!currentUser || !organization) throw new Error('Not authenticated or no organization');
 
       // Create thread
       const { data: thread, error: threadError } = await supabase
@@ -279,6 +284,7 @@ export const useCreateThread = () => {
         .insert({
           subject,
           branch_id: branchId,
+          organization_id: organization.id,
           created_by: currentUser.id
         })
         .select()

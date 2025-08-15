@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from './useUserRole';
 import { toast } from 'sonner';
+import { useTenant } from '@/contexts/TenantContext';
 
 export interface ClientContact {
   id: string;
@@ -61,12 +62,13 @@ const parseAttachments = (attachments: any): any[] => {
 // Get client's care administrators (only admins assigned to their branch)
 export const useClientCareTeam = () => {
   const { data: currentUser } = useUserRole();
+  const { organization } = useTenant();
   
   return useQuery({
-    queryKey: ['client-care-team', currentUser?.id],
+    queryKey: ['client-care-team', currentUser?.id, organization?.id],
     queryFn: async (): Promise<ClientContact[]> => {
-      if (!currentUser) {
-        console.log('[useClientCareTeam] No current user');
+      if (!currentUser || !organization) {
+        console.log('[useClientCareTeam] No current user or organization');
         return [];
       }
 
@@ -79,11 +81,22 @@ export const useClientCareTeam = () => {
 
       console.log('[useClientCareTeam] Looking up client with email:', user.email);
 
-      // Get client record to find branch using authenticated user's email
+      // Get client record to find branch using authenticated user's email - filter by organization
       const { data: client, error: clientError } = await supabase
         .from('clients')
-        .select('id, branch_id, first_name, last_name, email')
+        .select(`
+          id, 
+          branch_id, 
+          first_name, 
+          last_name, 
+          email,
+          branches!inner (
+            id,
+            organization_id
+          )
+        `)
         .eq('email', user.email)
+        .eq('branches.organization_id', organization.id)
         .single();
 
       if (clientError || !client?.branch_id) {
@@ -143,7 +156,7 @@ export const useClientCareTeam = () => {
       console.log('[useClientCareTeam] Found contacts:', contacts);
       return contacts;
     },
-    enabled: !!currentUser,
+    enabled: !!currentUser && !!organization,
     staleTime: 300000, // 5 minutes
   });
 };
@@ -151,11 +164,12 @@ export const useClientCareTeam = () => {
 // Get client's message threads - now integrated with unified messaging system
 export const useClientMessageThreads = () => {
   const { data: currentUser } = useUserRole();
+  const { organization } = useTenant();
   
   return useQuery({
-    queryKey: ['client-message-threads', currentUser?.id],
+    queryKey: ['client-message-threads', currentUser?.id, organization?.id],
     queryFn: async (): Promise<ClientMessageThread[]> => {
-      if (!currentUser) return [];
+      if (!currentUser || !organization) return [];
 
       const { data: threads, error } = await supabase
         .from('message_threads')
@@ -165,12 +179,14 @@ export const useClientMessageThreads = () => {
           created_at,
           updated_at,
           last_message_at,
+          organization_id,
           message_participants (
             user_id,
             user_type,
             user_name
           )
         `)
+        .eq('organization_id', organization.id)
         .order('last_message_at', { ascending: false });
 
       if (error) {
@@ -253,7 +269,7 @@ export const useClientMessageThreads = () => {
 
       return processedThreads;
     },
-    enabled: !!currentUser,
+    enabled: !!currentUser && !!organization,
     refetchInterval: 30000, // Refetch every 30 seconds for real-time feel
   });
 };
@@ -390,6 +406,7 @@ export const useClientSendMessage = () => {
 export const useClientCreateThread = () => {
   const queryClient = useQueryClient();
   const { data: currentUser } = useUserRole();
+  const { organization } = useTenant();
 
   return useMutation({
     mutationFn: async ({ 
@@ -418,11 +435,26 @@ export const useClientCreateThread = () => {
 
       console.log('[useClientCreateThread] Authenticated user:', user.id, user.email);
 
-      // Get client information using the authenticated user's email
+      if (!organization) {
+        throw new Error('No organization context available');
+      }
+
+      // Get client information using the authenticated user's email - filter by organization
       const { data: client, error: clientError } = await supabase
         .from('clients')
-        .select('id, branch_id, first_name, last_name, email')
+        .select(`
+          id, 
+          branch_id, 
+          first_name, 
+          last_name, 
+          email,
+          branches!inner (
+            id,
+            organization_id
+          )
+        `)
         .eq('email', user.email)
+        .eq('branches.organization_id', organization.id)
         .single();
 
       if (clientError || !client) {
@@ -434,10 +466,11 @@ export const useClientCreateThread = () => {
 
       const clientName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.email?.split('@')[0] || 'Client';
 
-      // Create thread with the client's branch
+      // Create thread with the client's branch and organization
       const threadData = {
         subject,
         branch_id: client.branch_id,
+        organization_id: organization.id,
         created_by: user.id
       };
 
