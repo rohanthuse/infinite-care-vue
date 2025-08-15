@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from './useUserRole';
+import { useTenant } from '@/contexts/TenantContext';
 import { toast } from 'sonner';
 import { useUnifiedMessageThreads, useUnifiedThreadMessages, useUnifiedSendMessage, useUnifiedCreateThread } from './useUnifiedMessaging';
 
@@ -53,14 +54,15 @@ export interface AdminMessageThread {
 // Get contacts available for admin messaging (clients and carers in their branches)
 export const useAdminContacts = () => {
   const { data: currentUser } = useUserRole();
+  const { organization } = useTenant();
   
   return useQuery({
-    queryKey: ['admin-contacts', currentUser?.id],
+    queryKey: ['admin-contacts', currentUser?.id, organization?.id],
     queryFn: async (): Promise<AdminContact[]> => {
-      console.log('[useAdminContacts] Current user:', currentUser);
+      console.log('[useAdminContacts] Current user:', currentUser, 'Organization:', organization?.id);
       
-      if (!currentUser) {
-        console.log('[useAdminContacts] No current user found');
+      if (!currentUser || !organization) {
+        console.log('[useAdminContacts] No current user or organization found');
         return [];
       }
 
@@ -68,38 +70,50 @@ export const useAdminContacts = () => {
 
       try {
 
-      // Get branch access for admin
+      // Get branch access for admin - FILTER BY ORGANIZATION
       let branchIds: string[] = [];
       
       if (currentUser.role === 'super_admin') {
-        // Super admin can see all branches
+        // Super admin can see branches ONLY within their current organization
         const { data: branches, error: branchError } = await supabase
           .from('branches')
-          .select('id, name');
+          .select('id, name')
+          .eq('organization_id', organization.id);
         
         if (branchError) {
           console.error('[useAdminContacts] Error fetching branches:', branchError);
           return [];
         }
         branchIds = branches?.map(b => b.id) || [];
+        console.log('[useAdminContacts] Super admin branches for organization:', branchIds);
       } else if (currentUser.role === 'branch_admin') {
-        // Regular admin - get their assigned branches
+        // Regular admin - get their assigned branches WITHIN current organization
         const { data: adminBranches, error: adminBranchError } = await supabase
           .from('admin_branches')
-          .select('branch_id')
-          .eq('admin_id', currentUser.id);
+          .select(`
+            branch_id,
+            branches!inner (
+              id,
+              organization_id
+            )
+          `)
+          .eq('admin_id', currentUser.id)
+          .eq('branches.organization_id', organization.id);
         
         if (adminBranchError) {
           console.error('[useAdminContacts] Error fetching admin branches:', adminBranchError);
           return [];
         }
         branchIds = adminBranches?.map(ab => ab.branch_id) || [];
+        console.log('[useAdminContacts] Branch admin branches for organization:', branchIds);
       } else {
-        // For other user types, try to get all branches as fallback
+        // For other user types, get branches within current organization only
         const { data: branches } = await supabase
           .from('branches')
-          .select('id, name');
+          .select('id, name')
+          .eq('organization_id', organization.id);
         branchIds = branches?.map(b => b.id) || [];
+        console.log('[useAdminContacts] Other user type branches for organization:', branchIds);
       }
 
       console.log('[useAdminContacts] Branch IDs found:', branchIds);
@@ -108,7 +122,7 @@ export const useAdminContacts = () => {
         return [];
       }
 
-      // Get clients for these branches and map to auth user IDs
+      // Get clients for these branches - with organization filter
       const { data: clients, error: clientError } = await supabase
         .from('clients')
         .select(`
@@ -117,9 +131,14 @@ export const useAdminContacts = () => {
           last_name, 
           email,
           branch_id,
-          status
+          status,
+          branches!inner (
+            id,
+            organization_id
+          )
         `)
         .in('branch_id', branchIds)
+        .eq('branches.organization_id', organization.id)
         .or('status.is.null,status.not.in.("Former","Closed Enquiries","Inactive")');
 
       if (clientError) {
@@ -162,7 +181,7 @@ export const useAdminContacts = () => {
         }
       }
 
-      // Get carers for these branches - simplified query with error handling
+      // Get carers for these branches - with organization filter
       const { data: carers, error: carerError } = await supabase
         .from('staff')
         .select(`
@@ -171,9 +190,14 @@ export const useAdminContacts = () => {
           last_name, 
           email,
           branch_id,
-          status
+          status,
+          branches!inner (
+            id,
+            organization_id
+          )
         `)
         .in('branch_id', branchIds)
+        .eq('branches.organization_id', organization.id)
         .or('status.is.null,status.ilike.active');
 
       if (carerError) {
@@ -204,9 +228,23 @@ export const useAdminContacts = () => {
         });
       }
 
-      // Get admin users for messaging - super admin can message all admins
+      // Get admin users for messaging - WITHIN CURRENT ORGANIZATION ONLY
       if (currentUser.role === 'super_admin') {
-        // Get all admin and super_admin users except self
+        // Get admin users who have access to branches in current organization only
+        const { data: orgAdminBranches } = await supabase
+          .from('admin_branches')
+          .select(`
+            admin_id,
+            branches!inner (
+              id,
+              organization_id
+            )
+          `)
+          .eq('branches.organization_id', organization.id)
+          .neq('admin_id', currentUser.id);
+
+        const orgAdminIds = [...new Set(orgAdminBranches?.map(ab => ab.admin_id) || [])];
+        
         const { data: allAdmins } = await supabase
           .from('user_roles')
           .select(`
@@ -214,7 +252,7 @@ export const useAdminContacts = () => {
             role
           `)
           .in('role', ['super_admin', 'branch_admin'])
-          .neq('user_id', currentUser.id);
+          .in('user_id', orgAdminIds);
 
         console.log('[useAdminContacts] Admin roles found for super admin:', allAdmins?.length || 0);
         
@@ -250,13 +288,27 @@ export const useAdminContacts = () => {
           }
         }
       } else if (currentUser.role === 'branch_admin') {
-        // Branch admin can message super admins and other branch admins with shared branches
+        // Branch admin can message super admins and other branch admins WITHIN SAME ORGANIZATION
         
-        // Get all super admins
+        // Get super admins who have access to current organization
+        const { data: orgSuperAdminBranches } = await supabase
+          .from('admin_branches')
+          .select(`
+            admin_id,
+            branches!inner (
+              id,
+              organization_id
+            )
+          `)
+          .eq('branches.organization_id', organization.id);
+
+        const orgSuperAdminIds = [...new Set(orgSuperAdminBranches?.map(ab => ab.admin_id) || [])];
+        
         const { data: superAdminRoles } = await supabase
           .from('user_roles')
           .select('user_id')
-          .eq('role', 'super_admin');
+          .eq('role', 'super_admin')
+          .in('user_id', orgSuperAdminIds);
 
         if (superAdminRoles && superAdminRoles.length > 0) {
           const superAdminIds = superAdminRoles.map(r => r.user_id);
@@ -289,11 +341,18 @@ export const useAdminContacts = () => {
            }
         }
 
-        // Get other branch admins who share at least one branch
+        // Get other branch admins within same organization
         const { data: sharedBranchAdmins } = await supabase
           .from('admin_branches')
-          .select('admin_id')
+          .select(`
+            admin_id,
+            branches!inner (
+              id,
+              organization_id
+            )
+          `)
           .in('branch_id', branchIds)
+          .eq('branches.organization_id', organization.id)
           .neq('admin_id', currentUser.id);
 
         if (sharedBranchAdmins && sharedBranchAdmins.length > 0) {
@@ -337,7 +396,7 @@ export const useAdminContacts = () => {
         throw new Error(`Failed to load contacts: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     },
-    enabled: !!currentUser,
+    enabled: !!currentUser && !!organization,
     staleTime: 300000, // 5 minutes
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
