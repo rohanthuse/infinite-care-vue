@@ -19,9 +19,7 @@ export const useSimpleClientAuth = () => {
         throw new Error('Client not found');
       }
 
-      if (clientData.status?.toLowerCase() !== 'active') {
-        throw new Error('Client account is not active');
-      }
+      // Allow clients to login regardless of status - status filtering removed
 
       return {
         user,

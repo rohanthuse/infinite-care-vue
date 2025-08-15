@@ -141,18 +141,38 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
         const isSuperAdmin = (roleRows || []).some(r => r.role === 'super_admin');
 
         if (!isSuperAdmin) {
-          // Require active membership for non-super admins
-          const { error: memberError } = await supabase
-            .from('organization_members')
-            .select('id')
-            .eq('organization_id', orgData.id)
-            .eq('user_id', user.id)
-            .eq('status', 'active')
-            .single();
+          // Check if user is a client - clients are linked through branches, not organization_members
+          const isClient = (roleRows || []).some(r => r.role === 'client');
+          
+          if (isClient) {
+            // For clients, verify access through their branch-organization relationship
+            const { error: clientAccessError } = await supabase
+              .from('clients')
+              .select('branch_id, branches!inner(organization_id)')
+              .eq('auth_user_id', user.id)
+              .eq('branches.organization_id', orgData.id)
+              .single();
 
-          if (memberError) {
-            console.error('User is not a member of this organization:', memberError);
-            throw new Error('Access denied: You are not a member of this organization');
+            if (clientAccessError) {
+              console.error('Client does not belong to this organization:', clientAccessError);
+              throw new Error('Access denied: You are not authorized to access this organization');
+            }
+            
+            console.log('[TenantProvider] Client access verified through branch relationship');
+          } else {
+            // For non-client users, check organization_members table
+            const { error: memberError } = await supabase
+              .from('organization_members')
+              .select('id')
+              .eq('organization_id', orgData.id)
+              .eq('user_id', user.id)
+              .eq('status', 'active')
+              .single();
+
+            if (memberError) {
+              console.error('User is not a member of this organization:', memberError);
+              throw new Error('Access denied: You are not a member of this organization');
+            }
           }
         } else {
           console.log('[TenantProvider] Super admin detected; bypassing org membership check.');
