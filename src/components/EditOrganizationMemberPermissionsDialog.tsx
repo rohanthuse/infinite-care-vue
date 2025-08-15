@@ -214,8 +214,42 @@ export function EditOrganizationMemberPermissionsDialog({
                       {renderPermissionSwitch('notifications', 'Notifications')}
                       {renderPermissionSwitch('library', 'Library')}
                       {renderPermissionSwitch('third_party', 'Third Party')}
-                      {renderPermissionSwitch('reports', 'Reports')}
                       {renderPermissionSwitch('system', 'System')}
+                    </div>
+                  </div>
+
+                  {/* Accounting Features */}
+                  <div className="space-y-4 border rounded-lg p-4 bg-gradient-to-br from-purple-50 to-purple-100/30">
+                    <h3 className="font-semibold text-gray-800 flex items-center text-base">
+                      Accounting & Finance
+                    </h3>
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
+                      {renderPermissionSwitch('accounting_extra_time', 'Extra Time Management')}
+                      {renderPermissionSwitch('accounting_expense', 'Expense Management')}
+                      {renderPermissionSwitch('accounting_travel', 'Travel Management')}
+                      {renderPermissionSwitch('accounting_invoices', 'Invoice Management')}
+                      {renderPermissionSwitch('accounting_gross_payslip', 'Gross Payslip')}
+                      {renderPermissionSwitch('accounting_travel_management', 'Travel Records')}
+                      {renderPermissionSwitch('accounting_client_rate', 'Client Rates')}
+                      {renderPermissionSwitch('accounting_authority_rate', 'Authority Rates')}
+                      {renderPermissionSwitch('accounting_staff_rate', 'Staff Rates')}
+                      {renderPermissionSwitch('accounting_rate_management', 'Rate Management')}
+                      {renderPermissionSwitch('accounting_staff_bank_detail', 'Staff Bank Details')}
+                    </div>
+                  </div>
+
+                  {/* Reports Features */}
+                  <div className="space-y-4 border rounded-lg p-4 bg-gradient-to-br from-orange-50 to-orange-100/30">
+                    <h3 className="font-semibold text-gray-800 flex items-center text-base">
+                      Reports & Analytics
+                    </h3>
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
+                      {renderPermissionSwitch('reports', 'General Reports')}
+                      {renderPermissionSwitch('report_accounting', 'Accounting Reports')}
+                      {renderPermissionSwitch('report_total_working_hours', 'Working Hours Reports')}
+                      {renderPermissionSwitch('report_staff', 'Staff Reports')}
+                      {renderPermissionSwitch('report_client', 'Client Reports')}
+                      {renderPermissionSwitch('report_service', 'Service Reports')}
                     </div>
                   </div>
                 </>

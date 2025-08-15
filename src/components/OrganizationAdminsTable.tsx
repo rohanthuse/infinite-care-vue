@@ -37,7 +37,7 @@ interface OrganizationMember {
   last_name?: string;
   role: string;
   status: string;
-  joined_at: string;
+  join_date: string;
   permissions?: any;
 }
 
@@ -54,6 +54,8 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
     name: string;
     email: string;
     role: string;
+    first_name?: string;
+    last_name?: string;
   } | null>(null);
   const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
 
@@ -254,7 +256,9 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
                               ? `${member.first_name} ${member.last_name}` 
                               : 'N/A',
                             email: member.email,
-                            role: member.role
+                            role: member.role,
+                            first_name: member.first_name,
+                            last_name: member.last_name
                           });
                           setIsPermissionsDialogOpen(true);
                         }}
@@ -304,10 +308,12 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
             setSelectedMember(null);
             refetch(); // Refetch data when dialog closes
           }}
-          memberId={selectedMember.id}
-          memberName={selectedMember.name}
-          memberEmail={selectedMember.email}
-          memberRole={selectedMember.role}
+                      memberId={selectedMember.id}
+                      memberName={selectedMember.first_name && selectedMember.last_name
+                        ? `${selectedMember.first_name} ${selectedMember.last_name}`
+                        : selectedMember.email}
+                      memberEmail={selectedMember.email}
+                      memberRole={selectedMember.role}
         />
       )}
     </div>

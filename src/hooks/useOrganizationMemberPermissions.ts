@@ -35,6 +35,24 @@ export interface OrganizationMemberPermissions {
   
   // Reports permissions
   reports?: boolean;
+  report_accounting?: boolean;
+  report_total_working_hours?: boolean;
+  report_staff?: boolean;
+  report_client?: boolean;
+  report_service?: boolean;
+  
+  // Accounting permissions
+  accounting_extra_time?: boolean;
+  accounting_expense?: boolean;
+  accounting_travel?: boolean;
+  accounting_invoices?: boolean;
+  accounting_gross_payslip?: boolean;
+  accounting_travel_management?: boolean;
+  accounting_client_rate?: boolean;
+  accounting_authority_rate?: boolean;
+  accounting_staff_rate?: boolean;
+  accounting_rate_management?: boolean;
+  accounting_staff_bank_detail?: boolean;
   
   // System permissions
   system?: boolean;
@@ -62,6 +80,22 @@ export const defaultOrganizationMemberPermissions: OrganizationMemberPermissions
   library: false,
   third_party: false,
   reports: false,
+  report_accounting: false,
+  report_total_working_hours: false,
+  report_staff: false,
+  report_client: false,
+  report_service: false,
+  accounting_extra_time: false,
+  accounting_expense: false,
+  accounting_travel: false,
+  accounting_invoices: false,
+  accounting_gross_payslip: false,
+  accounting_travel_management: false,
+  accounting_client_rate: false,
+  accounting_authority_rate: false,
+  accounting_staff_rate: false,
+  accounting_rate_management: false,
+  accounting_staff_bank_detail: false,
   system: false,
 };
 
@@ -87,6 +121,22 @@ export const adminOrganizationMemberPermissions: OrganizationMemberPermissions =
   library: true,
   third_party: true,
   reports: true,
+  report_accounting: true,
+  report_total_working_hours: true,
+  report_staff: true,
+  report_client: true,
+  report_service: true,
+  accounting_extra_time: true,
+  accounting_expense: true,
+  accounting_travel: true,
+  accounting_invoices: true,
+  accounting_gross_payslip: true,
+  accounting_travel_management: true,
+  accounting_client_rate: true,
+  accounting_authority_rate: true,
+  accounting_staff_rate: true,
+  accounting_rate_management: true,
+  accounting_staff_bank_detail: true,
   system: false,
 };
 
@@ -112,6 +162,22 @@ export const managerOrganizationMemberPermissions: OrganizationMemberPermissions
   library: true,
   third_party: false,
   reports: true,
+  report_accounting: false,
+  report_total_working_hours: true,
+  report_staff: true,
+  report_client: true,
+  report_service: true,
+  accounting_extra_time: false,
+  accounting_expense: false,
+  accounting_travel: false,
+  accounting_invoices: false,
+  accounting_gross_payslip: false,
+  accounting_travel_management: false,
+  accounting_client_rate: false,
+  accounting_authority_rate: false,
+  accounting_staff_rate: false,
+  accounting_rate_management: false,
+  accounting_staff_bank_detail: false,
   system: false,
 };
 
