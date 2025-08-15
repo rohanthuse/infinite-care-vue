@@ -18,20 +18,79 @@ const UnifiedLogin = () => {
 
   const detectUserOrganization = async (userId: string) => {
     try {
-      // Check organization membership
-      const { data: membership, error } = await supabase
+      // First check organization_members (for admins)
+      const { data: membership } = await supabase
         .from('organization_members')
         .select('organization_id, organizations(slug)')
         .eq('user_id', userId)
         .eq('status', 'active')
         .single();
 
-      if (error || !membership) {
-        console.error('No organization membership found:', error);
-        return null;
+      if (membership?.organizations?.slug) {
+        console.log('Found organization membership:', membership.organizations.slug);
+        return membership.organizations.slug;
       }
 
-      return membership.organizations?.slug;
+      // Then check staff table (for carers) - use separate queries to avoid join issues
+      const { data: staffMember } = await supabase
+        .from('staff')
+        .select('id, branch_id')
+        .eq('id', userId)
+        .eq('status', 'active')
+        .single();
+
+      if (staffMember?.branch_id) {
+        const { data: staffBranch } = await supabase
+          .from('branches')
+          .select('organization_id')
+          .eq('id', staffMember.branch_id)
+          .single();
+
+        if (staffBranch?.organization_id) {
+          const { data: staffOrg } = await supabase
+            .from('organizations')
+            .select('slug')
+            .eq('id', staffBranch.organization_id)
+            .single();
+
+          if (staffOrg?.slug) {
+            console.log('Found staff organization:', staffOrg.slug);
+            return staffOrg.slug;
+          }
+        }
+      }
+
+      // Finally check clients table (for clients)
+      const { data: clientMember } = await supabase
+        .from('clients')
+        .select('id, branch_id')
+        .eq('auth_user_id', userId)
+        .eq('status', 'active')
+        .single();
+
+      if (clientMember?.branch_id) {
+        const { data: clientBranch } = await supabase
+          .from('branches')
+          .select('organization_id')
+          .eq('id', clientMember.branch_id)
+          .single();
+
+        if (clientBranch?.organization_id) {
+          const { data: clientOrg } = await supabase
+            .from('organizations')
+            .select('slug')
+            .eq('id', clientBranch.organization_id)
+            .single();
+
+          if (clientOrg?.slug) {
+            console.log('Found client organization:', clientOrg.slug);
+            return clientOrg.slug;
+          }
+        }
+      }
+
+      console.log('No organization found for user:', userId);
+      return null;
     } catch (error) {
       console.error('Error detecting organization:', error);
       return null;
